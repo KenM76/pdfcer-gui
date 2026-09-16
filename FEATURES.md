@@ -4,14 +4,27 @@ This is the per-surface capability register for the pdfcer-gui shell: what an
 operator can reach in a real build, and what is planned, in order. It is
 authoritative for status.
 
-**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.53.0, a git dependency on the local engine repository, pinned at **`20bfb259`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
+**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.53.0, a git dependency on the local engine repository, pinned at **`5d43d2ea`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
 
-**What is new in this build.** A link that names a point on a page — the shape
-every Word table-of-contents entry has — now jumps to that point and leaves the
-magnification exactly where the operator set it. If the spot is already on
-screen sideways, the horizontal position is held where they were looking rather
-than re-centred. A bookmark that names a rectangle, which is what SolidWorks
-drawings export, still frames that rectangle as before.
+**What is new in this build.** Four things the operator asked for, all four
+about forms and reading.
+
+Pages are now rendered **before** he scrolls to them: a band either side of the
+page being read is drawn while the renderer is idle, so a scanned sheet is
+already there when it arrives on screen. Whatever is on screen still goes
+first — that is a property of the control flow, not a priority number.
+
+A form field's colours can be chosen, before placement and after: the box's
+background and border, and — new here — the ink, face and size of the field's
+own text. Those last three are one group because the file stores them as one
+string, so changing the colour cannot quietly change the font.
+
+Placing a field shows an outline of exactly what the click will produce,
+hung from the corner the click will hang it from.
+
+And Tab stays in the document. It walks the form's fields in the order the
+form declares, crossing pages, and on a page with no form it walks the
+objects drawn on it. It no longer escapes into the ribbon.
 
 **Scope.** This shell only. `pdfcer-core` and `pdfcer` capabilities live in
 `D:\Dev\pdfcer\docs\FEATURES.md`, whose `gui` column is this project's
@@ -361,6 +374,7 @@ declare an intention before pointing at anything.
 | | |
 |---|---|
 | ✅ | **A page's colours do not change with the zoom** |
+| 🔨 | **Pages are rendered before the operator scrolls to them** — a band either side of the page being read is ordered whenever the renderer is idle, so a scanned sheet is already drawn when it arrives on screen. **Precedence is structural rather than a priority number**: the visible scan runs first and unchanged, and the band is consulted only when that scan has nothing left to ask for, so a prefetch cannot ever sit in front of a page the operator is looking at. The band is ordered by distance from the current page **ascending**, which is the exact reverse of the order `StripRasters::retain` evicts in — any other order prefetches the page the cache most wants to drop, and the two mechanisms grind against each other for as long as he keeps scrolling. The budget is what is left of the strip's texels, because without that guard the worker renders a page the next frame evicts, for ever. Unit-falsified, **not yet driven** |
 | ✅ | **Overprint in print-ready files is a setting you can reach**, and grey over a spot colour is a second axis with its own control |
 | ✅ | **Render diagnostics is a report** — the status bar keeps its one-line disclosure and the dialog gets the room, both reading the same derivation so the editorial rules are stated once. It names **what colour the page was blended in and who decided**: *Blended in CMYK ink* or *Blended in screen colour (RGB)*, and under it the origin — the page's own `/Group`, the screen's colour standing because the page declared nothing, or the file's print output intent |
 | ✅ | **A blank drawing at deep zoom says what to do**, and the engine no longer prints its own crash text on it |
@@ -427,6 +441,9 @@ declare an intention before pointing at anything.
 
 | | |
 |---|---|
+| 🔨 | **A form field's colours — the box, and the ink** — background and border are swatches in the field's Properties and again in the placement dialog, so a colour can be chosen before the first field exists and is carried into the next one and across kinds. Each offers a colour, *remove*, and — on the background only — *no colour*, with an entry greyed and explained whenever pressing it would change no byte; the last two are different edits and render differently on a push button, one giving no plate and the other the grey one. The field's own text is a second group — font, size and ink — because the file stores all three as **one string**, so the panel reads all three back before writing any one of them and a recolour cannot silently restyle the face. Size zero reads as **Auto**, which is the reader picking a size that fits the box and re-picking it as the value changes. A signature draws no text of its own and gets no group at all rather than a greyed one. **An ink with no single screen colour — a four-ink separation, or a colour space pdfcer keeps exactly as the file states it — reads back as a sentence, not a swatch**, because a converted approximation in a picker invites the operator to press Set and rewrite an ink they never touched. **Not yet driven** |
+| 🔨 | **Placing a field shows what the click will produce** — an outline follows the pointer at the size the field will be, hung from its lower-left corner, so on screen it grows up and to the right — deliberately the same rule the drag uses, and read from the same function, because two copies would disagree the first time a page carried a rotation. Outline only, no label: the kind is already named on the armed-tool surface, and a label positioned relative to the document is what rule 4 sends off-canvas. It is drawn over existing widgets too, since a click there still places a field on top, and it disappears the moment a drag starts, because the rubber-band is then the cursor. Nothing is drawn into the document and nothing is committed. **Not yet driven** |
+| 🔨 | **Tab stays in the document instead of escaping into the ribbon** — the press is taken off the raw input before egui can latch a focus direction. On a form it walks the engine's own tab sequence, with a radio group collapsed to one stop, crossing pages, scrolling by the smallest amount that reveals the field and leaving the zoom alone; Space reaches a focused check box rather than panning the paper. On a page with no form, clicking the page gives it the keyboard and Tab walks the objects in paint order, scoped to whatever the selection is standing in — so a sheet whose whole body is one page-sized wrapper, which is every CAD export this project has seen, rings the wrapper's contents rather than offering one stop that is the entire drawing. **Not yet driven**, and the forms panel's tab-order view still numbers from `/Annots` order, which it says of itself in three places |
 | ✅ | **Forms can be authored, not only filled** — five commands on Edit ▸ Forms, one per kind `pdfcer-core` has a verb for |
 | ✅ | **A placed form field's properties are editable** — Required, Read only and a tooltip for every type, plus multiple lines, hide as typed, equal cells and a maximum length on a text field, rather than a pane that answers a click by offering to delete the field |
 | ✅ | **A field's box can be moved and resized** — X, Y, Width, Height and a caption with an Apply, plus all four of `WidgetEdit`'s box properties: position, size, border style and width, where it is visible, and the caption. **Moving is free and resizing is not, and the pane says which you are about to do**, because §12.5.5 derives the appearance matrix from the appearance box's corners |
