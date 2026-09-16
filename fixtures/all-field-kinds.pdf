@@ -1,0 +1,191 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [8 0 R 11 0 R 18 0 R 20 0 R 22 0 R 24 0 R 26 0 R 28 0 R 30 0 R] /DA (/Helv 0 Tf 0 g) /DR << /Font << /Helv 5 0 R /ZaDb 6 0 R >> >> >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 420 620] /Resources << /Font << /Helv 5 0 R /ZaDb 6 0 R >> >> /Contents 4 0 R /Annots [8 0 R 11 0 R 16 0 R 17 0 R 20 0 R 22 0 R 24 0 R 26 0 R 28 0 R 30 0 R] >>
+endobj
+4 0 obj
+<< /Length 455 >>
+stream
+BT /Helv 13 Tf 20 585 Td (All field kinds) Tj ET
+BT /Helv 9 Tf 20 531 Td (Text field) Tj ET
+BT /Helv 9 Tf 20 491 Td (Check box) Tj ET
+BT /Helv 9 Tf 20 457 Td (Radio buttons) Tj ET
+BT /Helv 9 Tf 20 423 Td (Drop-down) Tj ET
+BT /Helv 9 Tf 20 383 Td (Drop-down, editable) Tj ET
+BT /Helv 9 Tf 20 343 Td (List box) Tj ET
+BT /Helv 9 Tf 20 279 Td (List box, multi-select) Tj ET
+BT /Helv 9 Tf 20 215 Td (Push button) Tj ET
+BT /Helv 9 Tf 20 175 Td (Signature) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /ZapfDingbats >>
+endobj
+7 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 200 22] /Resources << /Font << /Helv 5 0 R /ZaDb 6 0 R >> >> /Length 104 >>
+stream
+q 0.5 G 0.5 w 0.25 0.25 199.5 21.5 re S Q
+/Tx BMC q BT /Helv 10 Tf 0 g 3 7 Td (Ada Lovelace) Tj ET Q EMC
+endstream
+endobj
+8 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (TextOne) /TU (A single-line text field) /Rect [170 520 370 542] /F 4 /P 3 0 R /DA (/Helv 10 Tf 0 g) /V (Ada Lovelace) /MaxLen 40 /Q 0 /MK << /BC [0 0 0] /BG [1 1 1] >> /BS << /W 1 /S /S >> /AP << /N 7 0 R >> >>
+endobj
+9 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 16 16] /Resources << /Font << /ZaDb 6 0 R >> >> /Length 80 >>
+stream
+q 0.5 G 0.7 w 0.35 0.35 15.3 15.3 re S Q
+q BT /ZaDb 11 Tf 0 g 3 4 Td (4) Tj ET Q
+endstream
+endobj
+10 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 16 16] /Resources << /Font << /ZaDb 6 0 R >> >> /Length 40 >>
+stream
+q 0.5 G 0.7 w 0.35 0.35 15.3 15.3 re S Q
+endstream
+endobj
+11 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /T (CheckOne) /TU (A check box, currently off) /Rect [170 486 186 502] /F 4 /P 3 0 R /DA (/ZaDb 0 Tf 0 g) /V /Off /AS /Off /MK << /CA (4) /BC [0 0 0] /BG [1 1 1] >> /BS << /W 1 /S /S >> /AP << /N << /Yes 9 0 R /Off 10 0 R >> >> >>
+endobj
+12 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 16 16] /Resources << /Font << /ZaDb 6 0 R >> >> /Length 80 >>
+stream
+q 0.5 G 0.7 w 0.35 0.35 15.3 15.3 re S Q
+q BT /ZaDb 11 Tf 0 g 3 4 Td (l) Tj ET Q
+endstream
+endobj
+13 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 16 16] /Resources << /Font << /ZaDb 6 0 R >> >> /Length 40 >>
+stream
+q 0.5 G 0.7 w 0.35 0.35 15.3 15.3 re S Q
+endstream
+endobj
+14 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 16 16] /Resources << /Font << /ZaDb 6 0 R >> >> /Length 80 >>
+stream
+q 0.5 G 0.7 w 0.35 0.35 15.3 15.3 re S Q
+q BT /ZaDb 11 Tf 0 g 3 4 Td (l) Tj ET Q
+endstream
+endobj
+15 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 16 16] /Resources << /Font << /ZaDb 6 0 R >> >> /Length 40 >>
+stream
+q 0.5 G 0.7 w 0.35 0.35 15.3 15.3 re S Q
+endstream
+endobj
+16 0 obj
+<< /Type /Annot /Subtype /Widget /Parent 18 0 R /Rect [170 452 186 468] /F 4 /P 3 0 R /AS /Off /MK << /CA (l) /BC [0 0 0] /BG [1 1 1] >> /BS << /W 1 /S /S >> /AP << /N << /A 12 0 R /Off 13 0 R >> >> >>
+endobj
+17 0 obj
+<< /Type /Annot /Subtype /Widget /Parent 18 0 R /Rect [260 452 276 468] /F 4 /P 3 0 R /AS /Off /MK << /CA (l) /BC [0 0 0] /BG [1 1 1] >> /BS << /W 1 /S /S >> /AP << /N << /B 14 0 R /Off 15 0 R >> >> >>
+endobj
+18 0 obj
+<< /FT /Btn /T (RadioGroup) /TU (Pick one) /Ff 32768 /V /Off /DA (/ZaDb 0 Tf 0 g) /Kids [16 0 R 17 0 R] >>
+endobj
+19 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 200 22] /Resources << /Font << /Helv 5 0 R /ZaDb 6 0 R >> >> /Length 97 >>
+stream
+q 0.5 G 0.5 w 0.25 0.25 199.5 21.5 re S Q
+/Tx BMC q BT /Helv 10 Tf 0 g 3 7 Td (Green) Tj ET Q EMC
+endstream
+endobj
+20 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Ch /T (ComboOne) /TU (A closed drop-down) /Rect [170 412 370 434] /F 4 /P 3 0 R /DA (/Helv 10 Tf 0 g) /Ff 131072 /Opt [(Red) (Green) (Blue)] /V (Green) /Q 0 /MK << /BC [0 0 0] /BG [1 1 1] >> /BS << /W 1 /S /S >> /AP << /N 19 0 R >> >>
+endobj
+21 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 200 22] /Resources << /Font << /Helv 5 0 R /ZaDb 6 0 R >> >> /Length 97 >>
+stream
+q 0.5 G 0.5 w 0.25 0.25 199.5 21.5 re S Q
+/Tx BMC q BT /Helv 10 Tf 0 g 3 7 Td (Other) Tj ET Q EMC
+endstream
+endobj
+22 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Ch /T (ComboEdit) /TU (An editable drop-down) /Rect [170 372 370 394] /F 4 /P 3 0 R /DA (/Helv 10 Tf 0 g) /Ff 393216 /Opt [(Small) (Medium) (Large)] /V (Other) /MK << /BC [0 0 0] /BG [1 1 1] >> /BS << /W 1 /S /S >> /AP << /N 21 0 R >> >>
+endobj
+23 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 200 46] /Resources << /Font << /Helv 5 0 R /ZaDb 6 0 R >> >> /Length 100 >>
+stream
+q 0.5 G 0.5 w 0.25 0.25 199.5 45.5 re S Q
+/Tx BMC q BT /Helv 10 Tf 0 g 3 19 Td (Toronto) Tj ET Q EMC
+endstream
+endobj
+24 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Ch /T (ListOne) /TU (A list box) /Rect [170 308 370 354] /F 4 /P 3 0 R /DA (/Helv 10 Tf 0 g) /Opt [[(tor) (Toronto)] [(mtl) (Montreal)] [(van) (Vancouver)]] /V (tor) /TI 0 /MK << /BC [0 0 0] /BG [1 1 1] >> /BS << /W 1 /S /S >> /AP << /N 23 0 R >> >>
+endobj
+25 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 200 46] /Resources << /Font << /Helv 5 0 R /ZaDb 6 0 R >> >> /Length 101 >>
+stream
+q 0.5 G 0.5 w 0.25 0.25 199.5 45.5 re S Q
+/Tx BMC q BT /Helv 10 Tf 0 g 3 19 Td (Mon, Wed) Tj ET Q EMC
+endstream
+endobj
+26 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Ch /T (ListMulti) /TU (Choose any number) /Rect [170 244 370 290] /F 4 /P 3 0 R /DA (/Helv 10 Tf 0 g) /Ff 2097152 /Opt [(Mon) (Tue) (Wed) (Thu) (Fri)] /V [(Mon) (Wed)] /I [0 2] /MK << /BC [0 0 0] /BG [1 1 1] >> /BS << /W 1 /S /S >> /AP << /N 25 0 R >> >>
+endobj
+27 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 200 22] /Resources << /Font << /Helv 5 0 R /ZaDb 6 0 R >> >> /Length 127 >>
+stream
+q 0.75 g 0 0 200 22 re f Q
+q 0.5 G 0.5 w 0.25 0.25 199.5 21.5 re S Q
+/Tx BMC q BT /Helv 10 Tf 0 g 3 7 Td (Press me) Tj ET Q EMC
+endstream
+endobj
+28 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /T (PushOne) /TU (A push button that does nothing) /Rect [170 204 370 226] /F 4 /P 3 0 R /DA (/Helv 10 Tf 0 g) /Ff 65536 /MK << /CA (Press me) /BC [0 0 0] /BG [0.75 0.75 0.75] >> /BS << /W 1 /S /B >> /AP << /N 27 0 R >> >>
+endobj
+29 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 200 40] /Resources << /Font << /Helv 5 0 R /ZaDb 6 0 R >> >> /Length 41 >>
+stream
+q 0.5 G 0.5 w 0.25 0.25 199.5 39.5 re S Q
+endstream
+endobj
+30 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Sig /T (SigOne) /TU (Sign here) /Rect [170 146 370 186] /F 4 /P 3 0 R /MK << /BC [0 0 0] >> /BS << /W 1 /S /S >> /AP << /N 29 0 R >> >>
+endobj
+xref
+0 31
+0000000000 65535 f 
+0000000015 00000 n 
+0000000219 00000 n 
+0000000276 00000 n 
+0000000495 00000 n 
+0000001001 00000 n 
+0000001098 00000 n 
+0000001171 00000 n 
+0000001428 00000 n 
+0000001699 00000 n 
+0000001918 00000 n 
+0000002098 00000 n 
+0000002387 00000 n 
+0000002607 00000 n 
+0000002787 00000 n 
+0000003007 00000 n 
+0000003187 00000 n 
+0000003405 00000 n 
+0000003623 00000 n 
+0000003746 00000 n 
+0000003996 00000 n 
+0000004285 00000 n 
+0000004535 00000 n 
+0000004827 00000 n 
+0000005081 00000 n 
+0000005385 00000 n 
+0000005640 00000 n 
+0000005949 00000 n 
+0000006230 00000 n 
+0000006511 00000 n 
+0000006705 00000 n 
+trailer
+<< /Size 31 /Root 1 0 R >>
+startxref
+6895
+%%EOF

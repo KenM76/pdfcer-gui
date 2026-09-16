@@ -36,3 +36,19 @@ Thumbs.db
 # `git status` then reported as untracked source.
 __pycache__/
 *.pyc
+
+# ★ Acrobat's extracted resource strings — `tools/acrobat-form-strings.py`'s
+# output. Deliberately NOT committed even though `evidence/` generally is, and
+# not because of size: `strings.txt` is ~750 KB of Adobe's own UTF-16LE
+# resource content lifted verbatim out of `AcroForm.api` and `AcrobatRes.dll`,
+# and THIS REPOSITORY IS PUBLIC. Quoting the few dozen control labels that a
+# parity table has to name is ordinary interoperability documentation;
+# republishing an entire product's string table is not.
+#
+# Regenerate before following any `ACRO:` citation in `FORMS_PARITY.md`:
+#     python tools/acrobat-form-strings.py
+# Line numbers and offsets in those citations are Acrobat-version-specific —
+# `FORMS_PARITY.md` §10 records the version they were taken against, and the
+# tool writes the version it found into its own output header. A different
+# Acrobat will produce the same labels at different coordinates.
+evidence/acrobat-forms/*.txt

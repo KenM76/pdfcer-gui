@@ -920,6 +920,7 @@ stores absolute byte offsets, so a normalized fixture is a corrupt one.
 | `DESIGNS.md` | Designs argued and not yet built. A section is deleted when its design has been built **and driven**. |
 | `OPERATOR_REQUESTS.md` | The standing backlog. Only the operator closes a row. |
 | `ENGINE_BACKLOG.md` | Every capability the engine has that this shell does not reach, and the decision on each. |
+| `FORMS_PARITY.md` | Every form-field capability Acrobat offers, against what the engine can write and what this shell reaches. Its gap register is the work list; its owner tags say who does each one. |
 | `EDITABLE_SURFACES.md` | Every verb `pdfcer-core` implements, and where the operator reaches it. |
 | `NO_SURFACE.md` | Shipped behaviour with a hard-coded value and no control. |
 | `UNIT_SURFACES.md` | Every surface that shows or accepts a length. |

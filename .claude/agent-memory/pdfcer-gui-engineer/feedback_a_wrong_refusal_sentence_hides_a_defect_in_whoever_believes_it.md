@@ -1,6 +1,6 @@
 ---
 name: a-wrong-refusal-sentence-hides-a-defect-in-whoever-believes-it
-description: A refusal that named the wrong cause kept a "visible control, silently inert" defect alive for months, because it read as a fact about the file rather than about the kind
+description: A refusal or staleness sentence is a claim about which code paths reach it - measure the paths, never the prose. Twice it hid a defect in whoever believed it, once in the shell and once in my own evidence doc
 metadata:
   type: feedback
 ---
@@ -35,6 +35,27 @@ it. Instead they shipped for the life of the feature and Ken found them.
   should refuse and one that should not. Here, a `/Square` accepting the same
   operation is what turned "this kind is limited" into "the engine does not
   recognise its own work".
+**Second instance, 2026-09-16, and this time the believer was me.** The engine
+writes a check box's rotation and reports success while never turning it. I
+built `evidence/forms-parity/engine-form-verbs.md`'s verdict column from the
+engine's own `appearance_stale` sentence - *"the stream is a push button's
+caption artwork, a signature, or a form built elsewhere"* - and recorded
+*"works for text/choice, discloses the rest"*. False in both directions: a push
+button pdfcer drew never reaches that sentence, and a foreign check box that
+does reach it is told it is a push button. The measurement that settled it was
+the fork, not the prose: which `/FT` arm runs, what it reads, and what its
+callee's signature can even accept.
+
+★ **The sharpened rule: a sentence that enumerates cases is a claim about which
+code paths reach it.** A staleness/refusal string sits behind a gate. Read the
+gate and every arm that satisfies it. The sentence was written when the gate had
+a different shape and nothing fails when they diverge - the string still
+compiles, the tests still pass, and the enumeration is now fiction.
+
+- Corollary: **a gate that cannot express the actual outcome will lie.** Here it
+  is `if !appearance_regenerated` - which has no way to say *"rebuilt, but not
+  rotated"*, so it says "fine".
+
 - Sibling of [[feedback_a_backlog_row_is_a_record_not_evidence]] and
   [[feedback_a_limitation_sentence_is_a_citation_with_an_hours_long_shelf_life]].
   The family rule: **a sentence explaining an absence is evidence about its

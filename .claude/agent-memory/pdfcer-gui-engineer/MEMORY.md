@@ -77,7 +77,7 @@
 - [Count a condition and you will reason about the other one](feedback_count_a_condition_and_you_will_reason_about_the_other_one.md) — two wrong diagnoses from one half of an AND.
 - [An `||` between two required conditions asserts neither](feedback_an_or_between_two_required_conditions_asserts_neither.md) — it looks like tolerance of a rewording.
 - [A check whose input is convenient tests the assertion](feedback_a_check_whose_input_is_chosen_for_convenience_tests_the_assertion.md) — "what is typed does not matter" is a finding.
-- [A wrong refusal sentence hides a defect in whoever believes it](feedback_a_wrong_refusal_sentence_hides_a_defect_in_whoever_believes_it.md) - KIND vs FILE.
+- [A wrong refusal sentence hides a defect in whoever believes it](feedback_a_wrong_refusal_sentence_hides_a_defect_in_whoever_believes_it.md) - 2nd instance: it claims which code paths reach it; measure the fork.
 - [A disproof is a measurement too](feedback_a_disproof_is_a_measurement_too_and_the_dead_hypothesis_was_the_truth.md) - the truth died on a number read against the WINDOW.
 - [A launch failure blamed on a resource count](feedback_a_launch_failure_blamed_on_a_resource_count_needs_a_control_binary.md) — two wrong attributions; run the control binary first.
 - [When a wobble is inside the framework, list the leaves by id](feedback_when_a_wobble_is_inside_the_framework_list_the_leaves_by_id.md) - five container probes stalled.

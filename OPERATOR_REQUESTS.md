@@ -37,6 +37,19 @@ record — not a chat reply, not a session summary, not an agent's memory.
    the same evidence, and leaves you unable to see that I noticed. O115 is
    the shape to copy.
 
+7. **A request is a request for the whole option set, and sibling kinds share
+   it.** When you name a capability, you are naming that capability with every
+   option a user of this product class would expect to find on it, and when a
+   thing comes in kinds — five form field kinds, eight markup kinds, four
+   measuring tools — an option added to one is owed to every kind the format
+   lets carry it. Where a kind genuinely cannot have it, the row says so with a
+   citation. The mechanism is not good intentions: it is a **parity table per
+   family**, reference application in one column, engine in the second, this
+   shell in the third, so the missing cells are countable rather than
+   discovered one complaint at a time. `FORMS_PARITY.md` is the first; the
+   same is owed to markup, measure and text as each is next touched. O206 is
+   where you asked for this.
+
 A request made in conversation lives exactly as long as the conversation:
 sessions end, context is compacted, and an ask made in turn three is gone by
 turn thirty. A file in the repository has none of those properties, and its
@@ -56,6 +69,18 @@ words.**
 The same rule governs what is asked of the engine: *"not adding such things
 just because they weren't explicitly asked for i think is how we end up with
 partially finished features."*
+
+**And a feature belongs to a family, not to the tool you happened to name.**
+
+> *"whenever I ask for a feature, what I really mean is that feature and all
+> the options that would normally exist for that feature. Most of the time we
+> just end up with features partially implemented for one item while another
+> that should have the same options gets a different set of features
+> implemented."*
+
+Which is a diagnosis, and it is correct: each kind was built when a request
+named it, and a request names one kind. The countermeasure is the parity table
+in contract clause 7, because a rule with no list behind it repeats the defect.
 
 **A report is a sample, not the scope.**
 
@@ -522,6 +547,102 @@ would disagree — and three sentences in that panel state, by name, that the
 order shown is NOT the tab order. Both halves of the gesture, and the panel,
 are still owed a driven check; it runs at the end of this batch rather than
 before each commit.
+
+## O205–O207 — three reports in one message, FILED BEFORE ANY WORK
+
+**Source:** his message of 2026-09-16 and the line he added to it while the
+measurement was still running. Every paragraph became a row below, in the order
+he wrote them, before any of it was measured.
+
+## O205 — **FILED** — the form tools are each missing a different part of themselves, and a drop-down cannot be used at all
+
+> *"Some of our form objects are missing features, and some of them don't work.
+> For example drop down lists don't let me select an option on the canvas, and I
+> can't edit the list of options after in properties. The rotate buttons don't
+> work for check boxes. This is just two examples. Please make yourself a table
+> of ALL the features that should be available to match Acrobat, then note
+> everything that is missing from each tool."*
+
+Three named instances, and he says explicitly that they are samples rather than
+the list:
+
+1. **A drop-down cannot be filled in on the canvas.** Clicking the widget does
+   not offer the options the file already declares. This is a Read-mode
+   capability — filling a form is the one edit Read grants — so it is not gated
+   behind authoring.
+2. **A drop-down's option list cannot be edited in Properties.** `/Opt` is the
+   list of choices; without an editor the kind can be placed and never made
+   useful, which is R9's shape with the refusal moved one step later.
+3. **Turn left and Turn right do nothing on a check box.** The controls are
+   drawn, so this is worse than absent: a control that writes no byte and says
+   nothing is the failure R1 exists to catch, and the turn was driven one way on
+   one kind only.
+
+**The request itself is the fourth item and the largest.** He asks for a table
+of every feature a form field should have to match Acrobat, with, per tool, what
+is missing. That table is the deliverable, and it is a measurement of three
+surfaces against one reference: what Acrobat offers, what `pdfcer-core` can
+write at the pin, and what this shell reaches today. **It is written, and it is
+`FORMS_PARITY.md`** — per kind x capability, every row cited, with a gap register
+at section 8 holding 26 `GUI` rows, 15 `ENGINE` rows and 3 questions only he can
+answer.
+
+The Acrobat column is sourced from the installed Acrobat DC rather than recalled,
+as the reference-app rule requires — but from its resource strings, not a
+photograph. `tools/acrobat-form-strings.py` lifts the UTF-16LE runs out of
+`AcroForm.api` and `AcrobatRes.dll`, which yields every control label, kind name,
+enumerated value and guidance sentence verbatim, offline, repeatably, and without
+taking the desktop while he is at it. What it cannot yield is which control sits
+on which tab: the resource table’s ordering is strong evidence and section 2 uses
+it, but adjacency is not structure. That single residue is `ASK` row A1, and a
+photograph pass is what closes it.
+
+**Why this happened, stated plainly, because the diagnosis is the row's value.**
+Each form kind was built when a request named it, and a request names one kind.
+A text field got a maximum length because he asked about a maximum length; a
+check box got nothing of the sort, because nobody asked. Nothing in this repo
+holds the sentence *these five kinds share a property set, and a property added
+to one is owed to the others that have it in the format*. The result is five
+tools each carrying a different slice of one feature set, which is exactly what
+he is describing when he says *"partially implemented for one item while another
+that should have the same options gets a different set of features implemented."*
+
+## O206 — **FILED** — a feature request means the feature and every option that normally comes with it
+
+> *"Also we need a list like this so that whenever I ask for a feature, what I
+> really mean is that feature and all the options that would normally exist for
+> that feature. Most of the time we just end up with features partially
+> implemented for one item while another that should have the same options gets
+> a different set of features implemented."*
+
+This is a standing rule about how every future request is to be read, not a
+feature. Recorded in the contract at the head of this file as clause 7, so it is
+read before the rows, and enforced by the parity tables the rule points at: a
+request for a capability is a request for the whole of that capability as the
+product class defines it, and where a kind cannot have an option the row says so
+with a citation rather than leaving the omission to be discovered.
+
+**The rule has teeth only if the option set is written down somewhere a session
+must read.** A doctrine paragraph nobody consults repeats the defect. So the
+rule ships with the tables: `FORMS_PARITY.md` for form fields, and the same
+treatment owed to markup, measure and text as each is next touched.
+
+## O207 — **FILED** — a size can only be typed in points, and a unit typed beside the number is not read
+
+> *"Also I can't set units by typing them beside the numbers as sizes. Things
+> still only are able to be entered in as points."*
+
+Every numeric entry that means a length — a field's X, Y, Width and Height, a
+markup's geometry, a page size, a margin — takes a bare number and reads it as
+points. He wants to type the unit with the number, `12 mm` or `1/2"`, and have
+the box do the conversion, which is what every CAD input on this desktop does.
+
+This is O194's other half seen from the entry side rather than the display side:
+O194 step 2 made `src/units.rs` the only place a length is converted **for
+display**, and a gate forbids a fresh `25.4` anywhere under the GUI. Nothing was
+done about what an operator may TYPE. The parse belongs in the same module, for
+the same reason, and the entry surfaces then all gain it at once instead of one
+box at a time — which is O206's rule applied to its own first instance.
 
 ## O177–O189 — `FEATURE.txt` — thirteen rows from one file, FILED BEFORE ANY WORK
 
