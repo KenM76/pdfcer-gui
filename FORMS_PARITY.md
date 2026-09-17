@@ -260,13 +260,13 @@ make it the default choice."*
 | Item List — rename display text | `/Opt` | ✅ | ✅ `panels/properties/choiceopts.rs`, `row{n}.shown` | ✅ |
 | Export Value ≠ display | `/Opt` pair | ✅ two-string option writes `[export display]` ENGINE:`forms.rs:375` | ✅ `panels/properties/choiceopts.rs` draws both columns — `row{n}.shown` and `row{n}.sent` | ✅ |
 | Duplicate item | — | ✅ **refused** `ChoiceOptionDuplicate` ENGINE:`edit.rs:7354` | ➖ | ✅ the refusal is the right behaviour; surface it |
-| Sort items | `/Ff` 20 | ⚠ flag written, **`/Opt` never reordered** — `sort_claim_unmet` discloses the mismatch ENGINE:`edit.rs:22080` | ✅ author-only `dialogs/formfield.rs:673`, and afterwards in `panels/properties/choiceopts.rs` (`sort` region) | ⚠ `ENGINE` still owed — see 8.2 E9; the shell sorts for itself meanwhile, which is the 058 report |
-| Allow custom text (CO) | `/Ff` 19 Edit | ✅ `editable`; `Edit` without `Combo` refused | ⚠ **flag settable at placement only, and no free-text entry exists anywhere** — not canvas, not panel, not Properties (`dialogs/formfield.rs:664-666`, `rows.rs:749-835`) | ⚠ `GUI` — an editable combo is authorable and unfillable |
+| Sort items | `/Ff` 20 | ✅ flag written, and **`sort_choice_options` is exported** (Pass 308.8) so one comparator serves both sides; bit 20 set *alone* still reorders nothing and is still disclosed as `sort_claim_unmet` ENGINE:`edit.rs:22080` | ✅ author-only `dialogs/formfield.rs:673`, and afterwards in `panels/properties/choiceopts.rs` (`sort` region), which calls the engine's sorter rather than a copy of it | ✅ E9 delivered; the 058 report closed by the export, and `FieldEditOutcome::options_sorted` is consumed as the drift tripwire |
+| Allow custom text (CO) | `/Ff` 19 Edit | ✅ `editable`; `Edit` without `Combo` refused; `set_choice_value` already accepts a value absent from `/Opt` for this case ENGINE:`edit.rs:39790-39818` | ⚠ **flag settable at placement only, and no free-text entry exists anywhere** — not canvas, not panel, not Properties (`dialogs/formfield.rs:664-666`, `rows.rs:749-835`). The canvas does not read the bit at all: the box census forks on `Combo` and `MultiSelect` only (`canvas/forms/boxes/mod.rs:540-545`), so an editable combo opens the same closed picker a plain one does | ⚠ `GUI` — an editable combo is authorable and unfillable; 8.1 row 15 |
 | Commit immediately (CO) | `/Ff` 27 | ✅ `with_commit_on_sel_change` | ❌ | ❌ `GUI` |
 | Multiple selection (LB) | `/Ff` 22 | ✅ | ✅ `fieldedit.rs:261-274` | ✅ |
 | Check spelling | `/Ff` 23 | ✅ | ❌ | ❌ `GUI` — sibling of 4.1 |
-| Default choice | `/DV` | ✅ | ❌ | ❌ `GUI` — sibling of 4.2/4.3 |
-| **Pick a value (fill)** | `/V` `/I` `/TI` | ✅ `set_choice_value` ENGINE:`edit.rs:38709` — export-first matching, `/I` and `/TI` maintained | ⚠ **panel only** (`panels/forms/rows.rs:810` → `FormEdit::SetChoice` → `panels/forms/edit.rs:765`). On the canvas: ❌ **and silently** — `classify()` falls to `_ => Err(NotOffered)` at `canvas/forms/boxes/mod.rs:471`, and `Routing.undrawn` counts only `NoAppearance` while `unreachable` counts only `RotatedPage\|NotPlaced` (`:623-631`), so nothing anywhere tells the operator why clicking does nothing | ⚠ `GUI` — **O205's first named defect.** Two jobs: make `NotOffered` speak, then offer the picker on the canvas |
+| Default choice | `/DV` | ✅ | ✅ `panels/properties/choiceopts.rs::default_row`, which offers *"Nothing — Reset clears the field"* as its first entry because a reset to empty is a different fact from the chooser having nothing selected, and writes the **export** value since `/DV` takes `/V`'s type (Table 228) | ✅ CO and LB done; CB and RB are still 8.1 row 4 |
+| **Pick a value (fill)** | `/V` `/I` `/TI` | ✅ `set_choice_value` ENGINE:`edit.rs:38709` — export-first matching, `/I` and `/TI` maintained | ✅ both. Panel: `panels/forms/rows.rs:810` → `FormEdit::SetChoice` → `panels/forms/edit.rs:765`. Canvas: `canvas/forms/choosing.rs` — a click opens the option list on the field's own answered row, and **`Combo` decides where it is drawn** (`choosing.rs:473`): a combo drops outside the widget, a list box draws opaquely inside its own rectangle with a scroll bar when the rows do not fit, which is what Acrobat does | ✅ O205's first named defect closed, and O209's C1–C3 with it |
 
 ### 4.5 Options — Button / push button (PB)
 
@@ -346,27 +346,28 @@ Acrobat's six widget triggers: `Mouse Up` `Mouse Down` `Mouse Enter`
 
 ## 5. Filling — the part O205 actually started from
 
-Acrobat fills every kind on the page. This shell has two surfaces and they do
-not agree with each other.
+Acrobat fills every kind on the page. This shell now fills five of the seven
+there; the two surfaces still disagree on the other two.
 
 | Kind | On the canvas | In the Forms panel | Keyboard | Verdict |
 |---|---|---|---|---|
 | TX | ✅ | ✅ | ➖ | ✅ |
 | CB | ✅ | ✅ | ✅ Space/Enter `tabbing.rs:307-308` | ✅ |
 | RB | ✅ | ✅ | ✅ + arrows move **and activate** `tabbing.rs:400-402` | ✅ |
-| **CO** | ❌ **silent** | ✅ | ❌ | ❌ `GUI` |
-| **LB** | ❌ **silent** | ✅ | ❌ | ❌ `GUI` |
+| **CO** | ✅ `canvas/forms/choosing.rs` — the list **drops** outside the widget | ✅ | ✅ Up/Down move the highlight and write nothing, Enter or Space picks, Escape closes the list on the first press and gives up the ring on the second | ✅ |
+| **LB** | ✅ same module — the list draws **in place**, opaquely over the appearance, with a scroll bar when the rows do not fit | ✅ | ✅ as CO; a multi-select list adds a value per pick and stays open | ✅ |
 | PB | ❌ | ➖ action editor | ❌ | ⚠ `ASK` — should clicking a push button on the canvas *run* its action in Read mode? Acrobat does |
 | SG | ❌ | 🚫 blocked | ❌ | ✅ correct |
 
-**The mechanism, because it decides the fix.** `BoxKind` has three variants only
-(`canvas/forms/boxes/mod.rs:88-163`); `classify()` (`:414-473`) matches TX, CB
-and RB and falls to `_ => Err(NotOffered)` at `:471` for CO, LB, PB and SG. The
-omission is silent because `Routing.undrawn` counts only `NoAppearance` and
-`unreachable` counts only `RotatedPage|NotPlaced` (`:623-631`), so
-`panels/forms/mod.rs:499-522` can never explain it. An independent measurement
-reached the same conclusion from the other direction
-(`evidence/forms-parity/canvas-per-kind.md` §3.4).
+**What is left, and it is no longer the fork.** `BoxKind` now has four variants
+(`canvas/forms/boxes/mod.rs:88-210`) and `classify()` (`:461-549`) matches TX, CB, RB
+and CO/LB alike; PB and SG fall to `_ => Err(NotOffered)` at `:547`. **That omission
+is still silent**, which is 8.1 row 3: `Routing.undrawn` counts only `NoAppearance`
+and `unreachable` counts only `RotatedPage|NotPlaced` (`:699-706`), so
+`panels/forms/mod.rs:508-520` can never explain a dead click on the two kinds that
+have no gesture. An independent measurement reached the same conclusion from the
+other direction (`evidence/forms-parity/canvas-per-kind.md` §3.4), and it was taken
+before the fork was built — read its CO and LB rows as history.
 
 **This is the canvas-primacy rule biting.** If the engine can do it, clicking the
 object must reach it — the panel is a second route, not the route.
@@ -439,8 +440,8 @@ Owner tags as defined in §1. `GUI` rows are ours and need no one's permission.
 | # | Gap | Where it goes | Engine verb |
 |---|---|---|---|
 | 1 | ~~`/Opt` list editing after placement (7 operations)~~ **BUILT** — `panels/properties/choiceopts.rs`, drawn at the end of the `FieldType::Choice` branch. All seven: add, remove, move up, move down, rename display, export separate from display, and keep-sorted; plus the default choice, and bits 19, 23 and 27 because Acrobat's Options tab groups them (O206). **Driven** — `the_option_arrows_are_greyed_only_at_the_ends_of_the_list` asserts all six arrow states across three rows through `PDFCER_DIAG_SELECT_FIELD`, and was falsified against a planted live top-row arrow and against a broken seam | `panels/properties/choiceopts.rs` | ENGINE:`edit.rs:21815` |
-| 2 | ~~Canvas fill for CO and LB~~ **BUILT** — `canvas/forms/choosing.rs`. A click on a combo or list widget opens its option list on the field's own answered row; Up/Down move the highlight and write nothing; Enter or Space, or a click on a row, writes one `SetChoice`; a multi-select list adds a value per tick and stays open; Escape closes the list on the first press and gives up the ring on the second. **Driven** — `a_drop_down_can_be_answered_on_the_page` asserts all seven steps on `fixtures/all-field-kinds.pdf` and was falsified three ways: a reverted focus lock, an arrow that answers the form, and a multi-select tick that replaces instead of adding. The driving is what found the defect — egui moves keyboard focus on a bare arrow and surrenders it on Escape unless the focused widget locks them, so the list opened, took one arrow, and then went dead to every further key, silently. Fixed by `canvas/forms.rs::keyboard_box`, which both on-page field editors now share | `canvas/forms/choosing.rs` | ENGINE:`edit.rs:38709` |
-| 3 | `NotOffered` is silent — nothing can explain a dead click | `boxes/mod.rs:623-631` + `panels/forms/mod.rs:499-522` | ➖ |
+| 2 | ~~Canvas fill for CO and LB~~ **BUILT** — `canvas/forms/choosing.rs`. A click on a combo or list widget opens its option list on the field's own answered row; Up/Down move the highlight and write nothing; Enter or Space, or a click on a row, writes one `SetChoice`; a multi-select list adds a value per tick and stays open; Escape closes the list on the first press and gives up the ring on the second. **Driven** — `a_drop_down_can_be_answered_on_the_page` asserts all seven steps on `fixtures/all-field-kinds.pdf` and was falsified three ways: a reverted focus lock, an arrow that answers the form, and a multi-select tick that replaces instead of adding. The driving is what found the defect — egui moves keyboard focus on a bare arrow and surrenders it on Escape unless the focused widget locks them, so the list opened, took one arrow, and then went dead to every further key, silently. Fixed by `canvas/forms.rs::keyboard_box`, which both on-page field editors now share | `canvas/forms/choosing.rs` | ENGINE:`edit.rs:38709` | **Rebuilt against Acrobat under O209**, which reported three defects in it: a pick was not remembered (the popup gave up on the *press* frame, because egui surrenders a focused widget's focus on any press that does not land on it and `choose()` early-returned on the loss — a click is a press and a release, and the popup has to survive the gap); the open list looked nothing like Acrobat's (a *maximum* width let it shrink to its longest label, 57 px under a 370 px field, inside egui's rounded shadowed pop-up card — now a fixed width in a square unshadowed zero-margin frame flush against the field, zero row spacing, full-width rows, and a selected row painted as a solid `Theme::accent_pair` plate, which is Acrobat's treatment in this shell's palette); and a list box was drawn as a drop-down (`/Ff` bit 18 `Combo` never reached the census — it now forks the presentation at `choosing.rs:473`). **Driven** — the pick, both presentations, the multi-select plate, and the scroll bar appearing with the last row clipped at a smaller zoom
+| 3 | `NotOffered` is silent — nothing can explain a dead click. Narrower than it was: CO and LB now have a gesture, so what is left unexplained is PB, SG, a rich-text field and a choice field with an empty `/Opt` | `boxes/mod.rs:699-706` + `panels/forms/mod.rs:508-520` | ➖ |
 | 4 | `/DV` for CB and RB. **CO and LB are done** — the default-choice chooser in `choiceopts.rs`, which offers *"Nothing — Reset clears the field"* as its first entry because a reset to empty is a different fact from the chooser having nothing selected | `fieldedit.rs:544-581` | ENGINE:`edit.rs:21382` |
 | 5 | Glyph-style picker for RB, and a kind fork so the row is labelled right | `widgetedit.rs:604-629` | `/MK /CA` char |
 | 6 | Radios-in-unison | beside `fieldedit.rs:228-243` | ENGINE:`edit.rs:21419` |
@@ -452,7 +453,7 @@ Owner tags as defined in §1. `GUI` rows are ours and need no one's permission.
 | 12 | Sort flag after placement, with `sort_claim_unmet` shown | choice rows | ENGINE:`edit.rs:22080` |
 | 13 | Mapping name `/TM` | field rows | ENGINE:`edit.rs:21551` |
 | 14 | Alignment `/Q` for CO and LB; clear-`/Q` for all, **labelled *inherit* rather than *Left*** — the engine resolves a clear through the `/Parent` chain and then `/AcroForm`, which this shell cannot see | `fieldedit.rs:608-636` | ENGINE:`edit.rs:21835` |
-| 15 | Free-text entry for an editable combo (canvas, panel or Properties — any) | `rows.rs:749-835` | ENGINE:`edit.rs:38709` |
+| 15 | Free-text entry for an editable combo (canvas, panel or Properties — any). The engine already takes it: `set_choice_value` writes export == display == the typed text when the field is an editable combo. The canvas does not read `/Ff` bit 19 at all — the box census forks on `Combo` and `MultiSelect` only (`boxes/mod.rs:540-545`) — so an editable combo opens the same closed picker a plain one does. Found under O209 while building the combo/list fork; not reported by the operator | `rows.rs:749-835`, `canvas/forms/boxes/mod.rs:540-545` | ENGINE:`edit.rs:39790-39818` |
 | 16 | Border width row when `border` is `None` | `widgetedit.rs:504-532` | ENGINE:`edit.rs:25202` |
 | 17 | Border style at placement | `author.rs:77-80` | ENGINE:`edit.rs:1652` |
 | 18 | Resize options — scale stroke width, keep `/RD` | resize path | ENGINE:`edit.rs:17624`, `:17632` |
@@ -499,7 +500,7 @@ Acrobat's dialog-level "Locked" checkbox.
 
 | # | Question | Cost of answering |
 |---|---|---|
-| A1 | Photograph Acrobat's per-kind Options tabs to firm up §2's adjacency-derived mapping | needs the desktop and Acrobat in Prepare Form; ~20 min, and it must not run while he is working |
+| A1 | Photograph Acrobat's per-kind **Options tabs** to firm up §2's adjacency-derived mapping. Still open — what was photographed under O209 is the *filling* side (how a drop-down and a list box look and behave in Reader), which is what §4.4's fill row and §5 are now measured against; the authoring dialogs have not been opened | needs the desktop and Acrobat in Prepare Form; ~20 min, and it must not run while he is working |
 | A2 | Should clicking a push button on the canvas in Read mode *run* its action? Acrobat does | design call |
 | A3 | Is an empty signature field a placeable authoring kind, or signing-only? | design call |
 
@@ -531,7 +532,7 @@ Re-derive with the commands in §10 before quoting these anywhere.
 ```
 # gap-register row counts -- section 8 only. Counting backticked tags
 # document-wide over-reports: a tag also appears in every verdict cell
-# in sections 3-5. Measured 2026-09-16: 27 / 16 (E3 filed) / 3.
+# in sections 3-5. Re-measured 2026-09-17: 27 / 16 (E3 filed) / 3.
 #
 # The closing pipe of each row pattern is ESCAPED. An earlier revision of
 # these four commands left it bare, where an unescaped trailing pipe is an

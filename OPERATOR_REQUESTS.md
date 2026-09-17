@@ -732,6 +732,114 @@ is never behind the tab that owns it.
 about two minutes of the operator's desktop, and until it runs green the
 register row stays untickable.
 
+## O209 — ◑ **SIX OF SEVEN BUILT AND DRIVEN; TWO GAPS NAMED AND OPEN** — the form fields do not look or behave like Acrobat's, and in Edit mode they cannot be seen or resized
+
+**Source:** his message of 2026-09-17, sent after using the choice fields that
+O205 delivered. Filed against the work that had already been done, which makes
+it a defect report rather than a feature request.
+
+> *"I haven't checked the other form options for completeness, but the
+> drop-down options don't remember what I've clicked on in read mode or any
+> mode and look different than they do in Acrobat when they are clicked on. The
+> list option is somehow hidden from view in Acrobat until I click on it, then I
+> can select options and if the box is too small for all of the options it gives
+> a scroll bar. You need to compare how your form fields look and act vs how
+> they look and act when opened in Acrobat. Also when I am in edit mode I can't
+> see these boxes and ther is no live preview when I drag the handles to resize
+> them and only the corner drag handles work. Do not run the whole suite of
+> tests unless I tell you to. Only run the tests you need. The PC is yours to
+> use with acrobat reader too."*
+
+Seven complaints in one paragraph, and they are seven different defects rather
+than one mood. They are numbered here because the rest of the row refers to
+them, and because *"I haven't checked the other form options for
+completeness"* is an eighth thing — a scope he has explicitly left open.
+
+**C1 — a drop-down pick is not remembered.** *"in read mode or any mode"*, so
+it is not a mode gate. **Cause:** the popup gave up on the frame the pointer
+went **down**, not the frame it came **up**. egui surrenders a focused widget's
+focus on any press that does not land on it, `choose()` early-returned on the
+loss, and the early return forgot the popup — so by the time the click
+completed there was no list and no row under the pointer. A click is a press
+*and* a release, and everything a click needs has to survive the gap between
+them. **Fixed**, and driven: the trace records the picked row and the field
+reads the chosen option afterwards.
+
+**C2 — the open list looks nothing like Acrobat's.** **Cause:** two
+independent ones. The width was set as a *maximum*, so the frame shrank to its
+longest label — 57 px of list hanging under a 370 px field. And the frame was
+egui's stock pop-up card: rounded, shadowed, generously padded, correct for a
+menu over an application's own chrome and wrong for a control belonging to a
+rectangle on a page. **Fixed** with a fixed width, a square unshadowed
+zero-margin frame flush against the field, zero row spacing, and compact
+painted rows whose selected state is a solid accent plate with legible ink —
+which is what Acrobat draws, expressed in this shell's palette rather than
+copied out of a screenshot.
+
+**C3 — a list box is not a drop-down and was being drawn as one.** His
+sentence is a precise specification of Acrobat's behaviour: hidden until
+clicked, then options **in place**, then a scroll bar when the box is too
+small. **Cause:** `/Ff` bit 18 — `Combo` — was never carried into the canvas,
+so every `/Ch` field got a drop. **Fixed:** the flag now reaches the box
+census and decides *where* the options are drawn. A list box renders inside
+its own rectangle, opaquely over the appearance stream, and grows a scroll bar
+the moment the rows do not fit. Driven at two zooms: at the smaller one the
+bar appears and the last option is clipped mid-row, which is the behaviour he
+described.
+
+**C4 — *"compare how your form fields look and act vs … Acrobat"*.** That is
+an instruction to measure, and it was carried out before any of the above was
+written: the same fixture was opened in Acrobat Reader and photographed field
+by field, and the repairs above are what the comparison found. The photographs
+are the evidence for C2 and C3 and are what the geometry was matched against.
+
+**C5 — in Edit mode the boxes are invisible.** **Cause:** the authoring branch
+of the canvas overlay returned before the form shading ran, so the one mode in
+which a widget must be *found* was the one mode that drew nothing.
+**Fixed:** Edit mode now outlines every widget that has a rectangle — not just
+the fillable ones, so check boxes, radios, push buttons and signature fields
+are visible too. Driven: ten targets, ten drawn.
+
+**C6 — no live preview while dragging a resize handle.** **Cause:** the ghost
+knew how to follow an annotation and an outline, and a form widget is neither,
+so the preview had nothing to draw. **Fixed:** the widget's rectangle is now
+fed to the same ghost. Driven by holding the button down and photographing
+mid-gesture, which needed a new tool — a drag driver — because nothing in this
+project could photograph a gesture that only exists between press and release.
+
+**C7 — only the corner handles work.** **Cause:** the resize arithmetic
+derived the far corner from the grip's pivot assuming the pivot was a corner.
+For the four edge grips it is a **mid-edge point**, so the derived corner
+collapsed and the committed rectangle had zero extent across the dragged axis.
+**Fixed** by scaling both corners about the pivot, which is correct for all
+eight grips and shorter than what it replaced. Driven east and south; unit
+tests pin both the edge case and the corner case.
+
+**Rule 4 holds throughout.** Everything added here is *cursor* — a resize
+ghost, a hover row, a focus ring, an Edit-mode outline. Nothing marks applied
+content, and a saved-and-reopened screenshot of the page is identical.
+
+**A finding of his, mid-work, which is a finding about Acrobat.** He tried the
+list box on a SolidWorks drawing and the background bled through it, then
+tested the same fixture here and in Acrobat: *"I see the list box shows fine on
+acrobat on your test. I tested some on the SW drawing so I guess the background
+on the drawing interferes with the list box in Acrobat. Maybe it is a bug in
+Acrobat!"* Ours cannot do that — the list paints an opaque plate first — and
+that is now deliberate rather than incidental.
+
+**Two things are open, and neither is C1–C7.**
+
+1. **An editable combo cannot be typed into.** `/Ff` bit 19 — `Edit` — says a
+   combo box accepts a value that is not in its list. The engine already
+   accepts free text for exactly that case; the canvas has no handling for the
+   flag at all, so the field behaves as a plain picker. Found while fixing C3,
+   not reported by him.
+2. **"I haven't checked the other form options for completeness."** Text
+   field, check box, radio group, push button and signature have not been put
+   through the same Acrobat comparison the choice fields just had. His sentence
+   reserves the right to report them; this row records that the sweep is owed
+   before he has to.
+
 ## O177–O189 — `FEATURE.txt` — thirteen rows from one file, FILED BEFORE ANY WORK
 
 **Source:** `C:\Users\Ken\OneDrive\pdfTests\FEATURE.txt`, written, read the same morning. Every paragraph in it became a row below, in the

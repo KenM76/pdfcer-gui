@@ -186,10 +186,13 @@ pub fn grip_box(mapping: &PageMapping, selection: &SelectionState) -> Option<Rec
 /// on [`crate::canvas::selection::AnnotSelection`] and not in
 /// `SelectionState::outlines`.
 ///
-/// # ★★ What it prevents — `OPERATOR_REQUESTS.md` O154
+/// # ★★ What it prevents — `OPERATOR_REQUESTS.md` O154 and O209
 ///
 /// > *"the Markup Items don't have a live preview — the bounding box stays the
 /// > same size when I drag the handles."*
+/// >
+/// > *"there is no live preview when I drag the handles to resize them"* — the
+/// > same sentence one surface along, about a form field.
 ///
 /// `selection.outlines()` is **empty** behind an annotation selection, so a
 /// ghost measured against `grip_box` draws nothing at all and the `None` that
@@ -198,8 +201,34 @@ pub fn grip_box(mapping: &PageMapping, selection: &SelectionState) -> Option<Rec
 /// functions for a good reason — a move is one displacement, a resize is a map
 /// — and that split is exactly what lets one of them quietly miss a kind of
 /// selection the other handles, so the box they share is stated once, here.
+///
+/// # ★★★ `widget`, and why it is a parameter rather than a third arm
+///
+/// A form widget is in **neither** of the two places this function can look. It
+/// is not `selection.annot()` — `canvas::selection` excludes `/Widget` by name
+/// — and it is not in `selection.outlines()`, because the selection lives on
+/// `OpenDoc::selected_field` instead. So the guard answered `None` and the
+/// resize ghost was unreachable for exactly the selection the operator was
+/// dragging: O154's defect, verbatim, on the surface that had not been checked
+/// for it.
+///
+/// It arrives as a parameter because this module is not allowed to know what a
+/// form is. The caller passes `canvas::widgetdrag::grab_box`, which is the same
+/// rectangle `pressing::grabbable` hands the drag itself — so the preview, the
+/// hit test and the commit are one box and not three.
+///
+/// ★ It takes **precedence**, which costs nothing: a widget selection and an
+/// annotation or content selection are mutually exclusive, so at most one of
+/// the three arms can be `Some` on any frame.
 #[must_use]
-pub fn ghost_box(mapping: &PageMapping, selection: &SelectionState) -> Option<Rect> {
+pub fn ghost_box(
+    mapping: &PageMapping,
+    selection: &SelectionState,
+    widget: Option<Rect>,
+) -> Option<Rect> {
+    if let Some(screen) = widget {
+        return Some(visible_outline_rect(screen, MIN_OUTLINE_EXTENT_PX));
+    }
     if let Some(annot) = selection.annot() {
         return Some(visible_outline_rect(
             mapping.rect_to_screen(annot.outline),
@@ -722,6 +751,7 @@ pub fn draw_resize_ghost(
     painter: &Painter,
     mapping: &PageMapping,
     selection: &SelectionState,
+    widget: Option<Rect>,
     anchor: egui::Pos2,
     (sx, sy): (f32, f32),
 ) {
@@ -740,6 +770,16 @@ pub fn draw_resize_ghost(
     // exist twice, because it is the half that has to agree with what
     // `canvas::resizing` commits. Two copies of `anchor + (p - anchor) * s` is
     // how a preview and a commit come to disagree about where a corner went.
+    //
+    // ★★★ **The widget arm** — O209, the same defect one surface along. A form
+    // widget is in neither `annot()` nor `outlines()`; its screen box arrives
+    // as a parameter, from the same `widgetdrag::grab_box` the drag measured
+    // against. See [`ghost_box`] for why it is a parameter and not a third
+    // place this module looks.
+    //
+    // ★ When it is `Some` the other two are empty by construction — a widget
+    // selection clears both — so the three are chained rather than ordered.
+    let widget_box = widget.map(|screen| visible_outline_rect(screen, MIN_OUTLINE_EXTENT_PX));
     let annot_box = selection
         .annot()
         .map(|a| visible_outline_rect(mapping.rect_to_screen(a.outline), MIN_OUTLINE_EXTENT_PX));
@@ -748,7 +788,7 @@ pub fn draw_resize_ghost(
         .iter()
         .map(|(_, page_rect)| mapping.rect_to_screen(*page_rect))
         .collect();
-    for screen in annot_box.into_iter().chain(content) {
+    for screen in widget_box.into_iter().chain(annot_box).chain(content) {
         // `anchor + (p - anchor) * s`, per corner — the same map the commit
         // applies to every node, one level up, so what the operator sees is the
         // outline of what they will get.
@@ -1036,6 +1076,51 @@ pub fn draw_field_shade(painter: &Painter, visuals: &Visuals, mapping: &PageMapp
         at_alpha(visuals.hyperlink_color, FIELD_WASH_ALPHA),
     );
 }
+
+/// **Outline every widget the authoring surface can select** — O209, *"when I
+/// am in edit mode I can't see these boxes."*
+///
+/// A wash *and* a hairline, where [`draw_field_shade`] is a wash alone, and the
+/// difference is what the two are for. The wash answers *"which of these can I
+/// type in"* and sits under a document the operator is reading, so it is
+/// deliberately faint. This answers *"where is the box I am about to click"*
+/// in the mode whose whole job is moving and resizing those boxes — and a box
+/// with no `/MK` background and an empty value has no pixels of its own at all,
+/// so a faint fill over nothing is still nothing. The outline is what makes an
+/// empty field a thing on screen.
+///
+/// ★ Same hue as the wash, at [`FIELD_TARGET_ALPHA`], so the two read as one
+/// family rather than as two unrelated marks — and *not* the selection ink,
+/// which is reserved for the one box the operator has actually picked.
+///
+/// ★★ Rule 4 is satisfied for [`draw_field_shade`]'s reason and no other: this
+/// is painted in the canvas overlay, over the finished page texture, so it
+/// reaches no rasterizer, no print, no export and no Save. It marks no
+/// inference — a widget either has a rectangle or it is not in the list.
+pub fn draw_field_target(painter: &Painter, visuals: &Visuals, mapping: &PageMapping, rect: Rect) {
+    let screen = mapping.rect_to_screen(rect);
+    painter.rect_filled(
+        screen,
+        CornerRadius::ZERO,
+        at_alpha(visuals.hyperlink_color, FIELD_WASH_ALPHA),
+    );
+    painter.rect_stroke(
+        screen,
+        CornerRadius::ZERO,
+        Stroke::new(1.0, at_alpha(visuals.hyperlink_color, FIELD_TARGET_ALPHA)),
+        // Outside, for `draw_field_spotlight`'s reason: a middle-aligned
+        // hairline on a tight text box eats the first and last glyph.
+        StrokeKind::Outside,
+    );
+}
+
+/// The authoring outline's alpha.
+///
+/// Well above [`FIELD_WASH_ALPHA`] because it is a *line* rather than an area —
+/// a stroke at the wash's alpha over pale paper is invisible — and still short
+/// of opaque so that a field drawn over dense linework does not read as part of
+/// the drawing.
+const FIELD_TARGET_ALPHA: u8 = 150;
 
 /// **Outline the field the Forms panel is pointing at** —
 /// `OPERATOR_REQUESTS.md` O98.

@@ -99,7 +99,7 @@
 //! - D9 disclosure: WAIVED — a scale changes no measured value that pdfcer
 //!   authored, and the new size is visible.
 
-use egui::Vec2;
+use egui::{Pos2, Rect, Vec2};
 use pdfcer_core::vector::Point;
 
 use crate::app::actions::{Action, VectorAction};
@@ -594,12 +594,9 @@ pub fn drag(
         // The ghost the operator was watching, in page space. `pivot` is the
         // corner that stays still — the one opposite the grip — so this is the
         // same box the preview drew, converted rather than recomputed.
-        let pivot = grip.pivot(bounds);
-        let far = egui::pos2(
-            pivot.x + (bounds.min.x + bounds.max.x - 2.0 * pivot.x) * sx,
-            pivot.y + (bounds.min.y + bounds.max.y - 2.0 * pivot.y) * sy,
-        );
-        let (Some(a), Some(b)) = (to_pdf(pivot, map, page), to_pdf(far, map, page)) else {
+        let scaled = scaled_about(bounds, grip.pivot(bounds), sx, sy);
+        let (Some(a), Some(b)) = (to_pdf(scaled.min, map, page), to_pdf(scaled.max, map, page))
+        else {
             decline(Refusal::Degenerate);
             return None;
         };
@@ -701,6 +698,32 @@ pub(crate) fn decline(reason: Refusal) {
     );
 }
 
+/// The rectangle `bounds` becomes when both its corners are scaled about
+/// `pivot` by `(sx, sy)`.
+///
+/// # ★★★ Both corners, because a pivot is not always a corner
+///
+/// This is the identical map `overlay::draw_resize_ghost` paints —
+/// `pivot + (p - pivot) * s` — so the box that is written is the box the
+/// operator watched, by construction rather than by two derivations agreeing.
+///
+/// The earlier spelling derived one far corner as `bounds.min + bounds.max -
+/// 2 * pivot`, which is right only while the pivot **is** a corner.
+/// [`Grip::pivot`] deliberately answers a **mid-edge** point for the four edge
+/// grips, and on such a grip's cross axis that expression is exactly zero — so
+/// the derived corner collapsed onto the pivot and an edge drag committed a
+/// zero-extent `/Rect`. The corner grips were unaffected and kept working,
+/// which is what O209 reports as *"only the corner drag handles work."*
+fn scaled_about(bounds: Rect, pivot: Pos2, sx: f32, sy: f32) -> Rect {
+    let map = |p: Pos2| {
+        egui::pos2(
+            pivot.x + (p.x - pivot.x) * sx,
+            pivot.y + (p.y - pivot.y) * sy,
+        )
+    };
+    Rect::from_min_max(map(bounds.min), map(bounds.max))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -708,6 +731,55 @@ mod tests {
     /// A 100×50 screen box at the origin.
     fn box_100x50() -> egui::Rect {
         egui::Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(100.0, 50.0))
+    }
+
+    /// ★★★ **An edge grip's scaled box keeps its cross-axis extent.**
+    ///
+    /// The regression O209 names: *"only the corner drag handles work."* An
+    /// east or west drag leaves the height alone and a north or south drag
+    /// leaves the width alone, because [`Grip::pivot`] answers a **mid-edge**
+    /// point on those four and the box is scaled about it rather than reflected
+    /// through it.
+    ///
+    /// It asserts the extent that must survive, not merely that the rectangle
+    /// is non-empty — a box collapsed on one axis and a box that merely failed
+    /// to grow are both "not what the operator dragged", and only the first was
+    /// the defect.
+    #[test]
+    fn an_edge_grip_scales_only_its_own_axis() {
+        let bounds = box_100x50();
+        for (grip, sx, sy, want_w, want_h) in [
+            (Grip::East, 1.5, 1.0, 150.0, 50.0),
+            (Grip::West, 1.5, 1.0, 150.0, 50.0),
+            (Grip::North, 1.0, 2.0, 100.0, 100.0),
+            (Grip::South, 1.0, 2.0, 100.0, 100.0),
+        ] {
+            let got = scaled_about(bounds, grip.pivot(bounds), sx, sy);
+            assert!(
+                (got.width() - want_w).abs() < 0.001 && (got.height() - want_h).abs() < 0.001,
+                "{grip:?}: wanted {want_w}x{want_h}, got {}x{}",
+                got.width(),
+                got.height()
+            );
+        }
+    }
+
+    /// ★ **A corner grip is unchanged by the fix.**
+    ///
+    /// The two spellings agree wherever the pivot is itself a corner, and that
+    /// is the half that kept working — so this is the control that says the
+    /// repair widened the set of grips that commit rather than moving it.
+    #[test]
+    fn a_corner_grip_pins_the_opposite_corner() {
+        let bounds = box_100x50();
+        let got = scaled_about(bounds, Grip::NorthWest.pivot(bounds), 2.0, 2.0);
+        assert_eq!(got.max, bounds.max, "the far corner stays put");
+        assert!(
+            (got.width() - 200.0).abs() < 0.001 && (got.height() - 100.0).abs() < 0.001,
+            "got {}x{}",
+            got.width(),
+            got.height()
+        );
     }
 
     /// ★ **Dragging the south-east grip right and down grows both axes.**

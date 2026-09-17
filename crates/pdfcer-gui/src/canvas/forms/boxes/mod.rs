@@ -190,6 +190,22 @@ pub enum BoxKind {
         /// `/Ff` `MultiSelect` — several rows may be ticked at once, and the
         /// list stays open between ticks.
         multi: bool,
+        /// `/Ff` `Combo` (§12.7.4.4, Table 230, bit 18) — a **combo box**
+        /// rather than a list box.
+        ///
+        /// ★★★ It decides where the options are drawn, and the two are not
+        /// variations of one another. A combo's options drop *below the
+        /// widget* as a separate surface; a list box's options render **inside
+        /// its own rectangle**, replacing what the appearance stream shows,
+        /// with a scroll bar when they do not fit.
+        ///
+        /// That is not a styling choice — it is the behaviour of the product
+        /// class, measured rather than assumed: *"the list option is somehow
+        /// hidden from view in Acrobat until I click on it, then I can select
+        /// options and if the box is too small for all of the options it gives
+        /// a scroll bar."* `super::super::choosing` carries the photographs it
+        /// was written against.
+        combo: bool,
     },
 }
 
@@ -525,6 +541,7 @@ pub fn classify(field: &Field, widget: &Widget, rotate: u16) -> Result<BoxKind, 
                 options: crate::panels::forms::rows::choice_options(field),
                 selected: crate::panels::forms::rows::choice_selections(field),
                 multi: field.flags.has(FieldFlags::MULTI_SELECT),
+                combo: field.flags.has(FieldFlags::COMBO),
             })
         }
         _ => Err(NotOnCanvas::NotOffered),

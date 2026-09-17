@@ -28,7 +28,7 @@
 //! identically either way.
 
 use crate::app::state::OpenDoc;
-use crate::canvas::forms::boxes::WidgetBox;
+use crate::canvas::forms::boxes::{FieldTarget, WidgetBox};
 use crate::canvas::strip::PageView;
 
 /// The trace slot for the panel→canvas spotlight — `OPERATOR_REQUESTS.md` O98.
@@ -40,6 +40,15 @@ use crate::canvas::strip::PageView;
 /// other's line.
 // ui-text-exempt: trace slot name, never displayed
 const SPOTLIGHT_SLOT: &str = "canvas-form-spotlight";
+
+/// The trace slot for the authoring outline — O209.
+///
+/// Its own slot for [`SHADE_SLOT`]'s reason, and because the two are never on
+/// screen together: [`shade`] draws in the filling modes and
+/// [`authoring_boxes`] draws in Edit. One shared slot would make every mode
+/// switch look like a change in the other mark.
+// ui-text-exempt: trace slot name, never displayed
+const TARGETS_SLOT: &str = "canvas-form-targets";
 
 /// The trace slot for the fillable-field wash — `OPERATOR_REQUESTS.md` O96.
 ///
@@ -160,6 +169,56 @@ pub(super) fn shade(ui: &egui::Ui, doc: &OpenDoc, pages: &[PageView], list: &[Wi
             // that is actually a defect.
             "canvas-form-shade on=1 drawn={drawn} boxes={}",
             list.len()
+        )
+    });
+}
+
+/// **Outline every widget the Edit-mode surface can select** — O209, *"when I
+/// am in edit mode I can't see these boxes."*
+///
+/// ## Why this is not [`shade`] with a different argument
+///
+/// Three things differ, and each is the reason the other two are not enough.
+///
+/// 1. **The set.** [`shade`] walks `Placed::boxes` — the widgets a click can
+///    *fill*, which excludes a drop-down, a push button and a signature by
+///    design. Edit mode hit-tests `Placed::targets`, every widget with a
+///    rectangle, and a wash that skipped the kinds the operator most often
+///    wants to reposition would reproduce his complaint for exactly those.
+/// 2. **The mark.** A wash alone is invisible on a field with no `/MK`
+///    background and no value — which is most of a form being authored. This
+///    draws the hairline too; see [`crate::canvas::overlay::draw_field_target`].
+/// 3. **The gate.** [`shade`] is the operator's `shade_form_fields` display
+///    option, about reading a form. This is Edit mode's own affordance and is
+///    unconditional, which is the conventional behaviour of every authoring
+///    surface in this product class: Acrobat's Prepare Form outlines every
+///    field whether or not field highlighting is switched on, because in that
+///    mode the boxes *are* the subject.
+///
+/// ★ Drawn before the selection outline and its grips, so the one box the
+/// operator has picked still reads as picked — a selection that had to be
+/// distinguished from its neighbours by degree rather than by kind is the
+/// failure [`spotlight`]'s own doc comment argues against.
+pub(super) fn authoring_boxes(ui: &egui::Ui, pages: &[PageView], targets: &[FieldTarget]) {
+    let painter = ui.painter().clone();
+    let visuals = ui.visuals();
+    let mut drawn = 0usize;
+    for view in pages {
+        for target in targets.iter().filter(|t| t.page == view.page) {
+            crate::canvas::overlay::draw_field_target(&painter, visuals, &view.map, target.rect);
+            drawn += 1;
+        }
+    }
+    crate::diag::trace_changed(TARGETS_SLOT, || {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            //
+            // Both counts, for `SHADE_SLOT`'s reason: `targets=` is the whole
+            // census and `drawn=` is this frame's paint, and they differ
+            // legitimately whenever a page is scrolled out of the strip. Only
+            // `targets>0 drawn=0` on a visible page is a defect.
+            "canvas-form-targets drawn={drawn} targets={}",
+            targets.len()
         )
     });
 }

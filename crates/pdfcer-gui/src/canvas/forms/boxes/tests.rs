@@ -799,19 +799,19 @@ fn a_drawn_text_field_fixture() {
 /// ★★★ **A kind that cannot be FILLED on the canvas can still be
 /// SELECTED there**, which is the whole reason [`FieldTarget`] exists.
 ///
-/// A drop-down (`/Ch`) is `NotOffered` — this shell has no canvas gesture
-/// for one, and `classify` refuses it. Were selection taken from the same
-/// list, that refusal would also remove it from the only list the canvas
-/// hit-tests, and a field the operator can plainly see would not be
-/// clickable at all.
+/// The fixture is a `/Ch` field with an **empty `/Opt`**: there is nothing to
+/// pick, so `classify` refuses it. Were selection taken from the same list,
+/// that refusal would also remove it from the only list the canvas hit-tests,
+/// and a field the operator can plainly see would not be clickable at all.
 ///
 /// The two assertions are deliberately opposite, because a test that only
 /// checked the target would pass against a change that made every widget
 /// fillable — which is a different bug with the same symptom on this test.
 #[test]
-fn a_choice_field_is_not_fillable_on_the_canvas_but_is_selectable() {
+fn a_choice_field_with_no_options_is_not_fillable_but_is_still_selectable() {
     let mut field = text_field();
     field.field_type = Some(FieldType::Choice);
+    assert!(field.options.is_empty(), "the premise of this fixture");
     let widget = field.widgets[0].clone();
     let placed = place(&form_of(field), &[page(0)], &annots_listing(&widget));
 
@@ -978,4 +978,41 @@ fn a_cmyk_background_uses_the_engines_own_table_and_not_one_minus_k() {
         Some(pdfcer_core::color::cmyk_to_srgb(0.0, 0.0, 0.0, 1.0)),
         "the engine conversion verbatim, so this box and the raster under it can never disagree"
     );
+}
+
+/// ★★★ **`/Ff` bit 18 reaches the box census, because it decides where the
+/// options are drawn.**
+///
+/// A combo box drops its list below the widget; a list box draws its options
+/// inside the widget's own rectangle. `canvas::forms::choosing` cannot make
+/// that choice unless the census carries the flag, and before it did, every
+/// `/Ch` field got the drop — which is the half of O209 that reads *"the list
+/// option is somehow hidden from view in Acrobat until I click on it."*
+///
+/// Both polarities are asserted from one fixture, so a census that hard-coded
+/// either answer fails.
+#[test]
+fn the_combo_flag_reaches_the_box_census() {
+    for (flags, want_combo) in [(FieldFlags(1 << 17), true), (FieldFlags(0), false)] {
+        let mut field = text_field();
+        field.field_type = Some(FieldType::Choice);
+        field.flags = flags;
+        field.options = vec![
+            pdfcer_core::forms::ChoiceOption {
+                export: b"a".to_vec(),
+                display: b"Alpha".to_vec(),
+            },
+            pdfcer_core::forms::ChoiceOption {
+                export: b"b".to_vec(),
+                display: b"Beta".to_vec(),
+            },
+        ];
+        let widget = field.widgets[0].clone();
+        let placed = place(&form_of(field), &[page(0)], &annots_listing(&widget));
+
+        let Some(BoxKind::Choice { combo, .. }) = placed.boxes.first().map(|b| &b.kind) else {
+            panic!("a choice field with options must be fillable on the canvas");
+        };
+        assert_eq!(*combo, want_combo, "flags {flags:?}");
+    }
 }

@@ -340,13 +340,22 @@ pub(super) fn draw(
     // which is the same precedence `overlay::draw_move_ghost` already used —
     // and the move ghost is why he could see the difference: dragging a stamp
     // previewed, dragging its corner did not.
+    //
+    // ★★★ …and the SAME defect on the form surface — O209, *"there is no live
+    // preview when I drag the handles to resize them."* A widget is in neither
+    // of the two places `ghost_box` could look, so it is handed the box
+    // directly. `widgetdrag::grab_box` is the function `pressing::grabbable`
+    // asks for the drag's own bounds, so the preview and the commit measure one
+    // rectangle — H7, on this surface as on the other three.
+    let widget_ghost = crate::canvas::widgetdrag::grab_box(&ctx, doc, map);
     if let Some((grip, factors)) = resize_ghost
-        && let Some(bounds) = overlay::ghost_box(map, selection)
+        && let Some(bounds) = overlay::ghost_box(map, selection, widget_ghost)
     {
         overlay::draw_resize_ghost(
             &painter,
             map,
             selection,
+            widget_ghost,
             // ★ `pivot`, not `anchor` — the SAME point `canvas::resizing`
             // commits about. `anchor` is where the grip is; the pivot is the
             // opposite corner, which is what stays still. Using the wrong one

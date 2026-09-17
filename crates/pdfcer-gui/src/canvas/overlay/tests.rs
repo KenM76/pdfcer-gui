@@ -54,7 +54,7 @@ fn an_annotations_ghost_box_is_its_own_rect_and_grip_box_is_left_alone() {
         oriented: None,
     });
 
-    let ghost = ghost_box(&map, &state).expect(
+    let ghost = ghost_box(&map, &state, None).expect(
         "★★★ an annotation must have a ghost box. Without one `canvas::painting`'s \
          `if let` never runs and a markup previews NOTHING while its grips are dragged \
          — which is O154, reported as \"the bounding box stays the same size\"",
@@ -90,7 +90,7 @@ fn nothing_selected_has_no_ghost_box() {
         (600.0, 800.0),
         1.0,
     );
-    assert_eq!(ghost_box(&map, &SelectionState::default()), None);
+    assert_eq!(ghost_box(&map, &SelectionState::default(), None), None);
 }
 
 /// ★ A zero-height rule gets a visible band rather than nothing.

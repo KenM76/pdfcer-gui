@@ -805,6 +805,20 @@ pub(super) fn overlay(
             selecting::seeded_select(doc, &placed.targets, actions);
             selecting::select_click(&ctx, doc, pages, drawn, &placed.targets, actions);
             selecting::select_cursor(&ctx, pages, &placed.targets);
+            // ★★★ **DRAW THE BOXES THEMSELVES** — O209, *"when I am in edit
+            // mode I can't see these boxes."*
+            //
+            // He is right and the cause was here: the wash that makes a form
+            // field findable was drawn below this branch's `return`, so it
+            // reached every mode *except* the one whose whole job is finding a
+            // box in order to move or resize it. An authoring surface that
+            // hides its own subject is not usable however well the selection
+            // works underneath.
+            //
+            // ★ `targets`, not `boxes`, and unconditional rather than gated on
+            // the display option — `form_marks::authoring_boxes` carries both
+            // arguments and why each is not the filling surface's answer.
+            crate::canvas::form_marks::authoring_boxes(ui, pages, &placed.targets);
             // ★★★ DRAW THE SELECTION. `OPERATOR_REQUESTS.md` **O53**.
             //
             // Nothing painted a selected form field. The click landed, the
