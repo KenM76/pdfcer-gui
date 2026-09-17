@@ -31,6 +31,17 @@ The failure mode is worse than a red gate that gets ignored, because a green
 gate over a shape it cannot express reads as *positive evidence*. Every "clean"
 it printed made the next person less likely to look.
 
+**A fourth shape, and it is the INPUT UNIT rather than the glob.**
+`check-ui-strings.sh` scans line by line, so it sees a literal only when the
+opening AND closing quote sit on one physical line. Falsified on a scratch tree:
+`"Save the document now"` on one line gave rc=1; the same sentence
+backslash-continued gave rc=0. A `#[expect(..., reason = "...")]` — text only
+the compiler reads — therefore fails un-continued and passes continued, and the
+gate's verdict is about **typography, not audience**. The trap it sets is the
+fix: re-wrapping to make it quiet teaches the next reader that the rule is line
+length. Exempt it in place instead, and write the asymmetry into the gate's
+header.
+
 **How to apply:**
 
 - When you touch or trust a detector, read **what it globs, what it opens, and

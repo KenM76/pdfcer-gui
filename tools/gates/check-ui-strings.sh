@@ -110,6 +110,19 @@
 # comment exists for the latter. Do not mistake a green run here for proof that
 # the catalog is complete.
 #
+# A SECOND LEAK, IN THE SHAPE OF THE LINE RATHER THAN THE SHAPE OF THE STRING.
+# The scanner is line-based: it sees a literal only when the opening AND the
+# closing quote sit on ONE physical line. A backslash-continued Rust string is
+# therefore invisible to it, and the identical prose written on one line is
+# flagged. Two neighbours in this crate demonstrate both halves -- a long
+# `#[expect(..., reason = "...")]` attribute passes when its reason is
+# continued and fails when it is not, and nothing about the audience changed.
+# So: a hit on a compiler-facing attribute is the gate measuring typography,
+# not visibility. Exempt it with a `// ui-text-exempt:` block INSIDE the
+# attribute (a trailing comment cannot reach a multi-line construct) rather
+# than re-wrapping to dodge the scanner, because the wrap is what makes the
+# next reader think the rule is about line length.
+#
 # ===========================================================================
 # USAGE / EXIT CODES
 # ===========================================================================
