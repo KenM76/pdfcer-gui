@@ -6,47 +6,56 @@ authoritative for status.
 
 **Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.53.0, a git dependency on the local engine repository, pinned at **`fb987cde`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
 
-**What is new in this build.** The drop-downs and lists on a form can now be
-answered on the sheet itself, and the list of choices behind one can be edited
-after the field is placed.
+**What is new in this build.** The form fields on a page now look and behave
+the way Acrobat's do, and in Edit mode they can be seen and resized.
 
-**A drop-down or a list is answered where it is drawn.** Click the field on the
-page and its options open beside it; the arrow keys move the highlight, Enter
-or a click answers it, Escape leaves it as it was, and Tab carries on through
-the form. Until now those two kinds were the only fillable fields that had to
-be answered from the side panel — read the question off the page, then find the
-same field again in a list, which is the round trip the on-page text editor
-exists to avoid. Nothing at all is drawn over a field that is not focused, so a
-picture of the page is a picture of the document as it will save. The option
-list opens above or below the field and is held to that side, because a list
-that slid back over the box it belongs to would then take the clicks meant for
-it.
+**A drop-down remembers what was clicked.** It did not. The options list gave
+up on the frame the pointer went *down* rather than the frame it came *up*, so
+by the time a click finished there was no list and no row under it, in every
+mode. A click is a press **and** a release, and everything a click needs now
+survives the gap between them.
 
-**The choices themselves can be edited.** In a choice field's Properties:
-add, remove, move up, move down, rename what the reader sees without changing
-what the form sends, sort the list, and choose which entry a Reset returns the
-field to — including *Nothing*, which clears it, because a reset to empty is a
-different instruction from having nothing picked. A repeated sent value is
-refused by name before anything is written: a fill resolves to the first match,
-so a second copy of it could never be selected by anyone, ever.
+**The open list is Acrobat's shape.** It was as wide as its longest label —
+57 points of list hanging under a 370-point field — and dressed as an
+application menu, rounded and shadowed and generously padded. It is now the
+field's own width, square-cornered, unshadowed, flush against the field, with
+compact rows and the chosen one on a solid plate. That is what Acrobat draws,
+expressed in this program's colours rather than copied out of a picture of it.
 
-**More fields are drawn on the page than were.** A widget whose own dictionary
-does not say which sheet it belongs to used to be absent from the page and
-reachable only from the panel. The page is now found by looking — the sheet
-whose annotation list names the widget — so those fields appear where they
-actually are, and the page and the panel no longer disagree about what exists.
+**A list box is no longer drawn as a drop-down.** They are two different
+controls and the file says which is which; the flag never reached the page, so
+every choice field dropped. A list box now shows its options **inside its own
+rectangle**, over the top of what was painted there, and grows a scroll bar the
+moment the rows do not fit — which is the operator's own description of
+Acrobat, tested against Acrobat.
 
-**A list holding an answer that is not one of its own options no longer earns a
-baffling refusal.** Some files carry a stored answer the option list does not
-contain, left behind when the choices were edited or written by another
-program. Ticking the first box used to be rejected with a complaint naming a
-value the operator never touched. The stray answer is now dropped from the
-selection, and the panel says so in words, because a check-box stack has no box
-to show it in and a silent drop is a change nobody can see.
+**A drop-down whose author allowed typing can now be typed into.** Some
+drop-downs accept an answer that is not on the list at all. This one is a live
+text box with a drop button: click the text for a caret with the current value
+selected, click the button — or press Alt+Down, or F4 — for the same list, and
+Enter or leaving the field commits whatever was typed. A typed value that
+happens to name a listed option is treated as picking it. **Built and unit-
+tested; not yet driven against the running program.**
 
-**Two of those are checked by driving the program**, not only by tests: one
-answers a drop-down on the page and reads the value back, the other proves the
-reorder arrows are greyed only at the two ends of the list.
+**In Edit mode the fields can be seen.** The one mode in which a field has to
+be *found* was the one mode that drew nothing, because the authoring branch
+returned before the form shading ran. Every widget with a rectangle is now
+outlined there — including check boxes, radio buttons, push buttons and
+signature fields, not only the ones that can be filled in.
+
+**Dragging a field's handle shows the new size while the button is still
+down.** The live preview knew how to follow a comment and a drawn shape, and a
+form field is neither, so there was nothing to draw.
+
+**All eight handles resize, not only the four corners.** The arithmetic worked
+out the opposite corner from the handle being dragged, assuming the handle was
+itself a corner. The four edge handles sit at the middle of an edge, so the
+opposite corner collapsed and the field came out with no width or no height at
+all across the dragged direction.
+
+**Nothing above marks the page.** A resize preview, a hover row, a focus ring
+and an Edit-mode outline are all *cursor* — a picture of the page saved and
+reopened is identical to a picture of it while it is being edited.
 
 **Scope.** This shell only. `pdfcer-core` and `pdfcer` capabilities live in
 `D:\Dev\pdfcer\docs\FEATURES.md`, whose `gui` column is this project's
@@ -467,7 +476,11 @@ declare an intention before pointing at anything.
 | 🔨 | **Placing a field shows what the click will produce** — an outline follows the pointer at the size the field will be, hung from its lower-left corner, so on screen it grows up and to the right — deliberately the same rule the drag uses, and read from the same function, because two copies would disagree the first time a page carried a rotation. Outline only, no label: the kind is already named on the armed-tool surface, and a label positioned relative to the document is what rule 4 sends off-canvas. It is drawn over existing widgets too, since a click there still places a field on top, and it disappears the moment a drag starts, because the rubber-band is then the cursor. Nothing is drawn into the document and nothing is committed. **Not yet driven** |
 | 🔨 | **Tab stays in the document instead of escaping into the ribbon** — the press is taken off the raw input before egui can latch a focus direction. On a form it walks the engine's own tab sequence, with a radio group collapsed to one stop, crossing pages, scrolling by the smallest amount that reveals the field and leaving the zoom alone; Space reaches a focused check box rather than panning the paper. On a page with no form, clicking the page gives it the keyboard and Tab walks the objects in paint order, scoped to whatever the selection is standing in — so a sheet whose whole body is one page-sized wrapper, which is every CAD export this project has seen, rings the wrapper's contents rather than offering one stop that is the entire drawing. **Not yet driven**, and the forms panel's tab-order view still numbers from `/Annots` order, which it says of itself in three places |
 | ✅ | **Forms can be authored, not only filled** — five commands on Edit ▸ Forms, one per kind `pdfcer-core` has a verb for |
-| ✅ | **A drop-down or a list is answered on the page** — a click on the widget opens its options anchored to the field itself, with the arrow keys moving the highlight and writing nothing, Enter or a click writing one value, and Escape leaving the stored answer alone. A pick closes the list and **keeps** the focus ring, because the commonest gesture on a form is pick-then-Tab and dropping focus on the pick would throw the operator back into the ribbon. A Tab arrival leaves the list closed, so tabbing a form does not spray dropdowns over the sheet. The popup's side is chosen before its constraint rectangle is set, so it cannot slide back over its own anchor and steal that anchor's clicks. Nothing is drawn over an unfocused choice field, which is rule 4's one-line test. Driven: `a_drop_down_can_be_answered_on_the_page` |
+| ✅ | **A drop-down or a list is answered on the page** — a click on the widget opens its options anchored to the field itself, with the arrow keys moving the highlight and writing nothing, Enter or a click writing one value, and Escape leaving the stored answer alone. A pick closes the list and **keeps** the focus ring, because the commonest gesture on a form is pick-then-Tab and dropping focus on the pick would throw the operator back into the ribbon. A Tab arrival leaves the list closed, so tabbing a form does not spray dropdowns over the sheet. The popup's side is chosen before its constraint rectangle is set, so it cannot slide back over its own anchor and steal that anchor's clicks. Nothing is drawn over an unfocused choice field, which is rule 4's one-line test. A **list box** is not a drop-down and is no longer drawn as one: its options appear inside its own rectangle, opaquely over the appearance stream, and grow a scroll bar the moment the rows do not fit — which is the operator's own description of Acrobat, measured against Acrobat. The list survives the gap between a press and a release, because a pick that is abandoned on the press frame is a drop-down that never remembers anything. The frame is Acrobat's: the field's own width, square, unshadowed, flush, compact rows, the chosen row on a solid plate. Driven: `a_drop_down_can_be_answered_on_the_page` |
+| 🔨 | **A drop-down whose author allowed typing accepts a typed answer** — `/Ff` bit 19 says a combo box takes a value that is not on its list, and the page had no handling for it, so the field behaved as a plain picker. It is now a live text box with a chevron drop button: click the text for a caret with the current value selected end to end, click the button (or Alt+Down, or F4) to drop the same list a plain combo drops, Enter or leaving the field to commit. A typed string is resolved against the option list first, so typing the name of a listed option is the same act as clicking it. The flag is read as the conjunction **Combo and Edit**, because the standard says *"used only with Combo"* and the engine gates its own free-text branch on the same pair — offering typing where the engine would refuse it puts an error in front of the operator naming a value they chose deliberately. Committing is guarded against a field nobody typed in: a stored answer may be held as either half of an option pair and the box shows the display half, so a plain differs-from-stored test would write the file and push an undo entry for a glance. **Built, unit-tested, falsified in both directions, not driven** |
+| ✅ | **A form field can be seen in Edit mode** — the one mode in which a widget has to be *found* was the one mode that drew nothing, because the authoring branch of the canvas overlay returned before the form shading ran. Every widget carrying a rectangle is outlined there, not only the fillable ones, so check boxes, radio buttons, push buttons and signature fields are visible too. Driven: ten targets, ten drawn |
+| ✅ | **A form field's resize shows the new size while the button is still down** — the live preview followed an annotation and a drawn outline, and a widget is neither, so it had nothing to draw. It now reads the widget's rectangle. Driven by holding the button down and photographing mid-gesture, which needed a drag driver: nothing in this project could previously photograph a gesture that exists only between a press and a release |
+| ✅ | **All eight of a form field's handles resize it** — the arithmetic derived the far corner from the handle's pivot assuming the pivot was a corner. On the four edge handles it is the middle of an edge, so the derived corner collapsed and the committed rectangle had no extent across the dragged axis. Both corners are now scaled about the pivot, which is correct for all eight and shorter than what it replaced. Driven east and south; unit tests pin the edge case and the corner case |
 | ✅ | **A choice field's option list is editable after placement** — add, remove, move up, move down, rename the displayed text without changing the exported value, sort, and choose the entry a Reset returns to, whose first offer is *Nothing*, because a reset that clears the field is a different fact from the chooser having nothing selected. `/Opt` is one property and `with_options` replaces the whole list, so every operation sends all of it and the panel emits **at most one edit per frame**: a button press steals focus from a half-typed box, so the box's commit and the button's operation arrive together, and two pushes would be two undo entries for one press with the second silently taking the rename back. The reorder happens through the engine's own `sort_choice_options`, and a repeated exported value is refused **by name** using the engine's own predicate, because the refusal that reaches the operator otherwise names neither the rule nor the value and the list is long enough that finding the repeat unaided is the whole difficulty. Driven: `the_option_arrows_are_greyed_only_at_the_ends_of_the_list` |
 | ✅ | **A widget the file does not place is placed by looking** — the page is found by walking each sheet's annotation list for the widget rather than by reading the widget's own `/P`, which `pdfcer-core` reports as absent when a producer wrote it directly instead of as a reference. Two reasons a field could not be offered on the page collapse into one fact — no sheet lists it, or the listed rectangle has no area — and fields that used to be panel-only appear where they are drawn |
 | ✅ | **A stored answer the options do not list is dropped, and said so in words** — on a multi-select list the selection is rebuilt by asking each option whether it is chosen, never by copying the stored value and editing it. A value matching no option is legal and real, and carrying it forward made the operator's first tick arrive as that value plus theirs, which the engine refuses as a value not in the options: a refusal naming something they never touched, in answer to a gesture that was valid. A check-box stack has no box to show such a value in, so the drop is the only outcome it can express, and it is disclosed off-canvas because it is a change nobody can see. **Not driven** — the visible half needs a fixture whose stored value names no option |
