@@ -372,6 +372,12 @@ mod tabbing;
 /// why the side is chosen before the constraint rather than after it.
 mod choosing;
 
+/// The live `egui::TextEdit` laid over a widget rectangle, and the three
+/// document properties that dress it. Shared by the `/Tx` editor below and by
+/// [`choosing`]'s editable combo box, so a form cannot be typed into with the
+/// wrong quadding on one surface and the right one on the other.
+mod textbox;
+
 /// Re-exported so the path `canvas::forms::right_click_hits_a_field` — which
 /// `canvas::rightclick` and `panels::properties::formfield` both cite by name
 /// — survived the R2 split unchanged.
@@ -385,9 +391,7 @@ use egui::{Id, Key, Ui};
 
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
-use crate::canvas::forms::boxes::{
-    BoxKind, WidgetBox, editor_align, editor_font_size, editor_rect, hit, offered_in, truncate,
-};
+use crate::canvas::forms::boxes::{BoxKind, WidgetBox, editor_rect, hit, offered_in, truncate};
 use crate::canvas::strip::{DrawnPage, PageView};
 use crate::canvas::tool::CanvasTool;
 use crate::panels::forms::edit::FormEdit;
@@ -1093,107 +1097,26 @@ fn editor(
 
     let id = focus.editor_id();
     let mut draft = truncate(&focus.draft, max_len);
-    let font = egui::FontId::proportional(editor_font_size(rect.height()));
-    // ★★★ **`/Q`, and it is the one appearance property this editor reads.**
-    //
-    // §3 above refuses to make this box a facsimile, and the refusal is
-    // arithmetic — glyph advances the substituted font cannot promise. It does
-    // not reach quadding, which states which END of the box the text is
-    // anchored to and says the same thing in any font. An editor that reads
-    // `/Q` nowhere types a centred or right-aligned field left-aligned, and
-    // its text jumps across the box the instant the operator tabs away — the
-    // appearance regenerated on commit honours `/Q` whatever this editor did,
-    // so the only surface that disagrees is the one being looked at.
-    //
-    // The whole of the rule is [`boxes::editor_align`]; see its doc and
-    // [`BoxKind::Text::align`] for why this one property is admissible and the
-    // `/DA` font and size are not.
-    let halign = editor_align(align);
-
-    // ★★★ **`/MK` `/BG`, the second appearance property this editor reads, and
-    // it is here for the same reason `/Q` is.**
-    //
-    // A live box painted `extreme_bg_color` — near-white under every light
-    // preset — makes a pale-yellow or shaded field **turn grey the moment the
-    // operator touches it** and turn back a gesture later. Nothing in the file
-    // has changed; the only thing that changes is the colour of the thing being
-    // looked at, which is exactly the flicker pdfcer's rule 4 exists to
-    // forbid. The engine's own `Widget::background` doc names this
-    // editor as its intended consumer, in these words: *"an on-page field
-    // EDITOR that lays a live text box over the raster … so a pale-yellow field
-    // does not flash white while the operator types."*
-    //
-    // ★★ **The fill and the ink arrive together, and that is not tidiness.**
-    // A document-derived fill under a theme-chosen foreground is `DEFECTS.md`
-    // D2's second shape — *a foreground assigned for a fill the text is not
-    // on* — and it is how the old GUI shipped near-white headings on light
-    // grey. [`Theme::foreign_fill_pair`] measures the pair and answers `None`
-    // when no theme ink reads on that fill; `None` means **paint neither**, so
-    // an unreadable field keeps the theme's own readable box rather than
-    // becoming a tinted one the operator cannot read their own typing in.
-    //
-    // What is deliberately NOT tinted: the focus ring. A ring is the *cursor*,
-    // which rule 4 admits in full — it says where the keystrokes are going, not
-    // what the document contains.
-    //
-    // The whole of which colour this is, including why DeviceCMYK is converted
-    // here and refused in the markup band, is [`boxes::editor_fill`].
-    let tint = widget_box
-        .fill
-        .and_then(|srgb| egui_shell::theme::Theme::foreign_fill_pair(&ctx, srgb));
-
-    let mut edit = if multiline {
-        egui::TextEdit::multiline(&mut draft)
-    } else {
-        egui::TextEdit::singleline(&mut draft).password(password)
-    }
-    .id(id)
-    .horizontal_align(halign)
-    .font(egui::FontSelection::from(font));
-    if let Some((fill, ink)) = tint {
-        edit = edit.background_color(fill).text_color(ink);
-    }
-
-    // ★★ **The refusal is traced, because an operator cannot see one.**
-    //
-    // Three outcomes reach this point and only two of them are visible. A
-    // field with no `/BG` keeps the theme box, which is right and expected. A
-    // field WITH a `/BG` that the theme has no readable ink for also keeps the
-    // theme box — identical on screen, a different fact about the file — and
-    // pdfcer's rule 4 is explicit that an inference the operator cannot see
-    // still owes an off-canvas report. This is that report, in the place this
-    // shell puts machine-readable ones.
-    //
-    // Emitted once per opened editor rather than per frame: it is keyed on the
-    // seating branch below, which fires on the frame the caret is placed.
-    // Components are printed as decimals rather than `Debug`-formatted,
-    // because a driven check reads this line and a `{:?}` tuple is a shape
-    // that changes when the type does.
-    if !focus.seated {
-        crate::diag::trace(|| match (widget_box.fill, tint) {
-            (None, _) => {
-                // ui-text-exempt: diagnostic trace, never displayed in the UI
-                format!("form-editor-tint field={} bg=absent", focus.field)
-            }
-            (Some(srgb), Some((_, ink))) => format!(
-                // ui-text-exempt: diagnostic trace, never displayed in the UI
-                "form-editor-tint field={} bg={:.3},{:.3},{:.3} ink={},{},{}",
-                focus.field,
-                srgb[0],
-                srgb[1],
-                srgb[2],
-                ink.r(),
-                ink.g(),
-                ink.b()
-            ),
-            (Some(srgb), None) => format!(
-                // ui-text-exempt: diagnostic trace, never displayed in the UI
-                "form-editor-tint field={} bg={:.3},{:.3},{:.3} declined=unreadable",
-                focus.field, srgb[0], srgb[1], srgb[2]
-            ),
-        });
-    }
-    let response = ui.put(rect, edit);
+    // Which font, which end of the box, and what colour — all three are
+    // properties of the document rather than of this interaction, so they live
+    // in [`textbox`] and the editable combo box reads the same rules. The
+    // three ★★★ arguments that admit `/Q` and `/MK` `/BG` and refuse `/DA` are
+    // on [`textbox::lay`].
+    let response = textbox::lay(
+        ui,
+        &mut draft,
+        &textbox::Spec {
+            id,
+            rect,
+            align,
+            fill: widget_box.fill,
+            multiline,
+            password,
+            // One line per opened editor, not one per frame: the seating
+            // branch below fires on the frame the caret is placed.
+            trace: (!focus.seated).then_some(focus.field.as_str()),
+        },
+    );
     // The canvas now holds the keyboard, and says so -- this is what lets
     // `raw_input_hook` take the next Tab away from egui's focus walk before
     // `Focus::begin_pass` can latch it. Published every frame the editor is
@@ -1201,20 +1124,15 @@ fn editor(
     // test: see `canvas::tabnav`'s header.
     crate::canvas::tabnav::publish(&ctx, crate::canvas::tabnav::Scope::Field, id);
 
-    // ★ Seat the caret exactly once. The click that asked for this editor was
-    // consumed by the PAGE (see the module header §4), so there is no click
-    // position to place a caret from; the end of the text is the least
-    // destructive place for it, because the alternative — selecting all — turns
-    // the operator's next keystroke into a deletion of the field's contents.
+    // ★ Seat the caret exactly once, at the END rather than over a selection.
+    // The click that asked for this editor was consumed by the PAGE (see the
+    // module header §4), so there is no click position to place a caret from,
+    // and selecting all would turn the operator's next keystroke into a
+    // deletion of the field's contents. [`textbox::seat`] carries why an
+    // editable combo box answers this differently.
     if !focus.seated {
         response.request_focus();
-        let end = egui::text::CCursor::new(draft.chars().count());
-        if let Some(mut state) = egui::TextEdit::load_state(&ctx, id) {
-            state
-                .cursor
-                .set_char_range(Some(egui::text::CCursorRange::one(end)));
-            egui::TextEdit::store_state(&ctx, id, state);
-        }
+        textbox::seat(&ctx, id, &draft, false);
     }
 
     // ★ Escape abandons, and says so. Read BEFORE the commit branch for the
@@ -1365,7 +1283,7 @@ fn click(
         // command. Unlike a button, whose click IS the answer, a choice field
         // has to be asked which option — so the gesture is two-step and the
         // first step is not an edit.
-        BoxKind::Choice { .. } => choosing::focus_choice(ctx, doc, page, widget_box),
+        BoxKind::Choice { .. } => choosing::focus_choice(ctx, doc, page, widget_box, point),
     }
 }
 

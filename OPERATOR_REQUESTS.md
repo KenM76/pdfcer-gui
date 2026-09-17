@@ -732,7 +732,7 @@ is never behind the tab that owns it.
 about two minutes of the operator's desktop, and until it runs green the
 register row stays untickable.
 
-## O209 — ◑ **SIX OF SEVEN BUILT AND DRIVEN; TWO GAPS NAMED AND OPEN** — the form fields do not look or behave like Acrobat's, and in Edit mode they cannot be seen or resized
+## O209 — ◑ **SIX OF SEVEN BUILT AND DRIVEN; THE EDITABLE COMBO BUILT AND AWAITING THE SCREEN; ONE SWEEP OWED** — the form fields do not look or behave like Acrobat's, and in Edit mode they cannot be seen or resized
 
 **Source:** his message of 2026-09-17, sent after using the choice fields that
 O205 delivered. Filed against the work that had already been done, which makes
@@ -829,11 +829,27 @@ that is now deliberate rather than incidental.
 
 **Two things are open, and neither is C1–C7.**
 
-1. **An editable combo cannot be typed into.** `/Ff` bit 19 — `Edit` — says a
-   combo box accepts a value that is not in its list. The engine already
-   accepts free text for exactly that case; the canvas has no handling for the
-   flag at all, so the field behaves as a plain picker. Found while fixing C3,
-   not reported by him.
+1. ~~**An editable combo cannot be typed into.**~~ **BUILT, NOT YET DRIVEN.**
+   `/Ff` bit 19 — `Edit` — says a combo box accepts a value that is not in its
+   list. The canvas had no handling for the flag at all, so the field behaved
+   as a plain picker. It is now a live text box with a chevron drop button:
+   click the text to place a select-all caret, click the button (or press
+   Alt+Down, or F4) to drop the same list a plain combo drops, and Enter or
+   leaving the field commits whatever is typed. The bit is read as the
+   conjunction `Combo && Edit`, because the spec says *"used only with Combo"*
+   and the engine gates its own free-text branch on the same pair — so the
+   shell cannot offer typing into a field the engine would then refuse.
+
+   Measured against Acrobat first, on `ComboEdit` in `fixtures/all-field-kinds.pdf`:
+   unfocused it is indistinguishable from a plain combo, focused it is a white
+   box with the existing value selected end to end and a rounded chevron
+   button, and its list drops flush under the field, the same width including
+   the button, square-cornered and exactly as tall as its rows.
+
+   **Not yet driven, and that is the honest state of it.** R1 says a UI change
+   is done when the running binary has been driven, and driving needs the
+   pointer and the screen — which are his again. Unit-tested and falsified in
+   both directions in the meantime.
 2. **"I haven't checked the other form options for completeness."** Text
    field, check box, radio group, push button and signature have not been put
    through the same Acrobat comparison the choice fields just had. His sentence

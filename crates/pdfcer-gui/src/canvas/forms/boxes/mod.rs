@@ -206,6 +206,31 @@ pub enum BoxKind {
         /// a scroll bar."* `super::super::choosing` carries the photographs it
         /// was written against.
         combo: bool,
+        /// `/Ff` `Edit` (§12.7.4.4, Table 230, bit 19) **and** `Combo` — the
+        /// operator may type a value the list does not contain.
+        ///
+        /// ★★★ Both bits, never bit 19 alone. The spec's own words for bit 19
+        /// are *"used only with Combo"*, so `Edit` on a list box is a
+        /// meaningless bit rather than a meaningful one, and a decoder that
+        /// honoured it would put a caret into a surface whose whole behaviour
+        /// is choosing from rows. `pdfcer-core`'s `set_choice_value` gates its
+        /// free-text branch on the same conjunction
+        /// (`edit.rs`, `editable_combo`), so a shell that disagreed here would
+        /// offer typing into a field the engine then refuses with
+        /// `ChoiceValueNotInOptions`.
+        ///
+        /// ★★ What it changes on the page is the **whole control**, not a
+        /// property of one: an editable combo box is a live text box with a
+        /// drop button beside it, where a plain one is a focus ring with a
+        /// popup. `super::super::choosing::typing` draws the first;
+        /// [`super::super::choosing::choose`] draws the second.
+        editable: bool,
+        /// `/Q`, carried for the same reason [`BoxKind::Text::align`] is and
+        /// read by the same code — but only on an `editable` combo box, which
+        /// is the one choice surface with a live text box in it. A plain combo
+        /// or a list box draws no text of its own, so nothing here has an end
+        /// of the box to be set against.
+        align: Quadding,
     },
 }
 
@@ -542,6 +567,8 @@ pub fn classify(field: &Field, widget: &Widget, rotate: u16) -> Result<BoxKind, 
                 selected: crate::panels::forms::rows::choice_selections(field),
                 multi: field.flags.has(FieldFlags::MULTI_SELECT),
                 combo: field.flags.has(FieldFlags::COMBO),
+                editable: field.flags.has(FieldFlags::COMBO) && field.flags.has(FieldFlags::EDIT),
+                align: field.quadding,
             })
         }
         _ => Err(NotOnCanvas::NotOffered),

@@ -68,6 +68,13 @@ use crate::canvas::forms::boxes::{BoxKind, WidgetBox};
 use crate::canvas::tabnav;
 use crate::panels::forms::edit::FormEdit;
 
+/// The **editable** combo box, `/Ff` bit 19 — a drop-down whose value need
+/// not be one of its options, and therefore a live text box rather than a
+/// ring. It reaches this module's list, row and pick machinery through
+/// `super::`, so its popup is the same popup; what it does not share is the
+/// lifecycle. See its header.
+mod typing;
+
 /// Memory key for the list's open/closed state and keyboard highlight.
 const LIST_KEY: &str = "pdfcer-canvas-form-choice-list"; // ui-text-exempt: internal memory id, never displayed
 
@@ -166,6 +173,7 @@ pub(super) fn focus_choice(
     doc: &OpenDoc,
     page: usize,
     widget_box: &WidgetBox,
+    point: egui::Pos2,
 ) {
     let focus = Focus {
         path: doc.path.clone(),
@@ -177,18 +185,32 @@ pub(super) fn focus_choice(
         seated: false,
         waiting: 0,
     };
-    let hl = match &widget_box.kind {
+    let (hl, editable) = match &widget_box.kind {
         BoxKind::Choice {
-            options, selected, ..
-        } => first_selected(options, selected).unwrap_or(0),
-        _ => 0,
+            options,
+            selected,
+            editable,
+            ..
+        } => (first_selected(options, selected).unwrap_or(0), *editable),
+        _ => (0, false),
     };
-    store(ctx, focus.editor_id(), ListState { open: true, hl });
+    // ★ An **editable** combo opens its list only when the click landed on the
+    // drop button; a click in its text area asks for a caret instead. Every
+    // other choice widget opens unconditionally, because a click on one has no
+    // second meaning to tell apart. `point` and `widget_box.rect` are both in
+    // page space, which is the space [`typing::arrow_strip`] has to be asked
+    // in for the answer to be about where the operator actually pressed.
+    let state = if editable {
+        typing::arrival(widget_box.rect, point, hl)
+    } else {
+        ListState { open: true, hl }
+    };
+    store(ctx, focus.editor_id(), state);
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
         format!(
-            "form-choice-open page={page} field={} widget={} row={hl}",
-            widget_box.field, widget_box.widget
+            "form-choice-open page={page} field={} widget={} row={hl} open={}",
+            widget_box.field, widget_box.widget, state.open
         )
     });
     store_focus(ctx, Some(focus));
@@ -217,6 +239,8 @@ pub(super) fn choose(
         selected,
         multi,
         combo,
+        editable,
+        align,
     } = &widget_box.kind
     else {
         // Unreachable: `super::editor` routes by the same match. Answering
@@ -224,6 +248,18 @@ pub(super) fn choose(
         // taking the window down.
         return false;
     };
+
+    // ★★★ An editable combo is a live text box with a drop button, not a ring
+    // over the appearance stream, and everything below this line assumes the
+    // second: it locks the arrow keys to a highlight the text box needs for
+    // its caret, draws no box over the widget, and treats Enter as a pick
+    // rather than as a commit of typed text. [`typing`]'s header carries the
+    // argument for why that is a separate surface rather than a flag.
+    if *editable {
+        return typing::type_into(
+            ui, focus, widget_box, rect, options, selected, *align, actions,
+        );
+    }
 
     let id = focus.editor_id();
     // The arrow keys and Escape below are only reachable because this locks

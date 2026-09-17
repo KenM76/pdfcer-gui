@@ -1016,3 +1016,40 @@ fn the_combo_flag_reaches_the_box_census() {
         assert_eq!(*combo, want_combo, "flags {flags:?}");
     }
 }
+
+/// ★★★ **`/Ff` bit 19 is only a capability when bit 18 is also set.**
+///
+/// Table 230 states it outright — *"used only with Combo"* — and the engine
+/// enforces the same conjunction: `set_choice_value`'s free-text branch is
+/// gated on `COMBO && EDIT`, so a census that honoured bit 19 alone would
+/// offer typing into a field the engine then refuses with
+/// `ChoiceValueNotInOptions`. The operator would see a box they could type in
+/// and an error naming a value they chose deliberately.
+///
+/// All three interesting polarities are asserted from one fixture, so a census
+/// that read either bit alone fails.
+#[test]
+fn the_edit_flag_is_a_capability_only_alongside_the_combo_flag() {
+    const COMBO: u32 = 1 << 17;
+    const EDIT: u32 = 1 << 18;
+    for (flags, want_editable) in [
+        (FieldFlags(COMBO | EDIT), true),
+        (FieldFlags(EDIT), false),
+        (FieldFlags(COMBO), false),
+    ] {
+        let mut field = text_field();
+        field.field_type = Some(FieldType::Choice);
+        field.flags = flags;
+        field.options = vec![pdfcer_core::forms::ChoiceOption {
+            export: b"a".to_vec(),
+            display: b"Alpha".to_vec(),
+        }];
+        let widget = field.widgets[0].clone();
+        let placed = place(&form_of(field), &[page(0)], &annots_listing(&widget));
+
+        let Some(BoxKind::Choice { editable, .. }) = placed.boxes.first().map(|b| &b.kind) else {
+            panic!("a choice field with options must be fillable on the canvas");
+        };
+        assert_eq!(*editable, want_editable, "flags {flags:?}");
+    }
+}

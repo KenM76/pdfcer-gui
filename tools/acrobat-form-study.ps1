@@ -27,10 +27,24 @@
 .PARAMETER Clicks
     Screen points to click before each capture, as "x,y" strings. Each click is
     followed by a capture, so the series reads as gesture, picture, gesture,
-    picture. An entry of "-" captures without clicking.
+    picture. An entry of "-" captures without clicking, an entry of "esc"
+    presses Escape, and an entry of "key:<SendKeys>" presses whatever follows
+    the colon -- "key:%{DOWN}" for Alt+Down, "key:{F4}", "key:abc".
+
+    Escape is in the vocabulary because Acrobat regularly draws a blank white
+    rectangle over the page — the operator's own instruction, verbatim: *"When
+    acrobat puts up that blank white rectangle you have to press escape."* A
+    series that does not clear it photographs the rectangle rather than the
+    form, and every field below the first is hidden.
 
 .PARAMETER Width, Height
     The window size, in physical pixels.
+
+.NOTES
+    Acrobat is single-instance. If one is already open the launched process
+    exits immediately after handing its argument to the running copy, so the
+    script adopts that window instead -- and then never closes it, because it
+    may be holding a document the operator opened.
 #>
 [CmdletBinding()]
 param(
@@ -91,6 +105,7 @@ $acro = "C:\Program Files\Adobe\Acrobat DC\Acrobat\Acrobat.exe"
 if (-not (Test-Path $acro)) { throw "Acrobat not found at $acro" }
 
 Write-Output "acrobat-form-study: opening $scratch"
+$adopted = $false
 $proc = Start-Process -FilePath $acro -ArgumentList "`"$scratch`"" -PassThru
 # Acrobat's first window is a splash; poll for a main window rather than
 # guessing a sleep long enough for a cold start.
@@ -101,6 +116,22 @@ while ($deadline -gt 0) {
     $proc.Refresh()
     if ($proc.MainWindowHandle -ne [IntPtr]::Zero) { $hwnd = $proc.MainWindowHandle; break }
     $deadline--
+}
+if ($hwnd -eq [IntPtr]::Zero) {
+    # Acrobat is single-instance. When one is already running, the process
+    # this script started hands the file over and exits, so its own
+    # MainWindowHandle never becomes non-zero and the document is on screen in
+    # a process we did not launch. Adopt that window rather than failing --
+    # and remember we do not own it, so the close step leaves it alone.
+    $owner = Get-Process -Name Acrobat -ErrorAction SilentlyContinue |
+        Where-Object { $_.MainWindowHandle -ne [IntPtr]::Zero } |
+        Select-Object -First 1
+    if ($null -ne $owner) {
+        $hwnd = $owner.MainWindowHandle
+        $proc = $owner
+        $adopted = $true
+        Write-Output ("acrobat-form-study: adopted existing Acrobat pid {0}" -f $owner.Id)
+    }
 }
 if ($hwnd -eq [IntPtr]::Zero) { throw "Acrobat never produced a main window" }
 Start-Sleep -Seconds 4
@@ -114,7 +145,25 @@ Start-Sleep -Milliseconds 800
 $i = 0
 foreach ($c in $Clicks) {
     $i++
-    if ($c -ne "-") {
+    if ($c -eq "esc" -or $c.StartsWith("key:")) {
+        # A synthesized press-and-release on a combo box's arrow cannot
+        # photograph the open list: the popup takes the mouse capture and
+        # Acrobat stops painting, so the frame is the white slab the operator
+        # already reported. The keyboard opens the same list without the
+        # capture, so "key:%{DOWN}" is the route that produces a picture.
+        [void][AWin]::SetForegroundWindow($hwnd)
+        Start-Sleep -Milliseconds 200
+        $wsh = New-Object -ComObject WScript.Shell
+        $wsh.SendKeys($(if ($c -eq "esc") { "{ESC}" } else { $c.Substring(4) }))
+        Start-Sleep -Milliseconds 900
+    }
+    elseif ($c -ne "-") {
+        # Foreground before every click, not only at the start. Acrobat leaves
+        # the page half-painted -- a black or white slab over the form -- when a
+        # click arrives while another window owns the foreground, and a series
+        # that does not re-assert it photographs the slab instead of the field.
+        [void][AWin]::SetForegroundWindow($hwnd)
+        Start-Sleep -Milliseconds 200
         $parts = $c.Split(",")
         $x = [int]$parts[0]; $y = [int]$parts[1]
         [void][AWin]::SetCursorPos($x, $y)
@@ -129,7 +178,7 @@ foreach ($c in $Clicks) {
     Write-Output ("  click {0,-12} -> {1}  (window {2}x{3} at {4},{5})" -f $c, (Split-Path $path -Leaf), $got.W, $got.H, $got.X, $got.Y)
 }
 
-if (-not $KeepOpen) {
+if (-not $KeepOpen -and -not $adopted) {
     Write-Output "acrobat-form-study: closing"
     try { $proc.CloseMainWindow() | Out-Null } catch {}
     Start-Sleep -Seconds 3
