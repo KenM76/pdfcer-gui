@@ -67,6 +67,28 @@ thiserror = "2"
 [profile.release]
 debug = 1
 
+# Incremental codegen in RELEASE, which cargo does not do by default.
+#
+# The release profile IS the development loop here — the operator runs the
+# release build and ui-verify drives `target/release/pdfcer-gui.exe` — so the
+# usual "release is for shipping, take the slow careful build" reasoning does
+# not apply. Measured, touching one leaf file in `pdfcer-gui`: 60s without, 28s
+# with (frontend 21.9 -> 4.2, codegen 34.9 -> 20.6, link 2.6 either way).
+#
+# The price is inlining: rustc partitions an incremental crate into more,
+# smaller codegen units and optimises less across them. Measured at +1.3% on
+# the binary (30,183,424 -> 30,578,688 bytes).
+#
+# That price lands where it does not matter, and this is the load-bearing part:
+# cargo enables incremental only for LOCAL units, and `pdfcer-core`,
+# `pdfcer-render` and `pdfcer-print` are GIT dependencies. They are compiled
+# exactly as before — verified by flipping this setting and observing that no
+# engine crate recompiled. The CPU-bound rasterisation path is untouched; what
+# loses a little inlining is shell code that spends its time waiting for a
+# frame. Should those ever become path dependencies, re-measure before
+# assuming this still holds.
+incremental = true
+
 # ★★★ The DEBUG profile carries line tables only, not full debug info.
 #
 # Operator, 2026-08-27: *"all this compiling has filled the drive with temporary

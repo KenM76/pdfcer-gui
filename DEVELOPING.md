@@ -74,6 +74,12 @@ CARGO_BUILD_JOBS=2 cargo test --workspace
 bash tools/gates/run-all.sh
 ```
 
+**The release profile is incremental**, which cargo does not do by default —
+because here the release build is also the development loop. A one-file edit
+rebuilds in 28s rather than 60s, at the cost of 1.3% on the binary and no
+change at all to the engine crates. The argument and the measurements are in
+the workspace `Cargo.toml`; re-measure there before quoting either number.
+
 **The job count on the test suite is not optional.** The workspace builds more
 than twenty test binaries, the `pdfcer-gui` one alone linking tens of megabytes
 of debug object. At cargo's default of one job per core, that many linkers run
