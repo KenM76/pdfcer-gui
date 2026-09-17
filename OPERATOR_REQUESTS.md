@@ -856,6 +856,42 @@ that is now deliberate rather than incidental.
    reserves the right to report them; this row records that the sweep is owed
    before he has to.
 
+## O211 — **FILED** — redaction removes text he never marked, and he wants to choose
+
+> *"I noticed that when I use the redaction tool on some content, if other
+> content matches I haven't selected also gets removed or replaced with X. I'd
+> like the option to only redact the content I have actually selected."*
+
+**Filed retroactively, and that is a defect in this file, not in the report.**
+He made this report to the engine side, the engine fixed it and sent `note E001`
+back through the request channel, and the row reached this file only when that
+note was read. Clause 1 says the row goes in the moment he makes the request. A
+request made through any channel is still a request.
+
+**It was a real defect and it is fixed in the engine, not here.** Two
+independent causes, both in `pdfcer-core`: the residual sweep had no liveness
+test, so it blanked live page content as readily as abandoned streams; and the
+needle was tokenised, so redacting `INVOICE 4412` made the bare word `INVOICE`
+its own needle and ate it from a page he never touched. Reproduced against
+released v0.54.0. Ships in the engine's `Pass 310.0`.
+
+**What is owed HERE**, and it is not automatic — the fix arrives with a control
+the shell must surface:
+
+1. Take the engine pin forward and confirm the over-reach is gone on his own
+   file, driven, not unit-tested.
+2. Surface `ResidualScope` — `MarkedOnly` / `HiddenCarriers` (the default) /
+   `WholeDocument` — somewhere durable. His sentence asks for the first one to
+   be reachable.
+3. Surface the declined-match note off-canvas. ★ `has_unscrubbed_matches()`
+   means *pdfcer was told not to act* and **must never block a redaction** —
+   it is not `has_disclosed_residuals()`, which means *pdfcer could not act* and
+   does block. Collapsing the two would break ordinary redaction, because almost
+   any phrase appears somewhere else in a document.
+4. Decide whether the scope wants a persisted settings key. The engine says it
+   is a one-line addition on request, and that a key nobody reads is worse than
+   no key.
+
 ## O210 — ◑ **HALF BUILT AND MEASURED** — rebuilding takes too long, and the answer was not DLLs
 
 > *"would compiling new versions and testing be faster and easier and less
