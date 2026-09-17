@@ -415,7 +415,16 @@ SNAPSHOT = pathlib.Path(
         str(ROOT / "tools" / "gates" / "engine-api-snapshot.txt"),
     )
 )
-MANIFEST = ROOT / "crates" / "pdfcer-gui" / "Cargo.toml"
+#: EVERY manifest in the GUI crate stack that may take an engine dependency.
+#: A list, not a single path, for the same reason `engine_crates` derives the
+#: crate names rather than typing them: the day the floor crate takes an
+#: engine crate this one does not, a single-manifest read makes that crate
+#: invisible to the instrument built to notice new engine API.
+MANIFESTS = [
+    ROOT / "crates" / "pdfcer-gui" / "Cargo.toml",
+    ROOT / "crates" / "pdfcer-gui-base" / "Cargo.toml",
+]
+MANIFEST_NAMES = ", ".join(str(m.relative_to(ROOT)) for m in MANIFESTS)
 LOCK = ROOT / "Cargo.lock"
 
 #: Minimum characters of prose an `exempt` line must carry. An exemption with
@@ -624,7 +633,7 @@ def scan_file(text: str, mod: str) -> list[tuple[str, str]]:
 
 
 def engine_crates() -> list[str]:
-    """Every engine crate this shell depends on, DERIVED from the manifest.
+    """Every engine crate this shell depends on, DERIVED from the manifests.
 
     A typed list here would be the very defect this gate is built to find: the
     day a fourth engine crate is taken, a typed list makes that crate's whole
@@ -634,15 +643,17 @@ def engine_crates() -> list[str]:
     prefix, because the prefix is exactly what a rename changes and the URL is
     what Cargo resolves — `engine_path.py`'s argument, applied one level up.
     """
-    if not MANIFEST.is_file():
-        return []
     names: list[str] = []
-    for line in MANIFEST.read_text(encoding="utf-8", errors="replace").splitlines():
-        if line.lstrip().startswith("#"):
+    for manifest in MANIFESTS:
+        if not manifest.is_file():
             continue
-        m = re.match(r'^\s*([A-Za-z0-9_-]+)\s*=\s*\{[^}]*git\s*=\s*"file:///', line)
-        if m and m.group(1) not in names:
-            names.append(m.group(1))
+        text = manifest.read_text(encoding="utf-8", errors="replace")
+        for line in text.splitlines():
+            if line.lstrip().startswith("#"):
+                continue
+            m = re.match(r'^\s*([A-Za-z0-9_-]+)\s*=\s*\{[^}]*git\s*=\s*"file:///', line)
+            if m and m.group(1) not in names:
+                names.append(m.group(1))
     return names
 
 
@@ -1525,7 +1536,7 @@ def self_test() -> int:
     # --- the derived crate list must never be silently empty ---------------
     if not engine_crates():
         print("engine-api-drift --self-test: FAIL -- no engine crate could be derived")
-        print(f"  from {MANIFEST}. That is the empty-scan condition, and it must be a")
+        print(f"  from {MANIFEST_NAMES}. That is the empty-scan condition, and it must")
         print("  FAILURE rather than a clean run: a gate that measured nothing is not")
         print("  a gate that found nothing.")
         fail = 1
@@ -1579,7 +1590,7 @@ def main() -> int:
         # and a blind derivation produces an empty scan that looks exactly like
         # a clean one. `engine_path.py`'s header is a defect report about
         # precisely this happening to check-verb-coverage during the rename.
-        print(f"FAIL: no engine crate could be derived from {MANIFEST}.")
+        print(f"FAIL: no engine crate could be derived from {MANIFEST_NAMES}.")
         print()
         print("  This gate reads every dependency taking a `git = \"file:///...\"` URL.")
         print("  Finding none means the manifest changed shape, and an empty crate")
@@ -1593,7 +1604,7 @@ def main() -> int:
     if repo is None or not repo.is_dir():
         return skip(
             f"the engine checkout is not on this machine.\n"
-            f"      {MANIFEST.relative_to(ROOT)} names {repo or 'no file:/// dependency'},\n"
+            f"      {MANIFEST_NAMES} name {repo or 'no file:/// dependency'},\n"
             f"      which is not a directory. The path is DERIVED from the manifest\n"
             f"      Cargo builds from, never hard-coded -- so this is a real absent\n"
             f"      engine and not a stale literal."
@@ -1692,7 +1703,7 @@ def main() -> int:
     accountant = make_accountant(rust, md)
 
     print(f"engine {repo} at {rev[:7]} (the revision {LOCK.name} pins)")
-    print(f"crates {' '.join(crates)}  (derived from {MANIFEST.relative_to(ROOT)})")
+    print(f"crates {' '.join(crates)}  (derived from {MANIFEST_NAMES})")
     rc, unaccounted, foldable = report(live, seen, exempt, complaints, accountant)
 
     # * COMING -- the other half of the truth, reported and never failed on.

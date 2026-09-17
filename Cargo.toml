@@ -36,6 +36,11 @@ members = [
     "crates/native-clipboard",
     "crates/native-window",
     "crates/pdfcer-gui",
+    # pdfcer-gui-base — the floor of the pdfcer-gui crate stack, and the first
+    # compiler-enforced arrow inside what was one 167,000-line crate. Admission
+    # test: the module references no other module of `pdfcer-gui`. See that
+    # crate's `Cargo.toml` and DESIGNS.md's staged plan.
+    "crates/pdfcer-gui-base",
     "tools/ui-verify",
 ]
 

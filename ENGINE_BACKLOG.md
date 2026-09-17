@@ -56,7 +56,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **42 of 183** <!-- counted by tools/walk-engine-backlog.py, 2026-09-16; do not retype -->
+## `wanted` — a real gap — **43 of 184** <!-- counted by tools/walk-engine-backlog.py, 2026-09-17; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -117,6 +117,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Write a field's `/DA` font, size and colour** — `FieldEdit::with_appearance`, `FieldAppearance`, `FieldFont::Standard` / `FieldFont::Resource`, `EditError::FieldFontNotInResources` | **wanted, third of the same family** — after `/DV` and `/Q`, the remaining half of *what a field's text looks like*. It narrows rather than breaks the argument `canvas::forms` §3 rests on: §3 refuses a facsimile because a substituted font cannot promise the document font's advances, and a size does not say the same thing in any font — but a size the operator just chose, in a face pdfcer authored from `FieldFont::standard`, is the document's own value in pdfcer's own face. Do not read §3 as stale on this row's strength; it has been misread that way once. `FieldAppearance::resource` versus `::standard` is the page-font versus authored-face split `panels::properties::face` already models, so reuse `Std14Presence::OnPage` against `WouldBeAdded`. `EditError::FieldFontNotInResources` is why: a chooser offering a face the page lacks offers a press that fails. |
 | **Write a field's quadding, default value and NoExport flag** — `FieldEdit::with_quadding`, `with_default_value`, `with_no_export` | **wanted for `with_no_export`; the rest of the builder is reached.** A *Default value* box (text fields only) commits on `lost_focus`, and an empty commit sends `clearing_default_value` rather than an empty string — *a default of nothing* and *no default* are different assertions. It matters because this shell ships Reset and `/ResetForm`: with no `/DV` to restore, §12.7.5.3 empties every field on a pdfcer-authored form. `with_quadding` is a driven **Alignment** chooser of three named choices, which makes `EditError::QuaddingInvalid` unreachable from this pane by construction; a test matches `Quadding` exhaustively with no wildcard. `clearing_quadding` **does** want a control, labelled *inherit*: `/Q 0` and an absent `/Q` are different assertions, because `forms.rs:1390` resolves `own_q.or(inherited.quadding)` up the `/Parent` chain and then `/AcroForm`. *Left* is correct only where nothing above the field states a justification, which this shell cannot see. `with_no_export` waits on a surface that submits. |
 | **Write an annotation's whole `/F` flag word** — `set_annotation_flags` | **wanted, and the SEQUENCING is the verdict rather than the wiring.** The verb has its own row below under its API name; this one is the pointer, because two entries for one capability is how the weaker one becomes the only one anybody reads. This shell can **read** `AnnotFlags::locked_contents` and deliberately does not, with an open row naming the consequence: that editor today offers to rewrite a note the file says may not be rewritten. Honour `LockedContents` on the way **in** first; only then offer the writer that clears it, because shipping the unlock button first lets an operator clear a lock without ever being told there was one. A `Locked` annotation's own flags can still be changed, including clearing `Locked`, which is what makes the second half safe once the first exists. The verb refuses a `/Widget` by name, so the Forms surfaces must not grow a Lock control from it. |
+| **Scope the residual sweep by carrier visibility** — `ResidualScope` (`MarkedOnly` / `HiddenCarriers` default / `WholeDocument`), `set_residual_scope`, `residual_scope`, `has_unscrubbed_matches`, `residual_matches_left`, `CarrierAction::FoundNotScrubbed` | **wanted, and it needs a pin bump first — O211.** He redacted a phrase and watched unmarked text elsewhere lose it. The engine fixed the over-scrub and handed the remaining choice here: a three-way scope on the session, defaulting to `HiddenCarriers`. ⚠ Both verbs are in the engine's working tree and not in the revision `Cargo.lock` pins — `tools/verb-coverage.py` lists them under COMING — so nothing here can call them yet. ★ Do not collapse the two report predicates: `has_disclosed_residuals` means pdfcer COULD NOT act and is what blocks; `has_unscrubbed_matches` means pdfcer WAS TOLD NOT TO, and gating on it would fail almost every redaction of a phrase appearing twice. Report the declined matches off-canvas; never block |
 | **Choose a check-box/radio-button glyph style at creation** — `CheckStyle`, `NewCheckBox::style` | **wanted, small, and waiting on nothing.** Six glyph styles (`Check`/`Cross`/`Star`/`Circle`/`Square`/`Diamond`) selectable when a check box or radio button is authored, drawn as vector artwork rather than a `Tf`'d ZapfDingbats glyph, so the appearance does not depend on a font resolution at display time. `canvas::formfield::draft::Draft` already carries the per-kind fields, so this is one more of those plus one combo in `dialogs`; `RIBBON_IA.md` needs no amendment. Call `CheckStyle::parse` rather than matching strings. **Creation only** — the engine offers no restyle of an existing box, so a Properties row would refuse when pressed (R9) and a request to change an existing tick is an engine request. Defaults to `Check`. The `/MK` `/CA` round trip (`CheckStyle::mk_caption_char` / `::from_mk_caption_char`) means a Properties row could honestly SHOW a style it cannot change; worth building once somebody asks. |
 | `pdfcer_core::edit::EditSession::set_annotation_flags` | **wanted, and the sequencing is the whole verdict.** Writes `/F` as one undoable `CommandKind::SetAnnotationFlags`, reporting `AnnotationFlagsChange { before, after, subtype }`. This shell already has the reading half and an open correctness row against it (`AnnotFlags::locked_contents`): that editor today offers to rewrite a note the file says may not be rewritten. Honour the flag on the way **in** first; only then offer the writer that clears it. Shipping the writer first lets an operator unlock a comment without ever being told it was locked, which is *fix the symptom, keep the surprise*. Full argument at `EDITABLE_SURFACES.md`'s row. |
 | `pdfcer_core::edit::AnnotationFlagsChange` (with `::before`, `::after`, `::subtype`) | **wanted, with `set_annotation_flags` and inseparable from it.** `before` **and** `after` rather than only the result is what makes an honest receipt possible: *Print was already off; this cleared Locked* is a different sentence from *this turned two things off*, and a surface holding only `after` must guess which. `subtype` is there because a flag means different things on a `/Widget` than on a `/Text`. Wire all three or the disclosure is a guess. |
@@ -134,7 +135,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 ---
 
-## `blocked` — waiting on something named — **2 of 183** <!-- counted by tools/walk-engine-backlog.py, 2026-09-16; do not retype -->
+## `blocked` — waiting on something named — **2 of 184** <!-- counted by tools/walk-engine-backlog.py, 2026-09-17; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -152,7 +153,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 183** <!-- counted by tools/walk-engine-backlog.py, 2026-09-16; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 184** <!-- counted by tools/walk-engine-backlog.py, 2026-09-17; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -163,7 +164,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **14 of 183** <!-- counted by tools/walk-engine-backlog.py, 2026-09-16; do not retype -->
+## `declined` — deliberately no surface — **14 of 184** <!-- counted by tools/walk-engine-backlog.py, 2026-09-17; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -203,7 +204,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **125 of 183** <!-- counted by tools/walk-engine-backlog.py, 2026-09-16; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **125 of 184** <!-- counted by tools/walk-engine-backlog.py, 2026-09-17; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 

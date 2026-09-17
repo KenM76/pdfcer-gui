@@ -69,7 +69,7 @@ alongside the other licences harvested from `Cargo.lock`.
 
 - **Apache License 2.0** — used by 189 crate(s)
 - **Unicode License v3** — used by 19 crate(s)
-- **MIT License** — used by 17 crate(s)
+- **MIT License** — used by 18 crate(s)
 - **BSD 3-Clause &quot;New&quot; or &quot;Revised&quot; License** — used by 7 crate(s)
 - **Boost Software License 1.0** — used by 2 crate(s)
 - **BSD Zero Clause License** — used by 1 crate(s)
@@ -6191,6 +6191,7 @@ Used by:
 - [iccce-profile 0.3.0](https://github.com/KenM76/iccce)
 - [egui-shell 0.1.0](https://crates.io/crates/egui-shell)
 - [pdfcer-gui 0.1.0](https://crates.io/crates/pdfcer-gui)
+- [pdfcer-gui-base 0.1.0](https://crates.io/crates/pdfcer-gui-base)
 - [dpi 0.1.2](https://github.com/rust-windowing/winit)
 - [harfrust 0.7.0](https://github.com/harfbuzz/harfrust)
 

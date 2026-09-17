@@ -42,7 +42,7 @@
 //!
 //! The third row is the one worth arguing. Every close prompt an operator has
 //! ever seen offers *Save · Don't save · Cancel*, and
-//! [`crate::dialogs::unsaved`] is this crate's implementation of exactly that
+//! `pdfcer_gui::dialogs::unsaved` is the application's implementation of that
 //! shape. **This dialog deliberately is not that one.** Its middle button would
 //! read *"open in Acrobat without saving"*, and pressing it would close the
 //! document, discard the edits, and hand Acrobat the **old bytes** — the
@@ -123,9 +123,10 @@
 //!
 //! Three constraints meet here and they only have one intersection:
 //!
-//! - `crates/pdfcer-gui/src/lib.rs` carries `#![forbid(unsafe_code)]`, which
-//!   cannot be relaxed by an inner `allow`. Calling `advapi32`'s
-//!   `RegGetValueW` from this crate is therefore not available at all.
+//! - This crate's root carries `#![forbid(unsafe_code)]`, as does
+//!   `pdfcer-gui`'s, and `forbid` cannot be relaxed by an inner `allow`.
+//!   Calling `advapi32`'s `RegGetValueW` from here is therefore not available
+//!   at all.
 //! - No crate in this workspace depends on a registry crate, and this work is
 //!   not permitted to edit a `Cargo.toml` to add one. (`winreg` does appear in
 //!   `Cargo.lock`, but only as a build-dependency of `embed-resource`, which
@@ -318,7 +319,7 @@ pub trait Launcher {
 /// operator has no way to tell the two apart from the ribbon. The escape hatch
 /// still works: **Settings shows what discovery resolved**, so a typo is
 /// visible where it was made, next to the field that caused it. See
-/// [`crate::dialogs::settings`].
+/// `pdfcer_gui::dialogs::settings`.
 ///
 /// # A configured path does NOT fall back to discovery
 ///
@@ -408,9 +409,9 @@ pub enum Prompt {
 ///
 /// A pure function over two `bool`s so the branch is asserted rather than
 /// inferred from a screenshot. Both facts come from
-/// [`crate::app::save`] — `has_a_file` and `has_unsaved_edits` — and that is
+/// `pdfcer_gui::app::save` — `has_a_file` and `has_unsaved_edits` — and that is
 /// deliberate: *"does this document have unsaved edits?"* already has exactly
-/// one answer in this crate, and a second one written here would be a second
+/// one answer in the application, and a second one here would be a second
 /// thing to keep in step with the tab strip's unsaved marker.
 ///
 /// `has_file` is asked **first**, and the order is the whole content of the
@@ -436,7 +437,7 @@ pub const fn prompt_for(has_file: bool, has_unsaved_edits: bool) -> Prompt {
 /// caller's to keep, not this function's: the document is closed **after** a
 /// successful spawn, because a launch that failed after the close would leave
 /// the operator with no document on screen and no Acrobat either. See
-/// [`crate::app::actions::acrobat`].
+/// `pdfcer_gui::app::actions::acrobat`.
 ///
 /// # Errors
 ///

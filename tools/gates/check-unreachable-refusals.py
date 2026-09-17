@@ -209,6 +209,10 @@ BASELINE = ROOT / "tools" / "gates" / "unreachable-refusals.txt"
 MARKER_ROOTS = (
     ROOT / "crates" / "pdfcer-gui" / "src",
     ROOT / "crates" / "pdfcer-gui" / "tests",
+    # The floor crate carries no refusal marker today. It is listed anyway,
+    # because an unlisted root is not reported as unscanned: the gate finds no
+    # marker there and passes.
+    ROOT / "crates" / "pdfcer-gui-base" / "src",
 )
 
 #: `UNREACHABLE-FROM: a::b::C::D @ 025d703d`

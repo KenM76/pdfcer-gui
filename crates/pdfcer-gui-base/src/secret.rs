@@ -6,9 +6,9 @@
 //! ## ★★★ The hazard, stated before the type
 //!
 //! A document password travels from a text field, through
-//! [`crate::app::actions::Action`], into the action queue, and out again in
-//! [`crate::app::lifecycle`]. Every step of that is ordinary — and
-//! `Action` derives `Debug`, this crate traces liberally to stderr under
+//! `pdfcer_gui::app::actions::Action`, into the action queue, and out again in
+//! `pdfcer_gui::app::lifecycle`. Every step of that is ordinary — and
+//! `Action` derives `Debug`, the program traces liberally to stderr under
 //! `PDFCER_DIAG`, and **`tools/ui-verify` captures that stderr to a file it
 //! keeps as evidence**.
 //!
@@ -38,7 +38,7 @@
 //!
 //! ## Why `PartialEq` is here
 //!
-//! [`crate::app::actions::Action`] derives it, and every variant must. The
+//! `pdfcer_gui::app::actions::Action` derives it, and every variant must. The
 //! comparison is the ordinary string one — deliberately **not** constant-time,
 //! because nothing here compares a secret against a stored secret. The only
 //! comparison that matters is `pdfcer-core`'s, inside the document's own

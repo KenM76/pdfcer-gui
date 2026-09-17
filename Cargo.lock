@@ -2650,11 +2650,20 @@ dependencies = [
  "native-clipboard",
  "native-window",
  "pdfcer-core",
+ "pdfcer-gui-base",
  "pdfcer-print",
  "pdfcer-render",
  "raw-window-handle",
  "rfd",
  "syn 2.0.119",
+]
+
+[[package]]
+name = "pdfcer-gui-base"
+version = "0.1.0"
+dependencies = [
+ "egui",
+ "pdfcer-core",
 ]
 
 [[package]]

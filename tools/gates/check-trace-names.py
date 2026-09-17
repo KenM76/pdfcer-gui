@@ -198,7 +198,14 @@ NL = chr(10)
 WS = "[ " + chr(9) + chr(13) + NL + "]*"
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-SRC = ROOT / "crates" / "pdfcer-gui" / "src"
+# BOTH GUI CRATES. `diag` — the trace facility the names in question are
+# emitted through — lives in `pdfcer-gui-base`, and a root list naming only
+# `pdfcer-gui` would stop seeing its call sites without failing: the gate
+# would find nothing and report clean.
+SRCS = [
+    ROOT / "crates" / "pdfcer-gui" / "src",
+    ROOT / "crates" / "pdfcer-gui-base" / "src",
+]
 EXEMPT = "trace-name-exempt:"
 
 # `vector_edit(doc, "label", …)` — the label is the first string literal on the
@@ -455,7 +462,7 @@ def self_test() -> int:
 def main() -> int:
     if "--self-test" in sys.argv[1:]:
         return self_test()
-    files = sorted(SRC.rglob("*.rs"))
+    files = sorted(p for src in SRCS if src.is_dir() for p in src.rglob("*.rs"))
     blobs = {p: p.read_text(encoding="utf-8", errors="replace") for p in files}
 
     labels: set[str] = set()

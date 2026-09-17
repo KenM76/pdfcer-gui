@@ -78,7 +78,11 @@ THEME_DIR="crates/egui-shell/src/theme"
 # left the reusable shell — the crate that OWNS the palette and draws the
 # ribbon, dock and tab labels D2 was about — as the one place a raw
 # colour could hide.
-SRC_ROOTS=("crates/egui-shell/src" "crates/pdfcer-gui/src")
+# All three source roots of the shell stack. `pdfcer-gui-base` holds no
+# `Color32` today; it is listed because a root that is absent from this array
+# is not reported as unscanned — the gate simply finds nothing there and
+# passes.
+SRC_ROOTS=("crates/egui-shell/src" "crates/pdfcer-gui/src" "crates/pdfcer-gui-base/src")
 
 # `from_gray` and the named constants (`Color32::RED`) count too: a
 # literal grey is exactly as invisible to a restyle as a literal blue.

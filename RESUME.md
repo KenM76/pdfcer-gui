@@ -6,8 +6,10 @@ what to build next, and the traps that cost a session if they are rediscovered.
 ## What this is
 
 A replacement GUI for the `pdfcer` PDF engine. `crates/pdfcer-gui` knows about
-PDF; `crates/egui-shell` carries the ribbon, dock, modes and command registry
-and never learns what a PDF is; two platform crates and the driving harness
+PDF; `crates/pdfcer-gui-base` holds the modules beneath it that reference
+nothing above them, so cargo's no-cycles rule is what keeps them down there;
+`crates/egui-shell` carries the ribbon, dock, modes and command registry and
+never learns what a PDF is; two platform crates and the driving harness
 `tools/ui-verify` complete the workspace. The engine is a **branch** git
 dependency on `D:\Dev\pdfcer`, linked statically, so the binary already carries
 it and there is no integration step. **That tree is read-only from here**:

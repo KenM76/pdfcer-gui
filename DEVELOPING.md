@@ -15,9 +15,15 @@ the standards every source file and document in it follows.
 
 ## 1. What this workspace is
 
-A replacement GUI for the `pdfcer` PDF engine, built as two crates:
+A replacement GUI for the `pdfcer` PDF engine, built as three crates:
 
 - **`crates/pdfcer-gui`** — the application. Knows about PDF.
+- **`crates/pdfcer-gui-base`** — the floor of that application: the modules
+  that reference no other `pdfcer-gui` module. Admission test is mechanical —
+  a fan-out of zero, measured by `python tools/module-graph.py` — and the
+  point of the split is that cargo forbids a cycle between crates, so nothing
+  in there can call back up into the application. It may name PDF concepts;
+  that is what separates it from the shell below.
 - **`crates/egui-shell`** — the reusable shell: ribbon, dock, modes, layout
   persistence, theme, command registry. Knows nothing about PDF, and a gate
   (`check-shell-purity.sh`) fails the build if it learns.

@@ -136,9 +136,33 @@ import engine_path  # noqa: E402
 LOCK = pathlib.Path("Cargo.lock")
 
 #: The shell's source tree — the population searched for consumers.
-SRC = pathlib.Path("crates/pdfcer-gui/src")
+# BOTH GUI CRATES. A settings field consumed in `pdfcer-gui-base` — `acrobat`
+# is reached with the operator's configured viewer path — must count as
+# consumed, and a root list that names only `pdfcer-gui` would not say so: it
+# would find no read and report the setting orphaned, or, for a field whose only
+# read moved out, report a clean tree as broken.
+SRCS = [
+    pathlib.Path("crates/pdfcer-gui/src"),
+    pathlib.Path("crates/pdfcer-gui-base/src"),
+]
 
-#: Paths that handle a setting without honouring it. Relative to `SRC`, matched
+
+def sources():
+    """`(path, rel)` for every `.rs` under either root.
+
+    `rel` is relative to **that file's own root**, because every prefix in
+    `HANDLERS_NOT_CONSUMERS` and every exemption marker is written against a
+    crate-relative path. Making it relative to a single root would silently
+    stop those prefixes matching.
+    """
+    for src in SRCS:
+        if not src.is_dir():
+            continue
+        for path in sorted(src.rglob("*.rs")):
+            yield path, path.relative_to(src).as_posix()
+
+
+#: Paths that handle a setting without honouring it. Relative to a crate source
 #: as a prefix, so a directory entry covers everything under it.
 HANDLERS_NOT_CONSUMERS = (
     "dialogs/settings/",
@@ -324,8 +348,7 @@ def consumers(fields: list[str]) -> dict[str, list[str]]:
     """
     patterns = {f: re.compile(r"\.%s\b" % re.escape(f)) for f in fields}
     found: dict[str, list[str]] = {f: [] for f in fields}
-    for path in sorted(SRC.rglob("*.rs")):
-        rel = path.relative_to(SRC).as_posix()
+    for path, rel in sources():
         if is_handler(rel) or rel.endswith("_tests.rs"):
             continue
         body = executable_text(path.read_text(encoding="utf-8", errors="replace"))
@@ -339,8 +362,7 @@ def exemptions() -> tuple[dict[str, tuple[str, str]], list[str]]:
     """`({field: (path, reason)}, [complaints about malformed markers])`."""
     claimed: dict[str, tuple[str, str]] = {}
     bad: list[str] = []
-    for path in sorted(SRC.rglob("*.rs")):
-        rel = path.relative_to(SRC).as_posix()
+    for path, rel in sources():
         text = path.read_text(encoding="utf-8", errors="replace")
         if EXEMPT not in text:
             continue
@@ -460,7 +482,7 @@ def run(explain: bool) -> int:
         for field in orphaned:
             print(
                 f"  `Settings::{field}` has no non-comment read anywhere in "
-                f"{SRC.as_posix()} outside "
+                f"{' or '.join(x.as_posix() for x in SRCS)} outside "
                 f"{', '.join(HANDLERS_NOT_CONSUMERS)}."
             )
         print(

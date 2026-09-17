@@ -2,7 +2,7 @@
 //!
 //! This file is the channel itself — [`enabled`], [`trace`], and the
 //! change-gated writers built on them. Nothing in it is a feature; it is the
-//! instrument every other module in the crate is measured with, and the
+//! instrument every other module of the application is measured with, and the
 //! contract below is what keeps it safe to leave switched on in the source.
 //!
 //! ## Why this exists
@@ -39,7 +39,7 @@
 //!   own, and redirects with `2>`. `key=value` because the consumer is a grep
 //!   or an LLM, not a person reading a log.
 //! - **Never a user-facing string.** Nothing here is shown in the interface, so
-//!   none of it belongs in [`crate::text`] (the ui-string catalog governs
+//!   none of it belongs in `pdfcer_gui::text` (the ui-string catalog governs
 //!   operator-visible copy).
 //! - **Never load-bearing.** No behaviour may depend on the trace. If deleting
 //!   this module changed what the application does, the trace would have become
@@ -55,7 +55,7 @@
 //!
 //! ## What the harness is owed, and by what
 //!
-//! `PROJECT_PLAN.md` §4.3 tabulates the three contracts this crate honours so
+//! `PROJECT_PLAN.md` §4.3 tabulates the three contracts this module honours so
 //! that `tools/ui-verify` needs no workarounds; each of them removes a harness
 //! workaround, and two are implemented by machinery in this file.
 //!
@@ -98,8 +98,8 @@
 //! `egui-shell` cannot depend on this crate —
 //! `tools/gates/check-shell-purity.sh` enforces the one-directional dependency
 //! — so the ribbon and the dock take a *rect sink* from their caller and this
-//! crate supplies one that forwards to [`ui_rect`]
-//! (`crate::app::surfaces`). Because the sink captures nothing and needs no
+//! module supplies one that forwards to [`ui_rect`]
+//! (`pdfcer_gui::app::surfaces`). Because the sink captures nothing and needs no
 //! `&mut` threaded through every widget signature, the shell can grow new
 //! named regions without a line changing here.
 //!
@@ -553,7 +553,7 @@ pub fn ui_control(name: &str, response: &egui::Response, clip: egui::Rect) -> bo
 /// [`ui_rect`] publishes a named region's rectangle **relative to the viewport
 /// that drew it**, and a harness converting to desktop coordinates has to add
 /// that viewport's client origin. With one window there is nothing to get
-/// wrong; `crate::dialogs::host` makes a dialog a real OS window, and its
+/// wrong; `pdfcer_gui::dialogs::host` makes a dialog a real OS window, and its
 /// regions publish rectangles that look exactly like the application window's
 /// while naming a completely different place on the desktop — typically by the
 /// few hundred points between the two windows' corners.
@@ -604,7 +604,7 @@ thread_local! {
 
 /// **Publish every [`ui_rect`] inside this scope as belonging to `id`.**
 ///
-/// Entered by [`crate::dialogs::host::Host::show`] around a dialog's body. A
+/// Entered by `pdfcer_gui::dialogs::host::Host::show` around a dialog's body. A
 /// guard rather than a closure because the body needs `&mut` on the dialog it
 /// belongs to, and threading that through a closure parameter would push the
 /// borrow problem into every caller.
@@ -727,7 +727,7 @@ fn frame_tick() {
 /// **Close a frame's region census and report anything that stopped being
 /// drawn.**
 ///
-/// Called once at the end of every frame, from `crate::app::frame`. See
+/// Called once at the end of every frame, from `pdfcer_gui::app::frame`. See
 /// [`UI_RECTS_THIS_FRAME`] for the defect this exists to remove — in one
 /// sentence: a change log that only reports appearances lets a consumer read a
 /// stale rect as a live one, and report a layout defect against a region that
@@ -834,7 +834,7 @@ static LAST_BY_KEY: LazyLock<Mutex<std::collections::HashMap<String, String>>> =
 /// somebody already having a bad day.
 ///
 /// A change log is the honest shape for a *state* rather than an *event*, and
-/// this crate already has one: [`ui_rect`] emits only when a rect moves. This
+/// this module already has one: [`ui_rect`] emits only when a rect moves. This
 /// is the same idea for a string, keyed so several callers can use it without
 /// interfering.
 ///

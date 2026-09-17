@@ -1,0 +1,47 @@
+# pdfcer-gui-base — the floor of the pdfcer-gui crate stack.
+#
+# WHAT GOES IN HERE, and it is a narrow test: a module that references no other
+# module of `pdfcer-gui`. Nothing else. `tools/module-graph.py` prints the set;
+# when it grows, this crate may grow with it.
+#
+# WHY IT EXISTS, and it is NOT build time. Moving these four modules out is
+# ~3,000 lines of 422,000 and buys no measurable seconds. It buys an arrow the
+# compiler defends. `pdfcer-gui` was one crate, a crate is Rust's only enforced
+# boundary, and with no boundary inside it the modules grew 25 mutually
+# recursive pairs — `app` <-> `canvas` at 263 references one way and 273 the
+# other. Cargo forbids a cycle between crates, so every one of those pairs now
+# has to be cut by hand before the crate can be divided where it would actually
+# pay. This crate is the first cut, and from here downward that cannot recur:
+# a module in here CANNOT call up into the application, because the code does
+# not compile if it tries.
+#
+# See `DESIGNS.md`, "The GUI is one crate, and its five largest modules call
+# each other in both directions", for the staged plan this is stage 1 of.
+#
+# THE ATTRIBUTION FILE HAS TO BE REGENERATED. No dependency below is new to
+# the build — both are already linked into `pdfcer-gui` — but a workspace
+# member is itself a crate `cargo-about` enumerates, so THIS crate is a new
+# line in `THIRD_PARTY_LICENSES.md`. Splitting a crate is therefore not a
+# licence-neutral act on that file, and `check-third-party-licences.sh` is
+# what says so.
+[package]
+name = "pdfcer-gui-base"
+description = "Floor of the pdfcer-gui crate stack: the diagnostic trace, the unit-conversion table, the secret wrapper and Acrobat discovery — the modules that reference nothing above them."
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+# egui — `diag` types its rect and control reports as `egui::Rect` and
+# `egui::Response` rather than as tuples, so a caller hands over what it
+# already has and `ui-verify` parses egui's own `Debug` spelling. Pinned once
+# in `[workspace.dependencies]`, like every other toolkit dependency here.
+egui.workspace = true
+
+# pdfcer-core — `units` converts against `pdfcer_core::dimension::Unit`, which
+# is what makes the GUI's unit table and the engine's agree by construction
+# rather than by a duplicated 25.4. Declared with the SAME git/branch/feature
+# spec as `crates/pdfcer-gui/Cargo.toml` so cargo unifies them into one build
+# of one crate; a divergence here would silently compile the engine twice.
+pdfcer-core = { git = "file:///D:/Dev/pdfcer", branch = "main", default-features = false }

@@ -186,6 +186,13 @@ native-window = { path = "../native-window" }
 # *cannot* change.
 native-clipboard = { path = "../native-clipboard" }
 
+# pdfcer-gui-base = the floor of this crate's own stack: `diag`, `units`,
+# `secret` and `acrobat`. Not a third-party library and not a reusable
+# framework — it is THIS crate, minus the four modules that reference nothing
+# above them, held below by an arrow cargo enforces. The crate root re-exports
+# all four, so call sites still spell them `crate::diag::…`.
+pdfcer-gui-base = { path = "../pdfcer-gui-base" }
+
 # eframe = egui's application shell. Version, backend and feature set are
 # pinned once in this workspace's root `[workspace.dependencies]` to match
 # `D:\Dev\pdfcer` exactly (glow rather than wgpu — the wgpu 29 stack fails

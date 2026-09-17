@@ -97,7 +97,13 @@ import engine_path  # noqa: E402
 ENGINE_REPO = engine_path.locate() or pathlib.Path("D:/Dev/pdfcer")
 ENGINE_FILE = f"crates/{engine_path.crate_name('core')}/src/edit.rs"
 LOCK = pathlib.Path("Cargo.lock")
-GUI = pathlib.Path("crates/pdfcer-gui/src")
+# Both GUI crates. The floor crate calls no engine edit verb today; it is in the
+# list because an omitted root never announces itself — the scan simply finds
+# nothing there and the verb scores zero, which reads as "not surfaced yet".
+GUI_ROOTS = [
+    pathlib.Path("crates/pdfcer-gui/src"),
+    pathlib.Path("crates/pdfcer-gui-base/src"),
+]
 
 
 def locked_revision() -> str | None:
@@ -189,7 +195,7 @@ def strip_comments(text: str) -> str:
     return LINE_COMMENT.sub(lambda m: " " * len(m.group(0)), text)
 
 
-def gui_hits(names: list[str], root: pathlib.Path) -> dict[str, int]:
+def gui_hits(names: list[str], roots: list[pathlib.Path]) -> dict[str, int]:
     """How many times each verb is CALLED across the shell's sources.
 
     One pass over the tree holding every file in memory once, rather than a
@@ -235,6 +241,8 @@ def gui_hits(names: list[str], root: pathlib.Path) -> dict[str, int]:
     """
     blobs = [
         strip_comments(p.read_text(encoding="utf-8", errors="replace"))
+        for root in roots
+        if root.is_dir()
         for p in root.rglob("*.rs")
     ]
     counts = {}
@@ -269,7 +277,7 @@ def main() -> int:
     rev = locked_revision()
     text, origin = engine_source(rev)
     verbs = engine_verbs_from(text)
-    counts = gui_hits(verbs, GUI)
+    counts = gui_hits(verbs, GUI_ROOTS)
     missing = [v for v in verbs if counts[v] == 0]
 
     # ★ What the engine's worktree has that the lock does not. Reported

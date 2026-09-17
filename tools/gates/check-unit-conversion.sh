@@ -6,7 +6,7 @@
 # =====================
 #
 # Every conversion between PDF points and a length an operator reads or types
-# belongs in `crates/pdfcer-gui/src/units.rs`. This gate fails the build when a
+# belongs in `crates/pdfcer-gui-base/src/units.rs`. This gate fails the build when a
 # second copy appears.
 #
 # It exists because the first copy was not the problem — the thirteenth was.
@@ -125,8 +125,12 @@ set -uo pipefail
 
 cd "$(dirname "$0")/../.." || exit 1
 
-TABLE="crates/pdfcer-gui/src/units.rs"
-SRC_ROOT="crates/pdfcer-gui/src"
+# The table lives in the base crate; the callers are spread over both. SCAN
+# BOTH ROOTS. A root list that names only the crate the table used to live in
+# would not fail — it would find nothing and report clean, which is the one
+# outcome indistinguishable from a pass.
+TABLE="crates/pdfcer-gui-base/src/units.rs"
+SRC_ROOTS=("crates/pdfcer-gui/src" "crates/pdfcer-gui-base/src")
 
 # Three families, all narrow enough that a hit is always a real second copy.
 #
@@ -254,12 +258,14 @@ if [ ! -f "$TABLE" ]; then
     echo "  'no table' — which is not the same as 'no second copies'."
     exit 2
 fi
-if [ ! -d "$SRC_ROOT" ]; then
-    echo "unit-conversion: SKIPPED — $SRC_ROOT does not exist."
-    exit 2
-fi
+for root in "${SRC_ROOTS[@]}"; do
+    if [ ! -d "$root" ]; then
+        echo "unit-conversion: SKIPPED — $root does not exist."
+        exit 2
+    fi
+done
 
-offenders=$(scan "$SRC_ROOT")
+offenders=$(for root in "${SRC_ROOTS[@]}"; do scan "$root"; done)
 
 if printf '%s' "$offenders" | grep -q .; then
     echo "unit-conversion: FAIL — a second length conversion outside $TABLE:"
@@ -267,7 +273,7 @@ if printf '%s' "$offenders" | grep -q .; then
     cat <<'EOF'
 
 Every conversion between PDF points and a length an operator reads or types
-goes through crates/pdfcer-gui/src/units.rs:
+goes through crates/pdfcer-gui-base/src/units.rs:
 
     units::mm_from_points(pt)          points -> millimetres
     units::points_from_mm(mm)          millimetres -> points

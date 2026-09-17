@@ -434,8 +434,20 @@ if [ "${1:-}" = "--self-test" ]; then
     exit $?
 fi
 
-SRC_DIR="${1:-crates/pdfcer-gui/src}"
+# Default: BOTH GUI crates. The floor crate carries 30 `ui-text-exempt:`
+# markers, and a marker is only meaningful while something scans the file it
+# sits in — drop that root and the exemptions become decorative while the
+# literals beside them go unchecked, with no gate turning red.
+#
+# An explicit argument list overrides the default, which is what an ad-hoc
+# scan of one tree uses.
+if [ "$#" -gt 0 ]; then
+    SRC_DIRS=("$@")
+else
+    SRC_DIRS=("crates/pdfcer-gui/src" "crates/pdfcer-gui-base/src")
+fi
 
+for SRC_DIR in "${SRC_DIRS[@]}"; do
 if [ ! -d "$SRC_DIR" ]; then
     echo "ui-strings: SKIPPED — no $SRC_DIR" >&2
     echo "  Run from the repository root, or pass a tree to scan." >&2
@@ -447,7 +459,7 @@ if hits=$(scan_tree "$SRC_DIR"); then
     echo "ui-strings: clean — $(count_files "$SRC_DIR") .rs file(s) scanned recursively under $SRC_DIR,"
     echo "            no operator-visible literals outside the catalog"
     echo "            catalog (excluded, relative to $SRC_DIR): ${CATALOG_RELPATHS[*]}"
-    exit 0
+    continue
 fi
 
 printf '%s\n' "$hits"
@@ -458,3 +470,7 @@ echo "Move each into the catalog (rule R1), or, if it is genuinely not"
 echo "operator-visible, append '// ui-text-exempt: <reason>' to the line"
 echo "(or put the reason in the comment block directly above it)."
 exit 1
+done
+
+# Every root scanned clean.
+exit 0

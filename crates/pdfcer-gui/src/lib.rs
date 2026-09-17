@@ -55,11 +55,6 @@
 
 #![forbid(unsafe_code)]
 
-// O122 — finding the operator's installed Acrobat and handing the open
-// document over to it. Everything that can only be true of a real machine
-// (reading the registry, starting a process) is behind a trait in there, so
-// the decisions are testable without either. See its header.
-pub mod acrobat;
 pub mod app;
 pub mod canvas;
 // ⚠ THE **OS** CLIPBOARD, and it is NOT `canvas::clipboard`.
@@ -74,7 +69,6 @@ pub mod canvas;
 // module header says at length what is missing and why shipping half of it
 // would be worse than shipping none.
 pub mod clipboard;
-pub mod diag;
 // The shell's stationary, screen-anchored surfaces — Print today, Properties
 // and the settings host to come. A dialog is one transaction with a start and
 // an end; a panel is somewhere you dip in and out of. See DIALOGS' own header
@@ -138,11 +132,6 @@ pub mod protect;
 // overwrites the file it came from.
 pub mod redact;
 pub mod render;
-/// A string the operator typed that must never reach a log — one type, and its
-/// whole reason for existing is its `Debug`. See its header: a `{:?}` on an
-/// action carrying a password writes it into the trace file `tools/ui-verify`
-/// keeps as evidence.
-pub mod secret;
 // The pdfcer shell definition — the seven-tab ribbon, three modes, QAT and
 // keymap, expressed as DATA over `egui-shell`'s manifest types rather than
 // as rendering code. See SHELL_FRAMEWORK.md; this module is the sole
@@ -193,26 +182,19 @@ pub mod text;
 /// never folded into one badge, and `NotChecked` renders as itself.
 pub mod trust;
 
-/// **The one length-conversion table for this program.**
-///
-/// Points to millimetres, inches, metres or any other engine [`Unit`], and
-/// back. Every operator-facing length goes through it, and the gate
-/// `tools/gates/check-unit-conversion.sh` fails the build when a second copy
-/// of the constant appears anywhere under `src/`.
-///
-/// ★ It exists because of a measured defect, not for tidiness: a sheet of
-/// exactly 210.5 mm rendered `210` in the page-thumbnail tooltip and `211`
-/// in the print dialogue. Both surfaces computed the same value; they disagreed
-/// on the ROUNDING RULE, because half the program wrote `.round()` (half away
-/// from zero, the CAD convention) and the other half wrote `{:.0}` in a format
-/// string, which is Rust's default and rounds half to even. The module's header
-/// argues that choice rather than leaving it to whichever spelling a caller
-/// reached for.
-///
-/// [`Unit`]: pdfcer_core::dimension::Unit
-pub mod units;
-
 pub mod viewer;
+
+// The floor of this crate's stack, re-exported so that `crate::diag::…`,
+// `crate::units::…`, `crate::secret::…` and `crate::acrobat::…` mean what
+// they have always meant. THEY LIVE IN `pdfcer-gui-base` — a separate crate,
+// and that is the point: cargo forbids a cycle between crates, so nothing in
+// there can call back up into this one. See that crate's `Cargo.toml` for
+// the admission test and DESIGNS.md for the staged plan it is stage 1 of.
+//
+// The alternative was to rewrite ~1,200 call sites to say `pdfcer_gui_base::`.
+// That would document the crossing at every use site and buy nothing else: the
+// boundary is in the crate graph, not in the spelling.
+pub use pdfcer_gui_base::{acrobat, diag, secret, units};
 
 use std::path::PathBuf;
 

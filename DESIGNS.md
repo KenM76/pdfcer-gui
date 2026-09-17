@@ -1315,6 +1315,24 @@ point. The point is that a crate boundary is a compiler-enforced arrow: once
 mechanism that produced the cycles above. Do this first because it is safe, and
 because it makes every later stage's direction checkable rather than argued.
 
+**The call sites do not move.** `pdfcer-gui`'s crate root re-exports the four
+names — `pub use pdfcer_gui_base::{acrobat, diag, secret, units};` — so all
+~1,200 existing `crate::diag::…` spellings compile unchanged. This is not a
+softening of the boundary: **the arrow is in the crate graph, not in how a
+caller spells a path**, and a module in the base crate cannot reach up into the
+application whichever spelling is used, because the code does not compile if it
+tries. What it buys is that the stage is a handful of files rather than a
+several-hundred-file mechanical diff — see the scheduling constraint below,
+which Stage 1 therefore escapes and Stages 2–3 do not.
+
+**What can silently break is the gates, not the code.** Fourteen gate scripts
+hard-code `crates/pdfcer-gui/src` as their scan root. One of them —
+`check-unit-conversion.sh` — names `units.rs` by path and fails loudly, which
+is the good case. The rest go **vacuously green**: the subject left the root,
+so the detector finds nothing and reports clean. Every stage that moves files
+must re-point those roots and falsify each one afterwards, because a blinded
+gate is indistinguishable from a passing one.
+
 **Stage 2 — what Stage 1 makes acyclic.** `ocr` (1,144 code) references only
 `units`, so the moment `units` is in the base crate `ocr` has no upward
 reference left and follows. `trust`, `pagedrag` and `pagetree` are one small
@@ -1341,11 +1359,17 @@ must end up thin, or Stage 3 buys a directory rearrangement and no seconds.
 
 ### A scheduling constraint that applies to every stage
 
-Stage 1 alone rewrites the import line of every call site that reaches `diag`
-— 430 from `app` and 242 from `panels` before counting the other fourteen
-modules. That is a wide, shallow, mechanical diff, and a wide mechanical diff
-is the worst possible neighbour for feature work in the same files. Run a
-stage in one sitting against a clean tree, or not that day.
+A stage that rewrites call sites touches every file that reaches the moved
+module — 430 from `app` and 242 from `panels` for `diag` alone, before counting
+the other fourteen. That is a wide, shallow, mechanical diff, and a wide
+mechanical diff is the worst possible neighbour for feature work in the same
+files. Run such a stage in one sitting against a clean tree, or not that day.
+
+A re-export at the crate root avoids this entirely, and Stage 1 uses one. It is
+available to Stages 2 and 3 as well, and the reason it will not stretch as far
+there is that those stages split modules that are *called from* the top crate
+as well as calling into it — a name re-exported at the root does not resolve a
+cycle, it only hides which crate a name came from.
 
 ### The open question, which is the operator's
 

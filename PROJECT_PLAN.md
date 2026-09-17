@@ -328,7 +328,8 @@ what follows names the *kinds* rather than the members. Measure the membership
 rather than quoting this list:
 
 ```bash
-grep -rhoE 'PDFCER_DIAG[A-Z_]*' crates/pdfcer-gui/src tools --include=*.rs -r | sort -u
+grep -rhoE 'PDFCER_DIAG[A-Z_]*' crates/pdfcer-gui/src crates/pdfcer-gui-base/src \
+  tools --include=*.rs -r | sort -u
 ```
 
 That command reports 28 lines: the 26 seams, plus `PDFCER_DIAG` itself (the
@@ -485,6 +486,7 @@ git checkout -b gui-foldin
 git tag pre-gui-foldin                                   # the rollback point
 
 cp -r /d/Dev/pdfcer-gui/crates/pdfcer-gui        crates/pdfcer-gui
+cp -r /d/Dev/pdfcer-gui/crates/pdfcer-gui-base   crates/pdfcer-gui-base
 cp -r /d/Dev/pdfcer-gui/crates/native-window     crates/native-window
 cp -r /d/Dev/pdfcer-gui/crates/native-clipboard  crates/native-clipboard
 cp -r /d/Dev/pdfcer-gui/tools/ui-verify          tools/ui-verify
@@ -495,11 +497,13 @@ cp -r /d/Dev/pdfcer-gui/fixtures                 fixtures/gui
 Then four edits, and no others:
 
 1. **Engine root `Cargo.toml`** — add `crates/pdfcer-gui`,
-   `crates/native-window`, `crates/native-clipboard` and `tools/ui-verify` to
+   `crates/pdfcer-gui-base`, `crates/native-window`, `crates/native-clipboard`
+   and `tools/ui-verify` to
    `[workspace] members`, and add `egui-shell` to `[workspace.dependencies]`
    pointing at `D:\Dev\egui-shell`.
-2. **`crates/pdfcer-gui/Cargo.toml`** — replace the three
-   `git = "file:///D:/Dev/pdfcer"` lines with `path = "../pdfcer-core"`,
+2. **`crates/pdfcer-gui/Cargo.toml` and `crates/pdfcer-gui-base/Cargo.toml`** —
+   in each, replace every
+   `git = "file:///D:/Dev/pdfcer"` line with `path = "../pdfcer-core"`,
    `path = "../pdfcer-render"`, `path = "../pdfcer-print"`, keeping each line's
    `default-features` setting exactly as it is; replace `version = "0.1.0"` with
    `version.workspace = true`, since the crate is versioned by the workspace it
