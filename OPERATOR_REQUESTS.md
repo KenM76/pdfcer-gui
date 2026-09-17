@@ -856,6 +856,33 @@ that is now deliberate rather than incidental.
    reserves the right to report them; this row records that the sweep is owed
    before he has to.
 
+## O210 — ◑ **HALF BUILT AND MEASURED** — rebuilding takes too long, and the answer was not DLLs
+
+> *"would compiling new versions and testing be faster and easier and less
+> tokens if we switch from building a single exe every time to compiling with
+> dlls?"* — and, told the crate is one enormous compilation unit,
+> *"Isn't the GUI crate being one giant piece poor form anyway?"*
+
+**The half that is built.** Cargo keeps no incremental state in the `release`
+profile by default, and `release` is this project's development loop — he runs
+the release build and `ui-verify` drives `target/release/pdfcer-gui.exe`. One
+key in the workspace manifest: a one-file edit rebuilt in **60s before, 28s
+after**. Measured, committed, gates green.
+
+**Why not dynamic libraries, in any flavour.** `cargo build --timings` splits
+the 60s into frontend 21.9s, codegen 34.9s, **link 2.6s**. Every form of
+dynamic linking — `.dll`, `.so`, Rust's own `dylib` — divides or defers the
+link and nothing else, so the ceiling on the whole idea is 4% of the cost,
+bought with an `extern "C"` boundary across calls that pass `egui` types. Rust
+has no stable ABI between dynamic objects, so its own flavour additionally
+requires every piece built by the identical compiler.
+
+**The half that is not built, and he is right that it is poor form.** The
+remaining 57s is one crate of **422,140 lines / 167,282 code lines in 727
+files**. The design is `DESIGNS.md` — *"The GUI is one crate, and its five
+largest modules call each other in both directions"*. Not started; it is a
+staged refactor, not an afternoon, and the first stage is safe and small.
+
 ## O177–O189 — `FEATURE.txt` — thirteen rows from one file, FILED BEFORE ANY WORK
 
 **Source:** `C:\Users\Ken\OneDrive\pdfTests\FEATURE.txt`, written, read the same morning. Every paragraph in it became a row below, in the

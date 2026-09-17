@@ -1243,3 +1243,113 @@ counts off the Objects panel rows.
 The design owed is a cache keyed by object identity and invalidated on the edit
 epoch, with `object_kind` left as the census path either way. The driven check
 owed is that scrolling the Objects panel over that sheet holds the frame budget.
+
+---
+
+## The GUI is one crate, and its five largest modules call each other in both directions
+
+### What is true
+
+`crates/pdfcer-gui` is **422,140 lines / 167,282 code lines across 727 files**,
+compiled as a single unit. Nothing is over the 1,500-line file limit — the four
+largest files sit at 1,486, 1,481, 1,473 and 1,471 — so `check-file-size.sh`
+reports a well-factored crate. R2 bounds the file; nothing bounds the crate.
+
+Two costs, and the second is the one that matters.
+
+**The build cost, measured.** A leaf-file edit and a rebuild, both crates
+incremental:
+
+| crate | code lines | rebuild |
+|---|---|---|
+| `egui-shell` | 22,122 | **1.36s** |
+| `pdfcer-gui` | 167,282 | **27.6s** (25.0s lib + 2.6s link) |
+
+7.6× the code, 18× the wait. The relationship is superlinear, which is why
+subdividing is worth more than the line counts suggest.
+
+**The encapsulation cost.** A crate is Rust's only enforced boundary. One crate
+means one boundary, and inside it everything can reach everything: **5,990 bare
+`pub` items against 495 `pub(crate)`**, in a crate whose sole external consumer
+is its own `main.rs`. There is no layer a compiler will defend, so none formed.
+
+### What that permitted, and it is the reason a split is not one commit
+
+Cross-module reference counts, `crate::<module>` paths with comment lines
+stripped — `python tools/module-graph.py`, which also prints the cycle list
+below and is the only thing worth quoting, because these numbers move:
+
+| module | code | depends on (top) |
+|---|---|---|
+| `canvas` | 43,977 | `app`:263, `diag`:258, `viewer`:82, `text`:54, `panels`:46 |
+| `app` | 32,135 | `diag`:430, `text`:346, `canvas`:263, `shell`:96, `panels`:77 |
+| `text` | 26,025 | `app`:27, `units`:26, `canvas`:24 |
+| `panels` | 23,581 | `diag`:242, `app`:192, `canvas`:97, `text`:87 |
+| `dialogs` | 18,977 | `diag`:298, `app`:207, `text`:88, `canvas`:25 |
+
+Those five are 86% of the crate, and **every pair among them is mutually
+recursive**: `app`→`canvas` 263 against `canvas`→`app` 273, `app`→`text` 346
+against `text`→`app` 27, and so on. The crate as a whole carries **25 mutually
+recursive module pairs, `app` in eleven of them**.
+
+**Cargo forbids a dependency cycle between crates.** So no arrangement of these
+five into separate crates compiles until the cycles are cut, and cutting them
+is the work — the `git mv` afterwards is an afternoon.
+
+The shape of the cycle is the same everywhere: `app` owns `PdfcerApp`, the
+drawing modules take `&mut PdfcerApp` because they need the whole of it, and
+`app` calls them to draw. State and painting are in one graph.
+
+### The staged plan
+
+**Stage 0 — done.** `incremental = true` on the release profile: 60s → 28s.
+
+**Stage 1 — the acyclic floor, and a gate to keep it flat.** `diag` (975),
+`units` (446), `secret` (218) and `acrobat` (1,333) each depend on **nothing**
+in the crate, and are depended on by 16, 6, 4 and 3 modules respectively. They
+move to a `pdfcer-gui-base` crate as they stand.
+
+The build win is near zero — ~3,000 lines of 422,000 — and that is not the
+point. The point is that a crate boundary is a compiler-enforced arrow: once
+`diag` is beneath, nothing can quietly call back up into the app, which is the
+mechanism that produced the cycles above. Do this first because it is safe, and
+because it makes every later stage's direction checkable rather than argued.
+
+**Stage 2 — what Stage 1 makes acyclic.** `ocr` (1,144 code) references only
+`units`, so the moment `units` is in the base crate `ocr` has no upward
+reference left and follows. `trust`, `pagedrag` and `pagetree` are one small
+edge each from the same position.
+
+`icons` looks like a Stage 2 candidate and is not: it is in a cycle with
+`shell` (`icons`→`shell` 1, `shell`→`icons` 4). One reference in one
+direction is the whole obstruction, which is the argument for the gate in
+Stage 1 — an edge that small is invisible to review and fatal to a split.
+`stamps`, `sign`, `redact`, `protect` and `clipboard` reach up into `app` or
+`text` and wait for Stage 3.
+
+**Stage 3 — the one that pays, and the one with real risk.** Cut
+`app` ↔ {`canvas`, `text`, `panels`, `dialogs`} by extracting the *state* the
+painters need from the *wiring* that calls them, into a crate beneath both. The
+target shape is: base → state → {canvas, text, panels, dialogs} as siblings →
+a thin top crate that wires and owns `main`.
+
+**The direction is load-bearing and easy to get backwards.** A split only pays
+when the big pieces sit at the BOTTOM and their dependents are small: editing a
+crate recompiles it and everything above it. Put `canvas` beneath a 32,000-line
+`app` and a canvas edit still recompiles `app` — 18× on nothing. The top crate
+must end up thin, or Stage 3 buys a directory rearrangement and no seconds.
+
+### A scheduling constraint that applies to every stage
+
+Stage 1 alone rewrites the import line of every call site that reaches `diag`
+— 430 from `app` and 242 from `panels` before counting the other fourteen
+modules. That is a wide, shallow, mechanical diff, and a wide mechanical diff
+is the worst possible neighbour for feature work in the same files. Run a
+stage in one sitting against a clean tree, or not that day.
+
+### The open question, which is the operator's
+
+Stage 3 is a refactor of the crate's five largest modules, and the payoff is
+developer seconds rather than anything he can see in the program. Whether it
+runs before or after the current feature work is his call, and nothing in
+Stages 1–2 forecloses either answer.
