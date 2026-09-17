@@ -913,11 +913,14 @@ bought with an `extern "C"` boundary across calls that pass `egui` types. Rust
 has no stable ABI between dynamic objects, so its own flavour additionally
 requires every piece built by the identical compiler.
 
-**The half that is not built, and he is right that it is poor form.** The
-remaining 57s is one crate of **422,140 lines / 167,282 code lines in 727
+**The half that is being built, and he is right that it is poor form.** The
+remaining 57s is one crate of **419,150 lines / 166,188 code lines in 720
 files**. The design is `DESIGNS.md` — *"The GUI is one crate, and its five
-largest modules call each other in both directions"*. Not started; it is a
-staged refactor, not an afternoon, and the first stage is safe and small.
+largest modules call each other in both directions"*. Stage 1 is done: the
+four modules that referenced nothing above them are a `pdfcer-gui-base` crate,
+so the arrow beneath them is now one cargo enforces. That stage was for the
+boundary, not the clock — it moved 3,060 lines. Stage 3 is the one that pays
+seconds, and it is a staged refactor rather than an afternoon.
 
 ## O177–O189 — `FEATURE.txt` — thirteen rows from one file, FILED BEFORE ANY WORK
 

@@ -1250,7 +1250,7 @@ owed is that scrolling the Objects panel over that sheet holds the frame budget.
 
 ### What is true
 
-`crates/pdfcer-gui` is **422,140 lines / 167,282 code lines across 727 files**,
+`crates/pdfcer-gui` is **419,150 lines / 166,188 code lines across 720 files**,
 compiled as a single unit. Nothing is over the 1,500-line file limit — the four
 largest files sit at 1,486, 1,481, 1,473 and 1,471 — so `check-file-size.sh`
 reports a well-factored crate. R2 bounds the file; nothing bounds the crate.
@@ -1263,15 +1263,22 @@ incremental:
 | crate | code lines | rebuild |
 |---|---|---|
 | `egui-shell` | 22,122 | **1.36s** |
-| `pdfcer-gui` | 167,282 | **27.6s** (25.0s lib + 2.6s link) |
+| `pdfcer-gui` | 166,188 | **27.6s** (25.0s lib + 2.6s link) |
 
 7.6× the code, 18× the wait. The relationship is superlinear, which is why
 subdividing is worth more than the line counts suggest.
 
 **The encapsulation cost.** A crate is Rust's only enforced boundary. One crate
-means one boundary, and inside it everything can reach everything: **5,990 bare
-`pub` items against 495 `pub(crate)`**, in a crate whose sole external consumer
-is its own `main.rs`. There is no layer a compiler will defend, so none formed.
+means one boundary, and inside it everything can reach everything. Counting item
+declarations by visibility —
+
+```bash
+grep -rhoE '^[[:space:]]*pub (fn|struct|enum|trait|const|static|type|mod|union) ' \
+  --include='*.rs' crates/pdfcer-gui/src | wc -l          # and again for pub(crate)
+```
+
+— gives **5,924 bare `pub` against 322 `pub(crate)`**, in a crate whose sole
+external consumer is its own `main.rs`. There is no layer a compiler will defend, so none formed.
 
 ### What that permitted, and it is the reason a split is not one commit
 
@@ -1281,13 +1288,13 @@ below and is the only thing worth quoting, because these numbers move:
 
 | module | code | depends on (top) |
 |---|---|---|
-| `canvas` | 43,977 | `app`:263, `diag`:258, `viewer`:82, `text`:54, `panels`:46 |
-| `app` | 32,135 | `diag`:430, `text`:346, `canvas`:263, `shell`:96, `panels`:77 |
-| `text` | 26,025 | `app`:27, `units`:26, `canvas`:24 |
-| `panels` | 23,581 | `diag`:242, `app`:192, `canvas`:97, `text`:87 |
-| `dialogs` | 18,977 | `diag`:298, `app`:207, `text`:88, `canvas`:25 |
+| `canvas` | 43,977 | `app`:273, `viewer`:82, `text`:54, `panels`:46 |
+| `app` | 32,135 | `text`:346, `canvas`:263, `shell`:96, `panels`:77 |
+| `text` | 26,025 | `app`:27, `canvas`:24, `redact`:10 |
+| `panels` | 23,581 | `app`:192, `canvas`:97, `text`:87, `pagedrag`:16 |
+| `dialogs` | 18,977 | `app`:207, `text`:88, `canvas`:25, `sign`:20 |
 
-Those five are 86% of the crate, and **every pair among them is mutually
+Those five are 87% of the crate, and **every pair among them is mutually
 recursive**: `app`→`canvas` 263 against `canvas`→`app` 273, `app`→`text` 346
 against `text`→`app` 27, and so on. The crate as a whole carries **25 mutually
 recursive module pairs, `app` in eleven of them**.
@@ -1304,38 +1311,41 @@ drawing modules take `&mut PdfcerApp` because they need the whole of it, and
 
 **Stage 0 — done.** `incremental = true` on the release profile: 60s → 28s.
 
-**Stage 1 — the acyclic floor, and a gate to keep it flat.** `diag` (975),
-`units` (446), `secret` (218) and `acrobat` (1,333) each depend on **nothing**
-in the crate, and are depended on by 16, 6, 4 and 3 modules respectively. They
-move to a `pdfcer-gui-base` crate as they stand.
+**Stage 1 — done.** `diag`, `units`, `secret` and `acrobat` — fan-out zero,
+fan-in 16, 6, 4 and 3 — are a `pdfcer-gui-base` crate. The build win was near
+zero — the base crate is 3,060 lines, 1,096 of them code — and was never the
+point: a crate boundary is an
+arrow the compiler enforces, so nothing down there can quietly call back up into
+the application, which is the mechanism that produced the cycles above.
 
-The build win is near zero — ~3,000 lines of 422,000 — and that is not the
-point. The point is that a crate boundary is a compiler-enforced arrow: once
-`diag` is beneath, nothing can quietly call back up into the app, which is the
-mechanism that produced the cycles above. Do this first because it is safe, and
-because it makes every later stage's direction checkable rather than argued.
+Two things it established that Stages 2 and 3 inherit.
 
-**The call sites do not move.** `pdfcer-gui`'s crate root re-exports the four
-names — `pub use pdfcer_gui_base::{acrobat, diag, secret, units};` — so all
-~1,200 existing `crate::diag::…` spellings compile unchanged. This is not a
-softening of the boundary: **the arrow is in the crate graph, not in how a
-caller spells a path**, and a module in the base crate cannot reach up into the
-application whichever spelling is used, because the code does not compile if it
-tries. What it buys is that the stage is a handful of files rather than a
-several-hundred-file mechanical diff — see the scheduling constraint below,
-which Stage 1 therefore escapes and Stages 2–3 do not.
+**The call sites need not move.** `pdfcer-gui`'s crate root re-exports the four
+names, so ~1,200 `crate::diag::…` spellings compile unchanged and the stage was
+a handful of files instead of a several-hundred-file mechanical diff. This is not
+a softening of the boundary: **the arrow is in the crate graph, not in how a
+caller spells a path.** See the scheduling constraint below for what it buys and
+for why it will not stretch as far in Stages 2 and 3.
 
-**What can silently break is the gates, not the code.** Fourteen gate scripts
-hard-code `crates/pdfcer-gui/src` as their scan root. One of them —
-`check-unit-conversion.sh` — names `units.rs` by path and fails loudly, which
-is the good case. The rest go **vacuously green**: the subject left the root,
-so the detector finds nothing and reports clean. Every stage that moves files
-must re-point those roots and falsify each one afterwards, because a blinded
-gate is indistinguishable from a passing one.
+**What silently breaks is the gates, not the code, and every later stage pays it
+again.** Fourteen gate scripts hard-code `crates/pdfcer-gui/src` as their scan
+root. One names its table file by path and fails loudly; the rest go **vacuously
+green** — the subject leaves the root, the detector finds nothing, and a clean
+report is indistinguishable from an empty one. Any stage that moves files
+re-points those roots and then **falsifies each one against a planted violation
+under the new root**. Re-running a re-pointed gate green proves nothing; it was
+green while blind. A gate's own `--self-test` usually cannot supply the evidence
+either, because it plants into a temp directory and therefore exercises the
+scanner rather than the root list — the one part a move does not touch.
 
-**Stage 2 — what Stage 1 makes acyclic.** `ocr` (1,144 code) references only
-`units`, so the moment `units` is in the base crate `ocr` has no upward
-reference left and follows. `trust`, `pagedrag` and `pagetree` are one small
+Two generated artefacts move with a workspace member and are named in no code
+diff: `THIRD_PARTY_LICENSES.md` (`cargo-about` enumerates members, so a new
+crate is a new line even when it adds no dependency) and the fold-in runbook's
+copy list and manifest edits in `PROJECT_PLAN.md` §7.3.
+
+**Stage 2 — what Stage 1 made acyclic.** `ocr` (1,144 code) references only
+`units`, which is now beneath it, so `ocr` has no upward reference left and
+follows. `trust`, `pagedrag` and `pagetree` are one small
 edge each from the same position.
 
 `icons` looks like a Stage 2 candidate and is not: it is in a cycle with
@@ -1365,7 +1375,7 @@ the other fourteen. That is a wide, shallow, mechanical diff, and a wide
 mechanical diff is the worst possible neighbour for feature work in the same
 files. Run such a stage in one sitting against a clean tree, or not that day.
 
-A re-export at the crate root avoids this entirely, and Stage 1 uses one. It is
+A re-export at the crate root avoids this entirely, as Stage 1 did. It is
 available to Stages 2 and 3 as well, and the reason it will not stretch as far
 there is that those stages split modules that are *called from* the top crate
 as well as calling into it — a name re-exported at the root does not resolve a
