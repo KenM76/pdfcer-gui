@@ -187,9 +187,12 @@ pub mod drop;
 /// the state machine, and the placement arithmetic. No `egui::Context`,
 /// no window: everything here is testable with nothing open.
 pub mod float;
-/// **Carrying a float window back over the dock** — the one gesture whose
-/// pointer this crate cannot sense for itself. Its header carries why.
+/// **Carrying a float window back over the dock** — what a carried float
+/// means to the dock: the compass, the preview and the drop.
 pub mod floatdrag;
+/// **The gesture that carries it** — a drag on the float window's own header
+/// strip, and the arithmetic between two window origins that places it.
+pub mod floatgrab;
 /// **The window a floated panel is drawn in.** [`Dock::show_floating`],
 /// the viewport, and the header strip that offers the way back.
 pub mod floatwin;

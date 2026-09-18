@@ -89,10 +89,12 @@ impl DockState {
     /// **Report a float window being carried back over the dock**, once per
     /// frame, for as long as the gesture lasts.
     ///
-    /// The extension point that lets the dock offer its drop grammar to a
-    /// gesture whose pointer it cannot see — see [`super::floatdrag`], whose
-    /// header carries why that pointer is the application's to supply and what
-    /// space it must be in.
+    /// [`super::Dock::show_floating`] calls this for its own header strips, so
+    /// an application that uses the shell's float windows needs nothing here.
+    /// It stays public for one that draws them another way, and because the
+    /// conversion needs two window origins a platform may not report — see
+    /// [`super::floatgrab`] for the arithmetic and [`super::floatdrag`] for
+    /// what the dock does with the answer.
     ///
     /// **Consumed, not held.** The next [`super::Dock::show`] takes it, so a
     /// caller that stops renewing the report ends the gesture with nothing

@@ -269,6 +269,12 @@ impl Dock<'_> {
         let mut intents: Vec<Intent> = Vec::new();
         let mut unplaced = 0usize;
         let mut tab_menu = self.tab_menu.take();
+        // ★ At most one carry per frame, because there is one pointer. Held
+        // across the loop rather than written straight into `state` so that a
+        // viewport callback re-run within the frame overwrites its own answer
+        // instead of appending a second one — the discipline `geometry` and
+        // `body_extent` hold, for the same reason.
+        let mut carried: Option<super::floatdrag::FloatDrag> = None;
 
         for f in &snapshot.floating {
             let size = float::clamp_size(f.size_pts);
@@ -355,7 +361,7 @@ impl Dock<'_> {
                 }
                 let inner = ui.max_rect().shrink(BODY_MARGIN_PTS);
                 let (header_rect, body_rect) = split_header(inner);
-                if let Some(handler) = tab_menu.as_deref_mut() {
+                let strip = if let Some(handler) = tab_menu.as_deref_mut() {
                     let response = self.draw_header(ui, header_rect, &f.panel, &theme);
                     let mut tab = TabMenu::new(&f.panel, &response);
                     handler(&mut tab);
@@ -365,6 +371,7 @@ impl Dock<'_> {
                     if tab.dock_requested() {
                         dock_back = true;
                     }
+                    response
                 } else {
                     // ★ No handler, so the shell owns the strip — and the
                     // built-in offer is **Dock**, not Close. The OS window
@@ -374,9 +381,25 @@ impl Dock<'_> {
                     // away. This mirrors `tabs.rs`'s built-in "Close": a
                     // consumer that has not adopted the tab-menu seam still
                     // gets a usable surface.
-                    if self.draw_builtin_header(ui, header_rect, &f.panel, &theme) {
+                    let (docked, response) =
+                        self.draw_builtin_header(ui, header_rect, &f.panel, &theme);
+                    if docked {
                         dock_back = true;
                     }
+                    response
+                };
+                // ★★ The carry, sensed on the same strip both branches drew.
+                //
+                // Deliberately after the menu handler and not instead of it: a
+                // click on the strip is the menu, a drag on it is the carry,
+                // and one `Response` answers both because `egui` distinguishes
+                // them itself. Put here rather than in the caller because the
+                // caller would have to re-derive `header_rect` from
+                // `BODY_MARGIN_PTS` and [`split_header`] to find the strip at
+                // all — geometry that is this module's and would go stale in
+                // a copy of it.
+                if let Some(report) = super::floatgrab::carry(ui, class, &strip, &f.panel) {
+                    carried = Some(report);
                 }
                 let mut child = ui.new_child(
                     egui::UiBuilder::new()
@@ -447,6 +470,11 @@ impl Dock<'_> {
         report.layout_changed = apply_float_intents(&mut state.layout, &intents, &mut report);
         forget_closed_windows(ctx, state);
         state.floats_drawn = report.drawn.len();
+        // ★ Set unconditionally, including to `None`. The report is consumed
+        // by the next [`Dock::show`], so writing `None` is how a gesture that
+        // has ended stops offering a drop — see
+        // [`super::state::DockState::set_float_drag`].
+        state.set_float_drag(carried);
         report
     }
 
@@ -464,12 +492,15 @@ impl Dock<'_> {
             .map_or_else(|| panel.as_str().to_owned(), |i| i.label.clone())
     }
 
-    /// The header strip: the panel's name, sensed for a secondary click.
+    /// The header strip: the panel's name, sensed for a click **and a drag**.
     ///
-    /// Returns the `Response`, which goes straight to the application's
+    /// Returns the `Response`, which goes two places. To the application's
     /// tab-menu handler — so the float window's menu and the dock tab's
     /// menu are literally the same menu, resolved through the same
-    /// registry against the same conditions.
+    /// registry against the same conditions. And to [`super::floatgrab`],
+    /// which reads the drag half as the gesture that carries the window back
+    /// over the dock; the strip is the only surface in the window whose
+    /// pointer `egui` still reports once the cursor has left it.
     fn draw_header(
         &self,
         ui: &mut egui::Ui,
@@ -481,7 +512,7 @@ impl Dock<'_> {
             Some(info) => (info.label.clone(), info.accessible_name().to_owned()),
             None => (panel.as_str().to_owned(), panel.as_str().to_owned()),
         };
-        let response = ui.allocate_rect(rect, egui::Sense::click());
+        let response = ui.allocate_rect(rect, egui::Sense::click_and_drag());
         ui.painter().text(
             rect.left_center(),
             egui::Align2::LEFT_CENTER,
@@ -500,16 +531,23 @@ impl Dock<'_> {
     /// The strip an application that has adopted no tab-menu handler
     /// gets: a name and a **Dock** button.
     ///
-    /// Returns whether the button was pressed. See the call site for why
-    /// the built-in offer is Dock rather than Close.
+    /// Returns whether the button was pressed, and the strip's own
+    /// `Response` — which [`super::floatgrab`] reads for the carry, so a
+    /// consumer that has adopted no tab-menu handler still gets the gesture.
+    /// See the call site for why the built-in offer is Dock rather than
+    /// Close.
     fn draw_builtin_header(
         &self,
         ui: &mut egui::Ui,
         rect: Rect,
         panel: &PanelId,
         theme: &Theme,
-    ) -> bool {
+    ) -> (bool, egui::Response) {
         let mut docked = false;
+        // Allocated before the button is drawn, so the button is the later
+        // widget and wins the pointer over the part of the strip it covers.
+        // Reversed, the strip would swallow the one control in it.
+        let response = ui.allocate_rect(rect, egui::Sense::click_and_drag());
         let mut strip = ui.new_child(
             egui::UiBuilder::new()
                 .max_rect(rect)
@@ -529,7 +567,7 @@ impl Dock<'_> {
             egui::TextStyle::Body.resolve(strip.style()),
             theme.palette.text,
         );
-        docked
+        (docked, response)
     }
 }
 

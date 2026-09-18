@@ -5,16 +5,19 @@
 //! back and drops it into the compartment **the operator aimed at** rather than
 //! the one it was torn from.
 //!
-//! # Why the pointer is handed in rather than read
+//! # Why the pointer arrives as a report rather than being read here
 //!
-//! A float is drawn in a child viewport, so while its window is being carried
-//! the pointer that matters is over the *application* window and `egui`'s
-//! pointer in this context is not it. Locating it is a question about window
-//! origins, and `egui-shell` links no windowing crate, so the answer is
-//! supplied once per frame through
-//! [`super::state::DockState::set_float_drag`] and consumed by
-//! [`super::Dock::show`]. An application that cannot answer reports nothing,
-//! draws nothing, and still has the command route home.
+//! A float is drawn in a child viewport, and [`super::Dock::show`] runs in the
+//! application's. The pointer that matters belongs to the child for the whole
+//! gesture, so this module cannot read it where it stands; it is sensed and
+//! converted in [`super::floatgrab`], one frame earlier, and arrives through
+//! [`super::state::DockState::set_float_drag`].
+//!
+//! The seam stays public because the conversion needs two window origins and
+//! a platform may report neither — and because an application that draws its
+//! float windows some other way still has a way to offer the drop. A caller
+//! that cannot answer reports nothing, draws nothing, and still has the
+//! command route home.
 //!
 //! The report is consumed rather than read, so a gesture ends the moment the
 //! caller stops renewing it: a window closed mid-drag, or a platform that lost
