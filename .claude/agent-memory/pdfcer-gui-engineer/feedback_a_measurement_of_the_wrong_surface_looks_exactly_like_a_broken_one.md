@@ -209,3 +209,36 @@ of its plumbing. Before trusting a driven FAIL, grep its trace for the one fact
 that makes the behaviour *possible at all* — `pages=`, object count, selection
 count, whether the panel is the active tab. And when a failure message names a
 mechanism, **date the mechanism** before repeating it.
+
+### ★ FIFTH INSTANCE — the check sampled the right window, the right gesture, and the wrong REGION KIND — 2026-09-18
+
+Three assertions in one new file failed at once, each with a precise sentence,
+all about a drag-and-drop that worked perfectly.
+
+- Two asked *"is this affordance on screen?"* about a **pre-commit affordance**
+  — a drop compass, a tear outline. Every such thing is retired by the release,
+  which is what makes it an affordance rather than a mark on the document. The
+  present-tense reader can only ever answer "absent".
+- One asked *"does the landed panel have a tab?"*. **This dock draws no tab
+  strip while its rail is showing.** The panel was docked exactly where the
+  offer promised.
+
+★★ **The tell was in the failure text itself and needed no debugging**: each
+sentence listed its own subject in its *"regions drawn"* list, because the
+assertion used the live reader while the helpful what-I-found list used the
+ever-seen one. **If a check's error names its own subject as found, the check
+is asking a present-tense question about a past-tense subject.**
+
+**How to apply.** Two questions before believing any region assertion:
+
+1. *Is the subject retired by the gesture that proves it?* If yes, it needs an
+   anchored `declared_since(.., gesture_start)`, never `declared`. The anchor is
+   required — without it the helper is fossil-reading renamed.
+2. *Is the subject chrome the container is free not to draw?* Tab strips,
+   scrollbars, splitter grips, resize handles and title bars are all optional in
+   some configuration, and each has been somebody's oracle. Assert on content:
+   **every docked panel has a body; only some have a tab.**
+
+Full write-ups: `D:\dev\rag\egui\a_ui_rect_change_log_produces_confident_wrong_failures_in_BOTH_directions.md`
+(§ the tell) and
+`D:\dev\rag\egui\a_panels_presence_in_a_dock_must_be_asserted_on_its_body_because_a_tab_strip_is_a_property_of_the_compartment.md`.

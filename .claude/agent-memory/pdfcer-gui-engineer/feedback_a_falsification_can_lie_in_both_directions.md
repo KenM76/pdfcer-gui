@@ -134,3 +134,33 @@ that intermediate line in one test.
 
 Related: [[a-check-that-cannot-fail-is-not-evidence]],
 [[a-tripwire-keyed-on-your-own-intention-is-not-a-tripwire]].
+
+---
+
+## The scorer itself lies three more ways, and all three read CAUGHT-or-clean — 2026-09-18
+
+Thirteen plants against two driven dock checks, scored by a shell runner that
+greps the report for the defect sentence. Three of the thirteen were scored
+wrongly before the runner was fixed.
+
+- **The probe matched the check's own advertisement.** A `ui-verify` report
+  prints a `detects:` line describing what the check is *for*, in the same
+  words as the defect sentence. The probe `"release put"` matched that line, so
+  it read **CAUGHT** while a completely different branch ran.
+  ⇒ **Filter the report's self-description out before grepping it.** Anything a
+  check prints unconditionally is not evidence about this run.
+- **The probe was defeated by line wrapping.** A sentence long enough to wrap
+  never matches a multi-word probe. Read **NOT CAUGHT** over a perfect catch.
+  ⇒ Flatten newlines and squeeze whitespace before matching.
+- **★ The plant silently did not apply, and the run reported PASS.** A python
+  edit raised on a failed `assert`, the tree stayed clean, the check passed —
+  and a *green that means nothing was planted* is indistinguishable from *green
+  because the mechanism holds*. Caught only because the runner prints its own
+  verdict per plant rather than relying on the suite's.
+  ⇒ **A falsification runner must fail loudly when its own edit did not land** —
+  `git diff --stat` after planting, or a non-zero exit from the editor. Same
+  genus as [[a-commit-message-can-describe-work-that-never-landed]].
+
+**How to apply:** a falsification score has three inputs — the plant applied,
+the check ran, the probe matched — and all three can fail silently in the
+direction that looks like success. Print all three per plant.
