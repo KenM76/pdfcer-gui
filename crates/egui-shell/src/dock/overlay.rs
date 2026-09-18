@@ -2,10 +2,11 @@
 //! it is being held over, and the compartment a release would produce.
 //!
 //! [`super::drag`] owns a drag along its own tab strip, where the affordance is
-//! an insertion caret. This module owns everything else: a drag carried over a
-//! *different* compartment, which is the whole drop grammar
-//! ([`super::drop::DropTarget`]) and the gesture an operator of any docking
-//! application expects to reach it by.
+//! an insertion caret, and [`super::tear`] owns a drag carried out of the dock
+//! altogether. This module owns the middle: a drag over a *different*
+//! compartment, which is the whole drop grammar ([`super::drop::DropTarget`])
+//! and the gesture an operator of any docking application expects to reach it
+//! by.
 //!
 //! ## The three things it draws, and the one it does not
 //!
@@ -191,21 +192,21 @@ fn draw_zones(
 /// Not `gamma_multiply`, which scales an opaque colour's channels and so
 /// *darkens* it against the panel instead of letting the panel through. The
 /// zones sit over a panel body the operator must still be able to read.
-fn wash(c: Color32, alpha: u8) -> Color32 {
+pub(super) fn wash(c: Color32, alpha: u8) -> Color32 {
     // NOT A THEME COLOUR: arithmetic on a role the caller already read from
     // the palette. The channels are `c`'s; only the alpha is this module's.
     Color32::from_rgba_unmultiplied(c.r(), c.g(), c.b(), alpha)
 }
 
 /// How opaque a zone that is merely on offer is drawn.
-const RESTING_A: u8 = 26;
+pub(super) const RESTING_A: u8 = 26;
 
 /// How opaque the zone the pointer is in is drawn.
 ///
 /// Far enough above [`RESTING_A`] to be unmistakable at a glance, and still
 /// short of hiding the panel underneath — the operator is choosing between five
 /// places in a compartment whose contents are how they recognise it.
-const ARMED_A: u8 = 96;
+pub(super) const ARMED_A: u8 = 96;
 
 /// How opaque the hairline between two zones is.
 const EDGE_A: u8 = 140;
@@ -218,4 +219,4 @@ const ZONE_EDGE_PTS: f32 = 1.0;
 /// Heavier than the zone edges: the zones are the question and this is the
 /// answer, and the answer is frequently somewhere else on the screen entirely —
 /// a column that does not exist yet, on the far side of the dock.
-const OUTCOME_PTS: f32 = 2.0;
+pub(super) const OUTCOME_PTS: f32 = 2.0;

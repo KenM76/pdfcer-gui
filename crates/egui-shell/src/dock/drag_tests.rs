@@ -201,8 +201,9 @@ fn a_drag_released_where_it_started_is_not_a_reorder() {
 /// The second is a reorder the operator did not ask for. A boundary is
 /// resolved from x alone, and x is perfectly well defined over the middle of
 /// the document — so a drag pulled down into the page would quietly rearrange
-/// the strip it left. Every application of this class treats that gesture as
-/// a tear-out, and until there is one, it must do nothing.
+/// the strip it left. What that gesture means is [`super::tear`]'s subject and
+/// is asserted there; what it must never mean is a permutation of the strip the
+/// pointer has left, and that is what this measures.
 #[test]
 fn a_drag_pulled_off_the_strip_ends_and_reorders_nothing() {
     let mut h = Harness::new(three_tabs());
@@ -221,8 +222,15 @@ fn a_drag_pulled_off_the_strip_ends_and_reorders_nothing() {
     assert_eq!(h.report.tab_drag, None, "no caret over the document");
 
     h.frame(release(off_in_the_canvas));
-    assert_eq!(h.report.reordered, None);
-    assert_eq!(order(&h), ["pages", "bookmarks", "layers"]);
+    assert_eq!(
+        h.report.reordered, None,
+        "a release off the strip is no reorder"
+    );
+    // The panel left the strip, and the two that stayed are in the order they
+    // were in. A tear that also permuted its neighbours would satisfy
+    // `reordered == None` — the intent is not raised — while leaving the strip
+    // rearranged, so the remaining order is asserted and not merely the count.
+    assert_eq!(order(&h), ["bookmarks", "layers"]);
     // And the drag is over: another frame must not resurrect it.
     h.warm();
     assert_eq!(h.report.tab_drag, None);

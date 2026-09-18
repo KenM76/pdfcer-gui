@@ -411,7 +411,10 @@ fn draw_tab(
     if close_requested {
         ctx.intents.push(Intent::Close(panel.clone()));
     } else if float_requested {
-        ctx.intents.push(Intent::Float(panel.clone()));
+        ctx.intents.push(Intent::Float {
+            panel: panel.clone(),
+            at: None,
+        });
     } else if dock_requested {
         ctx.intents.push(Intent::Dock(panel.clone()));
     }

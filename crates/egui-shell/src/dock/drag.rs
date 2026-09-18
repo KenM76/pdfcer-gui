@@ -10,6 +10,12 @@
 //! [`egui::PointerButton::Primary`] rather than using `egui`'s
 //! button-agnostic `drag_started()`.
 //!
+//! Carried off its own strip the same gesture becomes a drop
+//! ([`super::overlay`]) or a tear-out ([`super::tear`]). This module owns the
+//! drag's **lifetime** whichever of the three it turns into: [`begin`] starts
+//! it, [`in_flight`] is how the other two ask what is being carried, and
+//! [`settle`] ends it and raises whatever the three of them decided.
+//!
 //! ## ★ The drag lives in `egui::Memory`, keyed on the dock, not on the strip
 //!
 //! It has to outlive a frame, and nothing else in the dock does — the layout
@@ -103,11 +109,11 @@ pub(super) fn begin(ui: &egui::Ui, ctx: &Ctx<'_>, panel: &PanelId, from: PanelAd
 /// rects rather than computed from a width, for the rule
 /// [`super::geometry::DockGeometry::push_tab`] carries.
 ///
-/// Cross-compartment drops are not this function: a drag over a *different*
-/// strip proposes nothing and draws nothing, which is honest — there is no
-/// grammar behind it yet, and a caret that promised an outcome the release
-/// would not deliver is the disclosure failure this project names failure
-/// mode #2.
+/// Cross-compartment drops are not this function. A drag over a *different*
+/// strip belongs to [`super::overlay`], which resolves and draws it once at
+/// the end of the frame, when every compartment is in [`Ctx::geometry`]. This
+/// one stands down there, so that one gesture never has two carets proposing
+/// two outcomes.
 ///
 /// ## ★ The band, and why it is not the strip's own rectangle
 ///
@@ -243,10 +249,10 @@ pub(super) fn in_flight(ui: &egui::Ui, ctx: &Ctx<'_>) -> Option<PanelId> {
 
 /// **End a drag that the operator has released**, wherever they released it.
 ///
-/// Called once, after both sides have drawn. Clearing the memory is
-/// unconditional on release; raising the intent is not, because a drag with no
-/// boundary this frame — its strip was not drawn, or the pointer left the band
-/// [`preview`] describes — has nothing to name and must land nowhere rather
+/// Called once, after all three affordances have had their say. Clearing the
+/// memory is unconditional on release; raising an intent is not, because a drag
+/// that none of the three claimed — its strip was not drawn, the pointer is on
+/// a seam inside the dock — has nothing to name and must land nowhere rather
 /// than land at a guess.
 pub(super) fn settle(ui: &egui::Ui, ctx: &mut Ctx<'_>) {
     let id = key(ctx);
@@ -263,13 +269,29 @@ pub(super) fn settle(ui: &egui::Ui, ctx: &mut Ctx<'_>) {
     // `TabDrag` would be a drag of the empty panel from column zero — a value
     // that means something and is never true.
     ui.ctx().data_mut(|d| d.remove::<TabDrag>(id));
-    // The strip's own caret wins where both are live, which cannot happen:
-    // [`preview`] runs only over the strip the drag began in, and
-    // [`super::overlay`] stands down on any frame that published. Reading them
-    // in a stated order says which affordance is in charge rather than leaving
-    // it to whichever field happens to be cleared first.
+    // ★ The invariant the stated order below exists to make unnecessary, and
+    // the only place it is measured. Each of the three affordances stands down
+    // on a frame where an earlier one published, and for two of them that is
+    // implied by geometry rather than by their guard — see `super::tear::draw`,
+    // whose stand-down no input can reach. An implication nothing checks is an
+    // implication that stops holding silently, so it is checked here, where
+    // every driven test in the crate runs through it.
+    debug_assert!(
+        u8::from(ctx.tab_drag.is_some())
+            + u8::from(ctx.drop_preview.is_some())
+            + u8::from(ctx.tear.is_some())
+            <= 1,
+        "two affordances answered one drag: caret={} compass={} tear={}",
+        ctx.tab_drag.is_some(),
+        ctx.drop_preview.is_some(),
+        ctx.tear.is_some()
+    );
+    // The strip's own caret wins, then the compass, then the torn window.
+    // Reading them in a stated order says which affordance is in charge rather
+    // than leaving it to whichever field happens to be cleared first.
     if let Some(preview) = ctx.tab_drag.take() {
         ctx.drop_preview = None;
+        ctx.tear = None;
         ctx.intents.push(Intent::ReorderTab {
             stack: StackAddr::from(preview.from),
             from: preview.from.tab,
@@ -277,12 +299,20 @@ pub(super) fn settle(ui: &egui::Ui, ctx: &mut Ctx<'_>) {
         });
         return;
     }
-    let Some(drop) = ctx.drop_preview.take() else {
+    if let Some(drop) = ctx.drop_preview.take() {
+        ctx.tear = None;
+        ctx.intents.push(Intent::MovePanel {
+            panel: drop.panel,
+            target: drop.landing.target,
+        });
+        return;
+    }
+    let Some(tear) = ctx.tear.take() else {
         return;
     };
-    ctx.intents.push(Intent::MovePanel {
-        panel: drop.panel,
-        target: drop.landing.target,
+    ctx.intents.push(Intent::Float {
+        panel: tear.panel,
+        at: Some(tear.at_pts),
     });
 }
 

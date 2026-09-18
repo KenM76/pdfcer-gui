@@ -80,6 +80,13 @@ pub struct DockFrameReport {
     /// of an affordance whose visible form is a wash of colour, for
     /// [`Self::tab_drag`]'s reason.
     pub drop_preview: Option<super::overlay::DropPreview>,
+    /// **A drag held clear of the dock, and the window a release would open.**
+    ///
+    /// Set for every frame the tear outline is painted and `None` on the frame
+    /// the release lands — [`Self::floated`] is the release, whichever route
+    /// raised it. [`Self::tab_drag`]'s reason for existing separately from the
+    /// paint applies here unchanged.
+    pub tear: Option<super::tear::TearPreview>,
     /// The panel the operator floated this frame, if any.
     pub floated: Option<PanelId>,
     /// The panel the operator docked back this frame, if any.

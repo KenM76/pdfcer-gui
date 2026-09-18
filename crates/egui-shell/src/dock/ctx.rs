@@ -82,7 +82,20 @@ pub(crate) enum Intent {
     /// one: floating a panel *removes it from the tree*, so a direct write
     /// mid-frame would pull a compartment out from under a body that had
     /// already been laid out into it.
-    Float(PanelId),
+    ///
+    /// ★ `at` is where the window should open, in **desktop** points, or
+    /// `None` for *"wherever an unplaced window goes"* — the cascade of
+    /// [`crate::dock::float::opening_position`]. The two routes to this
+    /// verb differ in exactly that: a drag out of the dock ended somewhere
+    /// on purpose and says where, a menu row has no pointer to speak of
+    /// and does not. One variant rather than two, so that the place which
+    /// knows what floating means stays one place.
+    Float {
+        /// Which panel.
+        panel: PanelId,
+        /// Where the window should open, in desktop points.
+        at: Option<[f32; 2]>,
+    },
     /// **Put a floating panel back where it came from.**
     ///
     /// The mirror of [`Self::Float`]. Raised by the float window's own
@@ -256,6 +269,14 @@ pub(crate) struct Ctx<'a> {
     /// is the reorder caret, the other is the drop compass, and `settle` reads
     /// them in that order.
     pub drop_preview: Option<super::overlay::DropPreview>,
+    /// **A drag held clear of the dock, and the window a release would open**,
+    /// proposed by [`super::tear`] after [`super::overlay`] has declined and
+    /// consumed by [`super::drag::settle`].
+    ///
+    /// The third of the three, and never live at the same time as either: the
+    /// caret, the compass and the torn window are one gesture's three answers,
+    /// and `settle` reads them in that order.
+    pub tear: Option<super::tear::TearPreview>,
     /// **Whether this side's rail was actually drawn this frame**, set by
     /// [`super::rail::draw`] before any stack on the side is laid out.
     ///
@@ -334,6 +355,7 @@ mod tests {
             geometry: DockGeometry::default(),
             tab_drag: None,
             drop_preview: None,
+            tear: None,
             rail_drawn: false,
             rail_show: crate::peek::Show::Inline,
         }
@@ -389,6 +411,7 @@ mod tests {
             geometry: DockGeometry::default(),
             tab_drag: None,
             drop_preview: None,
+            tear: None,
             rail_drawn: false,
             rail_show: crate::peek::Show::Inline,
         };

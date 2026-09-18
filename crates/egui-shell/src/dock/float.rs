@@ -367,6 +367,33 @@ impl DockLayout {
         true
     }
 
+    /// **Tear `panel` out into a window at a position the operator chose.**
+    ///
+    /// [`Self::float`] plus the placement, which is the whole difference
+    /// between the two routes to this verb: a drag out of the dock ended
+    /// somewhere deliberately and a menu row did not. Returns what
+    /// [`Self::float`] returns, and places nothing when it refused.
+    ///
+    /// `at` is in **desktop** points, the space
+    /// [`FloatingPanel::pos_pts`] is stored in — see its docs for why that
+    /// is not the application window's space. Nothing here judges whether
+    /// the position is reachable; [`honour_position`] does that on the way
+    /// out, on every frame, and a position that was sane when the drag
+    /// ended can stop being sane before the window is next opened.
+    pub fn float_at(&mut self, panel: &PanelId, at: [f32; 2]) -> bool {
+        if !self.float(panel) {
+            return false;
+        }
+        // The size is the one `float` just gave it. Passing it back through
+        // rather than reading it is what keeps this from being a second
+        // opinion about how big a fresh float is.
+        let size = self
+            .float_of(panel)
+            .map_or(DEFAULT_SIZE_PTS, |f| f.size_pts);
+        self.set_float_geometry(panel, Some(at), size);
+        true
+    }
+
     /// **Put a floating panel back where it came from.**
     ///
     /// Returns `false` when the panel is not floating.

@@ -499,12 +499,15 @@ fn a_release_over_a_splitter_docks_nothing() {
     assert_eq!(columns(&h, DockSide::Left), 2);
 }
 
-/// ★ **A drag pulled out over the document ends, and docks nothing.**
+/// ★ **A drag pulled out over the document is not a dock, and ends.**
 ///
-/// The canvas is where tearing a panel out will attach. Until it does, a
-/// release there must leave the layout alone *and* end the gesture: a drag that
-/// survived the release would carry its compass into the next frame, and the
-/// one after, with no button held to get rid of it.
+/// The canvas is where [`super::tear`] attaches, and what happens there is
+/// asserted in its own file. What must not happen is anything from *this* one:
+/// no compass over a document, no `moved`, and no compartment on the right-hand
+/// side quietly gaining a tab because the nearest stack won by default. The
+/// gesture must also end — a drag that survived its release would carry the
+/// compass into the next frame, and the one after, with no button held to get
+/// rid of it.
 #[test]
 fn a_release_over_the_document_docks_nothing_and_ends_the_drag() {
     let mut h = Harness::new(two_columns());
@@ -519,8 +522,17 @@ fn a_release_over_the_document_docks_nothing_and_ends_the_drag() {
     assert_eq!(h.report.drop_preview, None, "no compass over the document");
 
     h.frame(release(canvas));
-    assert_eq!(h.report.moved, None);
-    assert_eq!(tabs(&h, LEFT0), ["pages", "bookmarks"]);
+    assert_eq!(h.report.moved, None, "nothing was docked anywhere");
+    assert_eq!(
+        tabs(&h, LEFT0),
+        ["bookmarks"],
+        "the panel left, and only it"
+    );
+    assert_eq!(
+        tabs(&h, RIGHT),
+        ["properties"],
+        "no side gained it by default"
+    );
     // And the drag is over: another frame must not resurrect it.
     h.warm();
     assert_eq!(h.report.drop_preview, None);

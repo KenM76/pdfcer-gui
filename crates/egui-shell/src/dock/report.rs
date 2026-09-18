@@ -270,6 +270,17 @@ pub fn drop_outcome() -> String {
     format!("{PREFIX}.drop.outcome")
 }
 
+/// **The window a drag carried out of the dock would open** — the outline, at
+/// the pointer.
+///
+/// Carries no address for [`drop_outcome`]'s reason and one of its own: a torn
+/// panel is going somewhere the dock has no addresses for, and the rectangle is
+/// the whole of what there is to say about it.
+#[must_use]
+pub fn tear_outline() -> String {
+    format!("{PREFIX}.tear.outline")
+}
+
 /// One panel's body region — the rectangle the application drew into.
 #[must_use]
 pub fn body(panel: &PanelId) -> String {

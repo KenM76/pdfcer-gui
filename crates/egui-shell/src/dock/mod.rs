@@ -213,6 +213,7 @@ pub mod splitter;
 mod stack;
 pub mod tab_menu;
 pub mod tabs;
+mod tear;
 
 // The driver the gesture test files share; see its header for the warm frame
 // every one of them depends on.
@@ -227,6 +228,8 @@ mod drop_tests;
 mod overlay_tests;
 #[cfg(test)]
 mod railhide_tests;
+#[cfg(test)]
+mod tear_tests;
 #[cfg(test)]
 mod width_tests;
 
@@ -279,6 +282,7 @@ pub use model::{
 pub use rail::{RailHandler, RailPlan, RailReach, RailRow, Rung};
 pub use report::{RectReport, RectSink};
 pub use tab_menu::{TabMenu, TabMenuHandler};
+pub use tear::TearPreview;
 
 /// The dock's live state: the arrangement, plus what the last frame did.
 ///
@@ -722,6 +726,7 @@ impl<'a> Dock<'a> {
             geometry: DockGeometry::default(),
             tab_drag: None,
             drop_preview: None,
+            tear: None,
             rail_drawn: false,
             rail_show: crate::peek::Show::Inline,
         };
@@ -770,9 +775,11 @@ impl<'a> Dock<'a> {
         // (see [`overlay`]), and the settlement so a release lands whatever
         // became of the strip it began on (see [`drag`]).
         overlay::draw(ui, &mut ctx, &snapshot);
+        tear::draw(ui, &mut ctx);
         drag::settle(ui, &mut ctx);
         report.tab_drag = ctx.tab_drag.clone();
         report.drop_preview = ctx.drop_preview.clone();
+        report.tear = ctx.tear.clone();
         state.geometry = std::mem::take(&mut ctx.geometry);
 
         // Phase 3: apply. The one place the layout is mutable.

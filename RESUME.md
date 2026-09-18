@@ -267,18 +267,29 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    caret hundreds of points away while the drop was never offered — `drag::preview`
    now bounds x by the strip exactly. `DESIGNS.md` carries the staging table and
    the traps; `D:/dev/rag/egui/` carries both findings.
-   **Next is step 4** — drag-to-tear, homed at the drag's origin, attaching to the
-   branch `drag::preview` declines below `REORDER_SLACK_PTS`; then step 5, dragging
-   a float back over the dock via `native-window::cursor_position()`.
-   **What is owed and needs the screen**: a `ui-verify` assertion for the new drop
-   overlay, and no register or `FEATURES.md` row has moved yet.
-   Two things to re-measure first: `panels_float_close_and_dock` has a
-   live undriven defect from O126 A5 — a floated panel opens an empty window and
-   *Dock all* recovers nothing — and steps 4 and 5 build directly on that
-   machinery; and `FEATURES.md` carries no float or tear-out row at all, though
-   the register marks the capability built. Also owed from step 1:
-   `panel_tabs_can_be_rearranged` drove green *before* the caret dimming landed,
-   so it wants one re-run on a build carrying it.
+   **Step 4 is complete too.** `dock::tear` draws a window outline around the
+   pointer whenever a tab drag is carried outside every side's rect grown by a
+   splitter's thickness, and `Intent::Float` carries an optional desktop position
+   so the window opens where the operator let go rather than at the cascade. Eight
+   driven tests in `dock/tear_tests.rs`.
+   **★ The falsification is the finding, and it is written into the three files it
+   concerns.** Three of seven plants left the suite green: the stand-downs in
+   `tear::draw` and the stated ordering in `drag::settle` are all implied by the
+   one geometric predicate `outside_the_dock`, so no input reaches them and no
+   test can falsify them. They are kept — a release build where the implication
+   breaks should draw one affordance rather than two — and what now measures the
+   implication is a `debug_assert!` in `drag::settle` that names the two
+   affordances that answered one drag. Falsified directly: widen the predicate and
+   the guard absorbs it (green, and that is the input under which it is live);
+   widen it and remove the guard and the assertion fires by name.
+   **Next is step 5** — drag a float back over the dock via
+   `native-window::cursor_position()`, degrading to the command route where it is
+   `None`.
+   **What is owed and needs the screen**: `ui-verify` assertions for the drop
+   overlay and the tear outline; a re-drive of `panel_tabs_can_be_rearranged`,
+   which drove green *before* the caret dimming landed; and `panels_float_close_and_dock`,
+   which has a live undriven defect from O126 A5 — a floated panel opens an empty
+   window and *Dock all* recovers nothing — that step 5 builds directly on.
 6. **O198's remainder, which is O188** — a title-block run the exporter wrote as
    one lump is still one lump: he can reach that text and drag a line, not take
    it apart. **The verb has landed and is in the pin**: `EditSession::split_text_object`

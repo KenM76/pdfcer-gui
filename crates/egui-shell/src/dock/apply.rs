@@ -83,8 +83,12 @@ pub(super) fn apply(
             // in `float.rs`, where they can be tested with no window open,
             // and this function stays a router rather than growing a second
             // place that knows what floating means.
-            Intent::Float(panel) => {
-                if layout.float(panel) {
+            Intent::Float { panel, at } => {
+                let floated = match at {
+                    Some(at) => layout.float_at(panel, *at),
+                    None => layout.float(panel),
+                };
+                if floated {
                     report.floated = Some(panel.clone());
                 }
             }
