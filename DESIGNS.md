@@ -1518,9 +1518,16 @@ Each step ships on its own and leaves the program usable.
 | **0** | Retain the dock's geometry — address to rect for every side, column, stack, tab strip and tab, built during the draw it already performs and kept for the next frame, with a position-to-address query at each level. | **Built** | Nothing after it can be written without it, and it is also the honest answer to `dock::report`'s stringly names. |
 | **1** | G1: reorder within a strip, with the insertion caret the page rail and the document strip already use, in its full and dimmed pair. | **Built** | The smallest useful gesture, and the recipe is proven twice in this repository. |
 | **2** | The drop grammar and its fuzz, headless: take, insert, split, new column, normalize, invariants. | **Built** | A pure value, testable with no window. It comes before the overlay so the overlay has something true to preview. |
-| **3** | G2: the compass overlay, the pointer-to-`DropTarget` resolution over the retained geometry, and cross-compartment drops previewed by replay. |  | The capability the register calls (d). Step 2 is what a replay preview applies to its clone, so this step has something true to show. |
+| **3** | G2: the pointer-to-`DropTarget` resolution over the retained geometry, then the compass overlay drawing it and the cross-compartment drop previewed by replay. | **Resolution built** | The capability the register calls (d). Step 2 is what a replay preview applies to its clone, so this step has something true to show. |
 | **4** | G3: a drag that leaves the dock tears out, homed at its origin. |  | Sits on the float model already built and changes nothing underneath. |
 | **5** | G4: drag a float back over the dock and drop it where the pointer says. |  | The only step needing the desktop-pixel cursor, and the only one with a platform fallback — without a global cursor position the header drag simply moves the window, and the command route still docks it. |
+
+**What *Resolution built* means for step 3.** `dock::compass` answers *which
+`DropTarget` is under this point* over the retained geometry, and returns the
+quadrilateral each of its five zones is hit as — so the overlay that fills those
+quads has drawn the hit test rather than a second description of it. What is not
+built is the overlay itself and the replayed preview beside it, both of which
+need the screen to be worth anything.
 
 ### Traps this will hit, recorded before it is built
 

@@ -241,18 +241,21 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    One still-open sub-item: the forms panel's tab-order view numbers its rows
    from `/Annots` order while the ring uses the engine's derived sequence, so on
    a page carrying `/Tabs /R` or `/C` the two surfaces would disagree.
-5. **O212 — panel docking, tear-out and cross-compartment drops, steps 3 to 5
-   of six.** Steps 0 to 2 are built, falsified plant by plant and gate-green:
-   the dock retains its own geometry; a dock tab drags along its own strip
-   behind a dimmed-at-a-no-op caret; and `dock::drop` is the drop grammar as a
-   pure value — `DockLayout::move_panel` and `accepts_drop`, with a 12,000-case
-   invariant fuzz that asserts what it swept. **No operator gesture reaches the
-   grammar yet**, which is why no register or `FEATURES.md` row moved for it.
-   `DESIGNS.md` carries the staging table and the traps. **Step 3 is next and
-   needs the screen** — the compass overlay, the pointer-to-`DropTarget`
-   resolution over the retained geometry, and a preview by replay: clone the
-   layout, apply the candidate, highlight the rect the same span resolution
-   returns. Two things to re-measure first: `panels_float_close_and_dock` has a
+5. **O212 — panel docking, tear-out and cross-compartment drops, the rest of
+   steps 3 to 5 of six.** Steps 0 to 2 are built, falsified plant by plant and
+   gate-green: the dock retains its own geometry; a dock tab drags along its own
+   strip behind a dimmed-at-a-no-op caret; and `dock::drop` is the drop grammar
+   as a pure value — `DockLayout::move_panel` and `accepts_drop`, with a
+   12,000-case invariant fuzz that asserts what it swept. Step 3's headless half
+   is built too: `dock::compass` resolves a pointer position over the retained
+   geometry into a `DropTarget` — five zones over a compartment's body, its tab
+   strip resolved first as a boundary between tabs — and returns the
+   quadrilateral each zone is hit as, so the overlay cannot draw a shape it does
+   not resolve. **No operator gesture reaches any of it yet**, which is why no
+   register or `FEATURES.md` row moved. `DESIGNS.md` carries the staging table
+   and the traps. **What is left of step 3 needs the screen** — the compass
+   overlay filling those quads, and a preview by replay: clone the layout, apply
+   the candidate, highlight the rect the same span resolution returns. Two things to re-measure first: `panels_float_close_and_dock` has a
    live undriven defect from O126 A5 — a floated panel opens an empty window and
    *Dock all* recovers nothing — and steps 4 and 5 build directly on that
    machinery; and `FEATURES.md` carries no float or tear-out row at all, though

@@ -171,6 +171,10 @@
 mod apply;
 pub mod banner;
 mod collapse;
+/// **The five places a panel can be released over one compartment**, and the
+/// pointer-to-[`DropTarget`] resolution built on them. Its header carries why
+/// the zones are drawn as exactly the shapes they are hit as.
+pub mod compass;
 pub mod ctx;
 /// **Dragging a tab, and where releasing it would put the panel.**
 mod drag;
@@ -248,6 +252,7 @@ use ctx::{Ctx, Intent};
 use splitter::Axis;
 
 pub use banner::BannerHandler;
+pub use compass::{Compass, DropLanding, DropZone};
 pub use drag::TabDragPreview;
 pub use drop::DropTarget;
 pub use float::{DockHome, FloatingPanel};
