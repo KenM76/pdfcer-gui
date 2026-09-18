@@ -31,6 +31,17 @@ pub struct DockState {
     /// exactly the property that makes it the *claim* rather than the
     /// *fact*.
     pub(super) floats_drawn: usize,
+    /// **Every panel [`super::Dock::show_floating`] has opened a window for and
+    /// not yet cleaned up after.**
+    ///
+    /// The window remembers, in `egui`'s temporary data, that it has been
+    /// opened, so that its stored position is asserted once and not re-asserted
+    /// every frame. Something has to clear that flag when the window goes, and
+    /// the set of windows *about to be drawn* cannot: a panel docked back by a
+    /// route outside `show_floating` — the *Dock all* command, a drop
+    /// [`super::Dock::show`] applied earlier in the same frame — has already
+    /// left that set. This is the list that still contains it.
+    pub(super) floats_seen: Vec<PanelId>,
     /// **The left rail's auto-hide state.** See [`crate::peek`].
     ///
     /// On [`DockState`] rather than on [`super::Dock`] because a `Dock` is built fresh
@@ -68,6 +79,7 @@ impl DockState {
             layout,
             last_frame: DockFrameReport::default(),
             floats_drawn: 0,
+            floats_seen: Vec::new(),
             rail_peek: crate::peek::Peek::new(),
             geometry: DockGeometry::default(),
             float_drag: None,

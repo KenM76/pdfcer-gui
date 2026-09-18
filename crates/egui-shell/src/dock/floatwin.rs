@@ -241,6 +241,7 @@ impl Dock<'_> {
         mut body: impl FnMut(&PanelId, &mut egui::Ui),
     ) -> FloatFrameReport {
         let mut report = FloatFrameReport::default();
+        forget_closed_windows(ctx, state);
         if state.layout.floating.is_empty() {
             state.floats_drawn = 0;
             return report;
@@ -282,6 +283,9 @@ impl Dock<'_> {
             let id = viewport_id(&f.panel);
             let opening = !ctx.data(|d| d.get_temp::<bool>(seen_key(&f.panel)).unwrap_or(false));
             ctx.data_mut(|d| d.insert_temp(seen_key(&f.panel), true));
+            if !state.floats_seen.contains(&f.panel) {
+                state.floats_seen.push(f.panel.clone());
+            }
 
             let mut builder = ViewportBuilder::default()
                 .with_title(self.float_title(&f.panel))
@@ -441,14 +445,7 @@ impl Dock<'_> {
         // Phase 3: apply, in one place, after everything has drawn — the
         // same discipline `Dock::show` holds and for the same reason.
         report.layout_changed = apply_float_intents(&mut state.layout, &intents, &mut report);
-        // A window that has gone must forget that it was ever opened, or a
-        // re-float would find `opening == false` and never assert its
-        // position.
-        for panel in snapshot.floating.iter().map(|f| &f.panel) {
-            if !state.layout.is_floating(panel) {
-                ctx.data_mut(|d| d.remove::<bool>(seen_key(panel)));
-            }
-        }
+        forget_closed_windows(ctx, state);
         state.floats_drawn = report.drawn.len();
         report
     }
@@ -616,6 +613,37 @@ pub fn viewport_id(panel: &PanelId) -> ViewportId {
 /// Where "has this window already been opened" is remembered, per panel.
 fn seen_key(panel: &PanelId) -> egui::Id {
     egui::Id::new(("egui-shell-float-seen", panel.as_str()))
+}
+
+/// **Clear the opened-once flag for every panel that has stopped floating.**
+///
+/// A window that has gone must forget that it was ever opened, or a re-float
+/// finds `opening == false`, never asserts `with_position`, and the window
+/// reappears wherever the platform decides rather than where the operator left
+/// it.
+///
+/// ★ Swept from [`DockState::floats_seen`] — the panels this module has opened
+/// a window for — and **not** from the floats it is about to draw. A panel can
+/// stop floating by a route that never passes through
+/// [`Dock::show_floating`]: the *Dock all* command, a drop
+/// [`Dock::show`] applied earlier in this very frame. By the time this runs it
+/// is in neither the current floats nor the snapshot taken from them, so a
+/// sweep over either leaves its flag set for the life of the process.
+///
+/// Called twice — before the early return for an empty float list, and after
+/// the intents apply — because both are moments at which a panel can have just
+/// stopped floating, and the first is the one the early return would otherwise
+/// skip entirely.
+fn forget_closed_windows(ctx: &egui::Context, state: &mut DockState) {
+    let mut seen = std::mem::take(&mut state.floats_seen);
+    seen.retain(|panel| {
+        let still_floating = state.layout.is_floating(panel);
+        if !still_floating {
+            ctx.data_mut(|d| d.remove::<bool>(seen_key(panel)));
+        }
+        still_floating
+    });
+    state.floats_seen = seen;
 }
 
 #[cfg(test)]
@@ -854,5 +882,60 @@ mod tests {
             &mut report
         ));
         assert_eq!(l, before);
+    }
+
+    /// ★★★ **A panel docked back by a route that never passes through
+    /// `show_floating` still forgets its window.**
+    ///
+    /// The opened-once flag is what makes a float window open at its stored
+    /// position exactly once instead of being dragged back to it every frame.
+    /// A flag that is never cleared is not a visible failure on the frame it
+    /// happens — it is a window that, the *next* time the operator floats that
+    /// panel, opens wherever the platform feels like putting it.
+    ///
+    /// Two routes dock a panel without this function seeing it: the *Dock all*
+    /// command, which edits the layout directly, and a
+    /// [`super::floatdrag`] drop, which [`Dock::show`] applies **earlier in
+    /// the same frame**. Both leave the panel out of the float list this
+    /// function draws from, which is why the sweep reads the list of windows
+    /// opened rather than the list of windows about to be drawn.
+    ///
+    /// The second frame here takes the empty-float-list early return, so this
+    /// also pins the sweep to a position before it rather than after.
+    #[test]
+    fn a_panel_docked_back_by_another_route_forgets_its_window() {
+        let ctx = egui::Context::default();
+        let mut state = floated_state();
+        let panel = id("layers");
+
+        let _ = ctx.run_ui(frame_input(), |ui| {
+            Dock::new().show_floating(ui.ctx(), &mut state, |_panel, ui| {
+                ui.allocate_space(Vec2::splat(8.0));
+            });
+        });
+        // The witness. Without it an absence below is satisfied by a build
+        // that never set the flag in the first place.
+        assert_eq!(
+            ctx.data(|d| d.get_temp::<bool>(seen_key(&panel))),
+            Some(true),
+            "the window marked itself opened"
+        );
+        assert_eq!(state.floats_seen, vec![panel.clone()], "and was recorded");
+
+        assert!(
+            state.layout_mut().dock_back(&panel),
+            "docked by another route"
+        );
+
+        let _ = ctx.run_ui(frame_input(), |ui| {
+            Dock::new().show_floating(ui.ctx(), &mut state, |_panel, _ui| {});
+        });
+
+        assert_eq!(
+            ctx.data(|d| d.get_temp::<bool>(seen_key(&panel))),
+            None,
+            "the flag is gone, so a re-float asserts its stored position again"
+        );
+        assert!(state.floats_seen.is_empty(), "and nothing is still tracked");
     }
 }
