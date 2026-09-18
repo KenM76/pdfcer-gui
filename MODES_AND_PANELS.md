@@ -378,7 +378,7 @@ that delivers it or the reason it is absent.
 | **a** | Two or more columns per side | **Built.** `SideLayout` holds a `Vec<Column>`; `plan` resolves their widths and `plan::drag_boundary` moves the boundary between two, writing exactly two slice entries. |
 | **b** | Vertical stacking within a column, resizable | **Built.** A `Column` holds a `Vec<Stack>` with draggable splitters, floored at `plan::MIN_STACK_HEIGHT` (80 pt). |
 | **c** | Tabbing panels together within a stack | **Built**, with the overflow menu (`dock::tabs`, `dock::tab_menu`) that reserves its affordance before the first tab is measured. The two-pane cap that dodged failure mode #8 is retired. |
-| **d** | Drag a panel between compartments | **Not built.** Tabs can be selected, closed and restored; they cannot be dragged into a different stack. Drag identity is tree-scoped, so one side cannot recognise the other's dragged tile. See "What is left to build". |
+| **d** | Drag a panel between compartments | **Not built.** Tabs can be selected, closed and restored; they cannot be dragged into a different stack. What is missing is a gesture and a queryable geometry, not a structure: one `DockState` owns both sides, so a drag begun on the left is readable on the right with no tree spanning them. See "What is left to build". |
 | **e** | Tear out to a floating OS window, and re-dock | **Built.** `dock::float` owns the state machine and `dock::floatwin` the window; the gesture is a command (`view.panel_float`, `view.panel_dock`), not a drag. |
 | **f** | Persist the arrangement across sessions | **Built.** `crate::layout` — topology, splitter shares, active tab per stack, widths, visibility, and any floating panel's home. |
 | **g** | Named, savable workspace layouts | **Built.** `layout::workspaces` — save, load, list, delete. Names are unique and matched exactly. |
@@ -769,17 +769,26 @@ written and not yet run; its own module header says so.
 
 ### What is left to build
 
-**Dragging a panel between compartments** — capability (d). Drag identity is
-tree-scoped, so one side cannot recognise the other's dragged tile; the elegant
-answer is **one wide tree spanning left ▸ canvas ▸ right**, which makes
-cross-compartment drag native and free. But that puts the canvas inside a
-resizable pane and fires R128 directly.
+**Dragging a panel between compartments** — capability (d). Two things are
+missing and neither is structural:
 
-**So the fit-to-viewport zoom must be converted to
-cached-recompute-on-explicit-trigger first, as its own landing, before the wide
-tree is attempted.** That landing has not happened, which is why the canvas
-stays outside the dock. The dock's own module header cites this paragraph as the
-reason it does.
+1. **A queryable geometry.** `plan` is scalar-only and every rect the dock
+   computes is a local in `dock::mod`, escaping only as a stringly-named
+   `RectReport`. A drop needs to ask *which stack is under this point, and where
+   would the panel land*, which needs the addresses and their rects retained for
+   the next frame's hit test.
+2. **A drop grammar** — take a panel from an address, insert it at a target that
+   may be an existing tab position, a new stack splitting a column, or a new
+   column. The preview is then the same arithmetic run against a clone, so what
+   is highlighted is what will happen, which is what failure mode #2 demands.
+
+**One `DockState` owns both sides**, so a drag begun on the left is readable on
+the right with no tree spanning them, and the canvas need not move inside a
+resizable pane. R128 is therefore **not** a prerequisite for this — the earlier
+reading that it was came from `egui_tiles`, where drag identity is scoped to a
+`Tree` and two docks are two trees. `UI_TOOLKIT_PINS.md` states the general
+form: a feasibility verdict that turns on what `egui_tiles` can do is a verdict
+about a library this shell never links.
 
 **Drag-to-tear**, as a gesture layered on the existing float model. Starting
 with a stationary command rather than a drag was deliberate: it captures most of

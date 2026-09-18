@@ -267,12 +267,12 @@ overflow menu (which is what retired the two-panes-per-side cap), named
 workspaces as the mode selector, per-scope layout reset, collapse to an icon
 rail, and tear-out to a floating window.
 
-Two items remain, and they are ordered:
+Two items remain, and they are independent:
 
-| Item | Why it is next, or why it is blocked |
+| Item | What it needs |
 |---|---|
-| **Fit-zoom cache (R128)** | Convert the fit computation from recompute-every-frame to cached-recompute-on-explicit-trigger. Its own landing. Prerequisite for anything that makes the canvas rect user-variable. |
-| **Cross-dock drag, via one wide tree** | The real unlock, and it puts the canvas inside a resizable pane, which fires R128 directly. Blocked on the fit-zoom cache. |
+| **Fit-zoom cache (R128)** | Convert the fit computation from recompute-every-frame to cached-recompute-on-explicit-trigger. Its own landing. Prerequisite for anything that makes the **canvas** rect user-variable. |
+| **Cross-dock drag** | A queryable dock geometry and a drop grammar, argued in `DESIGNS.md`. It moves panels between compartments the dock already owns and does not put the canvas in a pane, so it is **not** blocked on the fit-zoom cache. The earlier reading that it was came from `egui_tiles`, whose drag identity is scoped to a `Tree`; this shell never links it. |
 
 Tear-out was built as a **command, not a drag** — "Float this panel…" on a tab's
 secondary menu. That captures most of the value at a fraction of the cost, dodges

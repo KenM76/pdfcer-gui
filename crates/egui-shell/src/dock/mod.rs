@@ -130,13 +130,16 @@
 //! And the harder half of R128 is respected by omission: **the
 //! application's content area is not inside a dock compartment.** The
 //! dock draws side panels; the application draws its canvas in whatever
-//! remains. `MODES_AND_PANELS.md` names the single wide tree spanning
-//! left ▸ canvas ▸ right as the answer to cross-dock dragging, and
-//! immediately adds that it puts the canvas inside a resizable pane and
-//! fires R128 directly — so the fit-to-viewport zoom has to become
-//! cached-recompute-on-explicit-trigger first, as its own landing, before
-//! the wide tree is attempted. That landing has not happened, so the
-//! canvas stays outside.
+//! remains. Putting the canvas inside a resizable pane would fire R128
+//! directly, so it stays outside until the fit-to-viewport zoom becomes
+//! cached-recompute-on-explicit-trigger.
+//!
+//! **Cross-compartment dragging does not need that**, and any reading
+//! that says it does is about `egui_tiles`, where drag identity is
+//! scoped to a `Tree` and two docks are two trees. Here one
+//! [`DockState`] owns both sides, so a drag begun on the left is
+//! readable on the right; what is missing is a queryable geometry and a
+//! drop grammar, argued in `DESIGNS.md`.
 //!
 //! ## Module map
 //!

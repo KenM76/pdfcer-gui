@@ -375,7 +375,7 @@ impl Panel {
     /// `crate::shell::manifest::built_in`. A panel with no route from the
     /// ribbon cannot get past that.
     ///
-    /// Three of the nine are **not** on View ▸ Panels, and every placement is
+    /// Seven of the thirteen are **not** on View ▸ Panels, and every placement is
     /// `RIBBON_IA.md`'s:
     ///
     /// - **Fonts is `file.fonts`.** §7's migration map moves it from View ▸
@@ -521,9 +521,9 @@ impl Panel {
     /// Draw this panel.
     ///
     /// The one entry point a dock calls. `doc` is `None` when nothing is
-    /// open, and that case is handled **here** rather than nine times: the
-    /// answer does not vary by panel, and nine bespoke "open a document to…"
-    /// sentences would be nine chances for one of them to drift.
+    /// open, and that case is handled **here** rather than once per panel: the
+    /// answer does not vary by panel, and a bespoke "open a document to…"
+    /// sentence per panel would be one chance each for one of them to drift.
     ///
     /// The bodies below therefore all have the shape
     /// `fn body(ui, doc: &OpenDoc, state: &mut PanelsState, actions: &mut Vec<Action>)`
@@ -601,7 +601,7 @@ impl Panel {
 ///
 /// # Why this exists at all, and why it is not on `PdfcerApp`
 ///
-/// Two of the nine panels are not pure functions of the document: the Objects
+/// Two panels are not pure functions of the document: the Objects
 /// panel remembers which rows are expanded and which row was last picked, and
 /// the Properties panel reads that pick. None of it is document state, and
 /// none of it is derivable from anything — but all of it has to outlive a

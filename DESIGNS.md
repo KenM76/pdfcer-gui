@@ -1387,3 +1387,162 @@ Stage 3 is a refactor of the crate's five largest modules, and the payoff is
 developer seconds rather than anything he can see in the program. Whether it
 runs before or after the current feature work is his call, and nothing in
 Stages 1–2 forecloses either answer.
+
+---
+
+## Dragging a panel between compartments, and tearing one out by dragging it
+
+Capability (d) of `MODES_AND_PANELS.md`'s register, and the half of **O126**
+that was answered with commands rather than gestures: *"you understand that
+there are options to float, close, and dock those panels … No shortcuts or lazy
+half-implementation."* A tab can be activated, closed, floated and docked back;
+it cannot be dragged anywhere.
+
+### What is true
+
+Built and driven: multiple columns per side, vertical stacks within a column,
+tabs within a stack with a reserved overflow menu, draggable splitters, collapse
+to a rail, persistence, named workspaces, and tear-out to a real OS window with
+a home address it returns to.
+
+The four gestures that are absent:
+
+| | Gesture | What it lands on |
+|---|---|---|
+| **G1** | Drag a tab along its own strip | a new index in the same stack |
+| **G2** | Drag a tab into another stack, between two stacks, past the end of a column, or onto the other side | a different address, possibly one that does not exist yet |
+| **G3** | Drag a tab out of the window | a float, homed where the drag began |
+| **G4** | Drag a float's header back over the dock | a docked address chosen by the pointer, not by the remembered home |
+
+Three things are missing, and none of them is the layout structure:
+
+1. **A queryable geometry.** `plan` is scalar-only — it resolves spans and plans
+   tab strips and never sees an `egui::Rect`. Every rect the dock computes is a
+   local in `dock::mod` or `dock::tabs`, and the only way one leaves is
+   `dock::report`'s stringly-named `RectReport`. A drop must ask *which
+   compartment is under this point, and where exactly would the panel land*, and
+   nothing can answer that today without parsing names.
+2. **A drop grammar** — take a panel from an address; insert it at a target that
+   may be a tab index in an existing stack, a new stack splitting a column, a
+   new column, or the far side. `DockLayout` has no move, no indexed insert and
+   no reorder; `mount` pushes to the end, and the only indexed insert in the
+   crate is private inside `dock_back`. The fields are `pub` and `normalize`
+   already prunes what a move empties, so this is a small addition rather than a
+   rewrite.
+3. **A cross-viewport pointer, for G4 alone.** While a float window is being
+   dragged, the main window sees no pointer. `native-window`'s `cursor_position`
+   answers in physical desktop pixels on Windows and `None` elsewhere, which is
+   the bridge; the float and the dock are drawn from the same `egui::Context` in
+   the same frame, so the drag state itself is one field, not an IPC problem.
+
+**R128 is not a prerequisite.** The earlier reading — that cross-dock drag needs
+one wide tree spanning left ▸ canvas ▸ right, which puts the canvas in a
+resizable pane, which fires the fit-zoom feedback loop — is a verdict about
+`egui_tiles`, where drag identity is scoped to a `Tree` and two docks are two
+trees. This shell never links it. One `DockState` owns both sides, so a drag
+begun on the left is readable on the right, and the canvas does not move.
+
+### What transfers from `QDockWidget`, and what does not
+
+Qt's dock system is the most-copied answer to this problem, and the Qt Advanced
+Docking System (ADS) is the community's correction of it. Three of its ideas are
+worth taking, and one of its costs disappears here entirely.
+
+**★★★ Take the gap-and-replay preview.** Qt does not draw a guessed rectangle
+during a drag. `QDockAreaLayoutInfo::gapIndex` inserts a *placeholder item* into
+the real layout, the real layout engine runs, and the rubber band is drawn over
+the resulting `gapRect`. The preview is therefore the outcome by construction
+and cannot drift from it.
+
+Here that is cheaper still, because the layout is a plain value and the
+arithmetic is pure: clone the `DockLayout`, apply the candidate drop, run the
+same span resolution the real frame runs, and highlight the rect that comes
+back. **Failure mode #2 — *"feedback must encode the outcome, not merely 'valid
+target'"* — is then satisfied by construction rather than by care**, and the
+whole grammar is testable with no window open, which is what makes the driven
+checks a confirmation rather than the only evidence.
+
+**★★ Take ADS's drop compass, not Qt's bare rubber band.** Qt's worst-reported
+docking failure is inner-versus-outer ambiguity: the operator cannot tell
+whether a release will tab the panel into the hovered group or split the column
+around it. ADS answers with an overlay of five explicit zones over the hovered
+area — four edges and a centre — plus a second, container-level overlay for the
+outer edges. The five zones are the grammar made visible, and hovering one
+previews exactly that outcome. Adopt the zones, drawn in this shell's own theme;
+they are dock chrome and never reach the page.
+
+**★★ Take ADS's floating drag preview, and do not open a window mid-drag.** ADS
+drags a translucent preview and materialises a real window only on release.
+That answers G3 and G4 without `ViewportCommand::StartDrag`, which `egui-winit`
+gates on `window.has_focus()`, which requires the left button to have gone down
+immediately prior, and whose effect is invisible until the next frame. For G4
+the same trick runs backwards: the press lands in the float's header, the
+preview takes over, and the window is destroyed on a successful dock.
+
+**Take Qt's placeholder for persistence — later, not now.** `QMainWindow`'s
+saved state keeps a placeholder item in the tree for a dock widget that is
+closed or floating, so restoring puts it back where it was rather than where
+there is room. `dock::float`'s `DockHome` is the address form of the same idea,
+and its header already argues why an address can go stale and why `dock_back`
+rebuilds rather than clamps. A placeholder is strictly better and is a separate
+landing; nothing here depends on it.
+
+**Take "fuzz the drop grammar" literally.** It is failure mode #9's design rule,
+and Qt earned that rule with crashes in its stacking path. A drop grammar over a
+plain value is the easiest thing in this repository to fuzz: generate a layout,
+generate a drop, apply, normalize, assert the invariants — every panel appears
+exactly once, no empty stack or column survives, shares sum to one, every
+`active` indexes a tab that exists.
+
+**What does not transfer is most of `QDockWidget`.** Reparenting widgets between
+a dock area and a top-level window, native window handles, event filters, mouse
+grabs, and a `QRubberBand` that is itself a window — an immediate-mode shell has
+none of it. Moving a panel between compartments here is a mutation of a
+serializable value that the next frame draws. That is why the steps below are
+counted in days while Qt's implementation is counted in tens of thousands of
+lines.
+
+**One Qt default to reject.** Qt tears a dock widget out on any drag of its
+title bar, which is failure mode #1 — an OS title bar and an application handle
+stacked, where grabbing the wrong one silently does nothing. This shell draws
+its own chrome and has no second title bar, so the tab itself is the one
+unambiguous grab affordance: a drag that leaves the dock tears out, and there is
+no separate handle to miss.
+
+### The order to build it in
+
+Each step ships on its own and leaves the program usable.
+
+| | Step | Why here |
+|---|---|---|
+| **0** | Retain the dock's geometry — address to rect for every side, column, stack, tab strip and tab, built during the draw it already performs and kept for the next frame's hit test — plus a `DropTarget` hit test over it. | Nothing after it can be written without it, and it is also the honest answer to `dock::report`'s stringly names. |
+| **1** | G1: reorder within a strip, with the insertion caret the page rail and the document strip already use, in its full and dimmed pair. | The smallest useful gesture, and the recipe is proven twice in this repository. |
+| **2** | The drop grammar and its fuzz, headless: take, insert, split, new column, normalize, invariants. | A pure value, testable with no window. It comes before the overlay so the overlay has something true to preview. |
+| **3** | G2: the compass overlay and cross-compartment drops, previewed by replay. | The capability the register calls (d). |
+| **4** | G3: a drag that leaves the dock tears out, homed at its origin. | Sits on the float model already built and changes nothing underneath. |
+| **5** | G4: drag a float back over the dock and drop it where the pointer says. | The only step needing the desktop-pixel cursor, and the only one with a platform fallback — without a global cursor position the header drag simply moves the window, and the command route still docks it. |
+
+### Traps this will hit, recorded before it is built
+
+- **`drag_started()` fires after the threshold**, by which time the pointer has
+  moved. Anything decided at gesture start — which tab was grabbed, which
+  address it came from — reads `press_origin()`, never `interact_pointer_pos()`.
+- **Drag predicates are button-agnostic.** A right-drag on a tab must not
+  reorder it; every call site is `*_by(PointerButton::Primary)`.
+- **A tab is a `Button` today and senses clicks only.** Sensing must become
+  `click_and_drag`; `Sense::drag()` alone swallows the click that activates the
+  tab, which the form tab-order list learned expensively.
+- **The caret is resolved during layout and painted after the tabs.** A gap has
+  no position until the tabs are placed. egui's own `dnd_drag_source` is the
+  wrong tool twice over: it tints whole frames, and it re-runs the widget body
+  into a tooltip layer under the cursor, which is the wrong affordance for a
+  reorder and a second sense on an id already being interacted with.
+- **A harness's coordinates go stale the moment a drop changes a dock width**,
+  and a stale coordinate is indistinguishable from a broken conversion. Every
+  driven step re-reads the rect it is about to click.
+- **A child viewport's rects are relative to its own origin**, so anything G4
+  publishes must be tagged and converted, and `show_viewport_immediate` may run
+  its callback twice in one frame.
+- **A drop indicator is a gesture-only overlay**, so the `ui-rect` trace records
+  its appearance as a change and cannot report its disappearance. Assert on the
+  appearance, and on the layout the release produced.
