@@ -102,7 +102,7 @@ fn a_closed_document_closes_every_document_scoped_dialog() {
 #[test]
 fn the_apply_dialog_is_guarded_on_both_counts() {
     let mut dialogs = DialogsState::default();
-    dialogs.open_redact(&Status::Empty);
+    dialogs.open_redact(&Status::Empty, crate::app::prefs::RedactionReach::default());
     assert!(
         dialogs.redact.is_none(),
         "a document with nothing open has nothing to redact, and building \
@@ -112,9 +112,9 @@ fn the_apply_dialog_is_guarded_on_both_counts() {
     let status = Status::Open(Box::new(crate::app::state::open_fixture(
         crate::app::state::FOUR_PAGES,
     )));
-    dialogs.open_redact(&status);
+    dialogs.open_redact(&status, crate::app::prefs::RedactionReach::default());
     let first = std::ptr::from_ref(dialogs.redact.as_ref().expect("open"));
-    dialogs.open_redact(&status);
+    dialogs.open_redact(&status, crate::app::prefs::RedactionReach::default());
     let second = std::ptr::from_ref(dialogs.redact.as_ref().expect("still open"));
     assert_eq!(
         first, second,

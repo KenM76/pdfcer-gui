@@ -191,6 +191,7 @@ use std::path::{Path, PathBuf};
 
 use egui_shell::theme::Theme;
 
+use crate::app::prefs::RedactionReach;
 use crate::app::state::{OpenDoc, Status};
 use crate::redact::{
     PreparedRedaction, RedactApplyRefusal, ResidualAcknowledgement, WriteRefusal,
@@ -262,13 +263,10 @@ const REGION_DESTINATION_NEW_FILE: &str = "redact-apply-destination-new-file"; /
 /// [`REGION_CONFIRM`]'s top and fail if the disclosure ever moves below the
 /// button it is meant to precede.
 ///
-/// ★★ **Renamed from `redact-apply-undo-note` on 2026-09-05**, with
-/// `tools/ui-verify/src/checks/redaction.rs` in the same commit. The old name
-/// described the sentence that used to live here — *"this clears your undo
-/// history"* — and `Pass 250.2` made that false; a region name that still said
-/// `undo` would have aimed a harness at a sentence about undo and found one
-/// about staging, which is the shape of a check that passes while measuring
-/// something else. The geometry assertion it carries is unchanged.
+/// ★★ **The name must keep describing the sentence.** A region name that
+/// says one thing while the label below it says another aims a harness at a
+/// sentence it will not find, and the check then passes while measuring
+/// something else.
 const REGION_STAGING_NOTE: &str = "redact-apply-staging-note"; // ui-text-exempt: trace region name, never displayed
 
 /// Height kept clear below the report for the checkbox and button rows.
@@ -422,8 +420,14 @@ impl RedactDialog {
     ///
     /// The whole removal runs here — see §2 — so this call is as expensive as a
     /// full rewrite of the document, once, on a deliberate click.
-    fn open(doc: &OpenDoc) -> Self {
-        let phase = match prepare_redaction_apply(&doc.session) {
+    ///
+    /// ★ `reach` is read from the operator's preferences by the caller, once,
+    /// at the moment the window opens. It is deliberately not re-read while the
+    /// window is up: every number on screen was computed at one reach, and a
+    /// value that could move underneath them would make the report describe a
+    /// removal other than the one *Apply* performs.
+    fn open(doc: &OpenDoc, reach: RedactionReach) -> Self {
+        let phase = match prepare_redaction_apply(&doc.session, reach) {
             Ok(prepared) => {
                 crate::diag::trace(|| {
                     format!(
@@ -809,6 +813,14 @@ impl RedactDialog {
                 // is the difference between "nothing to do" and "checked,
                 // clean". See `disclosures::checked_clean`.
                 disclosures::checked_clean(ui, theme, report);
+
+                // --- what will be left, because he asked for it -----------
+                //
+                // Above the residual section so the danger colour stays last.
+                // Notice weight, never danger: the engine keeps "told not to"
+                // apart from "could not" so a deliberate scope does not read as
+                // a fault, and this shell keeps that distinction visible.
+                disclosures::left_by_choice(ui, theme, report);
 
                 // --- what could not be removed ----------------------------
                 if !residuals.is_empty() {
@@ -1384,11 +1396,11 @@ pub fn suggested_path(source: &Path) -> PathBuf {
 /// — the ribbon control is gated on `doc.pages`, a chord bound to the same id is
 /// not, and both are fixed by refusing here at the one place the dialog is
 /// built.
-pub(super) fn open_for(status: &Status) -> Option<RedactDialog> {
+pub(super) fn open_for(status: &Status, reach: RedactionReach) -> Option<RedactDialog> {
     let Status::Open(doc) = status else {
         return None;
     };
-    Some(RedactDialog::open(doc))
+    Some(RedactDialog::open(doc, reach))
 }
 
 /// The headless assertions for this dialog's state machine, in their own file

@@ -572,7 +572,9 @@ impl PdfcerApp {
                     crate::app::actions::RedactAction::Selection { appearance },
                 ));
             }
-            "edit.redact_apply" => self.dialogs.open_redact(&self.status),
+            "edit.redact_apply" => self
+                .dialogs
+                .open_redact(&self.status, self.prefs.redaction_reach),
             // ★★★ The FOURTH marking route, and the only one that begins with
             // a question rather than with an operand.
             //

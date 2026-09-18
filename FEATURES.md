@@ -4,58 +4,43 @@ This is the per-surface capability register for the pdfcer-gui shell: what an
 operator can reach in a real build, and what is planned, in order. It is
 authoritative for status.
 
-**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.53.0, a git dependency on the local engine repository, pinned at **`fb987cde`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
+**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.55.0, a git dependency on the local engine repository, pinned at **`c5a80c3b`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
 
-**What is new in this build.** The form fields on a page now look and behave
-the way Acrobat's do, and in Edit mode they can be seen and resized.
+**What is new in this build.** A redaction now reaches exactly as far as you
+tell it to, and says what it chose to leave alone.
 
-**A drop-down remembers what was clicked.** It did not. The options list gave
-up on the frame the pointer went *down* rather than the frame it came *up*, so
-by the time a click finished there was no list and no row under it, in every
-mode. A click is a press **and** a release, and everything a click needs now
-survives the gap between them.
+**You choose how far a redaction reaches beyond what you marked.** Three
+settings, in Settings under Redacting: change only what I marked; also remove
+the hidden copies a viewer never shows, such as the document properties and
+the embedded metadata, which stays the default; or blank the whole page
+content of every page a mark touches. The choice is remembered between runs
+and applies to every route that applies a redaction — the preview, the
+armed-save path and the direct one — because a reach that three verbs could
+disagree about is worse than no reach at all.
 
-**The open list is Acrobat's shape.** It was as wide as its longest label —
-57 points of list hanging under a 370-point field — and dressed as an
-application menu, rounded and shadowed and generously padded. It is now the
-field's own width, square-cornered, unshadowed, flush against the field, with
-compact rows and the chosen one on a solid plate. That is what Acrobat draws,
-expressed in this program's colours rather than copied out of a picture of it.
+**The copies it was told to leave are named, and they never stop a save.**
+When the narrow setting is in force and the text you marked also sits in the
+document properties or the metadata, the redaction report names each place
+and says plainly that the copy will still be in the saved file. It is written
+as a consequence of your setting, not as a fault, and it never blocks — a
+phrase that appears twice in a document is ordinary, and a program that
+refused every such redaction would be unusable.
 
-**A list box is no longer drawn as a drop-down.** They are two different
-controls and the file says which is which; the flag never reached the page, so
-every choice field dropped. A list box now shows its options **inside its own
-rectangle**, over the top of what was painted there, and grows a scroll bar the
-moment the rows do not fit — which is the operator's own description of
-Acrobat, tested against Acrobat.
+**The warning above it no longer claims a failure that did not happen.** That
+section collects three different things: what pdfcer could not remove, what
+it could not rule out, and what you told it not to touch. Only the first is a
+limit. It now heads the list with what is true of all three — this will still
+be in the saved file — and leaves the cause to each line.
 
-**A drop-down whose author allowed typing can now be typed into.** Some
-drop-downs accept an answer that is not on the list at all. This one is a live
-text box with a drop button: click the text for a caret with the current value
-selected, click the button — or press Alt+Down, or F4 — for the same list, and
-Enter or leaving the field commits whatever was typed. A typed value that
-happens to name a listed option is treated as picking it. **Built and unit-
-tested; not yet driven against the running program.**
+**Nothing above marks the page.** Every one of those sentences is off-canvas,
+in the report. A picture of the page while it is being edited is identical to
+a picture of it saved and reopened.
 
-**In Edit mode the fields can be seen.** The one mode in which a field has to
-be *found* was the one mode that drew nothing, because the authoring branch
-returned before the form shading ran. Every widget with a rectangle is now
-outlined there — including check boxes, radio buttons, push buttons and
-signature fields, not only the ones that can be filled in.
-
-**Dragging a field's handle shows the new size while the button is still
-down.** The live preview knew how to follow a comment and a drawn shape, and a
-form field is neither, so there was nothing to draw.
-
-**All eight handles resize, not only the four corners.** The arithmetic worked
-out the opposite corner from the handle being dragged, assuming the handle was
-itself a corner. The four edge handles sit at the middle of an edge, so the
-opposite corner collapsed and the field came out with no width or no height at
-all across the dragged direction.
-
-**Nothing above marks the page.** A resize preview, a hover row, a focus ring
-and an Edit-mode outline are all *cursor* — a picture of the page saved and
-reopened is identical to a picture of it while it is being edited.
+**The program is no longer one crate.** The four lowest layers — the theme and
+unit helpers, the clipboard, the window, and the shell framework — now sit
+below the application in their own compilation units, and nothing in them can
+call back up into it. It changes nothing you can see; it is what makes a
+rebuild recompile the part that changed rather than the whole program.
 
 **Scope.** This shell only. `pdfcer-core` and `pdfcer` capabilities live in
 `D:\Dev\pdfcer\docs\FEATURES.md`, whose `gui` column is this project's
@@ -96,7 +81,7 @@ than the number it produced last.
 | **Gates** | `bash tools/gates/run-all.sh` — exit 0 pass, 1 fail, 3 skipped. A skip is not a pass. Every grep-over-source gate carries a `--self-test` that plants a violation |
 | **Source** | `git ls-files '*.rs'` through `xargs` with a newline delimiter, then `cat`, then `wc -l`. The `cat` matters: without it `xargs` splits into two `wc` invocations and emits two `total` lines. A `find crates -name '*.rs'` count answers a different question |
 | **Commands** | read from the build's own trace line `pdfcer-diag shell commands=… planned=… directed=…` on an off-screen smoke launch under `PDFCER_DIAG_VIEWPORT` |
-| **Engine** | `pdfcer-core` v0.53.0, pinned as above |
+| **Engine** | `pdfcer-core` v0.55.0, pinned as above |
 | **Panels** | 13 — `Panel::ALL` is `[Self; 13]` at `crates/pdfcer-gui/src/panels/mod.rs:353`, pinned by `tests::the_panel_catalog_is_complete` |
 | **Ribbon surface** | 40 captioned groups — `grep -c 'caption:' crates/pdfcer-gui/src/shell/ron/built_in.ron` |
 
@@ -256,6 +241,7 @@ than the number it produced last.
 - ✅ **The freehand tolerance follows the pen** — `ink::SIMPLIFY_TOLERANCE_PTS` is derived rather than constant: Ramer–Douglas–Peucker bounds how far the drawn centreline can move, so ε has to track the stroke's half-width or a wide pen loses its shape
 - ✅ **Redaction works on a real drawing.** The gate is on the **samples**, not the bounding boxes; a covered image has its pixels destroyed — decoded, overwritten, its soft mask cleared to match, re-encoded losslessly — and a wholly covered one is removed; an image it cannot decode retains **that mark alone** while every other mark applies; vector lines through a region are **cut** at the boundary. Destroyed cells come back as paper, not black. The mark-time sentence reads *those pixels will be destroyed, not hidden*. The report says what happened to each image, names a shared image copied so other pages keep theirs, and counts the geometry cut and dropped. Three residuals gate the write: a **retained** mark, which is a region where nothing was removed under a rectangle that says it was; geometry that could not be cut; and a clip whose outline had to be kept. A sheet with no image is marked in **silence**, because a caveat attached to every mark is one you learn to scroll past. The true-removal proof is unskippable four ways, because `pdfcer-core` has no verdict type — `apply_redactions` returns a *report* and `pdfcer` exits SUCCESS on a file it never verified
 - ✅ **Redact by selecting on the canvas**
+- ✅ **How far a redaction reaches beyond what you marked is the operator's choice** — `ResidualScope`, set on the session so the preview, the armed save and the direct apply cannot disagree, persisted in preferences, defaulting to `HiddenCarriers` exactly as the engine does. `MarkedOnly` is the setting he asked for by name. ★ The two report predicates stay apart: `has_disclosed_residuals` means pdfcer COULD NOT act and gates the write; `has_unscrubbed_matches` means pdfcer WAS TOLD NOT TO and gates nothing, because almost any phrase appears somewhere else in a document. The declined copies are named off-canvas in the report, in the notice weight rather than the danger one, saying they will still be in the saved file and naming the setting that decided it
 - ✅ **The line-weights display mode** — the CAD hairline stance, a control that was removed once and came back on the operator's report
 - ✅ **Fillable fields wear a wash**, defaulting **on**, in the theme's hyperlink role at low alpha rather than `selection`, which would make every field look selected
 - ✅ **Fill a field on the canvas** — click the widget and type; Enter or clicking away commits one `FormEdit::FillText`, Escape abandons the draft without also ascending a selection rung. Check boxes toggle and radio widgets select that widget's on-state. **No `CanvasTool` variant**: a widget's `/Rect` is a region the file itself marks interactive. What a fill **inferred** is in the status bar: `applied_autosize` and `unencodable_chars` are the only two facts of a fill not re-derivable from the saved document, and afterwards they look exactly like the author's decision

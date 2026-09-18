@@ -86,6 +86,21 @@ impl Prefs {
                         line,
                     }),
                 },
+                // ui-text-exempt: a file KEY, parsed out of preferences.txt.
+                //
+                // A value this build cannot read falls back to the shipped
+                // answer for this key alone and is reported — which matters
+                // more here than on any other key in this file, because the
+                // shipped answer is the middle of three and a typo therefore
+                // cannot widen a redaction to the destructive end of the scale.
+                "redaction_reach" => match RedactionReach::from_key(value) {
+                    Some(reach) => prefs.redaction_reach = reach,
+                    None => notes.push(PrefNote::BadValue {
+                        key: key.to_owned(),
+                        value: value.to_owned(),
+                        line,
+                    }),
+                },
                 // ui-text-exempt: a file KEY, matched literally.
                 //
                 // ★ Taken verbatim, with no validation against the engine's
@@ -478,6 +493,24 @@ impl Prefs {
         // "How sharply pages are drawn" in the Settings window.
         out.push_str("render_quality = ");
         out.push_str(self.render_quality.key());
+        out.push('\n');
+        out.push_str(
+            "\n\
+             # How far APPLYING A REDACTION may reach beyond the regions you\n\
+             # marked, when the same text appears elsewhere in the file:\n\
+             #   marked-only     = nowhere. Only what you marked is removed.\n\
+             #   hidden-carriers = also the document title, keywords, XMP and\n\
+             #                     other entries you cannot see on the page.\n\
+             #                     The shipped answer.\n\
+             #   whole-document  = also text drawn on pages you did not mark.\n\
+             #                     The strongest guarantee, the most\n\
+             #                     destructive.\n\
+             # Every value REPORTS everything it finds. They differ only in\n\
+             # what they are allowed to change.\n",
+        );
+        // ui-text-exempt: a file KEY, as above.
+        out.push_str("redaction_reach = ");
+        out.push_str(self.redaction_reach.key());
         out.push('\n');
         out.push_str(
             "\n\

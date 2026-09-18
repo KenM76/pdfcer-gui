@@ -124,6 +124,10 @@ pub(crate) mod printing;
 /// The two preferences that change what a **frame costs**.
 pub mod quality;
 
+/// How far a redaction is allowed to reach beyond the regions the operator
+/// marked. The only preference here that changes what pdfcer **destroys**.
+pub mod redaction;
+
 /// What a plain wheel does when the document is not one long scroll — O30.
 pub mod wheel;
 
@@ -148,6 +152,7 @@ pub use pastechords::PasteChords;
 // `private_interfaces` quiet.
 pub(crate) use printing::PrintPrefs;
 pub use quality::{DEFAULT_SETTLE_MS, MAX_SETTLE_MS, MIN_SETTLE_MS, RenderQuality};
+pub use redaction::RedactionReach;
 pub use wheel::WheelPaging;
 
 /// The shipped maximum zoom, as a percentage.
@@ -252,6 +257,16 @@ pub fn auto_hide(on: bool) -> egui_shell::peek::AutoHide {
 pub struct Prefs {
     /// How sharply a page is rasterised.
     pub render_quality: RenderQuality,
+    /// **How far a redaction may reach beyond the regions the operator
+    /// marked** — O211, and the one preference in this struct whose wrong
+    /// value destroys content.
+    ///
+    /// Read at the moment a removal is prepared or staged, never held on the
+    /// session across a settings change: `crate::redact`'s three entry points
+    /// each take it as an argument so the value in force is the one on screen
+    /// when the operator pressed the control, not the one that happened to be
+    /// set when the document opened.
+    pub redaction_reach: RedactionReach,
     /// ★★ **How much memory the page cache may hold**, so a page already drawn
     /// is not drawn again.
     ///
@@ -847,6 +862,11 @@ impl Default for Prefs {
     fn default() -> Self {
         Self {
             render_quality: RenderQuality::default(),
+            // O211: the engine's own default, and the shell does not
+            // second-guess it. `HiddenCarriers` is the value that fixed his
+            // report, and a shell that shipped a different one would be
+            // answering a question the engine already answered.
+            redaction_reach: RedactionReach::default(),
             // O58: the operator's own ruling, not Acrobat's. He was told about
             // the divergence and asked for a setting rather than a swap.
             paste_chords: PasteChords::default(),

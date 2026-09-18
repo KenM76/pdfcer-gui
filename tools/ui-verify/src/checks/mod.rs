@@ -968,6 +968,12 @@ pub mod redact_selection;
 
 pub mod redaction;
 
+/// **The reach setting, driven twice.** `redaction` above proves a removal
+/// removes; this proves the operator's answer to *how far* arrives at the
+/// engine, by writing the preference and reading the saved bytes. It also
+/// covers the search-and-mark route, which its neighbour names as its gap.
+pub mod redaction_reach;
+
 /// **Paragraph reflow, driven.** The one check whose operand is a caret in
 /// egui's temporary memory — put there by a click and read by a command, with
 /// no other instrument that can see the handover.

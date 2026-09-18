@@ -842,6 +842,13 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // taken in the process that produced it. See its header.
         Box::new(signing::ADocumentCanBeSignedAndTheSignatureIsInTheFile),
         Box::new(redaction::RedactionRemovesAndProvesIt),
+        // Immediately after `redaction`, and the order is load-bearing in one
+        // direction: this check writes a preference into the profile and
+        // restores it on the way out, so a failure to restore is cheapest to
+        // diagnose while the check that shares its surface is still fresh in
+        // the report above it. It also types, which `redaction` does not, so
+        // the two together cover both routes into the marking panel.
+        Box::new(redaction_reach::TheRedactionReachSettingDecidesWhatSurvives),
         // Beside the text-editing checks and owning its own fixture, like
         // `text_edit` and `redaction` above: its verdict is a LINE COUNT that
         // only `fixtures/paragraph.pdf` produces, so it takes no `--pdf`.

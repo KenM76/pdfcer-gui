@@ -306,7 +306,12 @@ use crate::redact::Staging;
 /// redaction variants here — and it is spelled rather than `unreachable!()`
 /// because a future fifth variant sent here by mistake should do nothing
 /// visible rather than end the process an operator is mid-edit in.
-pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::settings::Settings) {
+pub fn apply(
+    doc: &mut OpenDoc,
+    action: RedactAction,
+    settings: &pdfcer_core::settings::Settings,
+    reach: crate::app::prefs::RedactionReach,
+) {
     match action {
         // ===============================================================
         // THE REDACTION MARKING VERBS
@@ -657,7 +662,7 @@ pub fn apply(doc: &mut OpenDoc, action: RedactAction, settings: &pdfcer_core::se
                 // copy. The operator-facing half of a refusal here is the
                 // funnel's own worded decline; the dialog has already refused
                 // by name for every cause reachable in practice.
-                crate::redact::stage_into_session(session)
+                crate::redact::stage_into_session(session, reach)
                     .map_err(|refusal| format!("{refusal:?}"))
                     .map(|staged| {
                         absence_claims = staged.report.redacted_text.clone();

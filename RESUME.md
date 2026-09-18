@@ -30,7 +30,7 @@ grepping it — a count only goes stale, a name can be born false.
 
 | What | Command | What the command alone will not tell you |
 |---|---|---|
-| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `fb987cde` — a **branch** pin with no `rev`, so cargo re-resolves it opportunistically and it moves with no `cargo update` on our side. Re-read the lock in the same breath as quoting it; never carry a sha forward from a paragraph written an hour ago. `check-pin-citation.sh` reads this row's third cell and `FEATURES.md`'s first `**Updated:**` line, and fails if either disagrees with the lock |
+| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `c5a80c3b` — a **branch** pin with no `rev`, so cargo re-resolves it opportunistically and it moves with no `cargo update` on our side. Re-read the lock in the same breath as quoting it; never carry a sha forward from a paragraph written an hour ago. `check-pin-citation.sh` reads this row's third cell and `FEATURES.md`'s first `**Updated:**` line, and fails if either disagrees with the lock |
 | Engine HEAD | `git -C /d/Dev/pdfcer log --oneline -1 main` | The question is never whether the two shas MATCH — it is whether CODE has landed since the pin, because only that can falsify a sentence beginning *"the engine cannot"*. `git -C /d/Dev/pdfcer diff --stat <pin>..main -- '*.rs'` is the test; empty means such a sentence may be written. Read this log in the same breath as listing `open/`: a delivery has arrived here as a commit before it arrived as a reply three times |
 | Engine version | `grep -A1 'name = "pdfcer-core"' Cargo.lock` | — |
 | Last release | `git fetch --tags origin && gh api repos/KenM76/pdfcer-gui/releases/latest` | **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in an unfetched tree answers with an older tag and reports a commits-unreleased count wrong by a factor. Read every field back out of the API rather than inferring it from the flags passed in, and check the local zip's byte count against the asset's — agreement to the unit is the cheapest proof the upload is the file and not a truncation. The binary's own stamp and `published_at` sit twelve to twenty minutes apart on every release; label which clock |
@@ -180,14 +180,13 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    at all (`canvas/forms/boxes/mod.rs`), which is why he had to discover row 2
    by clicking; row 19 is O207, and it is adoption rather than engineering —
    `parse_length` already implements the CAD length grammar at the pin
-   (`pdfcer-core/src/dimension/length_parse.rs:139`), so the work is one helper in
-   `src/units.rs` reached from the entry sites, the same shape O194 step 2 used for
+   (`pdfcer_core::dimension::length_parse`), so the work is one helper in
+   `pdfcer-gui-base`'s `units` reached from the entry sites, the same shape O194 step 2 used for
    the display side. Section 8.2’s rows are the channel’s work, not ours — count
    them, do not quote a number — and five have moved: **G022 and G023 are both shipped upstream and the pin
-   now carries them** (measured at `20e539a2`; the lock has since moved to `fb987cde`, which is
-   what row 3 quotes and what `place_page` was re-verified against — both
-   re-measured in the checkout rather than believed from a commit message) — so a `/Btn` rotation
-   now turns, and G022’s reply carries a fact the request did not, that `/Q` is
+   carries them** — read out of the engine checkout, which is the only thing
+   that settles such a claim, since a commit message can describe work that
+   never landed — so a `/Btn` rotation now turns, and G022’s reply carries a fact the request did not, that `/Q` is
    inheritable, so the clear-alignment control it unblocks is labelled *inherit*
    and never *Left*. That control is still unbuilt and is now GUI work with no
    blocker in front of it. E3 went out as **`request_G024`**, which asks for an *emitter* over
@@ -294,6 +293,37 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
     fix this row used to prescribe.
 
 ## Traps
+
+- **A panel body owns its own scrolling; the dock only styles the bar.** The
+  dock's helper sets `ScrollStyle::solid()` and nothing else — it creates no
+  `ScrollArea`, so a body taller than its slot lays its remainder out past the
+  bottom of the pane and, in a side dock, past the bottom of the **window**.
+  Nothing clips and nothing errors. The redaction marking panel shipped with
+  its search field, its find-and-mark button, its match-mode pair and its hint
+  off screen at 1,100x800, leaving *Mark whole page* — the widest redaction
+  offered — as the only reachable way to mark anything. The oracle is one
+  comparison, `child.max.y > window_inner.max.y`; no unit test and no gate can
+  see it. **A control a driven check will CLICK is published with
+  `ui_rect_visible`, never plain `ui_rect`** — then an absent rect means *not
+  reachable*, which is the truth and is actionable. And treat any comment
+  saying *the host already wraps this* as a claim to grep, not a fact: that
+  sentence is what kept the missing area alive through every later read.
+
+- **A harness helper that takes a bare `Rect` cannot be made viewport-aware —
+  the signature is the defect.** A rect is in the coordinate space of the
+  viewport that drew it, and the apply dialogs are real OS child viewports with
+  their own origins. Converting one against `session.frame()` yields a
+  plausible desktop point several hundred points away: no error, no
+  missed-click report, just an acknowledgement that never takes. Because the
+  dialog declares its confirm region only when armed, it presents as *"the
+  application declared no `redact-apply-confirm` region"* — a **SKIP**. Both
+  redaction checks, one of them the only cover on the most irreversible
+  operation the program has, had exercised nothing since the dialogs became
+  viewports. `click_region` now takes the region **name**, re-reads the trace
+  (it is a change log, so a rect fetched before an intervening click may name
+  where the control *was*) and converts through `driving::frame_of`. The
+  correct twin was already sitting in `checks/ocr.rs` and was never swept: a
+  fix that lives in one copy of a duplicated helper is not a fix.
 
 - **`PDFCER_DIAG_VIEWPORT`'s height is silently clamped to the monitor's work
   area, so a control below the fold CANNOT be revealed by asking for a taller

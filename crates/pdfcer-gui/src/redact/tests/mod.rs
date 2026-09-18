@@ -33,6 +33,12 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use super::*;
+
+/// The redaction reach setting, measured on the saved bytes. Split out
+/// because it changes for a different reason: this file proves the apply path
+/// is sound under a fixed scope, that one proves the scope is the operator's
+/// to choose and that choosing it changes the file.
+mod reach;
 use pdfcer_core::annot_author::{Quad, RedactSpec};
 use pdfcer_core::page_tree::{self, Rect};
 use pdfcer_core::text_extract::{self, ExtractOptions};
@@ -73,6 +79,15 @@ fn secret_pdf() -> Vec<u8> {
 /// `pub(super)` so [`super::proof`]'s tests share it rather than growing a
 /// second, subtly different assembler.
 pub(super) fn assemble(bodies: &[&str]) -> Vec<u8> {
+    assemble_with_trailer(bodies, "")
+}
+
+/// [`assemble`], plus extra keys spliced into the trailer dictionary.
+///
+/// The trailer is where a carrier that is on no page lives — `/Info` above
+/// all — so a fixture that needs one needs this rather than a second
+/// assembler. `extra` is inserted verbatim before the closing `>>`.
+pub(super) fn assemble_with_trailer(bodies: &[&str], extra: &str) -> Vec<u8> {
     let mut buf = b"%PDF-1.7\n%\xE2\xE3\xCF\xD3\n".to_vec();
     let mut offsets = Vec::new();
     for (i, body) in bodies.iter().enumerate() {
@@ -86,7 +101,8 @@ pub(super) fn assemble(bodies: &[&str]) -> Vec<u8> {
         buf.extend_from_slice(format!("{off:010} 00000 n \n").as_bytes());
     }
     buf.extend_from_slice(
-        format!("trailer\n<< /Size {n} /Root 1 0 R >>\nstartxref\n{xref_at}\n%%EOF\n").as_bytes(),
+        format!("trailer\n<< /Size {n} /Root 1 0 R {extra}>>\nstartxref\n{xref_at}\n%%EOF\n")
+            .as_bytes(),
     );
     buf
 }
@@ -136,7 +152,8 @@ fn scratch(name: &str) -> std::path::PathBuf {
 #[test]
 fn applied_redaction_leaves_no_recoverable_trace_in_the_saved_bytes() {
     let session = session_with_unsaved_mark();
-    let prepared = prepare_redaction_apply(&session).expect("the apply must succeed");
+    let prepared = prepare_redaction_apply(&session, RedactionReach::default())
+        .expect("the apply must succeed");
 
     // The bytes are private, so the assertion goes through the one door
     // that exists — which is itself the property this module is about.
@@ -200,7 +217,7 @@ fn applied_redaction_leaves_no_recoverable_trace_in_the_saved_bytes() {
 #[test]
 fn the_absence_proof_reports_a_clean_verification() {
     let session = session_with_unsaved_mark();
-    let prepared = prepare_redaction_apply(&session).unwrap();
+    let prepared = prepare_redaction_apply(&session, RedactionReach::default()).unwrap();
     assert!(
         prepared.verification.strings_checked > 0,
         "the proof must have had something to check"
@@ -226,7 +243,7 @@ fn a_mark_that_was_never_saved_is_still_applied() {
     assert_eq!(redact::count_redaction_marks(session.document()), 0);
     assert!(redact::count_redaction_marks(&session.graph()) > 0);
 
-    let prepared = prepare_redaction_apply(&session).unwrap();
+    let prepared = prepare_redaction_apply(&session, RedactionReach::default()).unwrap();
     assert!(
         prepared.report.marks_applied >= 1,
         "an unsaved mark must be applied, not silently skipped"
@@ -243,7 +260,7 @@ fn a_mark_that_was_never_saved_is_still_applied() {
 #[test]
 fn the_output_is_one_revision_with_no_prior_revision_to_walk_back_to() {
     let session = session_with_unsaved_mark();
-    let prepared = prepare_redaction_apply(&session).unwrap();
+    let prepared = prepare_redaction_apply(&session, RedactionReach::default()).unwrap();
     let target = scratch("one-revision.pdf");
     let _ = std::fs::remove_file(&target);
     prepared
@@ -265,7 +282,7 @@ fn an_unmarked_document_is_refused_by_name() {
     let doc = Document::from_bytes(secret_pdf()).unwrap();
     let session = EditSession::new(doc);
     assert_eq!(
-        prepare_redaction_apply(&session).unwrap_err(),
+        prepare_redaction_apply(&session, RedactionReach::default()).unwrap_err(),
         RedactApplyRefusal::NothingToApply
     );
 }
@@ -309,7 +326,8 @@ fn writing_over_the_source_replaces_it_and_leaves_no_temporary() {
     );
 
     let session = session_with_unsaved_mark();
-    let prepared = prepare_redaction_apply(&session).expect("the apply must succeed");
+    let prepared = prepare_redaction_apply(&session, RedactionReach::default())
+        .expect("the apply must succeed");
     prepared
         .write_to(&target, ResidualAcknowledgement::Withheld)
         .expect("writing over the source is now a supported destination");
@@ -388,13 +406,14 @@ fn a_real_drawing_sheet_with_an_embedded_font_is_applied_rather_than_refused() {
         "the fixture must contain the word, or nothing below is a test"
     );
 
-    let prepared = prepare_redaction_apply(&session).unwrap_or_else(|refusal| {
-        panic!(
-            "★ THE OPERATOR'S COMPLAINT: a completed redaction on a real \
+    let prepared =
+        prepare_redaction_apply(&session, RedactionReach::default()).unwrap_or_else(|refusal| {
+            panic!(
+                "★ THE OPERATOR'S COMPLAINT: a completed redaction on a real \
              drawing sheet was refused outright, so nothing was written and \
              there was no way to proceed — {refusal:?}"
-        )
-    });
+            )
+        });
     assert!(
         prepared.report.glyphs_removed > 0,
         "not refusing is worthless if nothing was removed"
@@ -479,7 +498,7 @@ fn a_region_over_an_image_destroys_the_samples_and_says_so() {
         )
         .unwrap();
 
-    let prepared = prepare_redaction_apply(&session)
+    let prepared = prepare_redaction_apply(&session, RedactionReach::default())
         .expect("a region over an image is applied, not refused, since pdfcer-core v0.26.0");
     let report = &prepared.report;
     assert!(
@@ -539,7 +558,7 @@ fn the_mark_list_and_the_mark_count_agree() {
 #[test]
 fn an_unacknowledged_residual_refuses_the_write() {
     let session = session_with_unsaved_mark();
-    let mut prepared = prepare_redaction_apply(&session).unwrap();
+    let mut prepared = prepare_redaction_apply(&session, RedactionReach::default()).unwrap();
     assert!(
         prepared.verification.is_clean(),
         "the fixture must start clean, or the assertion below proves nothing"
@@ -582,7 +601,7 @@ fn an_unacknowledged_residual_refuses_the_write() {
 #[test]
 fn a_clean_report_writes_with_the_acknowledgement_withheld() {
     let session = session_with_unsaved_mark();
-    let prepared = prepare_redaction_apply(&session).unwrap();
+    let prepared = prepare_redaction_apply(&session, RedactionReach::default()).unwrap();
     for ack in [
         ResidualAcknowledgement::Withheld,
         ResidualAcknowledgement::Given,
@@ -605,7 +624,7 @@ fn a_clean_report_writes_with_the_acknowledgement_withheld() {
 #[test]
 fn a_write_that_cannot_happen_is_a_named_refusal() {
     let session = session_with_unsaved_mark();
-    let prepared = prepare_redaction_apply(&session).unwrap();
+    let prepared = prepare_redaction_apply(&session, RedactionReach::default()).unwrap();
     let target = scratch("no-such-folder").join("nested").join("out.pdf");
     let refusal = prepared
         .write_to(&target, ResidualAcknowledgement::Withheld)
@@ -624,7 +643,7 @@ fn a_write_that_cannot_happen_is_a_named_refusal() {
 #[test]
 fn the_debug_impl_reports_a_length_rather_than_the_bytes() {
     let session = session_with_unsaved_mark();
-    let prepared = prepare_redaction_apply(&session).unwrap();
+    let prepared = prepare_redaction_apply(&session, RedactionReach::default()).unwrap();
     let rendered = format!("{prepared:?}");
     assert!(
         !rendered.contains("KEEPTHIS"),
@@ -669,7 +688,8 @@ fn the_debug_impl_reports_a_length_rather_than_the_bytes() {
 /// pressing Save, and the state every test below starts from.
 fn staged_session() -> EditSession {
     let mut session = session_with_unsaved_mark();
-    let staged = stage_into_session(&mut session).expect("the fixture must stage");
+    let staged = stage_into_session(&mut session, RedactionReach::default())
+        .expect("the fixture must stage");
     assert!(staged.report.marks_applied >= 1);
     assert!(
         session.has_pending_redaction(),
@@ -816,7 +836,8 @@ fn staging_preserves_the_undo_log() {
         "the fixture must have something in the log, or this test cannot fail"
     );
 
-    let staged = stage_into_session(&mut session).expect("the fixture stages");
+    let staged =
+        stage_into_session(&mut session, RedactionReach::default()).expect("the fixture stages");
 
     assert_eq!(
         session.undo_depth(),
@@ -941,7 +962,7 @@ fn a_staged_document_with_no_marks_left_can_still_be_called_off() {
     assert!(session.has_pending_redaction(), "…and the arming stands");
 
     assert_eq!(
-        prepare_redaction_apply(&session).unwrap_err(),
+        prepare_redaction_apply(&session, RedactionReach::default()).unwrap_err(),
         RedactApplyRefusal::AlreadyStaged,
         "★★★ NOT `NothingToApply`. The dialog draws that one as a refusal with \
          no control on it, and this document cannot be saved by any other \
@@ -973,11 +994,11 @@ fn a_staged_document_with_no_marks_left_can_still_be_called_off() {
 fn a_second_staging_and_a_second_report_are_both_refused_by_name() {
     let mut session = staged_session();
     assert_eq!(
-        stage_into_session(&mut session).unwrap_err(),
+        stage_into_session(&mut session, RedactionReach::default()).unwrap_err(),
         RedactApplyRefusal::AlreadyStaged
     );
     assert_eq!(
-        prepare_redaction_apply(&session).unwrap_err(),
+        prepare_redaction_apply(&session, RedactionReach::default()).unwrap_err(),
         RedactApplyRefusal::AlreadyStaged,
         "★★ the dialog reopened on a staged document must be told WHICH state \
          it is in. Without this it reaches `to_full_bytes`, which the engine \
@@ -997,7 +1018,8 @@ fn a_second_staging_and_a_second_report_are_both_refused_by_name() {
 fn a_refused_staging_leaves_the_session_untouched() {
     let doc = Document::from_bytes(secret_pdf()).unwrap();
     let mut session = EditSession::new(doc);
-    let err = stage_into_session(&mut session).expect_err("no marks, no staging");
+    let err = stage_into_session(&mut session, RedactionReach::default())
+        .expect_err("no marks, no staging");
     assert_eq!(err, RedactApplyRefusal::NothingToApply);
     assert!(
         !session.has_pending_redaction(),
@@ -1110,7 +1132,8 @@ fn a_real_drawing_survives_the_staged_route() {
         "the fixture must contain {TERM}, or this test proves nothing"
     );
 
-    let staged = stage_into_session(&mut session).expect("a real drawing must stage");
+    let staged = stage_into_session(&mut session, RedactionReach::default())
+        .expect("a real drawing must stage");
     assert!(staged.report.glyphs_removed > 0);
 
     // ★ The refusal, on a real document. This is the assertion that the guard
@@ -1209,7 +1232,7 @@ fn the_save_time_proof_is_free_when_there_is_nothing_to_prove_and_bites_when_the
 #[test]
 fn the_residual_count_matches_the_disclosed_list_except_for_promotion() {
     let session = session_with_unsaved_mark();
-    let mut prepared = prepare_redaction_apply(&session).expect("apply");
+    let mut prepared = prepare_redaction_apply(&session, RedactionReach::default()).expect("apply");
     assert_eq!(
         residual_count(&prepared.report, Some(&prepared.verification)),
         0,
@@ -1300,7 +1323,7 @@ fn where_do_the_survivors_live_on_his_drawing() {
         quadding: Quadding::Left,
     };
     session.add_redaction(0, &spec).expect("mark");
-    match prepare_redaction_apply(&session) {
+    match prepare_redaction_apply(&session, RedactionReach::default()) {
         Ok(prepared) => {
             println!(
                 "PREPARED: marks={} pages_redacted={} glyphs={} checked={} short={} residuals={} clean={}",

@@ -856,7 +856,7 @@ that is now deliberate rather than incidental.
    reserves the right to report them; this row records that the sweep is owed
    before he has to.
 
-## O211 — **FILED** — redaction removes text he never marked, and he wants to choose
+## O211 — ✅ **BUILT** — redaction removes text he never marked, and he wants to choose
 
 > *"I noticed that when I use the redaction tool on some content, if other
 > content matches I haven't selected also gets removed or replaced with X. I'd
@@ -875,24 +875,36 @@ needle was tokenised, so redacting `INVOICE 4412` made the bare word `INVOICE`
 its own needle and ate it from a page he never touched. Reproduced against
 released v0.54.0. Ships in the engine's `Pass 310.0`.
 
-**What is owed HERE**, and it is not automatic — the fix arrives with a control
-the shell must surface:
+**What the shell built on top of that fix.**
 
-1. Take the engine pin forward and confirm the over-reach is gone on his own
-   file, driven, not unit-tested.
-2. Surface `ResidualScope` — `MarkedOnly` / `HiddenCarriers` (the default) /
-   `WholeDocument` — somewhere durable. His sentence asks for the first one to
-   be reachable.
-3. Surface the declined-match note off-canvas. ★ `has_unscrubbed_matches()`
-   means *pdfcer was told not to act* and **must never block a redaction** —
-   it is not `has_disclosed_residuals()`, which means *pdfcer could not act* and
-   does block. Collapsing the two would break ordinary redaction, because almost
-   any phrase appears somewhere else in a document.
-4. Decide whether the scope wants a persisted settings key. The engine says it
-   is a one-line addition on request, and that a key nobody reads is worse than
-   no key.
+1. **A standing choice, in Settings → Redaction.** *Only what I marked* /
+   *What I marked, and copies no viewer shows* (the shipped default) /
+   *Every copy, anywhere in the document*. His sentence asks for the first, and
+   it is now the first rung of a ladder that reads least-to-most destructive.
+2. **It persists**, under `redaction_reach` in the shell's own
+   `preferences.txt`. A reach is a standing position about the work, and it has
+   to be in force before the apply dialog opens — that dialog runs the removal
+   the instant it is raised, so a value chosen inside it would arrive one full
+   rewrite too late.
+3. **The narrower reaches disclose what they leave**, off-canvas, in the apply
+   dialog and in the report — by carrier, before he commits. ★ The two
+   predicates stay apart: *told not to act* never blocks the save, *could not
+   act* still does. Collapsing them would break ordinary redaction, because
+   almost any phrase appears somewhere else in a document.
+4. **Driven, not unit-tested**, by
+   `the_redaction_reach_setting_decides_what_survives`: two launches of the real
+   binary, the preference written into the profile between them, marked by
+   search, saved, and the two files read back by a third process. The copy in
+   `/Info /Title` survives the narrow reach and does not survive the default,
+   and the dialog asks for an acknowledgement under exactly one of them.
 
-## O210 — ◑ **HALF BUILT AND MEASURED** — rebuilding takes too long, and the answer was not DLLs
+**The engine's offer of a persisted key is declined**, and that is a decision
+rather than an omission: the reach is what this operator wants of this shell,
+not a property of a document, so it belongs in the shell's preferences where
+every other such answer lives. Recorded in the request channel so the engine
+does not hold the offer open.
+
+## O210 — ◑ **PART BUILT AND MEASURED** — rebuilding takes too long, and the answer was not DLLs
 
 > *"would compiling new versions and testing be faster and easier and less
 > tokens if we switch from building a single exe every time to compiling with

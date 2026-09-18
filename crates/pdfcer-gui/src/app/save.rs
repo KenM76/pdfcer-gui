@@ -1044,7 +1044,7 @@ fn write_copy(doc: &OpenDoc, target: &Path) -> Result<Written, SaveError> {
         // has a shorter list, and proving against the longer one would refuse a
         // legitimate save over a mark he deliberately took off.
         let claims = report.redacted_text.clone();
-        (bytes, Written::RedactionApplied(report), claims)
+        (bytes, Written::RedactionApplied(Box::new(report)), claims)
     } else {
         let (bytes, report) = doc.session.to_incremental_bytes(&options)?;
         // The standing claim on the document. Empty on everything that has not
@@ -1195,7 +1195,12 @@ enum Written {
     /// A staged redaction, performed — §1.1. A single-revision full rewrite
     /// with the marked content gone, proven absent from the bytes twice before
     /// they reached the disk.
-    RedactionApplied(pdfcer_core::redact::RedactionReport),
+    ///
+    /// Boxed because `RedactionReport` is more than three times the size of
+    /// `SaveReport`, and an un-boxed variant makes **every** save pay that size
+    /// — the enum is as large as its largest arm, and the ordinary incremental
+    /// save is the one this program performs constantly.
+    RedactionApplied(Box<pdfcer_core::redact::RedactionReport>),
 }
 
 /// Why a save-a-copy produced no file.

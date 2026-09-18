@@ -67,7 +67,7 @@ alongside the other licences harvested from `Cargo.lock`.
 
 ## Licence overview
 
-- **Apache License 2.0** — used by 189 crate(s)
+- **Apache License 2.0** — used by 190 crate(s)
 - **Unicode License v3** — used by 19 crate(s)
 - **MIT License** — used by 18 crate(s)
 - **BSD 3-Clause &quot;New&quot; or &quot;Revised&quot; License** — used by 7 crate(s)
@@ -1184,7 +1184,7 @@ Used by:
 ### Apache License 2.0
 
 Used by:
-- [zerocopy 0.8.56](https://github.com/google/zerocopy)
+- [zerocopy 0.8.57](https://github.com/google/zerocopy)
 
 ```
                                  Apache License
@@ -2239,7 +2239,7 @@ Used by:
 ### Apache License 2.0
 
 Used by:
-- [crc32fast 1.5.0](https://github.com/srijs/rust-crc32fast)
+- [crc32fast 1.5.2](https://github.com/srijs/rust-crc32fast)
 
 ```
                                  Apache License
@@ -3294,15 +3294,15 @@ Used by:
 - [arrayvec 0.7.8](https://github.com/bluss/arrayvec)
 - [base64 0.21.7](https://github.com/marshallpierce/rust-base64)
 - [bitflags 1.3.2](https://github.com/bitflags/bitflags)
-- [bitflags 2.13.1](https://github.com/bitflags/bitflags)
-- [cfg-if 1.0.4](https://github.com/rust-lang/cfg-if)
-- [crossbeam-deque 0.8.7](https://github.com/crossbeam-rs/crossbeam)
-- [crossbeam-epoch 0.9.20](https://github.com/crossbeam-rs/crossbeam)
-- [crossbeam-utils 0.8.22](https://github.com/crossbeam-rs/crossbeam)
+- [bitflags 2.13.2](https://github.com/bitflags/bitflags)
+- [cfg-if 1.0.5](https://github.com/rust-lang/cfg-if)
+- [crossbeam-deque 0.8.8](https://github.com/crossbeam-rs/crossbeam)
+- [crossbeam-epoch 0.9.21](https://github.com/crossbeam-rs/crossbeam)
+- [crossbeam-utils 0.8.23](https://github.com/crossbeam-rs/crossbeam)
 - [displaydoc 0.2.7](https://github.com/yaahc/displaydoc)
-- [either 1.17.0](https://github.com/rayon-rs/either)
+- [either 1.18.0](https://github.com/rayon-rs/either)
 - [euclid 0.22.14](https://github.com/servo/euclid)
-- [flate2 1.1.9](https://github.com/rust-lang/flate2-rs)
+- [flate2 1.1.10](https://github.com/rust-lang/flate2-rs)
 - [form_urlencoded 1.2.2](https://github.com/servo/rust-url)
 - [group 0.14.0](https://github.com/zkcrypto/group)
 - [hashbrown 0.16.1](https://github.com/rust-lang/hashbrown)
@@ -3311,7 +3311,7 @@ Used by:
 - [idna_adapter 1.2.2](https://github.com/hsivonen/idna_adapter)
 - [itertools 0.14.0](https://github.com/rust-itertools/itertools)
 - [lock_api 0.4.14](https://github.com/Amanieu/parking_lot)
-- [log 0.4.33](https://github.com/rust-lang/log)
+- [log 0.4.34](https://github.com/rust-lang/log)
 - [num-traits 0.2.19](https://github.com/rust-num/num-traits)
 - [num_cpus 1.17.0](https://github.com/seanmonstar/num_cpus)
 - [once_cell 1.21.4](https://github.com/matklad/once_cell)
@@ -3324,12 +3324,12 @@ Used by:
 - [rayon 1.12.0](https://github.com/rayon-rs/rayon)
 - [ron 0.8.1](https://github.com/ron-rs/ron)
 - [scopeguard 1.2.0](https://github.com/bluss/scopeguard)
-- [smallvec 1.15.2](https://github.com/servo/rust-smallvec)
+- [smallvec 1.16.1](https://github.com/servo/rust-smallvec)
 - [smol_str 0.2.2](https://github.com/rust-analyzer/smol_str)
 - [stable_deref_trait 1.2.1](https://github.com/storyyeller/stable_deref_trait)
 - [unicode-segmentation 1.13.3](https://github.com/unicode-rs/unicode-segmentation)
 - [url 2.5.8](https://github.com/servo/rust-url)
-- [uuid 1.24.0](https://github.com/uuid-rs/uuid)
+- [uuid 1.26.1](https://github.com/uuid-rs/uuid)
 
 ```
                               Apache License
@@ -3750,7 +3750,7 @@ limitations under the License.
 ### Apache License 2.0
 
 Used by:
-- [aes 0.9.2](https://github.com/RustCrypto/block-ciphers)
+- [aes 0.9.3](https://github.com/RustCrypto/block-ciphers)
 - [base16ct 1.0.0](https://github.com/RustCrypto/formats)
 - [base64ct 1.8.3](https://github.com/RustCrypto/formats)
 - [block-buffer 0.12.1](https://github.com/RustCrypto/utils)
@@ -3759,14 +3759,14 @@ Used by:
 - [cipher 0.5.2](https://github.com/RustCrypto/traits)
 - [const-oid 0.10.2](https://github.com/RustCrypto/formats)
 - [cpubits 0.1.1](https://github.com/RustCrypto/utils)
-- [cpufeatures 0.3.0](https://github.com/RustCrypto/utils)
+- [cpufeatures 0.3.1](https://github.com/RustCrypto/utils)
 - [crypto-bigint 0.7.5](https://github.com/RustCrypto/crypto-bigint)
 - [crypto-common 0.2.2](https://github.com/RustCrypto/traits)
 - [der 0.8.2](https://github.com/RustCrypto/formats)
 - [digest 0.11.3](https://github.com/RustCrypto/traits)
 - [elliptic-curve 0.14.1](https://github.com/RustCrypto/traits)
 - [hmac 0.13.0](https://github.com/RustCrypto/MACs)
-- [hybrid-array 0.4.14](https://github.com/RustCrypto/hybrid-array)
+- [hybrid-array 0.4.15](https://github.com/RustCrypto/hybrid-array)
 - [inout 0.2.2](https://github.com/RustCrypto/utils)
 - [p256 0.14.0](https://github.com/RustCrypto/elliptic-curves)
 - [p384 0.14.0](https://github.com/RustCrypto/elliptic-curves)
@@ -5515,7 +5515,7 @@ Apache License
 
 Used by:
 - [bytemuck 1.25.2](https://github.com/Lokathor/bytemuck)
-- [bytemuck_derive 1.12.0](https://github.com/Lokathor/bytemuck)
+- [bytemuck_derive 1.12.1](https://github.com/Lokathor/bytemuck)
 
 ```
 Apache License
@@ -5612,6 +5612,7 @@ Used by:
 - [linebender_resource_handle 0.1.1](https://github.com/linebender/raw_resource_handle)
 - [litrs 1.0.0](https://github.com/LukasKalbertodt/litrs)
 - [miniz_oxide 0.8.9](https://github.com/Frommi/miniz_oxide/tree/master/miniz_oxide)
+- [miniz_oxide 0.9.1](https://github.com/Frommi/miniz_oxide/tree/master/miniz_oxide)
 - [ocrs 0.12.2](https://github.com/robertknight/ocrs)
 - [pin-project-lite 0.2.17](https://github.com/taiki-e/pin-project-lite)
 - [proc-macro2 1.0.107](https://github.com/dtolnay/proc-macro2)
@@ -5634,11 +5635,11 @@ Used by:
 - [serde_derive 1.0.229](https://github.com/serde-rs/serde)
 - [subsetter 0.2.6](https://github.com/typst/subsetter)
 - [syn 2.0.119](https://github.com/dtolnay/syn)
-- [syn 3.0.3](https://github.com/dtolnay/syn)
+- [syn 3.0.6](https://github.com/dtolnay/syn)
 - [thiserror-impl 2.0.20](https://github.com/dtolnay/thiserror)
 - [thiserror 2.0.20](https://github.com/dtolnay/thiserror)
 - [typeid 1.0.3](https://github.com/dtolnay/typeid)
-- [unicode-ident 1.0.24](https://github.com/dtolnay/unicode-ident)
+- [unicode-ident 1.0.26](https://github.com/dtolnay/unicode-ident)
 - [vello_common 0.0.9](https://github.com/linebender/vello)
 - [vello_cpu 0.0.9](https://github.com/linebender/vello)
 
@@ -5878,7 +5879,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&
 ### Boost Software License 1.0
 
 Used by:
-- [error-code 3.3.2](https://github.com/DoumanAsh/error-code)
+- [error-code 3.4.0](https://github.com/DoumanAsh/error-code)
 
 ```
 Boost Software License - Version 1.0 - August 17th, 2003
@@ -6112,7 +6113,7 @@ THE SOFTWARE.
 ### MIT License
 
 Used by:
-- [synstructure 0.13.2](https://github.com/mystor/synstructure)
+- [synstructure 0.14.0](https://github.com/mystor/synstructure)
 
 ```
 Copyright 2016 Nika Layzell
@@ -6486,7 +6487,7 @@ DEALINGS IN THE FONT SOFTWARE.
 ### Unicode License v3
 
 Used by:
-- [unicode-ident 1.0.24](https://github.com/dtolnay/unicode-ident)
+- [unicode-ident 1.0.26](https://github.com/dtolnay/unicode-ident)
 
 ```
 UNICODE LICENSE V3
@@ -6534,24 +6535,24 @@ authorization of the copyright holder.
 ### Unicode License v3
 
 Used by:
-- [icu_collections 2.2.0](https://github.com/unicode-org/icu4x)
-- [icu_locale_core 2.2.0](https://github.com/unicode-org/icu4x)
-- [icu_normalizer 2.2.0](https://github.com/unicode-org/icu4x)
-- [icu_normalizer_data 2.2.0](https://github.com/unicode-org/icu4x)
-- [icu_properties 2.2.0](https://github.com/unicode-org/icu4x)
-- [icu_properties_data 2.2.0](https://github.com/unicode-org/icu4x)
-- [icu_provider 2.2.0](https://github.com/unicode-org/icu4x)
-- [litemap 0.8.2](https://github.com/unicode-org/icu4x)
-- [potential_utf 0.1.5](https://github.com/unicode-org/icu4x)
-- [tinystr 0.8.3](https://github.com/unicode-org/icu4x)
-- [writeable 0.6.3](https://github.com/unicode-org/icu4x)
-- [yoke-derive 0.8.2](https://github.com/unicode-org/icu4x)
+- [icu_collections 2.3.0](https://github.com/unicode-org/icu4x)
+- [icu_locale_core 2.3.0](https://github.com/unicode-org/icu4x)
+- [icu_normalizer 2.3.0](https://github.com/unicode-org/icu4x)
+- [icu_normalizer_data 2.3.0](https://github.com/unicode-org/icu4x)
+- [icu_properties 2.3.0](https://github.com/unicode-org/icu4x)
+- [icu_properties_data 2.3.0](https://github.com/unicode-org/icu4x)
+- [icu_provider 2.3.1](https://github.com/unicode-org/icu4x)
+- [litemap 0.8.3](https://github.com/unicode-org/icu4x)
+- [potential_utf 0.1.6](https://github.com/unicode-org/icu4x)
+- [tinystr 0.8.4](https://github.com/unicode-org/icu4x)
+- [writeable 0.6.4](https://github.com/unicode-org/icu4x)
+- [yoke-derive 0.8.3](https://github.com/unicode-org/icu4x)
 - [yoke 0.8.3](https://github.com/unicode-org/icu4x)
-- [zerofrom-derive 0.1.7](https://github.com/unicode-org/icu4x)
+- [zerofrom-derive 0.1.8](https://github.com/unicode-org/icu4x)
 - [zerofrom 0.1.8](https://github.com/unicode-org/icu4x)
-- [zerotrie 0.2.4](https://github.com/unicode-org/icu4x)
-- [zerovec-derive 0.11.3](https://github.com/unicode-org/icu4x)
-- [zerovec 0.11.6](https://github.com/unicode-org/icu4x)
+- [zerotrie 0.2.5](https://github.com/unicode-org/icu4x)
+- [zerovec-derive 0.11.6](https://github.com/unicode-org/icu4x)
+- [zerovec 0.11.8](https://github.com/unicode-org/icu4x)
 
 ```
 UNICODE LICENSE V3

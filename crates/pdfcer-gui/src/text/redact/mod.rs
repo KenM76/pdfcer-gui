@@ -565,9 +565,18 @@ pub fn mark_covers_image(images: usize) -> String {
 
 /// The heading for the residual section — the part that makes the feature
 /// honest.
+///
+/// It states the **consequence** and never a limit of pdfcer, because the
+/// section below it collects three different causes and only one of them is a
+/// limit: content pdfcer could not reach, a byte run it could not rule out,
+/// and — once the redaction reach is narrowed — copies it found, can remove,
+/// and was told to leave. A heading reading "pdfcer could not" would make that
+/// third kind read as a failure, which is the one thing the engine keeps two
+/// separate verdicts to prevent. What every line under it has in common is
+/// what the heading says: it survives the save.
 #[must_use]
 pub fn residual_heading() -> &'static str {
-    "⚠  Read before continuing — pdfcer could not remove, or could not rule out, the following:"
+    "⚠  Read before continuing — the following will still be in the saved file:"
 }
 
 // ---------------------------------------------------------------------------
@@ -579,7 +588,7 @@ pub fn residual_heading() -> &'static str {
 // ---------------------------------------------------------------------------
 mod carriers;
 pub use carriers::{
-    carrier_name, checked_clean_line, engine_notes_heading, engine_notes_lead,
+    carrier_name, checked_clean_line, engine_notes_heading, engine_notes_lead, left_by_choice_line,
     residual_carrier_line, residual_sweep_line, sweep_scrubbed_line,
 };
 

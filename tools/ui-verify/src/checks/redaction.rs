@@ -130,16 +130,16 @@ use crate::trace::Trace;
 /// tab and Read and Review are not shown that tab at all. A check that stayed
 /// in Review would find no control and SKIP, reporting a missing feature that
 /// is merely on a tab it did not open.
-const MODE: &str = "edit";
+pub(super) const MODE: &str = "edit";
 
 /// The Edit tab.
-const EDIT_TAB: (&str, &str) = ("ribbon.tab.edit", "edit");
+pub(super) const EDIT_TAB: (&str, &str) = ("ribbon.tab.edit", "edit");
 
 /// The File tab, for the extraction oracle.
 const FILE_TAB: (&str, &str) = ("ribbon.tab.file", "file");
 
 /// The control that opens the marking panel.
-const REDACT: (&str, &str) = ("ribbon.item.edit.redact", "edit.redact");
+pub(super) const REDACT: (&str, &str) = ("ribbon.item.edit.redact", "edit.redact");
 
 /// The control that copies the current page's text — the extraction oracle,
 /// used once on the fixture and once on the redacted output.
@@ -149,10 +149,10 @@ const COPY_PAGE_TEXT: (&str, &str) = ("ribbon.item.file.copy_page_text", "file.c
 const WHOLE_PAGE_REGION: &str = "redact-whole-page";
 
 /// The panel's control that opens the apply report.
-const APPLY_REGION: &str = "redact-apply";
+pub(super) const APPLY_REGION: &str = "redact-apply";
 
 /// The dialog's mandatory acknowledgement checkbox.
-const ACK_REGION: &str = "redact-apply-ack";
+pub(super) const ACK_REGION: &str = "redact-apply-ack";
 
 /// The dialog's confirm control.
 ///
@@ -160,7 +160,7 @@ const ACK_REGION: &str = "redact-apply-ack";
 /// makes phase E possible at all: its absence from the trace is positive
 /// evidence that the gate is closed, rather than the absence of evidence a
 /// disabled-but-drawn control would leave.
-const CONFIRM_REGION: &str = "redact-apply-confirm";
+pub(super) const CONFIRM_REGION: &str = "redact-apply-confirm";
 
 /// The dialog's *replace the open file* destination choice.
 ///
@@ -201,7 +201,7 @@ const DESTINATION_INTO_DOCUMENT_NOW_REGION: &str = "redact-apply-destination-int
 /// Also unconditional. Phase E2 **clicks** it, because the default no longer
 /// writes a file and phases F–I are entirely about a file — see E2's own note
 /// on why the check moves off the default deliberately and says so.
-const DESTINATION_NEW_FILE_REGION: &str = "redact-apply-destination-new-file";
+pub(super) const DESTINATION_NEW_FILE_REGION: &str = "redact-apply-destination-new-file";
 
 /// The dialog's staging disclosure.
 ///
@@ -219,22 +219,22 @@ const DESTINATION_NEW_FILE_REGION: &str = "redact-apply-destination-new-file";
 const STAGING_NOTE_REGION: &str = "redact-apply-staging-note";
 
 /// Every region name the redaction surfaces publish, for a SKIP reason.
-const REGION_PREFIX: &str = "redact-";
+pub(super) const REGION_PREFIX: &str = "redact-";
 
 /// `redact-panel marks=N pages=M epoch=E` — the marking census.
-const PANEL_EVENT: &str = "redact-panel";
+pub(super) const PANEL_EVENT: &str = "redact-panel";
 
 /// `redact-prepared marks=… verified=… …` — the removal ran in memory.
-const PREPARED_EVENT: &str = "redact-prepared";
+pub(super) const PREPARED_EVENT: &str = "redact-prepared";
 
 /// `redact-refused reason=…` — the apply declined before anything was written.
-const REFUSED_EVENT: &str = "redact-refused";
+pub(super) const REFUSED_EVENT: &str = "redact-refused";
 
 /// `redact-written path=… verified=… …` — bytes reached the file system.
-const WRITTEN_EVENT: &str = "redact-written";
+pub(super) const WRITTEN_EVENT: &str = "redact-written";
 
 /// `redact-write-failed path=… detail=…`.
-const WRITE_FAILED_EVENT: &str = "redact-write-failed";
+pub(super) const WRITE_FAILED_EVENT: &str = "redact-write-failed";
 
 /// `text-copied source=page chars=N` — pdfcer's own extraction found text.
 const COPIED_EVENT: &str = "text-copied";
@@ -252,14 +252,14 @@ const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH";
 /// can pass by luck proves nothing. It is also well over
 /// `redact::proof::MIN_VERIFIABLE_LEN`, so the raw-byte half of the
 /// application's own proof has something to say about it.
-const SECRET: &str = "CONFIDENTIALWITNESSALPHA";
+pub(super) const SECRET: &str = "CONFIDENTIALWITNESSALPHA";
 
 /// **The string that must survive**, drawn on page 2.
 ///
 /// The negative control, and the reason the fixture has two pages. Without it,
 /// a build that wrote an empty document would satisfy every absence assertion
 /// in this check.
-const SURVIVOR: &str = "UNTOUCHEDWITNESSBETA";
+pub(super) const SURVIVOR: &str = "UNTOUCHEDWITNESSBETA";
 
 /// See the module documentation.
 pub struct RedactionRemovesAndProvesIt;
@@ -298,7 +298,7 @@ impl Check for RedactionRemovesAndProvesIt {
 /// it is auditing would be a weaker proof."* Here the separation is stronger
 /// still — this one is in a different crate, in a different process, over bytes
 /// read back from the file system.
-fn contains(hay: &[u8], needle: &[u8]) -> bool {
+pub(super) fn contains(hay: &[u8], needle: &[u8]) -> bool {
     if needle.is_empty() || needle.len() > hay.len() {
         return false;
     }
@@ -387,7 +387,7 @@ pub(super) fn fixture_bytes() -> Vec<u8> {
 
 /// Launch one process with both diagnostic channels armed and the save seam
 /// set.
-fn launch(
+pub(super) fn launch(
     ctx: &CheckContext,
     report: &mut CheckReport,
     pdf: &Path,
@@ -452,7 +452,7 @@ fn invokes(session: &Session, id: &str) -> Result<usize> {
 }
 
 /// Click a ribbon tab and confirm the shell reported it.
-fn click_tab(
+pub(super) fn click_tab(
     session: &Session,
     driver: &Driver,
     ui_rect: &str,
@@ -488,7 +488,7 @@ fn click_tab(
 }
 
 /// Locate a declared region and refuse a degenerate rectangle.
-fn region(trace: &Trace, ui_rect: &str, name: &str, prefix: &str) -> Result<LRect> {
+pub(super) fn region(trace: &Trace, ui_rect: &str, name: &str, prefix: &str) -> Result<LRect> {
     let rect = declared(trace, ui_rect, name).ok_or_else(|| {
         Error::new(format!(
             "the application declared no `{name}` region, so there is nothing to aim at. \
@@ -506,7 +506,7 @@ fn region(trace: &Trace, ui_rect: &str, name: &str, prefix: &str) -> Result<LRec
 }
 
 /// Click a ribbon band control and confirm the **shell** reported the invoke.
-fn click_command(
+pub(super) fn click_command(
     session: &Session,
     driver: &Driver,
     ui_rect: &str,
@@ -572,14 +572,36 @@ fn click_command(
 /// asserts an application-side effect immediately afterwards: an unconfirmed
 /// click plus an unchanged application is reported as a SKIP by the caller
 /// rather than as a failure of the feature.
-fn click_region(session: &Session, driver: &Driver, rect: LRect, settle: u32) -> Result<()> {
-    driver.click_at(session.frame()?.declared_center(rect))?;
+///
+/// # ★★★ It takes the NAME, and it must keep taking the name
+///
+/// A rectangle does not carry the viewport it was measured in, and this check
+/// drives two of them: the marking panel is in the application window, the
+/// apply dialog is a child viewport with its own client origin. Converting a
+/// dialog rect against the application window produces a *plausible* screen
+/// point several hundred points from the control — no error, no missed-click
+/// report, just an acknowledgement that never takes and a confirm control that
+/// is never offered. [`driving::frame_of`] answers with the right origin for
+/// either, and it can only be asked once the name is in hand.
+pub(super) fn click_region(
+    session: &Session,
+    driver: &Driver,
+    ui_rect: &str,
+    name: &str,
+    settle: u32,
+) -> Result<()> {
+    // Re-read rather than take a rect from the caller: the trace is a change
+    // log, so a rect fetched before an intervening click may name where the
+    // control *was*.
+    let trace = session.trace()?;
+    let rect = region(&trace, ui_rect, name, REGION_PREFIX)?;
+    driver.click_at(driving::frame_of(session, &trace, ui_rect, name)?.declared_center(rect))?;
     session.settle(settle);
     Ok(())
 }
 
 /// The most recent marking census, as `(marks, pages)`.
-fn census(trace: &Trace) -> Option<(usize, usize)> {
+pub(super) fn census(trace: &Trace) -> Option<(usize, usize)> {
     let line = trace.last(PANEL_EVENT)?;
     Some((line.get_usize("marks")?, line.get_usize("pages")?))
 }
@@ -725,16 +747,15 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         click_tab(&session, &driver, ui_rect, EDIT_TAB)?;
         click_command(&session, &driver, ui_rect, REDACT, 20)?;
         let trace = session.trace()?;
-        let whole_page =
-            region(&trace, ui_rect, WHOLE_PAGE_REGION, REGION_PREFIX).map_err(|e| {
-                Error::new(format!(
-                    "{e}\n\
+        region(&trace, ui_rect, WHOLE_PAGE_REGION, REGION_PREFIX).map_err(|e| {
+            Error::new(format!(
+                "{e}\n\
                      `{}` was invoked and the marking panel published no controls. Either the \
                      panel did not mount, or `Panel::Redact` is not reachable from this mode's \
                      dock arrangement.",
-                    REDACT.1
-                ))
-            })?;
+                REDACT.1
+            ))
+        })?;
         if let Some((marks, _)) = census(&trace)
             && marks != 0
         {
@@ -745,7 +766,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
 
         // --- PHASE C: mark page 1 ------------------------------------------
-        click_region(&session, &driver, whole_page, 18)?;
+        click_region(&session, &driver, ui_rect, WHOLE_PAGE_REGION, 18)?;
         let trace = session.trace()?;
         let Some((marks, pages)) = census(&trace) else {
             return Err(Error::new(format!(
@@ -770,8 +791,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ));
 
         // --- PHASE D: the apply report -------------------------------------
-        let apply = region(&session.trace()?, ui_rect, APPLY_REGION, REGION_PREFIX)?;
-        click_region(&session, &driver, apply, 20)?;
+        region(&session.trace()?, ui_rect, APPLY_REGION, REGION_PREFIX)?;
+        click_region(&session, &driver, ui_rect, APPLY_REGION, 20)?;
         let trace = session.trace()?;
         let Some(prepared) = trace.last(PREPARED_EVENT) else {
             if let Some(refused) = trace.last(REFUSED_EVENT) {
@@ -939,8 +960,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             )));
         }
 
-        let ack = region(&session.trace()?, ui_rect, ACK_REGION, REGION_PREFIX)?;
-        click_region(&session, &driver, ack, 16)?;
+        region(&session.trace()?, ui_rect, ACK_REGION, REGION_PREFIX)?;
+        click_region(&session, &driver, ui_rect, ACK_REGION, 16)?;
         let confirm =
             region(&session.trace()?, ui_rect, CONFIRM_REGION, REGION_PREFIX).map_err(|e| {
                 Error::new(format!(
@@ -1004,28 +1025,27 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // abandoning phases F–I, since a staged document refuses the ordinary
         // saves those phases depend on. It wants a check of its own and does
         // not have one.
-        let new_file = region(
+        region(
             &session.trace()?,
             ui_rect,
             DESTINATION_NEW_FILE_REGION,
             REGION_PREFIX,
         )?;
-        click_region(&session, &driver, new_file, 16)?;
+        click_region(&session, &driver, ui_rect, DESTINATION_NEW_FILE_REGION, 16)?;
         // The undo note disappears with the destination, so the layout moves
         // and the confirm control is somewhere else. Re-read it rather than
         // clicking a fossil — `declared`'s own header records what happens to a
         // check that does not.
-        let confirm =
-            region(&session.trace()?, ui_rect, CONFIRM_REGION, REGION_PREFIX).map_err(|e| {
-                Error::new(format!(
-                    "{e}\n\
+        region(&session.trace()?, ui_rect, CONFIRM_REGION, REGION_PREFIX).map_err(|e| {
+            Error::new(format!(
+                "{e}\n\
                      The destination was changed to `a new file` and the confirm control is no \
                      longer offered. Changing the destination retires the OVERWRITE \
                      acknowledgement, which the new-file destination does not require — so if \
                      the button is dead here, `RedactDialog::ready_to_confirm` is asking for a \
                      tick at a checkbox that is not on screen."
-                ))
-            })?;
+            ))
+        })?;
         if declared(&session.trace()?, ui_rect, STAGING_NOTE_REGION).is_some() {
             return Ok(Some(format!(
                 "★ THE STAGING DISCLOSURE IS STILL ON SCREEN on the `a new file` destination, \
@@ -1041,7 +1061,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         );
 
         // --- PHASE F: write ------------------------------------------------
-        click_region(&session, &driver, confirm, 24)?;
+        click_region(&session, &driver, ui_rect, CONFIRM_REGION, 24)?;
         let trace = session.trace()?;
         let Some(written) = trace.last(WRITTEN_EVENT) else {
             if let Some(failed) = trace.last(WRITE_FAILED_EVENT) {

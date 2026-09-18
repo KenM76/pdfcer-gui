@@ -28,195 +28,204 @@ use pdfcer_core::export::dxf::{DxfText, DxfUnits};
 /// writer and a hand-written parser get wrong first: they are two spellings
 /// of the same vocabulary, and this is what stops them drifting.
 ///
-/// Every field is varied, and the two enums are varied over **all** their
-/// values rather than one apiece — a writer that emitted a constant token
-/// would pass a single-value check.
+/// Every field is varied, and the three multi-valued enums are varied over
+/// **all** their values rather than one apiece — a writer that emitted a
+/// constant token would pass a single-value check.
 #[test]
 fn every_preference_round_trips_through_the_file() {
     for quality in RenderQuality::ALL {
         for fit in OpeningFit::ALL {
-            let original = Prefs {
-                // ★ Non-default, like every field here. O70: `false`, because
-                // the shipped default is `true` and a writer that emitted a
-                // constant would otherwise pass.
-                smart_select: false,
-                // ★ Non-default, identically. O163 ships `true`, so a
-                // writer emitting a constant would round-trip a preference
-                // the operator had turned OFF without this test noticing.
-                find_zoom_on_jump: false,
-                // ★ Non-default, identically. O180 ships `true`.
-                find_trim_query: false,
-                page_previews: false,
-                page_preview_budget_ms: 0,
-                ribbon_auto_hide: false,
-                rail_auto_hide: false,
-                // ★ Non-default for the identical reason — O96 ships `true`,
-                // so a writer emitting a constant `true` would round-trip a
-                // preference the operator had turned OFF and this test would
-                // not notice.
-                shade_form_fields: false,
-                // ★ Non-default, like every field here — and this one is
-                // the only OPTIONAL key in the file, so a writer that emitted
-                // nothing for it would fail this round trip. `Facing` rather
-                // than `Single` so it cannot coincide with the compiled-in
-                // per-mode answer either. O80.
-                default_page_display: Some(crate::viewer::PageDisplay::Facing),
-                font_folders: vec![std::path::PathBuf::from("C:/Fonts")],
-                use_os_fonts: true,
-                // ★ Non-default, like every field here, and with a SPACE in
-                // it — a path a person would really type on Windows. O122.
-                // Non-default, like every field here. O173 ships `true`, so a
-                // writer that emitted a constant would round-trip the offer as
-                // still-wanted after the operator had ticked Do not ask again -
-                // which is the one failure this preference exists to prevent.
-                ask_default_app: false,
-                acrobat_path: r"D:\Apps\Acrobat DC\Acrobat.exe".to_owned(),
-                // ★ Non-default, and deliberately a DIFFERENT string from the
-                // field above: two paths that happened to be equal would pass on a
-                // writer that emitted one of them twice.
-                acrobat_trust_store_path: r"D:\Certs\addressbook.acrodata".to_owned(),
-                // ★ Non-default, like every other field here: a `None`
-                // would pass on a build whose writer emitted no
-                // `chosen_standard` key at all.
-                chosen_standard: Some("pdf-x1a".to_owned()),
-                // ★ Non-default, and with a SPACE in it: the writer emits
-                // the value raw and the parser trims, so a name of one word
-                // would pass on a reader that split on whitespace.
-                author_name: "Ken Mantle".to_owned(),
-                // The migration marker round-trips like every other key.
-                // `true` rather than the default `false`, per this test's
-                // own rule: a non-default in every field, so no emitted
-                // value can coincide with what a failed parse left behind.
-                render_quality: *quality,
-                page_cache: PageCache::default(),
-                zoom_settle_ms: 275,
-                // A non-default well past the shipped ceiling, so the
-                // round trip is proved on a value that MATTERS rather
-                // than on 800.
-                max_zoom_percent: 1_000_000.0,
-                opening_fit: *fit,
-                // ★ The non-default, so a writer that emitted no
-                // `wheel_paging` key at all would fail here rather than
-                // pass by landing back on `Scroll`.
-                paste_chords: PasteChords::AcrobatOrder,
-                wheel_paging: WheelPaging::FlipPages,
-                // Deliberately not all-true and not all-false: an assignment
-                // that crossed two of the three fields would survive either.
-                chrome: PageChrome {
-                    rulers: true,
-                    grid: false,
-                    guides: true,
-                },
-                // A non-default that is ON the control's step, so the round
-                // trip tests the writer's formatting rather than the
-                // loader's rounding — that is `an_off_step_ui_scale_is_rounded_and_reported`'s job.
-                ui_scale: 1.25,
-                // ★★ O166's thirteen keys, every one non-default, per this
-                // test's own rule. This is the only group whose parser and
-                // writer live outside `prefs::file` (they are in
-                // `prefs::printing`, together), so this assertion is the one
-                // that proves the delegation reaches both halves.
-                print: PrintPrefs {
-                    // A name with spaces AND parentheses — what a real second
-                    // plotter is actually called on a Windows machine, and the
-                    // string most likely to break a naive writer.
-                    printer: Some("HP DesignJet T1600 (Copy 2)".to_owned()),
-                    orientation: Orientation::Landscape,
-                    duplex: Duplex::ShortEdge,
-                    pick_tray_by_page_size: true,
-                    paper: PaperChoice::AutoFromPages,
-                    // ★ `Custom(1.0)` and not `Custom(2.5)`, deliberately, and
-                    // this is the one place in this test where a "more
-                    // non-default" value would be WRONG. `ScaleMode::Custom`'s
-                    // payload is not persisted — the percentage has its own
-                    // key and the payload is re-derived from it at the point
-                    // of use — so `1.0` is what `scale_from_key("custom")`
-                    // returns and any other payload would fail this round trip
-                    // for a duplication the design deliberately avoids. The
-                    // MODE is still non-default; the shipped one is `Fit`.
-                    scale: ScaleMode::Custom(1.0),
-                    // The number the payload above would be derived from, and
-                    // deliberately not 100: a writer emitting a constant would
-                    // otherwise pass.
-                    custom_percent: 250,
-                    scope: pdfcer_render::AnnotationScope::DocumentAndMarkups,
-                    max_dpi: 600,
-                    copies: 3,
-                    // ★ Non-default, and it is the field that proves the
-                    // INVERSION: the file says `print_collate` and the struct
-                    // holds `uncollated`, so a writer and parser that inverted
-                    // differently would land back on `false` here.
-                    uncollated: true,
-                    subset: PageSubset::Even,
-                    reverse: true,
-                },
-                // ★★★ Off-page display, and every one of these three is
-                // the OPPOSITE of what that mode ships — Read ships off,
-                // Review and Edit ship on. That is not decoration: this
-                // group stores only the answers actually GIVEN, so a
-                // writer that skipped an answer equal to its default, or a
-                // parser that dropped one, would still round-trip cleanly
-                // if the values here agreed with the defaults. Inverted,
-                // either bug lands on the wrong bool and fails.
-                //
-                // ★ The fourth key is a mode this build does not ship. The
-                // family is a PREFIX rather than three fixed keys, because
-                // ribbon modes come from the manifest and an operator may
-                // customize it; a parser that closed over the three shipped
-                // modes would silently drop this line and fail here, which
-                // is the whole point of it being present.
-                off_page: {
-                    let mut p = OffPagePrefs::default();
-                    p.set("read", true);
-                    p.set("review", false);
-                    p.set("edit", false);
-                    p.set("proof", true);
-                    p
-                },
-                // ★★ O196's twelve keys, every one non-default, per this
-                // test's own rule. The second group whose parser and writer
-                // live outside `prefs::file` -- in `prefs::exporting`, together
-                // -- so this assertion is what proves the THIRD link of the
-                // delegation chain reaches both halves.
-                //
-                // ★ The two page scopes are set to OPPOSITE values, and that
-                // is the pair worth looking at: the image window ships
-                // `CurrentPage` and the text window ships `AllPages`, so a
-                // writer or parser that collapsed them onto one key would land
-                // each group on the other's default and still look plausible.
-                // Crossed over, it fails.
-                export: ExportPrefs {
-                    image: ExportImagePrefs {
-                        format: ImageFormat::Emf,
-                        scope: PageScope::AllPages,
-                        // Off the hundred, so a writer that rounded or
-                        // truncated to an integer would land on 601 or 600.
-                        dpi: 601.5,
-                        transparent: false,
-                        quality: 55,
+            for reach in RedactionReach::ALL {
+                let original = Prefs {
+                    // ★ Non-default, like every field here. O70: `false`, because
+                    // the shipped default is `true` and a writer that emitted a
+                    // constant would otherwise pass.
+                    smart_select: false,
+                    // ★ Non-default, identically. O163 ships `true`, so a
+                    // writer emitting a constant would round-trip a preference
+                    // the operator had turned OFF without this test noticing.
+                    find_zoom_on_jump: false,
+                    // ★ Non-default, identically. O180 ships `true`.
+                    find_trim_query: false,
+                    page_previews: false,
+                    page_preview_budget_ms: 0,
+                    ribbon_auto_hide: false,
+                    rail_auto_hide: false,
+                    // ★ Non-default for the identical reason — O96 ships `true`,
+                    // so a writer emitting a constant `true` would round-trip a
+                    // preference the operator had turned OFF and this test would
+                    // not notice.
+                    shade_form_fields: false,
+                    // ★ Non-default, like every field here — and this one is
+                    // the only OPTIONAL key in the file, so a writer that emitted
+                    // nothing for it would fail this round trip. `Facing` rather
+                    // than `Single` so it cannot coincide with the compiled-in
+                    // per-mode answer either. O80.
+                    default_page_display: Some(crate::viewer::PageDisplay::Facing),
+                    font_folders: vec![std::path::PathBuf::from("C:/Fonts")],
+                    use_os_fonts: true,
+                    // ★ Non-default, like every field here, and with a SPACE in
+                    // it — a path a person would really type on Windows. O122.
+                    // Non-default, like every field here. O173 ships `true`, so a
+                    // writer that emitted a constant would round-trip the offer as
+                    // still-wanted after the operator had ticked Do not ask again -
+                    // which is the one failure this preference exists to prevent.
+                    ask_default_app: false,
+                    acrobat_path: r"D:\Apps\Acrobat DC\Acrobat.exe".to_owned(),
+                    // ★ Non-default, and deliberately a DIFFERENT string from the
+                    // field above: two paths that happened to be equal would pass on a
+                    // writer that emitted one of them twice.
+                    acrobat_trust_store_path: r"D:\Certs\addressbook.acrodata".to_owned(),
+                    // ★ Non-default, like every other field here: a `None`
+                    // would pass on a build whose writer emitted no
+                    // `chosen_standard` key at all.
+                    chosen_standard: Some("pdf-x1a".to_owned()),
+                    // ★ Non-default, and with a SPACE in it: the writer emits
+                    // the value raw and the parser trims, so a name of one word
+                    // would pass on a reader that split on whitespace.
+                    author_name: "Ken Mantle".to_owned(),
+                    // The migration marker round-trips like every other key.
+                    // `true` rather than the default `false`, per this test's
+                    // own rule: a non-default in every field, so no emitted
+                    // value can coincide with what a failed parse left behind.
+                    render_quality: *quality,
+                    // ★ Swept rather than pinned, like the two enums above, and
+                    // this is the one where a constant token would be worst: the
+                    // three values differ in what a redaction DESTROYS, so a
+                    // writer that emitted `hidden-carriers` whatever the operator
+                    // chose would silently return the widest choice to the middle
+                    // and the narrowest to the middle too.
+                    redaction_reach: *reach,
+                    page_cache: PageCache::default(),
+                    zoom_settle_ms: 275,
+                    // A non-default well past the shipped ceiling, so the
+                    // round trip is proved on a value that MATTERS rather
+                    // than on 800.
+                    max_zoom_percent: 1_000_000.0,
+                    opening_fit: *fit,
+                    // ★ The non-default, so a writer that emitted no
+                    // `wheel_paging` key at all would fail here rather than
+                    // pass by landing back on `Scroll`.
+                    paste_chords: PasteChords::AcrobatOrder,
+                    wheel_paging: WheelPaging::FlipPages,
+                    // Deliberately not all-true and not all-false: an assignment
+                    // that crossed two of the three fields would survive either.
+                    chrome: PageChrome {
+                        rulers: true,
+                        grid: false,
+                        guides: true,
                     },
-                    text: ExportTextPrefs {
-                        scope: PageScope::CurrentPage,
-                        separator: PageSeparator::Marker,
-                        line_endings: LineEndings::Windows,
-                        byte_order_mark: true,
+                    // A non-default that is ON the control's step, so the round
+                    // trip tests the writer's formatting rather than the
+                    // loader's rounding — that is `an_off_step_ui_scale_is_rounded_and_reported`'s job.
+                    ui_scale: 1.25,
+                    // ★★ O166's thirteen keys, every one non-default, per this
+                    // test's own rule. This is the only group whose parser and
+                    // writer live outside `prefs::file` (they are in
+                    // `prefs::printing`, together), so this assertion is the one
+                    // that proves the delegation reaches both halves.
+                    print: PrintPrefs {
+                        // A name with spaces AND parentheses — what a real second
+                        // plotter is actually called on a Windows machine, and the
+                        // string most likely to break a naive writer.
+                        printer: Some("HP DesignJet T1600 (Copy 2)".to_owned()),
+                        orientation: Orientation::Landscape,
+                        duplex: Duplex::ShortEdge,
+                        pick_tray_by_page_size: true,
+                        paper: PaperChoice::AutoFromPages,
+                        // ★ `Custom(1.0)` and not `Custom(2.5)`, deliberately, and
+                        // this is the one place in this test where a "more
+                        // non-default" value would be WRONG. `ScaleMode::Custom`'s
+                        // payload is not persisted — the percentage has its own
+                        // key and the payload is re-derived from it at the point
+                        // of use — so `1.0` is what `scale_from_key("custom")`
+                        // returns and any other payload would fail this round trip
+                        // for a duplication the design deliberately avoids. The
+                        // MODE is still non-default; the shipped one is `Fit`.
+                        scale: ScaleMode::Custom(1.0),
+                        // The number the payload above would be derived from, and
+                        // deliberately not 100: a writer emitting a constant would
+                        // otherwise pass.
+                        custom_percent: 250,
+                        scope: pdfcer_render::AnnotationScope::DocumentAndMarkups,
+                        max_dpi: 600,
+                        copies: 3,
+                        // ★ Non-default, and it is the field that proves the
+                        // INVERSION: the file says `print_collate` and the struct
+                        // holds `uncollated`, so a writer and parser that inverted
+                        // differently would land back on `false` here.
+                        uncollated: true,
+                        subset: PageSubset::Even,
+                        reverse: true,
                     },
-                    dxf: ExportDxfPrefs {
-                        units: DxfUnits::Millimetres,
-                        fit_arcs: false,
-                        text: DxfText::Omit,
+                    // ★★★ Off-page display, and every one of these three is
+                    // the OPPOSITE of what that mode ships — Read ships off,
+                    // Review and Edit ship on. That is not decoration: this
+                    // group stores only the answers actually GIVEN, so a
+                    // writer that skipped an answer equal to its default, or a
+                    // parser that dropped one, would still round-trip cleanly
+                    // if the values here agreed with the defaults. Inverted,
+                    // either bug lands on the wrong bool and fails.
+                    //
+                    // ★ The fourth key is a mode this build does not ship. The
+                    // family is a PREFIX rather than three fixed keys, because
+                    // ribbon modes come from the manifest and an operator may
+                    // customize it; a parser that closed over the three shipped
+                    // modes would silently drop this line and fail here, which
+                    // is the whole point of it being present.
+                    off_page: {
+                        let mut p = OffPagePrefs::default();
+                        p.set("read", true);
+                        p.set("review", false);
+                        p.set("edit", false);
+                        p.set("proof", true);
+                        p
                     },
-                },
-            };
-            let (read_back, notes) = Prefs::parse(&original.write_to_string());
-            assert!(
-                notes.is_empty(),
-                "a written file did not read cleanly: {notes:?}"
-            );
-            assert_eq!(
-                read_back, original,
-                "{quality:?}/{fit:?} did not survive the trip"
-            );
+                    // ★★ O196's twelve keys, every one non-default, per this
+                    // test's own rule. The second group whose parser and writer
+                    // live outside `prefs::file` -- in `prefs::exporting`, together
+                    // -- so this assertion is what proves the THIRD link of the
+                    // delegation chain reaches both halves.
+                    //
+                    // ★ The two page scopes are set to OPPOSITE values, and that
+                    // is the pair worth looking at: the image window ships
+                    // `CurrentPage` and the text window ships `AllPages`, so a
+                    // writer or parser that collapsed them onto one key would land
+                    // each group on the other's default and still look plausible.
+                    // Crossed over, it fails.
+                    export: ExportPrefs {
+                        image: ExportImagePrefs {
+                            format: ImageFormat::Emf,
+                            scope: PageScope::AllPages,
+                            // Off the hundred, so a writer that rounded or
+                            // truncated to an integer would land on 601 or 600.
+                            dpi: 601.5,
+                            transparent: false,
+                            quality: 55,
+                        },
+                        text: ExportTextPrefs {
+                            scope: PageScope::CurrentPage,
+                            separator: PageSeparator::Marker,
+                            line_endings: LineEndings::Windows,
+                            byte_order_mark: true,
+                        },
+                        dxf: ExportDxfPrefs {
+                            units: DxfUnits::Millimetres,
+                            fit_arcs: false,
+                            text: DxfText::Omit,
+                        },
+                    },
+                };
+                let (read_back, notes) = Prefs::parse(&original.write_to_string());
+                assert!(
+                    notes.is_empty(),
+                    "a written file did not read cleanly: {notes:?}"
+                );
+                assert_eq!(
+                    read_back, original,
+                    "{quality:?}/{fit:?}/{reach:?} did not survive the trip"
+                );
+            }
         }
     }
 }
@@ -659,6 +668,11 @@ fn the_writer_emits_no_key_the_parser_rejects() {
         author_name: "Ken Mantlé".to_owned(),
         // Non-default, for the reason stated below about every other field.
         render_quality: RenderQuality::Sharper,
+        // ★ Non-default, for this test's stated reason, and `WholeDocument`
+        // rather than `MarkedOnly` because it is the value whose loss would
+        // be silent in the dangerous direction: a build that failed to write
+        // it would leave the operator at the middle, which still edits.
+        redaction_reach: RedactionReach::WholeDocument,
         // ★ Not the default, deliberately, and this test's own comment says
         // why: "a non-default in every field, so no emitted value can
         // coincide with what a failed parse would have left behind". A

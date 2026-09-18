@@ -113,6 +113,7 @@ mod forms;
 pub mod images;
 pub mod measuring;
 pub mod pages;
+pub mod redaction;
 pub mod saving;
 /// May pdfcer read the trust list Acrobat has downloaded, and where is it.
 ///
@@ -709,6 +710,14 @@ pub fn show(
                     ui.add_space(10.0);
                     saving::quad_point_order(ui, draft);
                 });
+                // Last, and the only group in this window whose setting
+                // destroys rather than describes. It opens closed and sits
+                // below everything an operator scrolls past, because a control
+                // that widens what a redaction deletes should be arrived at,
+                // not encountered.
+                widgets::group(ui, "redaction", t::group_redaction(), false, |ui| {
+                    redaction::residual_reach(ui, &mut draft.working_prefs);
+                });
             });
 
         ui.separator();
@@ -830,6 +839,9 @@ mod tests {
         ("measuring", include_str!("measuring.rs")),
         ("pages", include_str!("pages.rs")),
         ("preset", include_str!("preset.rs")),
+        // Binds no `Settings` field either — its one stored value is a `Prefs`
+        // field — and is listed for `defaultapp`'s reason above.
+        ("redaction", include_str!("redaction.rs")),
         ("saving", include_str!("saving.rs")),
         // Its absence would make the completeness test report
         // `Settings::acrobat_trust_store` as uncontrolled with the control

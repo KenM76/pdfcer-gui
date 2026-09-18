@@ -93,6 +93,12 @@ does exactly that — so the fold is never the reason to reach for a cut verb.
 | `cut_outline_item` | The identical reason, stated at `panels/bookmarks/clip.rs:74`. The engine's verb *is* `copy_outline_item` followed by `delete_outline_item`; the panel performs those two in that order, and `BookmarkAction::Delete` already drops the selection, warns how many descendants travel and lands one undo entry. The copy's success **gates** the delete, so a cut whose copy half failed cannot silently become a delete — the failure an operator would discover by pasting. |
 | `cut_field` | A workaround that costs one undo entry too many, and the deliberate half is not the cost. `canvas::fieldclip::cut` is copy plus `FieldAction::DeleteWidget`, because the operator pointed at **a box** and `cut_field` removes the whole *field* — on a field with three widgets that is not what was asked. The two verbs are genuinely different acts. The undo cost is the residue, and the fold that clears it is `EditSession::coalesce_last(2, CommandKind::DeleteFormField)` after the delete commits, in the shape `app/actions/forms/author.rs:268` already uses on the authoring path. |
 
+### The apply that collapses the session
+
+| Verb | Why nothing calls it |
+|---|---|
+| `apply_redactions` | It runs the removal **and adopts the result as the session's new base with an empty undo stack**, in one call. This shell reaches the same removal by two other doors, and each keeps something this verb destroys. The Apply dialog's preview is `redact::apply_redactions_with` over a serialized copy, which touches the session not at all — so an operator who reads the report and closes the dialog has changed nothing. Pressing through goes to `apply_redactions_deferred`, which arms the removal and leaves base, overlay and the whole undo/redo stack standing until the save. Calling this verb would make the preview itself irreversible, which is the one property a dialog that opens with a report must not have. It is also the only one of the three that cannot be given a reach: it serializes under `SaveOptions::default()` and the session's residual scope, with no argument for either, so an operator's setting could reach it only by the route `stage_into_session` already takes. |
+
 ### Singular verbs this shell only ever needs plural
 
 | Verb | Why nothing calls it |

@@ -999,7 +999,7 @@ impl PdfcerApp {
                 | RedactAction::ApplyNow { .. }
                 | RedactAction::OffPage { .. }),
             ) => {
-                super::redact::apply(doc, redaction, &self.settings);
+                super::redact::apply(doc, redaction, &self.settings, self.prefs.redaction_reach);
             }
             // ★ Its own module, not a fourth arm in `redact`: it is the only
             // marking route whose geometry comes from the CANVAS.

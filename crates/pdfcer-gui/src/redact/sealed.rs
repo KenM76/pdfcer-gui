@@ -105,16 +105,27 @@ use std::path::{Path, PathBuf};
 /// engine"* is the failure this file exists to catch. When a legitimate route
 /// lands or leaves, the number changes in the same commit as the route.
 ///
-/// ★★ Note that `apply_redactions` and `apply_redactions_deferred` are separate
-/// rows and cannot be confused for one another: [`calls_in`] compares the
-/// identifier for **equality**, not by prefix, which is why the deferred verb
-/// needed a row of its own rather than being absorbed into the first one's
-/// count.
+/// ★★ Note that `apply_redactions_with` and `apply_redactions_deferred` are
+/// separate rows and cannot be confused for one another: [`calls_in`] compares
+/// the identifier for **equality**, not by prefix, which is why the deferred
+/// verb needed a row of its own rather than being absorbed into the first
+/// one's count.
+///
+/// ★★★ That same equality is why swapping a call for a **wider-signatured
+/// twin** of itself is a silent hole in this seal rather than a compile error.
+/// `apply_redactions` and `apply_redactions_with` are the same removal; the
+/// first hard-codes the engine's default residual scope. Moving the call from
+/// one to the other without moving the row here would leave a row matching
+/// zero call sites — which the fail-closed assertion below catches — and,
+/// worse, would leave the new name pinned by nothing at all had the row been
+/// left as a ceiling instead of an exact count. It is an exact count.
 // ui-text-exempt: Rust function names, matched against the parsed syntax tree.
 const SUBJECTS: [(&str, usize); 4] = [
     // The free function: `prepare_redaction_apply`, which produces bytes and
-    // proves them before returning.
-    ("apply_redactions", 1),
+    // proves them before returning. The `_with` form is the pinned one because
+    // it is the only one this crate may call — the bare `apply_redactions`
+    // hard-codes a residual scope the operator is offered a choice about.
+    ("apply_redactions_with", 1),
     // `stage_into_session` — arms the removal and touches nothing else.
     ("apply_redactions_deferred", 1),
     // `save_applying_pending` — performs it at save time and proves the buffer.
@@ -408,7 +419,7 @@ mod tests {
     ///
     /// # ★★★ The exception
     ///
-    /// `redact/tests.rs` **does** call the forbidden verb, deliberately and
+    /// `redact/tests/` **does** call the forbidden verb, deliberately and
     /// repeatedly, and it must. It performs exactly the save the ban forbids
     /// and asserts it is **refused by name** (`WriteError::RedactionPending`),
     /// because the un-redacted content is still live in the staged session, so
@@ -428,7 +439,7 @@ mod tests {
     ///
     /// 1. no production file under `redact/` calls it — unchanged, and it is
     ///    the assertion that was always the point;
-    /// 2. **`tests.rs` calls it at least twice**, because if the measurement is
+    /// 2. **the `tests/` suite calls it at least twice**, because if the measurement is
     ///    ever deleted this test starts passing for the wrong reason and the
     ///    only evidence for the deferred route's safety goes with it.
     ///
@@ -444,12 +455,16 @@ mod tests {
             swept.files_read,
             root.display()
         );
-        // ui-text-exempt: a file name inside this crate, never displayed.
-        let suite: PathBuf = ["redact", "tests.rs"].iter().collect();
+        // The suite is a DIRECTORY, and this predicate has to keep saying so.
+        // Keyed on a file name it would reclassify every test in
+        // `redact/tests/` as production the day the suite outgrew one file.
+        //
+        // ui-text-exempt: a directory name inside this crate, never displayed.
+        let suite: PathBuf = ["redact", "tests"].iter().collect();
         let (measurement, production): (Vec<_>, Vec<_>) = swept
             .call_sites
             .iter()
-            .partition(|(path, _)| path.ends_with(&suite));
+            .partition(|(path, _)| path.parent().is_some_and(|d| d.ends_with(&suite)));
         assert!(
             production.is_empty(),
             "★ `{FORBIDDEN_IN_REDACT}` is called inside `redact/`: {production:?}\n\
@@ -462,7 +477,7 @@ mod tests {
         let measured: usize = measurement.iter().map(|(_, n)| *n).sum();
         assert!(
             measured >= 2,
-            "★★★ `redact/tests.rs` calls `{FORBIDDEN_IN_REDACT}` {measured} \
+            "★★★ `redact/tests/` calls `{FORBIDDEN_IN_REDACT}` {measured} \
              time(s), and the deferred route's entire safety argument is that \
              an ordinary save of a STAGED session is refused by name. That \
              claim is the engine's; the measurement is ours, and it is gone. \
@@ -483,18 +498,32 @@ mod tests {
 
     /// A fixture module with one genuine call and every trap a text scan falls
     /// into.
-    const FIXTURE: &str = r####"
-//! A doc comment naming apply_redactions, which calls nothing.
+    ///
+    /// **Built from [`FIXTURE_SUBJECT`] rather than spelling the verb out.**
+    /// It was a `const` with the name written in, and the day [`SUBJECTS`]'
+    /// first row named a different verb every assertion below went looking for
+    /// a call the fixture no longer contained. A falsification that plants
+    /// nothing reports *nothing found*, which is indistinguishable from a
+    /// passing check; these four survived only because they assert an exact
+    /// count rather than an absence, which is luck rather than design.
+    /// Deriving the text removes the possibility.
+    fn fixture() -> String {
+        let verb = FIXTURE_SUBJECT;
+        format!(
+            r####"
+//! A doc comment naming {verb}, which calls nothing.
 
-use pdfcer_core::redact::apply_redactions;
+use pdfcer_core::redact::{verb};
 
-/// Another mention of apply_redactions, in prose.
-fn real() {
-    // apply_redactions in a line comment
-    let _ = "apply_redactions in a string";
-    let _ = apply_redactions(&doc, &opts);
-}
-"####;
+/// Another mention of {verb}, in prose.
+fn real() {{
+    // {verb} in a line comment
+    let _ = "{verb} in a string";
+    let _ = {verb}(&doc, &opts);
+}}
+"####
+        )
+    }
 
     /// **A. The reader finds a real call.**
     ///
@@ -504,7 +533,7 @@ fn real() {
     #[test]
     fn the_reader_finds_a_real_call() {
         assert_eq!(
-            calls_in(FIXTURE, FIXTURE_SUBJECT).expect("the fixture parses"),
+            calls_in(&fixture(), FIXTURE_SUBJECT).expect("the fixture parses"),
             1,
             "the reader missed a plain call expression"
         );
@@ -523,9 +552,10 @@ fn real() {
         // The same fixture with the CALL removed and everything else left in
         // place — which is exactly the shape of a module that mentions the
         // engine's verb and does not use it.
-        let mentions_only = FIXTURE.replace("let _ = apply_redactions(&doc, &opts);", "");
+        let built = fixture();
+        let mentions_only = built.replace(&format!("let _ = {FIXTURE_SUBJECT}(&doc, &opts);"), "");
         assert_ne!(
-            mentions_only, FIXTURE,
+            mentions_only, built,
             "the plant must actually change the fixture"
         );
         assert_eq!(
@@ -545,9 +575,11 @@ fn real() {
     /// `syn::visit` rather than a bespoke recursion.
     #[test]
     fn a_planted_second_call_is_reported() {
+        let verb = FIXTURE_SUBJECT;
         let planted = format!(
-            "{FIXTURE}\nfn sneaky() {{ let f = || {{ let _ = \
-             pdfcer_core::redact::apply_redactions(&d, &o); }}; f(); }}\n"
+            "{}\nfn sneaky() {{ let f = || {{ let _ = \
+             pdfcer_core::redact::{verb}(&d, &o); }}; f(); }}\n",
+            fixture()
         );
         assert_eq!(
             calls_in(&planted, FIXTURE_SUBJECT).expect("the fixture parses"),
@@ -563,8 +595,8 @@ fn real() {
     /// onto a type would otherwise slip the monopoly in silence.
     #[test]
     fn a_method_call_of_the_same_name_counts() {
-        let src = "fn f() { let _ = engine.apply_redactions(&opts); }";
-        assert_eq!(calls_in(src, FIXTURE_SUBJECT).expect("parses"), 1);
+        let src = format!("fn f() {{ let _ = engine.{FIXTURE_SUBJECT}(&opts); }}");
+        assert_eq!(calls_in(&src, FIXTURE_SUBJECT).expect("parses"), 1);
     }
 
     /// **E. A source that does not parse is refused rather than counted as
@@ -610,8 +642,9 @@ fn real() {
         let _ = std::fs::remove_dir_all(&root);
         std::fs::create_dir_all(&nested).expect("the fixture tree must be creatable");
         std::fs::write(root.join("clean.rs"), "fn a() {}").expect("write");
-        std::fs::write(root.join("notes.txt"), "apply_redactions(&d, &o)").expect("write");
-        std::fs::write(nested.join("planted.rs"), FIXTURE).expect("write");
+        std::fs::write(root.join("notes.txt"), format!("{FIXTURE_SUBJECT}(&d, &o)"))
+            .expect("write");
+        std::fs::write(nested.join("planted.rs"), fixture()).expect("write");
 
         let swept = sweep(&root, FIXTURE_SUBJECT).expect("the fixture tree must sweep");
         assert_eq!(

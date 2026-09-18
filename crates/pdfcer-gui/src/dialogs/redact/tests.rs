@@ -69,7 +69,7 @@ fn the_suggestion_is_always_a_usable_pdf_name() {
 /// that had done a full rewrite of nothing in order to refuse.
 #[test]
 fn no_document_means_no_dialog() {
-    assert!(open_for(&Status::Empty).is_none());
+    assert!(open_for(&Status::Empty, crate::app::prefs::RedactionReach::default()).is_none());
 }
 
 /// ★★ **The confirm control is not enabled until both gates are answered.**
@@ -105,7 +105,8 @@ fn the_confirm_control_needs_every_gate_that_applies() {
 
     // A prepared, clean redaction: one box.
     let session = clean_session();
-    let prepared = prepare_redaction_apply(&session).expect("the fixture applies");
+    let prepared =
+        prepare_redaction_apply(&session, RedactionReach::default()).expect("the fixture applies");
     assert!(prepared.verification.is_clean());
     assert!(
         residual_lines(&prepared).is_empty(),
@@ -122,7 +123,8 @@ fn the_confirm_control_needs_every_gate_that_applies() {
 
     // …and the same value with a residual: two boxes.
     let session = clean_session();
-    let mut prepared = prepare_redaction_apply(&session).expect("the fixture applies");
+    let mut prepared =
+        prepare_redaction_apply(&session, RedactionReach::default()).expect("the fixture applies");
     prepared
         .verification
         .residuals
@@ -261,7 +263,8 @@ fn the_outcome_sentence_says_the_open_window_is_now_stale_after_a_replace() {
 #[test]
 fn every_source_of_a_residual_reaches_the_disclosed_list() {
     let session = clean_session();
-    let mut prepared = prepare_redaction_apply(&session).expect("the fixture applies");
+    let mut prepared =
+        prepare_redaction_apply(&session, RedactionReach::default()).expect("the fixture applies");
     assert!(residual_lines(&prepared).is_empty());
 
     prepared
@@ -407,7 +410,8 @@ fn the_default_destination_writes_nothing() {
 #[test]
 fn the_staging_consequence_is_disclosed_before_the_operator_can_commit() {
     let session = clean_session();
-    let prepared = prepare_redaction_apply(&session).expect("the fixture applies");
+    let prepared =
+        prepare_redaction_apply(&session, RedactionReach::default()).expect("the fixture applies");
     let mut dialog = RedactDialog {
         source: PathBuf::from("x.pdf"),
         phase: Phase::Prepared(Box::new(prepared)),
@@ -466,10 +470,11 @@ fn the_staging_consequence_is_disclosed_before_the_operator_can_commit() {
 #[test]
 fn a_staged_document_offers_the_control_that_calls_the_removal_off() {
     let mut session = clean_session();
-    crate::redact::stage_into_session(&mut session).expect("the fixture stages");
+    crate::redact::stage_into_session(&mut session, RedactionReach::default())
+        .expect("the fixture stages");
 
     assert_eq!(
-        prepare_redaction_apply(&session).unwrap_err(),
+        prepare_redaction_apply(&session, RedactionReach::default()).unwrap_err(),
         RedactApplyRefusal::AlreadyStaged,
         "★ the pipeline must name this state rather than letting the \
          engine's `RedactionPending` surface as a full-rewrite failure"
@@ -528,7 +533,8 @@ fn a_staged_document_offers_the_control_that_calls_the_removal_off() {
 #[test]
 fn confirming_the_default_destination_pushes_an_action_and_writes_no_file() {
     let session = clean_session();
-    let prepared = prepare_redaction_apply(&session).expect("the fixture applies");
+    let prepared =
+        prepare_redaction_apply(&session, RedactionReach::default()).expect("the fixture applies");
     let mut dialog = RedactDialog {
         source: PathBuf::from("x.pdf"),
         phase: Phase::Prepared(Box::new(prepared)),
@@ -585,7 +591,8 @@ fn confirming_the_default_destination_pushes_an_action_and_writes_no_file() {
 #[test]
 fn the_overwrite_acknowledgement_is_owed_by_exactly_one_destination() {
     let session = clean_session();
-    let prepared = prepare_redaction_apply(&session).expect("the fixture applies");
+    let prepared =
+        prepare_redaction_apply(&session, RedactionReach::default()).expect("the fixture applies");
     assert!(residual_lines(&prepared).is_empty());
     let mut dialog = RedactDialog {
         source: PathBuf::from("x.pdf"),
@@ -634,7 +641,8 @@ fn the_overwrite_acknowledgement_is_owed_by_exactly_one_destination() {
 #[test]
 fn the_disclosed_list_is_the_domain_count_plus_promotion() {
     let session = clean_session();
-    let mut prepared = prepare_redaction_apply(&session).expect("the fixture applies");
+    let mut prepared =
+        prepare_redaction_apply(&session, RedactionReach::default()).expect("the fixture applies");
     let count = |p: &PreparedRedaction| {
         crate::redact::residual_count(&p.report, Some(&p.verification))
             + usize::from(!p.promoted_by_materialisation.is_empty())

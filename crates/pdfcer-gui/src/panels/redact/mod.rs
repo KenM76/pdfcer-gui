@@ -197,24 +197,44 @@ pub struct RedactUi {
 /// convention, and every verb below is an [`Action`] pushed for the apply phase.
 pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: &mut Vec<Action>) {
     crate::diag::ui_rect(REGION_PANEL, ui.max_rect());
-    ui.label(t::panel_intro());
-    ui.add_space(6.0);
-    ui.separator();
 
     // The one walk both this panel and `crate::redact::prepare_redaction_apply`
     // read — see the module header on why it must be the session graph.
     let marks = pdfcer_core::redact::redaction_marks(&doc.session.graph());
     let page_count = doc.pages.len();
 
-    // ★ **State, then action, then detail** — and the order is measured rather
-    // than preferred. See the module header's layout section.
-    census_and_apply(ui, &marks, actions);
-    ui.add_space(8.0);
-    ui.separator();
-    marking_controls(ui, doc, state, actions, page_count);
-    ui.add_space(8.0);
-    ui.separator();
-    mark_rows(ui, &marks, actions);
+    // ★★★ **Everything below scrolls, and it has to.**
+    //
+    // This body is taller than the slot a side dock gives it. At a 1,100x800
+    // window the pane runs out at the appearance group, and everything after
+    // it — the search field, Find & mark, the match-mode pair, the hint — is
+    // laid out at coordinates past the bottom of the WINDOW. Without a scroll
+    // area those are not merely awkward, they are unreachable: the only way to
+    // make a mark is Mark whole page, which is the widest redaction there is,
+    // on the panel whose whole purpose is choosing a narrow one.
+    //
+    // The host does NOT supply this. `Panel::show` calls `scroll_style`, which
+    // sets how a bar is PAINTED, and the dock says so itself: *"any
+    // `ScrollArea` a panel body creates inherits this"*. Every sibling panel
+    // that can overflow makes its own, and this one makes its own.
+    egui::ScrollArea::vertical()
+        .id_salt(REGION_PANEL)
+        .auto_shrink([false, false])
+        .show(ui, |ui| {
+            ui.label(t::panel_intro());
+            ui.add_space(6.0);
+            ui.separator();
+
+            // ★ **State, then action, then detail** — and the order is measured rather
+            // than preferred. See the module header's layout section.
+            census_and_apply(ui, &marks, actions);
+            ui.add_space(8.0);
+            ui.separator();
+            marking_controls(ui, doc, state, actions, page_count);
+            ui.add_space(8.0);
+            ui.separator();
+            mark_rows(ui, &marks, actions);
+        });
 
     crate::diag::trace_changed("redact-panel", || {
         format!(
@@ -275,7 +295,7 @@ fn marking_controls(
         .add_enabled(page_count > 0, egui::Button::new(t::mark_whole_page()))
         .on_hover_text(t::mark_whole_page_tooltip())
         .on_disabled_hover_text(t::mark_whole_page_disabled());
-    crate::diag::ui_rect(REGION_WHOLE_PAGE, whole.rect);
+    crate::diag::ui_rect_visible(REGION_WHOLE_PAGE, whole.rect, ui.clip_rect());
     if whole.clicked() {
         actions.push(Action::Redact(RedactAction::WholePage {
             page: doc.view.page_index,
@@ -307,7 +327,7 @@ fn marking_controls(
     ui.horizontal(|ui| {
         ui.label(t::search_label());
         let field = ui.text_edit_singleline(&mut redact_ui.query);
-        crate::diag::ui_rect(REGION_QUERY, field.rect);
+        crate::diag::ui_rect_visible(REGION_QUERY, field.rect, ui.clip_rect());
     });
     let query = redact_ui.query.trim().to_owned();
     let pattern = redact_ui.pattern;
@@ -326,7 +346,7 @@ fn marking_controls(
             // consumer.
             .on_hover_text(t::search_button_tooltip(true))
             .on_disabled_hover_text(t::search_button_tooltip(!query.is_empty()));
-        crate::diag::ui_rect(REGION_SEARCH, search.rect);
+        crate::diag::ui_rect_visible(REGION_SEARCH, search.rect, ui.clip_rect());
         if search.clicked() {
             actions.push(Action::Redact(RedactAction::BySearch {
                 query,
@@ -408,7 +428,7 @@ fn census_and_apply(
         .on_hover_text(t::review_and_apply_tooltip(true))
         .on_disabled_hover_text(t::review_and_apply_tooltip(false));
     if !marks.is_empty() {
-        crate::diag::ui_rect(REGION_APPLY, apply.rect);
+        crate::diag::ui_rect_visible(REGION_APPLY, apply.rect, ui.clip_rect());
     }
     if apply.clicked() {
         actions.push(Action::Command(APPLY_COMMAND.to_owned()));
@@ -426,9 +446,9 @@ fn mark_rows(
     marks: &[pdfcer_core::redact::RedactionMark],
     actions: &mut Vec<Action>,
 ) {
-    // No nested scroll area: `Panel::show` already put one around this body,
-    // and a second would give the operator two bars to choose between and a
-    // list that scrolls the wrong one.
+    // No nested scroll area: [`body`] puts one around the whole panel, and a
+    // second here would give the operator two bars to choose between and a list
+    // that scrolls the wrong one.
     for mark in marks {
         ui.horizontal(|ui| {
             let size = mark.rect.map(|[llx, lly, urx, ury]| (urx - llx, ury - lly));

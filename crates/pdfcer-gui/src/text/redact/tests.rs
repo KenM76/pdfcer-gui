@@ -145,6 +145,10 @@ fn only_the_verification_line_and_the_clean_outcome_say_verified() {
             "checked_clean_line",
             checked_clean_line(&["the document properties"]),
         ),
+        (
+            "left_by_choice_line",
+            left_by_choice_line(&["the document properties"]),
+        ),
         ("sweep_scrubbed_line", sweep_scrubbed_line(3, 5, 2)),
         (
             "sweep_scrubbed_line(no content)",
@@ -763,5 +767,66 @@ fn the_clean_census_claims_the_places_and_not_the_document() {
         line.contains("checked"),
         "the verb is what makes this evidence of diligence rather than a \
          reassurance: {line}"
+    );
+}
+
+/// **The declined-match line says the copies survive, and says where.**
+///
+/// This is rule 1 at its sharpest. Every other sentence in the report body
+/// describes something pdfcer is about to remove; this one describes text it
+/// found, can remove, and will not. A copy pass that softened it into "some
+/// metadata was left unchanged" would be technically true and would cost the
+/// operator the one fact he needs — that the marked words are still readable in
+/// the file he is about to keep.
+#[test]
+fn the_declined_matches_are_named_and_said_to_survive() {
+    let line = left_by_choice_line(&["the document properties", "the XMP metadata packet"]);
+    assert!(
+        line.contains('2'),
+        "the count is stated, not implied: {line}"
+    );
+    for name in ["the document properties", "the XMP metadata packet"] {
+        assert!(line.contains(name), "`{name}` is missing from: {line}");
+    }
+    let lower = line.to_lowercase();
+    assert!(
+        lower.contains("still be in the saved file"),
+        "★ the survival of the text is the whole point of this sentence: {line}"
+    );
+    assert!(
+        lower.contains("read them"),
+        "and what survival costs him is stated in his terms, not as a property \
+         of the file: {line}"
+    );
+}
+
+/// **It reads as a choice, never as a failure, and names the control that
+/// caused it.**
+///
+/// The engine keeps `FoundNotScrubbed` and `DisclosedNotScrubbed` apart because
+/// collapsing them would make a deliberate scope look like a failure and a real
+/// failure look like a preference. That distinction only survives into the
+/// product if the two sentences read differently — so this one must not borrow
+/// the vocabulary of the other, and must point at the setting a failure could
+/// not point at.
+#[test]
+fn the_declined_matches_read_as_a_setting_and_not_as_a_fault() {
+    let line = left_by_choice_line(&["the document properties"]);
+    let lower = line.to_lowercase();
+    for fault in ["could not", "cannot", "failed", "unable", "error", "⚠"] {
+        assert!(
+            !lower.contains(fault),
+            "★ {fault:?} makes a deliberate scope read as a failure: {line}"
+        );
+    }
+    assert!(
+        lower.contains("because your redaction reach is set"),
+        "the cause is his setting, and saying so is what separates this from a \
+         failure: {line}"
+    );
+    assert!(
+        line.contains("Settings > Redacting"),
+        "a sentence that names a cause the operator can change must say where \
+         he changes it: {line}"
     );
 }

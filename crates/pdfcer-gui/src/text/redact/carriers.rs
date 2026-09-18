@@ -278,3 +278,41 @@ pub fn engine_notes_heading(count: usize) -> String {
 pub fn engine_notes_lead() -> &'static str {
     "In pdfcer's own words, unedited. These name objects by number and cite the PDF standard by clause; anything here that needed your attention is already stated above in plain English."
 }
+
+// ---------------------------------------------------------------------------
+// The copies pdfcer found, can remove, and was told not to
+// ---------------------------------------------------------------------------
+
+/// **[`CarrierAction::FoundNotScrubbed`][f] in English: text that survives
+/// because the operator's setting says so.**
+///
+/// [f]: pdfcer_core::redact::CarrierAction::FoundNotScrubbed
+///
+/// This is the disclosure that makes
+/// [`crate::app::prefs::RedactionReach::MarkedOnly`] shippable. A narrower
+/// reach changes what pdfcer is permitted to *change*; it never changes what
+/// pdfcer *looks for* or *reports*. Every copy it finds is counted and named
+/// here whether or not it is allowed to act on it — so the operator who
+/// narrowed the setting learns, before he commits, exactly what he is choosing
+/// to leave in the file.
+///
+/// **Not a failure, and it must never be worded as one.** The engine keeps this
+/// verdict distinct from `DisclosedNotScrubbed` — *tried and could not* — for
+/// the reason it states itself: collapsing them would make a deliberate scope
+/// look like a failure, and a real failure look like a preference. So this
+/// sentence names the setting that caused it and the place to change it, which
+/// a genuine failure could not do.
+///
+/// It is drawn in the notice colour and gates nothing: it can neither block the
+/// confirm control nor enter [`crate::redact::residual_count`].
+///
+/// Takes the names already in English — the caller maps through
+/// [`carrier_name`] — so this function never has to know the key vocabulary.
+#[must_use]
+pub fn left_by_choice_line(names: &[&str]) -> String {
+    format!(
+        "The text you marked also appears in {} other place(s) — {} — and pdfcer will leave every one of them exactly as it is, because your redaction reach is set to change only what you marked. Those copies will still be in the saved file, and anyone opening it can read them. Widen \"How far a redaction reaches beyond what you marked\" in Settings > Redacting to have pdfcer remove them too, or remove them by hand.",
+        names.len(),
+        names.join("; ")
+    )
+}

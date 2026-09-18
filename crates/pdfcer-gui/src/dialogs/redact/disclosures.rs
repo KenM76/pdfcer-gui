@@ -4,10 +4,9 @@
 //!
 //! ## Why a file of its own, and where the seam is
 //!
-//! `dialogs/redact.rs` stood at 1,453 lines, forty-seven under rule R2's
-//! ceiling, and the three blocks below plus their arguments are about sixty. So
-//! a split was compulsory; what follows is why *this* split rather than a
-//! mechanical one.
+//! The blocks below plus their arguments would put `dialogs/redact.rs` over
+//! rule R2's ceiling, so a split is compulsory; what follows is why *this*
+//! split rather than a mechanical one.
 //!
 //! The seam is **"a disclosure derived from the engine's report, drawn into the
 //! report body, that gates nothing."** Every block here reads
@@ -21,9 +20,9 @@
 //! ★ **The derivations live here too**, and that is deliberate but conditional.
 //! `crate::redact` is where a derivation belongs when two surfaces must agree
 //! on it — [`crate::redact::residual_count`]'s doc comment argues that at length
-//! and it is right. Nothing else consumes these three; the moment something
-//! does, they move down into `crate::redact` and this file keeps only the
-//! painting. Putting them there today would have been a layer for one caller.
+//! and it is right. Nothing else consumes these; the moment something does,
+//! they move down into `crate::redact` and this file keeps only the painting.
+//! Putting them there today would have been a layer for one caller.
 //!
 //! ## ★★ Rule 1 and the reassuring sentence
 //!
@@ -41,8 +40,8 @@
 //!
 //! Everything below paints into a `&mut Ui`, which is not an oracle, so no unit
 //! test in this crate can observe that any of it is **drawn**. The derivations
-//! are tested — [`checked_clean_names`] is separated out precisely so one of
-//! them can be — but a build where all three call sites in
+//! are tested — [`checked_clean_names`] and [`left_by_choice_names`] are
+//! separated out precisely so they can be — but a build where every call site in
 //! [`super::RedactDialog::report`] had been deleted would pass every test in the
 //! workspace, which is the exact shape of the defect this module closes.
 //!
@@ -151,7 +150,62 @@ pub(super) fn checked_clean_names(report: &RedactionReport) -> Vec<&'static str>
 }
 
 // ---------------------------------------------------------------------------
-// 3. The engine's own notes
+// 3. The copies pdfcer found and was told to leave
+// ---------------------------------------------------------------------------
+
+/// **The matches a narrower redaction reach declines to act on.**
+///
+/// [`CarrierAction::FoundNotScrubbed`] — the carrier holds a copy of the marked
+/// text, pdfcer can remove it, and the operator's reach setting says not to.
+/// This block is what makes offering a narrow reach honest: the setting changes
+/// what pdfcer may *change*, never what it *finds* or *reports*, so the operator
+/// sees the full census either way and chooses with it in front of him.
+///
+/// **Notice weight, and the choice of colour is the substance of the block.**
+/// Not muted like the clean census, because this is live text surviving into
+/// the saved file rather than evidence that a check ran. Not
+/// `palette.danger` like the residual section, because nothing failed — the
+/// engine keeps this verdict apart from `DisclosedNotScrubbed` precisely so a
+/// deliberate scope does not read as a fault, and painting both red would
+/// collapse in the product the distinction the engine maintains in the report.
+///
+/// Drawn **above** the residual section so the danger colour stays last and
+/// closest to the confirm control.
+///
+/// It gates nothing. It cannot enter [`crate::redact::residual_count`], cannot
+/// be acknowledged, and cannot block the confirm control — an operator who set
+/// a narrow reach and is then refused the save he asked for has been given a
+/// setting that does not work.
+pub(super) fn left_by_choice(ui: &mut egui::Ui, theme: &Theme, report: &RedactionReport) {
+    let names = left_by_choice_names(report);
+    if names.is_empty() {
+        return;
+    }
+    ui.add_space(10.0);
+    ui.separator();
+    ui.label(egui::RichText::new(t::left_by_choice_line(&names)).color(theme.palette.notice));
+}
+
+/// **The carriers holding a copy that the reach setting leaves alone**, already
+/// in the operator's words.
+///
+/// An `==` filter for the same reason [`checked_clean_names`] is one:
+/// `CarrierAction` is `#[non_exhaustive]`, a `match` here could only be written
+/// with a catch-all, and a catch-all is how a new verdict becomes invisible.
+/// The tripwire for a new variant is `tools/gates/check-engine-api-drift.sh`,
+/// not this file.
+#[must_use]
+pub(super) fn left_by_choice_names(report: &RedactionReport) -> Vec<&'static str> {
+    report
+        .carriers
+        .iter()
+        .filter(|c| c.action == CarrierAction::FoundNotScrubbed)
+        .map(|c| t::carrier_name(c.carrier))
+        .collect()
+}
+
+// ---------------------------------------------------------------------------
+// 4. The engine's own notes
 // ---------------------------------------------------------------------------
 
 /// **`RedactionReport::notes`, at the foot of the report, collapsed.**
@@ -258,6 +312,54 @@ mod tests {
             ("xmp", CarrierAction::Scrubbed),
         ]);
         assert!(checked_clean_names(&report).is_empty());
+    }
+
+    /// **The two "not scrubbed" verdicts never reach each other's section.**
+    ///
+    /// This is the assertion with teeth in the whole module. The engine keeps
+    /// `FoundNotScrubbed` — *told not to* — apart from `DisclosedNotScrubbed`
+    /// — *tried and could not* — and warns that collapsing them makes a
+    /// deliberate scope look like a failure and a real failure look like a
+    /// preference. Both directions are wrong and both are one `==` away, so
+    /// both are asserted: a declined match must not enter the blocking
+    /// residual section, and a real failure must not be excused as a setting.
+    #[test]
+    fn a_declined_match_and_a_real_failure_are_never_the_same_list() {
+        let report = report_with(&[
+            ("info", CarrierAction::FoundNotScrubbed),
+            ("xmp", CarrierAction::FoundNotScrubbed),
+            ("xfa", CarrierAction::DisclosedNotScrubbed),
+            ("struct_tree", CarrierAction::CheckedClean),
+            ("attachments", CarrierAction::Scrubbed),
+        ]);
+        let declined = left_by_choice_names(&report);
+        assert_eq!(
+            declined.len(),
+            2,
+            "two carriers were found and left by choice: {declined:?}"
+        );
+        assert!(
+            declined.iter().all(|n| !n.contains("XFA")),
+            "a carrier pdfcer COULD NOT scrub was excused as a setting: {declined:?}"
+        );
+        assert!(
+            checked_clean_names(&report)
+                .iter()
+                .all(|n| !declined.contains(n)),
+            "a carrier holding a surviving copy was also called clean"
+        );
+    }
+
+    /// **The declined list is empty on every report from a default reach**, so
+    /// the block is drawn on a measurement and never as decoration.
+    #[test]
+    fn a_report_with_nothing_declined_says_nothing() {
+        let report = report_with(&[
+            ("info", CarrierAction::Scrubbed),
+            ("xfa", CarrierAction::DisclosedNotScrubbed),
+            ("xmp", CarrierAction::CheckedClean),
+        ]);
+        assert!(left_by_choice_names(&report).is_empty());
     }
 
     /// ★ **The census never prints an engine key**, which is the second half of

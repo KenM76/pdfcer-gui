@@ -82,12 +82,14 @@ pub mod overprint;
 /// [`look`] on 2026-09-02 under R2. Its header says which of the three is there
 /// for a weak reason and should move out first if the module grows.
 pub mod print_colour;
+pub mod redaction;
 
 pub use bytes::*;
 pub use extract::*;
 pub use look::*;
 pub use overprint::*;
 pub use print_colour::*;
+pub use redaction::*;
 
 use egui_shell::theme::Preset;
 use pdfcer_core::settings::StoreKind;
@@ -545,7 +547,7 @@ mod tests {
     // and answered the other way: those two have different blast radii, these
     // two have the same one.
     //
-    const SETTINGS_COUNT: usize = 37;
+    const SETTINGS_COUNT: usize = 38;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
     ///
@@ -729,6 +731,9 @@ mod tests {
             // The theme's twin in the Appearance group — the second setting
             // that changes the program rather than the document.
             (ui_scale_title(), ui_scale_silence(), ui_scale_radius()),
+            // The Redacting group's one setting — a shell preference, here for
+            // the reason every other shell preference in this list is here.
+            (reach_title(), reach_silence(), reach_radius()),
         ]
     }
 
@@ -802,6 +807,10 @@ mod tests {
             include_str!("../../dialogs/settings/measuring.rs"),
         ),
         ("pages", include_str!("../../dialogs/settings/pages.rs")),
+        (
+            "redaction",
+            include_str!("../../dialogs/settings/redaction.rs"),
+        ),
         ("saving", include_str!("../../dialogs/settings/saving.rs")),
         (
             "signatures",

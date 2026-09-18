@@ -443,7 +443,9 @@ fn stage(open: &mut crate::app::state::OpenDoc, term: &str) {
         .mark_redactions_by_search(term, false)
         .expect("the drawing's text is extractable");
     assert!(!created.is_empty(), "the fixture must contain the term");
-    let staged = crate::redact::stage_into_session(session).expect("the staging must succeed");
+    let staged =
+        crate::redact::stage_into_session(session, crate::app::prefs::RedactionReach::default())
+            .expect("the staging must succeed");
     open.redaction_absence_claims = staged.report.redacted_text.clone();
     open.edit_epoch += 1;
 }

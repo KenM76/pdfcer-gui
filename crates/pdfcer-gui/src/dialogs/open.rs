@@ -53,6 +53,7 @@ use super::{
     formfield, import_text, insert_image, insert_pages, new_document, ocr, offpage, page_size,
     print, protect, redact, scale, shortcuts, stamp_collection, textannot, unembed,
 };
+use crate::app::prefs::RedactionReach;
 use crate::app::state::Status;
 
 impl DialogsState {
@@ -151,11 +152,11 @@ impl DialogsState {
     ///   they were with one computed against the marks as they are now, which is
     ///   the difference between the numbers on screen and the bytes that would
     ///   be written.
-    pub fn open_redact(&mut self, status: &Status) {
+    pub fn open_redact(&mut self, status: &Status, reach: RedactionReach) {
         if self.redact.is_some() {
             return;
         }
-        self.redact = redact::open_for(status);
+        self.redact = redact::open_for(status, reach);
     }
 
     /// **Open the off-the-sheet census window** — `edit.offpage`.

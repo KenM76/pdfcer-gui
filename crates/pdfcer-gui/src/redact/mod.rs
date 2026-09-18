@@ -315,6 +315,8 @@ use pdfcer_core::object::ObjId;
 use pdfcer_core::redact::{self, RedactError, RedactionReport};
 use pdfcer_core::writer::{SaveOptions, WriteError};
 
+use crate::app::prefs::RedactionReach;
+
 pub use proof::{AbsenceVerification, Residual, ResidualSite};
 
 /// Why a redaction apply did not happen. Every variant is a refusal **before
@@ -810,11 +812,24 @@ impl PreparedRedaction {
 /// [`PreparedRedaction::write_to`] after the operator confirms, and that method
 /// proves the bytes again on the way past.
 ///
-/// # ★ This is the one call site of [`pdfcer_core::redact::apply_redactions`] in
-/// this crate
+/// # ★ This is the one call site of [`pdfcer_core::redact::apply_redactions_with`]
+/// in this crate
 ///
 /// Asserted, not asked for: `redact::sealed` parses every `.rs` file in the crate and
 /// fails if a second one appears, or if this one disappears. See §2.4.
+///
+/// # How far the removal reaches
+///
+/// `reach` decides what happens to text matching the redacted content found
+/// **outside** the marked regions. Removing the marked content is
+/// unconditional and is not affected by it. Every value produces the same
+/// report — a match a narrow reach declines to act on is still counted and
+/// still named — so the disclosure this function's caller draws is complete
+/// under all three.
+///
+/// It is taken as an argument rather than read here because this module has no
+/// access to the operator's preferences and must not acquire one: a function
+/// that reads configuration cannot be tested at a reach the test chose.
 ///
 /// # Errors
 ///
@@ -823,6 +838,7 @@ impl PreparedRedaction {
 /// full rewrite degrades into an incremental save.
 pub fn prepare_redaction_apply(
     session: &EditSession,
+    reach: RedactionReach,
 ) -> Result<PreparedRedaction, RedactApplyRefusal> {
     // ★★★ Asked FIRST — before the mark census — and the ORDER is load-bearing
     // twice over.
@@ -871,22 +887,30 @@ pub fn prepare_redaction_apply(
         }
     })?;
 
-    // Full rewrite #2 — the removal itself. `apply_redactions` forces its own
-    // full rewrite internally (R35); this call site cannot ask it for anything
-    // else, which is the property that makes "apply is never incremental"
-    // structural rather than a convention.
+    // Full rewrite #2 — the removal itself. `apply_redactions_with` forces its
+    // own full rewrite internally (R35); this call site cannot ask it for
+    // anything else, which is the property that makes "apply is never
+    // incremental" structural rather than a convention.
+    //
+    // ★ The `_with` form rather than the bare one, and it is not a preference
+    // for the longer name: the bare `apply_redactions` hard-codes the engine's
+    // default reach, so calling it would make the setting in the window a
+    // promise this route breaks. The two are otherwise the same function.
+    let redact_options = redact::RedactOptions::with_residual_scope(reach.scope());
     let (bytes, report) =
-        redact::apply_redactions(&doc, &SaveOptions::identity()).map_err(|err| match err {
-            // A write failure is the same class of refusal as a failed
-            // materialisation: the full rewrite did not happen.
-            RedactError::Write(inner) => RedactApplyRefusal::FullRewriteUnavailable {
-                broken_xref_stream: matches!(inner, WriteError::HybridFullRewrite),
-                reason: inner.to_string(),
+        redact::apply_redactions_with(&doc, &SaveOptions::identity(), &redact_options).map_err(
+            |err| match err {
+                // A write failure is the same class of refusal as a failed
+                // materialisation: the full rewrite did not happen.
+                RedactError::Write(inner) => RedactApplyRefusal::FullRewriteUnavailable {
+                    broken_xref_stream: matches!(inner, WriteError::HybridFullRewrite),
+                    reason: inner.to_string(),
+                },
+                other => RedactApplyRefusal::CoreRefused {
+                    reason: other.to_string(),
+                },
             },
-            other => RedactApplyRefusal::CoreRefused {
-                reason: other.to_string(),
-            },
-        })?;
+        )?;
 
     // ★★★ A survivor in drawn content does NOT refuse here. `prove` lists it as
     // a `ResidualSite::DrawnContent` residual, the window shows it with the
@@ -1041,6 +1065,7 @@ pub struct StagedRedaction {
 /// pending flag is NOT set"*), not this function's inference.
 pub fn stage_into_session(
     session: &mut EditSession,
+    reach: RedactionReach,
 ) -> Result<StagedRedaction, RedactApplyRefusal> {
     // Idempotence, by refusal rather than by silence. Staging twice is not an
     // error the engine would report — the flag is already set and the second
@@ -1057,9 +1082,30 @@ pub fn stage_into_session(
         return Err(RedactApplyRefusal::NothingToApply);
     }
 
+    // ★★★ Set BEFORE the staging verb, and it stays on the session afterwards.
+    // That is what makes `save_applying_pending` — which takes `&EditSession`
+    // and therefore cannot be told anything — perform the removal at the same
+    // reach the preview below was computed at and the operator acknowledged.
+    // A settings change between staging and saving does NOT move it, which is
+    // the correct answer: the operator confirmed a specific preview.
+    session.set_residual_scope(reach.scope());
+
     // ★★★ The engine's staging verb — one of the four calls `sealed` pins to
     // this file. See §2.4.
     let report = session.apply_redactions_deferred().map_err(map_refusal)?;
+
+    // The reach must SURVIVE that call. `apply_redactions_deferred` collapses
+    // the staged state, and a collapse that reset the scope would leave
+    // `save_applying_pending` — which cannot be told anything — performing the
+    // removal at the default reach while the operator acknowledged a preview
+    // computed at his. The engine documents that it survives; this is the
+    // assertion that notices if it stops, since nothing else in this shell
+    // reads the value back.
+    debug_assert_eq!(
+        session.residual_scope(),
+        reach.scope(),
+        "the staging verb reset the redaction reach the operator chose"
+    );
 
     // ★ Read AFTER the call, and that is the assertion rather than an
     // afterthought. The route this replaces had to read the depth before,
