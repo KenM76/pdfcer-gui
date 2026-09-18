@@ -99,6 +99,13 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // first explains a failure in the second, and reading them the other
         // way round does not work.
         Box::new(panel_carry::PanelCarriedHomeLandsWhereItWasAimed),
+        // The two affordances the gesture shows BEFORE it commits, read after
+        // the two that say the commit works. In that order because a failure
+        // in the commit explains a failure in the preview and not the other
+        // way round: a compass that offers a compartment the dock cannot move
+        // a panel into is one defect, not two.
+        Box::new(dock_drop::ADragOverTheDockOffersTheCompartmentUnderThePointer),
+        Box::new(dock_drop::ADragCarriedOffTheDockOffersAWindow),
         Box::new(layers_search::LayersSearchNarrowsTheList),
         // The first *driving* check, and it goes first among them on
         // purpose: it is the cheapest — two clicks on one always-enabled

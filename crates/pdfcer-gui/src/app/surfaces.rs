@@ -651,6 +651,13 @@ impl PdfcerApp {
         // of these types is a format nobody declared: it changes shape when a
         // field is added, and a check written against the old shape then
         // quotes one field while matching another.
+        //
+        // The rectangles and the point are spelled `[[x0 y0] - [x1 y1]]` and
+        // `[x y]` because that is what every other geometric field on this
+        // channel is spelled, and `tools/ui-verify`'s `parse_egui_rect` and
+        // `parse_egui_pos` already read it. A tidier four-number spelling
+        // would be a second format for one concept, which is one more parser
+        // for the two ends of this bridge to drift apart in.
         crate::diag::trace_changed(DOCK_DROP_SLOT, || {
             report.drop_preview.as_ref().map_or_else(
                 // ui-text-exempt: diagnostic trace, never displayed.
@@ -658,7 +665,8 @@ impl PdfcerApp {
                 |p| {
                     format!(
                         // ui-text-exempt: diagnostic trace, never displayed.
-                        "dock-drop panel={} over={} zone={} target={} lands={} rect=[{:.1} {:.1} {:.1} {:.1}]",
+                        "dock-drop panel={} over={} zone={} target={} lands={} \
+                         rect=[[{:.1} {:.1}] - [{:.1} {:.1}]]",
                         p.panel,
                         stack_key(p.landing.over),
                         p.landing
@@ -681,7 +689,7 @@ impl PdfcerApp {
                 |t| {
                     format!(
                         // ui-text-exempt: diagnostic trace, never displayed.
-                        "dock-tear panel={} rect=[{:.1} {:.1} {:.1} {:.1}] at=[{:.1} {:.1}]",
+                        "dock-tear panel={} rect=[[{:.1} {:.1}] - [{:.1} {:.1}]] at=[{:.1} {:.1}]",
                         t.panel,
                         t.rect.min.x,
                         t.rect.min.y,

@@ -714,6 +714,11 @@ pub mod layers_search;
 
 pub mod pages_drag;
 
+/// **The two pre-commit affordances of a panel drag** — the drop compass and
+/// the tear outline. Its header carries why each needs two channels asserted
+/// together, and why nothing in it names a compartment.
+pub mod dock_drop;
+
 /// **A panel tears out into a real OS window, comes back, and closes** —
 /// O126. Its header carries the two-line oracle and why one line is not
 /// enough.

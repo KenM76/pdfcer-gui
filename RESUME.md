@@ -335,8 +335,15 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    that nothing in the program published. Both are repaired — every section fires
    `view.reset_layout` and asserts it landed, and the float body publishes
    `float.body.<panel>` and `float.content.<panel>` against the dock's own
-   `empty=` count. **What is still owed to the screen**: `ui-verify` assertions
-   for the drop overlay and the tear outline.
+   `empty=` count. **The drop compass and the tear outline are driven too**, by
+   `a_drag_over_the_dock_offers_the_compartment_under_the_pointer` and
+   `a_drag_carried_off_the_dock_offers_a_window`. Neither names a compartment:
+   the arrangement is discovered from the regions the run itself published,
+   because the left dock draws no tab strip at all while its rail is showing and
+   a check that named a strip would assert about a surface the operator cannot
+   see. **The subject of a landing assertion is the panel's body, not its tab** —
+   a tab is a property of the compartment a panel is in, a body is a property of
+   its being docked at all. Thirteen falsification plants, all caught.
 6. **O198's remainder, which is O188** — a title-block run the exporter wrote as
    one lump is still one lump: he can reach that text and drag a line, not take
    it apart. **The verb has landed and is in the pin**: `EditSession::split_text_object`
