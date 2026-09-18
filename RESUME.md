@@ -241,9 +241,9 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    One still-open sub-item: the forms panel's tab-order view numbers its rows
    from `/Annots` order while the ring uses the engine's derived sequence, so on
    a page carrying `/Tabs /R` or `/C` the two surfaces would disagree.
-5. **O212 — panel docking, tear-out and cross-compartment drops: what remains
-   is the second half of step 5 of six, and the driving steps 3 and 4 owe.** Steps 0 to 2 are built, falsified plant by plant and
-   gate-green: the dock retains its own geometry; a dock tab drags along its own
+5. **O212 — panel docking, tear-out and cross-compartment drops: all six steps
+   are built and the only thing outstanding is the driving steps 3 and 4 owe.**
+   Steps 0 to 2 are built, falsified plant by plant and gate-green: the dock retains its own geometry; a dock tab drags along its own
    strip behind a dimmed-at-a-no-op caret; and `dock::drop` is the drop grammar
    as a pure value — `DockLayout::move_panel` and `accepts_drop`, with a
    12,000-case invariant fuzz that asserts what it swept. Step 3's two headless
@@ -294,32 +294,40 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    because the edge band is a quarter of the body capped at 64 pt. That tolerance
    is the file's stated blind spot, and it is why the conversion has to be driven
    rather than unit-tested.
-   **Nothing calls `set_float_drag`**, so G4 is not reachable from the running
-   program, the command route is still the only way home, and `FEATURES.md` ticks
-   nothing for it. **The gesture is now measured, not read.** Driving the release
-   binary with a temporary probe on both pointer channels settles it: the child
-   viewport keeps reporting the pointer while the button is held, 272 points
-   outside its own 320-point-wide window, `is_decidedly_dragging()` true
-   throughout; the application's own context reports `down=false` for every
-   sample of the same gesture; `ViewportInfo::inner_rect` is the platform's
-   client rectangle in monitor space on both sides and `outer_rect` is the window
-   rectangle; and `child_inner.min + local - app_inner.min` reproduces, to the
-   point, the coordinate the root's own channel reports for the same physical
-   cursor. So the gesture is **a drag on the panel's own header strip**, no
-   platform crate, and the OS title bar is not the route. Measured at `ppp = 1.0`.
-   `DESIGNS.md` item 3 carries the numbers. **What is owed is now the caller** —
-   sense the header drag, convert, feed `set_float_drag` — and one more driven
-   question the probe did not answer: whether making the window follow the
-   pointer every frame is stable rather than the jitter loop `floatwin`'s header
-   warns about.
-   **A live defect fell out of reading that machinery**, and it is not a G4
-   prerequisite: the flag recording that a float window has been opened once was
-   swept from the set of floats *about to be drawn*, so a panel docked back by
-   *Dock all* — or by a drop applied earlier in the same frame — kept its flag
-   forever and reopened wherever the platform chose rather than where the operator
-   left it, and an empty set skipped the sweep entirely. `DockState::floats_seen`
-   is the list that still contains such a panel, and it is what the sweep now
-   walks.
+   **The caller is built, so the gesture is reachable.** `dock::floatwin` senses
+   a press on a float window's header strip, converts the pointer with
+   `child_inner.min + local - app_inner.min`, and renews `set_float_drag` every
+   frame until the release — the float window's own viewport is the only channel
+   that reports the pointer during the gesture, because the application's context
+   reports the button up throughout. The conversion is measured at `ppp = 1.0`
+   only; whether the two window origins still agree at a non-unit ui scale is a
+   reading. `DESIGNS.md` item 3 carries the numbers.
+   **`panel_carried_home_lands_where_it_was_aimed` drives it.** `Driver::carry`
+   is the harness verb: it raises the window the gesture *begins* in rather than
+   the application's, and it rests 400 ms on the destination before letting go,
+   because the pointer crosses two viewports before it becomes a drop offer and a
+   release on the arrival frame lands nothing. The oracle is **which**
+   compartment — a left-dock panel carried to the right dock's Objects stack, both
+   tabs asserted into one tab bar by containment — so a landing that went home
+   reads differently from a landing that went where the pointer was. Falsified
+   twice, and the two plants separate the assertions: a fixed left-dock drop point
+   reddens only *the panel is in no stack*; the right dock's **other** stack
+   reddens only the aimed-at assertion.
+   **The aim point is published by the application, not re-derived.** The header
+   strip is the shell's geometry and the shell has no diagnostic channel and must
+   not grow one, so `float.header.<panel>` is published from the tab-menu handler
+   the application already supplies for that strip — inside the float's own
+   `ViewportScope`, because that handler runs *before* the body closure that
+   normally enters it and an untagged region converts against the wrong window's
+   origin.
+   **The window covers the compass** it is being aimed with, since it follows the
+   pointer. The drop resolves and lands regardless; the remedy is an open question
+   in `GUI_ROADMAP.md`.
+   **The flag saying a float window has been opened is swept from
+   `DockState::floats_seen`**, not from the set of floats about to be drawn: a
+   panel docked back by *Dock all*, or by a drop applied earlier in the same
+   frame, has already left that set, and a panel that kept its flag reopens
+   wherever the platform chooses rather than where the operator left it.
    **`panel_tabs_can_be_rearranged` and `panels_float_close_and_dock` both drive
    PASS.** The latter's O126 A5 findings were the check's own, not the
    application's: the sections were not hermetic and fed each other through the

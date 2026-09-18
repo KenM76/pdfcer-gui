@@ -1405,7 +1405,7 @@ tabs within a stack with a reserved overflow menu, draggable splitters, collapse
 to a rail, persistence, named workspaces, and tear-out to a real OS window with
 a home address it returns to.
 
-The four gestures that are absent:
+The four gestures:
 
 | | Gesture | What it lands on |
 |---|---|---|
@@ -1414,21 +1414,19 @@ The four gestures that are absent:
 | **G3** | Drag a tab out of the window | a float, homed where the drag began |
 | **G4** | Drag a float's header back over the dock | a docked address chosen by the pointer, not by the remembered home |
 
-Three things are missing, and none of them is the layout structure:
+Three parts carry all four, and none of them is the layout structure:
 
 1. **A queryable geometry.** `plan` is scalar-only — it resolves spans and plans
-   tab strips and never sees an `egui::Rect`. Every rect the dock computes is a
-   local in `dock::mod` or `dock::tabs`, and the only way one leaves is
-   `dock::report`'s stringly-named `RectReport`. A drop must ask *which
-   compartment is under this point, and where exactly would the panel land*, and
-   nothing can answer that today without parsing names.
+   tab strips and never sees an `egui::Rect` — so a drop that must ask *which
+   compartment is under this point, and where exactly would the panel land*
+   cannot be answered from it without parsing `dock::report`'s stringly-named
+   `RectReport`. `DockGeometry` is the retained answer, rebuilt each frame and
+   therefore one frame old by the time a drop reads it.
 2. **A drop grammar** — take a panel from an address; insert it at a target that
    may be a tab index in an existing stack, a new stack splitting a column, a
-   new column, or the far side. `DockLayout` has no move, no indexed insert and
-   no reorder; `mount` pushes to the end, and the only indexed insert in the
-   crate is private inside `dock_back`. The fields are `pub` and `normalize`
-   already prunes what a move empties, so this is a small addition rather than a
-   rewrite.
+   new column, or the far side. `DockLayout::move_panel` and `accepts_drop` are
+   that grammar as a pure value, and `normalize` prunes what a move empties, so
+   no caller has to reason about the column a drag leaves behind.
 3. **A pointer the dock is told rather than reads, for G4 alone.** A float is
    drawn in a child viewport, so while its window is carried the pointer that
    matters is over the *application* window and `egui`'s pointer in the dock's
@@ -1470,11 +1468,20 @@ Three things are missing, and none of them is the layout structure:
    command route. Measured at `ppp = 1.0`; whether the two sides stay in
    agreement when the ui scale is not 1 is the one part of this not yet driven.
 
-   **What the measurement does not settle** is the second half of the gesture:
-   the window must follow the pointer, and making it follow means asserting its
-   position every frame, which is precisely what `floatwin`'s header warns drags
-   a window back toward where the program thinks it is. That is a
-   screenshot-and-drive question of its own, and it is the next one.
+   **The window follows the pointer, and what makes that stable is an absolute
+   target plus one declined pass.** `floatgrab::carry_to` puts the window where
+   the grabbed point lands under the cursor, so once the window is where it
+   should be the offset driving it is zero — where a per-frame delta oscillates,
+   because the platform re-reports the cursor at a local position exactly as far
+   back as the window just moved. That is necessary and not sufficient: the pass
+   immediately after a commanded move reads a pointer measured across it and
+   reports the residual as the negative of the one just acted on, which would
+   send the window back every step for the whole gesture. `floatgrab::Settling`
+   is what declines that one pass. `floatgrab`'s header carries both, with the
+   `D:/dev/rag/egui/` finding that measured the second.
+
+   The cost is that the window covers the compass it is being aimed with, which
+   is an open question in `GUI_ROADMAP.md` rather than a defect in the gesture.
 
    The OS title bar is not the route. It runs a platform modal move loop in
    which `egui` sees no cursor, and it would need a platform crate to recover

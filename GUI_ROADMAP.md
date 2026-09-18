@@ -403,3 +403,14 @@ every command in it is absent.
 a shared scale and a drafting standard; a tolerance stated in drawing units and
 one stated in page units differ by that scale, and the wrong choice prints a
 plausible number. *Blocks:* tolerance authoring in the dimension-group editor.
+
+**A float window carried home covers the compass it is being aimed with.** The
+window follows the pointer, and the five-zone compass is drawn in the main
+window underneath it, so the operator aims at a target they can see only at its
+edges. The drop still resolves and still lands — this costs confidence, not
+correctness. The product class answers it two ways: a translucent dragged
+window, or an always-on-top guide overlay the dragged window cannot cover. The
+second is the stronger offer and the larger build, because the compass then has
+to be drawn into a viewport of its own rather than the one the dock is laid out
+in. *Blocks:* nothing — the gesture ships without it; what it decides is
+whether the shell grows a third window kind.
