@@ -494,15 +494,16 @@ fn an_author_imposed_refusal_names_the_author_and_not_pdfcer() {
 /// the ones that did **not** refuse and would otherwise be silent.
 #[test]
 fn the_written_summary_carries_the_reuse_the_lock_and_the_notes() {
-    let written = crate::text::sign::written_details(
-        "SignHere",
-        "CN=Ken",
-        "0A1B",
-        true,
-        Some("Include: Name"),
-        Some("form fill-in and signing"),
-        &["seed value: a timestamp was recommended".to_owned()],
-    );
+    let written = crate::text::sign::written_details(&crate::text::sign::Written {
+        field: "SignHere",
+        subject: "CN=Ken",
+        serial: "0A1B",
+        reused: true,
+        lock: Some("Include: Name"),
+        certification: Some("form fill-in and signing"),
+        notes: &["seed value: a timestamp was recommended".to_owned()],
+        appearance: &[],
+    });
     assert!(written.contains("already on the document"), "{written}");
     assert!(written.contains("SignHere"), "{written}");
     assert!(written.contains("Include: Name"), "{written}");
@@ -511,11 +512,133 @@ fn the_written_summary_carries_the_reuse_the_lock_and_the_notes() {
 
     // The created-field case says none of it, rather than saying "no lock" and
     // "no notes" — an absence is not a disclosure.
-    let plain =
-        crate::text::sign::written_details("Signature1", "CN=Ken", "0A1B", false, None, None, &[]);
+    let plain = crate::text::sign::written_details(&crate::text::sign::Written {
+        field: "Signature1",
+        subject: "CN=Ken",
+        serial: "0A1B",
+        reused: false,
+        lock: None,
+        certification: None,
+        notes: &[],
+        appearance: &[],
+    });
     assert!(plain.contains("Signature field Signature1"), "{plain}");
     assert!(!plain.contains("already on the document"), "{plain}");
     assert!(!plain.contains("lock"), "{plain}");
+}
+
+/// **What the signature's box will read reaches the screen.**
+///
+/// `SignReport::appearance_lines` is the text the engine composed into a
+/// visible signature's appearance — the certificate's subject, the time of
+/// signing, and the reason and location as given. The operator never wrote that
+/// composition, and he cannot read it off the document he still has open,
+/// because that one is the unsigned original he started from. A fact about what
+/// was written that is obtainable no other way is rule 4's whole subject.
+#[test]
+fn the_written_summary_carries_the_text_the_signature_box_shows() {
+    let visible = crate::text::sign::written_details(&crate::text::sign::Written {
+        field: "Signature1",
+        subject: "CN=Ken",
+        serial: "0A1B",
+        reused: false,
+        lock: None,
+        certification: None,
+        notes: &[],
+        appearance: &[
+            "Digitally signed by Ken Mantle".to_owned(),
+            "Date: 2026-09-18 10:04:11 -04'00'".to_owned(),
+            "Reason: I approve this drawing".to_owned(),
+        ],
+    });
+    assert!(
+        visible.contains("Digitally signed by Ken Mantle"),
+        "the engine's own line, verbatim: {visible}"
+    );
+    assert!(
+        visible.contains("Date: 2026-09-18 10:04:11 -04'00'"),
+        "including the time, which the operator did not type: {visible}"
+    );
+    assert!(
+        visible.contains("Reason: I approve this drawing"),
+        "and every line, not merely the first: {visible}"
+    );
+
+    // An invisible signature composes nothing, and an absence is not a
+    // disclosure: the screen says nothing about a box rather than announcing an
+    // empty one. `reused` is false in both calls, so the word cannot arrive
+    // from the sentence about signing into a box that was already there.
+    let invisible = crate::text::sign::written_details(&crate::text::sign::Written {
+        field: "Signature1",
+        subject: "CN=Ken",
+        serial: "0A1B",
+        reused: false,
+        lock: None,
+        certification: None,
+        notes: &[],
+        appearance: &[],
+    });
+    assert!(
+        !invisible.to_lowercase().contains("box"),
+        "no box is mentioned when none was drawn: {invisible}"
+    );
+}
+
+/// **The counter that the driven check reads measures the sentence.**
+///
+/// `appearance_shown` is the shell's own account of whether the page's composed
+/// text reached the operator, and `ui-verify` believes it. So it is asserted on
+/// three shapes: every line present, a line dropped, and a line that appears in
+/// the sentence but not as an appearance line — the last because a counter
+/// matching a bare substring would score the subject and report a disclosure
+/// that never happened.
+#[test]
+fn the_appearance_counter_measures_the_sentence_not_the_slice() {
+    let lines = [
+        "Digitally signed by Ken Mantle".to_owned(),
+        "Date: 2026-09-18 10:04:11 -04'00'".to_owned(),
+    ];
+    let full = crate::text::sign::written_details(&crate::text::sign::Written {
+        field: "Signature1",
+        subject: "CN=Ken",
+        serial: "0A1B",
+        reused: false,
+        lock: None,
+        certification: None,
+        notes: &[],
+        appearance: &lines,
+    });
+    assert_eq!(
+        crate::text::sign::appearance_shown(&full, &lines),
+        2,
+        "both lines are in it: {full}"
+    );
+
+    // The defect the counter exists to name: the composer was handed nothing,
+    // so the sentence carries neither line while the engine composed two.
+    let none = crate::text::sign::written_details(&crate::text::sign::Written {
+        field: "Signature1",
+        subject: "CN=Ken",
+        serial: "0A1B",
+        reused: false,
+        lock: None,
+        certification: None,
+        notes: &[],
+        appearance: &[],
+    });
+    assert_eq!(
+        crate::text::sign::appearance_shown(&none, &lines),
+        0,
+        "and it says so rather than reporting the engine's own count: {none}"
+    );
+
+    // The subject is in the sentence, and it is not an appearance line. A
+    // counter matching a bare substring would score this 1.
+    assert_eq!(
+        crate::text::sign::appearance_shown(&none, &["CN=Ken".to_owned()]),
+        0,
+        "only the block's own indented lines count: {none}"
+    );
 }
 
 /// **The three placement arms map to three different requests.**

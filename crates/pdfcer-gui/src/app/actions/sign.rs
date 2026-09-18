@@ -230,15 +230,32 @@ fn run(
 
     // --- 4. write, and say exactly what was written -----------------------
     let report = prepared.report();
-    let details = t::written_details(
-        &report.field_name,
-        &report.signer_subject,
-        &report.signer_serial_hex,
-        report.field_reused,
-        report.field_lock.as_deref(),
-        report.certification.map(MdpPermission::meaning),
-        &report.notes,
-    );
+    let details = t::written_details(&t::Written {
+        field: &report.field_name,
+        subject: &report.signer_subject,
+        serial: &report.signer_serial_hex,
+        reused: report.field_reused,
+        lock: report.field_lock.as_deref(),
+        certification: report.certification.map(MdpPermission::meaning),
+        notes: &report.notes,
+        // The one part of the disclosure whose subject is not the file but the
+        // PAGE: what the box will read when somebody opens the signed
+        // document. Empty for an invisible signature.
+        appearance: &report.appearance_lines,
+    });
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        //
+        // ★ `shown` is counted against the SENTENCE, not against the report:
+        // reading the slice's length twice would be satisfied by a call site
+        // that handed the composer nothing. See `text::sign::appearance_shown`,
+        // and `ui-verify`'s `signing`, which is that link's only oracle.
+        let shown = t::appearance_shown(&details, &report.appearance_lines);
+        format!(
+            "sign-disclosed appearance_lines={} appearance_shown={shown}",
+            report.appearance_lines.len(),
+        )
+    });
     match prepared.write_to(target) {
         Ok(_) => Outcome::Written {
             path: PathBuf::from(target),

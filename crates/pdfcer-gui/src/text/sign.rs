@@ -870,6 +870,47 @@ pub fn written(file_name: &str, replaced: bool) -> String {
     }
 }
 
+/// **The shape one line of a signature's appearance is shown in.**
+///
+/// One constant because [`written_details`] writes it and [`appearance_shown`]
+/// matches it, and two spellings of an indent would drift without a symptom:
+/// the sentence would still read correctly and the counter would silently
+/// report that none of it reached the operator.
+const APPEARANCE_INDENT: &str = "\n    "; // string-gap-exempt: an indent, not a sentence.
+
+/// **Everything one signing wrote**, as the sentence that discloses it needs
+/// the facts.
+///
+/// A struct rather than eight parameters for two reasons. The sentence takes
+/// four strings in a row, and a caller that transposed two of them would
+/// compose something entirely plausible and entirely wrong. And the engine's
+/// `SignReport` is `#[non_exhaustive]`, so it cannot be built outside the
+/// engine crate: this is the shape a test in this crate *can* construct, which
+/// is what keeps the composing pure and asserted headlessly.
+///
+/// ⚠ What no test here can see is the mapping *into* this struct. See
+/// `ui-verify`'s `signing`, whose `sign-disclosed` line is that link's only
+/// oracle.
+pub struct Written<'a> {
+    /// The signature field's `/T`.
+    pub field: &'a str,
+    /// The certificate's subject.
+    pub subject: &'a str,
+    /// Its serial, in hex — what a recipient quotes back.
+    pub serial: &'a str,
+    /// Whether the signature went into a box that was already on the document.
+    pub reused: bool,
+    /// The `/FieldMDP` written because the field carried a `/Lock`.
+    pub lock: Option<&'a str>,
+    /// The `/DocMDP` level's meaning, when this signing certified.
+    pub certification: Option<&'a str>,
+    /// Seed-value constraints the form author recommended and this signature
+    /// does not meet.
+    pub notes: &'a [String],
+    /// The text a visible signature's box shows.
+    pub appearance: &'a [String],
+}
+
 /// ★★★ **What the report says pdfcer wrote — the rule-4 disclosure.**
 ///
 /// The engine's `SignReport` exists so a front end can state what it wrote
@@ -877,7 +918,7 @@ pub fn written(file_name: &str, replaced: bool) -> String {
 /// certificate was used and its serial — the two things a recipient will quote
 /// back when they ask *"is this really you?"*
 ///
-/// # ★★ What `Pass 10.12`–`10.14` added, and why each is on this screen
+/// # What each part is, and why it is on this screen
 ///
 /// * **`reused`** — whether the signature went into a box that was already
 ///   there. Two outcomes that produce identical byte counts and can produce
@@ -894,16 +935,25 @@ pub fn written(file_name: &str, replaced: bool) -> String {
 ///   did **not** refuse. Silence about them would be exactly the *"quiet
 ///   divergence"* the engine's own strictness exists to prevent, arriving one
 ///   layer up.
+/// * **`appearance`** — `SignReport::appearance_lines`, the text a visible
+///   signature's box shows. The engine composes it from the certificate's
+///   subject, the time of signing and whatever reason and location were typed,
+///   so it is content the operator never wrote and **cannot look at**: the
+///   document still open is the unsigned one — see [`open_document_unchanged`].
+///   Empty for an invisible signature, which is a placement he chose and which
+///   therefore owes no sentence.
 #[must_use]
-pub fn written_details(
-    field: &str,
-    subject: &str,
-    serial: &str,
-    reused: bool,
-    lock: Option<&str>,
-    certification: Option<&str>,
-    notes: &[String],
-) -> String {
+pub fn written_details(written: &Written<'_>) -> String {
+    let &Written {
+        field,
+        subject,
+        serial,
+        reused,
+        lock,
+        certification,
+        notes,
+        appearance,
+    } = written;
     let mut out = if reused {
         format!(
             "Signed in the box already on the document, {field} — by {subject}, \
@@ -929,12 +979,45 @@ pub fn written_details(
              instruction, honoured."
         ));
     }
+    if !appearance.is_empty() {
+        out.push_str(
+            "\nThe signature box on the page shows this text, which pdfcer \
+             composed from your certificate, the time of signing, and the \
+             reason and location you gave:",
+        );
+        for line in appearance {
+            out.push_str(&format!("{APPEARANCE_INDENT}{line}"));
+        }
+    }
     for note in notes {
         out.push_str(&format!(
             "\nWhat the document asked for and this signature does not do: {note}"
         ));
     }
     out
+}
+
+/// **How many of `appearance`'s lines the composed sentence actually shows.**
+///
+/// Counted against the SENTENCE, never against the slice. Reading the slice's
+/// own length twice would be satisfied by a caller that handed
+/// [`written_details`] an empty one, which is the defect no test in this
+/// process can see: `SignReport` is `#[non_exhaustive]`, so the mapping from
+/// the engine's report into [`Written`] cannot be exercised here at all.
+///
+/// ★ The indented form is what is matched, because it is the shape the
+/// appearance block writes and nothing else in the sentence produces it. A
+/// bare `contains` would score a line that merely happens to be a substring of
+/// the subject.
+///
+/// ⇒ `ui-verify`'s `signing` reads this through `sign-disclosed`, and that
+/// driven run is the only oracle the mapping has.
+#[must_use]
+pub fn appearance_shown(details: &str, appearance: &[String]) -> usize {
+    appearance
+        .iter()
+        .filter(|line| details.contains(&format!("{APPEARANCE_INDENT}{line}")))
+        .count()
 }
 
 /// ★★ **What the open document is now, said rather than left to be

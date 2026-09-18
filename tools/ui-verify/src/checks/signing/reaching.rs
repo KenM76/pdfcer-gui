@@ -28,7 +28,7 @@ use super::super::driving::{
     self, INVOKE_EVENT, ITEM_PREFIX, SHELL_DIAG_ENV, TAB_EVENT, declared, declared_names,
     declared_or_in_overflow, list, shell_trace,
 };
-use super::{OPENED_EVENT, REGION_BODY};
+use super::{DISCLOSED_EVENT, OPENED_EVENT, REGION_BODY};
 use crate::error::{Error, Result};
 use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
@@ -402,4 +402,57 @@ pub(super) fn raise_signatures(session: &Session, driver: &Driver, ui_rect: &str
     }
     session.settle(30);
     Ok(())
+}
+
+/// **Whether the text the signature box will show was put in front of the
+/// operator**, read after a signing.
+///
+/// # What this measures that no test in the process can
+///
+/// The engine composes a visible signature's appearance itself — signer, time,
+/// and whatever reason and location were typed — so it is content the operator
+/// never wrote and cannot read back: the document still open is the unsigned
+/// one. Rule 4 therefore owes it a sentence, and the shell composes that
+/// sentence from `SignReport::appearance_lines`.
+///
+/// ⇒ `pdfcer_core::sign::apply::SignReport` is `#[non_exhaustive]`, so no test
+/// outside the engine crate can build one. Every unit test of the composing
+/// function passes over a build whose call site hands it an empty slice, and
+/// the operator sees a report with the page's own text missing from it. This
+/// is the only oracle for that link.
+///
+/// The `sign-disclosed` line carries both halves — how many lines the engine
+/// composed, and how many of them the sentence actually contains, counted
+/// against the sentence rather than against the report.
+///
+/// ⚠ **A count of zero composed lines is a note, never a finding.** An
+/// invisible signature owes no sentence, and whether the fixture's field is
+/// large enough for the engine to compose one at all is the engine's question,
+/// not the disclosure's. The finding fires on the disagreement only.
+pub(super) fn disclosed_appearance(
+    trace: &Trace,
+    phase: &str,
+    report: &mut CheckReport,
+    findings: &mut Vec<String>,
+) {
+    let Some(line) = trace.events(DISCLOSED_EVENT).last() else {
+        findings.push(format!(
+            "{phase}: no `{DISCLOSED_EVENT}` line after a signing. Either the build predates the \
+             appearance disclosure or the sentence was never composed."
+        ));
+        return;
+    };
+    let composed = line.get("appearance_lines").unwrap_or_default().to_owned();
+    let shown = line.get("appearance_shown").unwrap_or_default().to_owned();
+    report.note(format!(
+        "{phase}: {DISCLOSED_EVENT} appearance_lines={composed} appearance_shown={shown}"
+    ));
+    if composed != "0" && shown != composed {
+        findings.push(format!(
+            "{phase}: the engine composed {composed} line(s) of appearance text into the \
+             signature box and the report the operator reads carries {shown} of them. That text \
+             is on the page, it is not in the document they still have open, and rule 4 owes them \
+             every line of it."
+        ));
+    }
 }

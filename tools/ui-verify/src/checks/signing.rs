@@ -186,6 +186,9 @@ const REGION_BOX_WHERE: &str = "sign-box-where";
 const OPENED_EVENT: &str = "sign-opened";
 /// What the engine said it wrote.
 const WRITTEN_EVENT: &str = "sign-written";
+/// How much of the page's own composed text the operator's report carries.
+/// See [`reaching::disclosed_appearance`].
+const DISCLOSED_EVENT: &str = "sign-disclosed";
 /// What came out of the container. Carries no subject, no serial and no path.
 const IDENTITY_EVENT: &str = "sign-identity";
 /// The Signatures panel's per-row line — phase D's oracle.
@@ -300,8 +303,8 @@ impl Check for ADocumentCanBeSignedAndTheSignatureIsInTheFile {
 mod reaching;
 
 use reaching::{
-    click, click_scrolled, click_tab, drawn, engine_fixture, field_name_of, last_refusal, launch,
-    press, raise_signatures, repo_fixture,
+    click, click_scrolled, click_tab, disclosed_appearance, drawn, engine_fixture, field_name_of,
+    last_refusal, launch, press, raise_signatures, repo_fixture,
 };
 
 #[allow(clippy::too_many_lines)]
@@ -836,7 +839,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
         click(&session, &driver, ui_rect, REGION_CONFIRM)?;
         session.settle(60);
-        match session.trace()?.events(WRITTEN_EVENT).last() {
+        let after_confirm = session.trace()?;
+        disclosed_appearance(&after_confirm, "phase E", report, &mut findings);
+        match after_confirm.events(WRITTEN_EVENT).last() {
             Some(line) => {
                 let reused = line.get("field_reused").unwrap_or_default().to_owned();
                 let field = line.get("field").unwrap_or_default().to_owned();
@@ -1016,7 +1021,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // for the form, the other for the furniture around it.
         click(&session, &driver, ui_rect, REGION_CONFIRM)?;
         session.settle(60);
-        match session.trace()?.events(WRITTEN_EVENT).last() {
+        let after_confirm = session.trace()?;
+        disclosed_appearance(&after_confirm, "phase G", report, &mut findings);
+        match after_confirm.events(WRITTEN_EVENT).last() {
             Some(line) => {
                 let certified = line.get("certified").unwrap_or_default().to_owned();
                 report.note(format!("phase G: {WRITTEN_EVENT} certified={certified}"));
