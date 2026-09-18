@@ -101,7 +101,9 @@
 use egui::{Align, Layout, Rect, RichText, TextStyle, UiBuilder, Vec2};
 
 use super::ctx::{Ctx, Intent};
-use super::model::{DockSide, Stack};
+use super::drag;
+use super::geometry::StackAddr;
+use super::model::{DockSide, PanelAddress, Stack};
 use super::plan::{self, TabPlan};
 use super::report;
 use super::tab_menu::TabMenu;
@@ -134,9 +136,11 @@ pub(crate) fn tab_bar(
         return outcome;
     }
 
+    let addr = StackAddr::new(side, column, stack_index);
     ui.painter().rect_filled(rect, 0.0, ctx.theme.palette.panel);
     ctx.reporter
         .report(ui, rect, || report::tab_bar(side, column, stack_index));
+    ctx.geometry.push_strip(addr, rect);
 
     // 1. Measure. `egui` memoizes layout jobs, so asking for the width of
     //    a label that is about to be drawn costs a hash lookup rather
@@ -180,6 +184,10 @@ pub(crate) fn tab_bar(
             &labels[i],
             tab_rect,
         );
+        // ★ Recorded from the LAYOUT's rect, not from the button's response.
+        // This is the rectangle the reservation arithmetic decided on, and it
+        // is the one a caret and a drop test must agree with.
+        ctx.geometry.push_tab(addr.tab(i), tab_rect);
         x += width + plan::TAB_GAP;
     }
 
@@ -198,6 +206,10 @@ pub(crate) fn tab_bar(
             rect,
         );
     }
+
+    // 7. The reorder drag, resolved and painted after every tab is placed —
+    //    a boundary has no position until they are.
+    drag::preview(ui, ctx, addr, rect);
 
     outcome
 }
@@ -286,9 +298,16 @@ fn draw_tab(
                 //
                 // `.fill()` wins over the class-based styling because
                 // `Button`'s own fill is applied after `button_style` has run.
+                // ★★ `click_and_drag`, not the default `click()` and not
+                // `Sense::drag()`. `egui` still reports `clicked()` when the
+                // press and release are close enough together in space and
+                // time, so activating a tab is unchanged; `Sense::drag()`
+                // alone would swallow that click, which is the regression the
+                // document strip learned expensively.
                 let mut button = egui::Button::new(text)
                     .min_size(rect.size())
                     .truncate()
+                    .sense(egui::Sense::click_and_drag())
                     .selected(selected);
                 if selected {
                     button = button.fill(ctx.theme.palette.accent);
@@ -300,6 +319,23 @@ fn draw_tab(
 
     if response.clicked() {
         ctx.intents.push(Intent::Activate(panel.clone()));
+    }
+    // ★ `drag_started_by(Primary)`, never `drag_started()`. `egui`'s plain
+    // predicate is button-agnostic, so a right-press that wandered a few points
+    // before releasing would start a reorder the operator meant as a context
+    // menu, and a middle-press one they meant as nothing at all.
+    if response.drag_started_by(egui::PointerButton::Primary) {
+        drag::begin(
+            ui,
+            ctx,
+            panel,
+            PanelAddress {
+                side,
+                column,
+                stack: stack_index,
+                tab: index,
+            },
+        );
     }
 
     // ★ The accessible name is published BEFORE anything else is allowed

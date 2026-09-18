@@ -87,3 +87,28 @@ the synthetic row printed the two opposite shas.
 to match the pin anywhere on the row. That is exactly the looseness that lets
 case 8 through. **A gate can always be quietened by reading more broadly, and
 reading more broadly is how it stops measuring.**
+
+## ★★ 2026-09-18 — the variant where the TOLERANCE is exactly the size of the defect
+
+The dock's insertion caret is a 2 pt stroke centred on a boundary. The unit
+test asserted it lands on its strip:
+
+    strip.expand(1.0).contains_rect(caret)
+
+Green from the day it was written. The driven check asserted plain
+`contains_rect`, with no slack, and failed on its first run: at boundary zero
+the caret is centred on the strip's own left edge, so **half of it is outside
+the `Ui` that clips it** — the one marker in the strip drawn at half the weight
+of every other, at the end where a faint marker is hardest to tell from none.
+
+★ The epsilon was `1.0`. The defect was 1.0 pt. That is not a coincidence: a
+tolerance gets written at whatever size makes the assertion pass on the build in
+front of you, so **an epsilon is a measurement of the defect, recorded as
+permission for it.**
+
+**How to apply:** when an assertion about geometry carries a slack, the slack
+needs a stated reason in units — *"the strip's stroke is 1 pt wide and the rect
+is its outer edge"* — or it is not there for a reason and must go. `expand`,
+`abs() < eps` and `approx` in a containment test are the shape to look for. If
+removing the slack turns the test red, that is the finding, not an argument for
+the slack.

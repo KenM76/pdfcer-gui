@@ -241,46 +241,59 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    One still-open sub-item: the forms panel's tab-order view numbers its rows
    from `/Annots` order while the ring uses the engine's derived sequence, so on
    a page carrying `/Tabs /R` or `/C` the two surfaces would disagree.
-5. **O198's remainder, which is O188** — a title-block run the exporter wrote as
+5. **O212 — panel docking, tear-out and cross-compartment drops, steps 2 to 5
+   of six.** Steps 0 and 1 are built, unit-falsified, gate-green and driven:
+   the dock retains its own geometry, and a dock tab drags along its own strip
+   behind a dimmed-at-a-no-op caret. `DESIGNS.md` carries the staging table and
+   the traps; `dock::drag` is the gesture, `dock::geometry` the address-to-rect
+   map, `dock::drag_tests` the headless driving. **Step 2 is next and is
+   headless** — the drop grammar as a pure value, with its fuzz: take, insert,
+   split, new column, normalize, invariants. It comes before the compass overlay
+   so the overlay has something true to preview. Two things to re-measure first:
+   `panels_float_close_and_dock` has a live undriven defect from O126 A5 — a
+   floated panel opens an empty window and *Dock all* recovers nothing — and
+   steps 4 and 5 build directly on that machinery; and `FEATURES.md` carries no
+   float or tear-out row at all, though the register marks the capability built.
+6. **O198's remainder, which is O188** — a title-block run the exporter wrote as
    one lump is still one lump: he can reach that text and drag a line, not take
    it apart. **The verb has landed and is in the pin**: `EditSession::split_text_object`
    with `text_object_split_plan` for the cost-before-committing half. Nothing in
    this shell calls either; the row in `ENGINE_BACKLOG.md` carries the five
    refusals that want operator sentences and the rule-4 disclosure `Line`
    granularity owes.
-6. **O181** — installed fonts in Add Text, and the dead Format ribbon controls.
-7. **O189** — bookmarks survive a cross-document page drag.
-8. **O183** — the nine-part ce-dimension paragraph, part 7 first.
-9. **O178** — multi-window tab dragging.
-10. **O182** — white seams between the image tiles of a colour rendering.
-11. **O194 steps 1, 4 and 5** — the ~30 surfaces in `UNIT_SURFACES.md` with no
+7. **O181** — installed fonts in Add Text, and the dead Format ribbon controls.
+8. **O189** — bookmarks survive a cross-document page drag.
+9. **O183** — the nine-part ce-dimension paragraph, part 7 first.
+10. **O178** — multi-window tab dragging.
+11. **O182** — white seams between the image tiles of a colour rendering.
+12. **O194 steps 1, 4 and 5** — the ~30 surfaces in `UNIT_SURFACES.md` with no
    unit control, and `ui_text` abbreviations. Step 2 shipped as an invariant:
    `src/units.rs` is the only place a document length is converted or rounded for
    display, `whole()` the only function permitted to round one, and
    `check-unit-conversion.sh` fails the build on a fresh `25.4` under the GUI.
    Font and type sizes are excluded, and the exclusion is written into source.
-12. **O195** — smart select in Review. `smart::enabled` defaults on and
+13. **O195** — smart select in Review. `smart::enabled` defaults on and
     `clicking.rs` reads the scope every frame, but `textsel::takes_the_press`
     answers `tool.is_text() || (Select && !edit_content)`, so in Review the plain
     Select press is consumed as a text sweep and the smart rung never sees it.
     Flipping the manifest condition alone would ship a visible, inert control,
     which is what R9 exists to prevent.
-13. **O176 — his verdict, not a repair.** At fit zoom a form field is about 28 px
+14. **O176 — his verdict, not a repair.** At fit zoom a form field is about 28 px
     wide and its corner grips eat every point on it; the fix is a grip that yields
     the body below some size, not a harness zoom that hides it.
-14. **Wire `SignReport::appearance_lines`** — the one engine delivery genuinely
+15. **Wire `SignReport::appearance_lines`** — the one engine delivery genuinely
     owed. It is what the engine drew into the signature box, and here it reaches
     only a trace the source marks as never displayed, so he signs without seeing
     what the stamp says while the engine records *a rectangle too small for them*
     as a real outcome. Off-canvas, in the signing dialog's result.
-15. **Re-run a full driven sweep, and read the SKIP set before the tally.** The
+16. **Re-run a full driven sweep, and read the SKIP set before the tally.** The
     last one reported `passed=86 failed=3 skipped=141` and **128 of those skips
     were one stuck notification toast**, so it measured nothing for more than
     half its roster while printing a tally that reads like a result. Ninety-five
     minutes taking the real cursor and keyboard, so only while he is away, and
     start `target/scratch/toast-watchdog.ps1` alongside it. Diff the SKIP set by
     NAME against the previous baseline in `target/scratch/`, in both directions.
-16. **The Set-scale window never appears, and the ordering story for it is
+17. **The Set-scale window never appears, and the ordering story for it is
     disproved — D64.** `app::frame`'s `ui` is one function: ribbon at 724, the
     command drain at 954, `dialogs.show` at 995 — so a dispatch always precedes
     `dialogs.show` in the same frame, and `export_text` shows a dialog drawing

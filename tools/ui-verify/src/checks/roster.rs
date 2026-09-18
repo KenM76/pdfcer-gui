@@ -880,6 +880,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // passed twice.
         Box::new(document_tabs::TwoDocumentsGetTwoTabs),
         Box::new(tab_reorder::DocumentTabsCanBeRearranged),
+        Box::new(panel_tab_reorder::PanelTabsCanBeRearranged),
         Box::new(page_drag_between_documents::PageDraggedBetweenDocuments::COPY),
         Box::new(page_drag_between_documents::PageDraggedBetweenDocuments::MOVE),
         Box::new(about::AboutReportsTheBuild),

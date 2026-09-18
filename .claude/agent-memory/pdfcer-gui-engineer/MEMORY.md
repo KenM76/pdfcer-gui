@@ -41,8 +41,8 @@
 - [A second route is an audit of the capability](feedback_adding_a_second_route_is_an_audit_of_the_capability.md) — twice in a day it found what the old door hid.
 - [Completeness needs an instrument, not a document](feedback_a_completeness_question_needs_an_instrument_not_a_document.md) — a script keyed on THEIR API, not our docs.
 - [Write the row when he speaks, not when the work lands](feedback_write_the_row_when_he_speaks_not_when_the_work_lands.md) — three requests were built and never filed.
-- [A limitation sentence is a citation with an hours-long shelf life](feedback_a_limitation_sentence_is_a_citation_with_an_hours_long_shelf_life.md) — spell engine-limit claims as assertions.
-- [The shell's unit of selection may not be the operator's](project_the_shells_unit_of_selection_may_not_be_the_operators.md) — one PDF path object holds 6,681 anchors across half his sheet.
+- [A limitation sentence has an hours-long shelf life](feedback_a_limitation_sentence_is_a_citation_with_an_hours_long_shelf_life.md) — spell engine-limit claims as assertions.
+- [The shell's unit of selection may not be the operator's](project_the_shells_unit_of_selection_may_not_be_the_operators.md) — one PDF path object holds 6,681 anchors.
 - [The project is pdfcer-gui since 2026-09-03](project_the_project_is_pdfcer_gui_since_2026_09_03.md) — names, folders, repos; two references deliberately did NOT move.
 - [A rename can blind an instrument silently](feedback_a_rename_can_blind_an_instrument_silently.md) — a hard-coded external path makes a rename a green check over nothing.
 - [A proxy condition survives one correction](feedback_a_proxy_condition_survives_one_correction.md) — corrected once for a stand-in, probably still one; ask what it READS.
@@ -77,7 +77,7 @@
 - [Count a condition and you will reason about the other one](feedback_count_a_condition_and_you_will_reason_about_the_other_one.md) — two wrong diagnoses from one half of an AND.
 - [An `||` between two required conditions asserts neither](feedback_an_or_between_two_required_conditions_asserts_neither.md) — it looks like tolerance of a rewording.
 - [A check whose input is convenient tests the assertion](feedback_a_check_whose_input_is_chosen_for_convenience_tests_the_assertion.md) — "what is typed does not matter" is a finding.
-- [A wrong refusal sentence hides a defect in whoever believes it](feedback_a_wrong_refusal_sentence_hides_a_defect_in_whoever_believes_it.md) — it claims which paths reach it; measure the fork.
+- [A wrong refusal sentence hides a defect downstream](feedback_a_wrong_refusal_sentence_hides_a_defect_in_whoever_believes_it.md) — it claims which paths reach it; measure the fork.
 - [A disproof is a measurement too](feedback_a_disproof_is_a_measurement_too_and_the_dead_hypothesis_was_the_truth.md) — the number was read against the WINDOW.
 - [A number with no control is an attribution](feedback_a_launch_failure_blamed_on_a_resource_count_needs_a_control_binary.md) — the shipped exe is the control.
 - [When a wobble is inside the framework, list the leaves by id](feedback_when_a_wobble_is_inside_the_framework_list_the_leaves_by_id.md) - five container probes stalled.
@@ -123,13 +123,12 @@
 - [A classification in a rule invites the next exception](feedback_a_rule_with_a_classification_in_it_is_where_the_next_exception_goes.md) — one token plus a written exemption, not a list.
 - [An inherited session summary is not a source](feedback_an_inherited_session_summary_is_not_a_source.md) — quoting across a summary has no re-measure rule; it reached a commit.
 - [Scope a use-measurement the way the language does](feedback_a_use_measurement_must_be_scoped_the_way_the_language_scopes_it.md) - a namesake discharges a twin.
-- [A falsification script's anchors rot](feedback_a_falsification_scripts_anchors_rot_and_a_rotted_one_reports_nothing.md) — it then plants nothing and reports green; red must exit 101.
 - [A guarded capability is not the file's capability](feedback_a_guarded_capability_is_not_a_capability_of_the_file.md) — count when the guard is true: 15 files in 4,012.
 - [A detector's scope is a claim](feedback_a_detectors_scope_is_a_claim.md) — one gate reported clean over three blind spots; falsify the widening.
 - [An injected file is a dated snapshot](feedback_an_injected_file_is_a_dated_snapshot.md) — 13 of 26 anchors from the in-context MEMORY.md were not on disk.
 - [A rewrite of a cell deletes what only that cell held](feedback_a_rewrite_of_a_cell_deletes_what_only_that_cell_held.md) - it held the only copy.
 - [A gesture named without its outcome](feedback_a_gesture_without_its_outcome.md) — drag copies, Shift moves; the header was wrong 4h44m later.
-- [A falsification proves the check, not each assertion inside it](feedback_a_falsification_proves_the_check_not_each_assertion.md) — ask of every `if`: what input reaches this line?
+- [A falsification can lie in both directions](feedback_a_falsification_can_lie_in_both_directions.md) — red proves the check not its parts; green may mean a rotted anchor planted nothing.
 - [An index crossing a boundary is numbered in the callee's list](feedback_an_index_handed_across_a_boundary_must_be_numbered_in_the_callees_own_list.md) — 106/144 vs 49/70.
 - [A doc arguing for a guard claims the guard exists](feedback_a_doc_comment_that_argues_for_a_guard_is_a_claim_the_guard_exists.md) — the gate went; its defence survived in five files.
 - [A capability greyed everywhere is one selection defect](feedback_a_capability_greyed_everywhere_is_one_selection_defect.md) — three surfaces, one predicate.
@@ -139,3 +138,4 @@
 - [Verify the result, not the diff](feedback_verify_the_result_not_the_diff.md) — two checks passed on a file that would not compile.
 - [A remembered "unset" names one variable, not its neighbour](feedback_env_var_neighbour.md) - $TMP was set; I derived a root path and reached for rm -f.
 - [A doc-range edit eats the attribute under it](feedback_doc_edit_eats_the_attribute.md) — a #[test] vanished; the count is the only witness.
+- [A blocker can be inherited from an unlinked dependency](feedback_a_blocker_can_be_inherited_from_a_dependency_that_is_not_linked.md) — four docs blocked a feature on a crate not in the lock.

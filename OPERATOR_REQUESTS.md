@@ -112,6 +112,39 @@ exactly that. **The canvas needs the same treatment and does not have it.**
 
 # OPEN
 
+## O212 — ◑ **STEPS 0 AND 1 ARE BUILT AND DRIVEN; FOUR STEPS REMAIN** — panels should dock, tear out, and drop back the way Qt's do
+
+> *"how much effort will it take to get our gui panel docking and tearout and
+> being able to drop the panels back into new regions, drag tabs to reorder or
+> move to the another panel section like you can with PySide6 / QDockWidget?
+> Can you use knowledge from how those work to make building the same feature
+> set easier in rust?"*
+
+**Answered: about a week, across six steps that each ship on their own**, and
+yes — Qt's *design* transfers even though none of its code can. `DESIGNS.md`
+carries the staging table, the four gestures G1–G4, the drop grammar, and the
+one Qt default deliberately rejected (Qt tears a dock widget out on any drag of
+its title bar; here a drag along the strip reorders and only a drag that leaves
+the dock tears out, so there is no separate handle to miss).
+
+**What he can do today.** A dock tab drags along its own strip. A caret marks
+the boundary the release will use, dimmed at the two boundaries against the
+tab's own edges because those are legal drops that change nothing. The panel on
+screen does not change as the order does. Driven by
+`panel_tabs_can_be_rearranged`, which found a real defect on its first run: at
+the leftmost boundary the caret was centred on the strip's own edge and half of
+it was clipped away.
+
+**What he cannot do yet**, and the order it arrives in: dragging a tab into a
+*different* stack, or between stacks, or onto the other side (steps 2 and 3);
+tearing a tab out into a window by dragging it off the dock (step 4); and
+dragging a floating panel back over the dock to drop it where the pointer says
+(step 5). Until step 3 lands, a drag over a strip it did not begin in proposes
+nothing and draws nothing — a caret that promised an outcome the release would
+not deliver is worse than no caret.
+
+**Only he closes this row.**
+
 ## O200–O204 — five reports in one message, FILED BEFORE ANY WORK
 
 **Source:** his message. Every paragraph became a row below, in the order he

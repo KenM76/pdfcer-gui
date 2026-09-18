@@ -172,6 +172,8 @@ mod apply;
 pub mod banner;
 mod collapse;
 pub mod ctx;
+/// **Dragging a tab, and where releasing it would put the panel.**
+mod drag;
 /// **A panel torn out of the dock into a window of its own** — the value,
 /// the state machine, and the placement arithmetic. No `egui::Context`,
 /// no window: everything here is testable with nothing open.
@@ -180,6 +182,9 @@ pub mod float;
 /// the viewport, and the header strip that offers the way back.
 pub mod floatwin;
 pub mod frame_report;
+/// **Where every compartment was drawn, asked by address** — what a pointer
+/// gesture consults, and the honest answer to [`report`]'s stringly names.
+pub mod geometry;
 pub mod model;
 /// **The wobble probe** — which widget ran past the window's edge.
 mod overflow_probe;
@@ -195,6 +200,8 @@ mod stack;
 pub mod tab_menu;
 pub mod tabs;
 
+#[cfg(test)]
+mod drag_tests;
 #[cfg(test)]
 mod railhide_tests;
 #[cfg(test)]
@@ -235,9 +242,11 @@ use ctx::{Ctx, Intent};
 use splitter::Axis;
 
 pub use banner::BannerHandler;
+pub use drag::TabDragPreview;
 pub use float::{DockHome, FloatingPanel};
 pub use floatwin::FloatFrameReport;
 pub use frame_report::DockFrameReport;
+pub use geometry::{ColumnAddr, DockGeometry, StackAddr};
 pub use model::{
     AnyPanel, Column, DockLayout, DockSide, PanelAddress, PanelCatalog, PanelId, PanelInfo,
     PanelRegistry, SideLayout, Stack,
@@ -270,6 +279,10 @@ pub struct DockState {
     /// preference the application restores through [`Self::set_rail_auto_hide`];
     /// the *revealed* half is per-frame and is never persisted.
     rail_peek: crate::peek::Peek,
+    /// **Where every compartment was drawn on the last frame.** See
+    /// [`geometry`], whose header carries when this is current and what it
+    /// does not claim.
+    geometry: DockGeometry,
 }
 
 impl DockState {
@@ -292,6 +305,7 @@ impl DockState {
             last_frame: DockFrameReport::default(),
             floats_drawn: 0,
             rail_peek: crate::peek::Peek::new(),
+            geometry: DockGeometry::default(),
         }
     }
 
@@ -361,6 +375,17 @@ impl DockState {
     #[must_use]
     pub fn last_frame(&self) -> &DockFrameReport {
         &self.last_frame
+    }
+
+    /// **Where every compartment was drawn on the last frame.**
+    ///
+    /// Rebuilt from nothing each frame, so it holds no rect for a compartment
+    /// that has stopped being drawn — but it is one frame old, and a rect one
+    /// frame old is indistinguishable from a current one by inspection. See
+    /// [`geometry`].
+    #[must_use]
+    pub fn geometry(&self) -> &DockGeometry {
+        &self.geometry
     }
 
     /// Bring a panel to the front of its stack, revealing its side.
@@ -669,6 +694,8 @@ impl<'a> Dock<'a> {
             // build one per frame, which every caller does.
             tab_menu: self.tab_menu.take(),
             intents: Vec::new(),
+            geometry: DockGeometry::default(),
+            tab_drag: None,
             rail_drawn: false,
             rail_show: crate::peek::Show::Inline,
         };
@@ -711,6 +738,12 @@ impl<'a> Dock<'a> {
                 collapse::draw_collapsed_rail(ui, &mut ctx, side, &mut report);
             }
         }
+
+        // ★ The drag is settled AFTER both sides have drawn, so its release
+        // lands whatever became of the strip it began on. See [`drag`].
+        drag::settle(ui, &mut ctx);
+        report.tab_drag = ctx.tab_drag.clone();
+        state.geometry = std::mem::take(&mut ctx.geometry);
 
         // Phase 3: apply. The one place the layout is mutable.
         report.layout_changed = apply(&mut state.layout, &ctx.intents, &mut report);
@@ -867,6 +900,8 @@ impl<'a> Dock<'a> {
             ctx.intents.push(Intent::DragSide { side, delta });
         }
 
+        ctx.geometry.push_side(side, columns_rect);
+
         let side_layout = layout.side(side);
         let shares: Vec<f32> = side_layout.columns.iter().map(|c| c.share).collect();
         let spans = plan::resolve_spans(
@@ -883,6 +918,7 @@ impl<'a> Dock<'a> {
                 Vec2::new(*span, columns_rect.height()),
             );
             ctx.reporter.report(ui, rect, || report::column(side, i));
+            ctx.geometry.push_column(ColumnAddr::new(side, i), rect);
             self.draw_column(ui, ctx, layout, side, i, rect, report, body);
             x += span;
 
@@ -945,6 +981,8 @@ impl<'a> Dock<'a> {
                 Rect::from_min_size(egui::pos2(rect.left(), y), Vec2::new(rect.width(), *span));
             ctx.reporter
                 .report(ui, stack_rect, || report::stack(side, column, i));
+            ctx.geometry
+                .push_stack(StackAddr::new(side, column, i), stack_rect);
             self.draw_stack(
                 ui, ctx, side, column, i, &stacks[i], stack_rect, report, body,
             );

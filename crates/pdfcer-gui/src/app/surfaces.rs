@@ -874,6 +874,38 @@ impl PdfcerApp {
             self.modes.record_layout(&arrangement, &mut self.layout);
         }
 
+        // **A panel tab that the operator dragged to a new position.**
+        //
+        // `trace`, not `trace_changed`: a reorder is an event, and dragging
+        // the same panel to the same boundary twice is two of them. A
+        // suppressed second line would read as a gesture that did nothing.
+        //
+        // The compartment is named as well as the panel because the boundary
+        // is a boundary IN a stack, and a harness reading only the panel could
+        // not tell a reorder from a move between compartments once there is
+        // one to tell it apart from.
+        if let Some(panel) = &report.reordered {
+            // Where it ended up, read back from the layout rather than
+            // carried on the report: the report says WHICH panel moved, and
+            // the layout is the only thing that can say where it now is.
+            let at = self.dock.layout().find(panel).map_or_else(
+                // ui-text-exempt: diagnostic trace, never displayed.
+                || "side=? column=? stack=? tab=?".to_owned(),
+                |a| {
+                    format!(
+                        // ui-text-exempt: diagnostic trace, never displayed.
+                        "side={} column={} stack={} tab={}",
+                        a.side.key(),
+                        a.column,
+                        a.stack,
+                        a.tab
+                    )
+                },
+            );
+            // ui-text-exempt: diagnostic trace, never displayed.
+            crate::diag::trace(|| format!("panel-reorder panel={panel} {at}"));
+        }
+
         // What the dock actually drew, not what the layout asked for. The
         // two differ whenever a saved layout names a panel this build does
         // not have, and the difference is the thing worth tracing.

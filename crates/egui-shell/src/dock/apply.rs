@@ -96,6 +96,19 @@ pub(super) fn apply(
             Intent::FloatGeometry { panel, pos, size } => {
                 layout.set_float_geometry(panel, *pos, *size);
             }
+            // One line, like the float arms and for their reason: the rule
+            // lives in `model`, where it is testable with no window open.
+            Intent::ReorderTab { stack, from, gap } => {
+                if layout.reorder_tab(stack.side, stack.column, stack.stack, *from, *gap) {
+                    report.reordered = layout
+                        .side(stack.side)
+                        .columns
+                        .get(stack.column)
+                        .and_then(|c| c.stacks.get(stack.stack))
+                        .and_then(|s| s.tabs.get(if *gap > *from { *gap - 1 } else { *gap }))
+                        .cloned();
+                }
+            }
             Intent::DragSide { side, delta } => {
                 let s = layout.side_mut(*side);
                 s.width_pts = (s.width_pts + delta).max(plan::MIN_SIDE_WIDTH);

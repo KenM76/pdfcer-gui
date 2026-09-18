@@ -1147,6 +1147,11 @@ pub mod page_drag_between_documents;
 /// otherwise ship silently.
 pub mod tab_reorder;
 
+/// **Dragging a PANEL's dock tab along its strip moves it**, marks where it
+/// will land while the pointer is down, and does not change which panel is on
+/// screen. The dock's strip, not the document strip [`tab_reorder`] drives.
+pub mod panel_tab_reorder;
+
 pub mod about;
 
 pub mod add_text;

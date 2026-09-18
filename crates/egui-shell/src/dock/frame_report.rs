@@ -49,6 +49,22 @@ pub struct DockFrameReport {
     pub activated: Option<PanelId>,
     /// The panel the operator closed this frame, if any.
     pub closed: Option<PanelId>,
+    /// **The panel whose tab the operator dragged to a new position this
+    /// frame**, if the move changed the order.
+    ///
+    /// `None` for a drag released where it started — which is a real outcome
+    /// and not a failure, and the reason this is published separately from
+    /// [`Self::tab_drag`]: one says a gesture is in flight, the other says it
+    /// changed something.
+    pub reordered: Option<PanelId>,
+    /// **A tab drag in flight, and the boundary a release would use.**
+    ///
+    /// Set for every frame between the press passing `egui`'s drag threshold
+    /// and the release, and `None` on the frame the release lands. The caret
+    /// drawn on the strip is the same fact in paint; this is the checkable
+    /// half, because a hairline between two near-identical labels is precise
+    /// and cannot be asserted on.
+    pub tab_drag: Option<super::drag::TabDragPreview>,
     /// The panel the operator floated this frame, if any.
     pub floated: Option<PanelId>,
     /// The panel the operator docked back this frame, if any.

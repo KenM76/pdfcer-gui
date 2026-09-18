@@ -54,6 +54,7 @@
 
 use egui::Id;
 
+use super::geometry::{DockGeometry, StackAddr};
 use super::model::{DockSide, PanelId, PanelRegistry};
 use super::report::Reporter;
 use super::tab_menu::TabMenuHandler;
@@ -155,6 +156,26 @@ pub(crate) enum Intent {
         /// The boundary index.
         boundary: usize,
     },
+    /// **Move a tab to a different boundary within its own stack.**
+    ///
+    /// Raised by [`super::drag::settle`] when a tab drag is released. `gap` is
+    /// a boundary and not a destination index — see
+    /// [`super::geometry::DockGeometry::gap_in`], which resolves it, and
+    /// [`super::model::DockLayout::reorder_tab`], which applies it. The two
+    /// differ by one whenever a tab moves rightwards, and a caller that got the
+    /// convention wrong would be off by one in one direction only.
+    ///
+    /// Raised even when the boundary is where the tab already is: filtering a
+    /// no-op here would put the same test in two places, and `apply` already
+    /// decides "did anything change" by comparing the whole layout.
+    ReorderTab {
+        /// Which stack.
+        stack: StackAddr,
+        /// The tab's current index in it.
+        from: usize,
+        /// The boundary it is moving to.
+        gap: usize,
+    },
     /// Change a whole side's width.
     ///
     /// The only intent that writes an **absolute** number, and the only
@@ -198,6 +219,16 @@ pub(crate) struct Ctx<'a> {
     pub tab_menu: Option<&'a mut TabMenuHandler<'a>>,
     /// What the operator did, in the order they did it.
     pub intents: Vec<Intent>,
+    /// **Where every compartment of the dock was drawn**, accumulated as it is
+    /// drawn and moved onto [`super::DockState`] at the end of the frame.
+    ///
+    /// Filled by the same code that lays the dock out, so a gesture resolved
+    /// after both sides have drawn reads current rects rather than last
+    /// frame's. See [`super::geometry`].
+    pub geometry: DockGeometry,
+    /// **A tab drag in flight and the boundary it would land on**, proposed by
+    /// the strip the drag began in and consumed by [`super::drag::settle`].
+    pub tab_drag: Option<super::drag::TabDragPreview>,
     /// **Whether this side's rail was actually drawn this frame**, set by
     /// [`super::rail::draw`] before any stack on the side is laid out.
     ///
@@ -273,6 +304,8 @@ mod tests {
             id_salt: Id::new("dock-test"),
             tab_menu: None,
             intents: Vec::new(),
+            geometry: DockGeometry::default(),
+            tab_drag: None,
             rail_drawn: false,
             rail_show: crate::peek::Show::Inline,
         }
@@ -325,6 +358,8 @@ mod tests {
             id_salt: Id::new("dock-test"),
             tab_menu: None,
             intents: Vec::new(),
+            geometry: DockGeometry::default(),
+            tab_drag: None,
             rail_drawn: false,
             rail_show: crate::peek::Show::Inline,
         };

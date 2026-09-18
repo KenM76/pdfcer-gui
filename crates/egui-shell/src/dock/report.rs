@@ -221,6 +221,26 @@ pub fn tab(panel: &PanelId) -> String {
     format!("{PREFIX}.tab.{panel}")
 }
 
+/// **The insertion caret drawn while a tab is being dragged.**
+///
+/// Published by the strip the caret is drawn on, and only while a drag is in
+/// flight — so a harness reads it as a *change*: the region appears on the
+/// first frame the caret is painted and goes when the drag ends.
+///
+/// It is named rather than left to the pixels because it is the half of the
+/// gesture no screenshot taken after the fact can see, and because *"clear
+/// markers of where it is going to move to"* is the operator's own wording for
+/// what this feature is. A drag that reorders correctly and shows nothing has
+/// answered the wrong half of that.
+///
+/// Positioned by stack rather than by panel: the caret marks a boundary in a
+/// compartment, and a boundary belongs to the strip, not to the tab that would
+/// land at it.
+#[must_use]
+pub fn tab_caret(side: DockSide, column: usize, stack: usize) -> String {
+    format!("{PREFIX}.{}.{column}.{stack}.caret", side.key())
+}
+
 /// One panel's body region — the rectangle the application drew into.
 #[must_use]
 pub fn body(panel: &PanelId) -> String {
@@ -415,6 +435,17 @@ mod tests {
             stack_splitter(DockSide::Left, 0, 0)
         );
         assert_ne!(stack(DockSide::Left, 0, 1), stack(DockSide::Left, 1, 0));
+        // The caret is a region of its own, not the tab bar seen again: a
+        // harness that could not tell them apart would read "a strip exists"
+        // as "a caret was drawn".
+        assert_ne!(
+            tab_caret(DockSide::Left, 0, 0),
+            tab_bar(DockSide::Left, 0, 0)
+        );
+        assert_ne!(
+            tab_caret(DockSide::Left, 0, 0),
+            tab_caret(DockSide::Left, 0, 1)
+        );
     }
 
     /// A panel-scoped name follows the panel rather than its position, so

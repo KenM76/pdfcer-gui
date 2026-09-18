@@ -1513,14 +1513,14 @@ no separate handle to miss.
 
 Each step ships on its own and leaves the program usable.
 
-| | Step | Why here |
-|---|---|---|
-| **0** | Retain the dock's geometry — address to rect for every side, column, stack, tab strip and tab, built during the draw it already performs and kept for the next frame's hit test — plus a `DropTarget` hit test over it. | Nothing after it can be written without it, and it is also the honest answer to `dock::report`'s stringly names. |
-| **1** | G1: reorder within a strip, with the insertion caret the page rail and the document strip already use, in its full and dimmed pair. | The smallest useful gesture, and the recipe is proven twice in this repository. |
-| **2** | The drop grammar and its fuzz, headless: take, insert, split, new column, normalize, invariants. | A pure value, testable with no window. It comes before the overlay so the overlay has something true to preview. |
-| **3** | G2: the compass overlay and cross-compartment drops, previewed by replay. | The capability the register calls (d). |
-| **4** | G3: a drag that leaves the dock tears out, homed at its origin. | Sits on the float model already built and changes nothing underneath. |
-| **5** | G4: drag a float back over the dock and drop it where the pointer says. | The only step needing the desktop-pixel cursor, and the only one with a platform fallback — without a global cursor position the header drag simply moves the window, and the command route still docks it. |
+| | Step | | Why here |
+|---|---|---|---|
+| **0** | Retain the dock's geometry — address to rect for every side, column, stack, tab strip and tab, built during the draw it already performs and kept for the next frame's hit test — plus a `DropTarget` hit test over it. | **Built** | Nothing after it can be written without it, and it is also the honest answer to `dock::report`'s stringly names. |
+| **1** | G1: reorder within a strip, with the insertion caret the page rail and the document strip already use, in its full and dimmed pair. | **Built** | The smallest useful gesture, and the recipe is proven twice in this repository. |
+| **2** | The drop grammar and its fuzz, headless: take, insert, split, new column, normalize, invariants. |  | A pure value, testable with no window. It comes before the overlay so the overlay has something true to preview. |
+| **3** | G2: the compass overlay and cross-compartment drops, previewed by replay. |  | The capability the register calls (d). |
+| **4** | G3: a drag that leaves the dock tears out, homed at its origin. |  | Sits on the float model already built and changes nothing underneath. |
+| **5** | G4: drag a float back over the dock and drop it where the pointer says. |  | The only step needing the desktop-pixel cursor, and the only one with a platform fallback — without a global cursor position the header drag simply moves the window, and the command route still docks it. |
 
 ### Traps this will hit, recorded before it is built
 
