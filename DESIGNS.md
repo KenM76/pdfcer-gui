@@ -1437,37 +1437,48 @@ Three things are missing, and none of them is the layout structure:
    frame; `dock::floatdrag` then resolves, draws and settles it with the same
    grammar a tab drag uses. Built, and falsified.
 
-   **Where that point comes from is the open question, and the two candidate
-   gestures have different answers.** Nothing measured decides between them yet;
-   both claims below are readings of `egui` and `winit` and are marked as such
-   until the binary is driven.
+   **The gesture is a drag on the panel's own header strip inside the float
+   window, and the point is arithmetic on two `inner_rect`s.** Measured by
+   driving the release binary with a temporary probe on both pointer channels,
+   pressing inside the float and dragging the real cursor out over the
+   application window:
 
-   - **The OS title bar.** The window is decorated, so the platform owns the
-     drag and runs a modal move loop. `egui` sees no cursor at all — only, if
-     `winit` keeps pumping redraws inside that loop, the window's own moving
-     rectangle. On this route the cursor needs a platform call and the
-     `native-window` fallback the earlier reading assumed is real.
-   - **The panel's own header strip inside the window.** The child window has
-     captured the pointer, so the child's `egui` context reports positions
-     while the button is held, including positions outside its own bounds. The
-     conversion to the application window's points is then arithmetic on two
-     viewport `inner_rect`s — the **content** rect, which is the origin a
-     viewport's own coordinates are relative to, and which `ViewportInfo`
-     reports in monitor space at ui-point scale in either context. **Inner on
-     both sides**: `outer_rect` is the same rect plus decoration chrome, and
-     using it here injects a title bar's worth of constant error. That route
-     needs no platform crate, but it is not fallback-free either: both rects are
-     `Option` and are `None` wherever a window's position cannot be obtained, so
-     a platform that reports neither degrades to the position-blind command
-     route. And dragging a strip inside a window is not by itself the
-     conventional gesture: the window has to follow
-     the pointer, and making it follow means asserting its position every frame,
-     which is precisely what `floatwin`'s header warns drags a window back
-     toward where the program thinks it is.
+   - **The child viewport keeps reporting the pointer far outside its own
+     bounds while the button is held.** The window is 320×480 and the child's
+     own context reported `latest` as far as x=592 — 272 points past its right
+     edge — with `has_pointer()` and `is_decidedly_dragging()` both true for
+     every sample of the drag. The platform captures the pointer to the window
+     the press landed in, and `egui` in that viewport sees all of it.
+   - **The application's own context does not see the drag at all.** Across the
+     same gesture the root reported `down=false` on every sample. So the dock
+     cannot sense this pointer for itself, which is exactly why
+     `set_float_drag` exists rather than the dock reading `ctx.pointer`.
+   - **`ViewportInfo::inner_rect` is the window's content rect in monitor
+     space**, in both the root and the child: each matched the platform's own
+     client rectangle exactly. `outer_rect` matched the platform's *window*
+     rectangle — the same rect plus decoration chrome — so using it on either
+     side injects a title bar's worth of constant error.
+   - **The conversion is `child_inner.min + local - app_inner.min`, and the
+     root calibrated it.** For the last sample of the drag the child reported
+     `(558, 335)`; the arithmetic gives `(610, 387)`; and the root's own
+     context, for the same physical cursor, reported `latest=610,387`. The two
+     sides agree to the point, and the confirming number came from a channel
+     the arithmetic does not touch.
 
-   Which gesture ships, and whether the second's window-follow is stable rather
-   than a jitter loop, is a **screenshot-and-drive question**. It is on the
-   driving list; no code is written against either reading until it is answered.
+   Both rects are `Option` and are `None` wherever a window's position cannot be
+   obtained, so a platform that reports neither degrades to the position-blind
+   command route. Measured at `ppp = 1.0`; whether the two sides stay in
+   agreement when the ui scale is not 1 is the one part of this not yet driven.
+
+   **What the measurement does not settle** is the second half of the gesture:
+   the window must follow the pointer, and making it follow means asserting its
+   position every frame, which is precisely what `floatwin`'s header warns drags
+   a window back toward where the program thinks it is. That is a
+   screenshot-and-drive question of its own, and it is the next one.
+
+   The OS title bar is not the route. It runs a platform modal move loop in
+   which `egui` sees no cursor, and it would need a platform crate to recover
+   one; the header strip needs none.
 
    The float and the dock are drawn from the same `egui::Context` in the same
    frame, so whichever route supplies the point, the drag state itself is one
@@ -1558,7 +1569,7 @@ Each step ships on its own and leaves the program usable.
 | **2** | The drop grammar and its fuzz, headless: take, insert, split, new column, normalize, invariants. | **Built** | A pure value, testable with no window. It comes before the overlay so the overlay has something true to preview. |
 | **3** | G2: the pointer-to-`DropTarget` resolution over the retained geometry, then the compass overlay drawing it and the cross-compartment drop previewed by replay. | **Built** | The capability the register calls (d). Step 2 is what a replay preview applies to its clone, so this step has something true to show. |
 | **4** | G3: a drag that leaves the dock tears out, homed at its origin. | **Built** | Sits on the float model already built and changes nothing underneath. |
-| **5** | G4: drag a float back over the dock and drop it where the pointer says. | **Shell half built** — `dock::floatdrag` offers, previews and settles. Nothing calls `set_float_drag`, so the gesture is not reachable from the running program and the command route is still the only way home. What is owed is the caller, and it is blocked on the measurement in item 3 above, not on more dock code. | Last because it settles with the grammar steps 2 and 3 built, and because it is the one gesture whose pointer the dock cannot sense for itself — so it is the one that needs an extension point. |
+| **5** | G4: drag a float back over the dock and drop it where the pointer says. | **Shell half built** — `dock::floatdrag` offers, previews and settles. Nothing calls `set_float_drag`, so the gesture is not reachable from the running program and the command route is still the only way home. What is owed is the caller: sense a drag on the panel's header strip inside the float body, convert by item 3's measured arithmetic, and feed `set_float_drag`. | Last because it settles with the grammar steps 2 and 3 built, and because it is the one gesture whose pointer the dock cannot sense for itself — so it is the one that needs an extension point. |
 
 **What step 3 is made of.** Three parts, all in.
 

@@ -296,14 +296,22 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    rather than unit-tested.
    **Nothing calls `set_float_drag`**, so G4 is not reachable from the running
    program, the command route is still the only way home, and `FEATURES.md` ticks
-   nothing for it. **What is owed is a measurement, not more dock code.** Which
-   gesture supplies that pointer is undecided: an OS title-bar drag runs a
-   platform modal move loop in which `egui` sees no cursor, so `native-window`
-   would be needed; a drag on the panel's own header strip has the child
-   viewport's pointer capture and needs only arithmetic on two `inner_rect`s, but
-   the window must then be made to follow the pointer every frame. `DESIGNS.md`
-   item 3 carries both readings as readings. Neither gets code until the binary is
-   driven.
+   nothing for it. **The gesture is now measured, not read.** Driving the release
+   binary with a temporary probe on both pointer channels settles it: the child
+   viewport keeps reporting the pointer while the button is held, 272 points
+   outside its own 320-point-wide window, `is_decidedly_dragging()` true
+   throughout; the application's own context reports `down=false` for every
+   sample of the same gesture; `ViewportInfo::inner_rect` is the platform's
+   client rectangle in monitor space on both sides and `outer_rect` is the window
+   rectangle; and `child_inner.min + local - app_inner.min` reproduces, to the
+   point, the coordinate the root's own channel reports for the same physical
+   cursor. So the gesture is **a drag on the panel's own header strip**, no
+   platform crate, and the OS title bar is not the route. Measured at `ppp = 1.0`.
+   `DESIGNS.md` item 3 carries the numbers. **What is owed is now the caller** —
+   sense the header drag, convert, feed `set_float_drag` — and one more driven
+   question the probe did not answer: whether making the window follow the
+   pointer every frame is stable rather than the jitter loop `floatwin`'s header
+   warns about.
    **A live defect fell out of reading that machinery**, and it is not a G4
    prerequisite: the flag recording that a float window has been opened once was
    swept from the set of floats *about to be drawn*, so a panel docked back by
@@ -312,16 +320,15 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    left it, and an empty set skipped the sweep entirely. `DockState::floats_seen`
    is the list that still contains such a panel, and it is what the sweep now
    walks.
-   **What is owed and needs the screen**: `ui-verify` assertions for the drop
-   overlay and the tear outline; a re-drive of `panel_tabs_can_be_rearranged`,
-   which drove green *before* the caret dimming landed; and `panels_float_close_and_dock`,
-   whose machinery step 5 builds directly on. **Its O126 A5 findings were the
-   check's own, not the application's**: the sections were not hermetic and fed
-   each other through the saved layout, and the empty-window oracle asked for a
-   viewport-tagged region that nothing in the program published. Both are
-   repaired — every section fires `view.reset_layout` and asserts it landed, and
-   the float body now publishes `float.body.<panel>` and `float.content.<panel>`
-   against the dock's own `empty=` count. What is owed is the run.
+   **`panel_tabs_can_be_rearranged` and `panels_float_close_and_dock` both drive
+   PASS.** The latter's O126 A5 findings were the check's own, not the
+   application's: the sections were not hermetic and fed each other through the
+   saved layout, and the empty-window oracle asked for a viewport-tagged region
+   that nothing in the program published. Both are repaired — every section fires
+   `view.reset_layout` and asserts it landed, and the float body publishes
+   `float.body.<panel>` and `float.content.<panel>` against the dock's own
+   `empty=` count. **What is still owed to the screen**: `ui-verify` assertions
+   for the drop overlay and the tear outline.
 6. **O198's remainder, which is O188** — a title-block run the exporter wrote as
    one lump is still one lump: he can reach that text and drag a line, not take
    it apart. **The verb has landed and is in the pin**: `EditSession::split_text_object`
