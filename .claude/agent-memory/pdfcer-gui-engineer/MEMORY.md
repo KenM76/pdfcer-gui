@@ -139,3 +139,5 @@
 - [A remembered "unset" names one variable, not its neighbour](feedback_env_var_neighbour.md) - $TMP was set; I derived a root path and reached for rm -f.
 - [A doc-range edit eats the attribute under it](feedback_doc_edit_eats_the_attribute.md) — a #[test] vanished; the count is the only witness.
 - [A blocker can be inherited from an unlinked dependency](feedback_a_blocker_can_be_inherited_from_a_dependency_that_is_not_linked.md) — four docs blocked a feature on a crate not in the lock.
+- [A plant harness keyed on "error:" calls every working plant a broken build](feedback_a_plant_harness_keyed_on_error_calls_every_working_plant_a_broken_build.md) — a red suite prints `error: test failed`; key on `could not compile`.
+- [A preview must be replayed, not read off the target's current rect](feedback_a_preview_must_be_replayed_not_read_off_the_targets_current_rect.md) — and the calibration test is blind to an error both sides share.
