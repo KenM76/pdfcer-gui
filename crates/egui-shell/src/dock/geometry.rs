@@ -167,6 +167,17 @@ impl DockGeometry {
         self.tabs.push((addr, rect));
     }
 
+    /// The rect a whole side was drawn in — its columns, **less** its width
+    /// handle. The rectangle the column walk in [`super::preview`] divides.
+    #[must_use]
+    pub fn side_rect(&self, side: DockSide) -> Option<Rect> {
+        self.sides
+            .iter()
+            .rev()
+            .find(|(s, _)| *s == side)
+            .map(|(_, r)| *r)
+    }
+
     /// Which side is under `pos`, if either.
     #[must_use]
     pub fn side_at(&self, pos: egui::Pos2) -> Option<DockSide> {

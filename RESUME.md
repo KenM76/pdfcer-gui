@@ -246,16 +246,21 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    gate-green: the dock retains its own geometry; a dock tab drags along its own
    strip behind a dimmed-at-a-no-op caret; and `dock::drop` is the drop grammar
    as a pure value — `DockLayout::move_panel` and `accepts_drop`, with a
-   12,000-case invariant fuzz that asserts what it swept. Step 3's headless half
-   is built too: `dock::compass` resolves a pointer position over the retained
-   geometry into a `DropTarget` — five zones over a compartment's body, its tab
-   strip resolved first as a boundary between tabs — and returns the
+   12,000-case invariant fuzz that asserts what it swept. Step 3's two headless
+   parts are built too. `dock::compass` resolves a pointer position over the
+   retained geometry into a `DropTarget` — five zones over a compartment's body,
+   its tab strip resolved first as a boundary between tabs — and returns the
    quadrilateral each zone is hit as, so the overlay cannot draw a shape it does
-   not resolve. **No operator gesture reaches any of it yet**, which is why no
-   register or `FEATURES.md` row moved. `DESIGNS.md` carries the staging table
-   and the traps. **What is left of step 3 needs the screen** — the compass
-   overlay filling those quads, and a preview by replay: clone the layout, apply
-   the candidate, highlight the rect the same span resolution returns. Two things to re-measure first: `panels_float_close_and_dock` has a
+   not resolve. `dock::preview` answers what the drop would *do*:
+   `DockLayout::preview_drop` clones the layout, applies the candidate with the
+   same `move_panel` the release calls, and re-walks the rects with the very
+   function `Dock::show` lays its own columns and stacks out with — so the
+   highlight names the outcome, including the column a drag empties on its way
+   out. **No operator gesture reaches any of it yet**, which is why no register
+   or `FEATURES.md` row moved. `DESIGNS.md` carries the staging table and the
+   traps. **What is left of step 3 needs the screen** — the painted overlay:
+   fill the five quads, highlight the rect the replay returns, wire the release.
+   Two things to re-measure first: `panels_float_close_and_dock` has a
    live undriven defect from O126 A5 — a floated panel opens an empty window and
    *Dock all* recovers nothing — and steps 4 and 5 build directly on that
    machinery; and `FEATURES.md` carries no float or tear-out row at all, though

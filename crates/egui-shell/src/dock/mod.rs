@@ -175,6 +175,7 @@ mod collapse;
 /// pointer-to-[`DropTarget`] resolution built on them. Its header carries why
 /// the zones are drawn as exactly the shapes they are hit as.
 pub mod compass;
+
 pub mod ctx;
 /// **Dragging a tab, and where releasing it would put the panel.**
 mod drag;
@@ -197,6 +198,9 @@ pub mod model;
 /// **The wobble probe** — which widget ran past the window's edge.
 mod overflow_probe;
 pub mod plan;
+/// **Where a compartment lands**, shared by the draw path and by the replay
+/// that shows an operator the outcome of the drop they are aiming at.
+pub mod preview;
 /// The permanent vertical strip down a side's outer edge — the left rail.
 pub mod rail;
 pub mod report;
@@ -916,27 +920,17 @@ impl<'a> Dock<'a> {
 
         let side_layout = layout.side(side);
         let shares: Vec<f32> = side_layout.columns.iter().map(|c| c.share).collect();
-        let spans = plan::resolve_spans(
-            &shares,
-            columns_rect.width(),
-            plan::MIN_COLUMN_WIDTH,
-            plan::SPLITTER_THICKNESS,
-        );
+        // ★ The same walk a drop preview replays. See [`preview`].
+        let rects = preview::columns_across(columns_rect, &shares);
 
-        let mut x = columns_rect.left();
-        for (i, span) in spans.iter().enumerate() {
-            let rect = Rect::from_min_size(
-                egui::pos2(x, columns_rect.top()),
-                Vec2::new(*span, columns_rect.height()),
-            );
+        for (i, rect) in rects.iter().copied().enumerate() {
             ctx.reporter.report(ui, rect, || report::column(side, i));
             ctx.geometry.push_column(ColumnAddr::new(side, i), rect);
             self.draw_column(ui, ctx, layout, side, i, rect, report, body);
-            x += span;
 
-            if i + 1 < spans.len() {
+            if i + 1 < rects.len() {
                 let split = Rect::from_min_size(
-                    egui::pos2(x, columns_rect.top()),
+                    egui::pos2(rect.right(), columns_rect.top()),
                     Vec2::new(plan::SPLITTER_THICKNESS, columns_rect.height()),
                 );
                 let outcome = splitter::splitter(
@@ -960,7 +954,6 @@ impl<'a> Dock<'a> {
                         delta: outcome.delta,
                     });
                 }
-                x += plan::SPLITTER_THICKNESS;
             }
         }
     }
@@ -980,17 +973,10 @@ impl<'a> Dock<'a> {
     ) {
         let stacks = &layout.side(side).columns[column].stacks;
         let shares: Vec<f32> = stacks.iter().map(|s| s.share).collect();
-        let spans = plan::resolve_spans(
-            &shares,
-            rect.height(),
-            plan::MIN_STACK_HEIGHT,
-            plan::SPLITTER_THICKNESS,
-        );
+        // ★ The same walk a drop preview replays. See [`preview`].
+        let rects = preview::stacks_down(rect, &shares);
 
-        let mut y = rect.top();
-        for (i, span) in spans.iter().enumerate() {
-            let stack_rect =
-                Rect::from_min_size(egui::pos2(rect.left(), y), Vec2::new(rect.width(), *span));
+        for (i, stack_rect) in rects.iter().copied().enumerate() {
             ctx.reporter
                 .report(ui, stack_rect, || report::stack(side, column, i));
             ctx.geometry
@@ -998,11 +984,10 @@ impl<'a> Dock<'a> {
             self.draw_stack(
                 ui, ctx, side, column, i, &stacks[i], stack_rect, report, body,
             );
-            y += span;
 
-            if i + 1 < spans.len() {
+            if i + 1 < rects.len() {
                 let split = Rect::from_min_size(
-                    egui::pos2(rect.left(), y),
+                    egui::pos2(rect.left(), stack_rect.bottom()),
                     Vec2::new(rect.width(), plan::SPLITTER_THICKNESS),
                 );
                 let outcome = splitter::splitter(
@@ -1028,7 +1013,6 @@ impl<'a> Dock<'a> {
                         delta: outcome.delta,
                     });
                 }
-                y += plan::SPLITTER_THICKNESS;
             }
         }
     }
