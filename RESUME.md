@@ -288,8 +288,13 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    **What is owed and needs the screen**: `ui-verify` assertions for the drop
    overlay and the tear outline; a re-drive of `panel_tabs_can_be_rearranged`,
    which drove green *before* the caret dimming landed; and `panels_float_close_and_dock`,
-   which has a live undriven defect from O126 A5 — a floated panel opens an empty
-   window and *Dock all* recovers nothing — that step 5 builds directly on.
+   whose machinery step 5 builds directly on. **Its O126 A5 findings were the
+   check's own, not the application's**: the sections were not hermetic and fed
+   each other through the saved layout, and the empty-window oracle asked for a
+   viewport-tagged region that nothing in the program published. Both are
+   repaired — every section fires `view.reset_layout` and asserts it landed, and
+   the float body now publishes `float.body.<panel>` and `float.content.<panel>`
+   against the dock's own `empty=` count. What is owed is the run.
 6. **O198's remainder, which is O188** — a title-block run the exporter wrote as
    one lump is still one lump: he can reach that text and drag a line, not take
    it apart. **The verb has landed and is in the pin**: `EditSession::split_text_object`
