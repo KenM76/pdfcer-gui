@@ -218,6 +218,11 @@ pub mod status;
 /// and the central area.
 ///
 pub mod surfaces;
+
+/// **The windows outside the application window** — one child viewport per
+/// floating panel, and the coordinate questions being in another window
+/// forces.
+pub mod floats;
 /// ★★★ **Which runs a Format command acts on** - one answer, two gestures.
 ///
 /// `OPERATOR_REQUESTS.md` O198. The five Format ▸ Font controls and the
@@ -264,6 +269,27 @@ const REGION_STATUS_MESSAGE: &str = "status-message"; // ui-text-exempt: trace r
 /// one line rather than one per frame — the lesson `canvas-pointer` taught
 /// when a stationary pointer emitted fifty identical lines in nine seconds.
 const DOCK_SLOT: &str = "dock"; // ui-text-exempt: trace slot name, never displayed
+
+/// Trace slot: the drop offer a drag over the dock is being shown.
+///
+/// Its own slot rather than a second line under [`DOCK_SLOT`], because two
+/// call sites sharing a slot each suppress the other's lines: the dock's own
+/// summary changes on a layout edit and the offer changes on every pointer
+/// move, so sharing would erase whichever moved second.
+///
+/// Reports `none` rather than falling silent when no drag is in flight. A
+/// change-only slot that simply stops emitting cannot be told apart from a
+/// program that stopped running the code, and *the offer was withdrawn* is
+/// exactly what a check asserting a stand-down needs to read.
+const DOCK_DROP_SLOT: &str = "dock-drop"; // ui-text-exempt: trace slot name, never displayed
+
+/// Trace slot: the window a drag carried outside the dock would open.
+///
+/// Separate from [`DOCK_DROP_SLOT`] for that slot's reason, and because the
+/// two are mutually exclusive by construction — the compass needs a
+/// compartment under the pointer and the tear needs there to be none — so a
+/// frame reporting both named is a defect the two lines make visible.
+const DOCK_TEAR_SLOT: &str = "dock-tear"; // ui-text-exempt: trace slot name, never displayed
 
 /// The whole application state.
 ///
