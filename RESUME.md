@@ -241,8 +241,8 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    One still-open sub-item: the forms panel's tab-order view numbers its rows
    from `/Annots` order while the ring uses the engine's derived sequence, so on
    a page carrying `/Tabs /R` or `/C` the two surfaces would disagree.
-5. **O212 — panel docking, tear-out and cross-compartment drops, the rest of
-   steps 3 to 5 of six.** Steps 0 to 2 are built, falsified plant by plant and
+5. **O212 — panel docking, tear-out and cross-compartment drops: what remains
+   is the second half of step 5 of six, and the driving steps 3 and 4 owe.** Steps 0 to 2 are built, falsified plant by plant and
    gate-green: the dock retains its own geometry; a dock tab drags along its own
    strip behind a dimmed-at-a-no-op caret; and `dock::drop` is the drop grammar
    as a pure value — `DockLayout::move_panel` and `accepts_drop`, with a
@@ -282,9 +282,36 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    affordances that answered one drag. Falsified directly: widen the predicate and
    the guard absorbs it (green, and that is the input under which it is live);
    widen it and remove the guard and the assertion fires by name.
-   **Next is step 5** — drag a float back over the dock via
-   `native-window::cursor_position()`, degrading to the command route where it is
-   `None`.
+   **Step 5's dock half is built and falsified.** `DockState::set_float_drag`
+   takes the panel, a pointer in the application window's own screen points, and
+   whether this is the release frame; `dock::floatdrag` resolves that point with
+   the same compass a tab drag uses, draws the same overlay, and applies the same
+   move on release. Seven driven tests in `dock/floatdrag_tests.rs`, which send no
+   pointer events at all, because in the real gesture the pointer is not
+   `egui`'s. Two of six falsification plants only bit once the plant was moved to
+   the real mechanism: the take inside `floatdrag` is implied by the take in
+   `Dock::show`, and a pointer shifted by 40 pt still resolves to the same zone
+   because the edge band is a quarter of the body capped at 64 pt. That tolerance
+   is the file's stated blind spot, and it is why the conversion has to be driven
+   rather than unit-tested.
+   **Nothing calls `set_float_drag`**, so G4 is not reachable from the running
+   program, the command route is still the only way home, and `FEATURES.md` ticks
+   nothing for it. **What is owed is a measurement, not more dock code.** Which
+   gesture supplies that pointer is undecided: an OS title-bar drag runs a
+   platform modal move loop in which `egui` sees no cursor, so `native-window`
+   would be needed; a drag on the panel's own header strip has the child
+   viewport's pointer capture and needs only arithmetic on two `inner_rect`s, but
+   the window must then be made to follow the pointer every frame. `DESIGNS.md`
+   item 3 carries both readings as readings. Neither gets code until the binary is
+   driven.
+   **A live defect fell out of reading that machinery**, and it is not a G4
+   prerequisite: the flag recording that a float window has been opened once was
+   swept from the set of floats *about to be drawn*, so a panel docked back by
+   *Dock all* — or by a drop applied earlier in the same frame — kept its flag
+   forever and reopened wherever the platform chose rather than where the operator
+   left it, and an empty set skipped the sweep entirely. `DockState::floats_seen`
+   is the list that still contains such a panel, and it is what the sweep now
+   walks.
    **What is owed and needs the screen**: `ui-verify` assertions for the drop
    overlay and the tear outline; a re-drive of `panel_tabs_can_be_rearranged`,
    which drove green *before* the caret dimming landed; and `panels_float_close_and_dock`,
