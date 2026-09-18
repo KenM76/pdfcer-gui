@@ -102,3 +102,35 @@ eye. Same genus as [[feedback_a_command_judged_through_a_pipe_reports_the_pipes_
 — an outer layer's success word standing in for the inner one's — and the
 third direction this file is about: a misread harness is a falsification lying
 in the direction that looks like diligence. Full recipe in `D:/dev/rag/rust/cargo_test_prints_error_on_a_red_suite_so_a_harness_keyed_on_error_reports_a_build_failure.md`.
+
+---
+
+## Green, because the mechanism you aimed at is IMPLIED by another — 2026-09-18
+
+The third direction, and the only one where the green is a finding about the
+**production code** rather than about the harness.
+
+Seven plants against the dock's tear-out tests; **three green**, all three
+aimed at the mechanisms that appear to enforce *only one affordance answers a
+drag* — two stand-down guards and the stated branch order in the settlement.
+All three are implied by the tear's own geometric predicate, so no input
+reaches them and no test can redden them.
+
+★ **Do not delete the implied mechanism.** The predicate is expected to move,
+and a release build where the implication breaks should do the safe thing. Keep
+it, label it in-comment as unreachable-under-today's-predicate, and move the
+claim to an assertion where the decision is consumed — every driven test runs
+through that.
+
+★★ **Falsifying the replacement takes two plants and the first is expected
+green**: widen the predicate and the guard absorbs it — *that* green is the
+evidence the guard is live under the one input that reaches it — then widen it
+and remove the guard, and the assertion fires by name.
+
+★★★ **A tripwire behind an assertion that fires earlier is an unfalsified
+tripwire.** Every test asserting the absence *before* the release failed there
+instead, so the assert was never reached; it had to be falsified by deleting
+that intermediate line in one test.
+
+Related: [[a-check-that-cannot-fail-is-not-evidence]],
+[[a-tripwire-keyed-on-your-own-intention-is-not-a-tripwire]].
