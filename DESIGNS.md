@@ -1429,11 +1429,18 @@ Three things are missing, and none of them is the layout structure:
    crate is private inside `dock_back`. The fields are `pub` and `normalize`
    already prunes what a move empties, so this is a small addition rather than a
    rewrite.
-3. **A cross-viewport pointer, for G4 alone.** While a float window is being
-   dragged, the main window sees no pointer. `native-window`'s `cursor_position`
-   answers in physical desktop pixels on Windows and `None` elsewhere, which is
-   the bridge; the float and the dock are drawn from the same `egui::Context` in
-   the same frame, so the drag state itself is one field, not an IPC problem.
+3. **A pointer the shell is told rather than reads, for G4 alone.** A float is
+   drawn in a child viewport, so while its window is carried the pointer that
+   matters is over the *application* window and `egui`'s pointer in the dock's
+   context is not it. Locating it is a window-origin question and `egui-shell`
+   links no windowing crate, so the application answers: `set_float_drag` takes
+   the point in the application window's own screen points, once per frame, and
+   the dock resolves, draws and settles it with the same grammar a tab drag
+   uses. Both origins are readable from `egui` itself — a viewport's
+   `inner_rect` is its desktop rect in either context — so this needs no
+   platform crate and has no platform fallback. The float and the dock are drawn
+   from the same `egui::Context` in the same frame, so the drag state itself is
+   one field, not an IPC problem.
 
 **R128 is not a prerequisite.** The earlier reading — that cross-dock drag needs
 one wide tree spanning left ▸ canvas ▸ right, which puts the canvas in a
@@ -1520,7 +1527,7 @@ Each step ships on its own and leaves the program usable.
 | **2** | The drop grammar and its fuzz, headless: take, insert, split, new column, normalize, invariants. | **Built** | A pure value, testable with no window. It comes before the overlay so the overlay has something true to preview. |
 | **3** | G2: the pointer-to-`DropTarget` resolution over the retained geometry, then the compass overlay drawing it and the cross-compartment drop previewed by replay. | **Built** | The capability the register calls (d). Step 2 is what a replay preview applies to its clone, so this step has something true to show. |
 | **4** | G3: a drag that leaves the dock tears out, homed at its origin. | **Built** | Sits on the float model already built and changes nothing underneath. |
-| **5** | G4: drag a float back over the dock and drop it where the pointer says. |  | The only step needing the desktop-pixel cursor, and the only one with a platform fallback — without a global cursor position the header drag simply moves the window, and the command route still docks it. |
+| **5** | G4: drag a float back over the dock and drop it where the pointer says. | **Shell half built** — `dock::floatdrag` offers, previews and settles; nothing calls `set_float_drag` yet, so the gesture is not reachable from the running program and the command route is still the only way home. | Last because it settles with the grammar steps 2 and 3 built, and because it is the one gesture whose pointer the shell cannot sense for itself — so it is the one that needs an extension point rather than more dock code. |
 
 **What step 3 is made of.** Three parts, all in.
 

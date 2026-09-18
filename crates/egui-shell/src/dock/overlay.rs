@@ -86,13 +86,31 @@ pub(super) fn draw(ui: &egui::Ui, ctx: &mut Ctx<'_>, layout: &DockLayout) {
     let Some(pointer) = ui.ctx().pointer_latest_pos() else {
         return;
     };
+    offer(ui, ctx, layout, &panel, pointer);
+}
+
+/// **Resolve one point against the whole dock, draw the offer, and publish what
+/// a release would do.**
+///
+/// The grammar half of [`draw`], shared with [`super::floatdrag`]. The two
+/// gestures differ only in where the point comes from — `egui`'s pointer, or a
+/// float window's own drag reported by the application — and sharing this is
+/// what stops them disagreeing about which compartment a point is in, which
+/// zone of it, or what the release produces.
+pub(super) fn offer(
+    ui: &egui::Ui,
+    ctx: &mut Ctx<'_>,
+    layout: &DockLayout,
+    panel: &PanelId,
+    pointer: egui::Pos2,
+) {
     let Some(landing) = layout.resolve_drop(&ctx.geometry, pointer) else {
         return;
     };
-    let Some(rect) = layout.preview_drop(&ctx.geometry, &panel, landing.target) else {
+    let Some(rect) = layout.preview_drop(&ctx.geometry, panel, landing.target) else {
         return;
     };
-    let lands = layout.drop_lands(&panel, landing.target);
+    let lands = layout.drop_lands(panel, landing.target);
 
     let painter = ui.ctx().layer_painter(egui::LayerId::new(
         egui::Order::Foreground,
@@ -123,7 +141,7 @@ pub(super) fn draw(ui: &egui::Ui, ctx: &mut Ctx<'_>, layout: &DockLayout) {
     ui.ctx().set_cursor_icon(egui::CursorIcon::Grabbing);
 
     ctx.drop_preview = Some(DropPreview {
-        panel,
+        panel: panel.clone(),
         landing,
         rect,
         lands,

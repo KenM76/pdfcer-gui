@@ -187,6 +187,9 @@ pub mod drop;
 /// the state machine, and the placement arithmetic. No `egui::Context`,
 /// no window: everything here is testable with nothing open.
 pub mod float;
+/// **Carrying a float window back over the dock** — the one gesture whose
+/// pointer this crate cannot sense for itself. Its header carries why.
+pub mod floatdrag;
 /// **The window a floated panel is drawn in.** [`Dock::show_floating`],
 /// the viewport, and the header strip that offers the way back.
 pub mod floatwin;
@@ -227,6 +230,8 @@ mod drive;
 mod drag_tests;
 #[cfg(test)]
 mod drop_tests;
+#[cfg(test)]
+mod floatdrag_tests;
 #[cfg(test)]
 mod overlay_tests;
 #[cfg(test)]
@@ -275,6 +280,7 @@ pub use compass::{Compass, DropLanding, DropZone};
 pub use drag::TabDragPreview;
 pub use drop::DropTarget;
 pub use float::{DockHome, FloatingPanel};
+pub use floatdrag::FloatDrag;
 pub use floatwin::FloatFrameReport;
 pub use frame_report::DockFrameReport;
 pub use geometry::{ColumnAddr, DockGeometry, StackAddr};
@@ -583,6 +589,9 @@ impl<'a> Dock<'a> {
             tab_drag: None,
             drop_preview: None,
             tear: None,
+            // Taken rather than borrowed: the gesture lasts exactly as long as
+            // the application renews it. See `DockState::set_float_drag`.
+            float_drag: state.float_drag.take(),
             rail_drawn: false,
             rail_show: crate::peek::Show::Inline,
         };
@@ -632,6 +641,9 @@ impl<'a> Dock<'a> {
         // became of the strip it began on (see [`drag`]).
         overlay::draw(ui, &mut ctx, &snapshot);
         tear::draw(ui, &mut ctx);
+        // After the three that read `egui`'s own pointer, so a gesture the
+        // shell sensed for itself is never overruled by one it was told about.
+        floatdrag::draw(ui, &mut ctx, &snapshot);
         drag::settle(ui, &mut ctx);
         report.tab_drag = ctx.tab_drag.clone();
         report.drop_preview = ctx.drop_preview.clone();

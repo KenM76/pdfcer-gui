@@ -11,6 +11,7 @@
 //! it, in that order.
 
 use super::DockFrameReport;
+use super::floatdrag::FloatDrag;
 use super::geometry::DockGeometry;
 use super::model::{DockLayout, PanelId};
 
@@ -42,6 +43,10 @@ pub struct DockState {
     /// [`geometry`], whose header carries when this is current and what it
     /// does not claim.
     pub(super) geometry: DockGeometry,
+    /// **A float window the operator is carrying**, reported by the application
+    /// and consumed by the next [`super::Dock::show`]. See
+    /// [`Self::set_float_drag`].
+    pub(super) float_drag: Option<FloatDrag>,
 }
 
 impl DockState {
@@ -65,7 +70,25 @@ impl DockState {
             floats_drawn: 0,
             rail_peek: crate::peek::Peek::new(),
             geometry: DockGeometry::default(),
+            float_drag: None,
         }
+    }
+
+    /// **Report a float window being carried back over the dock**, once per
+    /// frame, for as long as the gesture lasts.
+    ///
+    /// The extension point that lets the dock offer its drop grammar to a
+    /// gesture whose pointer it cannot see — see [`super::floatdrag`], whose
+    /// header carries why that pointer is the application's to supply and what
+    /// space it must be in.
+    ///
+    /// **Consumed, not held.** The next [`super::Dock::show`] takes it, so a
+    /// caller that stops renewing the report ends the gesture with nothing
+    /// landed. That is what makes a window closed mid-drag, or a platform that
+    /// lost the pointer, safe by construction rather than by a cancel path
+    /// somebody has to remember to call.
+    pub fn set_float_drag(&mut self, drag: Option<FloatDrag>) {
+        self.float_drag = drag;
     }
 
     /// The current arrangement.

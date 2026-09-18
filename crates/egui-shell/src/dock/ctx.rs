@@ -269,6 +269,17 @@ pub(crate) struct Ctx<'a> {
     /// is the reorder caret, the other is the drop compass, and `settle` reads
     /// them in that order.
     pub drop_preview: Option<super::overlay::DropPreview>,
+    /// **A float window the operator is carrying back over the dock**, handed
+    /// in by the application through
+    /// [`super::state::DockState::set_float_drag`] and taken by
+    /// [`super::floatdrag::draw`].
+    ///
+    /// The one input on this context the shell cannot sense for itself: the
+    /// pointer that matters is over the application's window while `egui`'s
+    /// pointer is in the float's child viewport, and locating it is a question
+    /// about window origins this crate does not link a windowing library to
+    /// answer. See [`super::floatdrag`].
+    pub float_drag: Option<super::floatdrag::FloatDrag>,
     /// **A drag held clear of the dock, and the window a release would open**,
     /// proposed by [`super::tear`] after [`super::overlay`] has declined and
     /// consumed by [`super::drag::settle`].
@@ -356,6 +367,7 @@ mod tests {
             tab_drag: None,
             drop_preview: None,
             tear: None,
+            float_drag: None,
             rail_drawn: false,
             rail_show: crate::peek::Show::Inline,
         }
@@ -412,6 +424,7 @@ mod tests {
             tab_drag: None,
             drop_preview: None,
             tear: None,
+            float_drag: None,
             rail_drawn: false,
             rail_show: crate::peek::Show::Inline,
         };
