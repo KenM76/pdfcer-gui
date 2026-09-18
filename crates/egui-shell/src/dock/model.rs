@@ -635,10 +635,9 @@ impl DockLayout {
 
     /// Remove `panel` from the layout, pruning whatever it leaves empty.
     ///
-    /// Returns `false` if it was not mounted. Closing the active tab
-    /// selects the previous one rather than the next, which is what keeps
-    /// a run of closes moving leftwards along the bar instead of
-    /// marching through the tabs the operator has not touched.
+    /// Returns `false` if it was not mounted. Removing the tab and deciding
+    /// what becomes active afterwards is [`DockLayout::take_panel`], which
+    /// carries that rule; this verb is that plus the pruning.
     pub fn close(&mut self, panel: &PanelId) -> bool {
         // ★★★ **Closing a FLOATING panel is a close, not a dock-and-close.**
         //
@@ -657,14 +656,8 @@ impl DockLayout {
             self.floating.remove(i);
             return true;
         }
-        let Some(a) = self.find(panel) else {
+        if self.take_panel(panel).is_none() {
             return false;
-        };
-        let side = self.side_mut(a.side);
-        let stack = &mut side.columns[a.column].stacks[a.stack];
-        stack.tabs.remove(a.tab);
-        if stack.active >= a.tab && stack.active > 0 {
-            stack.active -= 1;
         }
         self.normalize();
         true

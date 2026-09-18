@@ -174,6 +174,10 @@ mod collapse;
 pub mod ctx;
 /// **Dragging a tab, and where releasing it would put the panel.**
 mod drag;
+/// **Where a dragged panel may be released, and what releasing it there does
+/// to the layout** — a pure value grammar over [`DockLayout`], with no window
+/// and no pointer. Its header carries the rule the whole module turns on.
+pub mod drop;
 /// **A panel torn out of the dock into a window of its own** — the value,
 /// the state machine, and the placement arithmetic. No `egui::Context`,
 /// no window: everything here is testable with nothing open.
@@ -202,6 +206,8 @@ pub mod tabs;
 
 #[cfg(test)]
 mod drag_tests;
+#[cfg(test)]
+mod drop_tests;
 #[cfg(test)]
 mod railhide_tests;
 #[cfg(test)]
@@ -243,6 +249,7 @@ use splitter::Axis;
 
 pub use banner::BannerHandler;
 pub use drag::TabDragPreview;
+pub use drop::DropTarget;
 pub use float::{DockHome, FloatingPanel};
 pub use floatwin::FloatFrameReport;
 pub use frame_report::DockFrameReport;
