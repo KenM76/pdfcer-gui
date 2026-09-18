@@ -112,3 +112,31 @@ is its outer edge"* — or it is not there for a reason and must go. `expand`,
 `abs() < eps` and `approx` in a containment test are the shape to look for. If
 removing the slack turns the test red, that is the finding, not an argument for
 the slack.
+
+## ★★★ 2026-09-18 — the variant where a REPAIR PASS downstream produces the rule's own answer
+
+`DockLayout::close` selects the **previous** tab when the active one goes, so a
+run of closes walks leftwards instead of marching through tabs the operator has
+not touched. Delete that rule and **202 dock tests stayed green**, including the
+one written for it.
+
+The fixture closed the **last** tab. `normalize()` runs afterwards and clamps a
+stale `active` to `tabs.len() - 1` — and at the end of a list, the clamp's answer
+*is* the predecessor. The rule and its absence agree on exactly that one input,
+and that input is the one a fixture reaches for because it is the easiest to
+write. Only a tab with something after it separates *"the previous one"* from
+*"whatever slid into this index"*.
+
+★ **The generalisation is about pipelines, not about assertions.** The earlier
+sections here are about an assert that is too weak. This one has a perfectly
+sharp assert — `is_active("bookmarks")` — over an input where a **later stage**
+reproduces the earlier stage's output. Anything with a repair, a clamp, a
+fallback or a normalizer downstream of the rule under test has this shape, and
+the coincidence always lives at the **boundary of the data**: end of list, index
+zero, empty, single element.
+
+**How to apply:** before trusting a fixture for a rule that has a repair pass
+behind it, ask *"what would the repair alone have produced here?"* If it is the
+same value, move the fixture off the boundary — middle of the list, not the end.
+Then plant the rule's deletion and watch it go red; this one had to be found by
+the plant, because reading the test could not tell.
