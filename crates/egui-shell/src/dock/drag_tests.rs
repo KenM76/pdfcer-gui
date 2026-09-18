@@ -10,27 +10,17 @@
 //! chain in front of it. So every test here pumps real `egui::Event`s through a
 //! real `Context` and asserts on what came back.
 //!
-//! # ★ Why the first frame of every fixture is empty
+//! # The driver
 //!
-//! `egui` resolves a press against the widget rectangles of the **previous**
-//! frame. A fixture that pressed on its first frame would press on nothing, and
-//! would report exactly what a build with no drag sensing reports — a green
-//! test over a dead feature. [`Harness::warm`] is that frame, and it is the
-//! control: [`a_press_that_does_not_move_activates_the_tab_and_reorders_nothing`]
-//! is what says the pump works at all.
-//!
-//! # Fonts
-//!
-//! No synthetic face is needed, for [`super::railhide_tests`]' reason: with no
-//! font a label measures zero and every tab is exactly
-//! [`super::plan::MIN_TAB_WIDTH`] wide, which is a constant. Nothing here reads
-//! a width derived from text — the positions all come back from
-//! [`super::DockState::geometry`], which is the layout's own record.
+//! [`super::drive`]. Its header carries the warm frame and the font situation,
+//! both of which govern every test here. The positive control this file owes it
+//! is [`a_press_that_does_not_move_activates_the_tab_and_reorders_nothing`].
 
-use egui::{Event, PointerButton, Pos2, Rect, Vec2};
+use egui::{Event, Pos2, Vec2};
 
+use super::drive::{Harness, press, release};
 use super::geometry::StackAddr;
-use super::{Column, Dock, DockLayout, DockSide, DockState, PanelId, SideLayout, Stack};
+use super::{Column, DockLayout, DockSide, PanelId, SideLayout, Stack};
 
 /// Three panels in one stack on the left, and nothing on the right.
 fn three_tabs() -> DockLayout {
@@ -52,113 +42,20 @@ const STACK: StackAddr = StackAddr {
     stack: 0,
 };
 
-/// One `egui::Context` driven frame by frame, with the dock's state carried
-/// across them.
-struct Harness {
-    ctx: egui::Context,
-    state: DockState,
-    report: super::DockFrameReport,
-    /// Every region the last frame published, by name.
-    rects: Vec<(String, Rect)>,
+/// The tab order of the stack under test, as strings.
+fn order(h: &Harness) -> Vec<String> {
+    h.state.layout().left.columns[0].stacks[0]
+        .tabs
+        .iter()
+        .map(|p| p.as_str().to_owned())
+        .collect()
 }
 
-impl Harness {
-    fn new(layout: DockLayout) -> Self {
-        let mut h = Self {
-            ctx: egui::Context::default(),
-            state: DockState::new(layout),
-            report: super::DockFrameReport::default(),
-            rects: Vec::new(),
-        };
-        h.warm();
-        h
-    }
-
-    /// Run one frame with the given events.
-    fn frame(&mut self, events: Vec<Event>) {
-        let input = egui::RawInput {
-            screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(1400.0, 900.0))),
-            events,
-            ..Default::default()
-        };
-        let state = &mut self.state;
-        let mut report = super::DockFrameReport::default();
-        let mut rects: Vec<(String, Rect)> = Vec::new();
-        let mut sink = |r: &super::report::RectReport<'_>| rects.push((r.name.to_string(), r.rect));
-        let _ = self.ctx.clone().run_ui(input, |ui| {
-            report = Dock::new()
-                .reporting_rects_to(&mut sink)
-                .show(ui, state, |_, _| {});
-        });
-        self.report = report;
-        self.rects = rects;
-    }
-
-    /// The region published under `name` on the last frame, if any.
-    fn rect(&self, name: &str) -> Option<Rect> {
-        self.rects
-            .iter()
-            .rev()
-            .find(|(n, _)| n == name)
-            .map(|(_, r)| *r)
-    }
-
-    /// A frame with no input, so the next frame's press has rectangles to
-    /// land on. See the module header.
-    fn warm(&mut self) {
-        self.frame(Vec::new());
-    }
-
-    /// The centre of a drawn tab, from the layout's own record.
-    fn tab_centre(&self, index: usize) -> Pos2 {
-        self.state
-            .geometry()
-            .tab_rect(STACK.tab(index))
-            .unwrap_or_else(|| panic!("tab {index} was not drawn"))
-            .center()
-    }
-
-    /// The tab order, as strings.
-    fn order(&self) -> Vec<String> {
-        self.state.layout().left.columns[0].stacks[0]
-            .tabs
-            .iter()
-            .map(|p| p.as_str().to_owned())
-            .collect()
-    }
-
-    /// The panel whose body the dock is drawing.
-    fn active(&self) -> String {
-        self.state.layout().left.columns[0].stacks[0]
-            .active_panel()
-            .map_or_else(String::new, |p| p.as_str().to_owned())
-    }
-}
-
-/// Press the primary button at `pos`.
-fn press(pos: Pos2) -> Vec<Event> {
-    vec![
-        Event::PointerMoved(pos),
-        Event::PointerButton {
-            pos,
-            button: PointerButton::Primary,
-            pressed: true,
-            modifiers: egui::Modifiers::NONE,
-        },
-    ]
-}
-
-/// Release the primary button at `pos`.
-fn release(pos: Pos2) -> Vec<Event> {
-    vec![
-        Event::PointerMoved(pos),
-        Event::PointerButton {
-            pos,
-            button: PointerButton::Primary,
-            pressed: false,
-            modifiers: egui::Modifiers::NONE,
-        },
-    ]
+/// The panel whose body the dock is drawing.
+fn active(h: &Harness) -> String {
+    h.state.layout().left.columns[0].stacks[0]
+        .active_panel()
+        .map_or_else(String::new, |p| p.as_str().to_owned())
 }
 
 /// **Step 0's deliverable.** The dock publishes where it put every
@@ -204,8 +101,8 @@ fn the_dock_publishes_where_it_drew_every_compartment() {
 #[test]
 fn a_press_that_does_not_move_activates_the_tab_and_reorders_nothing() {
     let mut h = Harness::new(three_tabs());
-    assert_eq!(h.active(), "pages");
-    let target = h.tab_centre(2);
+    assert_eq!(active(&h), "pages");
+    let target = h.tab_centre(STACK, 2);
 
     h.frame(press(target));
     h.frame(release(target));
@@ -215,8 +112,8 @@ fn a_press_that_does_not_move_activates_the_tab_and_reorders_nothing() {
         Some("layers")
     );
     assert_eq!(h.report.reordered, None);
-    assert_eq!(h.order(), ["pages", "bookmarks", "layers"]);
-    assert_eq!(h.active(), "layers");
+    assert_eq!(order(&h), ["pages", "bookmarks", "layers"]);
+    assert_eq!(active(&h), "layers");
 }
 
 /// **The gesture.** Drag the first tab past the last and it lands last.
@@ -229,8 +126,8 @@ fn a_press_that_does_not_move_activates_the_tab_and_reorders_nothing() {
 #[test]
 fn dragging_a_tab_past_the_last_one_moves_it_to_the_end() {
     let mut h = Harness::new(three_tabs());
-    let from = h.tab_centre(0);
-    let past_the_end = h.tab_centre(2) + Vec2::new(12.0, 0.0);
+    let from = h.tab_centre(STACK, 0);
+    let past_the_end = h.tab_centre(STACK, 2) + Vec2::new(12.0, 0.0);
 
     h.frame(press(from));
     h.frame(vec![Event::PointerMoved(past_the_end)]);
@@ -246,8 +143,8 @@ fn dragging_a_tab_past_the_last_one_moves_it_to_the_end() {
         h.report.reordered.as_ref().map(PanelId::as_str),
         Some("pages")
     );
-    assert_eq!(h.order(), ["bookmarks", "layers", "pages"]);
-    assert_eq!(h.active(), "pages", "the visible panel did not change");
+    assert_eq!(order(&h), ["bookmarks", "layers", "pages"]);
+    assert_eq!(active(&h), "pages", "the visible panel did not change");
     assert!(h.report.layout_changed, "the arrangement is worth saving");
     assert_eq!(h.report.tab_drag, None, "the drag is over");
 }
@@ -257,15 +154,15 @@ fn dragging_a_tab_past_the_last_one_moves_it_to_the_end() {
 #[test]
 fn dragging_a_tab_leftwards_lands_it_at_the_boundary_it_has_passed() {
     let mut h = Harness::new(three_tabs());
-    let from = h.tab_centre(2);
-    let left_of_the_first = h.tab_centre(0) - Vec2::new(12.0, 0.0);
+    let from = h.tab_centre(STACK, 2);
+    let left_of_the_first = h.tab_centre(STACK, 0) - Vec2::new(12.0, 0.0);
 
     h.frame(press(from));
     h.frame(vec![Event::PointerMoved(left_of_the_first)]);
     assert_eq!(h.report.tab_drag.as_ref().map(|d| d.gap), Some(0));
 
     h.frame(release(left_of_the_first));
-    assert_eq!(h.order(), ["layers", "pages", "bookmarks"]);
+    assert_eq!(order(&h), ["layers", "pages", "bookmarks"]);
 }
 
 /// **A drag released where it started changes nothing** — and says so by
@@ -273,7 +170,7 @@ fn dragging_a_tab_leftwards_lands_it_at_the_boundary_it_has_passed() {
 #[test]
 fn a_drag_released_where_it_started_is_not_a_reorder() {
     let mut h = Harness::new(three_tabs());
-    let from = h.tab_centre(1);
+    let from = h.tab_centre(STACK, 1);
     // Far enough to pass egui's click threshold, not far enough to leave the
     // tab's own half of the strip.
     let nudged = from + Vec2::new(8.0, 0.0);
@@ -288,7 +185,7 @@ fn a_drag_released_where_it_started_is_not_a_reorder() {
 
     h.frame(release(nudged));
     assert_eq!(h.report.reordered, None);
-    assert_eq!(h.order(), ["pages", "bookmarks", "layers"]);
+    assert_eq!(order(&h), ["pages", "bookmarks", "layers"]);
 }
 
 /// ★★ **A drag pulled off the strip ends, and reorders nothing.**
@@ -309,8 +206,8 @@ fn a_drag_released_where_it_started_is_not_a_reorder() {
 #[test]
 fn a_drag_pulled_off_the_strip_ends_and_reorders_nothing() {
     let mut h = Harness::new(three_tabs());
-    let from = h.tab_centre(0);
-    let past_the_end = h.tab_centre(2) + Vec2::new(12.0, 0.0);
+    let from = h.tab_centre(STACK, 0);
+    let past_the_end = h.tab_centre(STACK, 2) + Vec2::new(12.0, 0.0);
     let off_in_the_canvas = Pos2::new(900.0, 600.0);
 
     h.frame(press(from));
@@ -325,7 +222,7 @@ fn a_drag_pulled_off_the_strip_ends_and_reorders_nothing() {
 
     h.frame(release(off_in_the_canvas));
     assert_eq!(h.report.reordered, None);
-    assert_eq!(h.order(), ["pages", "bookmarks", "layers"]);
+    assert_eq!(order(&h), ["pages", "bookmarks", "layers"]);
     // And the drag is over: another frame must not resurrect it.
     h.warm();
     assert_eq!(h.report.tab_drag, None);
@@ -340,20 +237,20 @@ fn a_drag_pulled_off_the_strip_ends_and_reorders_nothing() {
 #[test]
 fn a_drag_that_wanders_a_little_below_the_strip_is_still_a_reorder() {
     let mut h = Harness::new(three_tabs());
-    let from = h.tab_centre(0);
+    let from = h.tab_centre(STACK, 0);
     let strip = h
         .state
         .geometry()
         .strip_rect(STACK)
         .expect("the strip was drawn");
-    let just_below = Pos2::new(h.tab_centre(2).x + 12.0, strip.bottom() + 6.0);
+    let just_below = Pos2::new(h.tab_centre(STACK, 2).x + 12.0, strip.bottom() + 6.0);
 
     h.frame(press(from));
     h.frame(vec![Event::PointerMoved(just_below)]);
     assert_eq!(h.report.tab_drag.as_ref().map(|d| d.gap), Some(3));
 
     h.frame(release(just_below));
-    assert_eq!(h.order(), ["bookmarks", "layers", "pages"]);
+    assert_eq!(order(&h), ["bookmarks", "layers", "pages"]);
 }
 
 /// ★ **The caret is published as a region, and it is where the tab will land.**
@@ -373,8 +270,8 @@ fn the_caret_marks_the_boundary_the_release_will_use_and_then_goes() {
     let name = super::report::tab_caret(DockSide::Left, 0, 0);
     assert_eq!(h.rect(&name), None, "no caret before the gesture");
 
-    let from = h.tab_centre(0);
-    let over_the_last = h.tab_centre(2) + Vec2::new(12.0, 0.0);
+    let from = h.tab_centre(STACK, 0);
+    let over_the_last = h.tab_centre(STACK, 2) + Vec2::new(12.0, 0.0);
     let tab2 = h
         .state
         .geometry()
@@ -439,8 +336,8 @@ fn the_caret_at_the_first_boundary_is_drawn_whole() {
         strip.left()
     );
 
-    let from = h.tab_centre(2);
-    let before_the_first = h.tab_centre(0) - Vec2::new(12.0, 0.0);
+    let from = h.tab_centre(STACK, 2);
+    let before_the_first = h.tab_centre(STACK, 0) - Vec2::new(12.0, 0.0);
     h.frame(press(from));
     h.frame(vec![Event::PointerMoved(before_the_first)]);
 
@@ -455,7 +352,7 @@ fn the_caret_at_the_first_boundary_is_drawn_whole() {
     );
 
     h.frame(release(before_the_first));
-    assert_eq!(h.order(), ["layers", "pages", "bookmarks"]);
+    assert_eq!(order(&h), ["layers", "pages", "bookmarks"]);
 }
 
 /// **The two boundaries that change nothing are the tab's own edges**, and the

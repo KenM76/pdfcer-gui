@@ -42,7 +42,7 @@ only because I asked why every single cell refused instead of writing it up.
   containing a character the document has never used measures your string.
 - A uniform failure across every trial is about the probe. (This is the sibling
   of `feedback_a_uniform_failure_at_every_rung_of_a_sweep_is_about_the_probe`
-  and of `feedback_a_harness_with_a_bad_input_produces_defects_that_do_not_exist`
+  and of `feedback_a_measurement_of_the_wrong_surface_looks_exactly_like_a_broken_one`
   — three receipts now, which is why this one is written as a positive
   procedure rather than another warning.)
 - **Correct the artifacts you already shipped.** Both wrong diagnoses had

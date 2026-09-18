@@ -54,6 +54,7 @@
 
 use egui::Id;
 
+use super::drop::DropTarget;
 use super::geometry::{DockGeometry, StackAddr};
 use super::model::{DockSide, PanelId, PanelRegistry};
 use super::report::Reporter;
@@ -176,6 +177,24 @@ pub(crate) enum Intent {
         /// The boundary it is moving to.
         gap: usize,
     },
+    /// **Put a panel in a different compartment**, or in a new one.
+    ///
+    /// Raised by [`super::drag::settle`] when a drag is released somewhere
+    /// other than its own tab strip. The whole drop grammar arrives through
+    /// this one intent, because [`super::drop::DropTarget`] already names every
+    /// release the grammar can express — an intent per zone would be five
+    /// spellings of one verb, and five places for the zone-to-target mapping to
+    /// be written differently.
+    ///
+    /// Raised even when the target is where the panel already is:
+    /// [`super::model::DockLayout::move_panel`] declines those, and `apply`
+    /// decides "did anything change" by comparing the whole layout.
+    MovePanel {
+        /// The panel being moved.
+        panel: PanelId,
+        /// Where it is going.
+        target: DropTarget,
+    },
     /// Change a whole side's width.
     ///
     /// The only intent that writes an **absolute** number, and the only
@@ -229,6 +248,14 @@ pub(crate) struct Ctx<'a> {
     /// **A tab drag in flight and the boundary it would land on**, proposed by
     /// the strip the drag began in and consumed by [`super::drag::settle`].
     pub tab_drag: Option<super::drag::TabDragPreview>,
+    /// **A drag held over a compartment other than its own strip, and the
+    /// compartment a release would produce**, proposed by [`super::overlay`]
+    /// after both sides have drawn and consumed by [`super::drag::settle`].
+    ///
+    /// The sibling of [`Self::tab_drag`] and never live at the same time: one
+    /// is the reorder caret, the other is the drop compass, and `settle` reads
+    /// them in that order.
+    pub drop_preview: Option<super::overlay::DropPreview>,
     /// **Whether this side's rail was actually drawn this frame**, set by
     /// [`super::rail::draw`] before any stack on the side is laid out.
     ///
@@ -306,6 +333,7 @@ mod tests {
             intents: Vec::new(),
             geometry: DockGeometry::default(),
             tab_drag: None,
+            drop_preview: None,
             rail_drawn: false,
             rail_show: crate::peek::Show::Inline,
         }
@@ -360,6 +388,7 @@ mod tests {
             intents: Vec::new(),
             geometry: DockGeometry::default(),
             tab_drag: None,
+            drop_preview: None,
             rail_drawn: false,
             rail_show: crate::peek::Show::Inline,
         };

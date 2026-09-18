@@ -1,6 +1,6 @@
 ---
 name: a-falsification-can-lie-in-both-directions
-description: A red falsification proves the check as a whole, not each assertion in it; a green one may mean the planting script's anchor rotted and it mutated nothing
+description: A red falsification proves the check as a whole, not each assertion in it; a green one may mean the planting script's anchor rotted and it mutated nothing; and a script that scores the run by scanning cargo output can call every working plant a broken build
 metadata:
   type: feedback
 ---
@@ -78,3 +78,27 @@ Related: [[feedback_the_write_python_to_a_file_workaround_does_not_protect_an_es
 [[feedback_a_check_that_cannot_fail_is_not_evidence]],
 [[feedback_never_git_checkout_to_undo_an_experiment]],
 [[feedback_a_long_green_check_can_be_aiming_at_nothing]].
+
+---
+
+## Red, and scored by a script that read the wrong word
+
+When a plant harness runs `cargo test` and decides the outcome by scanning
+output, key on **`could not compile`**, never bare `error:` — and print the
+**names** of the failing tests, not only how many.
+
+**Why:** a red suite ends with `error: test failed, to rerun pass …`. That is
+the test failing, not the build. Scoring seven plants with
+`if "error:" in out: DID NOT COMPILE` reported six broken builds and one green
+— when the truth was six precise reds and one genuine blind spot in the test
+set. The misclassification is almost invisible in this particular instrument,
+because a plant harness *expects* some deliberate defects not to type-check, so
+"DID NOT COMPILE" reads as an ordinary result rather than a broken tool. The
+count-only variant hides the neighbouring defect: a plant that reddens the
+*wrong* test is itself a finding.
+
+**How to apply:** any time falsification is scored by a script rather than by
+eye. Same genus as [[feedback_a_command_judged_through_a_pipe_reports_the_pipes_exit_code]]
+— an outer layer's success word standing in for the inner one's — and the
+third direction this file is about: a misread harness is a falsification lying
+in the direction that looks like diligence. Full recipe in `D:/dev/rag/rust/cargo_test_prints_error_on_a_red_suite_so_a_harness_keyed_on_error_reports_a_build_failure.md`.

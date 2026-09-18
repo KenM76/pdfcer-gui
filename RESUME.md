@@ -256,10 +256,22 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    same `move_panel` the release calls, and re-walks the rects with the very
    function `Dock::show` lays its own columns and stacks out with — so the
    highlight names the outcome, including the column a drag empties on its way
-   out. **No operator gesture reaches any of it yet**, which is why no register
-   or `FEATURES.md` row moved. `DESIGNS.md` carries the staging table and the
-   traps. **What is left of step 3 needs the screen** — the painted overlay:
-   fill the five quads, highlight the rect the replay returns, wire the release.
+   out. **Step 3 is now complete**: `dock::overlay` fills the five quads over the
+   hovered compartment's body, washes the armed one, outlines the rect the replay
+   returns, dims the outline at a release that would permute nothing, and
+   publishes a `DropPreview` the release reads. Eleven driven unit tests in
+   `dock/overlay_tests.rs` carry it, over a shared `dock/drive.rs` harness, and
+   eight falsification plants were all caught. **The gesture found a real defect**:
+   every tab strip sits at the same y, so a drag carried sideways onto another
+   strip stayed inside the reorder's y band and the origin strip went on drawing a
+   caret hundreds of points away while the drop was never offered — `drag::preview`
+   now bounds x by the strip exactly. `DESIGNS.md` carries the staging table and
+   the traps; `D:/dev/rag/egui/` carries both findings.
+   **Next is step 4** — drag-to-tear, homed at the drag's origin, attaching to the
+   branch `drag::preview` declines below `REORDER_SLACK_PTS`; then step 5, dragging
+   a float back over the dock via `native-window::cursor_position()`.
+   **What is owed and needs the screen**: a `ui-verify` assertion for the new drop
+   overlay, and no register or `FEATURES.md` row has moved yet.
    Two things to re-measure first: `panels_float_close_and_dock` has a
    live undriven defect from O126 A5 — a floated panel opens an empty window and
    *Dock all* recovers nothing — and steps 4 and 5 build directly on that

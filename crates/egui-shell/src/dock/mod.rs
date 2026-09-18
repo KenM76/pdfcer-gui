@@ -197,6 +197,8 @@ pub mod geometry;
 pub mod model;
 /// **The wobble probe** — which widget ran past the window's edge.
 mod overflow_probe;
+/// **The drop zones a drag is offered**, painted, and the outcome highlighted.
+pub mod overlay;
 pub mod plan;
 /// **Where a compartment lands**, shared by the draw path and by the replay
 /// that shows an operator the outcome of the drop they are aiming at.
@@ -212,10 +214,17 @@ mod stack;
 pub mod tab_menu;
 pub mod tabs;
 
+// The driver the gesture test files share; see its header for the warm frame
+// every one of them depends on.
+#[cfg(test)]
+mod drive;
+
 #[cfg(test)]
 mod drag_tests;
 #[cfg(test)]
 mod drop_tests;
+#[cfg(test)]
+mod overlay_tests;
 #[cfg(test)]
 mod railhide_tests;
 #[cfg(test)]
@@ -712,6 +721,7 @@ impl<'a> Dock<'a> {
             intents: Vec::new(),
             geometry: DockGeometry::default(),
             tab_drag: None,
+            drop_preview: None,
             rail_drawn: false,
             rail_show: crate::peek::Show::Inline,
         };
@@ -755,10 +765,14 @@ impl<'a> Dock<'a> {
             }
         }
 
-        // ★ The drag is settled AFTER both sides have drawn, so its release
-        // lands whatever became of the strip it began on. See [`drag`].
+        // ★ Both the offer and the settlement come AFTER both sides have
+        // drawn: the offer because resolving a drop needs the whole geometry
+        // (see [`overlay`]), and the settlement so a release lands whatever
+        // became of the strip it began on (see [`drag`]).
+        overlay::draw(ui, &mut ctx, &snapshot);
         drag::settle(ui, &mut ctx);
         report.tab_drag = ctx.tab_drag.clone();
+        report.drop_preview = ctx.drop_preview.clone();
         state.geometry = std::mem::take(&mut ctx.geometry);
 
         // Phase 3: apply. The one place the layout is mutable.

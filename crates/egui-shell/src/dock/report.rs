@@ -39,6 +39,7 @@
 
 use egui::Rect;
 
+use super::compass::DropZone;
 use super::model::{DockSide, PanelId};
 
 /// **One drawn region, as the dock reports it.**
@@ -239,6 +240,34 @@ pub fn tab(panel: &PanelId) -> String {
 #[must_use]
 pub fn tab_caret(side: DockSide, column: usize, stack: usize) -> String {
     format!("{PREFIX}.{}.{column}.{stack}.caret", side.key())
+}
+
+/// **The drop zone a drag is currently armed on**, named by the compartment it
+/// divides and by which of the five it is.
+///
+/// Only the armed zone is published. The other four are painted and not named:
+/// a consumer asking *"where would this land"* wants the answer, and four
+/// rectangles that are merely offered would have to be filtered back out of
+/// every assertion.
+#[must_use]
+pub fn drop_zone(side: DockSide, column: usize, stack: usize, zone: DropZone) -> String {
+    format!(
+        "{PREFIX}.{}.{column}.{stack}.zone.{}",
+        side.key(),
+        zone.key()
+    )
+}
+
+/// **The compartment a release would put the dragged panel in** — the outcome,
+/// replayed through the drop verb rather than read off the target.
+///
+/// Carries no address on purpose: the point of the replay is that the outcome
+/// is often a compartment that does not exist yet, and naming it by an address
+/// from the current layout would be the naive preview wearing a region name.
+/// See [`super::preview`].
+#[must_use]
+pub fn drop_outcome() -> String {
+    format!("{PREFIX}.drop.outcome")
 }
 
 /// One panel's body region — the rectangle the application drew into.

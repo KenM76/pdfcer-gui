@@ -119,6 +119,25 @@ pub(super) fn begin(ui: &egui::Ui, ctx: &Ctx<'_>, panel: &PanelId, from: PanelAd
 /// what every application of this class treats as a tear-out instead.
 /// [`REORDER_SLACK_PTS`] is the tolerance between those, and the branch this
 /// function declines is where tearing a panel out will attach.
+///
+/// ## ★★ And bounded in x by the strip exactly, with no slack at all
+///
+/// [`super::geometry::DockGeometry::gap_in`] is defined for **every** x on the
+/// screen: past the last tab it answers the boundary past the last tab, from
+/// anywhere. Every other tab strip in the dock sits at the same y as this one,
+/// so the y band alone would let a drag carried sideways onto a *different*
+/// strip be claimed as a reorder of the strip it left — a caret drawn where the
+/// pointer is not, and the drop the operator was aiming at never offered.
+///
+/// x gets no tolerance because it is the axis the boundary is *resolved* from,
+/// not the one wander happens along, and because the slack would land on a
+/// neighbour: two columns on one side put their strips a splitter apart. The
+/// strip spans its compartment's whole width, so a drag past the last tab is
+/// inside it already.
+///
+/// ★ Neither bound can be stated as *"over a different compartment"*, which is
+/// what it means — [`Ctx::geometry`] is filled in draw order, and this runs
+/// mid-draw, so the compartments after this one are not in it yet.
 pub(super) fn preview(ui: &mut egui::Ui, ctx: &mut Ctx<'_>, addr: StackAddr, strip: Rect) {
     let Some(drag) = ui.ctx().data(|d| d.get_temp::<TabDrag>(key(ctx))) else {
         return;
@@ -133,35 +152,14 @@ pub(super) fn preview(ui: &mut egui::Ui, ctx: &mut Ctx<'_>, addr: StackAddr, str
     {
         return;
     }
+    if pointer.x < strip.left() || pointer.x > strip.right() {
+        return;
+    }
     let Some(gap) = ctx.geometry.gap_in(addr, pointer) else {
         return;
     };
 
-    // The caret's x: the left edge of the tab that would be pushed rightwards,
-    // or the right edge of the last one when the boundary is past the end.
-    let x = ctx.geometry.tab_rect(addr.tab(gap)).map_or_else(
-        || {
-            ctx.geometry
-                .tabs_of(addr)
-                .last()
-                .map_or(strip.left(), |(_, r)| r.right())
-        },
-        |r| r.left(),
-    );
-    // Held inside the strip by its own half-width. The outermost boundaries sit
-    // on the strip's edges, and a caret centred on one of those is half clipped
-    // away — the two boundaries in every strip that would be drawn at half the
-    // weight of the rest, exactly where the operator is least able to tell a
-    // thin marker from none. `hi` is floored at `lo` because a strip narrower
-    // than the caret would otherwise invert the range and panic.
-    let half = CARET_PTS / 2.0;
-    let lo = strip.left() + half;
-    let hi = (strip.right() - half).max(lo);
-    let x = x.clamp(lo, hi);
-    let caret = Rect::from_min_max(
-        egui::pos2(x - half, strip.top()),
-        egui::pos2(x + half, strip.bottom()),
-    );
+    let caret = caret_rect(&ctx.geometry, addr, gap, strip);
     // Dimmed at the two boundaries against the dragged tab's own edges. They
     // are legal drops, so refusing them would be a lie; they permute nothing,
     // so a full-strength caret promises a move that will not happen. The page
@@ -193,6 +191,56 @@ pub(super) fn preview(ui: &mut egui::Ui, ctx: &mut Ctx<'_>, addr: StackAddr, str
     ctx.tab_drag = Some(landing);
 }
 
+/// **The caret marking one boundary of one strip.**
+///
+/// Shared by the reorder preview and by [`super::overlay`], which draws the
+/// same marker when a drag is carried over a *different* stack's strip. One
+/// definition, because two spellings of "where is boundary `gap`" disagree by
+/// whatever either of them gets wrong.
+pub(super) fn caret_rect(
+    geometry: &super::geometry::DockGeometry,
+    addr: StackAddr,
+    gap: usize,
+    strip: Rect,
+) -> Rect {
+    // The caret's x: the left edge of the tab that would be pushed rightwards,
+    // or the right edge of the last one when the boundary is past the end.
+    let x = geometry.tab_rect(addr.tab(gap)).map_or_else(
+        || {
+            geometry
+                .tabs_of(addr)
+                .last()
+                .map_or(strip.left(), |(_, r)| r.right())
+        },
+        |r| r.left(),
+    );
+    // Held inside the strip by its own half-width. The outermost boundaries sit
+    // on the strip's edges, and a caret centred on one of those is half clipped
+    // away — the two boundaries in every strip that would be drawn at half the
+    // weight of the rest, exactly where the operator is least able to tell a
+    // thin marker from none. `hi` is floored at `lo` because a strip narrower
+    // than the caret would otherwise invert the range and panic.
+    let half = CARET_PTS / 2.0;
+    let lo = strip.left() + half;
+    let hi = (strip.right() - half).max(lo);
+    let x = x.clamp(lo, hi);
+    Rect::from_min_max(
+        egui::pos2(x - half, strip.top()),
+        egui::pos2(x + half, strip.bottom()),
+    )
+}
+
+/// **The panel a drag is carrying**, or `None` when none is in flight.
+///
+/// [`super::overlay`] needs the panel to replay a candidate drop against the
+/// layout. Reached through this rather than through the memory key directly,
+/// because where a drag is kept is this module's business — see the header.
+pub(super) fn in_flight(ui: &egui::Ui, ctx: &Ctx<'_>) -> Option<PanelId> {
+    ui.ctx()
+        .data(|d| d.get_temp::<TabDrag>(key(ctx)))
+        .map(|d| d.panel)
+}
+
 /// **End a drag that the operator has released**, wherever they released it.
 ///
 /// Called once, after both sides have drawn. Clearing the memory is
@@ -215,19 +263,32 @@ pub(super) fn settle(ui: &egui::Ui, ctx: &mut Ctx<'_>) {
     // `TabDrag` would be a drag of the empty panel from column zero — a value
     // that means something and is never true.
     ui.ctx().data_mut(|d| d.remove::<TabDrag>(id));
-    let Some(preview) = ctx.tab_drag.take() else {
+    // The strip's own caret wins where both are live, which cannot happen:
+    // [`preview`] runs only over the strip the drag began in, and
+    // [`super::overlay`] stands down on any frame that published. Reading them
+    // in a stated order says which affordance is in charge rather than leaving
+    // it to whichever field happens to be cleared first.
+    if let Some(preview) = ctx.tab_drag.take() {
+        ctx.drop_preview = None;
+        ctx.intents.push(Intent::ReorderTab {
+            stack: StackAddr::from(preview.from),
+            from: preview.from.tab,
+            gap: preview.gap,
+        });
+        return;
+    }
+    let Some(drop) = ctx.drop_preview.take() else {
         return;
     };
-    ctx.intents.push(Intent::ReorderTab {
-        stack: StackAddr::from(preview.from),
-        from: preview.from.tab,
-        gap: preview.gap,
+    ctx.intents.push(Intent::MovePanel {
+        panel: drop.panel,
+        target: drop.landing.target,
     });
 }
 
 /// How thick the insertion caret is drawn — the weight the document strip and
 /// the page rail already use, so the three read as one affordance.
-const CARET_PTS: f32 = 2.0;
+pub(super) const CARET_PTS: f32 = 2.0;
 
 /// How far above or below its tab strip a drag may wander and still be a
 /// reorder of that strip — one strip height. See [`preview`].
@@ -236,4 +297,4 @@ const REORDER_SLACK_PTS: f32 = super::plan::TAB_BAR_HEIGHT;
 /// How far the caret's ink is knocked back at a boundary that changes nothing —
 /// the value the page rail, the page grid, the bookmark tree and the field list
 /// already use, so the five read as one affordance.
-const CARET_DIMMED: f32 = 0.35;
+pub(super) const CARET_DIMMED: f32 = 0.35;

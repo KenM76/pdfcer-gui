@@ -60,6 +60,21 @@ pub enum DropZone {
 }
 
 impl DropZone {
+    /// A stable short name, for a published region and for a diagnostic line.
+    ///
+    /// Lower case and never translated: it is an identifier a harness matches
+    /// on, not a label an operator reads.
+    #[must_use]
+    pub const fn key(self) -> &'static str {
+        match self {
+            Self::Centre => "centre", // ui-text-exempt: a region key, never displayed
+            Self::Left => "left",     // ui-text-exempt: a region key, never displayed
+            Self::Right => "right",   // ui-text-exempt: a region key, never displayed
+            Self::Top => "top",       // ui-text-exempt: a region key, never displayed
+            Self::Bottom => "bottom", // ui-text-exempt: a region key, never displayed
+        }
+    }
+
     /// Every zone, in the order an overlay should draw them: the centre first,
     /// so an edge's ink wins where they meet at a rounded corner.
     pub const ALL: [Self; 5] = [
@@ -232,7 +247,12 @@ impl DockLayout {
 /// The strip spans the compartment's full width along its top, so subtracting
 /// it leaves no band that belongs to neither. A stack with no strip recorded —
 /// too narrow to draw one — is divided whole.
-fn body_of(geometry: &DockGeometry, addr: StackAddr) -> Option<Rect> {
+///
+/// Visible to [`super::overlay`] because the rectangle the overlay fills must
+/// be the rectangle the resolution divided. Two spellings of "the compartment
+/// less its strip" would put the zones the operator sees a strip's height away
+/// from the zones the release is read against.
+pub(super) fn body_of(geometry: &DockGeometry, addr: StackAddr) -> Option<Rect> {
     let stack = geometry.stack_rect(addr)?;
     let Some(strip) = geometry.strip_rect(addr) else {
         return Some(stack);

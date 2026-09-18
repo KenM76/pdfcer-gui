@@ -63,7 +63,7 @@ fonts"*, so **every galley in its tests measures 0 × 0** and a test written wit
 fonts.
 
 Related: [[feedback_a_measurement_of_the_wrong_surface_looks_exactly_like_a_broken_one]],
-[[feedback_a_harness_with_a_bad_input_produces_defects_that_do_not_exist]] —
+[[feedback_a_measurement_of_the_wrong_surface_looks_exactly_like_a_broken_one]] —
 this is the same lesson in the driven harness rather than in a gate, and the
 2026-09-05 sweep is its largest single instance.
 

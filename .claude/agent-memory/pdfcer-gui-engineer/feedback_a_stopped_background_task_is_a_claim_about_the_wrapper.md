@@ -62,4 +62,4 @@ earlier entry's *"no completion notification is coming"* is a property of that
 
 Related: [[a-runners-sentinel-is-a-claim-about-the-runner]],
 [[a-launch-failure-blamed-on-a-resource-count-needs-a-control-binary]],
-[[a-harness-with-a-bad-input-produces-defects-that-do-not-exist]].
+[[a-measurement-of-the-wrong-surface-looks-exactly-like-a-broken-one]].

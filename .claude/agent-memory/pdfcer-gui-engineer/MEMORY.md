@@ -16,12 +16,12 @@
 - [Smoke-launch offscreen when the desktop is blocked](feedback_smoke_launch_offscreen_when_the_desktop_is_blocked.md) — `PDFCER_DIAG_VIEWPORT` draws without the pointer.
 - [Requests live in a file, not a conversation](feedback_operator_requests_live_in_a_file_not_a_conversation.md) — every ask goes in OPERATOR_REQUESTS.md at once; only Ken closes a row.
 - [A guard that stops repetition does not stop creep](feedback_a_guard_that_stops_repetition_does_not_stop_creep.md) — a measurement fed into a size needs a direction bound and a floor.
-- [A measurement of the wrong surface looks like a broken one](feedback_a_measurement_of_the_wrong_surface_looks_exactly_like_a_broken_one.md) — ask what a failing check SAMPLED first.
+- [A measurement of the wrong surface looks like a broken one](feedback_a_measurement_of_the_wrong_surface_looks_exactly_like_a_broken_one.md) — ask what a failing check SAMPLED, and what it was ASKED to do.
 - [Disk AND RAM are tight — and the biggest item is not in `target/`](project_disk_is_tight_and_target_grows_unbounded.md) — one engine source tree per pin bump under `~/.cargo`.
 - [A backlog row is a record, not evidence](feedback_a_backlog_row_is_a_record_not_evidence.md) — verify absence claims against source.
 - [A fixture defeating a default does not defeat a starting state](feedback_a_fixture_that_defeats_a_default_does_not_defeat_a_starting_state.md) - plant it.
 - [A SKIP is not red, so a check can stop running unnoticed](feedback_a_skip_is_not_red_so_a_check_can_stop_running_unnoticed.md) — diff the SKIP set.
-- [A check that cannot fail is not evidence](feedback_a_check_that_cannot_fail_is_not_evidence.md) — falsify before quoting green; a self-excusing SKIP is inert.
+- [A check that cannot fail is not evidence](feedback_a_check_that_cannot_fail_is_not_evidence.md) — falsify before quoting green; a self-excusing SKIP is inert; an early baseline asserts only that the total grew.
 - [Ken's sentences are reports, not measurements](feedback_kens_sentences_are_reports_not_measurements.md) — "up to 800%" named an old setting, not a threshold; measure it.
 - [When a measurement runs out, read a better instrument](feedback_when_a_measurement_runs_out_read_a_better_instrument.md) — an extreme-end failure is usually the harness's resolution.
 - [A measured limit belongs to a revision, not a design](feedback_a_measured_limit_belongs_to_a_revision_not_a_design.md) — date it and name the commit.
@@ -48,7 +48,6 @@
 - [A proxy condition survives one correction](feedback_a_proxy_condition_survives_one_correction.md) — corrected once for a stand-in, probably still one; ask what it READS.
 - [A right value in the wrong role passes every gate](feedback_a_correctly_sourced_value_used_for_the_wrong_role_passes_every_gate.md) — the gate forbids invented values, not wrong roles.
 - [A trace-grepping check passes on a build that crashed](feedback_a_trace_grepping_check_passes_on_a_build_that_crashed.md) — the oracle line is written before the panic.
-- [A harness with a bad input invents defects](feedback_a_harness_with_a_bad_input_produces_defects_that_do_not_exist.md) — one wrong page index made six reports and four filed defects.
 - [Parallelism is the default, and it needs an ownership map](feedback_parallelism_is_the_default_and_it_needs_an_ownership_map.md) — nine tracks in one repo.
 - [Never ask — just add the feature](feedback_never_ask_just_add_the_feature.md) — placement, wording and scope are yours.
 - [A commit message can describe work that never landed](feedback_a_commit_message_can_describe_work_that_never_landed.md) — a `;` chain let a failed edit look committed.
@@ -56,7 +55,6 @@
 - [A driven failure is a claim about the check too](feedback_a_driven_failure_is_a_claim_about_the_check_too.md) — the first full sweep gave 7 harness defects.
 - [A window over a thing takes that thing's gestures](feedback_a_window_over_the_thing_it_describes_takes_that_things_gestures.md) — `constrain_to` slides a pop-up onto its anchor.
 - [A uniform failure at every rung of a sweep is about the probe](feedback_a_uniform_failure_at_every_rung_of_a_sweep_is_about_the_probe.md) — the baseline rung is the control.
-- [An absence assertion is as good as its baseline's date](feedback_an_absence_assertion_is_only_as_good_as_when_its_baseline_was_taken.md) — green against a PLANTED defect, emitted first.
 - [An absence reported by a check is a panel gone quiet](feedback_an_absence_reported_by_a_check_is_usually_the_panel_going_quiet.md) — a dock draws only its active tab.
 - [Differ in two ways, and the measured one is not it](feedback_when_two_things_differ_in_two_ways_the_measured_one_is_not_the_cause.md) — I blamed the difference that had a report column.
 - [A gate keyed on a name is discharged by prose](feedback_a_gate_keyed_on_a_name_is_discharged_by_prose.md) — 25 verbs scored "consumed" on doc comments.
@@ -128,7 +126,7 @@
 - [An injected file is a dated snapshot](feedback_an_injected_file_is_a_dated_snapshot.md) — 13 of 26 anchors from the in-context MEMORY.md were not on disk.
 - [A rewrite of a cell deletes what only that cell held](feedback_a_rewrite_of_a_cell_deletes_what_only_that_cell_held.md) - it held the only copy.
 - [A gesture named without its outcome](feedback_a_gesture_without_its_outcome.md) — drag copies, Shift moves; the header was wrong 4h44m later.
-- [A falsification can lie in both directions](feedback_a_falsification_can_lie_in_both_directions.md) — red proves the check not its parts; green may mean a rotted anchor planted nothing.
+- [A falsification can lie in both directions](feedback_a_falsification_can_lie_in_both_directions.md) — red proves the check, not its parts; a green may mean nothing was planted, or a scorer read the wrong word.
 - [An index crossing a boundary is numbered in the callee's list](feedback_an_index_handed_across_a_boundary_must_be_numbered_in_the_callees_own_list.md) — 106/144 vs 49/70.
 - [A doc arguing for a guard claims the guard exists](feedback_a_doc_comment_that_argues_for_a_guard_is_a_claim_the_guard_exists.md) — the gate went; its defence survived in five files.
 - [A capability greyed everywhere is one selection defect](feedback_a_capability_greyed_everywhere_is_one_selection_defect.md) — three surfaces, one predicate.
@@ -139,5 +137,4 @@
 - [A remembered "unset" names one variable, not its neighbour](feedback_env_var_neighbour.md) - $TMP was set; I derived a root path and reached for rm -f.
 - [A doc-range edit eats the attribute under it](feedback_doc_edit_eats_the_attribute.md) — a #[test] vanished; the count is the only witness.
 - [A blocker can be inherited from an unlinked dependency](feedback_a_blocker_can_be_inherited_from_a_dependency_that_is_not_linked.md) — four docs blocked a feature on a crate not in the lock.
-- [A plant harness keyed on "error:" calls every working plant a broken build](feedback_a_plant_harness_keyed_on_error_calls_every_working_plant_a_broken_build.md) — a red suite prints `error: test failed`; key on `could not compile`.
 - [A preview must be replayed, not read off the target's current rect](feedback_a_preview_must_be_replayed_not_read_off_the_targets_current_rect.md) — and the calibration test is blind to an error both sides share.

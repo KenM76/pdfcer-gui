@@ -49,5 +49,5 @@ and a gate reporting "clean" about a directory it never opened. Same family —
   object 8 twice.
 
 Related: [[feedback_a_check_that_cannot_fail_is_not_evidence]],
-[[feedback_an_absence_assertion_is_only_as_good_as_when_its_baseline_was_taken]],
+[[feedback_a_check_that_cannot_fail_is_not_evidence]],
 [[feedback_an_assertion_both_outcomes_satisfy_is_not_a_measurement_of_which_one_shipped]].

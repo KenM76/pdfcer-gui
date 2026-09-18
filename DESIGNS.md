@@ -1518,12 +1518,11 @@ Each step ships on its own and leaves the program usable.
 | **0** | Retain the dock's geometry — address to rect for every side, column, stack, tab strip and tab, built during the draw it already performs and kept for the next frame, with a position-to-address query at each level. | **Built** | Nothing after it can be written without it, and it is also the honest answer to `dock::report`'s stringly names. |
 | **1** | G1: reorder within a strip, with the insertion caret the page rail and the document strip already use, in its full and dimmed pair. | **Built** | The smallest useful gesture, and the recipe is proven twice in this repository. |
 | **2** | The drop grammar and its fuzz, headless: take, insert, split, new column, normalize, invariants. | **Built** | A pure value, testable with no window. It comes before the overlay so the overlay has something true to preview. |
-| **3** | G2: the pointer-to-`DropTarget` resolution over the retained geometry, then the compass overlay drawing it and the cross-compartment drop previewed by replay. | **Resolution and replay built** | The capability the register calls (d). Step 2 is what a replay preview applies to its clone, so this step has something true to show. |
+| **3** | G2: the pointer-to-`DropTarget` resolution over the retained geometry, then the compass overlay drawing it and the cross-compartment drop previewed by replay. | **Built** | The capability the register calls (d). Step 2 is what a replay preview applies to its clone, so this step has something true to show. |
 | **4** | G3: a drag that leaves the dock tears out, homed at its origin. |  | Sits on the float model already built and changes nothing underneath. |
 | **5** | G4: drag a float back over the dock and drop it where the pointer says. |  | The only step needing the desktop-pixel cursor, and the only one with a platform fallback — without a global cursor position the header drag simply moves the window, and the command route still docks it. |
 
-**What *Resolution and replay built* means for step 3.** Two of the three parts
-are in.
+**What step 3 is made of.** Three parts, all in.
 
 `dock::compass` answers *which `DropTarget` is under this point* over the
 retained geometry, and returns the quadrilateral each of its five zones is hit
@@ -1539,8 +1538,25 @@ own rect is read from the retained geometry rather than recomputed, because
 `egui`'s panel reservation less the banner and the rail settles it and no drop
 this grammar can express moves it.
 
-What is not built is the overlay itself — the painted quads, and the highlight
-over the rect the replay returns. It needs the screen to be worth anything.
+`dock::overlay` paints it: the five quads over the hovered compartment's body at
+a resting wash, the armed one stronger, and an outline around the rect the replay
+returns — dimmed, not withheld, at a release that would permute nothing, for the
+reason the caret is. It runs once from `Dock::show` after both sides have drawn,
+because the resolution needs the whole geometry and a `Ctx::geometry` filled in
+draw order cannot answer about a compartment drawn later; it paints to a
+foreground layer rather than into the hosting `Ui`, which by then is under every
+panel body. It stands down whenever `drag::preview` published, which is the
+ownership split between the two affordances.
+
+**The one product defect this step exposed.** Every tab strip sits at the same y,
+so a drag carried *sideways* onto a different strip stayed inside the reorder's y
+band: the origin strip went on owning the gesture, drew a caret hundreds of
+points from the pointer, and the overlay stood down for it, so the drop the
+operator was reaching for was never offered. `drag::preview` now bounds x by the
+strip exactly, with no slack — x is the axis the boundary is resolved from, and
+`gap_in` answers for every x on the screen. The guard cannot be phrased as *"am I
+over a different compartment"* for the draw-order reason above; both halves are
+in `D:/dev/rag/egui/`.
 
 ### Traps this will hit, recorded before it is built
 

@@ -65,6 +65,21 @@ pub struct DockFrameReport {
     /// half, because a hairline between two near-identical labels is precise
     /// and cannot be asserted on.
     pub tab_drag: Option<super::drag::TabDragPreview>,
+    /// **The panel the operator dragged into a different compartment this
+    /// frame**, if the release moved it.
+    ///
+    /// Distinct from [`Self::reordered`], which is a permutation inside one
+    /// stack. The two are the same gesture and different outcomes, and an
+    /// application that told the operator "moved" for a reorder would be
+    /// reporting a structural change that did not happen.
+    pub moved: Option<PanelId>,
+    /// **A drag held over a compartment, and where a release would put it.**
+    ///
+    /// Set for every frame the drop compass is painted and `None` on the frame
+    /// the release lands — [`Self::moved`] is the release. The checkable half
+    /// of an affordance whose visible form is a wash of colour, for
+    /// [`Self::tab_drag`]'s reason.
+    pub drop_preview: Option<super::overlay::DropPreview>,
     /// The panel the operator floated this frame, if any.
     pub floated: Option<PanelId>,
     /// The panel the operator docked back this frame, if any.

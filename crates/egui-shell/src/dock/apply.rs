@@ -109,6 +109,14 @@ pub(super) fn apply(
                         .cloned();
                 }
             }
+            // One line, for the reason the float arms are: the whole drop
+            // grammar lives in `drop.rs`, where it is tested with no window
+            // open, and this function stays a router.
+            Intent::MovePanel { panel, target } => {
+                if layout.move_panel(panel, *target) {
+                    report.moved = Some(panel.clone());
+                }
+            }
             Intent::DragSide { side, delta } => {
                 let s = layout.side_mut(*side);
                 s.width_pts = (s.width_pts + delta).max(plan::MIN_SIDE_WIDTH);
