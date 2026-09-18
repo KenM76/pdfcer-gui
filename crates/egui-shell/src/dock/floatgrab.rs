@@ -37,6 +37,14 @@
 //! [`carry_to`] computes is an **absolute target** — put the window where the
 //! grabbed point lands under the cursor — which is self-cancelling instead:
 //! once the window is where it should be, the offset it is driven by is zero.
+//!
+//! ⚠ That is necessary and not sufficient. A pass that runs immediately after
+//! a commanded move reads a pointer measured across that move, and it reports
+//! the residual as the exact negative of the one just acted on — so an
+//! otherwise correct absolute target still sends the window back where it came
+//! from, every step, for the whole gesture. [`Settling`] is what declines that
+//! one pass. Measured on Windows 11 by driving the binary; see
+//! `D:/dev/rag/egui/a_window_moved_under_the_cursor_reports_one_pass_of_unreconciled_pointer.md`.
 
 use egui::{Pos2, ViewportClass, ViewportId};
 
@@ -137,14 +145,20 @@ pub(super) fn carry(
     // coordinates, and never re-based — which is what makes it the fixed end
     // of the arithmetic while `local` is re-reported against a moving origin.
     if dragging {
+        let mut settling = Settling::of(ctx, panel);
+        if header.drag_started() {
+            settling.reset();
+        }
         let grabbed = ctx.input(|i| i.pointer.press_origin());
         let outer = ctx.input(|i| i.viewport().outer_rect);
         if let (Some(grabbed), Some(outer)) = (grabbed, outer)
             && local != grabbed
+            && settling.may_move()
         {
             ctx.send_viewport_cmd(egui::ViewportCommand::OuterPosition(carry_to(
                 outer.min, grabbed, local,
             )));
+            settling.moved();
         }
     }
 
@@ -166,11 +180,86 @@ pub(super) fn carry(
     // all, because nothing asked it to repaint.
     ctx.request_repaint_of(ViewportId::ROOT);
 
+    if released {
+        Settling::of(ctx, panel).reset();
+    }
+
     Some(FloatDrag {
         panel: panel.clone(),
         pointer: window_point(child_origin, app_origin, local),
         released,
     })
+}
+
+/// **Whether the window may be moved on this pass, or has just been moved and
+/// is not yet reconciled with the pointer.**
+///
+/// One flag, kept in [`egui::Memory`]'s temporary data per panel, holding the
+/// single fact this gesture needs from the previous pass: did it command a
+/// move?
+///
+/// ★ **Why a pass has to be declined at all.** The residual that drives
+/// [`carry_to`] is the pointer's position minus the point it grabbed, both in
+/// the window's own coordinates. Move the window and both ends of that
+/// subtraction change — the grab because the window took it along, the pointer
+/// because the platform re-reports it against the new origin — and the pass
+/// that runs before those two readings agree reports a residual equal and
+/// opposite to the one just acted on. Acting on it sends the window straight
+/// back. Driving the real binary shows the full cycle in three passes: send
+/// +14, send −14, settle at 0, with the window visibly snapping back and forth
+/// once per pointer step for the length of the gesture.
+///
+/// ★ **Why one pass and not a settled-residual test.** "Move only when the
+/// last residual was zero" reads better and deadlocks: a platform that
+/// declines the move — a window clamped to a monitor edge, a compositor that
+/// places windows itself — leaves the residual non-zero forever and the window
+/// never moves again. Skipping exactly one pass retries on the pass after,
+/// so a command that did not take is simply re-sent.
+///
+/// The cost is that the window moves on at most every other pass. At frame
+/// rates where a carry is usable that is not a rate the eye resolves, and the
+/// alternative it buys out of is a window that shakes.
+struct Settling {
+    id: egui::Id,
+    ctx: egui::Context,
+    just_moved: bool,
+}
+
+impl Settling {
+    fn of(ctx: &egui::Context, panel: &PanelId) -> Self {
+        let id = egui::Id::new(("egui-shell::floatgrab::settling", panel));
+        let just_moved = ctx.data(|d| d.get_temp::<bool>(id).unwrap_or(false));
+        Self {
+            id,
+            ctx: ctx.clone(),
+            just_moved,
+        }
+    }
+
+    /// **Consumes the flag.** A declined pass clears it, so the pass after it
+    /// is free whether or not the platform honoured the command — which is
+    /// what keeps a refused move a stutter rather than a freeze.
+    fn may_move(&mut self) -> bool {
+        let was = self.just_moved;
+        if was {
+            self.set(false);
+        }
+        !was
+    }
+
+    fn moved(&mut self) {
+        self.set(true);
+    }
+
+    fn reset(&mut self) {
+        self.set(false);
+    }
+
+    fn set(&mut self, value: bool) {
+        self.just_moved = value;
+        let id = self.id;
+        self.ctx.data_mut(|d| d.insert_temp(id, value));
+    }
 }
 
 #[cfg(test)]
@@ -246,6 +335,82 @@ mod tests {
             moved_to,
             "an arrived window must be commanded nowhere"
         );
+    }
+
+    /// **The measured three-pass cycle, replayed, with the gate in place.**
+    ///
+    /// Each row is `(outer, local)` as one pass reported them while the
+    /// pointer was walked down and right in steps of 14 — lifted from a driven
+    /// run, and containing the reversal that makes the ungated form judder:
+    /// pass 2 reports the residual as `−14` on a pointer that only ever moved
+    /// `+14`. With [`Settling`] declining that pass the window only ever
+    /// advances.
+    ///
+    /// ★ The assertion is monotonicity, not a list of positions. A position
+    /// list would be satisfied by an implementation that moved backwards and
+    /// forwards through the same values, which is the defect.
+    #[test]
+    fn the_pass_after_a_move_is_declined_so_the_window_never_reverses() {
+        let grabbed = Pos2::new(160.0, 21.0);
+        #[rustfmt::skip]
+        let passes = [
+            (Pos2::new(270.0, 270.0), Pos2::new(174.0, 35.0)),
+            (Pos2::new(284.0, 284.0), Pos2::new(146.0,  7.0)),
+            (Pos2::new(284.0, 284.0), Pos2::new(160.0, 21.0)),
+            (Pos2::new(284.0, 284.0), Pos2::new(174.0, 35.0)),
+            (Pos2::new(298.0, 298.0), Pos2::new(146.0,  7.0)),
+            (Pos2::new(298.0, 298.0), Pos2::new(160.0, 21.0)),
+        ];
+
+        let ctx = egui::Context::default();
+        let panel = PanelId::new("carried");
+        let mut settling = Settling::of(&ctx, &panel);
+        settling.reset();
+
+        let mut sent = Vec::new();
+        let mut at = passes[0].0;
+        for (outer, local) in passes {
+            // The window is wherever the last honoured command put it; the
+            // replayed `outer` is what the pass reported having read.
+            let _ = outer;
+            if local != grabbed && Settling::of(&ctx, &panel).may_move() {
+                let target = carry_to(at, grabbed, local);
+                sent.push(target);
+                at = target;
+                Settling::of(&ctx, &panel).moved();
+            }
+        }
+
+        assert_eq!(sent.len(), 2, "one move per pointer step, not one per pass");
+        for pair in sent.windows(2) {
+            assert!(
+                pair[1].x > pair[0].x && pair[1].y > pair[0].y,
+                "the window reversed: {:?} then {:?}",
+                pair[0],
+                pair[1]
+            );
+        }
+    }
+
+    /// **A command the platform declined is re-sent, not waited on forever.**
+    ///
+    /// The flag is cleared by the pass it declines, so a window that did not
+    /// move — clamped to a monitor edge, placed by a compositor that does not
+    /// take instruction — gets asked again on the pass after. The failure mode
+    /// this rules out is a carry that stops moving the window entirely and
+    /// gives the operator no way to tell it apart from a hang.
+    #[test]
+    fn a_refused_move_is_retried_on_the_pass_after_the_declined_one() {
+        let ctx = egui::Context::default();
+        let panel = PanelId::new("clamped");
+        let mut allowed = 0;
+        for _ in 0..6 {
+            if Settling::of(&ctx, &panel).may_move() {
+                allowed += 1;
+                Settling::of(&ctx, &panel).moved();
+            }
+        }
+        assert_eq!(allowed, 3, "every other pass, indefinitely");
     }
 
     #[test]
