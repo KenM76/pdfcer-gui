@@ -141,6 +141,16 @@ pub(crate) const DRAG_STEPS: u32 = 8;
 /// PDF page at all.
 const DRAG_STEP_SETTLE: Duration = Duration::from_millis(25);
 
+/// How long [`Driver::carry`] rests on its destination before letting go.
+///
+/// Much longer than [`DRAG_STEP_SETTLE`] because the pointer of a carry crosses
+/// two viewports before it becomes a drop offer: it is sensed in the float
+/// window's pass, reported to the dock, and resolved into a zone by the *next*
+/// frame in the main window. Three frames is the floor; this is an order of
+/// magnitude over it, because the frame that has to run is one that rasterizes
+/// a CAD sheet behind a compass.
+const CARRY_SETTLE: Duration = Duration::from_millis(400);
+
 /// The OS-level input driver.
 ///
 /// Owns the operator's pointer position for its lifetime and returns it on
@@ -424,6 +434,64 @@ impl Driver {
             sys::set_cursor_position(lerp(a.x(), b.x()), lerp(a.y(), b.y()))?;
             std::thread::sleep(DRAG_STEP_SETTLE);
         }
+        Ok(())
+    }
+
+    /// **Carry a floating window's header from `from` to `to` and let go** —
+    /// the gesture that drops a torn-out panel back into the dock.
+    ///
+    /// # It is [`Self::drag`] with two deliberate differences
+    ///
+    /// **1. It raises the window the gesture *begins* in, not the main one.**
+    /// [`Self::drag`] opens with [`Self::raise_and_confirm`], which raises the
+    /// application's main window. A carry starts on a float window's header
+    /// strip, and raising the main window over it would put the press
+    /// underneath whatever it just covered. [`Self::raise_and_confirm_at`]
+    /// raises whichever of the process's windows owns the point.
+    ///
+    /// Both endpoints still go through [`Self::confirm_uncovered`] unchanged:
+    /// it accepts *any* same-process window, so a `from` inside the float and a
+    /// `to` inside the main window both pass, while an unrelated application
+    /// lying across either one still fails the check rather than the feature.
+    ///
+    /// **2. It rests on `to` before releasing.** The dock does not read this
+    /// pointer where it lands. A float is drawn in a child viewport whose pass
+    /// runs after the main window's, so the pointer is sensed in the child,
+    /// reported through `DockState::set_float_drag`, and consumed by the *next*
+    /// frame's `Dock::show` — which is the frame that resolves a zone and
+    /// publishes the offer. Releasing on the frame the pointer arrives releases
+    /// before any offer exists, and lands nothing at all.
+    ///
+    /// The rest is [`Self::drag_via`]'s dwell trick and for the same reason: a
+    /// stationary pointer generates no input, so the settle is a run of
+    /// one-pixel nudges rather than one sleep. A harness that held perfectly
+    /// still would be relying on the application asking for repaints it is not
+    /// obliged to ask for.
+    ///
+    /// ★ One pixel is safe against a zone boundary because every caller aims at
+    /// a zone *centre*; a verb that aimed at an edge would have to say so.
+    ///
+    /// # Errors
+    ///
+    /// As [`Self::drag`], plus the raise failing for the window owning `from`.
+    pub fn carry(&self, from: ScreenPoint, to: ScreenPoint) -> Result<()> {
+        self.raise_and_confirm_at(from)?;
+        self.confirm_uncovered(from)?;
+        self.confirm_uncovered(to)?;
+        sys::set_cursor_position(from.x(), from.y())?;
+        std::thread::sleep(MOVE_SETTLE);
+        sys::mouse_button(true);
+        std::thread::sleep(CLICK_HOLD);
+        self.walk(from, to)?;
+        let ticks = 8;
+        let per = CARRY_SETTLE / ticks;
+        for i in 0..ticks {
+            let nudge = i32::from(i % 2 == 0);
+            sys::set_cursor_position(to.x() + nudge, to.y())?;
+            std::thread::sleep(per);
+        }
+        sys::mouse_button(false);
+        std::thread::sleep(MOVE_SETTLE);
         Ok(())
     }
 

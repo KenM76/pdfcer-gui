@@ -92,6 +92,13 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // living in a comment cannot go red when it expires. Where such a claim
         // can be made an assertion instead, make it one.
         Box::new(panel_float::PanelsFloatCloseAndDock),
+        // The pointer-driven half of the same capability, immediately after
+        // the command-driven one: `panel_float` says the window opens, draws
+        // and can be sent home by a menu row; this says it can be picked up
+        // and dropped somewhere the menu row cannot reach. A failure in the
+        // first explains a failure in the second, and reading them the other
+        // way round does not work.
+        Box::new(panel_carry::PanelCarriedHomeLandsWhereItWasAimed),
         Box::new(layers_search::LayersSearchNarrowsTheList),
         // The first *driving* check, and it goes first among them on
         // purpose: it is the cheapest — two clicks on one always-enabled

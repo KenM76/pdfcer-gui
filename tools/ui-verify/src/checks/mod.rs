@@ -717,6 +717,7 @@ pub mod pages_drag;
 /// **A panel tears out into a real OS window, comes back, and closes** —
 /// O126. Its header carries the two-line oracle and why one line is not
 /// enough.
+pub mod panel_carry;
 pub mod panel_float;
 
 pub mod preset_group_reachable;

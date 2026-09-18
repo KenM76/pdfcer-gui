@@ -384,6 +384,30 @@ impl PdfcerApp {
         // not.
         let mut header_menu = |tab: &mut egui_shell::dock::TabMenu<'_>| {
             let panel = tab.panel().clone();
+            // **Where the header strip is**, published from the only place in
+            // the program that can answer.
+            //
+            // The strip is the grab handle for carrying a float window back
+            // over the dock, so a driven check has to aim at it — and nothing
+            // else knows where it is. `egui_shell::dock::floatwin` derives it
+            // from `BODY_MARGIN_PTS` and `split_header` and has no diagnostic
+            // channel to say so (R7); a harness that re-derived it from those
+            // two constants would be encoding the shell's geometry in the
+            // instrument, and would go on aiming confidently at the old place
+            // the day either constant moved.
+            //
+            // The scope is entered here as well as in the body closure because
+            // this runs *before* it: an untagged region carries the
+            // application window's origin, and a click converted against the
+            // wrong origin lands somewhere plausible and wrong — the failure
+            // `crate::diag::viewport_inner` exists to prevent.
+            if crate::diag::enabled() {
+                let _regions = crate::diag::ViewportScope::enter(
+                    egui_shell::dock::floatwin::viewport_id(&panel),
+                );
+                // ui-text-exempt: diagnostic region name, never displayed.
+                crate::diag::ui_rect(&format!("float.header.{panel}"), tab.response().rect);
+            }
             for h in host.iter() {
                 let conditions = h.with_conditions(&[
                     (crate::shell::menus::PANEL_DOCKED, false),
