@@ -1451,9 +1451,16 @@ Three things are missing, and none of them is the layout structure:
      captured the pointer, so the child's `egui` context reports positions
      while the button is held, including positions outside its own bounds. The
      conversion to the application window's points is then arithmetic on two
-     viewport `inner_rect`s, which `egui` reports in desktop points in either
-     context — no platform crate, no fallback. But dragging a strip inside a
-     window is not by itself the conventional gesture: the window has to follow
+     viewport `inner_rect`s — the **content** rect, which is the origin a
+     viewport's own coordinates are relative to, and which `ViewportInfo`
+     reports in monitor space at ui-point scale in either context. **Inner on
+     both sides**: `outer_rect` is the same rect plus decoration chrome, and
+     using it here injects a title bar's worth of constant error. That route
+     needs no platform crate, but it is not fallback-free either: both rects are
+     `Option` and are `None` wherever a window's position cannot be obtained, so
+     a platform that reports neither degrades to the position-blind command
+     route. And dragging a strip inside a window is not by itself the
+     conventional gesture: the window has to follow
      the pointer, and making it follow means asserting its position every frame,
      which is precisely what `floatwin`'s header warns drags a window back
      toward where the program thinks it is.
