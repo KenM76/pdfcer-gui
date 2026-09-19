@@ -112,6 +112,38 @@ exactly that. **The canvas needs the same treatment and does not have it.**
 
 # OPEN
 
+## O217 — **FILED** — redaction must address the same chunk unit, by the same gestures
+
+> *"Redaction would be nice to have work the same way on them as well."*
+
+**"The same way" is not a courtesy phrase; it is the whole requirement.**
+Everything O215 asks for the move gesture is asked here for redaction, on the
+same units:
+
+- clicking a block outlines the chunks inside it;
+- clicking a chunk marks **that chunk**, not the whole block and not the whole
+  inferred line;
+- shift-click, ctrl-click and a rubber-band mark several at once;
+- what will be removed is visible before it is committed.
+
+**⚠ The trap this row exists to prevent: redaction is the one verb where a
+selection that takes too much is unrecoverable.** Every other complaint in
+O215 costs an undo. If the chunk unit is wrong here — if marking the quantity
+cell of a bill-of-materials row silently takes the part number and the
+description with it because they share a baseline — the operator finds out
+after the file is written. So this row is not "apply the O215 work to
+redaction as well"; it is **redaction may not ship the old unit once the new
+one exists**, and the driven check is owed on his own drawing.
+
+**★ It is also the reason O215's ask 3 — boxes around the parts — is not
+cosmetic.** A preview of *what is about to be destroyed* is the only defence
+against an inference the operator cannot see, and that is squarely rule R8b:
+render normally, report off-canvas, and never let an inference act silently.
+
+**Nothing on this row is built.** Status stays **FILED** until a driven check
+marks one chunk of a table row on `SW41177.pdf` and asserts its neighbours
+survive.
+
 ## O216 — **FILED** — emptying a text chunk does not save, and a selected chunk must be deletable
 
 > *"Also I forgot that those chunks of text when we edit, if I delete all of
