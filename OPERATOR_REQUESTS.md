@@ -151,7 +151,7 @@ the line's left edge, which is the only evidence R1 accepts.
 
 His file is `C:/Users/Ken/OneDrive/pdfTests/SW41177.pdf`; work on a copy.
 
-## O214 — ◑ **RE-REPORTED BY HIM; THIS IS O188's MOVE HALF, AND IT IS STILL NOT REACHABLE** — drag one line of a block as if it were its own object
+## O214 — ◑ **MEASURED; THE GESTURE IS BUILT AND MOVES THE WRONG UNIT** — drag one line of a block as if it were its own object
 
 > *"I'd also like to be able to take a line like this that is part of a larger
 > block and be able to relocate it by dragging and moving as if it wasn't part
@@ -170,12 +170,32 @@ by a driven check. What the register missed is why that half does not answer
 him.
 
 **The unit the engine moves is one show operator; the unit he means is one
-visual line, and on his sheet those differ nine to one.** Dragging his
-`#2 USE SPACERS …` line by the built route moves one of its nine fragments and
-leaves the other eight where they were. The route that would answer him is
-`text_object_split_plan(…, SplitGranularity::Line)` → `split_text_object` →
-re-resolve the object indices, which shift by the number of pieces → `move_objects`.
-**Both split verbs exist in the engine and have zero call sites in this shell.**
+visual line, and on his sheet those differ nine to one.** That is the whole of
+O214.
+
+**Measured on his own file** — `SW41177.pdf`, page 0, text object 5871, which
+holds **237 show operators in one `BT`…`ET`**:
+
+| | |
+|---|---|
+| his line | `#2 USE SPACERS 8 9 10 11 IF REQUIRED.` — runs **50..59**, nine fragments, all on baseline 927.23 |
+| what a click gives him | run **53**, a 19 pt fragment in the middle of the words. Dragging it moves those glyphs and leaves the other eight fragments behind |
+| lines in the object | **144**, against the 237 the Part rung counts and calls *lines* in the status bar |
+| every run's `positioned_by` | `Explicit`, and `text_run_move_refusal` returns `None` for all nine — so nine `move_text_run` calls are all planned |
+| the nine-call move | dx **+0.00**, dy **−30.00** on every fragment; runs 49 and 59 untouched |
+
+**The split route was measured and abandoned.** `text_object_split_plan(…, Line)`
+reconstructs his line exactly — 143 cuts, 144 pieces, his line is piece 49 — and
+`split_text_object` applies it, after which object `5871 + 49 = 5920` shows
+exactly his sentence and nothing else. Then **`move_objects` refuses it**: *"not
+a path object (it is text)"*. Filed as **G029**; the split buys nothing for
+moving.
+
+⇒ **The shell moves the line without splitting**: one `move_text_run` per
+fragment, folded into one undo entry with `coalesce_last`. Its one hole is
+filed as **G030** — the per-run `MoveWouldMoveNextRun` guard cannot tell *"the
+next fragment is also moving"* from *"the next fragment is staying"*, so a line
+with an interior inherited fragment is refused rather than torn in half.
 
 His new sentence adds a requirement O188 did not state: a verb is not enough.
 He wants it **by dragging**, with the same gesture that moves any other object,
