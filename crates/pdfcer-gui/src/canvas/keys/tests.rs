@@ -79,6 +79,7 @@ fn part_entered() -> SelectionState {
             object: Some(TargetId::Object(3)),
             part: Some(1),
             node: None,
+            chunk: false,
         },
         false,
         true,

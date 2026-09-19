@@ -62,6 +62,7 @@ fn selecting_an_annotation_and_selecting_content_replace_each_other() {
             object: Some(TargetId::Object(4)),
             part: None,
             node: None,
+            chunk: false,
         },
         false,
         false,
@@ -82,6 +83,7 @@ fn selecting_an_annotation_and_selecting_content_replace_each_other() {
             object: Some(TargetId::Object(4)),
             part: None,
             node: None,
+            chunk: false,
         },
         false,
         false,
@@ -208,6 +210,7 @@ fn navigating_the_view_never_alters_the_selection() {
             object: Some(TargetId::Object(0)),
             part: Some(1),
             node: None,
+            chunk: false,
         },
         false,
         true,
@@ -218,6 +221,7 @@ fn navigating_the_view_never_alters_the_selection() {
             object: Some(TargetId::Object(0)),
             part: Some(1),
             node: Some(4),
+            chunk: false,
         },
         false,
         true,
@@ -499,6 +503,7 @@ fn only_the_object_rung_offers_anything_to_delete() {
             object: Some(TargetId::Object(0)),
             part: Some(1),
             node: None,
+            chunk: false,
         },
         false,
         true,
@@ -579,6 +584,7 @@ fn shift_picking_a_second_anchor_adds_it_rather_than_replacing() {
             object: Some(TargetId::Object(0)),
             part: Some(1),
             node: Some(4),
+            chunk: false,
         },
         false,
         true,
@@ -598,6 +604,7 @@ fn shift_picking_a_second_anchor_adds_it_rather_than_replacing() {
             object: Some(TargetId::Object(0)),
             part: Some(1),
             node: Some(7),
+            chunk: false,
         },
         true,
         false,
@@ -630,6 +637,7 @@ fn shift_picking_a_selected_anchor_removes_it() {
         object: Some(TargetId::Object(0)),
         part: Some(1),
         node: Some(node),
+        chunk: false,
     };
     sel.click(0, at(4), false, true);
     sel.resolve(Some(&targets), 0, 0);
@@ -691,6 +699,7 @@ fn a_double_click_descends_one_rung_at_a_time() {
             object: Some(TargetId::Object(0)),
             part: Some(1),
             node: None,
+            chunk: false,
         },
         false,
         true,
@@ -704,6 +713,7 @@ fn a_double_click_descends_one_rung_at_a_time() {
             object: Some(TargetId::Object(0)),
             part: Some(1),
             node: Some(6),
+            chunk: false,
         },
         false,
         true,
@@ -719,6 +729,7 @@ fn a_double_click_descends_one_rung_at_a_time() {
             object: Some(TargetId::Object(0)),
             part: Some(1),
             node: Some(6),
+            chunk: false,
         },
         false,
         true,
@@ -743,6 +754,7 @@ fn escape_ascends_one_rung_per_press() {
             object: Some(TargetId::Object(0)),
             part: Some(0),
             node: None,
+            chunk: false,
         },
         false,
         true,
@@ -753,6 +765,7 @@ fn escape_ascends_one_rung_per_press() {
             object: Some(TargetId::Object(0)),
             part: Some(0),
             node: Some(2),
+            chunk: false,
         },
         false,
         true,
@@ -797,6 +810,7 @@ fn clicking_away_leaves_the_entered_object() {
             object: Some(TargetId::Object(0)),
             part: Some(0),
             node: None,
+            chunk: false,
         },
         false,
         true,
@@ -821,6 +835,7 @@ fn clicking_a_different_object_leaves_rather_than_nesting() {
             object: Some(TargetId::Object(0)),
             part: Some(0),
             node: None,
+            chunk: false,
         },
         false,
         true,
@@ -843,6 +858,7 @@ fn missing_every_anchor_falls_back_to_the_part_rung() {
             object: Some(TargetId::Object(0)),
             part: Some(0),
             node: None,
+            chunk: false,
         },
         false,
         true,
@@ -853,6 +869,7 @@ fn missing_every_anchor_falls_back_to_the_part_rung() {
             object: Some(TargetId::Object(0)),
             part: Some(0),
             node: Some(1),
+            chunk: false,
         },
         false,
         true,
@@ -865,6 +882,7 @@ fn missing_every_anchor_falls_back_to_the_part_rung() {
             object: Some(TargetId::Object(0)),
             part: Some(1),
             node: None,
+            chunk: false,
         },
         false,
         false,
@@ -956,6 +974,7 @@ fn a_marquee_ascends_to_the_object_rung() {
             object: Some(TargetId::Object(0)),
             part: Some(0),
             node: None,
+            chunk: false,
         },
         false,
         true,
@@ -988,6 +1007,7 @@ fn an_entered_parts_outline_is_the_parts_own_box() {
             object: Some(TargetId::Object(0)),
             part: Some(1),
             node: None,
+            chunk: false,
         },
         false,
         true,
@@ -1133,4 +1153,143 @@ fn a_leaf_is_never_a_delete_operand() {
     let mut sel = SelectionState::default();
     sel.select_only(0, TargetId::Leaf(0), "test");
     assert!(sel.deletable_objects_on(0).is_empty());
+}
+
+/// ★★ **A second plain click on an already-selected text block descends to
+/// the chunk under the pointer** — O215 ask 1, at the rung where it is decided.
+///
+/// The first click selects the block; the second, landing on a chunk of the
+/// same block, narrows. `hit.chunk` is what carries the permission: it is
+/// `true` only where the operator can see a box to aim at, which is
+/// [`crate::canvas::clicking`]'s job to establish and this function's to
+/// obey.
+#[test]
+fn a_second_click_on_a_boxed_text_block_descends_to_the_chunk_under_it() {
+    use crate::canvas::selection::{ClickHit, SelectionLevel};
+    use crate::canvas::target::TargetId;
+
+    let mut sel = SelectionState::default();
+    let object = TargetId::Object(3);
+    sel.click(
+        0,
+        ClickHit {
+            object: Some(object),
+            part: Some(2),
+            node: None,
+            chunk: true,
+        },
+        false,
+        false,
+    );
+    assert_eq!(
+        sel.level(),
+        SelectionLevel::Object,
+        "the first click names the block"
+    );
+
+    sel.click(
+        0,
+        ClickHit {
+            object: Some(object),
+            part: Some(2),
+            node: None,
+            chunk: true,
+        },
+        false,
+        false,
+    );
+    assert_eq!(sel.level(), SelectionLevel::Part);
+    assert_eq!(
+        sel.entries().first().and_then(|e| e.subpath),
+        Some(2),
+        "the chunk under the pointer, not the first chunk of the block"
+    );
+}
+
+/// The same gesture on a block whose chunks are **not** boxed stays at the
+/// Object rung.
+///
+/// The honest half of the rule. Narrowing to a unit nothing drew is the
+/// unpredictability O215 reports, so a `part` with `chunk: false` — a path's
+/// subpath, a one-line text object, or the switch turned off — changes the
+/// verb set for nobody.
+#[test]
+fn a_part_that_is_not_a_visible_chunk_never_narrows_the_selection() {
+    use crate::canvas::selection::{ClickHit, SelectionLevel};
+    use crate::canvas::target::TargetId;
+
+    let mut sel = SelectionState::default();
+    let object = TargetId::Object(3);
+    for _ in 0..3 {
+        sel.click(
+            0,
+            ClickHit {
+                object: Some(object),
+                part: Some(2),
+                node: None,
+                chunk: false,
+            },
+            false,
+            false,
+        );
+        assert_eq!(sel.level(), SelectionLevel::Object);
+    }
+}
+
+/// Narrowing requires the clicked block to be the **whole** current selection.
+///
+/// With two blocks selected, a click on one of them means *now just this one* —
+/// the ordinary Object-rung answer — and skipping that step would descend into
+/// a block the operator had not yet singled out.
+#[test]
+fn a_click_on_one_of_several_selected_blocks_selects_it_rather_than_descending() {
+    use crate::canvas::selection::{ClickHit, SelectionLevel};
+    use crate::canvas::target::TargetId;
+
+    let mut sel = SelectionState::default();
+    sel.marquee(0, &[TargetId::Object(3), TargetId::Object(4)], false);
+
+    sel.click(
+        0,
+        ClickHit {
+            object: Some(TargetId::Object(3)),
+            part: Some(2),
+            node: None,
+            chunk: true,
+        },
+        false,
+        false,
+    );
+    assert_eq!(sel.level(), SelectionLevel::Object);
+    assert_eq!(sel.object_indices_on(0), vec![3]);
+}
+
+/// Once at the Part rung, every further click re-picks — including a click
+/// back onto a chunk already visited.
+///
+/// O215 ask 1 in one sentence: *"selecting one chunk is repeatable."* The
+/// third click here returns to chunk 2 and must land there, which is also why
+/// a driven check of this behaviour has to **alternate** rather than click one
+/// chunk twice: [`crate::diag::trace_changed`] emits only on change.
+#[test]
+fn every_click_after_the_descent_repicks_the_chunk_under_the_pointer() {
+    use crate::canvas::selection::{ClickHit, SelectionLevel};
+    use crate::canvas::target::TargetId;
+
+    let object = TargetId::Object(3);
+    let at = |part: usize| ClickHit {
+        object: Some(object),
+        part: Some(part),
+        node: None,
+        chunk: true,
+    };
+    let mut sel = SelectionState::default();
+    sel.click(0, at(2), false, false);
+    sel.click(0, at(2), false, false);
+
+    for part in [5usize, 0, 5, 2] {
+        sel.click(0, at(part), false, false);
+        assert_eq!(sel.level(), SelectionLevel::Part);
+        assert_eq!(sel.entries().first().and_then(|e| e.subpath), Some(part));
+    }
 }

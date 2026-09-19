@@ -248,7 +248,26 @@ pub(super) fn selection_event(selection: &SelectionState, kind: &str, modifier: 
     // the readout that matters is what a single click produced. A check that
     // needs the whole set reads `object_indices_on` / `leaf_indices_on`
     // through a unit test, where it can see them exactly.
+    // **`part=` — WHICH chunk, so repeatability is measurable.**
+    //
+    // `level=Part` says the operator is inside something; it cannot say inside
+    // *what*, and O215 ask 1 is entirely about whether the same click lands on
+    // the same chunk twice. Printed as the index or `none`.
+    //
+    // ★ This line is written through `trace_changed`, so a click that lands on
+    // the chunk already selected writes nothing. A driven check measuring
+    // repeatability therefore alternates — chunk A, chunk B, chunk A — and
+    // reads three lines, rather than clicking one chunk twice and reading a
+    // silence it cannot tell from a dead painter.
     crate::diag::trace_changed(SELECTION_SLOT, || {
+        let part = selection
+            .entries()
+            .first()
+            .and_then(|e| e.subpath)
+            .map_or_else(
+                || "none".to_owned(), // ui-text-exempt: diagnostic trace, never displayed
+                |p| p.to_string(),
+            );
         let first = selection.entries().first().map_or_else(
             || "none".to_owned(), // ui-text-exempt: diagnostic trace, never displayed
             |e| {
@@ -259,9 +278,9 @@ pub(super) fn selection_event(selection: &SelectionState, kind: &str, modifier: 
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI.
             // Placed directly above the literal — see `trace_layout`.
-            "canvas-selection via={kind} mod={modifier} sel={} level={:?} first={first}",
+            "canvas-selection via={kind} mod={modifier} sel={} level={} first={first} part={part}",
             selection.len(),
-            selection.level(),
+            selection.level().traced(),
         )
     });
 }

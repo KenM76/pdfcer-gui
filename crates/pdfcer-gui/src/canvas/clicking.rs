@@ -165,7 +165,7 @@ fn cycle_depth(ctx: &egui::Context, point: egui::Pos2, alt: bool) -> usize {
 }
 use crate::canvas::mapping::PageMapping;
 use crate::canvas::pick::PickFilter;
-use crate::canvas::selection::SelectionState;
+use crate::canvas::selection::{ClickHit, SelectionState};
 use crate::canvas::textsel::TextSelection;
 use crate::canvas::tool::CanvasTool;
 use crate::panels::objects::provider::ObjectModelProvider;
@@ -783,6 +783,23 @@ pub fn click(
         let hit = targets
             .map(|t| probe(t, selection, page_index, point, map, pick, depth, scope))
             .unwrap_or_default();
+        // ★★★ **The one field `probe` cannot answer** — see `ClickHit::chunk`.
+        //
+        // Three facts meet here and nowhere else: the point (the gesture's),
+        // the document's line count (`chunks::boxed`, through `doc`), and the
+        // `View ▸ Text chunks` preference (the `Context`). And one more that is
+        // not about the page at all — whether the press that began THIS click
+        // is what selected the block. `presspick::changed_selection` carries it
+        // across the press/release boundary, and its own doc argues why the two
+        // cases are otherwise indistinguishable.
+        let hit = ClickHit {
+            chunk: hit.part.is_some()
+                && !crate::canvas::presspick::changed_selection(ctx)
+                && hit
+                    .object
+                    .is_some_and(|object| crate::canvas::chunks::boxed(ctx, doc, object)),
+            ..hit
+        };
         // ★ How many there were, so the status line can say *"2 of 5 here"*
         // rather than leaving the operator to discover a stack by cycling into
         // it. Computed only when something is under the pointer — the count is

@@ -142,7 +142,18 @@ pub(super) fn probe(
         }
         _ => (None, None),
     };
-    ClickHit { object, part, node }
+    // ★ `chunk` is NOT answered here. It asks whether the part is a text line
+    // the operator can see a box around, which needs the document's line count
+    // and the `View ▸ Text chunks` preference — a `CanvasTargetProvider` has
+    // neither, and this function has no `Context`. `canvas::clicking` fills it
+    // through `chunks::boxed` on the very next statement after this returns;
+    // the field's own doc carries the argument.
+    ClickHit {
+        object,
+        part,
+        node,
+        chunk: false,
+    }
 }
 
 /// The front-most target at `point` whose CLASS the operator has left

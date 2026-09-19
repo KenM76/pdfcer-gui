@@ -28,8 +28,42 @@ use crate::app::modes::Capabilities;
 use crate::app::state::OpenDoc;
 use crate::canvas::mapping::PageMapping;
 use crate::canvas::pick::PickFilter;
-use crate::canvas::selection::SelectionState;
+use crate::canvas::selection::{Selection, SelectionState};
 use crate::canvas::tool::CanvasTool;
+
+/// `egui::Memory` key for *did the press that began this gesture change what is
+/// selected?*
+///
+/// Frame-local gesture state, kept where [`crate::canvas::input`]'s header says
+/// gesture state belongs and for its reason: it has no meaning across a
+/// document, and a value that survived one would be a claim about a file it was
+/// not measured on.
+const CHANGED_KEY: &str = "pdfcer-canvas-press-changed"; // ui-text-exempt: internal memory id, never displayed
+
+/// Did the press that began the gesture in flight change the selection?
+///
+/// ★★★ **The one fact that tells a first click from a second.** A click is a
+/// press and a release, and [`at_press`] runs on the press while
+/// [`crate::canvas::clicking`] runs on the release — by which time the state
+/// they would both read is identical: one object selected, at the Object rung.
+/// So *"the operator clicked a block that was already selected"* and *"the
+/// operator clicked a block and this press is what selected it"* are the same
+/// state, and without this they cannot be told apart.
+///
+/// They must be, because the chunk rung is entered on the **second** click.
+/// Descending on the first would advance two rungs in one gesture: the block
+/// would never be selectable, and the boxes O215 ask 3 draws around its chunks
+/// would never be on screen when the operator went to aim at one.
+#[must_use]
+pub(super) fn changed_selection(ctx: &egui::Context) -> bool {
+    ctx.data(|d| d.get_temp::<bool>(egui::Id::new(CHANGED_KEY)))
+        .unwrap_or(false)
+}
+
+/// Record what this press did to the selection.
+fn note_changed(ctx: &egui::Context, changed: bool) {
+    ctx.data_mut(|d| d.insert_temp(egui::Id::new(CHANGED_KEY), changed));
+}
 
 /// Select whatever an unselected press landed on.
 ///
@@ -95,8 +129,11 @@ pub(super) fn at_press(
     // from the other direction.
     if press_selects(ctx, response, active_tool, caps, shift)
         && let Some(origin) = ctx.input(|i| i.pointer.press_origin())
-        && !covers(ctx, doc, map, page_index, selection, origin)
     {
+        if covers(ctx, doc, map, page_index, selection, origin) {
+            note_changed(ctx, false);
+            return;
+        }
         let point = map.to_page(origin);
         let hit = doc.page_objects().and_then(|provider| {
             crate::canvas::input::topmost(
@@ -108,10 +145,84 @@ pub(super) fn at_press(
                 crate::canvas::smart::scope(ctx, page_index),
             )
         });
-        if let Some(object) = hit {
-            selection.select_only(page_index, object, "press");
-        }
+        let Some(object) = hit else {
+            note_changed(ctx, false);
+            return;
+        };
+        note_changed(
+            ctx,
+            take(ctx, doc, selection, map, page_index, point, object),
+        );
     }
+}
+
+/// Make `object` the subject of the press, and answer **whether that changed
+/// the selection**.
+///
+/// Three outcomes, in precedence order, and the first two are what O215 ask 1
+/// is about.
+///
+/// # ★★★ 1. A press that is already inside this object stays inside it
+///
+/// The operator: *"sometimes it moves the chunk and sometimes it takes the
+/// whole block."* [`covers`] declined a moment ago, which at the Part rung
+/// means the press landed **outside the selected chunk's box** — on a
+/// neighbouring chunk, or in the white between two of them. Selecting the whole
+/// object there is what promotes the operand back to the block mid-gesture, and
+/// the drag that follows moves everything.
+///
+/// So a press on the object the operator is already inside **re-picks within
+/// it** rather than leaving it. The rung is the operator's, and only a press on
+/// something else takes them out of it.
+///
+/// ⚠ Gated on [`crate::canvas::chunks::boxed`] — text, more than one chunk, and
+/// the switch on — so it is offered exactly where a box is drawn to aim at. A
+/// path's subpaths have no such affordance, and a press on a selected shape at
+/// the Part rung goes on behaving as it always has.
+///
+/// # 2. A press on what is already the whole selection changes nothing
+///
+/// Re-selecting an object that is already selected alone, at the Object rung,
+/// is a write with no effect — but it is not a *report* with no effect, because
+/// [`changed_selection`] is what the click path reads to decide whether this is
+/// the operator's first click on this block or their second. Saying "changed"
+/// here would make the chunk rung unreachable through the gap between two
+/// chunks, which is where [`covers`] declines most often on a CAD note.
+///
+/// # 3. Anything else selects, exactly as it always did
+fn take(
+    ctx: &egui::Context,
+    doc: &OpenDoc,
+    selection: &mut SelectionState,
+    map: &PageMapping,
+    page_index: usize,
+    point: egui::Pos2,
+    object: crate::canvas::target::TargetId,
+) -> bool {
+    if let Some(entered) = selection.entered_object()
+        && entered.object == object
+        && entered.page == page_index
+        && crate::canvas::chunks::boxed(ctx, doc, object)
+    {
+        // The chunk under the press, or — for a press in the white between two
+        // of them — the chunk the operator already had. Staying put is the
+        // conservative answer and it is the one that keeps a drag begun just
+        // outside a glyph on the chunk it was aimed at.
+        if let Some(part) =
+            crate::canvas::chunks::under(doc, page_index, object, point, map.tolerance())
+            && entered.subpath != Some(part)
+        {
+            selection.select_part(page_index, object, part, "press");
+        }
+        return false;
+    }
+    if selection.level() == crate::canvas::selection::SelectionLevel::Object
+        && selection.entries() == [Selection::object(page_index, object)].as_slice()
+    {
+        return false;
+    }
+    selection.select_only(page_index, object, "press");
+    true
 }
 
 /// Whether a press this frame may select what is under it.

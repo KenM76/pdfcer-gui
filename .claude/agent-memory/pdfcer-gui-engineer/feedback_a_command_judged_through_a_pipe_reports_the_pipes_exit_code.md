@@ -36,6 +36,17 @@ to package a **stale binary**. What caught it was the exe's mtime, not any rc.
   read. See [[feedback_never_kill_pdfcer_gui_by_name_he_uses_it_all_day]] for
   how to kill it safely.
 
+**It recurred on a gate sweep, 2026-09-19, and the shape was the opposite.**
+`bash tools/gates/run-all.sh 2>&1 | tee "$TEMP/gates.txt"` reported
+**"exited with code 0"** while its own last line read `RESULT: FAIL — 1 gate(s)
+found a violation.` The rc was `tee`'s. I nearly wrote it up as a runner defect
+— *"run-all.sh exits 0 on FAIL"* — and only reading the script's tail showed it
+does `exit 1`, `exit 3`, `exit 0` correctly. **A pipe does not only hide a
+failure; it manufactures a false finding about the tool you piped.** Before
+blaming a script's exit code, check whether you measured the script or the
+pipeline. `tee` is the sneakiest of the three, because unlike `tail` it is
+there to be helpful about output rather than to truncate it.
+
 Related: [[feedback_a_commit_message_can_describe_work_that_never_landed]] (a
 `;` chain let a failed edit look committed — same family: the shell reported on
 something other than the step that mattered), and

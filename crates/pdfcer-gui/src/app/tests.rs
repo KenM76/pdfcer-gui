@@ -497,6 +497,7 @@ fn the_ribbon_delete_declines_inside_an_object_just_as_the_key_does() {
             object: Some(TargetId::Object(1)),
             part: Some(1),
             node: None,
+            chunk: false,
         },
         false,
         true,

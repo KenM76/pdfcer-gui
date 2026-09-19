@@ -249,6 +249,35 @@ pub fn text_block_target() -> (std::path::PathBuf, f32, f32, f32) {
     (pdf, 700.0, 72.0, 330.0)
 }
 
+/// A point inside **chunk `index`** of the same document, for a check that has
+/// to aim at one line of a block and then at a different one.
+///
+/// `index` is a position in the content stream, 0 for the first `Tj` and 5 for
+/// the last; anything higher is a caller that has out-run the fixture and is
+/// rejected rather than clamped, because a clamp would silently turn *aim at
+/// chunk 7* into a second measurement of chunk 5.
+///
+/// # The two numbers, and why neither is an estimate
+///
+/// `y = 704 - 16 * index`: the baselines are 16 pt apart and the glyph band at
+/// 12 pt runs about 8.4 pt above each one, so `baseline + 4` is inside the
+/// glyphs of that line and 12 pt clear of the next one. A midpoint between two
+/// baselines hits nothing at all — [`text_block_target`] states the trap and
+/// this is the function that avoids it.
+///
+/// `x = 100`: the **shortest** line of the six ends at x = 110, so one x serves
+/// every chunk. A larger x would be further from the edges and would also miss
+/// the last line entirely, which is the shape of an aim that measures five
+/// chunks while reading as six.
+#[must_use]
+pub fn text_chunk_point(index: usize) -> (std::path::PathBuf, DocPoint) {
+    assert!(index < 6, "fixtures/paragraph.pdf holds six chunks");
+    let pdf = workspace_root().join("fixtures").join("paragraph.pdf");
+    #[allow(clippy::cast_precision_loss)]
+    let y = 704.0 - 16.0 * index as f64;
+    (pdf, DocPoint::new(0, 100.0, y))
+}
+
 /// The workspace root, derived from this crate's manifest directory.
 ///
 /// Every fixture this harness pins is named relative to the repository root,

@@ -174,6 +174,22 @@ pub enum SelectionLevel {
 }
 
 impl SelectionLevel {
+    /// The rung's name on the `PDFCER_DIAG` channel.
+    ///
+    /// Spelled out rather than left to `{:?}`, because `canvas::trace`'s header
+    /// calls that line a contract with a consumer that does not compile against
+    /// this crate: a variant renamed for a reason internal to this module would
+    /// otherwise silently change what a driven check reads.
+    #[must_use]
+    pub fn traced(self) -> &'static str {
+        match self {
+            // ui-text-exempt: diagnostic trace tokens, never displayed
+            Self::Object => "Object",
+            Self::Part => "Part",
+            Self::Node => "Node",
+        }
+    }
+
     /// The rung one step up, or `None` at the top.
     #[must_use]
     pub fn ascend(self) -> Option<Self> {
@@ -222,4 +238,23 @@ pub struct ClickHit {
     pub part: Option<usize>,
     /// The nearest anchor of the **entered** part, object-scoped.
     pub node: Option<usize>,
+    /// Whether [`Self::part`] names a **text chunk the operator can see** — a
+    /// line of a multi-line text object, with `View ▸ Text chunks` switched on
+    /// and a box drawn around it.
+    ///
+    /// ★ Not filled by [`crate::canvas::input::probe`], and that is the one
+    /// field of this struct that is not. `probe` holds a
+    /// [`CanvasTargetProvider`](crate::canvas::target::CanvasTargetProvider),
+    /// which can say what class an object is but cannot count a text object's
+    /// lines, and it holds no [`egui::Context`], so it can reach neither half
+    /// of the question. [`crate::canvas::chunks::boxed`] answers both, and
+    /// `canvas::clicking` — the one caller holding the document, the preference
+    /// and the point at once — sets this immediately after probing. Everywhere
+    /// else it is `false`, which is the ladder's behaviour with the boxes off.
+    ///
+    /// It gates one rule and no other: a plain click at the Object rung, on the
+    /// object that is **already** the whole selection, narrows to this chunk
+    /// instead of re-selecting the block. A path's subpath never sets it, so
+    /// clicking a line of vector work twice still leaves the object selected.
+    pub chunk: bool,
 }

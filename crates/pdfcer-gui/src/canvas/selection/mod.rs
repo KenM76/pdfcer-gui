@@ -1089,9 +1089,53 @@ impl SelectionState {
     }
 
     /// A plain or shift click while at the Object rung.
+    ///
+    /// # ★★★ The second click on a text block narrows to the chunk under it
+    ///
+    /// `OPERATOR_REQUESTS.md` **O215** ask 1, in his words: *"sometimes it moves
+    /// the chunk and sometimes it takes the whole block."* Selection has always
+    /// descended to a chunk — [`Self::select_part`] and the run menu address one
+    /// — but the ladder's own descent gesture is a double-click, and on text
+    /// that gesture is spent opening the caret. So the rung had no entrance a
+    /// hand could find, and which unit a drag picked up was decided on **press**
+    /// by [`crate::canvas::presspick::covers`] against a rectangle nothing drew.
+    ///
+    /// The narrowing is offered on a **plain click**, and exactly three
+    /// conditions have to hold at once:
+    ///
+    /// | condition | what it stops |
+    /// |---|---|
+    /// | `hit.chunk` | a path's subpath, and a text block whose boxes are switched off or which holds one line — narrowing to a unit with no box drawn around it is the same invisible aim, from the other side |
+    /// | this object is **already** the whole selection | a click on a different block, which selects it whole |
+    /// | `hit.part` is `Some` | a click in the white inside the block's box, which keeps the block |
+    ///
+    /// ★★ *"Already the whole selection"* is not enough on its own, and the
+    /// hazard is the reason [`crate::canvas::presspick::changed_selection`]
+    /// exists: the press of this very click may be what selected the block, and
+    /// the state it leaves is identical. The click path folds that answer into
+    /// `hit.chunk`, so the first click of a gesture selects the block and puts
+    /// the boxes up, and the second — with somewhere visible to aim — takes one
+    /// chunk.
+    ///
+    /// Everything below the Object rung is [`Self::click_inside`]'s, which
+    /// already re-picks a part on every click, so once here the gesture is
+    /// repeatable by a route that was always there.
     fn click_at_object_rung(&mut self, page: usize, hit: ClickHit, shift: bool) {
         match (shift, hit.object) {
-            (false, Some(object)) => self.entries = vec![Selection::object(page, object)],
+            (false, Some(object)) => {
+                if let Some(part) = hit.part
+                    && hit.chunk
+                    && self.entries == [Selection::object(page, object)]
+                {
+                    // Through the verb rather than by assembling the entry:
+                    // `select_part` is where "stand at the Part rung, on this
+                    // part" is defined, traced and normalised, and a second
+                    // statement of it here is a second thing to keep in step.
+                    self.select_part(page, object, part, "chunk-click");
+                } else {
+                    self.entries = vec![Selection::object(page, object)];
+                }
+            }
             (false, None) => self.entries.clear(),
             (true, Some(object)) => {
                 let entry = Selection::object(page, object);

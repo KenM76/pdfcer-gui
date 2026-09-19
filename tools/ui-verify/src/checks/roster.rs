@@ -421,6 +421,12 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // missing. It also drives a ribbon toggle, so it runs after the checks
         // that establish the ribbon is reachable at all.
         Box::new(text_chunks::TheChunkBoxesShowWhatATextBlockIsMadeOf),
+        // Immediately after, because it is the same row's other half and it
+        // cannot run without what that one measures: the chunk rung is offered
+        // only where a box is drawn. Running it second means a build that lost
+        // the boxes reports the boxes, once, rather than reporting a selection
+        // defect twice.
+        Box::new(chunk_click::ClickingAChunkSelectsThatChunk),
         // `OPERATOR_REQUESTS.md` O71. Beside the Smart-Selector
         // check because both are about what a plain click MEANS — that one in
         // Edit, this one in Read, which is the stance where the answer had

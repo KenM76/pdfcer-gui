@@ -162,43 +162,43 @@ use crate::trace::Trace;
 /// The mode whose canvas selects page content. Read refuses the click by
 /// design, and a check that skipped this step would report the mode gate as a
 /// selection defect.
-const MODE: &str = "edit";
+pub(crate) const MODE: &str = "edit";
 
 /// The page region, so a failure can say whether a sheet was drawn at all.
-const PAGE_REGION: &str = "page"; // ui-text-exempt: a trace region name, never displayed
+pub(crate) const PAGE_REGION: &str = "page"; // ui-text-exempt: a trace region name, never displayed
 
 /// `canvas-chunks page=N drawn=N` — written when boxes were painted.
-const DRAWN_EVENT: &str = "canvas-chunks"; // ui-text-exempt: a trace event name, never displayed
+pub(crate) const DRAWN_EVENT: &str = "canvas-chunks"; // ui-text-exempt: a trace event name, never displayed
 
 /// `canvas-chunks-declined reason=…` — written when none were.
 ///
 /// ★ A distinct first token, deliberately: `tools/gates/check-trace-names.py`
 /// compares first tokens, and a shared one would make the two events
 /// indistinguishable to `Trace::events`.
-const DECLINED_EVENT: &str = "canvas-chunks-declined"; // ui-text-exempt: a trace event name, never displayed
+pub(crate) const DECLINED_EVENT: &str = "canvas-chunks-declined"; // ui-text-exempt: a trace event name, never displayed
 
 /// `text-chunks enabled=…` — written by `canvas::chunks::set_enabled`, whose
 /// only caller is the dispatch arm an operator's press runs.
-const SWITCH_EVENT: &str = "text-chunks"; // ui-text-exempt: a trace event name, never displayed
+pub(crate) const SWITCH_EVENT: &str = "text-chunks"; // ui-text-exempt: a trace event name, never displayed
 
 /// `canvas-selection … first=` — read only to tell *the click missed* from
 /// *the boxes are broken* when the painter says nothing.
-const SELECTION_EVENT: &str = "canvas-selection"; // ui-text-exempt: a trace event name, never displayed
+pub(crate) const SELECTION_EVENT: &str = "canvas-selection"; // ui-text-exempt: a trace event name, never displayed
 
 /// The ribbon item that carries the toggle.
-const TOGGLE_REGION: &str = "ribbon.item.view.text_chunks";
+pub(crate) const TOGGLE_REGION: &str = "ribbon.item.view.text_chunks";
 /// The command id the shell reports for it.
-const TOGGLE_ID: &str = "view.text_chunks";
+pub(crate) const TOGGLE_ID: &str = "view.text_chunks";
 
 /// How many chunks `fixtures/paragraph.pdf`'s one text object holds.
 ///
 /// Six `Tm`-led `Tj` operators on six baselines 16 pt apart. An equality rather
 /// than a floor, for the reason in the header.
-const EXPECTED_CHUNKS: usize = 6;
+pub(crate) const EXPECTED_CHUNKS: usize = 6;
 
 /// What the painter last said about the chunk boxes.
 #[derive(Debug, Clone, PartialEq, Eq)]
-enum Verdict {
+pub(crate) enum Verdict {
     /// `canvas-chunks page=N drawn=N`.
     Drawn {
         /// The page it painted on.
@@ -224,7 +224,7 @@ impl std::fmt::Display for Verdict {
 /// ★ Both are read and the later one wins, rather than one being preferred:
 /// they are two spellings of one state, and asking only for the one a step
 /// expects would turn *the opposite happened* into *nothing happened*.
-fn verdict(trace: &Trace, after: usize) -> Option<Verdict> {
+pub(crate) fn verdict(trace: &Trace, after: usize) -> Option<Verdict> {
     let drawn = trace.last_after(DRAWN_EVENT, after);
     let declined = trace.last_after(DECLINED_EVENT, after);
     let newest = match (drawn, declined) {
@@ -272,7 +272,7 @@ impl Check for TheChunkBoxesShowWhatATextBlockIsMadeOf {
 ///
 /// Read from [`shell_trace`]: `ribbon-command-invoked` is `egui-shell`'s line,
 /// and `Session::trace` parses only the application's vocabulary.
-fn toggle_invokes(session: &Session) -> Result<usize> {
+pub(crate) fn toggle_invokes(session: &Session) -> Result<usize> {
     Ok(shell_trace(session)?
         .events(INVOKE_EVENT)
         .filter(|l| l.get("id") == Some(TOGGLE_ID))
@@ -286,7 +286,7 @@ fn toggle_invokes(session: &Session) -> Result<usize> {
 /// application's own `text-chunks enabled=` line — the middle link of the
 /// chain. The painter's answer is the caller's to check, because only the
 /// caller knows what should then be on the page.
-fn press_the_toggle(
+pub(crate) fn press_the_toggle(
     session: &Session,
     driver: &Driver,
     ui_rect: &str,

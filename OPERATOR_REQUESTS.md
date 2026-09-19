@@ -305,22 +305,35 @@ O17 ruling cannot simply be applied; and **`ClickHit.part` already carries the
 line** on the very first click, computed by `probe` and then discarded by
 `click_at_object_rung`. The information is not missing; it is thrown away.
 
-**Ask 3 is built and driven. Nothing else on this row is.** Clicking a block of
-text now outlines every chunk inside it, off a toggle — **View ▸ Navigate ▸
-Text chunks**, and the same row on the rail, live in Content Edit — which is
-his own proposal for the shape, and which remembers its answer.
-`ui-verify --check chunk_boxes_show_what_a_text_block_is_made_of` drives it on
-`paragraph.pdf`: one click draws six boxes for the six chunks of a one-object
-paragraph, the toggle turns them off (`canvas-chunks-declined
-reason=switched-off`) and a second press brings them back. It has been
-falsified — a loop that draws nothing reports `drawn=0` and the check goes red,
-because the traced count comes back out of the painter rather than off the
-vector handed to it.
+**Asks 1, 3 and 6 are built and driven; asks 4 and 5 are not, and ask 2 is the
+engine's.** Clicking a block of text outlines every chunk inside it, off a
+toggle — **View ▸ Navigate ▸ Text chunks**, and the same row on the rail, live
+in Content Edit — which is his own proposal for the shape, and which remembers
+its answer. With the boxes up, a second plain left-click inside one of them
+stands on that chunk, every click after it re-picks the chunk under the
+pointer, and a press at that rung on a neighbouring chunk moves to *that* chunk
+instead of resetting to the whole block — which is the mechanism behind
+*"sometimes it moves the entire block"*. No modifier and no double-click: the
+left button alone, with the right-click route untouched, because a right-click
+names a whole object and has no part to narrow to.
 
-**Status stays FILED.** Asks 1, 4, 5 and 6 are unbuilt and ask 2 is the
-engine's (`G032`). The boxes are the prerequisite this row argues for, not the
-row: the rectangle that decides which unit a press takes is now on the screen,
-and making the press itself repeatable is the next stage.
+Two driven checks on `paragraph.pdf`.
+`chunk_boxes_show_what_a_text_block_is_made_of` clicks once and counts six
+boxes for the six chunks of a one-object paragraph, turns the toggle off
+(`canvas-chunks-declined reason=switched-off`) and brings them back.
+`clicking_a_chunk_selects_that_chunk` clicks one point twice — the first click
+names the block (`level=Object`), the second descends (`level=Part`) — then
+clicks a neighbouring line and returns, asserting the chunk index *changes* and
+then comes back to the first. The indices are compared, never pinned, so a
+change in the provider's line granularity does not read as a selection defect.
+Both have been falsified: a loop that draws nothing reports `drawn=0`, and
+disabling the press path's entered-object branch makes the return-click ascend
+to the whole block, each turning its check red with a message naming the step.
+
+**Status stays FILED.** Ask 4 — shift-click, ctrl-click and rubber-band across
+chunks, moving several as one drag — and ask 5 — the chunk itself following the
+pointer rather than a rectangle — are unbuilt, and ask 2 is the engine's
+(`G032`).
 
 ## O213 — ✅ **CLOSED BY HIM** — editing one line of a title-block shifts that line to the right
 

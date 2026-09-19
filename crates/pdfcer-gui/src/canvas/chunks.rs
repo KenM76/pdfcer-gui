@@ -44,6 +44,7 @@ use egui::Rect;
 
 use crate::app::state::OpenDoc;
 use crate::canvas::selection::SelectionState;
+use crate::canvas::target::{CanvasTargetProvider, TargetId};
 
 /// Whether the chunk boxes are switched on. Memory key.
 ///
@@ -96,6 +97,48 @@ pub fn sync(ctx: &egui::Context, on: bool) {
     if enabled(ctx) != on {
         ctx.data_mut(|d| d.insert_temp(id(ENABLED_KEY), on));
     }
+}
+
+/// **Whether the boxes are drawn for `object`** — the switch is on and the
+/// object holds more than one chunk.
+///
+/// The gate on every gesture that narrows the selection to a chunk. Narrowing
+/// to a unit the operator cannot see is the unpredictability O215 ask 1
+/// reports, reached from the other side, so the rung is offered exactly where
+/// the boxes are and nowhere else. The second term is the same one [`outlines`]
+/// declines `single-chunk` on: a one-line object draws no box, so a click that
+/// descended into it would change the verb set with nothing on screen to say
+/// it had.
+#[must_use]
+pub fn boxed(ctx: &egui::Context, doc: &OpenDoc, object: TargetId) -> bool {
+    enabled(ctx)
+        && doc
+            .page_objects()
+            .is_some_and(|provider| provider.text_line_count_of(object) >= 2)
+}
+
+/// **The chunk of `object` under `point`**, in the same page space
+/// [`crate::canvas::input::probe`] asks its questions in.
+///
+/// The first hit, exactly as `probe` takes the first of `part_hits_of` — one
+/// rule, asked in two places, rather than two rules that agree today. `None`
+/// means the point is inside the block's box but not on any of its lines,
+/// which on a CAD note is most of the block.
+#[must_use]
+pub fn under(
+    doc: &OpenDoc,
+    page_index: usize,
+    object: TargetId,
+    point: egui::Pos2,
+    tolerance: f64,
+) -> Option<usize> {
+    let provider = doc.page_objects()?;
+    let hit = provider
+        .part_hits_of(page_index, object, point, tolerance)
+        .first()
+        .copied();
+    drop(provider);
+    hit
 }
 
 /// Why no chunk outlines were drawn.

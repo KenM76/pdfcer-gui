@@ -1287,6 +1287,12 @@ pub mod text_box;
 /// the operator are invisible to a test that calls those functions.
 pub mod text_chunks;
 
+/// The other half of that row: **O215 asks 1 and 6, driven** — a plain left
+/// click inside a drawn chunk box selects that chunk, and the same point
+/// selects the same chunk on a later visit. Its header carries why the claim
+/// needs three clicks and why the chunk index is compared rather than pinned.
+pub mod chunk_click;
+
 /// ★ The operator's own report, driven: Edit text on a REAL CAD sheet, aimed at a
 /// point the ENGINE says carries text. Its header carries why two passing text
 /// checks were not enough — both drive fixtures this repository generated to

@@ -88,6 +88,20 @@ command: each is a separate memory peak and one kill voids all three. Before
 relaunching after a kill, `tasklist | grep -iE 'cargo|rustc|link'` and wait —
 the orphans are finishing the work you need cached.
 
+**The failure signature names the wrong culprit — 2026-09-19.** A full gate
+sweep was killed for low memory during its last gate, `cargo clippy
+--workspace --all-targets`, and what clippy wrote before dying was
+`clippy-driver.exe ... (exit code: 0xc0000142, STATUS_DLL_INIT_FAILED)`,
+four times over. That reads as a corrupt toolchain or a missing DLL and it is
+neither: **0xc0000142 is what a Windows process reports when there is not
+enough memory to initialise its DLLs.** Check free RAM before touching
+`rustup`. Two further consequences: `run-all.sh` prints its SUMMARY only at the
+end, so a killed sweep leaves **no tally at all** — fifty-nine green gates and
+an unknown result are the same output; and a `clippy-driver` orphan survived
+the kill holding 1 GB, so the relaunch must wait for it rather than race it.
+Relaunch with `CARGO_BUILD_JOBS=2` for the sweep specifically — clippy peaks
+higher than `cargo test`, and 4 was not enough head-room here.
+
 ## ★★★ The biggest item is NOT in `target/` — 2026-09-10
 
 Every entry above treats `target/` as the problem. Measured on 2026-09-10 with

@@ -305,6 +305,10 @@ pub fn select_under_right_click(
                 object: Some(target),
                 part: None,
                 node: None,
+                // A right-click names a whole object. With no part there is
+                // nothing to narrow to, so this is stating the rule rather
+                // than declining it.
+                chunk: false,
             },
             false,
             false,
@@ -912,6 +916,7 @@ mod tests {
                 object: Some(TargetId::Object(3)),
                 part: Some(1),
                 node: None,
+                chunk: false,
             },
             false,
             true,
@@ -945,6 +950,7 @@ mod tests {
                 object: Some(TargetId::Object(3)),
                 part: Some(1),
                 node: None,
+                chunk: false,
             },
             false,
             true,
