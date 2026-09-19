@@ -50,14 +50,25 @@ channel: a reply is an input to *how* a thing is built, never to *which*. Each
 row's argument is in `OPERATOR_REQUESTS.md`, which **only Ken closes**; the open
 set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
-1. **O213 / O214 — the unit the shell calls a line is a show operator, and the
-   unit he calls a line is a visual line; on his own sheet those differ nine to
-   one.** Measured on `SW41177.pdf` page 0, text object 5871: **237 show
-   operators forming 144 lines**, and `#2 USE SPACERS 8 9 10 11 IF REQUIRED.` is
-   nine of them — runs 50..59, baseline 927.23, every one `Explicit`. A click
-   lands on run 53, a 19 pt fragment mid-phrase, so the status bar says *1 line
-   of 237*, the outline encloses a fifth of the words he clicked, and a drag
-   leaves the other eight fragments behind.
+1. **O213 / O214 — the shell now addresses the visual line everywhere, and
+   NONE of it has been driven.** This is the whole of the next drive.
+   **What shipped.** The Part rung, the object tree row (`Line #49`), the
+   status sentence (*1 line of 144*), the context menu, the selection outline,
+   the delete verb and the move verb all count and address lines. Run indices
+   survive only inside the `MoveTextLine` and `DeleteTextLine` action arms,
+   which translate at the call site; nothing else in the program holds one.
+   **What it is worth on his sheet.** `SW41177.pdf` page 0, text object 5871 is
+   **237 show operators forming 144 lines**, and `#2 USE SPACERS 8 9 10 11 IF
+   REQUIRED.` is nine of them — runs 50..59, baseline 927.23, every one
+   `Explicit`. Before the re-key a click landed on run 53, a 19 pt fragment
+   mid-phrase; now it lands on the line and a drag carries all nine.
+   **What is owed: a driven run.** `move_line_of_text` presses once per visual
+   line and asserts all four answers; `deeper_rung_delete` and `run_menu_route`
+   read renamed trace tokens. Every token those three assert on is present in
+   `target/release/pdfcer-gui.exe` — which rules out a typo and proves nothing
+   about reachability. None of the three has run since the re-key. O188's own
+   history is why that distinction is kept: the last check written about this
+   capability was green for a day while asserting the opposite of the truth.
    **The grouping is the engine's own**, not a second opinion:
    `pdfcer_core::vector::edit::text_object_split_points(obj, SplitGranularity::Line)`
    is called rather than re-derived from baselines, so the box that is drawn and
@@ -80,11 +91,14 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    **What a cold session should not re-derive.** An `Inherited` run starts where
    its predecessor's pen stopped, so for horizontal text it shares that baseline
    and is always in its predecessor's line group — which makes
-   `WouldMoveNextRun` **unreachable at line level** except for rotated text,
-   where the advance changes `f`. `fixtures/inherited-runs.pdf` therefore needs a
-   rotated pair appended to keep that refusal reachable, and in line space its
-   runs 0 and 1 collapse into one line, so it answers three parts in run space
-   and two in line space.
+   `WouldMoveNextRun` and `NoPositionOfItsOwn` **unreachable at line level**
+   except for rotated text, where the advance changes `f`. That is why
+   `fixtures/inherited-runs.pdf` carries a rotated pair: five show operators in
+   four lines, giving all four answers in one document. Its two rotated lines
+   meet at y = 428.008 with no gap, so the two aims that press at them are
+   pinned by `provider::line::tests::the_aims_driven_at_this_fixture_land_one_per_line`,
+   which asserts each point is inside **one** box — containment alone would be
+   satisfied by a point in both.
    **The Object rung is a separate cost and is not this.** `move_objects`
    refuses every text object while `transform_objects` accepts them, so every
    whole-text-object nudge pays a `q`/`cm`/`Q` wrapper. Filed as **G029**; it
