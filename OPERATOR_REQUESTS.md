@@ -146,7 +146,7 @@ to compensate. It refuses — and keeps the spanning form — when the change
 straddles two operators or falls in a gap extraction synthesised. ⚠ It is a
 workaround and comes out when `G028` lands.
 
-**Remaining: the release.** It is driven, and it holds. `ui-verify --check
+**Driven, and it holds.** `ui-verify --check
 text_edit_on_a_real_drawing --doc-point 0,549.0,935.5` on a copy of his sheet —
 the centre of the `SPACERS` rect `pdfcer find-text` reports — lands the caret on
 run 100, `#2 USE SPACERS 8 9 10 11 IF REQUIRED.`, the line he named. `narrowed=1`
@@ -156,10 +156,11 @@ fires, the commit is granted, and the left edge reads `474.160` before and
 The check can fail: planting a 12 pt shift in the shell's second reading and
 driving the rebuilt binary turned it red with O213's own sentence.
 
-⚠ **The narrowing landed after the newest release he has**, so the build on his
-machine still sends the spanning form and still moves the line. He is not
-mistaken and nothing further is owed to the investigation — **publishing is the
-answer**, and the row closes when he says the line stays put.
+**The narrowing landed after the release he had**, which is the whole of why he
+saw the defect and this tree did not. He was not mistaken and nothing was owed
+to the investigation — only a build. It is published as
+`v0.5.0-dev.20260919.1`, in OneDrive slot `pdfcer-gui2`. The row closes when he
+says the line stays put.
 
 His file is `C:/Users/Ken/OneDrive/pdfTests/SW41177.pdf`; work on a copy.
 

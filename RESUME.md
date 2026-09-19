@@ -84,8 +84,9 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    `followers_repositioned` counts operators *after* the edited one; it reported
    0 on the commit that moved his line +240.16 pt, which is how the defect
    reached him through a check already watching reflow scope.
-   ⚠ **The narrowing landed after his newest release**, so publishing is what
-   answers O213 — not more investigation.
+   **The narrowing landed after the release he had**, which is why he saw the
+   defect and this tree did not. Published as `v0.5.0-dev.20260919.1`; both rows
+   now wait on his word, not on a measurement.
    **The grouping is the engine's own**, not a second opinion:
    `pdfcer_core::vector::edit::text_object_split_points(obj, SplitGranularity::Line)`
    is called rather than re-derived from baselines, so the box that is drawn and
