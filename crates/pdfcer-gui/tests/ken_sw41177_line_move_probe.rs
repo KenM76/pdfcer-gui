@@ -527,3 +527,79 @@ fn whether_the_escape_remedy_reaches_a_verb_that_moves_a_whole_text_object() {
         Err(e) => println!("transform_objects on text object {object}: REFUSED — {e}"),
     }
 }
+
+/// **How often does one "line" hold pieces that are not one line?**
+///
+/// `SplitGranularity::Line` groups consecutive show operators whose text
+/// matrices agree on `a`, `b`, `c`, `d` and agree on `f` within a scaled
+/// tolerance. It never reads `e` — the horizontal translation — so there is no
+/// gap criterion, and a table row whose cells were emitted consecutively
+/// becomes one movable, deletable, redactable unit.
+///
+/// The probe reports, per text object: how many groups hold more than one
+/// operator, and for the widest of them the x-extent of each piece and the
+/// clear gap between consecutive pieces. A gap of tens of points between two
+/// pieces of one "line" is the defect, stated in the producer's own geometry
+/// rather than in the shell's opinion of it.
+#[test]
+#[ignore = "reads his own drawing from target/scratch — not in this repository"]
+fn how_many_lines_weld_pieces_that_are_separated_by_clear_space() {
+    let Some(mut session) = session() else {
+        return;
+    };
+    let page_count = pdfcer_core::page_tree::pages_in(&session.view()).map_or(0, |p| p.len());
+    let mut widest: Vec<(f64, String)> = Vec::new();
+    for page in 0..page_count {
+        let Ok(model) = session.page_objects(page) else {
+            continue;
+        };
+        for (index, object) in model.objects.iter().enumerate() {
+            let VectorObject::Text(text) = object else {
+                continue;
+            };
+            let cuts =
+                pdfcer_core::vector::edit::text_object_split_points(text, SplitGranularity::Line);
+            let mut starts = vec![0usize];
+            starts.extend_from_slice(&cuts);
+            let mut multi = 0usize;
+            for (piece, &start) in starts.iter().enumerate() {
+                let end = starts.get(piece + 1).copied().unwrap_or(text.runs.len());
+                if end - start < 2 {
+                    continue;
+                }
+                multi += 1;
+                // The widest clear space inside this group, and the whole
+                // group's geometry alongside it so the number can be checked.
+                let mut gap = 0.0f64;
+                let mut shape = String::new();
+                for r in start..end {
+                    let b = text.runs[r].bounds;
+                    if r > start {
+                        let clear = b.min.x - text.runs[r - 1].bounds.max.x;
+                        gap = gap.max(clear);
+                        shape.push_str(&format!(" |{clear:+.1}| "));
+                    }
+                    shape.push_str(&format!("[{:.1}..{:.1}]", b.min.x, b.max.x));
+                }
+                widest.push((
+                    gap,
+                    format!("page {page} obj {index} piece {piece} (runs {start}..{end}): {shape}"),
+                ));
+            }
+            println!(
+                "page {page} obj {index:>5}: {:>4} operator(s), {:>4} line(s), {multi:>4} of them hold more than one",
+                text.runs.len(),
+                starts.len()
+            );
+        }
+    }
+    widest.sort_by(|a, b| b.0.total_cmp(&a.0));
+    println!("\nthe twelve widest clear gaps welded inside one line:");
+    for (gap, what) in widest.iter().take(12) {
+        println!("  {gap:8.1}pt  {what}");
+    }
+    println!(
+        "\n{} line(s) across the document hold more than one operator",
+        widest.len()
+    );
+}

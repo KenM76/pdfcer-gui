@@ -259,6 +259,52 @@ the hit test's answer depends on state he cannot see. Neither is fixed by
 adding a mode on top. A driven check that presses the same point twice and
 asserts the same unit is selected both times is the first thing owed here.
 
+**Ask 2 is an engine defect, measured, and filed as `G032`.**
+`pdfcer_core::vector::edit::text_object_split_points` at `SplitGranularity::Line`
+groups consecutive show operators through `runs_share_a_line`, which compares
+orientation and baseline and **never reads the horizontal translation**. There is
+no gap criterion of any kind, so two pieces drawn at opposite ends of a sheet are
+one line if the producer happened to emit them back to back — which is exactly
+how a CAD producer emits a table row and a sheet border.
+
+`tests/ken_sw41177_line_move_probe.rs`,
+`how_many_lines_weld_pieces_that_are_separated_by_clear_space`, over his own
+drawing: **565 lines across the document hold more than one operator**, the
+widest welding two pieces separated by **709.4 pt of blank paper**. Page 1's
+bill-of-materials rows weld item number, part number, description and quantity
+into one unit. The same four-piece pattern repeats on seven pages — those are
+the sheet border's zone letters, which is the counter-example
+`SplitGranularity::Line`'s own doc raises and claims stream order prevents.
+
+The shell will not route around it: a post-split on bounds would make its unit
+differ from `delete_text_run`'s and `text_run_move_refusal`'s in a way neither
+side could detect.
+
+**The non-determinism has a mechanism, read from source and not yet driven.**
+Two different things select, and only one of them is the click he thinks he is
+making:
+
+- `canvas::presspick::at_press` selects on **press**, before the gesture is
+  classified, and calls `SelectionState::select_only` — which hard-sets
+  `SelectionLevel::Object`. Its guard `covers` asks whether the press is inside
+  the *current* selection's outline.
+- So once he is at the Part rung, a press inside that line's box is covered, no
+  re-selection happens, and the drag moves **the chunk**. A press a few points
+  off that line but still on the block is not covered, `select_only` fires, the
+  rung resets, and the same drag moves **the whole block**.
+
+That is his sentence exactly, and it is not a race or a timing window — it is a
+few points of pointer position he cannot see, because nothing on the canvas
+draws the box that decides it. **Ask 3 is therefore not decoration; drawing the
+boxes is what makes ask 1 possible.**
+
+Two further readings that shape the build: **double-click on text is already
+spent** — `canvas::clicking`'s content rung intercepts it to place a caret
+(`O70`), so the ladder's ordinary descent gesture is unavailable here and the
+O17 ruling cannot simply be applied; and **`ClickHit.part` already carries the
+line** on the very first click, computed by `probe` and then discarded by
+`click_at_object_rung`. The information is not missing; it is thrown away.
+
 **Nothing on this row is built.** Status stays **FILED** until each numbered
 ask above has a driven check by name.
 
