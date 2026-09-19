@@ -207,8 +207,25 @@ impl PdfcerApp {
                 // `dialogs::host` does — one line, one mechanism, so a window
                 // and a dialog cannot come to report their geometry two
                 // different ways.
-                if let Some(inner) = ui.ctx().input(|i| i.viewport().inner_rect) {
+                //
+                // The OUTER rectangle beside it, because the two answer
+                // different questions and only one of them is the question the
+                // tear-out affordance raises. `floatwin` places the window with
+                // `with_position`, which takes the **outer** corner, from the
+                // same `at_pts` the outline was drawn at; so *"did the window
+                // open where the operator was shown it would"* is a claim about
+                // the outer origin. Comparing it against the client rectangle
+                // instead would be off by the host's border and title bar, and
+                // reconciling that in the harness would put Windows' chrome
+                // inside the instrument.
+                let (inner, outer) = ui
+                    .ctx()
+                    .input(|i| (i.viewport().inner_rect, i.viewport().outer_rect));
+                if let Some(inner) = inner {
                     crate::diag::viewport_inner(vp, inner);
+                }
+                if let Some(outer) = outer {
+                    crate::diag::viewport_outer(vp, outer);
                 }
                 // **THE TWO REGIONS THAT MAKE AN EMPTY WINDOW
                 // DISTINGUISHABLE FROM A FULL ONE.**

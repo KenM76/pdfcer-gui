@@ -587,6 +587,50 @@ pub fn viewport_inner(id: egui::ViewportId, rect: egui::Rect) {
     }
 }
 
+/// **Where a child viewport's whole WINDOW sits on the desktop, decoration
+/// included.**
+///
+/// ```text
+/// pdfcer-diag viewport-outer id=<hash> rect=[[x0 y0] - [x1 y1]]
+/// ```
+///
+/// # Why the inner rectangle cannot answer the question this one answers
+///
+/// [`viewport_inner`] publishes the **client** area, and the client area is not
+/// the quantity any window-placement API speaks.
+/// `egui::ViewportBuilder::with_position` takes the **outer** corner while
+/// `with_inner_size` takes the client extent, so a check asking *"did the window
+/// open where the affordance promised"* is comparing a promise expressed in
+/// outer points against a measurement expressed in client points. On Windows 11
+/// those differ by the border and the title bar — measured here as 8 pt across
+/// and 31 pt down — and a harness reconciling them has to encode the host's
+/// chrome in the instrument, where it silently becomes wrong on the next
+/// platform, the next theme, or the next undecorated window.
+///
+/// The failure this closes is the one `viewport_inner`'s own doc comment names
+/// as a class: **a coordinate-space defect with plausible numbers.** A tear-out
+/// outline is drawn in *application-window* points and converted to desktop
+/// points by adding the application's own origin. Drop that addition and the
+/// window opens hundreds of points from the outline the operator was shown —
+/// while the client rectangle is still exactly the promised size, still on the
+/// desktop, still a real window. Every assertion available without this line
+/// goes on passing.
+///
+/// Emitted on change only and keyed by id, on the same terms as
+/// [`viewport_inner`], so the two lines for one window move together and a
+/// window sitting still costs nothing per frame.
+pub fn viewport_outer(id: egui::ViewportId, rect: egui::Rect) {
+    if !enabled() {
+        return;
+    }
+    let key = format!("viewport-outer:{:?}", id);
+    lock(&UI_RECTS_THIS_FRAME).insert(key.clone());
+    if record_rect_if_changed(&mut lock(&LAST_UI_RECT), &key, rect) {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        eprintln!("pdfcer-diag viewport-outer id={:?} rect={rect:?}", id);
+    }
+}
+
 thread_local! {
     /// Which viewport's coordinate space [`ui_rect`] is currently publishing
     /// in, or `None` for the application's own window.

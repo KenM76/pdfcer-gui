@@ -95,6 +95,30 @@ const NONE: &str = "none";
 /// generates no input and a build is not obliged to repaint without it.
 const DWELL: std::time::Duration = std::time::Duration::from_millis(600);
 
+/// How far the window that opens may sit from the origin the outline promised.
+///
+/// The measured residual is **0.0 pt on both axes** — `dock-tear at=[1267.0
+/// 502.0]` and `viewport-outer rect=[[1267.0 502.0] - ...]` from the same run.
+/// The allowance is not slack for a wrong conversion: it covers only the round
+/// trip through the window manager, which is asked for a position in logical
+/// points and reports one back after snapping to whole physical pixels. At a
+/// `ppp` above 1 that rounding is a fraction of a point, so one point is the
+/// ceiling on a correct build at any scale this application runs at.
+///
+/// ★ Sized deliberately far below the failure it is guarding against. A
+/// conversion that adds the wrong window origin, or none, is wrong by the
+/// application window's own position — hundreds of points. Anything between one
+/// point and that is a defect nobody has met yet and should be read, not
+/// tolerated, so widening this constant is the wrong response to it failing.
+const ORIGIN_TOLERANCE_PTS: f32 = 1.0;
+
+/// How far the window's client area may differ from the size the outline drew.
+///
+/// Same measurement, same reasoning: the outline is `DEFAULT_SIZE_PTS` and the
+/// window is built `with_inner_size` from the same value, so the two agree
+/// exactly (320x480 measured) and the allowance covers only pixel rounding.
+const SIZE_TOLERANCE_PTS: f32 = 1.0;
+
 /// **A drag over another compartment offers that compartment, and the release
 /// lands where the offer said.**
 pub struct ADragOverTheDockOffersTheCompartmentUnderThePointer;
@@ -718,19 +742,31 @@ fn drive_tear(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<Str
              `{panel}`. The drag is carrying something other than what was grabbed"
         ));
     }
-    match last.get_rect("rect") {
-        Some(r) if r.is_substantial() => {
+    // Kept for step 4: the offer is the promise, and a promise is only worth
+    // tracing if something afterwards measures the window against it.
+    let promised = last.get_rect("rect").filter(|r| r.is_substantial());
+    let promised_at = last.get_vec2("at");
+    match (promised, promised_at) {
+        (Some(r), Some(at)) => {
             report.note(format!(
                 "★ the outline offered a window {:.0}×{:.0} pts at ({:.0}, {:.0}) on the desktop",
                 r.width(),
                 r.height(),
-                last.get_vec2("at").map_or(f32::NAN, |p| p.x),
-                last.get_vec2("at").map_or(f32::NAN, |p| p.y),
+                at.x,
+                at.y,
             ));
         }
-        other => failures.push(format!(
-            "the tear offered no usable outline ({other:?}). The rectangle is the whole of what \
-             the affordance says, so an empty one is the affordance having nothing to show"
+        (None, _) => failures.push(format!(
+            "the tear offered no usable outline ({:?}). The rectangle is the whole of what \
+             the affordance says, so an empty one is the affordance having nothing to show",
+            last.get_rect("rect")
+        )),
+        (Some(_), None) => failures.push(format!(
+            "the tear offered an outline and no `at` ({:?}), so it says how big a window would \
+             be and never where. `at` is the value handed to the window as its position, so \
+             without it on the line nothing can check that the window opened where the \
+             operator was shown it would",
+            last.raw
         )),
     }
 
@@ -793,19 +829,144 @@ fn drive_tear(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<Str
              nothing"
         ));
     }
-    match trace
+    let Some(id) = trace
         .events(crate::checks::driving::VIEWPORT_INNER_EVENT)
         .last()
         .and_then(|l| l.get("id").map(str::to_owned))
-    {
-        Some(id) => {
-            report.note(format!("★★★ and a window opened for it (viewport {id})"));
-        }
-        None => failures.push(
+    else {
+        failures.push(
             "no float window was created by the release, so the panel left the dock and went \
              nowhere the operator can see"
                 .to_owned(),
-        ),
+        );
+        return Ok(verdict(&failures));
+    };
+    report.note(format!("★★★ and a window opened for it (viewport {id})"));
+
+    // --- 5: ★★★ and the window is the one the outline drew --------------
+    //
+    // Everything above is satisfied by a window of any size opening anywhere on
+    // the desktop. The outline is a promise with two halves, and both are
+    // checkable against what the window reports about itself.
+    //
+    // ★ SIZE against the INNER rectangle and ORIGIN against the OUTER one, and
+    // the pairing is the whole point: `floatwin` builds the window with
+    // `with_inner_size` and `with_position`, and those two egui setters speak
+    // different rectangles. Checking the origin against `viewport-inner`
+    // instead would fail by the host border and title bar — 8 pt across and
+    // 31 pt down on this desktop — and the only way to make it pass would be to
+    // put a chrome allowance in the harness, where it would be wrong on the
+    // next platform and would swallow a real 30-point placement error for ever.
+    let by_id = |event: &str| {
+        trace
+            .events(event)
+            .filter(|l| l.get("id") == Some(id.as_str()))
+            .filter_map(|l| l.get_rect("rect"))
+            .last()
+    };
+    let (Some(promised), Some(at)) = (promised, promised_at) else {
+        // Already reported at step 1; the window is real and the promise is not
+        // readable, so there is nothing further to compare it against.
+        return Ok(verdict(&failures));
+    };
+
+    match by_id(crate::checks::driving::VIEWPORT_INNER_EVENT) {
+        Some(inner)
+            if (inner.width() - promised.width()).abs() <= SIZE_TOLERANCE_PTS
+                && (inner.height() - promised.height()).abs() <= SIZE_TOLERANCE_PTS => {}
+        Some(inner) => failures.push(format!(
+            "the outline offered a window {:.0}×{:.0} pts and the window that opened has a \
+             {:.0}×{:.0} pt client area. The operator sized nothing — the outline is the \
+             only statement of how big the panel was about to be, so a window of a \
+             different size is the affordance having described something else",
+            promised.width(),
+            promised.height(),
+            inner.width(),
+            inner.height()
+        )),
+        None => failures.push(format!(
+            "viewport `{id}` opened and published no client rectangle, so nothing says how \
+             big the window the operator was promised actually is"
+        )),
+    }
+
+    // ★★ THE EXPECTED DESKTOP ORIGIN IS MEASURED HERE, NOT TAKEN FROM THE
+    // TRACE.
+    //
+    // Comparing the published `at` against the window that `at` positioned is
+    // a tautology: both carry whatever the conversion produced, so a build
+    // that adds the wrong application-window origin — or none — agrees with
+    // itself and passes. That was measured: deleting the `+ origin` term in
+    // the shell moved a real window 788 pt up and 71 pt left of the outline
+    // the operator was shown, and a check written that way still said PASS.
+    //
+    // So the harness computes the same quantity from its own side — the
+    // application window's client corner, read from the OS — and the outline
+    // rectangle as the operator saw it, which is in application-window points.
+    // The two inputs are then independent of each other, which is the only
+    // arrangement in which agreement means anything.
+    //
+    // `client_origin` is desktop PIXELS and `viewport-outer` is desktop
+    // POINTS, so the scale divides. At `ppp` 1 they are the same number and
+    // the division is invisible; on a scaled display it is the whole
+    // conversion.
+    let expected = (
+        promised.min.x + frame.client_origin.0 as f32 / frame.scale,
+        promised.min.y + frame.client_origin.1 as f32 / frame.scale,
+    );
+    let off_by = ((at.x - expected.0).abs(), (at.y - expected.1).abs());
+    if off_by.0 > ORIGIN_TOLERANCE_PTS || off_by.1 > ORIGIN_TOLERANCE_PTS {
+        failures.push(format!(
+            "the outline was drawn at ({:.0}, {:.0}) inside the application window, whose \
+             client corner is at ({:.0}, {:.0}) on the desktop, so the window it promised \
+             belongs at ({:.0}, {:.0}). The position handed to the window is ({:.0}, {:.0}) \
+             — out by {:.0} across and {:.0} down. The outline and the window position are \
+             the same rectangle in two coordinate spaces, and the conversion between them \
+             is the only step that can put a real window a plausible distance from the \
+             affordance that promised it",
+            promised.min.x,
+            promised.min.y,
+            frame.client_origin.0 as f32 / frame.scale,
+            frame.client_origin.1 as f32 / frame.scale,
+            expected.0,
+            expected.1,
+            at.x,
+            at.y,
+            at.x - expected.0,
+            at.y - expected.1
+        ));
+    }
+
+    match by_id(crate::checks::driving::VIEWPORT_OUTER_EVENT) {
+        Some(outer)
+            if (outer.min.x - expected.0).abs() <= ORIGIN_TOLERANCE_PTS
+                && (outer.min.y - expected.1).abs() <= ORIGIN_TOLERANCE_PTS =>
+        {
+            report.note(format!(
+                "★★★ and it opened where the outline was drawn, at ({:.0}, {:.0})",
+                outer.min.x, outer.min.y
+            ));
+        }
+        Some(outer) => failures.push(format!(
+            "the outline promised a window at ({:.0}, {:.0}) on the desktop and one opened \
+             at ({:.0}, {:.0}) — {:.0} pt across and {:.0} pt down from where the operator \
+             was shown it would be. Both are OUTER corners in desktop points, so this is \
+             not the host border and title bar: the window was given a position and did \
+             not take it",
+            expected.0,
+            expected.1,
+            outer.min.x,
+            outer.min.y,
+            outer.min.x - expected.0,
+            outer.min.y - expected.1
+        )),
+        None => failures.push(format!(
+            "viewport `{id}` opened and published no `{}` line, so nothing says where on the \
+             desktop the window went. The client rectangle cannot answer it: it is inset by \
+             the host chrome, and reconciling that in this check would encode one platform \
+             window frame in the instrument",
+            crate::checks::driving::VIEWPORT_OUTER_EVENT
+        )),
     }
 
     Ok(verdict(&failures))

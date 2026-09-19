@@ -343,7 +343,15 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    a check that named a strip would assert about a surface the operator cannot
    see. **The subject of a landing assertion is the panel's body, not its tab** —
    a tab is a property of the compartment a panel is in, a body is a property of
-   its being docked at all. Thirteen falsification plants, all caught.
+   its being docked at all. **The tear check also proves the window opens where
+   the outline promised** — same size, same desktop corner. The expected corner
+   is computed by the harness from the application window's own client origin,
+   read from the OS, and never from the `at` the application published: those
+   two agree by construction, so a build that converts the outline to desktop
+   points wrongly passes a check written that way. That was measured — deleting
+   the conversion term opened a real window 788 pt left and 71 pt up of the
+   outline and the tautological check still said PASS. Eighteen falsification
+   plants, all caught.
 6. **O198's remainder, which is O188** — a title-block run the exporter wrote as
    one lump is still one lump: he can reach that text and drag a line, not take
    it apart. **The verb has landed and is in the pin**: `EditSession::split_text_object`

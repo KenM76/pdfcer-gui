@@ -140,6 +140,16 @@ pub fn declared(trace: &Trace, ui_rect: &str, name: &str) -> Option<LRect> {
 /// **desktop logical points**.
 pub const VIEWPORT_INNER_EVENT: &str = "viewport-inner";
 
+/// The `viewport-outer` event: a child viewport's whole window — decoration
+/// included — in **desktop logical points**.
+///
+/// Use this, never [`VIEWPORT_INNER_EVENT`], to check a window against a
+/// position the application *asked for*: `egui::ViewportBuilder::with_position`
+/// speaks outer points. The two rectangles differ by the host's border and
+/// title bar, so the inner one answers a placement question off by the chrome —
+/// an error that looks like a real defect and varies by platform.
+pub const VIEWPORT_OUTER_EVENT: &str = "viewport-outer";
+
 /// **The frame a declared region's coordinates are relative to.**
 ///
 ///
