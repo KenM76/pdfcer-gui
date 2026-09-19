@@ -112,7 +112,77 @@ exactly that. **The canvas needs the same treatment and does not have it.**
 
 # OPEN
 
-## O212 — ◑ **STEPS 0 AND 1 ARE BUILT AND DRIVEN; FOUR STEPS REMAIN** — panels should dock, tear out, and drop back the way Qt's do
+## O213 — ◑ **CAUSE MEASURED, SHELL FIX LANDED, NOT YET DRIVEN** — editing one line of a title-block shifts that line to the right
+
+> *"In sw41177.pdf when I edit some of the lines like "#2 USE SPACERS"... the
+> entire line shifts to the right after instead of staying in place."*
+
+**The cause is not the disposition and is not the pin.** His producer writes
+that one visual line as **nine** show operators, each with its own origin. The
+shell asked the engine to replace the whole run, which makes the edit *span*
+those nine; a spanning edit puts the replacement into the operator holding the
+match's **end** and empties the ones before it, so the line is redrawn from its
+ninth fragment's origin. Measured on his own sheet, one `EditSession` per
+shape:
+
+| request | left edge, after | `followers_repositioned` |
+|---|---|---|
+| whole-run, spanning nine operators | **714.32** — moved **+240.16 pt** | 0 |
+| narrowed to the one operator changed | **474.16** — held exactly | — |
+
+The advance the character actually added is **0.499 pt**. `Reflow` and `Pin`
+produce byte-identical placement, so the disposition was never the variable.
+The compensation that normally hides the collapse reports **2** on the
+`per-glyph-operators.pdf` fixture, where the left edge holds, and **0** here —
+which is why a bound held only on that fixture went on passing straight through
+the defect he reported.
+
+**Engine:** filed as `G028`, with the reproduction, the nine-operator extent
+table and the fixture control.
+
+**Shell:** `canvas::textedit::narrow` narrows the request to the single show
+operator the keystroke touched, which makes it span nothing and leaves nothing
+to compensate. It refuses — and keeps the spanning form — when the change
+straddles two operators or falls in a gap extraction synthesised. ⚠ It is a
+workaround and comes out when `G028` lands.
+
+**Remaining:** drive it on his own file through `tools/ui-verify` and assert
+the line's left edge, which is the only evidence R1 accepts.
+
+His file is `C:/Users/Ken/OneDrive/pdfTests/SW41177.pdf`; work on a copy.
+
+## O214 — ◑ **RE-REPORTED BY HIM; THIS IS O188's MOVE HALF, AND IT IS STILL NOT REACHABLE** — drag one line of a block as if it were its own object
+
+> *"I'd also like to be able to take a line like this that is part of a larger
+> block and be able to relocate it by dragging and moving as if it wasn't part
+> of a larger block. I thought we worked on this and maybe the engine did
+> implement that change if that is where it was needed to be done, but it
+> didn't make it here."*
+
+**He is asking again, and the second asking is itself the finding.** O188 filed
+this as the move half of *"the text in a title block is one lump"*, and the
+register carried it as filed ever since.
+
+⇒ **Half of it is built, and the register was wrong to imply none of it was.**
+`EditSession::move_text_run` is wired through `canvas::moving`, reachable by the
+Points tool and by right-click → *Select this line*, and dragging it is asserted
+by a driven check. What the register missed is why that half does not answer
+him.
+
+**The unit the engine moves is one show operator; the unit he means is one
+visual line, and on his sheet those differ nine to one.** Dragging his
+`#2 USE SPACERS …` line by the built route moves one of its nine fragments and
+leaves the other eight where they were. The route that would answer him is
+`text_object_split_plan(…, SplitGranularity::Line)` → `split_text_object` →
+re-resolve the object indices, which shift by the number of pieces → `move_objects`.
+**Both split verbs exist in the engine and have zero call sites in this shell.**
+
+His new sentence adds a requirement O188 did not state: a verb is not enough.
+He wants it **by dragging**, with the same gesture that moves any other object,
+and the line must behave as though it were not part of the block for the
+duration of that drag.
+
+## O212 — ✅ **SHIPPED, DRIVEN, AND CONFIRMED BY HIM** — panels should dock, tear out, and drop back the way Qt's do
 
 > *"how much effort will it take to get our gui panel docking and tearout and
 > being able to drop the panels back into new regions, drag tabs to reorder or

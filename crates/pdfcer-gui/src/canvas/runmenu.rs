@@ -12,8 +12,10 @@
 //!
 //! * **(B)** delete one line — shipped: `EditSession::delete_text_run`,
 //!   reachable at the Part rung.
-//! * **(C)** move one line — **the engine has no verb**, request `G017`; the
-//!   drag declines with a worded sentence rather than silently.
+//! * **(C)** move one line — shipped: `EditSession::move_text_run`, reachable
+//!   by dragging the same Part-rung selection. ⚠ Its unit is **one show
+//!   operator**, which on a producer that writes a line in fragments is not the
+//!   whole visual line; `OPERATOR_REQUESTS.md` O214 is that gap.
 //! * **(A)** *find* either of them — **this file**.
 //!
 //! The note filed with (B) and (C) stated (A) in one line, and it is the line
@@ -172,8 +174,8 @@ pub enum RunPick {
     ///
     /// ★★ **The same numbering `delete_text_run` and `hit_test_text_runs`
     /// use**, so the number this menu picks is the number the engine acts on
-    /// and the shell needs no second index space. That is the fact request
-    /// `G017` relies on for its `move_text_run` signature too.
+    /// and the shell needs no second index space. `move_text_run` takes the
+    /// same index, so one pick drives all three verbs.
     Run {
         /// The page the click was on. Carried rather than re-derived at
         /// dispatch: a pick is only meaningful on the page it was taken on,

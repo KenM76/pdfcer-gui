@@ -62,7 +62,9 @@ use crate::app::state::OpenDoc;
 
 /// Which content buffer a glyph's span indexes — the `EditTarget` half of a pin.
 ///
-fn target_of(p: &pdfcer_core::text_extract::GlyphProvenance) -> pdfcer_core::text_edit::EditTarget {
+pub(super) fn target_of(
+    p: &pdfcer_core::text_extract::GlyphProvenance,
+) -> pdfcer_core::text_edit::EditTarget {
     match p.content_stream {
         pdfcer_core::text_extract::ContentStreamRef::Page => {
             pdfcer_core::text_edit::EditTarget::PageContents

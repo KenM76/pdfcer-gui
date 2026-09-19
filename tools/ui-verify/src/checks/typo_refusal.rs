@@ -42,7 +42,7 @@
 //!
 //! | gesture | what must happen |
 //! |---|---|
-//! | correct the typo in text the document arrived with | the commit **lands**, `pinned=true span_from_pin=1` on the plan's own line, and **no `⊗` slot draws** |
+//! | correct the typo in text the document arrived with | the commit **lands**, the plan's own line names one of the three legitimate request shapes with the pin still ON, and **no `⊗` slot draws** |
 //! | commit text pdfcer itself wrote | the edit lands **and no `⊗` slot draws after it** |
 //!
 //! The second row is the whole reason this file is long. The oracle for the
@@ -55,8 +55,8 @@
 //!
 //! ## ★★★ THE ASSERTION THAT CARRIES THE VERDICT IS NOT "THE EDIT LANDED"
 //!
-//! It is `edit-text-pin … pinned=true span_from_pin=1`, and the distinction is
-//! the difference between a working program and a dangerous one.
+//! It is `edit-text-pin … pinned=true`, and the distinction is the difference
+//! between a working program and a dangerous one.
 //!
 //! The pin is the **only** disambiguator `EditRequest` carries — there is no
 //! occurrence index on it — so dropping it hands the choice of *which*
@@ -131,7 +131,8 @@
 //! it is the page on which dropping the pin would edit the wrong one.
 //!
 //! ★ The driven check can only read the trace, so it asserts the *decision*
-//! (`pinned=true span_from_pin=1`). Which occurrence actually changed is asserted
+//! (`pinned=true`, in one of the three shapes below). Which occurrence actually
+//! changed is asserted
 //! by `canvas::textedit::glyphwall` against the same fixture, by position.
 //!
 //! ## ★★ Why the caret is expected to be OFFERED, not withheld
@@ -543,9 +544,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     //
     // ⚠ Neither field alone says it. `Pass 256.0`: a pinned request never
     // spans — so a pin without the flag is the refusal he reported, and the
-    // flag without a pin has nothing to anchor to. `span_from_pin` is the
-    // complement of `one_operator` by construction in `canvas::textedit::plan`,
-    // so reading all three is also a check on the emitter.
+    // flag without a pin has nothing to anchor to.
+    //
+    // ★★★ **THERE ARE THREE LEGITIMATE SHAPES, not two**, and the third is the
+    // newest — `canvas::textedit::narrow`, engine request `G028`. A request
+    // narrowed to the one show operator the keystroke touched carries a pin, an
+    // empty `find` and `span_from_pin=0` on a run that is **not** one operator,
+    // so the invariant this check used to assert — *"`span_from_pin` is the
+    // complement of `one_operator` by construction"* — is deliberately no longer
+    // true. `narrowed=` is the field that tells the third shape from a drift
+    // between the emitter and the decision, and without reading it this check
+    // would report the shipped fix as a defect.
     let pin_line = trace.events("edit-text-pin").last();
     let pinned = pin_line.and_then(|l| l.get("pinned")).map(str::to_owned);
     let spanning = pin_line
@@ -554,17 +563,51 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let one_op = pin_line
         .and_then(|l| l.get("one_operator"))
         .map(str::to_owned);
-    match (pinned.as_deref(), spanning.as_deref(), one_op.as_deref()) {
-        (Some("true"), Some("1"), Some("false")) => {
+    let narrowed = pin_line.and_then(|l| l.get("narrowed")).map(str::to_owned);
+    if narrowed.is_none() {
+        return Ok(Some(format!(
+            "★★ THE PLAN'S OWN LINE HAS NO `narrowed=` FIELD: `{}`.\n\
+             ⚠ Either the build predates `canvas::textedit::narrow` — in which case the \
+             defect he reported as O213 is still in it, and a title-block line jumps to the \
+             right when it is edited — or the field was renamed and this check has been \
+             reading a decision that stopped being emitted. Both are reasons to stop, \
+             because every arm below is about to judge a three-way decision on two of its \
+             fields. Trace: {}.",
+            pin_line.map_or("— no `edit-text-pin` line at all", |l| l.raw.as_str()),
+            session.trace_path().display()
+        )));
+    }
+    match (
+        pinned.as_deref(),
+        spanning.as_deref(),
+        one_op.as_deref(),
+        narrowed.as_deref(),
+    ) {
+        (Some("true"), Some("0"), Some("false"), Some("1")) => {
             report.note(
-                "★★★ and it landed for the RIGHT reason: `edit-text-pin` reports \
-                 `pinned=true span_from_pin=1 one_operator=false` — the run is written across \
-                 several show operators, the pin stayed ON, and the span search was told to \
-                 start AT it. On a page holding the same words twice the same code edits the \
-                 one that was clicked rather than the first one on the page",
+                "★★★ and it landed in the shape that keeps the line where his producer put \
+                 it: `edit-text-pin` reports `pinned=true span_from_pin=0 one_operator=false \
+                 narrowed=1` — the run is written across several show operators, and the \
+                 request was narrowed to the ONE the keystroke touched. Nothing spans, so \
+                 nothing is emptied and there is nothing for the engine to compensate. That \
+                 is O213: without it a spanning edit redraws the line from its final \
+                 fragment's origin, measured at +240.16 pt on this very sheet",
             );
         }
-        (Some("true"), Some("0"), Some("true")) => {
+        (Some("true"), Some("1"), Some("false"), Some("0")) => {
+            report.note(
+                "★★ and it landed by SPANNING, with the pin kept: `edit-text-pin` reports \
+                 `pinned=true span_from_pin=1 one_operator=false narrowed=0` — the run is \
+                 written across several show operators, the change touches more than one of \
+                 them so it could not be narrowed, and the span search was told to start AT \
+                 the pin. On a page holding the same words twice the same code edits the one \
+                 that was clicked rather than the first one on the page. ⚠ This is the shape \
+                 engine request `G028` is about: where the engine declines to reposition the \
+                 followers, a spanning edit redraws the line from its LAST fragment's origin. \
+                 Look at the capture before believing the line held",
+            );
+        }
+        (Some("true"), Some("0"), Some("true"), _) => {
             report.note(
                 "★★ it landed, and the pin was kept — but on a WHOLE-OPERATOR run: \
                  `edit-text-pin` reports `pinned=true span_from_pin=0 one_operator=true`, so \
@@ -574,7 +617,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                  decision. Aim at a per-glyph run to reach it — see this module's Aim section",
             );
         }
-        (Some("false"), _, _) => {
+        (Some("false"), _, _, _) => {
             return Ok(Some(format!(
                 "★★★ THE EDIT LANDED BUT THE PIN WAS DROPPED: `{}`.\n\
                  ⚠ This is the dangerous build. The pin is the ONLY disambiguator \
@@ -593,21 +636,26 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 session.trace_path().display()
             )));
         }
-        (Some(p), s, o) => {
+        (Some(p), s, o, n) => {
             return Ok(Some(format!(
                 "★★★ THE EDIT LANDED AND THE PLAN'S OWN LINE DOES NOT ADD UP: `pinned={p} \
-                 span_from_pin={} one_operator={}`. `span_from_pin` is the complement of \
-                 `one_operator` by construction in `canvas::textedit::plan`, so either the \
-                 emitter and the decision have drifted apart or a field changed spelling. In \
-                 both cases this check is reading something other than the decision it was \
-                 written to judge, and its green on other runs means less than it looks. \
-                 Trace: {}.",
+                 span_from_pin={} one_operator={} narrowed={}`.\n\
+                 ★ `canvas::textedit::plan` emits exactly three shapes. \
+                 `span_from_pin=0 one_operator=true narrowed=0` — one show operator, the pin \
+                 alone names it. `span_from_pin=1 one_operator=false narrowed=0` — several, \
+                 and the change straddles them. `span_from_pin=0 one_operator=false \
+                 narrowed=1` — several, and the change lies inside one of them. Anything \
+                 else means the emitter and the decision have drifted apart, or a field \
+                 changed spelling. In both cases this check is reading something other than \
+                 the decision it was written to judge, and its green on other runs means less \
+                 than it looks. Trace: {}.",
                 s.unwrap_or("— absent"),
                 o.unwrap_or("— absent"),
+                n.unwrap_or("— absent"),
                 session.trace_path().display()
             )));
         }
-        (None, _, _) => {
+        (None, _, _, _) => {
             return Ok(Some(format!(
                 "★★ THE EDIT LANDED AND THE PLAN SAID NOTHING ABOUT WHY. No `edit-text-pin` \
                  line carrying `pinned=`, so this check cannot tell a build that kept the pin \

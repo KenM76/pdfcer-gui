@@ -322,24 +322,32 @@ pub fn selection_part_of_path(line: &str, of: usize) -> String {
 /// there — so the sentence that gets him back has to be somewhere he is
 /// already looking.
 ///
-/// ★★ **It names Delete because Delete is the capability**, and naming it
-/// is the only disclosure the shell can make honestly: `delete_text_run`
-/// exists, `move_text_run` does not (request `G017`), and a sentence here
-/// that said *drag it* would be describing a verb the engine has not got.
-/// The refused drag has its own sentence, in `crate::text::arrange`, and
-/// this one deliberately does not duplicate it.
+/// ★★★ **It names both verbs, because the engine has both.**
+/// `delete_text_run` removes the line and `move_text_run` moves it, and
+/// `canvas::moving` routes a Part-rung drag on a run to the second exactly as
+/// it routes a Part-rung drag on a subpath to `move_subpath`. A hover that
+/// named only Delete would be telling the operator a shipped gesture does not
+/// exist — which is the failure mode O214 reported, in his words *"I thought
+/// we worked on this … but it didn't make it here"*.
+///
+/// ★★ **The two lines the engine refuses are not hedged into this sentence.**
+/// A run with no position of its own, and a run the next line's position is
+/// measured from, each get their own wording from `crate::text::arrange` at
+/// the moment the drag is declined. Folding a *"sometimes"* in here would cost
+/// every other line its plain instruction to buy a caveat the refused ones
+/// already state better.
 #[must_use]
 pub const fn selection_part_of_text_hint() -> &'static str {
-    "One line inside a block of text. Delete removes just this line. Press Escape to select the whole block again."
+    "One line inside a block of text. Drag it to move it, or press Delete to remove just this line. Press Escape to select the whole block again."
 }
 
 /// The hover behind the path clause.
 ///
-/// ★ Its verbs differ from the text one's and the difference is real rather
-/// than cosmetic: a part of a path can be **dragged** — `move_subpath` —
-/// and a line of text cannot. The two hovers are where that asymmetry is
-/// said out loud to the operator, and they will stay two sentences until
-/// the engine grows the missing verb.
+/// ★ The verbs are the same as the text one's — both parts drag and both
+/// parts delete — and what differs is the **nouns**: *part* of a *shape*
+/// against *line* of a *block of text*. That is why they stay two sentences
+/// rather than becoming one parameterised one: an operator told he is holding
+/// a shape goes looking for corner handles a line of text does not have.
 #[must_use]
 pub const fn selection_part_of_path_hint() -> &'static str {
     "One part of a shape. Drag it to move it, or press Delete to remove just this part. Press Escape to select the whole shape again."

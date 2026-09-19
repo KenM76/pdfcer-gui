@@ -906,14 +906,16 @@ pub mod geometry_fields;
 /// readout the press is supposed to move.
 pub mod max_zoom;
 
-/// ★★★ **A drag on one line of text is refused, and the operator is TOLD**
-/// — O188. The refusal is correct (`pdfcer-core` has no verb that moves one
-/// show operator), and a correct refusal that says nothing is this project's
-/// founding defect class: he dragged, nothing moved, nothing said why. Its
-/// oracle is a three-stage
-/// chain across the `Action` boundary, because the status bar's decline slot is
-/// shared by every decline in the application and its presence alone is
-/// satisfied equally by the wrong sentence and by a stale one.
+/// ★★★ **A drag on one line of text MOVES it, and where it cannot the operator
+/// is TOLD which line is the problem** — O188. `move_text_run` moves most
+/// lines; it refuses the two whose position the file does not state, and a
+/// correct refusal that says nothing is this project's founding defect class:
+/// he dragged, nothing moved, nothing said why. So the check drives all three
+/// answers — the two refusals and the move — because a table of refusals alone
+/// passes for ever against the build that refused every line. Its oracle is a
+/// three-stage chain across the `Action` boundary, because the status bar's
+/// decline slot is shared by every decline in the application and its presence
+/// alone is satisfied equally by the wrong sentence and by a stale one.
 pub mod move_line_of_text;
 
 /// ★ Shift-picked anchors move TOGETHER, not one at a time. ★★ The capability

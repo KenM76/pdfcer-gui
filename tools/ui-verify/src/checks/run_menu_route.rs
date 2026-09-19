@@ -763,9 +763,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             "★★★ THE BAR DISCLOSED THE WRONG RUNG: `{}`. Expected `kind={RUNG_TEXT} part={n} \
              of={of}`. {} The clause the operator reads is built from exactly these three \
              numbers, so a wrong one here is a wrong sentence on his screen — and the two \
-             wordings are not interchangeable: the text one deliberately does NOT say *drag it \
-             to move it*, because `pdfcer-core` has a verb that moves a subpath and none that \
-             moves one show operator (request G017). Trace: {}.",
+             wordings are not interchangeable: both rungs offer the same two verbs, drag and \
+             Delete, but they name different things to do them to. This one must say *line* of \
+             a *block of text*; the path rung says *part* of a *shape*. An operator told he is \
+             holding a shape goes looking for corner handles a line of text has not got. \
+             Trace: {}.",
             rung.raw,
             if kind == RUNG_TEXT {
                 "The kind is right and a number is not, so the clause was computed from a \
@@ -779,7 +781,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note(format!(
         "★★ the status bar disclosed the rung: `{}` — the operator is told he holds one line \
-         of {of}, and the hover behind it says what Delete will do and how to get back",
+         of {of}, and the hover behind it names both verbs that reach it, drag and Delete, \
+         and how to get back",
         rung.raw
     ));
 
