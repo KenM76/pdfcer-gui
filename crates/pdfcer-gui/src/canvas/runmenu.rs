@@ -170,22 +170,24 @@ pub const TRACE_COMMAND: &str = "text-run-command"; // ui-text-exempt: diagnosti
 /// `unwrap_or_default` its way into treating it as run 0.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum RunPick {
-    /// On a text run, by index into `TextObject::runs` in content order.
+    /// On one visual line of a text object.
     ///
-    /// ★★ **The same numbering `delete_text_run` and `hit_test_text_runs`
-    /// use**, so the number this menu picks is the number the engine acts on
-    /// and the shell needs no second index space. `move_text_run` takes the
-    /// same index, so one pick drives all three verbs.
-    Run {
+    /// ★★ **Numbered in LINES, not show operators** — the same numbering
+    /// `part_hits_of` answers in and `ObjectModelProvider::text_line_count`
+    /// counts, so the number this menu picks is the number a Points-tool click
+    /// would enter at. `VectorAction::MoveTextLine` and `DeleteTextLine`
+    /// translate it to the engine's run indices at their own call sites;
+    /// nothing outside those arms holds a run index.
+    TextLine {
         /// The page the click was on. Carried rather than re-derived at
         /// dispatch: a pick is only meaningful on the page it was taken on,
         /// and the dispatcher re-checks rather than assuming.
         page: usize,
         /// The text object, in whichever index space it lives in.
         object: TargetId,
-        /// Which run, content order.
-        run: usize,
-        /// How many runs the object has — the *of* in *line 3 of 14*.
+        /// Which visual line, content order.
+        line: usize,
+        /// How many lines the object has — the *of* in *line 3 of 14*.
         ///
         /// Carried so the disclosure the status row owes can be written
         /// without a second walk of the object, and so a reader of the trace
@@ -205,14 +207,14 @@ impl RunPick {
     /// *enabled* are one question, and this is it.
     #[must_use]
     pub const fn offered(self) -> bool {
-        matches!(self, Self::Run { .. })
+        matches!(self, Self::TextLine { .. })
     }
 
     /// A short word for the trace. Never displayed.
     fn word(self) -> String {
         match self {
             // ui-text-exempt: diagnostic trace fragments, never displayed in the UI.
-            Self::Run { run, of, .. } => format!("run:{run}/{of}"),
+            Self::TextLine { line, of, .. } => format!("line:{line}/{of}"),
             Self::Elsewhere => "elsewhere".to_owned(),
         }
     }
@@ -223,19 +225,19 @@ impl RunPick {
 /// # The three gates, in the order they are cheapest to fail
 ///
 /// 1. **The object under the pointer is a text object.** `part_kind_of`
-///    answers `Some(PartKind::Run)` for `VectorObject::Text` and nothing else,
+///    answers `Some(PartKind::TextLine)` for `VectorObject::Text` and nothing else,
 ///    so a path, an image or an annotation leaves here immediately.
-/// 2. **It has more than one run.** The module header carries why: on a
-///    single-run object this row would descend to a place indistinguishable
+/// 2. **It has more than one line.** The module header carries why: on a
+///    single-line object this row would descend to a place indistinguishable
 ///    from where the operator already stands.
-/// 3. **The pointer is actually on a run.** `part_hits_of` is the SAME query
+/// 3. **The pointer is actually on a line.** `part_hits_of` is the SAME query
 ///    `canvas::input::probe` asks to enter the Part rung, so the line this
 ///    menu offers and the line a Points-tool click would enter cannot
 ///    disagree.
 ///
 /// # ★★ Why `part_hits_of` and not a hit test of this module's own
 ///
-/// Because the alternative is two spellings of *"which run is under this
+/// Because the alternative is two spellings of *"which line is under this
 /// point"*, and the failure mode of that shape is silent: a change to one
 /// spelling's index handling leaves the other answering a different line, with
 /// every unit test of both still green. One query, two callers, no drift.
@@ -264,33 +266,33 @@ pub fn pick_at(
         return RunPick::Elsewhere;
     };
     // 1.
-    if targets.part_kind_of(object) != Some(PartKind::Run) {
+    if targets.part_kind_of(object) != Some(PartKind::TextLine) {
         return RunPick::Elsewhere;
     }
     // 2. ★ `page_object_index` is `None` for a leaf — a text object painted
     // from inside a form XObject. `part_hits_of` already answers empty there
-    // (`canvas::target`'s `(Some(PartKind::Run), None)` arm, which is an
+    // (`canvas::target`'s `(Some(PartKind::TextLine), None)` arm, which is an
     // acknowledged hole rather than an oversight), so the row would not be
     // offered anyway; failing here as well makes the reason legible instead of
     // arriving as a mysterious empty hit list two lines down.
     let Some(index) = object.page_object_index() else {
         return RunPick::Elsewhere;
     };
-    let of = targets.text_run_count(index);
+    let of = targets.text_line_count(index);
     if of <= 1 {
         return RunPick::Elsewhere;
     }
     // 3.
-    let Some(&run) = targets
+    let Some(&line) = targets
         .part_hits_of(page, object, map.to_page(at), map.tolerance())
         .first()
     else {
         return RunPick::Elsewhere;
     };
-    RunPick::Run {
+    RunPick::TextLine {
         page,
         object,
-        run,
+        line,
         of,
     }
 }
@@ -324,7 +326,7 @@ pub fn trace(pick: RunPick) {
     });
 }
 
-/// **The `(object, run)` a pressed row should select**, or `None` if it cannot.
+/// **The `(object, line)` a pressed row should select**, or `None` if it cannot.
 ///
 /// # ★★ Why the pick is re-validated here and not trusted from the menu
 ///
@@ -373,10 +375,10 @@ fn resolved(
     targets: Option<&ObjectModelProvider>,
     page: usize,
 ) -> Option<(TargetId, usize)> {
-    let RunPick::Run {
+    let RunPick::TextLine {
         page: picked_page,
         object,
-        run,
+        line,
         ..
     } = pick
     else {
@@ -386,34 +388,34 @@ fn resolved(
         return None;
     }
     let targets = targets?;
-    if targets.part_kind_of(object) != Some(PartKind::Run) {
+    if targets.part_kind_of(object) != Some(PartKind::TextLine) {
         return None;
     }
-    // ★ Bounds-checked against the CURRENT run count, not against the `of`
+    // ★ Bounds-checked against the CURRENT line count, not against the `of`
     // parked with the pick. A reflow between the click and the press can
-    // shorten the object, and an index past the end is exactly the operand
-    // `delete_text_run` would refuse — after the selection outline had already
+    // shorten the object, and an index past the end is one the delete and move
+    // arms find no run range for — after the selection outline had already
     // moved somewhere the operator did not point.
     let index = object.page_object_index()?;
-    (run < targets.text_run_count(index)).then_some((object, run))
+    (line < targets.text_line_count(index)).then_some((object, line))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    /// **R9's one boolean.** A pick on a run is offered; nothing else is.
+    /// **R9's one boolean.** A pick on a line is offered; nothing else is.
     ///
     /// ★ Falsified: defining `offered` as `true` makes the second assertion
     /// fail, which is the regression that would draw the row over paths,
     /// images and blank paper.
     #[test]
-    fn only_a_run_pick_is_offered() {
+    fn only_a_line_pick_is_offered() {
         assert!(
-            RunPick::Run {
+            RunPick::TextLine {
                 page: 0,
                 object: TargetId::Object(3),
-                run: 1,
+                line: 1,
                 of: 14,
             }
             .offered()
@@ -422,9 +424,9 @@ mod tests {
     }
 
     /// The pick's default is *nowhere near a line*, so a frame before any
-    /// right-click cannot be read as "run 0 of object 0".
+    /// right-click cannot be read as "line 0 of object 0".
     ///
-    /// ★ Falsified: making a `Run` variant the default makes this fail, and
+    /// ★ Falsified: making a `TextLine` variant the default makes this fail, and
     /// would have offered the row on every right-click anywhere on the canvas
     /// before the operator had pointed at anything.
     #[test]
@@ -444,10 +446,10 @@ mod tests {
     /// leaves the first assertion passing for the wrong reason.
     #[test]
     fn a_pick_from_another_page_is_refused() {
-        let pick = RunPick::Run {
+        let pick = RunPick::TextLine {
             page: 7,
             object: TargetId::Object(3),
-            run: 1,
+            line: 1,
             of: 14,
         };
         assert_eq!(resolved(pick, None, 2), None);
@@ -458,7 +460,7 @@ mod tests {
     ///
     /// ★ Falsified: an `_ =>` arm in [`resolved`] falling through to
     /// `Some((TargetId::Object(0), 0))` makes this fail — the shape of the
-    /// *"unwrap_or_default into run 0"* defect the enum's two variants exist
+    /// *"unwrap_or_default into line 0"* defect the enum's two variants exist
     /// to prevent.
     #[test]
     fn an_elsewhere_pick_resolves_to_nothing() {
@@ -467,21 +469,21 @@ mod tests {
 
     /// The trace word carries **both** numbers, because *"the right verb on
     /// the wrong line"* is the defect class this design can produce, and a
-    /// check that could only see `run` could not tell a wrong pick from a
+    /// check that could only see `line` could not tell a wrong pick from a
     /// short object.
     ///
     /// ★ Falsified: dropping `of` from the format string makes this fail.
     #[test]
     fn the_trace_word_names_the_line_and_the_total() {
         assert_eq!(
-            RunPick::Run {
+            RunPick::TextLine {
                 page: 0,
                 object: TargetId::Object(3),
-                run: 2,
+                line: 2,
                 of: 14,
             }
             .word(),
-            "run:2/14"
+            "line:2/14"
         );
         assert_eq!(RunPick::Elsewhere.word(), "elsewhere");
     }

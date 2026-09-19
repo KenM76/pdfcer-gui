@@ -6,7 +6,7 @@ driven check needs and the reasoning behind each one. Regenerate with:
 
     python tools/gen-inherited-runs-fixture.py
 
-Deterministic -- same bytes every time, no timestamps, no object ids. 656 bytes,
+Deterministic -- same bytes every time, no timestamps, no object ids. 700 bytes,
 one page, `/MediaBox [0 0 612 792]`, one uncompressed content stream, base-14
 Helvetica as `/F1`.
 
@@ -28,14 +28,39 @@ BT
 (Beta follows Alpha) Tj
 1 0 0 1 72 660 Tm
 (Gamma stands alone) Tj
+0 1 -1 0 300 400 Tm
+(Delta) Tj
+(Epsilon) Tj
 ET
 ```
 
 The one fact this document encodes is the **absence** of a positioning operator
-in front of the second `Tj`. That is why the stream is uncompressed: an absence
-inside a Flate stream is not reviewable by eye.
+in front of a `Tj` -- twice, once horizontally and once rotated. That is why
+the stream is uncompressed: an absence inside a Flate stream is not reviewable
+by eye.
 
-## The three runs, their answers, and their spans
+## The four LINES, and why the run table below is not the whole story
+
+The shell addresses a visual line. `runs_share_a_line` groups two runs when
+their text matrices agree in `a`/`b`/`c`/`d` exactly and their `f` differs by
+less than the drift tolerance -- so runs 0 and 1 are **one** line, and the
+rotated pair is **two**, because an advance under `0 1 -1 0` moves `f` by the
+string's width instead of leaving it alone.
+
+| line | runs | `text_line_move_refusal` | why |
+|---|---|---|---|
+| 0 | 0, 1 | `InteriorPieceHasNoPosition` | the line has a position; the join inside it does not |
+| 1 | 2 | `None` -- it MOVES | the CONTROL |
+| 2 | 3 | `WouldMoveNextRun` | the next LINE rides on this one's advance |
+| 3 | 4 | `NoPositionOfItsOwn` | this line's first and only piece is inherited |
+
+**MEASURED, not asserted.** `provider::line::tests::
+the_local_fixture_gives_all_four_line_move_answers` decomposes this file and
+checks every cell of that table. It is the only test in that module that reads
+a document from disk; the rest build their runs by hand and can therefore only
+calibrate the grouping rule, not measure it.
+
+## The five runs, their answers, and their spans
 
 Spans are in PDF user space (y up). The baseline y is stated by the stream; the
 x extents are computed from the Adobe Helvetica AFM advance widths at 12 pt
@@ -48,42 +73,78 @@ so its start x is *derived*, never asserted.
 | 0 | `Alpha` | 700 | 72.0 | 102.7 | `MoveWouldMoveNextRun` |
 | 1 | `Beta follows Alpha` | 700 | 102.7 | 201.4 | `TextRunHasNoPositionOfItsOwn` |
 | 2 | `Gamma stands alone` | 660 | 72.0 | 186.0 | `None` -- it MOVES |
+| 3 | `Delta` | -- | 291.4 | 302.5 | `MoveWouldMoveNextRun` |
+| 4 | `Epsilon` | -- | 291.4 | 302.5 | `TextRunHasNoPositionOfItsOwn` |
+
+Runs 3 and 4 are rotated a quarter turn by `0 1 -1 0 300 400 Tm`, so they have
+no baseline y: they read upward from `(300, 400)` and share one narrow x
+column. Their extent is in **y**, and it is the one number the aims turn on:
+
+| run | y from | y to |
+|---|---|---|
+| 3 `Delta` | 400.000 | 428.008 |
+| 4 `Epsilon` | 428.008 | 467.356 |
+
+They meet exactly at y = 428.008, with no gap, so an aim placed on that line
+is inside both. That is what makes the rotated pair the delicate two aims and
+why the test below asserts each point is inside **one** box rather than merely
+inside the right one.
+
+Every figure in both tables is read out of the engine's decomposition by
+`provider::line::tests::the_aims_driven_at_this_fixture_land_one_per_line`,
+which fails with the whole box list quoted when a number moves.
+
+The pair exists so that a LINE can begin with an inherited run, which a
+horizontal one never can: an inherited run advances along the text direction,
+so a horizontal one always lands back on its predecessor's baseline and inside
+its predecessor's line group.
 
 Cap height at 12 pt Helvetica is about 8.6 pt, so a run's glyphs occupy roughly
 `baseline` to `baseline + 8.6`. An aim four points above the baseline is inside
 every one of them with margin on both sides.
 
-### The aims in `move_line_of_text::AIMS`, and why each x was chosen
+### The aims in `move_line_of_text::AIMS`, and why each point was chosen
 
-| aim | point | why there |
-|---|---|---|
-| run 0 | `(87.0, 704.0)` | mid-`Alpha`; 15 pt clear of run 1's start |
-| run 1 | `(150.0, 704.0)` | mid-`Beta follows Alpha`; 47 pt clear of run 0's end |
-| run 2 | `(128.0, 664.0)` | mid-`Gamma stands alone`, on the lower baseline |
+One aim per visual LINE, so that all four answers come out of one launch.
+
+| aim | line | point | why there |
+|---|---|---|---|
+| 0 | runs 0+1 | `(87.0, 704.0)` | mid-`Alpha`, six points above the baseline |
+| 1 | run 2 | `(128.0, 664.0)` | mid-`Gamma stands alone`, on the lower baseline |
+| 2 | run 3 | `(297.0, 414.0)` | mid-`Delta`, fourteen points below the join at y = 428.008 |
+| 3 | run 4 | `(297.0, 448.0)` | mid-`Epsilon`, twenty points above that join |
+
+Aim 0 may land anywhere in the first line, including inside `Beta follows
+Alpha`: both pieces are the same line now, so both give the same answer. That
+is a widening of the target, not a loss of discrimination -- the four LINES
+still give four different answers.
+
+The rotated pair is the delicate one, because the two lines are stacked
+vertically along x = 291.4..302.5 and meet at y = 428.008. Both aims sit at
+x = 297 and clear that join by more than fourteen points in y.
 
 **The aim is not asserted directly, and it does not need to be.**
 `canvas-selection` carries no part index, so the harness cannot read back which
-run it hit. It does not have to: the three runs produce three *different*
+line it hit. It does not have to: the four lines produce four *different*
 answers, so an aim that landed on the wrong one produces the wrong answer and
 the check fails loudly, naming what it got. The discriminating power is in the
-document, not in the harness's arithmetic -- which is the reason all three aims
-live in one fixture rather than three.
+document, not in the harness's arithmetic -- which is the reason all four aims
+live in one fixture rather than four.
 
 ### Status of these numbers
 
-**CONFIRMED by a driven run on 2026-09-15** (`ui-verify --check
-dragging_one_line_of_text_moves_it_or_says_why`, PASS). All three aims landed
-on three *different* runs and produced the three different answers the table
-below predicts -- which is the strongest confirmation this fixture admits,
-because a mis-aimed press would have produced a neighbour's answer and the
-check reports what it got. The paragraph that follows is kept as the reasoning
-that stood before that run.
+**MEASURED, not computed, and pinned by a test.**
+`provider::line::tests::the_aims_driven_at_this_fixture_land_one_per_line`
+decomposes this file and asserts each of the four points above is inside its
+own line's box and no other. Hand-summing the AFM tables could not have placed
+the rotated pair at all: a quarter turn moves the advance into y, so the
+arithmetic that works for a horizontal run names the wrong axis for these two.
 
-**Computed, then re-measured against a rendered page.** They are hand-summed
-AFM advances; Helvetica metrics are fixed by the specification, so the arithmetic
-is the only thing that can be wrong, and a wrong x lands on a neighbouring run
-whose answer differs -- which the check reports rather than swallows. When a
-driven run confirms them, say so here and date it.
+**Not yet confirmed by a driven run at line granularity.** The four aims have
+never been through `ui-verify`. A wrong point lands on a neighbouring line
+whose answer differs, which the check reports rather than swallows -- so the
+first driven run is what turns this section from reasoning into evidence.
+When it passes, say so here and date it.
 
 ## Why base-14 Helvetica rather than an embedded font
 
@@ -96,3 +157,12 @@ program, so an embedded font would add failure modes (a broken `/Widths`, a bad
 * `tools/ui-verify/src/checks/move_line_of_text.rs` -- `FIXTURE`, `AIMS`. Its
   failure messages cite this file by name, so deleting it breaks a citation a
   reader will follow while a check is red.
+* `crates/pdfcer-gui/src/panels/objects/provider/line.rs` --
+  `the_local_fixture_gives_all_four_line_move_answers` owns the line table and
+  the four refusals; `the_aims_driven_at_this_fixture_land_one_per_line` owns
+  every coordinate on this page and the aim points in the harness.
+* `crates/pdfcer-gui/src/canvas/deleting/tests.rs` -- `ROTATED_INHERITING`.
+  The engine's own `text/runs-inherited.pdf` cannot serve at line granularity:
+  both of its inherited runs are horizontal, so each sits inside its
+  predecessor's line and the document has two lines, neither of which can
+  reach `WouldMoveNextRun` or `NoPositionOfItsOwn`.

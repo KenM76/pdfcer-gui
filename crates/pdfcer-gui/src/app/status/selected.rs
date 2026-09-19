@@ -298,7 +298,7 @@ fn with_part(
     let of = provider.part_count(index);
     // A part index outside the object's own count is a stale selection the
     // resolver is supposed to have cleared. Saying nothing beats saying
-    // *1 line of 3* about a run that is not there.
+    // *1 line of 3* about a line that is not there.
     if part >= of {
         return (line, None);
     }
@@ -327,7 +327,7 @@ fn with_part(
     // clause indistinguishable from the presence of one to any check that only
     // counts lines.
     match kind {
-        Some(PartKind::Run) => {
+        Some(PartKind::TextLine) => {
             trace_rung(RUNG_TEXT, part, of);
             (
                 t::selection_part_of_text(&line, of),

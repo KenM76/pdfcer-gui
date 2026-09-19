@@ -390,12 +390,9 @@ pub fn for_move_subject(
         // already carries, and drawing a rectangle here and calling it a shape
         // would be the same rectangle twice.
         //
-        // ★ `moving::drag`'s own comment already promised this: *"on a rung
-        // the shape preview cannot serve — a text run, an image, a form
-        // XObject — the outline is the whole answer, exactly as it was
-        // before this existed."* Written before a run could move at all, and
-        // still exactly right now that it can.
-        MoveSubject::TextRun { .. } | MoveSubject::TextRunInForm { .. } => None,
+        // On a rung the shape preview cannot serve — a line of text, an
+        // image, a form XObject — the outline is the whole answer.
+        MoveSubject::TextLine { .. } | MoveSubject::TextLineInForm { .. } => None,
         MoveSubject::Subpath {
             object, subpath, ..
         } => {

@@ -57,9 +57,9 @@
 //! | 2 | click the third line | `canvas-selection … level=Object` | the aim is not on a glyph |
 //! | 3 | **control**: the bar has said nothing about a rung | no [`RUNG_EVENT`] line yet | a fossil that would satisfy step 8 |
 //! | 4 | right-click the same point | `canvas-menu context=canvas.object` | the view menu, i.e. the hit test missed |
-//! | 5 | the pick was taken **on that frame** | `text-run-menu pick=run:N/6 offered=true` | `offered=false`, i.e. nothing to offer |
+//! | 5 | the pick was taken **on that frame** | `text-run-menu pick=line:N/6 offered=true` | `offered=false`, i.e. nothing to offer |
 //! | 6 | **the row is on screen** | `menu.item.canvas.object.format.select_text_line` | O188(A), unfixed: no route |
-//! | 7 | the press found the parked operand | `text-run-command pick=run:N/6 outcome=raised` | `outcome=declined`, i.e. the memory key died with the popup |
+//! | 7 | the press found the parked operand | `text-run-command pick=line:N/6 outcome=raised` | `outcome=declined`, i.e. the memory key died with the popup |
 //! | 8 | the ladder entered the Part rung on **that** run | `selection-set … part=N level=part via=select-text-line` | a different N, i.e. the operand was re-derived and drifted |
 //! | 9 | the bar says which line | `status-rung kind=text part=N of=6` | the rung is entered and nothing discloses it |
 //! | 10 | the bar drew it | `ui-rect status-group:selected` | a sentence computed and never painted |
@@ -97,6 +97,10 @@
 //! ignores the pointer and returns run 0 is a real and tempting defect (it is
 //! what a `.first()` over the run list does), and it is invisible when the aim
 //! is on the top line. So this check asserts `N != 0` as well as `of == 6`.
+//!
+//! ★ `N` and `of` are **line** numbers. On this fixture that coincides with
+//! the show-operator count — see [`EXPECTED_RUNS`] for why that is a stated
+//! weakness of this check rather than a silent one.
 //!
 //! ⚠ A missing fixture is a **FAIL**, not a SKIP: it is committed to this
 //! repository, so its absence is a broken checkout rather than an unavailable
@@ -160,13 +164,22 @@ const PAGE_SIZE: PageGeometry = PageGeometry {
     height_pt: 792.0,
 };
 
-/// How many `Tj` operators [`FIXTURE`]'s single text object holds.
+/// How many visual LINES [`FIXTURE`]'s single text object holds.
 ///
 /// A hard fact about a 976-byte file committed to this repository, quoted in
 /// the module header from its own content stream. It is asserted rather than
 /// read back, because `of` is the denominator the operator is shown — *1 line
 /// of 6* — and a build that counted wrongly would state a wrong number to him
 /// while every mechanism in the chain still worked.
+///
+/// ⚠ **This number cannot tell lines from show operators**, and saying so is
+/// the point of the warning. `paragraph.pdf` writes a `Tm` in front of all six
+/// of its `Tj`s on six distinct baselines, so its run count and its line count
+/// are both 6 — a build that had never been re-keyed satisfies this assertion
+/// unchanged. The oracle that CAN tell them apart is
+/// `provider::line::tests::runs_sharing_a_baseline_are_one_line` (3 runs, 2
+/// lines); its driven twin is `move_line_of_text`, whose fixture holds five
+/// runs in four lines.
 const EXPECTED_RUNS: usize = 6;
 
 /// `canvas-selection via=… sel=… level=… first=…`.
@@ -182,7 +195,7 @@ const MENU_EVENT: &str = "canvas-menu";
 /// The context a right-click on a selected text object must resolve.
 const OBJECT_CONTEXT: &str = "canvas.object";
 
-/// `text-run-menu pick=run:N/M offered=…` — `canvas::runmenu::trace`, written
+/// `text-run-menu pick=line:N/M offered=…` — `canvas::runmenu::trace`, written
 /// once per right-click, on the one frame the pointer is still over the text.
 const PICK_EVENT: &str = "text-run-menu";
 
@@ -262,7 +275,7 @@ impl Check for TheRightClickOffersTheLineYouClicked {
     }
 }
 
-/// The run index and total off a `pick=run:N/M` field.
+/// The line index and total off a `pick=line:N/M` field.
 ///
 /// `None` for `pick=elsewhere` and for anything malformed. The caller
 /// distinguishes those from the raw line rather than from this return: a parse
@@ -273,11 +286,11 @@ impl Check for TheRightClickOffersTheLineYouClicked {
 /// make this harness depend on a Rust enum's formatting, which is the defect
 /// recorded as *never `Debug`-format a field a machine reads* — a check there
 /// reported the opposite of the truth while quoting the truth in its own
-/// message. `RunPick::word` writes `run:N/M` as a deliberate, stable token for
+/// message. `RunPick::word` writes `line:N/M` as a deliberate, stable token for
 /// exactly this reason.
 fn run_of(line: &crate::trace::TraceLine) -> Option<(usize, usize)> {
     let pick = line.get("pick")?;
-    let rest = pick.strip_prefix("run:")?;
+    let rest = pick.strip_prefix("line:")?;
     let (n, of) = rest.split_once('/')?;
     Some((n.parse().ok()?, of.parse().ok()?))
 }
@@ -517,7 +530,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              the object; a pick of `elsewhere` therefore means the run-level hit test \
              disagrees with the object-level one, and there is no third reading. \
              `runmenu::pick_at` has three gates and each names a distinct cause: the object is \
-             not `PartKind::Run`; it is a leaf painted from inside a form XObject (the Part \
+             not `PartKind::TextLine`; it is a leaf painted from inside a form XObject (the Part \
              rung is unreachable there BY CONSTRUCTION, and this fixture has no forms); or \
              `part_hits_of` found no run under the point. ⚠ Falsify the aim before reading \
              this as a defect: {FIXTURE}'s third line has its baseline at 668 and this check \
@@ -529,8 +542,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     if !offered {
         return Ok(Some(format!(
-            "the pick found `run:{n}/{of}` and the row was NOT offered: `{}`. \
-             `RunPick::offered` is true for every `Run` variant, so a `run:` pick with \
+            "the pick found `line:{n}/{of}` and the row was NOT offered: `{}`. \
+             `RunPick::offered` is true for every `TextLine` variant, so a `line:` pick with \
              `offered=false` cannot arise from the current code and means the two have been \
              allowed to disagree. Trace: {}.",
             pick.raw,
@@ -565,7 +578,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note(format!(
-        "★★ the right-click picked `run:{n}/{of}` — the line under the pointer, not the first \
+        "★★ the right-click picked `line:{n}/{of}` — the line under the pointer, not the first \
          one, and the count matches the fixture's {EXPECTED_RUNS} show operators"
     ));
 
@@ -580,7 +593,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Ok(Some(format!(
             "★★★ THE DEFECT, AND IT IS O188(A) EXACTLY: there is NO ROW in the canvas object \
              menu for selecting the line that was clicked — no `{ROW_REGION}` region after the \
-             menu opened, although the pick above found `run:{n}/{of}` on that very frame. \
+             menu opened, although the pick above found `line:{n}/{of}` on that very frame. \
              Rows the menu DID publish: {}.\n\
              The operator's report is the consequence: the delete is reachable only through \
              the Points tool (`A`, then click) — a chord he has to know BEFORE he clicks, \
@@ -640,12 +653,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     if outcome != "raised" {
         return Ok(Some(format!(
             "★★★ THE PARKED OPERAND DID NOT SURVIVE THE POPUP: the command ran and declined — \
-             `{}`. The pick was `run:{n}/{of}` when the menu opened, and `runmenu::resolve` \
+             `{}`. The pick was `line:{n}/{of}` when the menu opened, and `runmenu::resolve` \
              re-validates it against the CURRENT model at press time, raising nothing when it \
              no longer applies. Four things it re-asks, each a distinct cause: the parked \
              value is `Elsewhere` (the `egui::Memory` key expired with the popup, or nothing \
              parked it); the pick names a different page than the one on screen; the object is \
-             no longer `PartKind::Run`; or the run index is now out of range. On a static \
+             no longer `PartKind::TextLine`; or the run index is now out of range. On a static \
              fixture with no edit between the two frames the FIRST is overwhelmingly the \
              likely one — and it is the exact failure this whole mechanism exists to prevent, \
              because it means the menu was right when it was drawn and meaningless when it was \
@@ -656,7 +669,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     let Some((command_n, command_of)) = run_of(command) else {
         return Ok(Some(format!(
-            "the command raised and its pick is unreadable: `{}`. Expected `pick=run:N/M`, \
+            "the command raised and its pick is unreadable: `{}`. Expected `pick=line:N/M`, \
              which `RunPick::word` writes as a stable token precisely so a harness never has \
              to read a `{{:?}}`. Trace: {}.",
             command.raw,
@@ -666,7 +679,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     if (command_n, command_of) != (n, of) {
         return Ok(Some(format!(
             "★★★ THE OPERAND DRIFTED BETWEEN THE MENU AND THE PRESS: the right-click picked \
-             `run:{n}/{of}` and the press read back `run:{command_n}/{command_of}`. These are \
+             `line:{n}/{of}` and the press read back `line:{command_n}/{command_of}`. These are \
              the same parked value read twice and they cannot legitimately differ — nothing \
              edited the document between the two frames. A re-derivation at press time is the \
              cause this is written to catch: it works on a one-line document and picks the \

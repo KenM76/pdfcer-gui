@@ -409,6 +409,24 @@ pub const fn line_piece_has_no_position_of_its_own() -> &'static str {
      press Escape to select the whole block of text and drag that."
 }
 
+/// Said when a line's pieces could not be folded into one undo entry.
+///
+/// A visual line may be several show operators, and moving or deleting it is
+/// therefore several engine commands folded into one with
+/// `EditSession::coalesce_last`. That fold answers `false` only when the undo
+/// stack was shorter than the count asked for: every piece was changed, and
+/// only the grouping failed. Saying so is the whole of the correct response —
+/// retrying would apply the change a second time, and silence would leave an
+/// operator who presses Undo once, sees the line half-moved, and concludes
+/// Undo is broken.
+#[must_use]
+pub fn line_takes_several_undo_presses(pieces: usize) -> String {
+    format!(
+        "That line is written in {pieces} pieces, so taking this back needs \
+         {pieces} presses of Undo rather than one."
+    )
+}
+
 // ===========================================================================
 // Z-order — what an Arrange command has to disclose
 // ===========================================================================

@@ -753,7 +753,7 @@ fn row_label(provider: &ObjectModelProvider, row: ObjectTreeRow) -> String {
                 t::object_row_headline(index, &summary::describe_object(o))
             }),
         ObjectTreeRow::Part { object, part } => match provider.part_kind(object) {
-            Some(provider::PartKind::Run) => t::object_tree_run_row(part),
+            Some(provider::PartKind::TextLine) => t::object_tree_run_row(part),
             // A path's part, and the fallback for an object whose kind
             // cannot be established — "Part" is the general word and the row
             // exists because the part does.
@@ -820,7 +820,7 @@ pub fn build_rows(
             if !parts_expanded.contains(&(index, part)) {
                 continue;
             }
-            // A text run has no anchors, so this is empty for one and no
+            // A text line has no anchors, so this is empty for one and no
             // guard on the object's kind is needed — the ladder caps itself
             // at two rungs for text by construction.
             let points = provider.subpath_node_points(index, part);
@@ -1003,7 +1003,7 @@ mod tests {
         // CAD export's labels take, and the reason the rung is shared.
         let p = fixture_provider("text/runs-two-explicit.pdf");
         let text = (0..p.page_objects().objects.len())
-            .find(|i| p.part_kind(*i) == Some(provider::PartKind::Run))
+            .find(|i| p.part_kind(*i) == Some(provider::PartKind::TextLine))
             .expect("the fixture must hold a text object");
         assert!(
             p.part_count(text) > 1,
@@ -1021,16 +1021,16 @@ mod tests {
             !rows
                 .iter()
                 .any(|r| matches!(r, ObjectTreeRow::Point { .. })),
-            "a run has no anchors, so no point row may exist: {rows:?}"
+            "a text line has no anchors, so no point row may exist: {rows:?}"
         );
-        // …and the rows are worded as runs, not as parts.
+        // …and the rows are worded as lines, not as parts.
         let part = rows
             .iter()
             .find(|r| matches!(r, ObjectTreeRow::Part { .. }))
             .copied()
             .expect("a part row");
         let label = row_label(&p, part);
-        assert!(label.starts_with("Run #"), "{label}");
+        assert!(label.starts_with("Line #"), "{label}");
     }
 
     /// **An image is a leaf.**

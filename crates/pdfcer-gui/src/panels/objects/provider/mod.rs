@@ -297,8 +297,10 @@ pub struct ObjectModelProvider {
 pub enum PartKind {
     /// A subpath of a path object.
     Subpath,
-    /// A show operator ("run") of a text object.
-    Run,
+    /// One visual **line** of a text object — which is however many show
+    /// operators its producer wrote it as. `provider::line` carries the
+    /// measurement and the argument.
+    TextLine,
 }
 
 /// **Why moving one line of a text object would be refused**, asked before the
@@ -558,7 +560,7 @@ impl ObjectModelProvider {
     pub fn part_kind(&self, index: usize) -> Option<PartKind> {
         match self.objects.objects.get(index) {
             Some(VectorObject::Path(_)) => Some(PartKind::Subpath),
-            Some(VectorObject::Text(_)) => Some(PartKind::Run),
+            Some(VectorObject::Text(_)) => Some(PartKind::TextLine),
             _ => None,
         }
     }
@@ -574,7 +576,7 @@ impl ObjectModelProvider {
     pub fn part_hits(&self, object: usize, point: Pos2, tolerance: f64) -> Vec<usize> {
         match self.part_kind(object) {
             Some(PartKind::Subpath) => self.subpath_hits(object, point, tolerance),
-            Some(PartKind::Run) => self.text_run_hits(object, point, tolerance),
+            Some(PartKind::TextLine) => self.text_line_hits(object, point, tolerance),
             None => Vec::new(),
         }
     }
@@ -587,7 +589,7 @@ impl ObjectModelProvider {
     pub fn part_bounds_canvas(&self, object: usize, part: usize) -> Option<Rect> {
         match self.part_kind(object) {
             Some(PartKind::Subpath) => self.subpath_bounds_canvas(object, part),
-            Some(PartKind::Run) => self.text_run_bounds_canvas(object, part),
+            Some(PartKind::TextLine) => self.text_line_bounds_canvas(object, part),
             None => None,
         }
     }
@@ -600,7 +602,7 @@ impl ObjectModelProvider {
     pub fn part_count(&self, index: usize) -> usize {
         match self.part_kind(index) {
             Some(PartKind::Subpath) => self.subpath_count(index),
-            Some(PartKind::Run) => self.text_run_count(index),
+            Some(PartKind::TextLine) => self.text_line_count(index),
             None => 0,
         }
     }

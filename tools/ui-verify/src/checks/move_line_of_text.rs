@@ -6,13 +6,12 @@
 //! names is a *silence*, and a silence is exactly what a green unit-test suite
 //! looks like.
 //!
-//! # The report, and why it was not a feature request
+//! # ★★★ A CHECK THAT PINS AN ABSENCE HAS A SHELF LIFE IN DAYS
 //!
-//!
-//! # ★★★ THIS CHECK WAS INVERTED ON THE DAY IT SHIPPED, AND THAT IS THE
-//! # LESSON IT NOW CARRIES
-//!
-//!
+//! This check first asserted that a single line could NOT be moved, because
+//! on the day it was written the engine had no verb for it. The verb landed,
+//! and the assertion became a confident statement of the opposite of the
+//! truth — green the whole time.
 //!
 //! ⇒ **A driven check that pins a capability's absence has a shelf life
 //! measured in days.** Nothing in this repository changed; a dependency did,
@@ -21,28 +20,29 @@
 //! backlog gate can see it (`ENGINE_BACKLOG.md`) so that the delivery arrives
 //! as a failing gate rather than as a quietly wrong assertion.
 //!
-//! # What it asserts now: three drags, three answers, one document
+//! # What it asserts: four drags, four answers, one document
 //!
-//! `move_text_run` succeeds on most lines and refuses on two shapes, and the
-//! operator is shown a different sentence for each. So the check drives all
-//! three answers against one fixture:
+//! A line move succeeds on most lines and refuses on three shapes, and the
+//! operator is shown a different sentence for each refusal. So the check
+//! drives all four answers against one fixture:
 //!
 //! | the line under the pointer | what must happen |
 //! |---|---|
+//! | one written in two pieces, the join having no position of its own | refused, *a piece inside this line has no position* |
+//! | one that states its own position, with no successor | **it MOVES** |
 //! | one the NEXT line's position is measured from | refused, *moving it would drag that line along too* |
 //! | one whose position this document does not state | refused, *there is no position here to change* |
-//! | one that states its own position, with no successor | **it MOVES** |
 //!
-//! ★★★ **The third row is not a bonus, it is what makes the other two mean
-//! something.** A table of two refusals passes for ever against the build this
-//! check was originally written for — the one that refused every line move.
-//! A check that cannot fail on the dangerous build is not a check.
+//! ★★★ **The row that MOVES is not a bonus, it is what makes the other three
+//! mean something.** A table of refusals alone passes for ever against the
+//! build this check was originally written for — the one that refused every
+//! line move. A check that cannot fail on the dangerous build is not a check.
 //!
 //! # ★★★ WHY THIS CHECK EXISTS WHEN FOUR UNIT TESTS ALREADY COVER IT
 //!
 //! `canvas::moving::tests` asserts, at the seam, that `decline` pushes the
-//! right `Action::DeclineOnCanvas`, and that a movable run produces
-//! `VectorAction::MoveTextRun`. Those tests are right and they are not
+//! right `Action::DeclineOnCanvas`, and that a movable line produces
+//! `VectorAction::MoveTextLine`. Those tests are right and they are not
 //! evidence, for this project's founding
 //! reason (**R1**): they call the function. They cannot see the chain in front
 //! of it — whether a real drag at a real rung reaches `decline` at all,
@@ -55,7 +55,7 @@
 //! Points tool, a real click to select one line, a real press-move-release,
 //! and then it reads what three independent subsystems wrote down.
 //!
-//! # The oracle — three lines, three subsystems, in order
+//! # The oracle — three lines, three subsystems, in order (per aim)
 //!
 //! ```text
 //! canvas       canvas-move-declined level=Part sel=1 reason=run-would-move-next …
@@ -66,8 +66,12 @@
 //! and, for the row that commits, one line from a fourth subsystem:
 //!
 //! ```text
-//! apply phase  move-text-run page=0 n=1 epoch=3 disclosures=none
+//! apply phase  move-text-line page=0 n=1 epoch=3 disclosures=none
 //! ```
+//!
+//! ★ `n=` is the number of show operators the line is written in. The one
+//! aim that commits here is a one-piece line, so it is `1`; on his own sheet
+//! the same line reports `n=9`.
 //!
 //! | line | question it answers | who writes it |
 //! |---|---|---|
@@ -108,30 +112,35 @@
 //!    `cp crates/pdfcer-gui/src/canvas/moving/mod.rs $SCRATCH/moving.rs.bak`.
 //!    **Never `git checkout` to undo it** — this project runs parallel tracks
 //!    and that discards another track's uncommitted work.
-//! 2. **Plant the pre-O188 behaviour**: in `Refusal::worded`, change
-//!    `Self::NoVerbForPart(PartKind::Run) => Some(CanvasDecline::TextRunCannotMoveAlone)`
-//!    to `=> None`. That is exactly the build Ken reported: the refusal still
-//!    happens, still traces, and says nothing.
+//! 2. **Plant the silence Ken reported**: in `Refusal::worded`, change
+//!    `Self::TextRunCannotMove(RunMoveBlock::NoPositionOfItsOwn)` from
+//!    `Some(CanvasDecline::TextRunHasNoPositionOfItsOwn)` to `None`. The
+//!    refusal still happens and still traces; it just says nothing, which is
+//!    the shape of the defect O188 names.
 //! 3. **Prove the plant is in the artifact.** `cargo build --release -p
-//!    pdfcer-gui`, then
-//!    `grep -c text-run-cannot-move-alone target/release/pdfcer-gui.exe` — the
-//!    planted build still contains the string (the token function is
-//!    unchanged), so this step instead needs the check's own output: a stale
+//!    pdfcer-gui`, then confirm the exe is newer than the source — a stale
 //!    binary is the commonest cause of a falsification that "did not
-//!    reproduce", so `touch` the source if the build is skipped.
+//!    reproduce". Do not grep the exe for the token: `token()` is untouched
+//!    by this plant, so the string is still in there and its presence proves
+//!    nothing either way.
 //! 4. **Require the `[FAIL]` line**, not the exit code — a SKIP exits the way
-//!    a PASS does. The message must name *the refusal happened and raised no
-//!    sentence*, and must quote the `canvas-move-declined` line it saw.
+//!    a PASS does. It must fail on **the last aim only**, naming *the refusal
+//!    happened and raised no sentence* and quoting the `canvas-move-declined`
+//!    line it saw. The other three aims must still pass: a plant that reddens
+//!    all four has broken the drag, not the sentence, and has measured
+//!    nothing about this check's discrimination.
 //! 5. **Restore from the byte copy**, rebuild, confirm the PASS returns.
 //!
-//! ★ A second, cheaper plant exercises the third link on its own: comment out
-//! the `Declined::TextRunCannotMoveAlone` arm's sentence lookup in
-//! `app::status::decline::line` and the check should fail on the *region*
-//! rather than on the record.
+//! ★ A second, cheaper plant exercises the third link on its own: in
+//! `app::status::decline::show`, return before `disclosure_line` publishes
+//! `REGION_DECLINE`. All three declining aims should then fail on the
+//! *region* while still reporting the right `canvas-decline-recorded` token —
+//! which is the one outcome that separates "recorded but never drawn" from
+//! "never recorded".
 //!
 //! # Fixture — pinned here, not passed on the command line
 //!
-//! `fixtures/paragraph.pdf` at page 0, `(120, 704)` in PDF user space.
+//! `fixtures/inherited-runs.pdf` at page 0, four aims in PDF user space.
 //!
 //! ★★★ **NOT `paragraph.pdf`, which every other line-of-text check in this
 //! harness uses** — and the reason is the whole argument for a second
@@ -141,10 +150,12 @@
 //! refusal can be reached on it**. A check written against it alone would pass
 //! on a build that had deleted the pre-check entirely, for ever.
 //!
-//! `inherited-runs.pdf` is one `BT`…`ET` block holding **three** `Tj`
-//! operators at 12 pt on a 612 × 792 page, with a positioning operator in
-//! front of the first and the third and **none** in front of the second. That
-//! single omission produces all three of the engine's answers in one document.
+//! `inherited-runs.pdf` is one `BT`…`ET` block holding **five** `Tj`
+//! operators at 12 pt on a 612 × 792 page — three horizontal, then a pair
+//! turned a quarter turn — with a positioning operator in front of three of
+//! them and **none** in front of the other two. Grouped into visual lines that
+//! is **four** lines producing all four of the engine's answers in one
+//! document, which is what [`AIMS`] drives.
 //! `tools/gen-inherited-runs-fixture.py` builds it and carries the reasoning;
 //! `fixtures/inherited-runs.PROVENANCE.md` carries the measured spans the aims
 //! in [`AIMS`] were computed from.
@@ -163,7 +174,9 @@
 //! `A`, labelled *Points* because a draughtsman says point — whose branch
 //! takes the click before every other claimant and calls
 //! `SelectionState::click_direct`, landing on the Part rung whenever the probe
-//! found a part. On a text object a "part" **is** a show operator.
+//! found a part. On a text object a "part" **is** a visual line — which may
+//! be written in any number of show operators, and on his own sheet usually
+//! is.
 //!
 //! `deeper_rung_delete::Rung::arms_the_points_tool` carries the measurement
 //! that established this, including the trace lines it was read out of.
@@ -214,15 +227,12 @@ const MOVE_DECLINED_EVENT: &str = "canvas-move-declined";
 /// `canvas-decline-recorded what=…` — the apply phase's line, written once per
 /// decline by `app::status::decline::canvas::record_canvas`.
 ///
-/// ★★★ The per-refusal tokens live in [`AIMS`] rather than in constants here,
-/// which is a change from this check's first shape and was forced by what
-/// happened to it. It held `REASON_RUN = "no-verb-for-text-run"` and
-/// `RECORDED_TEXT_RUN = "text-run-cannot-move-alone"` as module constants,
-/// asserted them, and was green — against a build whose refusal sentence said
-/// *pdfcer cannot move a single line yet*. `pdfcer-core` shipped the verb the
-/// next day and both constants became names of things that no longer exist. A
-/// token that only one row needs belongs in that row, where the thing it
-/// describes is visible beside it.
+/// ★★★ **The per-refusal tokens live in [`AIMS`], not in constants here.** A
+/// token hoisted to module scope reads as a property of the check, so it
+/// survives the disappearance of the refusal it names — the assertion stays
+/// green while the constant becomes the name of nothing. A token that only one
+/// row needs belongs in that row, where the answer it describes is visible
+/// beside it and a changed answer changes them together.
 const RECORDED_EVENT: &str = "canvas-decline-recorded";
 
 /// The `⊗` slot in the status bar. `app::status::decline::show` draws into it
@@ -244,39 +254,57 @@ const FIXTURE: &str = "inherited-runs.pdf";
 /// Page index of [`FIXTURE`] this check uses.
 const PAGE: usize = 0;
 
-/// ★★★ **The three aims, and the answer each one must produce.**
+/// ★★★ **The four aims, and the answer each one must produce.**
 ///
-/// One launch, one fixture, three drags. Every field here is measured — see
-/// `fixtures/inherited-runs.PROVENANCE.md` for the Helvetica advances the x
-/// spans were computed from and the re-measurement that confirmed them.
+/// One launch, one fixture, four drags — one per visual LINE of
+/// `inherited-runs.pdf`. Every field here is measured; the spans are recorded
+/// in `fixtures/inherited-runs.PROVENANCE.md` and pinned by
+/// `provider::line::tests::the_local_fixture_gives_all_four_line_move_answers`,
+/// which decomposes the same file.
 ///
 /// ★★ **The aim is not asserted directly, and it does not need to be.** The
-/// three runs produce three *different* answers, so an aim that landed on the
+/// four lines produce four *different* answers, so an aim that landed on the
 /// wrong one produces the wrong answer and this check fails — loudly, naming
-/// what it got. That is the property a table of three buys that three separate
-/// checks against three separate fixtures could not: the discriminating power
+/// what it got. That is the property a table of four buys that four separate
+/// checks against four separate fixtures could not: the discriminating power
 /// is in the document, not in the harness's arithmetic.
-const AIMS: [Aim; 3] = [
+///
+/// ★★★ **Two aims are on rotated text, and that is not decoration.** An
+/// inherited show operator advances along the text direction, so a horizontal
+/// one always lands on its predecessor's baseline and is always inside its
+/// predecessor's line. A line can only BEGIN with an inherited piece when the
+/// text is turned — so without rows three and four, `run-has-no-position` and
+/// `run-would-move-next` are tokens no document could produce at line
+/// granularity, and this check would pass on a build that had deleted both.
+const AIMS: [Aim; 4] = [
     Aim {
-        what: "the first line, which the SECOND line's position is measured from",
+        what: "the first line, written in two pieces, the second of which has no position",
         at: (87.0, 704.0),
+        expect: Expect::Declines {
+            reason: "line-piece-has-no-position",
+            recorded: "text-line-piece-has-no-position",
+        },
+    },
+    Aim {
+        what: "the second line, which states its own position and nothing follows on from it",
+        at: (128.0, 664.0),
+        expect: Expect::Moves,
+    },
+    Aim {
+        what: "the turned line that the line after it is measured from",
+        at: (297.0, 414.0),
         expect: Expect::Declines {
             reason: "run-would-move-next",
             recorded: "text-run-would-drag-next-line",
         },
     },
     Aim {
-        what: "the second line, whose position this document does not state",
-        at: (150.0, 704.0),
+        what: "the turned line whose position this document does not state",
+        at: (297.0, 448.0),
         expect: Expect::Declines {
             reason: "run-has-no-position",
             recorded: "text-run-no-position-of-its-own",
         },
-    },
-    Aim {
-        what: "the third line, which states its own position and has no successor",
-        at: (128.0, 664.0),
-        expect: Expect::Moves,
     },
 ];
 
@@ -308,9 +336,13 @@ enum Expect {
     Moves,
 }
 
-/// The funnel label `VectorAction::MoveTextRun`'s apply arm passes to
+/// The funnel label `VectorAction::MoveTextLine`'s apply arm passes to
 /// `vector_edit_on_page`, which becomes the head of its success line:
-/// `move-text-run page=0 n=1 epoch=N disclosures=…`.
+/// `move-text-line page=0 n=N epoch=N disclosures=…`.
+///
+/// ★ `n=` is the number of show operators the line is written in, not `1`.
+/// One `move_text_run` is issued per piece and the whole set is folded into
+/// one undo step, so a line a producer wrote as nine `Tj`s reports `n=9`.
 ///
 /// ★★ Asserted instead of `canvas-move`, and the difference is the whole
 /// point of asserting it. `canvas-move` is written by the canvas when it
@@ -318,7 +350,7 @@ enum Expect {
 /// has accepted the edit and the epoch has moved. A shell that raised a move
 /// the engine then refused writes the first and not the second — and that is
 /// precisely the build a pre-check regression produces.
-const MOVED_EVENT: &str = "move-text-run";
+const MOVED_EVENT: &str = "move-text-line";
 
 /// How far the drag travels, in window logical points, on each axis.
 ///

@@ -176,16 +176,19 @@ pub fn object_tree_subpath_row(index: usize) -> String {
     format!("Part #{index}")
 }
 
-/// A part row's label — a text object's run (one show operator).
+/// A part row's label — one visual line of a text object.
 ///
-/// **"Run", not "label".** "Label" presumes the CAD case that motivated the
-/// text half of this rung; a run is just as often a fragment of ordinary
-/// prose. "Run" is the honest structural word and it is already the
-/// project's vocabulary in code (`TextRun`, `hit_test_text_runs`) — a
-/// UI-only synonym would be a second word for one thing.
+/// **"Line", and the number counts lines, not show operators.** A producer
+/// is free to write one line of a title block as nine `Tj`s, and the
+/// operator sees one line; numbering the rung in show operators would put
+/// nine rows under a row he reads as one. `ObjectModelProvider::part_count`
+/// answers in lines for text, and this label is the same number.
+///
+/// **Not "label".** That presumes the CAD case that motivated the text half
+/// of this rung; a line is just as often a fragment of ordinary prose.
 #[must_use]
 pub fn object_tree_run_row(index: usize) -> String {
-    format!("Run #{index}")
+    format!("Line #{index}")
 }
 
 /// A point row's label.

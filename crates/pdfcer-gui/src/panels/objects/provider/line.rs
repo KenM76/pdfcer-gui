@@ -389,7 +389,11 @@ mod tests {
     #[test]
     fn runs_sharing_a_baseline_are_one_line() {
         let p = two_lines();
-        assert_eq!(p.part_kind(0), Some(PartKind::Run), "it is a text object");
+        assert_eq!(
+            p.part_kind(0),
+            Some(PartKind::TextLine),
+            "it is a text object"
+        );
         assert_eq!(p.text_run_count(0), 3, "three show operators");
         assert_eq!(p.text_line_count(0), 2, "two visual lines");
         assert_eq!(p.text_line_runs(0, 0), Some(0..2));
@@ -541,5 +545,128 @@ mod tests {
         );
         // Line 1 is the last line, so there is nothing after it at all.
         assert!(!p.text_line_delete_would_move_next(0, 1));
+    }
+
+    /// **The four answers, on a real document, in one page.**
+    ///
+    /// Every other test in this module builds its runs by hand, which makes
+    /// them a calibration of the grouping rule and not a measurement of it:
+    /// the fixture and the code under test were written from the same reading
+    /// of 9.4.2, so both can be wrong together. This one decomposes
+    /// `fixtures/inherited-runs.pdf` — a file on disk, written by a generator
+    /// that knows nothing about `runs_share_a_line` — and asserts the table in
+    /// that generator's header.
+    ///
+    /// ★★ **The rotated pair is the load-bearing half.** An inherited run
+    /// advances along the text direction, so a HORIZONTAL one always lands on
+    /// its predecessor's baseline and is always inside its predecessor's line
+    /// group. Rotation is the only way a line can BEGIN with an inherited run,
+    /// and without it `NoPositionOfItsOwn` and `WouldMoveNextRun` are sentences
+    /// no document could produce at line granularity — which would leave a
+    /// build that had deleted them passing every check.
+    ///
+    /// ★ Line 1 is the CONTROL. Without an answer of `None` somewhere on the
+    /// page, a build that refused every line move would satisfy the other
+    /// three assertions.
+    #[test]
+    fn the_local_fixture_gives_all_four_line_move_answers() {
+        let doc = crate::app::state::open_local_fixture("inherited-runs.pdf");
+        let p = doc.page_objects().expect("the fixture page decomposes");
+        let object = (0..p.page_objects().objects.len())
+            .find(|&i| p.text_line_count(i) > 0)
+            .expect("the fixture holds a text object");
+
+        assert_eq!(p.text_run_count(object), 5, "five show operators");
+        assert_eq!(p.text_line_count(object), 4, "four visual lines");
+
+        assert_eq!(p.text_line_runs(object, 0), Some(0..2), "Alpha + Beta");
+        assert_eq!(p.text_line_runs(object, 1), Some(2..3), "Gamma");
+        assert_eq!(p.text_line_runs(object, 2), Some(3..4), "Delta");
+        assert_eq!(p.text_line_runs(object, 3), Some(4..5), "Epsilon");
+
+        assert_eq!(
+            p.text_line_move_refusal(object, 0),
+            Some(RunMoveBlock::InteriorPieceHasNoPosition),
+            "the line has a position; the join inside it does not"
+        );
+        assert_eq!(
+            p.text_line_move_refusal(object, 1),
+            None,
+            "the control — one explicitly placed run, nothing inherits from it"
+        );
+        assert_eq!(
+            p.text_line_move_refusal(object, 2),
+            Some(RunMoveBlock::WouldMoveNextRun),
+            "the next LINE rides on this one's advance"
+        );
+        assert_eq!(
+            p.text_line_move_refusal(object, 3),
+            Some(RunMoveBlock::NoPositionOfItsOwn),
+            "this line's first and only piece is inherited"
+        );
+    }
+
+    /// The four points `move_line_of_text::AIMS` presses at land on the four
+    /// lines it says they do — one each, and no point inside two boxes.
+    ///
+    /// # ★★★ Why a unit test owns the harness's coordinates
+    ///
+    /// `AIMS` asserts an ANSWER per aim, never a line index, because
+    /// `canvas-selection` carries no part index for it to read back. That
+    /// makes the aims self-checking only while the four lines give four
+    /// different answers — and silently wrong the moment two of them agree.
+    /// Here the index IS visible, so the mapping from point to line can be
+    /// stated outright.
+    ///
+    /// The exclusivity half is the load-bearing one. The rotated pair is
+    /// stacked along one narrow column and meets at a single y, so a point
+    /// that fell in both boxes would still satisfy a containment-only
+    /// assertion while aiming at whichever of the two the hit test happened
+    /// to return first.
+    ///
+    /// ★ PDF user space, y-up, straight off the engine's decomposition. No
+    /// canvas transform is involved: `AIMS` is in page coordinates and the
+    /// harness maps it at drive time, so converting here would introduce the
+    /// one step this is meant to hold still.
+    #[test]
+    fn the_aims_driven_at_this_fixture_land_one_per_line() {
+        const AIMS: [(f64, f64); 4] = [
+            (87.0, 704.0),
+            (128.0, 664.0),
+            (297.0, 414.0),
+            (297.0, 448.0),
+        ];
+
+        let doc = crate::app::state::open_local_fixture("inherited-runs.pdf");
+        let p = doc.page_objects().expect("the fixture page decomposes");
+        let object = (0..p.page_objects().objects.len())
+            .find(|&i| p.text_line_count(i) > 0)
+            .expect("the fixture holds a text object");
+        let text = p
+            .text_of(TargetId::Object(object as u64))
+            .expect("that object is text");
+
+        let boxes: Vec<Bounds> = lines_of(text)
+            .into_iter()
+            .map(|runs| {
+                runs.filter_map(|r| text.runs.get(r))
+                    .fold(Bounds::EMPTY, |acc, run| acc.union(run.bounds))
+            })
+            .collect();
+        assert_eq!(boxes.len(), AIMS.len(), "one aim per line");
+
+        for (aim, (x, y)) in AIMS.iter().copied().enumerate() {
+            let hit: Vec<usize> = boxes
+                .iter()
+                .enumerate()
+                .filter(|(_, b)| b.min.x <= x && x <= b.max.x && b.min.y <= y && y <= b.max.y)
+                .map(|(i, _)| i)
+                .collect();
+            assert_eq!(
+                hit,
+                vec![aim],
+                "aim {aim} at ({x}, {y}) must be inside line {aim} and no other; boxes are {boxes:?}"
+            );
+        }
     }
 }

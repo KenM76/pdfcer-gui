@@ -33,11 +33,11 @@
 //! One line, written by `app::actions::vector` after each of the three verbs:
 //!
 //! ```text
-//! delete-text-run-applied page=0 object=12 part=3 \
-//!   objects_before=41 objects_after=41 runs_before=237 runs_after=236
+//! delete-text-line-applied page=0 object=12 part=3 \
+//!   objects_before=41 objects_after=41 text-lines_before=144 text-lines_after=143
 //! ```
 //!
-//! …plus the funnel's own `delete-text-run page=0 n=1 epoch=8 disclosures=none`,
+//! …plus the funnel's own `delete-text-line page=0 n=9 epoch=8 disclosures=none`,
 //! which is what says the **engine** accepted it. Both are required and they
 //! answer different questions: the first says the page still looks right, the
 //! second says an edit really landed. A build that computed the census and never
@@ -127,7 +127,11 @@ const PUBLISHED_ANCHORS: usize = 6;
 /// three places for the census pair to drift.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Rung {
-    /// One show operator out of a text object — `delete_text_run`.
+    /// One visual line out of a text object.
+    ///
+    /// A producer may write that line as several show operators, so the verb
+    /// behind it is `delete_text_run` called once per piece, and the funnel's
+    /// `n=` is the piece count rather than 1.
     Label,
     /// One subpath out of a path object — `delete_subpath`.
     Line,
@@ -139,7 +143,7 @@ impl Rung {
     /// The trace label `app::actions::vector` writes the census under.
     const fn applied(self) -> &'static str {
         match self {
-            Self::Label => "delete-text-run-applied",
+            Self::Label => "delete-text-line-applied",
             Self::Line => "delete-subpath-applied",
             Self::Point => "delete-node-applied",
         }
@@ -148,16 +152,21 @@ impl Rung {
     /// The funnel's own label — the line that says the **engine** accepted it.
     const fn funnel(self) -> &'static str {
         match self {
-            Self::Label => "delete-text-run",
+            Self::Label => "delete-text-line",
             Self::Line => "delete-subpath",
             Self::Point => "delete-node",
         }
     }
 
-    /// The census field prefix: `runs`, `lines` or `points`.
+    /// The census field prefix: `text-lines`, `lines` or `points`.
+    ///
+    /// ★ The text rung's prefix is `text-lines` and not `lines`, because
+    /// `Rung::Line` — a subpath — already owns `lines`, and two rungs writing
+    /// one field name into one trace is how a check comes to read the wrong
+    /// census and report a pass.
     const fn unit(self) -> &'static str {
         match self {
-            Self::Label => "runs",
+            Self::Label => "text-lines",
             Self::Line => "lines",
             Self::Point => "points",
         }

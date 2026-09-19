@@ -32,10 +32,10 @@ raise either.  A check that cannot fail on the dangerous build is not a check,
 and that is the whole justification for a second fixture rather than a second
 aim point on the first.
 
-# The shape, and why it is exactly three runs
+# The shape: five show operators, in two groups
 
-One `BT`...`ET` block, one font, three show operators, arranged so that a
-single document yields all three of the engine's answers:
+One `BT`...`ET` block, one font, five show operators.  The first three are
+horizontal and yield all three of the engine's RUN-level answers:
 
 | run | content stream | `text_run_move_refusal` | what a drag on it must do |
 |---|---|---|---|
@@ -43,10 +43,14 @@ single document yields all three of the engine's answers:
 | 1 | `(Beta follows Alpha) Tj`      | `TextRunHasNoPositionOfItsOwn` | refuse, saying THIS line has no position |
 | 2 | `1 0 0 1 72 660 Tm (Gamma stands alone) Tj` | `None` | MOVE |
 
-Run 1 is the only one with no positioning operator in front of it.  That single
-omission is what makes run 1 unmovable and run 0 unmovable-for-the-other-reason,
-which is why three runs is the minimum: two would give one refusal and no
-control, and a fourth would add nothing that is not already distinguishable.
+Run 1 is the only horizontal one with no positioning operator in front of it.
+That single omission is what makes run 1 unmovable and run 0
+unmovable-for-the-other-reason.
+
+The last two are the rotated pair, and the section below carries the whole
+argument for them: the shell addresses a LINE, runs 0 and 1 are one line, and
+at line granularity the horizontal trio can only reach two of the four
+answers.
 
 ** Run 2 is the CONTROL and is not decoration.  Without it, a build that
 refused every line move -- the state of the program before 2026-09-14 -- would
@@ -84,6 +88,30 @@ which is fine: nothing here asserts WHERE run 1 lands, only that it inherits.
 The measured spans a driven check aims at are recorded in
 `fixtures/inherited-runs.PROVENANCE.md` and are re-measured, never assumed.
 
+# The rotated pair, and why the fixture needs one
+
+The shell addresses a visual LINE, not a show operator, and at that granularity
+runs 0 and 1 are one line -- they share a baseline, which is what an inherited
+horizontal run always does.  So the horizontal trio above reaches only two of
+the four answers a line-level guard can give:
+
+| line | runs | refusal |
+|---|---|---|
+| 0 | 0, 1 | `InteriorPieceHasNoPosition` -- the line has a position, a join inside it does not |
+| 1 | 2 | `None` -- the CONTROL |
+| 2 | 3 | `WouldMoveNextRun` -- the next LINE starts inherited |
+| 3 | 4 | `NoPositionOfItsOwn` -- this line's first piece is inherited |
+
+Runs 3 and 4 are rotated a quarter turn (`0 1 -1 0 300 400 Tm`) for one reason:
+an inherited run advances along the text direction, so a HORIZONTAL inherited
+run always lands on its predecessor's baseline and is always in its
+predecessor's line group.  Rotation moves the advance off that baseline, which
+is the only way a line can begin with an inherited run -- and therefore the only
+way `NoPositionOfItsOwn` and `WouldMoveNextRun` stay reachable at line level.
+Without them a check written against this fixture would assert two sentences
+that no document could produce, and would pass on a build that had deleted
+them.
+
 # Regenerating
 
     python tools/gen-inherited-runs-fixture.py
@@ -99,9 +127,9 @@ import pathlib
 
 FIXTURES = pathlib.Path(__file__).resolve().parent.parent / "fixtures"
 
-# The three lines, spelled out rather than generated, because the ONE fact this
-# fixture encodes is the absence of a positioning operator on the middle line
-# and a loop would hide it behind a conditional.
+# Spelled out rather than generated, because the ONE fact this fixture encodes
+# is the ABSENCE of a positioning operator in front of two of these five show
+# operators, and a loop would hide it behind a conditional.
 CONTENT = """BT
 /F1 12 Tf
 1 0 0 1 72 700 Tm
@@ -109,6 +137,9 @@ CONTENT = """BT
 (Beta follows Alpha) Tj
 1 0 0 1 72 660 Tm
 (Gamma stands alone) Tj
+0 1 -1 0 300 400 Tm
+(Delta) Tj
+(Epsilon) Tj
 ET
 """
 

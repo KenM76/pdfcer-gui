@@ -151,7 +151,7 @@ the line's left edge, which is the only evidence R1 accepts.
 
 His file is `C:/Users/Ken/OneDrive/pdfTests/SW41177.pdf`; work on a copy.
 
-## O214 — ◑ **MEASURED; THE GESTURE IS BUILT AND MOVES THE WRONG UNIT** — drag one line of a block as if it were its own object
+## O214 — ◑ **MEASURED; THE SHELL NOW ADDRESSES THE LINE, NOT YET DRIVEN** — drag one line of a block as if it were its own object
 
 > *"I'd also like to be able to take a line like this that is part of a larger
 > block and be able to relocate it by dragging and moving as if it wasn't part
@@ -179,8 +179,8 @@ holds **237 show operators in one `BT`…`ET`**:
 | | |
 |---|---|
 | his line | `#2 USE SPACERS 8 9 10 11 IF REQUIRED.` — runs **50..59**, nine fragments, all on baseline 927.23 |
-| what a click gives him | run **53**, a 19 pt fragment in the middle of the words. Dragging it moves those glyphs and leaves the other eight fragments behind |
-| lines in the object | **144**, against the 237 the Part rung counts and calls *lines* in the status bar |
+| what a click gave him | run **53**, a 19 pt fragment in the middle of the words. Dragging it moved those glyphs and left the other eight fragments behind |
+| lines in the object | **144**. The Part rung now counts 144 and the status bar says *1 line of 144* |
 | every run's `positioned_by` | `Explicit`, and `text_run_move_refusal` returns `None` for all nine — so nine `move_text_run` calls are all planned |
 | the nine-call move | dx **+0.00**, dy **−30.00** on every fragment; runs 49 and 59 untouched |
 
@@ -201,6 +201,21 @@ His new sentence adds a requirement O188 did not state: a verb is not enough.
 He wants it **by dragging**, with the same gesture that moves any other object,
 and the line must behave as though it were not part of the block for the
 duration of that drag.
+
+⇒ **The shell's unit is now the visual line, everywhere it was the show
+operator.** The Part rung, the object tree row, the status sentence, the
+context menu, the selection outline, the delete verb and the move verb all
+count and address lines; the run indices survive only inside the two action
+arms that speak to the engine. On his sheet that turns 237 rows reading
+*Run #53* into 144 reading *Line #49*, and a drag on any fragment of his
+sentence moves all nine.
+
+**What is left before this row can be put to him:** it has not been driven.
+`move_line_of_text` now aims one press per visual line and asserts the four
+answers a line move can give, but that check has never run against the built
+binary at line granularity — and O188's own history is why that distinction is
+kept: the last check written about this capability was green for a day while
+asserting the opposite of the truth.
 
 ## O212 — ✅ **SHIPPED, DRIVEN, AND CONFIRMED BY HIM** — panels should dock, tear out, and drop back the way Qt's do
 

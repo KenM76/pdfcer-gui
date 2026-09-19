@@ -29,7 +29,23 @@
 //! obvious tidy is therefore to route everything through the transform, and it
 //! would be worse.
 //!
+//! `move_objects` rewrites the numbers the producer wrote, so a moved path's
+//! operands still say where its marks are. The transform leaves those operands
+//! naming the old place and adds a `q <cm> … Q` the producer never wrote to
+//! say how far. Both render identically — R8b's screenshot test cannot tell
+//! them apart — so the whole of the difference is in the bytes a CAD re-import
+//! reads, and pdf content is the one thing this program is not allowed to
+//! alter casually.
+//!
+//! ⇒ The transform earns the gestures operand rewriting cannot express at
+//! all: rotation and scale, which have no `re` spelling and no user-space
+//! scalar for `line_width`, and every object kind, because text runs and
+//! images have no coordinate operands and `move_objects` answers `NotAPath`
+//! for both. It does not earn the gestures the operand rewrite already
+//! expresses exactly.
+//!
 
+use pdfcer_core::edit::{CommandKind, EditSession};
 use pdfcer_core::vector::{Handle, Matrix, Point};
 
 impl From<VectorAction> for super::action::Action {
@@ -202,7 +218,7 @@ pub enum VectorAction {
     /// wherever this one ends, so excising this one **slides it**. The engine
     /// refuses with `DeleteWouldMoveNextRun`, and
     /// `crate::canvas::deleting` asks the identical question ahead of the
-    /// press through `ObjectModelProvider::text_run_delete_would_move_next` —
+    /// press through `ObjectModelProvider::text_line_delete_would_move_next` —
     /// R83 — so the operator gets the remedy (*delete the later label first*)
     /// instead of a cause-less decline. This variant is therefore never raised
     /// for a run the guard would refuse; if one arrives anyway the engine
@@ -212,13 +228,18 @@ pub enum VectorAction {
     ///
     /// **Always empty** — `plan_delete_text_run` returns `Vec::new()` on both
     /// of its arms. Routed anyway, for [`Self::DeleteSubpath`]'s reason.
-    DeleteTextRun {
+    DeleteTextLine {
         /// The 0-based page.
         page: usize,
         /// The enclosing text object, by paint-order index.
         object: usize,
-        /// The run, in content order — the numbering the hit test returns.
-        run: usize,
+        /// The visual line, numbered as
+        /// `ObjectModelProvider::text_line_count` counts — **not** a
+        /// show-operator index. The apply arm translates it into the line's
+        /// run range and calls `delete_text_run` once per run, **descending**,
+        /// because `plan_delete_text_run` excises `TextRun::bytes` and every
+        /// later run in the same object shifts when an earlier one goes.
+        line: usize,
     },
     /// ★★★ **Remove ONE anchor of one path object** — `EditSession::delete_
     /// node`, Pass 36.1, and the Node rung's delete verb.
@@ -380,16 +401,16 @@ pub enum VectorAction {
     ///
     /// # ★★ The refusal that is asked BEFORE the press, and where
     ///
-    /// 9.4.2 again, and the mirror image of [`Self::DeleteTextRun`]'s: a run
+    /// 9.4.2 again, and the mirror image of [`Self::DeleteTextLine`]'s: a run
     /// with no positioning operator of its own starts wherever the previous one
     /// ended, so there is no operand to rewrite; and a run whose SUCCESSOR is
     /// in that state cannot move without dragging the successor along.
     /// `crate::canvas::moving::eligible` asks
-    /// `ObjectModelProvider::text_run_move_refusal_of` before a ghost is drawn,
+    /// `ObjectModelProvider::text_line_move_refusal_of` before a ghost is drawn,
     /// and **that is the engine's own guard rather than a copy of it** —
     /// `pdfcer_core::vector::edit::text_run_move_refusal`, the function
     /// `plan_move_text_run` runs first. Compare the note on
-    /// [`Self::DeleteTextRun`], whose pre-check IS a hand-rolled copy because
+    /// [`Self::DeleteTextLine`], whose pre-check IS a hand-rolled copy because
     /// the delete side has no exported twin yet.
     ///
     /// # Disclosures — and this one is NOT always empty
@@ -401,16 +422,18 @@ pub enum VectorAction {
     /// original bytes. Rule 4 in its purest form — an inference the operator
     /// cannot see, so it is reported off-canvas and nothing is drawn
     /// differently. The funnel records them; this variant needs no code for it.
-    MoveTextRun {
+    MoveTextLine {
         /// The 0-based page.
         page: usize,
         /// The enclosing text object, by paint-order index.
         object: usize,
-        /// The run, in content order — the numbering the hit test returns and
-        /// [`Self::DeleteTextRun`] already uses. **Nothing renumbers**: the
+        /// The visual line, in the numbering
+        /// `ObjectModelProvider::text_line_count` produces and
+        /// [`Self::DeleteTextLine`] already uses. **Nothing renumbers**: the
         /// move family rewrites operands in place, so the selection survives
-        /// the drag naming the same line.
-        run: usize,
+        /// the drag naming the same line, and the apply arm may therefore call
+        /// `move_text_run` straight along the line's run range.
+        line: usize,
         /// Horizontal displacement, PDF user-space points.
         dx: f64,
         /// Vertical displacement, PDF user-space points (Y is up).
@@ -433,15 +456,16 @@ pub enum VectorAction {
     /// the disclosures through the funnel, as every `*_in_form` arm here does,
     /// IS how the operator is told. There is no second mechanism and there must
     /// not be one.
-    MoveTextRunInForm {
+    MoveTextLineInForm {
         /// The 0-based page.
         page: usize,
         /// The enclosing text object, by **leaf** index — a different address
-        /// space from [`Self::MoveTextRun`]'s `object`, which is why it is a
+        /// space from [`Self::MoveTextLine`]'s `object`, which is why it is a
         /// separate variant rather than a flag.
         leaf: usize,
-        /// The run, in content order.
-        run: usize,
+        /// The visual line, numbered as
+        /// `ObjectModelProvider::text_line_count_of` counts for that leaf.
+        line: usize,
         /// Horizontal displacement, PDF user-space points.
         dx: f64,
         /// Vertical displacement, PDF user-space points (Y is up).
@@ -716,6 +740,40 @@ fn trace_part_delete(
     });
 }
 
+/// Fold this gesture's `pieces` engine commands into one undo entry, and say so
+/// when the fold does not happen.
+///
+/// A visual line is however many show operators its producer wrote it as, so
+/// one drag or one Delete is `pieces` engine commands. `coalesce_last` answers
+/// `false` **only** when the undo stack was shorter than `pieces`; every change
+/// is applied and only the grouping failed, so the contract's instruction is to
+/// disclose and neither retry nor ignore.
+///
+/// The de-duplication is not cosmetic. `plan_move_text_run` emits one identical
+/// inserted-`Td` sentence per run it had to place an operator for, and a line
+/// of nine pieces would otherwise report the same fact nine times — which
+/// reads as nine separate things having happened. First-seen order is kept, so
+/// the sentences still arrive in the order the engine produced them.
+fn fold_undo(
+    session: &mut EditSession,
+    pieces: usize,
+    kind: CommandKind,
+    disclosures: &mut Vec<String>,
+) {
+    let mut seen: Vec<String> = Vec::new();
+    for sentence in disclosures.drain(..) {
+        if !seen.contains(&sentence) {
+            seen.push(sentence);
+        }
+    }
+    *disclosures = seen;
+    if !session.coalesce_last(pieces, kind) {
+        disclosures.push(crate::text::arrange::line_takes_several_undo_presses(
+            pieces,
+        ));
+    }
+}
+
 /// **Apply one geometry verb**, as one undoable command.
 ///
 /// Routed here from `super::apply` rather than living there, which is the shape
@@ -851,21 +909,45 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                 after,
             );
         }
-        VectorAction::DeleteTextRun { page, object, run } => {
-            let before = census(doc, object, |p, o| p.text_run_count(o));
-            vector_edit_on_page(doc, "delete-text-run", page, 1, |session| {
-                session.delete_text_run(page, object, run)
-            });
-            let after = census(doc, object, |p, o| p.text_run_count(o));
-            trace_part_delete(
-                "delete-text-run-applied",
-                "runs",
-                page,
-                object,
-                run,
-                before,
-                after,
-            );
+        VectorAction::DeleteTextLine { page, object, line } => {
+            // The run range is read BEFORE `&mut doc` is taken, and the `Ref`
+            // is dropped at the end of the statement. `None` means the line
+            // index out-ran the decomposition — a stale selection, which does
+            // nothing and earns no sentence, because nothing was refused.
+            if let Some(runs) = doc
+                .page_objects()
+                .and_then(|provider| provider.text_line_runs(object, line))
+            {
+                let pieces = runs.len();
+                let before = census(doc, object, |p, o| p.text_line_count(o));
+                vector_edit_on_page(doc, "delete-text-line", page, pieces, |session| {
+                    let mut disclosures = Vec::new();
+                    // DESCENDING. `plan_delete_text_run` excises
+                    // `TextRun::bytes`, so removing an earlier run shifts every
+                    // later one in the same object. Walking backwards means no
+                    // index this loop still holds has moved.
+                    for run in runs.clone().rev() {
+                        disclosures.extend(session.delete_text_run(page, object, run)?);
+                    }
+                    fold_undo(
+                        session,
+                        pieces,
+                        CommandKind::DeleteTextRun,
+                        &mut disclosures,
+                    );
+                    Ok::<_, pdfcer_core::edit::EditError>(disclosures)
+                });
+                let after = census(doc, object, |p, o| p.text_line_count(o));
+                trace_part_delete(
+                    "delete-text-line-applied",
+                    "text-lines",
+                    page,
+                    object,
+                    line,
+                    before,
+                    after,
+                );
+            }
         }
         // ★ The disclosures are surfaced by the funnel, not here — see the
         // variant's own docs for why a second `record_note` beside it would be
@@ -965,29 +1047,59 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                 session.move_subpath(page, object, subpath, dx, dy)
             });
         }
-        VectorAction::MoveTextRun {
+        VectorAction::MoveTextLine {
             page,
             object,
-            run,
+            line,
             dx,
             dy,
         } => {
-            vector_edit_on_page(doc, "move-text-run", page, 1, |session| {
-                session.move_text_run(page, object, run, dx, dy)
-            });
+            if let Some(runs) = doc
+                .page_objects()
+                .and_then(|provider| provider.text_line_runs(object, line))
+            {
+                let pieces = runs.len();
+                vector_edit_on_page(doc, "move-text-line", page, pieces, |session| {
+                    let mut disclosures = Vec::new();
+                    // ASCENDING is safe where descending was necessary above:
+                    // `plan_move_text_run` rewrites operands in place and puts
+                    // the run back, so nothing renumbers and no byte span this
+                    // loop will visit has moved.
+                    for run in runs.clone() {
+                        disclosures.extend(session.move_text_run(page, object, run, dx, dy)?);
+                    }
+                    fold_undo(session, pieces, CommandKind::MoveTextRun, &mut disclosures);
+                    Ok::<_, pdfcer_core::edit::EditError>(disclosures)
+                });
+            }
         }
-        VectorAction::MoveTextRunInForm {
+        VectorAction::MoveTextLineInForm {
             page,
             leaf,
-            run,
+            line,
             dx,
             dy,
         } => {
-            vector_edit_on_page(doc, "move-text-run-in-form", page, 1, |session| {
-                session
-                    .move_text_run_in_form(page, leaf, run, dx, dy)
-                    .map(|outcome| outcome.disclosures)
-            });
+            if let Some(runs) = doc.page_objects().and_then(|provider| {
+                provider.text_line_runs_of(
+                    crate::panels::objects::provider::TargetId::Leaf(leaf as u64),
+                    line,
+                )
+            }) {
+                let pieces = runs.len();
+                vector_edit_on_page(doc, "move-text-line-in-form", page, pieces, |session| {
+                    let mut disclosures = Vec::new();
+                    for run in runs.clone() {
+                        disclosures.extend(
+                            session
+                                .move_text_run_in_form(page, leaf, run, dx, dy)
+                                .map(|outcome| outcome.disclosures)?,
+                        );
+                    }
+                    fold_undo(session, pieces, CommandKind::MoveTextRun, &mut disclosures);
+                    Ok::<_, pdfcer_core::edit::EditError>(disclosures)
+                });
+            }
         }
         VectorAction::MoveNode {
             page,

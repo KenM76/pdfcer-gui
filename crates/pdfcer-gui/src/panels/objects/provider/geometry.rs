@@ -100,7 +100,7 @@ impl ObjectModelProvider {
     pub fn part_kind_of(&self, target: TargetId) -> Option<PartKind> {
         match self.object_for(target) {
             Some(VectorObject::Path(_)) => Some(PartKind::Subpath),
-            Some(VectorObject::Text(_)) => Some(PartKind::Run),
+            Some(VectorObject::Text(_)) => Some(PartKind::TextLine),
             _ => None,
         }
     }

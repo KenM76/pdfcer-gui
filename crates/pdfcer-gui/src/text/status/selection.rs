@@ -276,10 +276,10 @@ pub fn selection_many(count: usize) -> String {
 /// # ★★ Why there is no index in it
 ///
 /// The obvious wording is *line 4 of 27*, and it was refused. The Objects
-/// panel already numbers the same thing, as `Run #3`, **zero-based on
+/// panel already numbers the same thing, as `Line #3`, **zero-based on
 /// purpose** — decision 025 §1.3(b), so that the number pdfcer shows and
 /// the number a `pdfcer` command line addresses are one number. A status bar
-/// saying *line 4* beside a panel saying *Run #3* about the same run is two
+/// saying *line 4* beside a panel saying *Line #3* about the same line is two
 /// numberings of one thing, which is the drift this project spends its
 /// corrections on.
 ///

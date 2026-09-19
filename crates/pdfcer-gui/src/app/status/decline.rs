@@ -1014,15 +1014,15 @@ pub(crate) enum Declined {
     /// because the fact recorded is *what the engine answered about a request
     /// that no longer exists*. The operator's next command retires it.
     EditText(crate::text::textedit::EditRefusal),
-    /// ★★★ **A drag on one line inside a block of text, refused in silence
-    /// until now** — `OPERATOR_REQUESTS.md` **O188**, 2026-09-15.
+    /// ★★★ **A drag on one line inside a block of text, refused because this
+    /// document does not write that line's position down** —
+    /// `OPERATOR_REQUESTS.md` **O188**.
     ///
     /// The operator draws a box round one label in a title block, presses inside
-    /// it, drags it across the sheet — and nothing happens, with no sentence
-    /// anywhere. `canvas::moving` refused with `Refusal::NoVerbForPart(Run)` and
-    /// wrote a trace line only.
+    /// it, drags it across the sheet. The engine will not move that line, and
+    /// this is the sentence that says so before the outline is ever drawn.
     ///
-    /// # ★★★ Why this one, when nine of the eleven refusals stay silent
+    /// # ★★★ Why this one, when most of `Refusal`'s variants stay silent
     ///
     /// `canvas::moving::decline`'s standing argument is good and is not being
     /// overturned: *nothing selected*, *the drag never travelled* and *no part
@@ -1038,11 +1038,11 @@ pub(crate) enum Declined {
     /// # No payload, and it is not [`Self::EditRefused`]'s kind of no-payload
     ///
     /// That one carries nothing because its taxonomy was too wide to copy. This
-    /// one carries nothing because **there is exactly one way to be it**: all
-    /// four `NoVerbForPart` construction sites in `canvas::moving` can only
-    /// produce [`crate::panels::objects::provider::PartKind::Run`], two of them
-    /// unreachable by construction because a run has no anchors to descend to. A
-    /// payload would have one inhabitant.
+    /// one carries nothing because **there is exactly one way to be it**: it is
+    /// raised from the single `RunMoveBlock::NoPositionOfItsOwn` arm of
+    /// `canvas::moving::Refusal::worded`, and the block it answers has already
+    /// been narrowed to one cause by the engine. A payload would have one
+    /// inhabitant.
     ///
     /// The wording is
     /// [`crate::text::arrange::run_has_no_position_of_its_own`], which carries

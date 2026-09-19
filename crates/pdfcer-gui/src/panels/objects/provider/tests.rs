@@ -488,7 +488,7 @@ fn page_objects_feeds_the_snap_engine_from_the_one_decomposition() {
 ///
 /// This is what the Objects panel's tree builder relies on to decide
 /// whether a row gets an expander. A path with subpaths expands, a text
-/// object with runs expands, an image is a leaf — and the panel asks one
+/// object with lines expands, an image is a leaf — and the panel asks one
 /// question rather than matching on `VectorObject` itself, which is the
 /// duplicated-predicate drift [`ObjectModelProvider::part_hits`]'s own
 /// docs warn about.
@@ -498,9 +498,16 @@ fn part_kind_and_part_count_answer_for_every_object_kind() {
     assert_eq!(p.part_kind(0), Some(PartKind::Subpath));
     assert_eq!(p.part_count(0), 2);
 
+    // ★ `provider` builds from a bare content stream, which has no
+    // `/Resources` and therefore no font; every run closes with empty bounds
+    // and is dropped, so this object has zero runs AND zero lines. What is
+    // asserted here is the KIND — that text routes to the line rung at all.
+    // The count is 0 either way, so it cannot tell lines from show operators;
+    // `provider::line::tests::runs_sharing_a_baseline_are_one_line` is the
+    // oracle that can, and it builds its runs directly rather than from bytes.
     let t = provider(b"BT /F1 12 Tf 40 40 Td (Hi) Tj ET");
-    assert_eq!(t.part_kind(0), Some(PartKind::Run));
-    assert_eq!(t.part_count(0), t.text_run_count(0));
+    assert_eq!(t.part_kind(0), Some(PartKind::TextLine));
+    assert_eq!(t.part_count(0), t.text_line_count(0));
     assert_eq!(t.subpath_count(0), 0, "a text object has no subpaths");
 
     let i = provider(b"q 100 0 0 50 10 10 cm BI /W 1 /H 1 /CS /G /BPC 8 ID \x00 EI Q");

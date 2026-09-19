@@ -33,7 +33,7 @@
 //! | rung | what is selected | verb |
 //! |---|---|---|
 //! | Part, on a **path** | one subpath | `EditSession::delete_subpath` (Pass 25.2) |
-//! | Part, on **text** | one show operator — one label | `EditSession::delete_text_run` (`Pass 32.0`) |
+//! | Part, on **text** | one visual line — one label | `EditSession::delete_text_run`, once per fragment |
 //! | Node | one anchor | `EditSession::delete_node` (Pass 36.1) |
 //!
 //! Each of the three had its **move** twin wired — `move_subpath` through
@@ -63,7 +63,7 @@
 //! names its remedy
 //!
 //! One refusal here is asked ahead of the verb rather than reported after it:
-//! [`Refusal::RunWouldMoveNext`]. `ObjectModelProvider::text_run_delete_would_
+//! [`Refusal::RunWouldMoveNext`]. `ObjectModelProvider::text_line_delete_would_
 //! move_next` answers from the same `positioned_by` flag
 //! `EditSession::delete_text_run` refuses on (§9.4.2 — a following run with no
 //! positioning operator of its own starts wherever this one ends, so removing
@@ -122,16 +122,18 @@ pub enum DeleteSubject {
         /// The subpath, in decomposition order.
         subpath: usize,
     },
-    /// One **show operator** of one text object — `delete_text_run`.
+    /// One **visual line** of one text object — `delete_text_run`, applied to
+    /// every show operator the line is written in.
     ///
-    /// One label off a sheet whose 237 labels share a single `BT`…`ET`.
-    TextRun {
+    /// One label off a sheet whose 237 show operators share a single
+    /// `BT`…`ET` and form 144 lines.
+    TextLine {
         /// The 0-based page.
         page: usize,
         /// The enclosing object, by paint-order index.
         object: usize,
-        /// The run, in content order — the numbering the hit test returns.
-        run: usize,
+        /// The line, in content order — the numbering the hit test returns.
+        line: usize,
     },
     /// One **anchor** of one path object — `delete_node`.
     Node {
@@ -304,16 +306,16 @@ fn part_rung(
             object,
             subpath: part,
         }),
-        Some(PartKind::Run) => {
+        Some(PartKind::TextLine) => {
             // R83, and the whole reason this function takes a provider rather
             // than a `PartKind`. See the module header.
-            if provider.text_run_delete_would_move_next(object, part) {
+            if provider.text_line_delete_would_move_next(object, part) {
                 return Err(Refusal::RunWouldMoveNext(part));
             }
-            Ok(DeleteSubject::TextRun {
+            Ok(DeleteSubject::TextLine {
                 page,
                 object,
-                run: part,
+                line: part,
             })
         }
         None => Err(Refusal::NoPartsInObject),
@@ -349,7 +351,7 @@ fn node_rung(
             }
             Ok(DeleteSubject::Node { page, object, node })
         }
-        Some(PartKind::Run) => Err(Refusal::NoNodeVerbForText),
+        Some(PartKind::TextLine) => Err(Refusal::NoNodeVerbForText),
         None => Err(Refusal::NoPartsInObject),
     }
 }
@@ -396,8 +398,8 @@ pub fn action(subject: DeleteSubject) -> crate::app::actions::VectorAction {
             object,
             subpath,
         },
-        DeleteSubject::TextRun { page, object, run } => {
-            VectorAction::DeleteTextRun { page, object, run }
+        DeleteSubject::TextLine { page, object, line } => {
+            VectorAction::DeleteTextLine { page, object, line }
         }
         DeleteSubject::Node { page, object, node } => {
             VectorAction::DeleteNode { page, object, node }

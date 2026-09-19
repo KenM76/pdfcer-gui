@@ -67,8 +67,8 @@ fn provider(src: &[u8]) -> ObjectModelProvider {
 /// requires `runs.len() > 1`, and a test written that way **passes for the
 /// wrong reason** — it asserts a routing decision made over an object that has
 /// no parts. `provider::tests::part_kind_and_part_count_answer_for_every_object_kind`
-/// hits the same wall and works around it by asserting
-/// `part_count(0) == text_run_count(0)` rather than a number.
+/// hits the same wall: its part count is `0` there, so it asserts the KIND and
+/// records in a comment that the number is not a measurement.
 ///
 /// So the text rungs are exercised against documents on disk. The path rungs
 /// are not, because path geometry needs no font.
@@ -78,10 +78,17 @@ fn provider(src: &[u8]) -> ObjectModelProvider {
 /// two different acts.
 const SIX_LABELS: &str = "paragraph.pdf";
 
-/// **The engine's own §9.4.2 fixture**: run 1 is `RunPositioning::Inherited`,
-/// so deleting run 0 would slide it. `crates/pdfcer-core/tests/text_run_delete.rs`
-/// asserts that property of this file, which is what makes it safe to build on.
-const INHERITING_LABEL: &str = "text/runs-inherited.pdf";
+/// **Five show operators forming four lines**, two of them a rotated pair
+/// where the second inherits its origin — `tools/gen-inherited-runs-fixture.py`
+/// carries the whole argument for the shape.
+///
+/// The engine's own §9.4.2 fixture (`text/runs-inherited.pdf`) cannot serve
+/// here: its inherited runs are horizontal, so each one shares its
+/// predecessor's baseline and lands inside its predecessor's LINE. Deleting
+/// that line takes both fragments and orphans nothing, so no line of it can
+/// reach the refusal. Rotation is the only way a line can begin on another
+/// line's advance.
+const ROTATED_INHERITING: &str = "inherited-runs.pdf";
 
 /// One path object holding **two lines**, the shape of a CAD view in miniature.
 const TWO_LINES: &[u8] = b"0 0 m 10 0 l 20 0 l h 40 40 m 60 40 l 60 60 l S";
@@ -100,14 +107,17 @@ fn against(
     subject(selection, 0, Some(&provider))
 }
 
-/// The paint-order index of the first text object on page 0 that has at least
-/// `runs` runs, so a fixture edit that renumbers the page does not silently
-/// re-aim the assertions at a different object.
-fn text_object_with(doc: &crate::app::state::OpenDoc, runs: usize) -> usize {
+/// The paint-order index of the first text object on page 0 that holds at
+/// least `lines` visual lines, so a fixture edit that renumbers the page does
+/// not silently re-aim the assertions at a different object.
+///
+/// Counted in LINES, because that is what a part index means at the Part rung.
+/// Counting runs would find an object the assertions below cannot address.
+fn text_object_with(doc: &crate::app::state::OpenDoc, lines: usize) -> usize {
     let provider = doc.page_objects().expect("the fixture page decomposes");
     (0..provider.page_objects().objects.len())
-        .find(|&i| provider.text_run_count(i) >= runs)
-        .unwrap_or_else(|| panic!("no text object on page 0 holds {runs} runs"))
+        .find(|&i| provider.text_line_count(i) >= lines)
+        .unwrap_or_else(|| panic!("no text object on page 0 holds {lines} lines"))
 }
 
 /// A selection sitting at the Part rung on `object`, part `part`.
@@ -159,42 +169,49 @@ fn selecting_one_label_deletes_that_label_and_not_the_object() {
     let selection = at_part(object as u64, 1);
     assert_eq!(
         against(&doc, &selection),
-        Ok(DeleteSubject::TextRun {
+        Ok(DeleteSubject::TextLine {
             page: 0,
             object,
-            run: 1,
+            line: 1,
         }),
         "the Part rung on a text object must reach `delete_text_run`, not the \
          whole-object verb"
     );
     assert_eq!(
-        action(DeleteSubject::TextRun {
+        action(DeleteSubject::TextLine {
             page: 0,
             object,
-            run: 1,
+            line: 1,
         }),
-        VectorAction::DeleteTextRun {
+        VectorAction::DeleteTextLine {
             page: 0,
             object,
-            run: 1,
+            line: 1,
         }
     );
 }
 
 /// ★★ **R83, asked before the press.**
 ///
-/// The second label has no position of its own, so removing the first would
-/// slide it. The engine refuses with `DeleteWouldMoveNextRun`; this refuses
-/// first, from the same `positioned_by` flag, so the operator gets the remedy
-/// instead of a cause-less decline.
+/// Line 2 of the fixture is the rotated `Delta`, and line 3 is `Epsilon`
+/// riding on its advance. Removing line 2 would slide line 3; the engine
+/// refuses with `DeleteWouldMoveNextRun`, and this refuses first, from the
+/// same `positioned_by` flag, so the operator gets the remedy instead of a
+/// cause-less decline.
+///
+/// Aimed at the ROTATED pair deliberately. `Alpha`/`Beta` inherit too, but a
+/// horizontal inherited run lands on its predecessor's baseline and is
+/// therefore inside its predecessor's LINE — so deleting that line takes both
+/// fragments and orphans nothing. Rotation is the only way one line can begin
+/// on another line's advance.
 #[test]
 fn deleting_a_label_that_would_move_the_next_one_is_refused_by_name() {
-    let doc = crate::app::state::open_fixture(INHERITING_LABEL);
-    let object = text_object_with(&doc, 2);
-    let selection = at_part(object as u64, 0);
+    let doc = crate::app::state::open_local_fixture(ROTATED_INHERITING);
+    let object = text_object_with(&doc, 4);
+    let selection = at_part(object as u64, 2);
     assert_eq!(
         against(&doc, &selection),
-        Err(Refusal::RunWouldMoveNext(0)),
+        Err(Refusal::RunWouldMoveNext(2)),
         "§9.4.2: the following run inherits its position, so this delete must be \
          refused before it is raised"
     );
@@ -206,15 +223,15 @@ fn deleting_a_label_that_would_move_the_next_one_is_refused_by_name() {
 /// reason.
 #[test]
 fn the_last_label_is_deletable_even_when_the_earlier_one_is_not() {
-    let doc = crate::app::state::open_fixture(INHERITING_LABEL);
-    let object = text_object_with(&doc, 2);
-    let selection = at_part(object as u64, 1);
+    let doc = crate::app::state::open_local_fixture(ROTATED_INHERITING);
+    let object = text_object_with(&doc, 4);
+    let selection = at_part(object as u64, 3);
     assert_eq!(
         against(&doc, &selection),
-        Ok(DeleteSubject::TextRun {
+        Ok(DeleteSubject::TextLine {
             page: 0,
             object,
-            run: 1,
+            line: 3,
         })
     );
 }

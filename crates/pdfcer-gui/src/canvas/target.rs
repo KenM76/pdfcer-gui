@@ -547,20 +547,33 @@ impl CanvasTargetProvider for ObjectModelProvider {
             // generalising a function: the new axis (which index space) is easy
             // to see, and the axis that was ALREADY there (which kind of part)
             // is the one that gets dropped.
-            (Some(PartKind::Run), Some(object)) => self.text_run_hits(object, point, tolerance),
-            // ★ A text run INSIDE a form has no leaf-indexed hit test yet —
-            // `text_run_hits` indexes the page's own list, and answering from it
-            // would return another object's runs entirely. Empty is the honest
+            (Some(PartKind::TextLine), Some(object)) => {
+                self.text_line_hits(object, point, tolerance)
+            }
+            // ★ A text line INSIDE a form has no leaf-indexed hit test yet —
+            // `text_line_hits` indexes the page's own list, and answering from it
+            // would return another object's lines entirely. Empty is the honest
             // answer, and it is the next thing to build rather than an
             // oversight.
-            (Some(PartKind::Run), None) | (None, _) => Vec::new(),
+            (Some(PartKind::TextLine), None) | (None, _) => Vec::new(),
         }
     }
 
+    // ★★★ Dispatches on the KIND, for the reason written out at length in
+    // `part_hits_of` above: the first version of that function generalised over
+    // index space and dropped the part-kind axis that was already there, and
+    // this one had the same defect — subpath-only, so a text line's outline
+    // came back `None` the moment the Part rung was reached through a
+    // `TargetId` rather than an object index.
     fn part_bounds_of(&self, page_index: usize, target: TargetId, part: usize) -> Option<Rect> {
-        (page_index == self.page_index())
-            .then(|| self.subpath_bounds_canvas_of(target, part))
-            .flatten()
+        if page_index != self.page_index() {
+            return None;
+        }
+        use crate::panels::objects::provider::PartKind;
+        match self.part_kind_of(target)? {
+            PartKind::Subpath => self.subpath_bounds_canvas_of(target, part),
+            PartKind::TextLine => self.text_line_bounds_canvas_of(target, part),
+        }
     }
 
     fn nearest_node_of(

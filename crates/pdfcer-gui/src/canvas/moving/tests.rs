@@ -526,38 +526,38 @@ fn run_entered() -> SelectionState {
 /// O188 complained about — so this asserts the exact subject, not merely that
 /// something was returned.
 #[test]
-fn a_text_run_at_the_part_rung_moves_that_run() {
+fn a_line_of_text_at_the_part_rung_moves_that_line() {
     let sel = run_entered();
     let ctx = MoveContext {
         non_path: None,
-        part_kind: Some(PartKind::Run),
+        part_kind: Some(PartKind::TextLine),
         run_move: None,
     };
     assert_eq!(
         eligible(&sel, 0, ctx),
-        Ok(MoveSubject::TextRun {
+        Ok(MoveSubject::TextLine {
             page: 0,
             object: 0,
-            run: 0,
+            line: 0,
         }),
         "a run the engine would accept must move as a run — not as its enclosing \
          object, and not as a refusal"
     );
     assert_eq!(
         action(
-            MoveSubject::TextRun {
+            MoveSubject::TextLine {
                 page: 0,
                 object: 0,
-                run: 0,
+                line: 0,
             },
             PageDelta { dx: 4.0, dy: -1.25 },
             None,
             &[],
         ),
-        Ok(VectorAction::MoveTextRun {
+        Ok(VectorAction::MoveTextLine {
             page: 0,
             object: 0,
-            run: 0,
+            line: 0,
             dx: 4.0,
             dy: -1.25,
         }
@@ -591,7 +591,7 @@ fn a_run_the_engine_would_refuse_declines_before_the_ghost_is_drawn() {
     ] {
         let ctx = MoveContext {
             non_path: None,
-            part_kind: Some(PartKind::Run),
+            part_kind: Some(PartKind::TextLine),
             run_move: Some(block),
         };
         assert_eq!(
@@ -767,7 +767,7 @@ fn all_refusals() -> Vec<Refusal> {
         Refusal::NotAPath(3),
         Refusal::NoPartEntered,
         Refusal::NoVerbForPart(PartKind::Subpath),
-        Refusal::NoVerbForPart(PartKind::Run),
+        Refusal::NoVerbForPart(PartKind::TextLine),
         // ★★★ Every block, not one representative. The vector below is
         // what `refusals_that_owe_nothing` and its twin iterate, so a block
         // missing here is a block whose sentence — or whose deliberate
