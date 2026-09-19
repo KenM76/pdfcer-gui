@@ -382,6 +382,33 @@ pub const fn run_would_drag_the_next_line() -> &'static str {
      line along too — press Escape to select the whole block of text and drag that."
 }
 
+/// **A drag on a line written in several pieces, one of which has no position
+/// of its own** — O214's refusal, and the third of the set.
+///
+/// ★★★ **The distinction it exists to draw is invisible on the page.** A
+/// producer may write one visual line as several show operators; on the
+/// operator's own sheet the line `#2 USE SPACERS 8 9 10 11 IF REQUIRED.` is
+/// nine of them. Nothing renders differently, so *written in several pieces*
+/// is a fact he cannot check and would not believe unstated — which is why
+/// the sentence says it plainly first, before saying what follows from it.
+///
+/// ★★ **Why not reuse [`run_has_no_position_of_its_own`]**, which is the
+/// same engine refusal. Because that sentence says *that line takes its
+/// position from the line before it*, and here that is **false**: the line
+/// has a position of its own, and a join inside it does not. An operator told
+/// the false version examines the row above, finds nothing wrong with it, and
+/// concludes pdfcer is guessing — the exact failure the pair above was split
+/// to avoid.
+///
+/// ★ Same remedy, and safe for the same reason: Escape ascends one rung to
+/// the whole text object, which `transform_objects` really does move.
+#[must_use]
+pub const fn line_piece_has_no_position_of_its_own() -> &'static str {
+    "This line is written in several pieces and one of them takes its position from \
+     the piece before it, so moving the line would leave that piece behind — \
+     press Escape to select the whole block of text and drag that."
+}
+
 // ===========================================================================
 // Z-order — what an Arrange command has to disclose
 // ===========================================================================

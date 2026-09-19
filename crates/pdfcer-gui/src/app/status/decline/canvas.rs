@@ -115,6 +115,15 @@ pub enum CanvasDecline {
     /// a consequence rather than an absence: the move is possible and pdfcer is
     /// declining it, because it would carry a line the operator never selected.
     TextRunWouldDragTheNextLine,
+    /// ★★★ **A drag on a line written in several pieces, one of which
+    /// takes its position from the piece before it.**
+    ///
+    /// Distinct from [`Self::TextRunHasNoPositionOfItsOwn`] in the one way the
+    /// operator can act on: that one is about the *line*, which he can see is
+    /// the continuation of the one above it. This one is about a join *inside*
+    /// the words he clicked, which nothing on the page shows him. Telling him
+    /// the first when it is the second sends him to look at the wrong row.
+    TextRunPieceHasNoPositionOfItsOwn,
 }
 
 impl CanvasDecline {
@@ -147,6 +156,8 @@ impl CanvasDecline {
             Self::TextRunHasNoPositionOfItsOwn => "text-run-no-position-of-its-own",
             // ui-text-exempt: stable diagnostic token, never displayed.
             Self::TextRunWouldDragTheNextLine => "text-run-would-drag-next-line",
+            // ui-text-exempt: stable diagnostic token, never displayed.
+            Self::TextRunPieceHasNoPositionOfItsOwn => "text-line-piece-has-no-position",
         }
     }
 }
@@ -213,6 +224,9 @@ pub(crate) fn record_canvas(what: CanvasDecline) {
             super::Declined::TextRunHasNoPositionOfItsOwn
         }
         CanvasDecline::TextRunWouldDragTheNextLine => super::Declined::TextRunWouldDragTheNextLine,
+        CanvasDecline::TextRunPieceHasNoPositionOfItsOwn => {
+            super::Declined::TextRunPieceHasNoPositionOfItsOwn
+        }
     };
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI

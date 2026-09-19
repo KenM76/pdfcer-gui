@@ -207,6 +207,9 @@ impl Declined {
             Self::TextRunWouldDragTheNextLine => {
                 crate::text::arrange::run_would_drag_the_next_line()
             }
+            Self::TextRunPieceHasNoPositionOfItsOwn => {
+                crate::text::arrange::line_piece_has_no_position_of_its_own()
+            }
         };
         std::borrow::Cow::Borrowed(fixed)
     }

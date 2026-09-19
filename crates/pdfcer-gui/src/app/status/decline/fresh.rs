@@ -336,7 +336,9 @@ impl Declined {
             // -one call sites in `decline/tests.rs` to build the one mechanism
             // this arm exists to refuse.
             //
-            Self::TextRunHasNoPositionOfItsOwn | Self::TextRunWouldDragTheNextLine => true,
+            Self::TextRunHasNoPositionOfItsOwn
+            | Self::TextRunWouldDragTheNextLine
+            | Self::TextRunPieceHasNoPositionOfItsOwn => true,
         }
     }
 }

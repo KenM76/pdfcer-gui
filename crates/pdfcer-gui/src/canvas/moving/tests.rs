@@ -586,6 +586,7 @@ fn a_run_the_engine_would_refuse_declines_before_the_ghost_is_drawn() {
     let sel = run_entered();
     for block in [
         RunMoveBlock::NoPositionOfItsOwn,
+        RunMoveBlock::InteriorPieceHasNoPosition,
         RunMoveBlock::WouldMoveNextRun,
     ] {
         let ctx = MoveContext {
@@ -634,6 +635,10 @@ fn a_refused_drag_on_one_line_of_text_asks_for_a_sentence() {
         (
             RunMoveBlock::WouldMoveNextRun,
             CanvasDecline::TextRunWouldDragTheNextLine,
+        ),
+        (
+            RunMoveBlock::InteriorPieceHasNoPosition,
+            CanvasDecline::TextRunPieceHasNoPositionOfItsOwn,
         ),
     ] {
         let mut actions = Vec::new();
@@ -763,13 +768,14 @@ fn all_refusals() -> Vec<Refusal> {
         Refusal::NoPartEntered,
         Refusal::NoVerbForPart(PartKind::Subpath),
         Refusal::NoVerbForPart(PartKind::Run),
-        // ★★★ All three blocks, not one representative. The vector below is
+        // ★★★ Every block, not one representative. The vector below is
         // what `refusals_that_owe_nothing` and its twin iterate, so a block
         // missing here is a block whose sentence — or whose deliberate
         // silence — is never checked by anything. `NotThere` is the one that
-        // matters most: it is the only arm of the three that says nothing, and
-        // an omission here would read as a pass.
+        // matters most: it is the only arm that says nothing, and an omission
+        // here would read as a pass.
         Refusal::TextRunCannotMove(RunMoveBlock::NoPositionOfItsOwn),
+        Refusal::TextRunCannotMove(RunMoveBlock::InteriorPieceHasNoPosition),
         Refusal::TextRunCannotMove(RunMoveBlock::WouldMoveNextRun),
         Refusal::TextRunCannotMove(RunMoveBlock::NotThere),
         Refusal::NoNodeEntered,
@@ -786,7 +792,18 @@ fn all_refusals() -> Vec<Refusal> {
             | Refusal::NotAPath(_)
             | Refusal::NoPartEntered
             | Refusal::NoVerbForPart(_)
-            | Refusal::TextRunCannotMove(_)
+            // ★★★ Destructured, where every neighbour is a wildcard. A
+            // `TextRunCannotMove(_)` arm accepts a fourth [`RunMoveBlock`]
+            // silently, and the vector above would then be missing the one
+            // entry this whole function exists to force — the completeness
+            // guard would go on passing while the newest refusal's sentence
+            // was checked by nothing.
+            | Refusal::TextRunCannotMove(
+                RunMoveBlock::NoPositionOfItsOwn
+                | RunMoveBlock::InteriorPieceHasNoPosition
+                | RunMoveBlock::WouldMoveNextRun
+                | RunMoveBlock::NotThere,
+            )
             | Refusal::NoNodeEntered
             | Refusal::NodeNotFound(_)
             | Refusal::NoTravel

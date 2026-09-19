@@ -75,6 +75,13 @@
 /// family is a seam rather than an arbitrary cut.
 mod geometry;
 
+/// **The Part rung's unit for text: one visual LINE, not one show operator.**
+/// One line of a CAD title block is however many show operators its producer
+/// chose to write — 237 operators forming 144 lines on the measured sheet —
+/// and its header carries why the shell addresses lines and what follows for
+/// the move.
+mod line;
+
 /// **The Point rung's pick sets** — which anchors belong to which subpath,
 /// which number each answers to, which Bézier handle shapes which side of a
 /// node, and which of them a press picks. Its header carries why the rung is a
@@ -322,6 +329,7 @@ pub enum PartKind {
 /// | variant | the file says | what the operator can still do |
 /// |---|---|---|
 /// | [`Self::NoPositionOfItsOwn`] | this line carries on from the line above it, so it has no coordinate of its own | select the whole block and drag that |
+/// | [`Self::InteriorPieceHasNoPosition`] | the line is written in several pieces and one of them carries on from the piece before it | select the whole block and drag that |
 /// | [`Self::WouldMoveNextRun`] | the line AFTER this one carries on from it, so moving this one drags that one too | select the whole block and drag that |
 /// | [`Self::NotThere`] | the index is not a run of this object | nothing — a stale selection, not worded |
 ///
@@ -340,6 +348,18 @@ pub enum RunMoveBlock {
     /// The run takes its origin from the previous run's advance (9.4.2), so
     /// there is no operand to rewrite. `TextRunHasNoPositionOfItsOwn`.
     NoPositionOfItsOwn,
+    /// A fragment that is **not** the line's first takes its origin from the
+    /// fragment before it. Moving the line means moving that predecessor, and
+    /// the single-run verb refuses that move because it cannot be told the
+    /// follower is moving too — request `G030`. So the line is declined whole
+    /// rather than torn in half.
+    ///
+    /// Same engine answer as [`Self::NoPositionOfItsOwn`]
+    /// (`TextRunHasNoPositionOfItsOwn`), different fact about the document, and
+    /// therefore a different sentence: that one says the *line* carries on from
+    /// the line above, which is false here and would send the operator looking
+    /// at the wrong row.
+    InteriorPieceHasNoPosition,
     /// The run AFTER this one takes its origin from this one's advance, so
     /// moving this one would drag that one along. `MoveWouldMoveNextRun`.
     WouldMoveNextRun,

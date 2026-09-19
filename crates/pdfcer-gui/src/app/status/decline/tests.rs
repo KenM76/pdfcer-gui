@@ -314,6 +314,12 @@ fn no_two_declines_share_a_sentence() {
         // the only fact he needs.
         Declined::TextRunHasNoPositionOfItsOwn,
         Declined::TextRunWouldDragTheNextLine,
+        // The third of that set, and the one nearest of all to the FIRST: same
+        // engine refusal, same remedy clause, and the only difference is
+        // whether the line or a join inside it lacks a position. A collapse of
+        // those two would tell an operator that a line he can see is fine
+        // carries on from the row above.
+        Declined::TextRunPieceHasNoPositionOfItsOwn,
     ];
     for (i, a) in all.iter().enumerate() {
         for b in &all[i + 1..] {
@@ -745,7 +751,8 @@ fn a_new_decline_cannot_be_added_unnoticed(declined: Declined) {
         // REPLACED rather than added. A rename the compiler waves through is
         // how a completeness test quietly stops being complete.
         | Declined::TextRunHasNoPositionOfItsOwn
-        | Declined::TextRunWouldDragTheNextLine => {}
+        | Declined::TextRunWouldDragTheNextLine
+        | Declined::TextRunPieceHasNoPositionOfItsOwn => {}
     }
 }
 

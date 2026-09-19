@@ -10,6 +10,14 @@ metadata:
 *new* shell scripts are safe. `sweep-full.sh` itself is **not** safe, because
 bash reads a running script incrementally.
 
+⚠ **This is about `sweep-full.sh`, and NOT about `tools/gates/run-all.sh`.**
+The two get conflated — both are called "the sweep" — and the conflation is a
+scheduling error in the expensive direction: the gate run is minutes, not
+ninety-five, and none of the staleness guards below are in it. Before deciding
+to wait, check WHICH sweep is running. (What the gate run does share is the
+last bullet's other half: it ends in `cargo fmt`/`clippy`/`test`, so do not
+start a competing cargo job against it.)
+
 **Why:** two independent staleness guards exist precisely to stop a check from
 being believed against a binary that no longer matches its source —
 `ui-verify/src/main.rs::refuse_if_self_is_stale` compares the running

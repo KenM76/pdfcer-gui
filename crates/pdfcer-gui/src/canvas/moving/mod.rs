@@ -575,6 +575,10 @@ impl Refusal {
             // ui-text-exempt: stable diagnostic tokens, never displayed.
             Self::TextRunCannotMove(RunMoveBlock::WouldMoveNextRun) => "run-would-move-next",
             // ui-text-exempt: stable diagnostic tokens, never displayed.
+            Self::TextRunCannotMove(RunMoveBlock::InteriorPieceHasNoPosition) => {
+                "line-piece-has-no-position"
+            }
+            // ui-text-exempt: stable diagnostic tokens, never displayed.
             Self::TextRunCannotMove(RunMoveBlock::NotThere) => "run-not-there",
             // ui-text-exempt: stable diagnostic tokens, never displayed.
             Self::NoNodeEntered => "no-node-entered",
@@ -653,6 +657,12 @@ impl Refusal {
             }
             Self::TextRunCannotMove(RunMoveBlock::WouldMoveNextRun) => {
                 Some(CanvasDecline::TextRunWouldDragTheNextLine)
+            }
+            // The third of the set, and the one whose subject is a join the
+            // operator cannot see. `NoPositionOfItsOwn`'s sentence is false for
+            // it — see [`RunMoveBlock::InteriorPieceHasNoPosition`].
+            Self::TextRunCannotMove(RunMoveBlock::InteriorPieceHasNoPosition) => {
+                Some(CanvasDecline::TextRunPieceHasNoPositionOfItsOwn)
             }
             // ★ Silence, deliberately. The selection named a run the object
             // does not have — it outlived an edit — and the operator did

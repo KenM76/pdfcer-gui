@@ -491,3 +491,39 @@ fn moving_every_fragment_of_the_line_relocates_it_without_restructuring_anything
         }
     }
 }
+
+/// **Does `move_objects` move a whole text object?**
+///
+/// `crate::text::arrange`'s two refusal sentences both end *"press Escape to
+/// select the whole block of text and drag that"*, and that remedy is only
+/// honest if the Object rung's verb covers text. `G029` found it refusing a
+/// text object produced by a split; this asks the same question of a text
+/// object the file itself contains, because a wrong remedy sentence sends the
+/// operator to a gesture that does nothing and reports nothing.
+#[test]
+#[ignore = "reads his own drawing from target/scratch — not in this repository"]
+fn whether_the_escape_remedy_reaches_a_verb_that_moves_a_whole_text_object() {
+    let Some(mut session) = session() else {
+        return;
+    };
+    let Some((page, object, _, _)) = locate(&mut session) else {
+        println!("NOT FOUND");
+        return;
+    };
+    match session.move_objects(page, &[object], 0.0, -10.0) {
+        Ok(notes) => println!(
+            "move_objects on text object {object}: OK, {} note(s)",
+            notes.len()
+        ),
+        Err(e) => println!("move_objects on text object {object}: REFUSED — {e}"),
+    }
+    match session.transform_objects(
+        page,
+        &[object],
+        pdfcer_core::vector::Matrix::IDENTITY,
+        pdfcer_core::vector::TransformOptions::default(),
+    ) {
+        Ok(_) => println!("transform_objects on text object {object}: OK"),
+        Err(e) => println!("transform_objects on text object {object}: REFUSED — {e}"),
+    }
+}
