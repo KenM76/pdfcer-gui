@@ -577,6 +577,14 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
 ## Release discipline
 
+1. **Re-measure `FEATURES.md` against the build before packaging.** It is the
+   file he reads to know what he has, so a stale row is not an inconvenience,
+   it is a report he cannot act on. Every row carries the command that produces
+   its figure rather than the figure itself; run those commands, and read the
+   three that still carry a bare number — the engine version, the panel count
+   and its line citation, and the ribbon's captioned-group count. A row that
+   turns out to have been a *claim* rather than a stale figure is corrected in
+   place and keeps what it got wrong.
 2. **Update the engine first**: `cargo update -p pdfcer-core -p pdfcer-render -p
    pdfcer-print`. `package-portable.py` does this as its own first step, so on a
    day the engine commits live every packaging run moves the pin and stamps the
