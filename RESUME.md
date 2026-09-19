@@ -242,7 +242,11 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    from `/Annots` order while the ring uses the engine's derived sequence, so on
    a page carrying `/Tabs /R` or `/C` the two surfaces would disagree.
 5. **O212 — panel docking, tear-out and cross-compartment drops: all six steps
-   are built and the only thing outstanding is the driving steps 3 and 4 owe.**
+   are built, and every gesture among them is driven through the real binary.**
+   What is still a reading rather than a measurement is a non-unit ui scale:
+   every window-origin conversion in the tear-out and float-drag paths was
+   measured at `ppp = 1.0` only. The float window covering the compass it is
+   being aimed with is an open question in `GUI_ROADMAP.md`.
    Steps 0 to 2 are built, falsified plant by plant and gate-green: the dock retains its own geometry; a dock tab drags along its own
    strip behind a dimmed-at-a-no-op caret; and `dock::drop` is the drop grammar
    as a pure value — `DockLayout::move_panel` and `accepts_drop`, with a
