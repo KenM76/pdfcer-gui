@@ -205,3 +205,136 @@ pub fn trace_target(page: usize, run: usize, report: &pdfcer_core::text_edit::Ed
         )
     });
 }
+
+/// **Where a line sits, and how many lines there are to count from** — one
+/// reading of a page, taken either side of an edit.
+///
+/// The run count is not decoration. `left` is read by *index*, and an edit is
+/// free to change how many runs a page decomposes into — a replacement that
+/// empties a run, or joins two. When the count moves, `runs[n]` before and
+/// `runs[n]` after are not necessarily the same line, and a displacement
+/// computed across them is an attribution rather than a measurement. Carrying
+/// the count is what lets a check see that and say so, instead of reporting a
+/// confident number about the wrong line.
+#[derive(Clone, Copy)]
+pub struct LineReading {
+    /// The run's left edge in PDF user-space points, or `None` when the run
+    /// carries no bounding box.
+    pub left: Option<f64>,
+    /// How many runs the page decomposed into for this reading.
+    pub runs: usize,
+}
+
+/// **Read `run`'s left edge on `page`** — the number the operator's own report
+/// is phrased in.
+///
+/// `None` when tracing is off or the page's text is unavailable; a `Some` whose
+/// `left` is `None` when the page read but that run has no bounding box.
+/// [`trace_left_edge`] spells every one of those as *nothing was measured*
+/// rather than substituting a zero, because a zero is a position and would read
+/// as a line that had moved to the left margin.
+///
+/// # Why the provenance cache and not the cheaper one
+///
+/// `crate::app::cache`'s `page_text` is an order of magnitude cheaper and is
+/// the wrong instrument here for two reasons. It answers for the *current*
+/// page, so it would silently measure the wrong sheet the day a commit runs
+/// against a page the operator is not looking at; and it returns a `Ref` into
+/// the cache, which cannot be held while the funnel takes `&mut OpenDoc`.
+/// `provenance_page_text` is page-indexed and hands back an `Rc`, so the
+/// reading is complete and the borrow gone before the edit starts.
+///
+/// Both caches hold the *same* segmentation — `capture_provenance` populates a
+/// field and changes no run boundaries — so `runs[run]` names the same run
+/// either way, and `run` may keep coming straight from the caret.
+///
+/// # Cost
+///
+/// The reading before the edit is a cache hit: the caret already paid for this
+/// page at this epoch when it placed itself. The reading after is a new epoch
+/// and rebuilds — one extraction per commit, on a path that already saves and
+/// re-rasterises. Bought only when someone is reading.
+#[must_use]
+pub fn read_line(doc: &crate::app::state::OpenDoc, page: usize, run: usize) -> Option<LineReading> {
+    if !crate::diag::enabled() {
+        return None;
+    }
+    let text = doc.provenance_page_text(page)?;
+    Some(LineReading {
+        left: text.runs.get(run).and_then(|r| r.bbox).map(|b| b.llx),
+        runs: text.runs.len(),
+    })
+}
+
+/// **Did the edit move the line it corrected?** — `OPERATOR_REQUESTS.md` O213,
+/// on the channel a driven check can read.
+///
+/// # ★★★ Why this number and not `followers_repositioned`
+///
+/// [`trace_target`] already publishes the reflow's reach, and the engine asked
+/// for that one by name. It is the right number for *"how far did the edit
+/// run"* and the **wrong** number for the question the operator actually asked,
+/// which was *"the entire line shifts to the right"*.
+///
+/// On his own sheet the defective commit reports no repositioned followers and
+/// moves the line a long way right; on every document this repository can
+/// author, the same request shape reports two followers and moves the line
+/// nothing. A check bound to the follower count would therefore have to know
+/// which document it was looking at to know which value was the bad one. A
+/// check bound to displacement does not: **zero is correct everywhere**, on
+/// every producer, for every request shape.
+///
+/// ⚠ **This is not a disclosure and must never become one.** It is a distance
+/// in content-stream coordinates, and R8b reserves the status row for what the
+/// operator can see. What he can see is the page; the line holding still *is*
+/// the disclosure.
+///
+/// # The line, and the three fields that stop it lying
+///
+/// ```text
+/// edit-text-left-edge page=0 run=17 committed=yes runs=412/412 before=72.000 after=72.000 moved=+0.000
+/// ```
+///
+/// `moved=+0.000` is this check's PASS value, and three separate things could
+/// produce it without the line having held still:
+///
+/// | field | what it rules out |
+/// |---|---|
+/// | `committed` | a refused edit, which leaves the page untouched and agrees with itself perfectly. Read from the edit epoch, not from the plan |
+/// | `runs=n/m` | `n != m` means the decomposition changed under the index, so `before` and `after` may name different lines — see [`LineReading`] |
+/// | `before`/`after` spelled `none` | nothing was measured, and `moved` is `none` rather than a difference taken against a missing operand |
+pub fn trace_left_edge(
+    page: usize,
+    run: usize,
+    committed: bool,
+    before: Option<LineReading>,
+    after: Option<LineReading>,
+) {
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        //
+        // ★ `moved` is emitted rather than left to the reader's subtraction,
+        // and only when both ends were measured. A harness that differenced
+        // two fields itself would have to decide what `none - 812.4` means,
+        // and the answer a parser reaches for is `0` — this check's PASS
+        // value. An unmeasured edit would then read as a line that held still.
+        let spell = |v: Option<LineReading>| {
+            v.and_then(|r| r.left)
+                .map_or_else(|| "none".to_owned(), |x| format!("{x:.3}"))
+        };
+        let count =
+            |v: Option<LineReading>| v.map_or_else(|| "none".to_owned(), |r| r.runs.to_string());
+        let moved = match (before.and_then(|r| r.left), after.and_then(|r| r.left)) {
+            (Some(b), Some(a)) => format!("{:+.3}", a - b),
+            _ => "none".to_owned(),
+        };
+        format!(
+            "edit-text-left-edge page={page} run={run} committed={} runs={}/{} before={} after={} moved={moved}",
+            if committed { "yes" } else { "no" },
+            count(before),
+            count(after),
+            spell(before),
+            spell(after)
+        )
+    });
+}

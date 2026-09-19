@@ -9,10 +9,11 @@
 //! function somewhere else and gets out of the way — *"the arm routes; it does
 //! not compute"*, as that module's own header puts it. This verb cannot be an
 //! arm of that shape. It plans the edit, traces the plan's disposition, gathers
-//! a page-level form report **before** the mutation because of a borrow, copies
-//! one fact out of the plan so a closure can take the rest by reference,
+//! a page-level form report **before** the mutation because of a borrow, reads
+//! the edited line's position either side of the mutation for the same reason,
+//! copies one fact out of the plan so a closure can take the rest by reference,
 //! classifies the engine's refusal, and appends two independent disclosure
-//! sources to the report. Six decisions, none of which is *"which verb is
+//! sources to the report. Seven decisions, none of which is *"which verb is
 //! this?"*. So it lives here, and the arm in `apply.rs` is a single call with
 //! the variant's four fields.
 //!
@@ -41,18 +42,22 @@ use super::funnel::vector_edit;
 /// is what decides whether the run still says what the caret thinks it says,
 /// and what to do when it does not. Nothing here second-guesses that.
 ///
-/// ## The two things that must happen in this order, and why
+/// ## The three things that must happen in this order, and why
 ///
 /// 1. **`PageLevelForms::of(doc)` before the edit.** It reads a `Ref` into the
 ///    decomposition cache while `vector_edit` wants `&mut OpenDoc`, so gathering
 ///    it afterwards does not borrow-check — and gathering it afterwards would
 ///    also be measuring a document the edit has already changed.
-/// 2. **`plan.one_operator` copied out before the closure.** The closure takes
+/// 2. **`report::read_line` before the edit, and again after it.** The *before*
+///    reading is the one that cannot be recovered later, and it is the whole
+///    of O213's oracle: a check that can only see the page afterwards cannot
+///    tell a line that was always at x=312 from one that was at x=72 and moved.
+/// 3. **`plan.one_operator` copied out before the closure.** The closure takes
 ///    `plan` by reference, and the refusal classifier needs that one `bool`
 ///    after the engine has answered.
 ///
-/// Both are load-bearing rather than stylistic, which is why they are stated
-/// here as well as at their sites.
+/// All three are load-bearing rather than stylistic, which is why they are
+/// stated here as well as at their sites.
 pub(super) fn commit_text_edit(
     doc: &mut OpenDoc,
     page: usize,
@@ -90,6 +95,17 @@ pub(super) fn commit_text_edit(
     // out of the plan before the closure takes `plan` by reference,
     // because the classification below runs inside it.
     let one_operator = plan.one_operator;
+    // **O213's oracle, half one.** The left edge of the line as it stands
+    // before the correction, so that a driven check can assert the thing he
+    // reported rather than a proxy for it. `report::read_line` carries the
+    // whole argument, including why this is not a disclosure; it costs nothing
+    // unless someone is tracing, and it is taken here because the funnel below
+    // takes `&mut OpenDoc`.
+    let before_line = crate::canvas::textedit::report::read_line(doc, page, run);
+    // Read from the document rather than from the funnel, which returns `()`
+    // by design. The epoch advances only on a granted edit, so this is the
+    // one discriminator available for "did anything actually commit".
+    let epoch_before = doc.edit_epoch;
     vector_edit(doc, "edit-text", page, 1, |session| {
         session
             .edit_text(&plan.request, &plan.options)
@@ -136,4 +152,14 @@ pub(super) fn commit_text_edit(
                 notes
             })
     });
+    // **O213's oracle, half two.** After the funnel, so `doc` is borrowable
+    // again and the cache has been invalidated by the epoch bump — the second
+    // reading is of the edited page, not of the one that was measured above.
+    crate::canvas::textedit::report::trace_left_edge(
+        page,
+        run,
+        doc.edit_epoch != epoch_before,
+        before_line,
+        crate::canvas::textedit::report::read_line(doc, page, run),
+    );
 }

@@ -193,6 +193,27 @@ const BECAME_ADD_EVENT: &str = "text-edit-became-add";
 /// would fail on the first document with a long justified line, and a check that
 /// cries wolf gets disabled.
 const MAX_FOLLOWERS: u64 = 64;
+
+/// `edit-text-left-edge` — the edited line's position in PDF user-space points,
+/// read either side of the commit. `canvas::textedit::report::trace_left_edge`
+/// carries the argument for why displacement and not the follower count.
+const LEFT_EDGE_EVENT: &str = "edit-text-left-edge";
+
+/// How far the corrected line's left edge may move, in points.
+///
+/// ★★ **Zero is the correct answer and the tolerance is for arithmetic, not for
+/// behaviour.** Replacing a run's glyphs does not touch the text-positioning
+/// operand that put it there, so the left edge before and after are the same
+/// number arrived at twice. Half a point is a fraction of the smallest
+/// character on a title block and orders of magnitude below the defect this
+/// catches, which he described as the whole line moving.
+///
+/// It is the same bound `canvas::textedit::glyphwall` holds a synthesised
+/// document to, and the equality is deliberate: one asserts it where the engine
+/// is called directly and this one where the operator's keystrokes arrive. A
+/// check that allowed more slack than its unit-level twin would be saying the
+/// shell may move text the engine may not.
+const MAX_SHIFT_PT: f64 = 0.5;
 const DECLINED_EVENT: &str = "text-edit-declined";
 
 /// See the module documentation.
@@ -817,6 +838,96 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              disclosure is on the status row saying so"
         ));
     }
+
+    // --- 9: ★★★ AND THE LINE IT CORRECTED IS STILL WHERE IT WAS -----------
+    //
+    // `OPERATOR_REQUESTS.md` O213, in his own words: *`when I edit some of the
+    // lines like #2 USE SPACERS … the entire line shifts to the right after
+    // instead of staying in place`*.
+    //
+    // ★★ Step 8 is not this, and the difference is the whole reason step 9
+    // exists. `followers_repositioned` counts how many operators AFTER the
+    // edited one were moved; it is silent about the edited one itself. On his
+    // sheet the defective commit reports a follower count step 8 is happy with
+    // and moves the corrected line anyway, which is how this reached him
+    // through a check already asserting on reflow scope.
+    //
+    // ★ A trace number and not pixels, deliberately. The standing rule is that
+    // layout defects have one oracle and it is a rendered screenshot — and a
+    // title block is the case that rule did not have in mind: the leftmost ink
+    // in the strip holding `#2 USE SPACERS` is the box rule, not the text, so a
+    // pixel left-edge would measure furniture and hold still while the words
+    // slid under it. Points in content-stream space is the unit the defect was
+    // reported in and the unit the fix has to be true in.
+    let Some(edge) = trace.last(LEFT_EDGE_EVENT) else {
+        return Ok(Some(format!(
+            "the edit committed and no `{LEFT_EDGE_EVENT}` line followed, so this build cannot \
+             say whether the corrected line stayed put. That line is raised unconditionally by \
+             `app::actions::textcommit` after the funnel returns, so its absence means the \
+             reading was removed — not that the line held still. Trace: {}.",
+            session.trace_path().display()
+        )));
+    };
+    report.note(format!(
+        "★ the line's position was read either side of the commit: `{}`",
+        edge.raw
+    ));
+    // Three ways `moved=+0.000` can be produced without the line having held
+    // still, each ruled out by a field beside it — `trace_left_edge` carries the
+    // table. Every one is a SKIP: they say this gesture taught us nothing about
+    // O213, not that the program is wrong.
+    if edge.get("committed") != Some("yes") {
+        return Err(Error::new(format!(
+            "`{LEFT_EDGE_EVENT}` reports `committed=no`, so the document was never changed and \
+             the two readings are of one unedited page. `moved` is then arithmetic rather than \
+             behaviour. SKIPPED: aim at a run the engine will accept — the arms above name the \
+             tells."
+        )));
+    }
+    if let Some((before_n, after_n)) = edge.get("runs").and_then(|v| v.split_once('/'))
+        && before_n != after_n
+    {
+        return Err(Error::new(format!(
+            "the page decomposed into {before_n} runs before the edit and {after_n} after, so \
+             the run index the two readings share may not name the same line in both, and a \
+             displacement computed across that is an attribution rather than a measurement. \
+             SKIPPED. Trace: {}.",
+            session.trace_path().display()
+        )));
+    }
+    let Some(moved) = edge.get("moved").and_then(|v| v.parse::<f64>().ok()) else {
+        return Err(Error::new(format!(
+            "`{LEFT_EDGE_EVENT}` reports `moved={}`, which means one of the two readings did \
+             not happen — the page would not extract, or the run carries no bounding box. \
+             SKIPPED rather than passed: a check that could not read the number must not report \
+             that the number was fine. Trace: {}.",
+            edge.get("moved").unwrap_or("absent"),
+            session.trace_path().display()
+        )));
+    };
+    if moved.abs() > MAX_SHIFT_PT {
+        let shot = ctx.out("text-edit-line-shifted.png");
+        if crate::capture::window_to_png(&session, &shot).is_ok() {
+            report.artifact(shot);
+        }
+        return Ok(Some(format!(
+            "★★★ THE CORRECTION MOVED THE LINE IT CORRECTED. Its left edge went from {} to {} \
+             pt — {moved:+.3} pt — and an edit that relocates the text it fixes is a worse \
+             defect than the typo, because the operator has to notice it before he can undo \
+             it.\n\
+             This is `OPERATOR_REQUESTS.md` O213. ★ Note what step 8 reported one line above: \
+             the reflow's follower count was inside its bound. The two numbers measure \
+             different things and only this one answers his report.\n\
+             A capture is attached. Trace: {}.",
+            edge.get("before").unwrap_or("?"),
+            edge.get("after").unwrap_or("?"),
+            session.trace_path().display()
+        )));
+    }
+    report.note(format!(
+        "★★★ the corrected line stayed where it was: its left edge moved {moved:+.3} pt, inside \
+         the {MAX_SHIFT_PT} pt bound — O213"
+    ));
     Ok(None)
 }
 
