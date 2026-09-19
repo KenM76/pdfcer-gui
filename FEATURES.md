@@ -6,41 +6,35 @@ authoritative for status.
 
 **Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.55.0, a git dependency on the local engine repository, pinned at **`c5a80c3b`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
 
-**What is new in this build.** A redaction now reaches exactly as far as you
-tell it to, and says what it chose to leave alone.
+**What is new in this build.** A line of text in a title block is now one
+thing — you can click it, move it, delete it and correct it as the line you
+see, and correcting it no longer slides it across the sheet.
 
-**You choose how far a redaction reaches beyond what you marked.** Three
-settings, in Settings under Redacting: change only what I marked; also remove
-the hidden copies a viewer never shows, such as the document properties and
-the embedded metadata, which stays the default; or blank the whole page
-content of every page a mark touches. The choice is remembered between runs
-and applies to every route that applies a redaction — the preview, the
-armed-save path and the direct one — because a reach that three verbs could
-disagree about is worse than no reach at all.
+**Editing a line keeps it where it is.** Your producer writes `#2 USE SPACERS
+8 9 10 11 IF REQUIRED.` as nine separate pieces, each with its own position.
+Correcting a character used to replace all nine and redraw the line from the
+ninth piece's origin, which put it a third of the way across the sheet. The
+correction now goes into the one piece you typed in, so nothing else moves.
+Measured on your own drawing: the line's left edge is the same number before
+and after, and a check drives that on your file so it cannot come back
+unnoticed.
 
-**The copies it was told to leave are named, and they never stop a save.**
-When the narrow setting is in force and the text you marked also sits in the
-document properties or the metadata, the redaction report names each place
-and says plainly that the copy will still be in the saved file. It is written
-as a consequence of your setting, not as a fault, and it never blocks — a
-phrase that appears twice in a document is ordinary, and a program that
-refused every such redaction would be unusable.
+**A line is what the program selects, everywhere.** Click one and the status
+row says which of the title block's lines it is; right-click and the menu
+offers the line under the pointer, not the first one in the block; the outline
+is drawn around the line; delete takes that line out and leaves its neighbours;
+and dragging carries the whole line rather than one fragment of a phrase.
 
-**The warning above it no longer claims a failure that did not happen.** That
-section collects three different things: what pdfcer could not remove, what
-it could not rule out, and what you told it not to touch. Only the first is a
-limit. It now heads the list with what is true of all three — this will still
-be in the saved file — and leaves the cause to each line.
+**One case is declined, and it says so.** Where a line's middle fragment
+inherits its position from the fragment before it — which is how Word and
+Chrome write paragraphs, and not how your CAD exporter does — the whole line is
+declined rather than cut into pieces, and the reason is put in the status row.
+On a drawing you will not meet it.
 
-**Nothing above marks the page.** Every one of those sentences is off-canvas,
-in the report. A picture of the page while it is being edited is identical to
-a picture of it saved and reopened.
-
-**The program is no longer one crate.** The four lowest layers — the theme and
-unit helpers, the clipboard, the window, and the shell framework — now sit
-below the application in their own compilation units, and nothing in them can
-call back up into it. It changes nothing you can see; it is what makes a
-rebuild recompile the part that changed rather than the whole program.
+**A whole-text-object nudge still costs a wrapper.** Moving an entire text
+object, as opposed to a line inside one, writes a small transform around it
+rather than rewriting its positions. It is filed with the engine; it changes
+nothing you can see.
 
 **Scope.** This shell only. `pdfcer-core` and `pdfcer` capabilities live in
 `D:\Dev\pdfcer\docs\FEATURES.md`, whose `gui` column is this project's
