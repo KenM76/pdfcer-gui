@@ -112,7 +112,90 @@ exactly that. **The canvas needs the same treatment and does not have it.**
 
 # OPEN
 
-## O213 — ◑ **FIXED AND DRIVEN ON HIS OWN SHEET; AWAITING THE RELEASE** — editing one line of a title-block shifts that line to the right
+## O215 — **FILED** — moving one text chunk inside a block must be a left-click gesture with boxes, multi-select and a live preview
+
+> *"The offset problem is fixed and moving text within a block sort of works. I
+> can't quite figure out how to consistently just move one text chunk within a
+> block. Sometimes I click, get the four arrows move sign, click again then
+> click to move and it moves the chunk and sometimes it moves the entire block.
+> If two chunks are on the same line sometimes they move together even though
+> the text edit counts them as separate chunks. We need a way to easily move
+> one or more text chunks within a block, but also see what we are moving and
+> be able to select multiple chunks at once to move. We also need a live
+> preview. I just noticed you added a right click option and that does work
+> well, but we want an easier way with the left click button."*
+>
+> *"We probably need a new selector option we can turn on or off in the
+> sidebar, navigate, and content edit tools. Ideally we'd have a way to click
+> on a text block and it would show us boxes around all the blocks contained
+> within it, then let us use our usual mouse selection methods to move the
+> chunks."*
+
+**This is six asks in one paragraph and none of them is optional.** Written out
+so no part of it can be quietly dropped:
+
+| # | The ask | Done when |
+|---|---|---|
+| 1 | Selecting one chunk is **repeatable** — the same gesture on the same chunk gives the same answer every time | he can say which gesture selects a chunk without guessing |
+| 2 | **Two chunks sharing a baseline are two chunks**, not one line | clicking the left one does not take the right one |
+| 3 | **The parts are visible** — clicking a block outlines everything inside it | he can see what he is about to move before he moves it |
+| 4 | **Multi-select** with the usual gestures — shift-click, ctrl-click, rubber-band | several chunks move together as one drag |
+| 5 | **Live preview** while dragging | the chunk follows the pointer, not a rectangle |
+| 6 | The whole thing is on the **left button**; the right-click route stays | no gesture he uses daily requires the context menu |
+
+Plus his own proposal for the shape, which is a design input and is treated as
+one: **a selector option, toggleable, reachable from the sidebar, the Navigate
+tool and the Content Edit tool.**
+
+**The second sentence retires O214's premise, and that is the finding.** O214
+made *the line* the unit of selection everywhere, on the evidence that his
+producer writes one visual line as nine show operators and clicking used to
+land on a 19 pt fragment mid-phrase. That was right for the sentence he was
+editing and **wrong for a title block**, where two unrelated labels — a field
+name on the left, its value on the right — share a baseline and are now one
+selectable thing. The grouping predicate is the defect: *same baseline* is not
+*same chunk*.
+
+**A line is still the right default and must not be thrown away.** What is
+missing is the rung beneath it. The convention every drawing program converges
+on is a **group you can enter**: PowerPoint selects the group, then a second
+click inside selects the member; Illustrator and Inkscape enter on double-click
+and leave on Escape; Acrobat's Edit PDF outlines every editable block the
+moment you enter the mode, which is ask 3 exactly. R11 says take the
+interaction from those, not invent one.
+
+**★ This file already contains the ruling that would have prevented it, and it
+was never put to him.** `O17` closes on an open question in these words:
+
+> *"whether entering edit-on-an-object in Edit mode is the single click that
+> selected it, or a second click / double-click … **The class answer is
+> double-click**: PowerPoint, Illustrator, Figma, Visio and Acrobat all use
+> single-click-selects, double-click-enters … Proposed, for his ruling: **click
+> selects, double-click enters the object's editor**, with Enter as the
+> keyboard equivalent on a selection."*
+
+That is ask 1 and ask 6 of this row, already argued, already resolved against
+the product class, and parked. It was never asked, so it was never answered,
+and he found the gap by using the program instead. **A design question parked
+for the operator's ruling and not put to him is not parked; it is dropped.**
+The ruling is taken as given here — it is the convention, R11 applies, and
+nothing is owed but the building.
+
+`O21` carries the live-preview half — *"I've never seen a program that doesn't
+live preview any change"* — which makes ask 5 a **second asking**, not a new
+request.
+
+**⚠ The reported non-determinism is the part to measure first, not design
+around.** *"Sometimes it moves the chunk and sometimes it moves the entire
+block"* from a fixed gesture means either two gestures are being conflated or
+the hit test's answer depends on state he cannot see. Neither is fixed by
+adding a mode on top. A driven check that presses the same point twice and
+asserts the same unit is selected both times is the first thing owed here.
+
+**Nothing on this row is built.** Status stays **FILED** until each numbered
+ask above has a driven check by name.
+
+## O213 — ✅ **CLOSED BY HIM** — editing one line of a title-block shifts that line to the right
 
 > *"In sw41177.pdf when I edit some of the lines like "#2 USE SPACERS"... the
 > entire line shifts to the right after instead of staying in place."*
@@ -158,13 +241,16 @@ driving the rebuilt binary turned it red with O213's own sentence.
 
 **The narrowing landed after the release he had**, which is the whole of why he
 saw the defect and this tree did not. He was not mistaken and nothing was owed
-to the investigation — only a build. It is published as
-`v0.5.0-dev.20260919.1`, in OneDrive slot `pdfcer-gui2`. The row closes when he
-says the line stays put.
+to the investigation — only a build, published as `v0.5.0-dev.20260919.1`.
+
+> **Ken, on that build:** *"The offset problem is fixed."*
+
+⚠ `canvas::textedit::narrow` is still a **workaround**, and it comes out when
+the engine closes `G028`. Closing this row does not close that.
 
 His file is `C:/Users/Ken/OneDrive/pdfTests/SW41177.pdf`; work on a copy.
 
-## O214 — ◑ **BUILT AND DRIVEN; AWAITING HIS DRAG ON HIS OWN SHEET** — drag one line of a block as if it were its own object
+## O214 — ◑ **HALF CONFIRMED BY HIM — *"sort of works"*; the rest is O215** — drag one line of a block as if it were its own object
 
 > *"I'd also like to be able to take a line like this that is part of a larger
 > block and be able to relocate it by dragging and moving as if it wasn't part
