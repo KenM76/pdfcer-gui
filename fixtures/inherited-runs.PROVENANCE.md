@@ -140,11 +140,14 @@ own line's box and no other. Hand-summing the AFM tables could not have placed
 the rotated pair at all: a quarter turn moves the advance into y, so the
 arithmetic that works for a horizontal run names the wrong axis for these two.
 
-**Not yet confirmed by a driven run at line granularity.** The four aims have
-never been through `ui-verify`. A wrong point lands on a neighbouring line
-whose answer differs, which the check reports rather than swallows -- so the
-first driven run is what turns this section from reasoning into evidence.
-When it passes, say so here and date it.
+**Confirmed by a driven run at line granularity, 2026-09-19, at commit
+`348e1e1`.** `ui-verify --check dragging_one_line_of_text_moves_it_or_says_why`
+pressed once per aim in a single launch and got four *different* answers, in
+aim order: `line-piece-has-no-position`, a committed `move-text-line`,
+`run-would-move-next`, `run-has-no-position`. Four distinct answers from four
+aims is what proves each aim landed on its own line -- `canvas-selection`
+carries no part index, so the document's discriminating power is the only
+oracle there is, and it held. Re-date this only when a number above moves.
 
 ## Why base-14 Helvetica rather than an embedded font
 

@@ -50,8 +50,8 @@ channel: a reply is an input to *how* a thing is built, never to *which*. Each
 row's argument is in `OPERATOR_REQUESTS.md`, which **only Ken closes**; the open
 set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
-1. **O213 / O214 — the shell now addresses the visual line everywhere, and
-   NONE of it has been driven.** This is the whole of the next drive.
+1. **O213 / O214 — the shell addresses the visual line everywhere, driven and
+   green, and it has not yet been put to him.**
    **What shipped.** The Part rung, the object tree row (`Line #49`), the
    status sentence (*1 line of 144*), the context menu, the selection outline,
    the delete verb and the move verb all count and address lines. Run indices
@@ -62,13 +62,15 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    REQUIRED.` is nine of them — runs 50..59, baseline 927.23, every one
    `Explicit`. Before the re-key a click landed on run 53, a 19 pt fragment
    mid-phrase; now it lands on the line and a drag carries all nine.
-   **What is owed: a driven run.** `move_line_of_text` presses once per visual
-   line and asserts all four answers; `deeper_rung_delete` and `run_menu_route`
-   read renamed trace tokens. Every token those three assert on is present in
-   `target/release/pdfcer-gui.exe` — which rules out a typo and proves nothing
-   about reachability. None of the three has run since the re-key. O188's own
-   history is why that distinction is kept: the last check written about this
-   capability was green for a day while asserting the opposite of the truth.
+   **Driven, all three checks, 2026-09-19 at `348e1e1`.** `move_line_of_text`
+   presses once per visual line and got four *different* answers from four aims
+   in one launch; `deeper_rung_delete` took a label out and left the other five
+   (`text-lines` 6 → 5, page objects unchanged); `run_menu_route` right-clicked
+   the third of six lines and the menu offered `line:2/6`, the line under the
+   pointer. **What is owed is Ken's word, not another measurement** — O214 stays
+   open until he drags a line of his own title block. O188's history is why the
+   grep-the-exe pre-flight was never allowed to stand in for this: every token
+   was in the binary while the capability addressed the wrong unit.
    **The grouping is the engine's own**, not a second opinion:
    `pdfcer_core::vector::edit::text_object_split_points(obj, SplitGranularity::Line)`
    is called rather than re-derived from baselines, so the box that is drawn and

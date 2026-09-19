@@ -190,8 +190,12 @@ pub fn operator_file_complaint(name: &str) -> String {
 /// **Page 0, (120, 704)** - inside the FIRST line. The baseline is 700 and
 /// the cap height at 12 pt is about 8.4 pt, so the glyph band runs roughly
 /// 700..708; x = 120 is about eight characters into a line some 270 pt long.
-/// Driven confirmation: `deeper_rung_delete`'s label rung selects a text run
-/// there and removes it, `runs_before=6 runs_after=5`.
+/// Driven confirmation: `deeper_rung_delete`'s label rung selects a text line
+/// there and removes it, `text-lines_before=6 text-lines_after=5`. Six either
+/// way on this document — it writes a `Tm` in front of every `Tj`, so each of
+/// its six show operators is its own line and the two granularities agree.
+/// That agreement is why this fixture cannot tell a line-addressing build from
+/// a run-addressing one, and why `inherited-runs.pdf` exists.
 ///
 /// ⚠ **This is a single point on a single line, and that is deliberate.**
 /// A check that needs several separate text OBJECTS, or a band wide enough

@@ -151,7 +151,7 @@ the line's left edge, which is the only evidence R1 accepts.
 
 His file is `C:/Users/Ken/OneDrive/pdfTests/SW41177.pdf`; work on a copy.
 
-## O214 — ◑ **MEASURED; THE SHELL NOW ADDRESSES THE LINE, NOT YET DRIVEN** — drag one line of a block as if it were its own object
+## O214 — ◑ **BUILT AND DRIVEN; AWAITING HIS DRAG ON HIS OWN SHEET** — drag one line of a block as if it were its own object
 
 > *"I'd also like to be able to take a line like this that is part of a larger
 > block and be able to relocate it by dragging and moving as if it wasn't part
@@ -210,12 +210,21 @@ arms that speak to the engine. On his sheet that turns 237 rows reading
 *Run #53* into 144 reading *Line #49*, and a drag on any fragment of his
 sentence moves all nine.
 
-**What is left before this row can be put to him:** it has not been driven.
-`move_line_of_text` now aims one press per visual line and asserts the four
-answers a line move can give, but that check has never run against the built
-binary at line granularity — and O188's own history is why that distinction is
-kept: the last check written about this capability was green for a day while
-asserting the opposite of the truth.
+**Driven, 2026-09-19 at `348e1e1`, three checks against the built binary.**
+`move_line_of_text` pressed once per visual line of a fixture whose four lines
+give four *different* answers and got all four, rotated pair included — four
+distinct answers from four aims is the only available proof each aim landed on
+its own line, because `canvas-selection` carries no part index.
+`run_menu_route` right-clicked the **third** of six lines and the menu offered
+`line:2/6`, then the press read back the same pick and the Part rung entered on
+that line. `deeper_rung_delete` removed one label and left the other five.
+O188's history is why the grep-the-exe pre-flight was never allowed to stand in
+for this: every asserted token was already in the binary while the capability
+addressed the wrong unit.
+
+**What is left is his word, not another measurement.** The row stays open until
+he drags a line of his own title block and says it moves as he meant. His file
+is `C:/Users/Ken/OneDrive/pdfTests/SW41177.pdf`.
 
 ## O212 — ✅ **SHIPPED, DRIVEN, AND CONFIRMED BY HIM** — panels should dock, tear out, and drop back the way Qt's do
 
