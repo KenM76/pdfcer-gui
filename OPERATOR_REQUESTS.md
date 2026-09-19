@@ -112,6 +112,41 @@ exactly that. **The canvas needs the same treatment and does not have it.**
 
 # OPEN
 
+## O216 — **FILED** — emptying a text chunk does not save, and a selected chunk must be deletable
+
+> *"Also I forgot that those chunks of text when we edit, if I delete all of
+> the text within them it doesn't save the change. We should be able to delete
+> all the text in them or select and delete them as well."*
+
+**Two asks, and they are different mechanisms with different failure modes.**
+
+| # | The ask | The suspicion to measure first |
+|---|---|---|
+| 1 | Select all the text in a chunk, delete it, commit — and it stays gone | an **empty replacement** is refused or dropped somewhere on the edit path, and the refusal is silent |
+| 2 | Select the chunk on the canvas and delete it as an object | `DeleteTextLine` exists; the question is whether it is reachable from the gesture he uses |
+
+**⚠ "It doesn't save the change" is the operator's description of the symptom,
+not a diagnosis, and there are at least four places it could be true:**
+
+1. the caret's commit never fires for an empty string, so nothing is requested;
+2. the shell's own plan declines an empty replacement before the engine sees it;
+3. the engine refuses it and the decline is not shown;
+4. it commits, and the save path drops it.
+
+These are distinguished by the trace, not by argument — `text-edit-plan`,
+`edit-text-target` and `edit-text-left-edge` already say which of the first
+three happened, and `committed=` on the last of those separates 1–2 from 4.
+**Measure before designing.** A silent refusal is its own defect under the
+disclosure rule whatever the cause: if an empty replacement is genuinely not
+allowed, he is owed a sentence saying so, not a no-op.
+
+**★ Ask 1 is not "delete the object".** Emptying a chunk and deleting a chunk
+are different results — an emptied run may still hold position, style and a
+place in the stream that following runs depend on. Both are asked for here and
+both are owed; neither substitutes for the other.
+
+**Nothing on this row is built or measured.** Status stays **FILED**.
+
 ## O215 — **FILED** — moving one text chunk inside a block must be a left-click gesture with boxes, multi-select and a live preview
 
 > *"The offset problem is fixed and moving text within a block sort of works. I
