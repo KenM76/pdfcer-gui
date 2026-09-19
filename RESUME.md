@@ -71,6 +71,21 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    open until he drags a line of his own title block. O188's history is why the
    grep-the-exe pre-flight was never allowed to stand in for this: every token
    was in the binary while the capability addressed the wrong unit.
+   **O213's own oracle is driven on his own sheet and it holds.**
+   `edit-text-left-edge page= run= committed= runs=n/m before= after= moved=`
+   is raised by `app::actions::textcommit` either side of the funnel, and step 9
+   of `text_edit_on_a_real_drawing` bounds `moved` at 0.5 pt — the same bound
+   `canvas::textedit::glyphwall` holds a synthesised document to. At
+   `--doc-point 0,549.0,935.5` on a copy of `SW41177.pdf` the caret lands on run
+   100, his `#2 USE SPACERS` line, `narrowed=1` fires, and the left edge reads
+   474.160 before and after. Falsified by planting a 12 pt shift in the second
+   reading and driving the rebuilt binary: red, naming O213.
+   ★ **The follower count is NOT this number.** Step 8's
+   `followers_repositioned` counts operators *after* the edited one; it reported
+   0 on the commit that moved his line +240.16 pt, which is how the defect
+   reached him through a check already watching reflow scope.
+   ⚠ **The narrowing landed after his newest release**, so publishing is what
+   answers O213 — not more investigation.
    **The grouping is the engine's own**, not a second opinion:
    `pdfcer_core::vector::edit::text_object_split_points(obj, SplitGranularity::Line)`
    is called rather than re-derived from baselines, so the box that is drawn and

@@ -112,7 +112,7 @@ exactly that. **The canvas needs the same treatment and does not have it.**
 
 # OPEN
 
-## O213 — ◑ **CAUSE MEASURED, SHELL FIX LANDED, NOT YET DRIVEN** — editing one line of a title-block shifts that line to the right
+## O213 — ◑ **FIXED AND DRIVEN ON HIS OWN SHEET; AWAITING THE RELEASE** — editing one line of a title-block shifts that line to the right
 
 > *"In sw41177.pdf when I edit some of the lines like "#2 USE SPACERS"... the
 > entire line shifts to the right after instead of staying in place."*
@@ -146,8 +146,20 @@ to compensate. It refuses — and keeps the spanning form — when the change
 straddles two operators or falls in a gap extraction synthesised. ⚠ It is a
 workaround and comes out when `G028` lands.
 
-**Remaining:** drive it on his own file through `tools/ui-verify` and assert
-the line's left edge, which is the only evidence R1 accepts.
+**Remaining: the release.** It is driven, and it holds. `ui-verify --check
+text_edit_on_a_real_drawing --doc-point 0,549.0,935.5` on a copy of his sheet —
+the centre of the `SPACERS` rect `pdfcer find-text` reports — lands the caret on
+run 100, `#2 USE SPACERS 8 9 10 11 IF REQUIRED.`, the line he named. `narrowed=1`
+fires, the commit is granted, and the left edge reads `474.160` before and
+`474.160` after: `moved=+0.000`.
+
+The check can fail: planting a 12 pt shift in the shell's second reading and
+driving the rebuilt binary turned it red with O213's own sentence.
+
+⚠ **The narrowing landed after the newest release he has**, so the build on his
+machine still sends the spanning form and still moves the line. He is not
+mistaken and nothing further is owed to the investigation — **publishing is the
+answer**, and the row closes when he says the line stays put.
 
 His file is `C:/Users/Ken/OneDrive/pdfTests/SW41177.pdf`; work on a copy.
 
