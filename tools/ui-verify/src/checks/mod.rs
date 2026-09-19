@@ -1280,6 +1280,13 @@ pub mod text_annot_focus;
 /// the draft at the first line break and discards everything after it.
 pub mod text_box;
 
+/// ★★ **O215 ask 3, driven** — clicking a block of text draws a thin box
+/// round each chunk inside it, and the ribbon toggle turns them off and back on.
+/// Its header carries why a green unit suite is not evidence here: the boxes are
+/// what makes the chunk aimable, and four links between the tested functions and
+/// the operator are invisible to a test that calls those functions.
+pub mod text_chunks;
+
 /// ★ The operator's own report, driven: Edit text on a REAL CAD sheet, aimed at a
 /// point the ENGINE says carries text. Its header carries why two passing text
 /// checks were not enough — both drive fixtures this repository generated to

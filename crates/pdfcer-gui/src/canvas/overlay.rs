@@ -997,6 +997,66 @@ pub fn draw_text_selection(painter: &Painter, mapping: &PageMapping, boxes: &[Re
     }
 }
 
+/// The alpha the chunk outlines are drawn at.
+///
+/// Below the selection outline's full-strength stroke, deliberately. The two
+/// are on the screen together and they say different things: the selection
+/// outline says *this is what is selected*, the chunk boxes say *these are the
+/// pieces it is made of*. If the pieces were drawn at the same weight as the
+/// whole, the operator would read the strongest rectangle on the block as the
+/// selection and aim at the wrong one, which is the confusion O215 ask 1
+/// reports rather than a fix for it.
+const CHUNK_OUTLINE_ALPHA: u8 = 110;
+
+/// **One hairline box per chunk of a selected text block** —
+/// `OPERATOR_REQUESTS.md` O215 ask 3.
+///
+/// `boxes` are canvas space, as [`crate::canvas::chunks::outlines`] returns
+/// them; the projection is done here because it is this painter's mapping that
+/// knows where the page currently sits.
+///
+/// # Outlines, not washes
+///
+/// [`draw_text_selection`] fills because a text *selection* is a region the
+/// operator asked for and wants to see the extent of. These are not a
+/// selection — they are the units a **future** click can reach, drawn so the
+/// aim is possible. A wash over every chunk of a title block would obscure the
+/// drawing it describes, and the thing being disclosed here is a boundary, so
+/// a boundary is what is drawn.
+///
+/// # R8b
+///
+/// A pre-commit affordance, in the class the rule admits by name alongside
+/// snap indicators and rubber-bands: nothing about the page's own content is
+/// restyled, and the same document saved and reopened paints identically.
+/// [`crate::canvas::chunks`] carries the whole argument.
+///
+/// # ★★★ Returns how many rectangles reached the painter, and the caller
+/// traces THAT
+///
+/// Not `boxes.len()`, which the caller already holds. The difference is the
+/// whole evidentiary value of the trace line: a count taken from the argument
+/// is true whether or not this function was called, so deleting the call would
+/// leave the driven check passing over a canvas with nothing drawn on it. A
+/// count taken from the loop cannot be produced without entering the loop, and
+/// removing the call is then a compile error rather than a silent success.
+///
+/// ⚠ Its reach ends at the painter. A stroke made transparent, a theme colour
+/// equal to the page, or a mapping that puts every box off-screen would all
+/// still count. Those have one oracle, and it is a rendered screenshot.
+#[must_use]
+pub fn draw_chunk_boxes(painter: &Painter, mapping: &PageMapping, boxes: &[Rect]) -> usize {
+    let stroke = Stroke::new(1.0, at_alpha(ink(painter), CHUNK_OUTLINE_ALPHA));
+    let mut drawn = 0;
+    for page_rect in boxes {
+        let screen =
+            visible_outline_rect(mapping.rect_to_screen(*page_rect), MIN_OUTLINE_EXTENT_PX);
+        painter.rect_stroke(screen, CornerRadius::ZERO, stroke, StrokeKind::Middle);
+        drawn += 1;
+    }
+    drawn
+}
+
 /// A themed colour at a chosen alpha.
 ///
 /// Read back through `to_srgba_unmultiplied`, for the reason [`ghost`]

@@ -295,6 +295,21 @@ pub(super) fn band() -> Vec<Command> {
         command("view.smart_select", t::view_smart_select(), 258)
             .with_icon("show-points")
             .enabled_when("mode.edit_content"),
+        // ★ **The chunk boxes** — `OPERATOR_REQUESTS.md` O215 ask 3. Token 265,
+        // the next free one in the View band.
+        //
+        // ★ `enabled_when("mode.edit_content")`, matching its neighbour above
+        // and for that argument: the boxes exist to aim a content-edit gesture,
+        // so a build in Read would be reporting the state of a switch that
+        // governs nothing there.
+        //
+        // ★ The icon is `pick-part`, shared with `format.select_text_line` —
+        // literally the same subject, one chunk of text — and the two are never
+        // drawn beside each other, which is the condition this file's reuse
+        // notes turn on: one is a context-menu row and one is a ribbon button.
+        command("view.text_chunks", t::view_text_chunks(), 265)
+            .with_icon("pick-part")
+            .enabled_when("mode.edit_content"),
         command("view.show_points", t::view_show_points(), 231)
             .with_icon("show-points")
             .enabled_when("doc.pages"),

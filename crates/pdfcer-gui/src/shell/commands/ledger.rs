@@ -406,9 +406,15 @@ fn registration_succeeds_and_registers_every_command() {
     // smoothing it over — is that the other five are the discoverable
     // SECOND route to something the ribbon also offers, and this one is the
     // only route there is.
+    // ★ 161 → 162: `view.text_chunks` REGISTERED —
+    // `OPERATOR_REQUESTS.md` O215. Ken: *"we probably need a new selector
+    // option we can turn on or off in the sidebar, navigate, and content edit
+    // tools."* It draws one box per chunk of a selected text block, which is
+    // what makes the chunk a thing an operator can aim at rather than a thing
+    // the selection code knows about privately.
     assert_eq!(
         registry().len(),
-        161 + usize::from(cfg!(feature = "signing"))
+        162 + usize::from(cfg!(feature = "signing"))
     );
 }
 
@@ -790,9 +796,15 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // toggle on Edit, the other a row in the canvas context menu), which is
     // the condition the reuse notes above all turn on. Nothing was drawn, so
     // `icons/assets/PROVENANCE.md` is untouched.
+    // ★ 144 → 145: `view.text_chunks` names `pick-part` (O215), the seventh
+    // reuse and the second of this same glyph. It is the same subject a third
+    // time — one chunk of text — and the two commands that now share it are
+    // never drawn together either: one is a ribbon toggle, the other a context
+    // menu row. Nothing was drawn, so `icons/assets/PROVENANCE.md` is
+    // untouched.
     assert_eq!(
         named,
-        144 + usize::from(cfg!(feature = "signing")),
+        145 + usize::from(cfg!(feature = "signing")),
         "commands naming an icon"
     );
     // ★ 12 → 17: the Format ▸ Font group's five commands

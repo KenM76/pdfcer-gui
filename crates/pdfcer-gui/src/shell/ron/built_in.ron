@@ -161,6 +161,11 @@
                             size: Small,
                             visible_when: "mode.edit_content",
                         ),
+                        Command(
+                            id: "view.text_chunks",
+                            size: Small,
+                            visible_when: "mode.edit_content",
+                        ),
                     ],
                 ),
                 (
@@ -535,6 +540,7 @@
                 Command(id: "view.tool_text"),
                 Command(id: "view.tool_hand"),
                 Command(id: "view.smart_select", visible_when: "mode.edit_content"),
+                Command(id: "view.text_chunks", visible_when: "mode.edit_content"),
             ],
         ),
         (

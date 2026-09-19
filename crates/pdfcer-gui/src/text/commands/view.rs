@@ -484,6 +484,24 @@ pub const fn view_smart_select() -> CommandText {
     )
 }
 
+/// `view.text_chunks`
+///
+/// ★ The label is **Text chunks**, not *Parts* and not a third *Points*.
+/// `RIBBON_IA.md` §8 item 5 already carries two controls labelled *Points* —
+/// `view.tool_node` and `view.show_points` — and a third would make the word
+/// mean nothing. *Chunk* is also the word the operator used for the thing.
+///
+/// The tooltip says what the boxes are FOR rather than what they are, because
+/// an operator who reads only that they are boxes has no reason to want them.
+#[must_use]
+pub const fn view_text_chunks() -> CommandText {
+    CommandText::new(
+        "Text chunks",
+        "Draw a thin box round each chunk of text inside a selected block, so you can see which \
+         piece a click will pick up before you click it. It changes nothing about the page.",
+    )
+}
+
 /// `view.rulers`
 ///
 /// The tooltip states the unit, because the unit is the thing an operator

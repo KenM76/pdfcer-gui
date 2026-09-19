@@ -305,8 +305,22 @@ O17 ruling cannot simply be applied; and **`ClickHit.part` already carries the
 line** on the very first click, computed by `probe` and then discarded by
 `click_at_object_rung`. The information is not missing; it is thrown away.
 
-**Nothing on this row is built.** Status stays **FILED** until each numbered
-ask above has a driven check by name.
+**Ask 3 is built and driven. Nothing else on this row is.** Clicking a block of
+text now outlines every chunk inside it, off a toggle — **View ▸ Navigate ▸
+Text chunks**, and the same row on the rail, live in Content Edit — which is
+his own proposal for the shape, and which remembers its answer.
+`ui-verify --check chunk_boxes_show_what_a_text_block_is_made_of` drives it on
+`paragraph.pdf`: one click draws six boxes for the six chunks of a one-object
+paragraph, the toggle turns them off (`canvas-chunks-declined
+reason=switched-off`) and a second press brings them back. It has been
+falsified — a loop that draws nothing reports `drawn=0` and the check goes red,
+because the traced count comes back out of the painter rather than off the
+vector handed to it.
+
+**Status stays FILED.** Asks 1, 4, 5 and 6 are unbuilt and ask 2 is the
+engine's (`G032`). The boxes are the prerequisite this row argues for, not the
+row: the rectangle that decides which unit a press takes is now on the screen,
+and making the press itself repeatable is the next stage.
 
 ## O213 — ✅ **CLOSED BY HIM** — editing one line of a title-block shifts that line to the right
 

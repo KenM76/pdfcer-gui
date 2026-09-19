@@ -424,6 +424,12 @@ impl eframe::App for PdfcerApp {
         // press and wrong for a mirror that runs sixty times a second.
         crate::canvas::smart::sync(&ctx, self.prefs.smart_select);
 
+        // ★★ Step 0b³ — **the same mirror for the chunk boxes** —
+        // `OPERATOR_REQUESTS.md` O215. One direction, every frame, for the
+        // reason stated immediately above; `crate::canvas::chunks` carries why
+        // that switch has two homes at all.
+        crate::canvas::chunks::sync(&ctx, self.prefs.text_chunks);
+
         // ★★ Step 0b² bis — **measure the page's content digest**, on the one
         // frame-level `&mut` this shell has.
         //

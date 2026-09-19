@@ -231,6 +231,7 @@ pub fn groups() -> Vec<RailGroup> {
                 Item::command("view.tool_text"),
                 Item::command("view.tool_hand"),
                 Item::command("view.smart_select").shown_when("mode.edit_content"),
+                Item::command("view.text_chunks").shown_when("mode.edit_content"),
             ],
         )
         .with_caption(t::group_view_navigate())
@@ -399,7 +400,7 @@ mod tests {
     /// would take the pin away from the tool the operator is holding whenever
     /// the preference was on. See the module-level note beside this group.
     #[test]
-    fn the_smart_selector_is_the_last_row_of_navigate() {
+    fn the_two_selection_toggles_are_the_last_rows_of_navigate() {
         let group = groups()
             .into_iter()
             .find(|g| g.id == "navigate")
@@ -420,6 +421,7 @@ mod tests {
                 "view.tool_text",
                 "view.tool_hand",
                 "view.smart_select",
+                "view.text_chunks",
             ],
             "the rail's Navigate group mirrors View ▸ Navigate row for row"
         );
@@ -433,6 +435,16 @@ mod tests {
             Some("mode.edit_content"),
             "the command is `enabled_when(\"mode.edit_content\")`, so an ungated rail row \
              would be a permanently greyed control on a permanent surface in Read"
+        );
+        let chunks = group
+            .items
+            .iter()
+            .find(|i| matches!(i, Item::Command { id, .. } if id == "view.text_chunks"))
+            .expect("the chunk boxes");
+        assert_eq!(
+            chunks.visible_condition(),
+            Some("mode.edit_content"),
+            "O215's toggle carries the identical gate, for the identical reason"
         );
     }
 

@@ -126,6 +126,13 @@ impl crate::app::PdfcerApp {
         if crate::canvas::smart::enabled(ctx) {
             set.set(egui_shell::ribbon::selected_condition("view.smart_select"));
         }
+        // **The chunk boxes' pressed state** — `OPERATOR_REQUESTS.md` O215.
+        //
+        // The live value, not the persisted one, for the reason stated
+        // immediately above: the ribbon must report what is true now.
+        if crate::canvas::chunks::enabled(ctx) {
+            set.set(egui_shell::ribbon::selected_condition("view.text_chunks"));
+        }
         // The armed markup tool, published the same way and outside the
         // `Status::Open` arm for the same reason as the two above.
         //

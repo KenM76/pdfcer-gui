@@ -315,6 +315,14 @@ impl Prefs {
                         line,
                     }),
                 },
+                "text_chunks" => match opening::bool_from_key(value) {
+                    Some(on) => prefs.text_chunks = on,
+                    None => notes.push(PrefNote::BadValue {
+                        key: key.to_owned(),
+                        value: value.to_owned(),
+                        line,
+                    }),
+                },
                 "find_zoom_on_jump" => match opening::bool_from_key(value) {
                     Some(on) => prefs.find_zoom_on_jump = on,
                     None => notes.push(PrefNote::BadValue {
@@ -710,6 +718,18 @@ impl Prefs {
         // ui-text-exempt: a file KEY, as above.
         out.push_str("smart_select = ");
         out.push_str(opening::bool_key(self.smart_select));
+        out.push('\n');
+        out.push_str(
+            "\n\
+             # text_chunks: true | false. With this on, selecting a block\n\
+             # of text draws a thin box round each chunk inside it, so\n\
+             # the piece a further click would pick up can be seen before\n\
+             # the click. It changes nothing about what is selected or\n\
+             # about what is saved.\n",
+        );
+        // ui-text-exempt: a file KEY, as above.
+        out.push_str("text_chunks = ");
+        out.push_str(opening::bool_key(self.text_chunks));
         out.push('\n');
         out.push_str(
             "\n\

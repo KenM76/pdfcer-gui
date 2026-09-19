@@ -50,7 +50,48 @@ channel: a reply is an input to *how* a thing is built, never to *which*. Each
 row's argument is in `OPERATOR_REQUESTS.md`, which **only Ken closes**; the open
 set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
-1. **O213 / O214 — the shell addresses the visual line everywhere, driven and
+1. **O215 / O216 / O217 — the text chunk as a thing the operator can aim at.
+   Stage 1 is built and driven; five of the six asks are not.**
+   **What shipped.** Clicking a block of text draws a hairline box round every
+   chunk inside it, off a toggle — View ▸ Navigate ▸ *Text chunks*, and the
+   same row on the rail, live in Content Edit, persisted. That is O215 ask 3,
+   and the row argues it is a prerequisite rather than a nicety: what decides
+   whether a drag takes the chunk or the whole block is `canvas::presspick::covers`
+   asking, on **press**, whether the pointer is inside the current selection's
+   outline — a rectangle nothing drew. *"Sometimes it moves the chunk and
+   sometimes it moves the entire block"* is what aiming at an invisible target
+   feels like.
+   **Driven, and falsified.** `ui-verify --check
+   chunk_boxes_show_what_a_text_block_is_made_of` clicks `paragraph.pdf`,
+   asserts six boxes for six chunks, presses the toggle and asserts
+   `canvas-chunks-declined reason=switched-off`, then presses it back. The
+   oracle is three subsystems deep on purpose: a missing ribbon item writes
+   none of the three lines, a missing dispatch arm writes the first only, and a
+   build reading the persisted preference instead of the live one writes the
+   first two — a defect otherwise invisible until the next restart. Planting a
+   loop that draws nothing turns it red at `drawn=0`, because the traced count
+   is taken inside the painter's loop rather than off the vector handed to it.
+   **What is next, in order.** S2: a plain left-click inside a box selects that
+   chunk and the press path stops resetting the rung (asks 1 and 6). S3:
+   shift-click, ctrl-click and a rubber-band over chunks, which needs a plural
+   `MoveSubject` and three hard-set-to-Object paths relaxed (ask 4). S4: real
+   live-preview geometry — `canvas::shapes::for_move_subject` returns `None` for
+   both text-line subjects today, so a drag previews a rectangle (ask 5).
+   **Ask 2 is the engine's and is filed as `G032`**: `runs_share_a_line` never
+   reads the horizontal translation, so a table row welds into one line — 565
+   welded lines on his own drawing, the widest spanning 709.4 pt of blank paper.
+   **Not worked around**, deliberately: a post-split on bounds would make the
+   shell's unit differ from `delete_text_run`'s with neither side able to
+   detect it.
+   **O216 is unmeasured** — emptying a chunk does not save, and four causes fit
+   the symptom; `text-edit-plan`, `edit-text-target`, `edit-text-left-edge` and
+   `committed=` separate them, so measure before designing. **O217 is
+   unbuilt** and is the one that cannot ship the old unit: redaction on a
+   welded row would silently take the part number and the description with the
+   quantity, and he would find out after the file was written.
+
+
+2. **O213 / O214 — the shell addresses the visual line everywhere, driven and
    green, and it has not yet been put to him.**
    **What shipped.** The Part rung, the object tree row (`Line #49`), the
    status sentence (*1 line of 144*), the context menu, the selection outline,
@@ -121,7 +162,7 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    refuses every text object while `transform_objects` accepts them, so every
    whole-text-object nudge pays a `q`/`cm`/`Q` wrapper. Filed as **G029**; it
    does not block him.
-2. **O209 — the form fields did not look or act like Acrobat's; six of seven
+3. **O209 — the form fields did not look or act like Acrobat's; six of seven
    are driven, the seventh is built and awaiting the screen, and a sweep is
    owed.** Seven complaints in one paragraph and they were seven different
    defects: a pick the popup forgot between press and release, a list frame
@@ -154,7 +195,7 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    backslash-continued. Exempt it with a `// ui-text-exempt:` block inside the
    attribute rather than re-wrapping to dodge the scanner; the gate's own
    header now says so.
-3. **O208 is built, driven and falsified — what is left is his word.** Both
+4. **O208 is built, driven and falsified — what is left is his word.** Both
    clauses are built: the page drags on the
    sheet, the four shortcuts and reset-all are there, the offset is typed or
    nudged, the frame and sign are stated, the per-edge overhang is disclosed
@@ -201,7 +242,7 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
    **What remains on O208 is Ken's word.** The row stays FILED until he closes
    it.
-4. **The form tools, a unit typed beside a number, and the rule behind both —
+5. **The form tools, a unit typed beside a number, and the rule behind both —
    O205, O206, O207.** The table he asked for is written: `FORMS_PARITY.md`,
    Acrobat against the engine at the pin against this shell, per kind x
    capability, every row cited. **Work from its section 8.1 in its own order.**
@@ -298,7 +339,7 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    `a_drop_down_can_be_answered_on_the_page`, both pinning
    `fixtures/all-field-kinds.pdf`. **Radio is the half left**, and it shares
    the focus-lock defect row 2 found, so it is a drive rather than a build.
-5. **Drive the four that just shipped — O201, O202, O203, O204.** All four are
+6. **Drive the four that just shipped — O201, O202, O203, O204.** All four are
    built, unit-falsified, gate-green and **not driven**, which is R1's exact
    failure shape: a green suite over a program nobody has used. Render-ahead is
    a band either side of the current page, ordered by distance ascending because
@@ -312,7 +353,7 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    One still-open sub-item: the forms panel's tab-order view numbers its rows
    from `/Annots` order while the ring uses the engine's derived sequence, so on
    a page carrying `/Tabs /R` or `/C` the two surfaces would disagree.
-6. **O212 — panel docking, tear-out and cross-compartment drops: built, driven,
+7. **O212 — panel docking, tear-out and cross-compartment drops: built, driven,
    and CLOSED BY HIM** — *"Their position is easy to manage and clear!"* Only
    the residue below is open.
    What is still a reading rather than a measurement is a non-unit ui scale:
@@ -428,47 +469,48 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    the conversion term opened a real window 788 pt left and 71 pt up of the
    outline and the tautological check still said PASS. Eighteen falsification
    plants, all caught.
-7. **O198's remainder, which is O188 — the MOVE half is item 1 above; what is
-   left here is taking the lump APART.** `EditSession::split_text_object` and
+8. **O198's remainder, which is O188 — the MOVE half is the O213/O214
+   item above; what is left here is taking the lump APART.**
+   `EditSession::split_text_object` and
    `text_object_split_plan` are in the pin and nothing in this shell calls
    either. Splitting is a separate capability from moving a line and buys
    nothing for it — a split-out line is still a text object, and `move_objects`
    refuses those (**G029**). The row in `ENGINE_BACKLOG.md` carries the five
    refusals that want operator sentences and the rule-4 disclosure `Line`
    granularity owes.
-8. **O181** — installed fonts in Add Text, and the dead Format ribbon controls.
-9. **O189** — bookmarks survive a cross-document page drag.
-10. **O183** — the nine-part ce-dimension paragraph, part 7 first.
-11. **O178** — multi-window tab dragging.
-12. **O182** — white seams between the image tiles of a colour rendering.
-13. **O194 steps 1, 4 and 5** — the ~30 surfaces in `UNIT_SURFACES.md` with no
+9. **O181** — installed fonts in Add Text, and the dead Format ribbon controls.
+10. **O189** — bookmarks survive a cross-document page drag.
+11. **O183** — the nine-part ce-dimension paragraph, part 7 first.
+12. **O178** — multi-window tab dragging.
+13. **O182** — white seams between the image tiles of a colour rendering.
+14. **O194 steps 1, 4 and 5** — the ~30 surfaces in `UNIT_SURFACES.md` with no
    unit control, and `ui_text` abbreviations. Step 2 shipped as an invariant:
    `src/units.rs` is the only place a document length is converted or rounded for
    display, `whole()` the only function permitted to round one, and
    `check-unit-conversion.sh` fails the build on a fresh `25.4` under the GUI.
    Font and type sizes are excluded, and the exclusion is written into source.
-14. **O195** — smart select in Review. `smart::enabled` defaults on and
+15. **O195** — smart select in Review. `smart::enabled` defaults on and
     `clicking.rs` reads the scope every frame, but `textsel::takes_the_press`
     answers `tool.is_text() || (Select && !edit_content)`, so in Review the plain
     Select press is consumed as a text sweep and the smart rung never sees it.
     Flipping the manifest condition alone would ship a visible, inert control,
     which is what R9 exists to prevent.
-15. **O176 — his verdict, not a repair.** At fit zoom a form field is about 28 px
+16. **O176 — his verdict, not a repair.** At fit zoom a form field is about 28 px
     wide and its corner grips eat every point on it; the fix is a grip that yields
     the body below some size, not a harness zoom that hides it.
-16. **Wire `SignReport::appearance_lines`** — the one engine delivery genuinely
+17. **Wire `SignReport::appearance_lines`** — the one engine delivery genuinely
     owed. It is what the engine drew into the signature box, and here it reaches
     only a trace the source marks as never displayed, so he signs without seeing
     what the stamp says while the engine records *a rectangle too small for them*
     as a real outcome. Off-canvas, in the signing dialog's result.
-17. **Re-run a full driven sweep, and read the SKIP set before the tally.** The
+18. **Re-run a full driven sweep, and read the SKIP set before the tally.** The
     last one reported `passed=86 failed=3 skipped=141` and **128 of those skips
     were one stuck notification toast**, so it measured nothing for more than
     half its roster while printing a tally that reads like a result. Ninety-five
     minutes taking the real cursor and keyboard, so only while he is away, and
     start `target/scratch/toast-watchdog.ps1` alongside it. Diff the SKIP set by
     NAME against the previous baseline in `target/scratch/`, in both directions.
-18. **The Set-scale window never appears, and the ordering story for it is
+19. **The Set-scale window never appears, and the ordering story for it is
     disproved — D64.** `app::frame`'s `ui` is one function: ribbon at 724, the
     command drain at 954, `dialogs.show` at 995 — so a dispatch always precedes
     `dialogs.show` in the same frame, and `export_text` shows a dialog drawing

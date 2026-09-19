@@ -177,6 +177,11 @@ pub mod annotnodes;
 /// **A declared workaround** — its header says what is filed at the engine and
 /// carries the tripwire that fires when the answer arrives.
 pub mod annotquad;
+/// ★ **The boxes that show what a text block is made of** — one outline per
+/// chunk of the selected text, so the unit a click is aiming at is visible
+/// before the click. `OPERATOR_REQUESTS.md` O215 ask 3; its header carries why
+/// that is a prerequisite for ask 1 rather than decoration.
+pub mod chunks;
 /// ★ Dragging a **Bézier handle** — the last Phase 1 row, and one `pdfcer`'s
 /// own `gui` column ticked `[x]` while nothing here drew a handle at all.
 /// `EditSession::move_handle` had existed since Pass 30.1; what was missing was

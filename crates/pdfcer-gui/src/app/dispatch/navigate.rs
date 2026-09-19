@@ -44,6 +44,7 @@ pub(crate) fn handles(id: &str) -> bool {
             | "view.tool_text"
             | "view.tool_node"
             | "view.smart_select"
+            | "view.text_chunks"
     )
 }
 
@@ -133,6 +134,25 @@ pub(crate) fn dispatch(app: &mut crate::app::PdfcerApp, ctx: &egui::Context, id:
                 decline(id);
             }
         }
+        // ★★★ **The chunk boxes** — `OPERATOR_REQUESTS.md` O215 ask 3.
+        //
+        // `view.smart_select`'s arm above, in every respect: both homes written
+        // here and nowhere else, `app::frame` mirroring the persisted answer
+        // into the live one, the pressed look read back out of the live one by
+        // `app::conditions::armed`. The two switches sit side by side in the
+        // Navigate row and are the same kind of thing — a statement about how
+        // the next gesture is read — so they are the same mechanism rather than
+        // two that resemble each other.
+        "view.text_chunks" => {
+            if app.capabilities().edit_content {
+                let on = !crate::canvas::chunks::enabled(ctx);
+                crate::canvas::chunks::set_enabled(ctx, on);
+                app.prefs.text_chunks = on;
+                let _ = app.prefs.save();
+            } else {
+                decline(id);
+            }
+        }
         // Unreachable while `handles` and this `match` agree; a bare fall-out
         // would be a command that reached its own module and did nothing, which
         // is the failure `handles`' doc comment is about.
@@ -171,6 +191,7 @@ mod tests {
             "view.tool_text",
             "view.tool_node",
             "view.smart_select",
+            "view.text_chunks",
         ] {
             assert!(handles(id), "{id} is in the Navigate row");
         }
@@ -189,10 +210,10 @@ mod tests {
     /// what lets `app::dispatch` ask it in a guard arm on every command.
     #[test]
     fn the_claim_is_a_cheap_question() {
-        let claimed = ["view.tool_select", "view.smart_select"]
+        let claimed = ["view.tool_select", "view.smart_select", "view.text_chunks"]
             .into_iter()
             .filter(|id| handles(id))
             .count();
-        assert_eq!(claimed, 2);
+        assert_eq!(claimed, 3);
     }
 }

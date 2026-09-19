@@ -277,6 +277,13 @@ pub(super) fn draw(
                 .map_or(&[][..], |s| s.highlights(view.page, doc.edit_epoch)),
         );
     }
+    // ★ The chunk boxes, UNDER the selection outline.
+    //
+    // They describe the pieces of what is selected, so where a piece's edge
+    // coincides with the block's the stronger line has to be the block's:
+    // the operator is being shown what the current selection is, and then
+    // what a further click could reach inside it.
+    draw_chunks(&painter, &ctx, doc, map, selection, page_index);
     // ★★★ **ONE `GripSet`, ASKED ONCE, HANDED TO THE PAINTER — rule H7.**
     //
     // `pressing::grabbable` is the function `pressing::look` asks to decide
@@ -730,6 +737,66 @@ pub(super) fn draw(
     // operator clicked the page they are trying to type on. The right one asks
     // whether a **text field** has it — the page-number box, a Properties value
     // — which is the only case where a character is not ours.
+}
+
+/// **The boxes that show what a selected text block is made of** —
+/// `OPERATOR_REQUESTS.md` O215 ask 3.
+///
+/// [`crate::canvas::chunks`] decides *whether* and *which*; this decides
+/// nothing except how the answer is reported. The split is deliberate: the
+/// decision is testable without a painter, and the painter cannot grow a second
+/// opinion about what a chunk is.
+///
+/// # Why every path writes a line, and why they share one slot
+///
+/// The same argument [`draw_anchors`] makes: a driven check that finds no boxes
+/// has to be able to tell *the operator turned them off* from *the click
+/// missed* from *the program is broken*, and silence says all three at once.
+///
+/// Through [`crate::diag::trace_changed`] rather than `trace`, because this
+/// runs once per page per frame and an unchanging state re-reported at sixty
+/// hertz buries the transitions that are the news. **Both the drawn line and
+/// the declined line take the one slot**, so an alternation between them is
+/// never collapsed — only a repeat of the identical line is.
+///
+/// The first token is `canvas-chunks-declined`, not `canvas-chunks`, for the
+/// reason `draw_anchors` states at length: `tools/ui-verify` keys on first
+/// tokens, and a reader asking for the drawn line must not be handed a decline
+/// carrying none of the fields it reads.
+fn draw_chunks(
+    painter: &egui::Painter,
+    ctx: &egui::Context,
+    doc: &OpenDoc,
+    map: &PageMapping,
+    selection: &SelectionState,
+    page_index: usize,
+) {
+    fn declined(reason: crate::canvas::chunks::Declined) {
+        crate::diag::trace_changed("canvas-chunks", || {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            format!("canvas-chunks-declined reason={reason}")
+        });
+    }
+    // `switched-off` is decided here rather than in `outlines`, because the
+    // switch is about this SURFACE. The selection still holds chunks and the
+    // command that reports the answer in words is unaffected by it; what the
+    // operator turned off is the drawing.
+    if !crate::canvas::chunks::enabled(ctx) {
+        return declined("switched-off");
+    }
+    match crate::canvas::chunks::outlines(doc, selection, page_index) {
+        Ok(boxes) => {
+            // ★ The traced count comes back OUT of the painter rather than off
+            // the vector handed to it — `overlay::draw_chunk_boxes` argues why,
+            // and the driven check's falsification depends on it.
+            let drawn = overlay::draw_chunk_boxes(painter, map, &boxes);
+            crate::diag::trace_changed("canvas-chunks", || {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!("canvas-chunks page={page_index} drawn={drawn}")
+            });
+        }
+        Err(reason) => declined(reason),
+    }
 }
 
 /// Mark the entered object's anchors when the operator is inside one.

@@ -241,6 +241,20 @@ pub(super) fn tab() -> Tab {
                     // so a keyboard route cannot reach it where the item is
                     // hidden.
                     icon_only("view.smart_select").shown_when("mode.edit_content"),
+                    // ★★★ **Text chunks** — `OPERATOR_REQUESTS.md` O215,
+                    // and the operator named this row for it too: *"a new
+                    // selector option we can turn on or off in the sidebar,
+                    // navigate, and content edit tools."*
+                    //
+                    // ★ Beside the smart selector rather than in View ▸
+                    // Display, on that item's argument applied a second time:
+                    // it changes which piece a click picks up. The boxes it
+                    // draws are the visible half of that, not the point of it.
+                    //
+                    // `shown_when` for the same reason, and the command
+                    // carries the matching `enabled_when` so a keyboard route
+                    // cannot reach it where the item is hidden.
+                    icon_only("view.text_chunks").shown_when("mode.edit_content"),
                 ],
             ),
             // ---------------------------------------------------------------

@@ -1005,6 +1005,22 @@ pub fn too_many_anchors(count: usize, cap: usize) -> String {
     )
 }
 
+/// **The chunk boxes were asked for and none were drawn** — `OPERATOR_REQUESTS.md`
+/// O215, and [`crate::canvas::chunks::MAX_CHUNK_BOXES`]'s disclosure.
+///
+/// Its sibling above carries the argument in full and it applies unchanged: the
+/// canvas is not marked, the status bar carries the number, and it names both
+/// numbers because the count alone would not say the cap is the reason. The
+/// remedy differs — there is no rung below a chunk to descend into, so the way
+/// to see fewer at once is to select less.
+#[must_use]
+pub fn too_many_text_chunks(count: usize, cap: usize) -> String {
+    format!(
+        "What you have selected holds {count} chunks of text and pdfcer outlines at most {cap} \
+         at once, so none are shown. Select one text block on its own to see its chunks."
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

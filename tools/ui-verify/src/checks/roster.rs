@@ -414,6 +414,13 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(form_leaf_descend::TheLadderGoesAsDeepInsideAContainer),
         // The chain's last rung, and the one that leaves the geometry: text.
         Box::new(double_click_text::DoubleClickingATextBoxEditsTheText),
+        // Adjacent to that rung deliberately: the chunk boxes are its VISIBLE
+        // half. The descent above proves the selection can reach one chunk of
+        // text; this proves an operator can see which chunk before committing a
+        // gesture to it, which is what `OPERATOR_REQUESTS.md` O215 reports is
+        // missing. It also drives a ribbon toggle, so it runs after the checks
+        // that establish the ribbon is reachable at all.
+        Box::new(text_chunks::TheChunkBoxesShowWhatATextBlockIsMadeOf),
         // `OPERATOR_REQUESTS.md` O71. Beside the Smart-Selector
         // check because both are about what a plain click MEANS — that one in
         // Edit, this one in Read, which is the stance where the answer had

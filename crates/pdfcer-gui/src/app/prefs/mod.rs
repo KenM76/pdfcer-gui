@@ -473,6 +473,17 @@ pub struct Prefs {
     /// the checkbox exists so the behaviour can be turned OFF, and the
     /// behaviour is what every drawing program in the class does.
     pub smart_select: bool,
+    /// **Are the chunk boxes drawn on a selected text block?** —
+    /// `OPERATOR_REQUESTS.md` **O215**.
+    ///
+    /// The persisted half of [`crate::canvas::chunks`]; the live value lives in
+    /// `egui::Memory` for [`Self::smart_select`]'s reason, and this is where it
+    /// survives a restart.
+    ///
+    /// ★ **`true` by default**, on the same argument: the switch exists so the
+    /// boxes can be turned OFF, and an operator who has to find a checkbox
+    /// before the thing he asked for appears has not been given it.
+    pub text_chunks: bool,
     /// **Is going to a search hit allowed to change the zoom?** —
     /// `OPERATOR_REQUESTS.md` **O163**, 2026-09-09, his words: *"add a
     /// checkbox option to our search bar called zoom - when I unchecked just
@@ -895,6 +906,7 @@ impl Default for Prefs {
             // `MODES_AND_PANELS.md`'s per-mode rule. See the field.
             default_page_display: None,
             smart_select: true,
+            text_chunks: true,
             find_zoom_on_jump: true,
             find_trim_query: true,
             // ★ True = what every build has done, deliberately. See the
