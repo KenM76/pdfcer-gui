@@ -556,7 +556,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // it would report a redaction defect about a degenerate measurement.
     if !block.height().is_finite() || block.height() <= 0.0 {
         return Ok(Some(format!(
-            "★★ THE CONTROL HAS NO HEIGHT: the whole-block mark reports `bbox={block}`, which is              {:.1} pt tall. Every comparison below is a ratio against that number, so there is              nothing here to measure — and a mark with no area would remove nothing when              applied, which is its own defect.",
+            "★★ THE CONTROL HAS NO HEIGHT: the whole-block mark reports `bbox={block}`, which \
+             is {:.1} pt tall. Every comparison below is a ratio against that number, so there \
+             is nothing here to measure — and a mark with no area would remove nothing when \
+             applied, which is its own defect.",
             block.height()
         )));
     }
