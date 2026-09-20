@@ -94,12 +94,13 @@
 //! 6. **Restore from the byte copy**, rebuild, confirm the PASS returns.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment, declared, declared_names, list};
+use crate::checks::redact_menu::mark_through_the_menu;
 use crate::checks::text_chunks::{
     EXPECTED_CHUNKS, MODE, PAGE_REGION, SELECTION_EVENT, Verdict, press_the_toggle, verdict,
 };
 use crate::checks::text_selection::aim;
 use crate::checks::{Check, CheckContext};
-use crate::coords::{PageGeometry, ScreenPoint};
+use crate::coords::PageGeometry;
 use crate::error::{Error, Result};
 use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
@@ -112,22 +113,6 @@ const OBJECT_RUNG: &str = "Object"; // ui-text-exempt: a trace token, never disp
 
 /// The rung one chunk is selected at.
 const PART_RUNG: &str = "Part"; // ui-text-exempt: a trace token, never displayed
-
-/// The shell's line for the verb under test, carrying `quads=` and `bbox=`.
-const REQUESTED: &str = "redact-mark-selection-requested"; // ui-text-exempt: a trace event name
-
-/// What the canvas writes on every frame carrying a secondary click.
-const MENU_EVENT: &str = "canvas-menu"; // ui-text-exempt: a trace event name
-
-/// The context the object menu declares.
-const OBJECT_CONTEXT: &str = "canvas.object"; // ui-text-exempt: a trace token
-
-/// The context-menu row this check presses — **O53's half of the row**.
-const ROW_REGION: &str = "menu.item.canvas.object.edit.redact_selection";
-
-/// Everything the object menu publishes, for a failure that can name what IS
-/// there rather than only what is not.
-const ROW_PREFIX: &str = "menu.item.canvas.object.";
 
 /// The engine's answer to `Ctrl+Z`, and its refusal.
 const UNDO_EVENT: &str = "undo"; // ui-text-exempt: a trace event name
@@ -148,59 +133,6 @@ const AIM_CHUNK: usize = 2;
 /// midpoint between the two, chosen so the threshold cannot be reached by
 /// leading, ascenders or a rounded trace figure.
 const MAX_CHUNK_SHARE: f64 = 0.5;
-
-/// How far outside the block's bounds a chunk's may fall, in points.
-///
-/// The trace publishes one decimal place, and the two boxes are computed from
-/// the same outlines, so this absorbs rounding and nothing else. A real
-/// containment failure is tens of points, not tenths.
-const CONTAINMENT_SLACK_PT: f64 = 1.0;
-
-/// A rectangle read off a `bbox=` field, in PDF user space.
-#[derive(Debug, Clone, Copy, PartialEq)]
-struct Bounds {
-    llx: f64,
-    lly: f64,
-    urx: f64,
-    ury: f64,
-}
-
-impl Bounds {
-    /// Parse `llx,lly,urx,ury`. `None` for `bbox=none`, a short field or any
-    /// component that is not a number — all of which mean the same thing to
-    /// every caller: **this line cannot say what was marked.**
-    fn parse(field: &str) -> Option<Self> {
-        let mut parts = field.split(',');
-        let mut next = || parts.next()?.parse::<f64>().ok();
-        let (llx, lly, urx, ury) = (next()?, next()?, next()?, next()?);
-        if parts.next().is_some() {
-            return None;
-        }
-        Some(Self { llx, lly, urx, ury })
-    }
-
-    fn height(self) -> f64 {
-        self.ury - self.lly
-    }
-
-    /// Whether `self` lies inside `outer`, allowing [`CONTAINMENT_SLACK_PT`].
-    fn inside(self, outer: Self) -> bool {
-        self.llx >= outer.llx - CONTAINMENT_SLACK_PT
-            && self.lly >= outer.lly - CONTAINMENT_SLACK_PT
-            && self.urx <= outer.urx + CONTAINMENT_SLACK_PT
-            && self.ury <= outer.ury + CONTAINMENT_SLACK_PT
-    }
-}
-
-impl std::fmt::Display for Bounds {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{:.1},{:.1},{:.1},{:.1}",
-            self.llx, self.lly, self.urx, self.ury
-        )
-    }
-}
 
 /// See the module documentation.
 pub struct RedactingAClickedChunkMarksOnlyThatChunk;
@@ -237,112 +169,6 @@ fn rung(trace: &Trace) -> Option<(String, String)> {
             l.raw.clone(),
         )
     })
-}
-
-/// Right-click at `at`, press the redaction row, and read the bounds it
-/// requested.
-///
-/// The whole gesture is here rather than spelled twice because the two marks
-/// differ in exactly one thing — the rung standing when they run — and a second
-/// copy of the sequence would be a second place for the route to drift.
-///
-/// `Ok(Err(..))` is a finding about the program; `Err(..)` is a finding about
-/// the run and is reported as SKIPPED.
-fn mark_through_the_menu(
-    session: &Session,
-    driver: &Driver,
-    ui_rect: &str,
-    at: ScreenPoint,
-    what: &str,
-) -> Result<std::result::Result<Bounds, String>> {
-    driver.right_click_at(at)?;
-    session.settle(35);
-
-    let trace = session.trace()?;
-    let Some(menu) = trace.events(MENU_EVENT).last() else {
-        return Ok(Err(format!(
-            "THE RIGHT-CLICK ON {what} RESOLVED NO MENU AT ALL: no `{MENU_EVENT}` line after a \
-             secondary click on the page. `canvas::menus::attach` writes that line on every frame \
-             carrying a secondary click, so its absence means the click never reached the canvas \
-             response. Trace: {}",
-            session.trace_path().display()
-        )));
-    };
-    let context = menu.get("context").unwrap_or_default();
-    if context != OBJECT_CONTEXT {
-        return Ok(Err(format!(
-            "THE RIGHT-CLICK ON {what} RESOLVED `{context}`, NOT `{OBJECT_CONTEXT}`: `{}`.\n\
-             A selection standing at either the Object or the Part rung is an OBJECT selection as \
-             far as the menu is concerned, so the object menu is the one that must appear. \
-             Resolving the view menu here means the secondary hit test lost the selection the \
-             left click made. Trace: {}",
-            menu.raw,
-            session.trace_path().display()
-        )));
-    }
-
-    let Some(row) = declared(&trace, ui_rect, ROW_REGION) else {
-        return Ok(Err(format!(
-            "★★★ THE REDACT ROW IS NOT IN THE CANVAS OBJECT MENU: no `{ROW_REGION}` region after \
-             the menu opened on {what}. Rows it DID publish: {}.\n\
-             Three readings, and all three are defects: `edit.redact_selection` is registered on \
-             the Edit ribbon tab only, which is exactly what **O53** forbids; the row is drawn \
-             but disabled, because a disabled command is dropped before it is drawn and \
-             `selection.any` is not being set for this selection; or `MenuHost::attach_with` has \
-             stopped supplying a rect sink, in which case no context-menu row anywhere in this \
-             application can be pressed by a check. Trace: {}",
-            list(&declared_names(&trace, ui_rect, ROW_PREFIX)),
-            session.trace_path().display()
-        )));
-    };
-    if !row.is_substantial() {
-        return Ok(Err(format!(
-            "`{ROW_REGION}` was published at {row:?}, which has no usable area — so the row \
-             exists in the plan and was laid out to nothing. A click aimed at a degenerate \
-             rectangle proves nothing, and this is itself the finding."
-        )));
-    }
-
-    let mark = session.trace()?.mark();
-    driver.click_at(session.frame()?.declared_center(row))?;
-    session.settle(30);
-
-    let trace = session.trace()?;
-    let Some(line) = trace.last_after(REQUESTED, mark) else {
-        return Ok(Err(format!(
-            "★★★ THE ROW WAS PRESSED AND THE VERB DID NOT RUN: no `{REQUESTED}` line after \
-             pressing the redact row on {what}.\n\
-             ★★ Ask first whether the press dispatched at all. The menu dies on the pointer MOVE \
-             if the canvas is choosing between two responses per frame — egui derives a popup's \
-             identity from the response it was attached to — and the tell is the row's \
-             `ui-rect-gone` lines arriving in the same frame as `canvas-pointer`, with no button \
-             ever going down.\n\
-             IF the verb WAS entered, the next suspect is the page filter: \
-             `app::actions::redactsel::mark_selection` keeps only outlines whose page is the \
-             current one, and a build that kept none writes \
-             `redact-mark-selection-declined … reason=no-bounds` instead. Grep for it. Trace: {}",
-            session.trace_path().display()
-        )));
-    };
-    let Some(field) = line.get("bbox") else {
-        return Ok(Err(format!(
-            "★★★ THE VERB RAN AND DID NOT SAY WHAT IT MARKED: `{}` carries no `bbox=` field.\n\
-             The count alone is written identically for a chunk-sized mark and a block-sized one, \
-             which is the pair this check exists to separate, so without the bounds there is \
-             nothing here to measure. Somebody narrowed the trace line; widen it again.",
-            line.raw
-        )));
-    };
-    let Some(bounds) = Bounds::parse(field) else {
-        return Ok(Err(format!(
-            "★★ THE MARKED BOUNDS ARE NOT A RECTANGLE: `{}`.\n\
-             `bbox=none` means the union of the marked rectangles was empty on a frame that went \
-             on to build quads — which `mark_selection`'s own early return is supposed to make \
-             unreachable. Anything else is a malformed field.",
-            line.raw
-        )));
-    };
-    Ok(Ok(bounds))
 }
 
 #[allow(clippy::too_many_lines)]
@@ -481,7 +307,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- B: mark the BLOCK, and read the control --------------------------
     let block = match mark_through_the_menu(&session, &driver, ui_rect, at, "the whole block")? {
-        Ok(bounds) => bounds,
+        Ok(marked) => marked.bbox,
         Err(failure) => return Ok(Some(failure)),
     };
     report.note(format!(
@@ -543,7 +369,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- E: mark the CHUNK, and compare -----------------------------------
     let chunk = match mark_through_the_menu(&session, &driver, ui_rect, at, "one line")? {
-        Ok(bounds) => bounds,
+        Ok(marked) => marked.bbox,
         Err(failure) => return Ok(Some(failure)),
     };
     report.note(format!(

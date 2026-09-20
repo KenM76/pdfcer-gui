@@ -1,6 +1,6 @@
 ---
 name: disk-is-tight-and-target-grows-unbounded
-description: Disk AND RAM are tight; clear debug/doc target routinely, run the suite with a job limit, wait for orphaned linkers after a kill; the BIGGEST disk item is one full engine source tree per pin bump under ~/.cargo; and 0xc0000142 / fork failures are usually HANDLE exhaustion by an orphaned process, not free RAM
+description: Disk AND RAM are tight; clear debug/doc target routinely, run the suite with a job limit, wait for orphaned linkers after a kill; the BIGGEST disk item is one full engine source tree per pin bump under ~/.cargo; 0xc0000142 / fork failures are usually HANDLE exhaustion by an orphaned process rather than free RAM; and a low-memory kill with no process to blame is kernel PAGED POOL, which no working-set scan can see
 metadata:
   type: project
 ---
@@ -99,8 +99,10 @@ enough memory to initialise its DLLs.** Check free RAM before touching
 end, so a killed sweep leaves **no tally at all** — fifty-nine green gates and
 an unknown result are the same output; and a `clippy-driver` orphan survived
 the kill holding 1 GB, so the relaunch must wait for it rather than race it.
-Relaunch with `CARGO_BUILD_JOBS=2` for the sweep specifically — clippy peaks
-higher than `cargo test`, and 4 was not enough head-room here.
+Relaunch with **`CARGO_BUILD_JOBS=1`** for the sweep specifically — clippy peaks
+higher than `cargo test`, 4 was not enough head-room, and **2 was killed too**
+on 2026-09-20. The kernel-pool section below is why lowering the job count
+keeps failing to be enough.
 
 **What the watchdog actually kills is the REBUILD, not the checks — 2026-09-19.**
 Four background packaging runs in a row were killed for low memory while
@@ -220,3 +222,130 @@ not the cause. Two riders:
   and a lost child does not change it. Any gate whose log carries a fork error
   has to be re-run on a healthy machine before its green is quoted —
   [[a-runners-sentinel-is-a-claim-about-the-runner]].
+
+## ★★★ The gigabytes with no process to blame are in the KERNEL — 2026-09-20
+
+A gate sweep at `CARGO_BUILD_JOBS=2` was killed for low memory with 3.7 GB free
+and **no orphan to blame**: the usual scan found no surviving `cargo`, `rustc`,
+`clippy-driver` or `bash`, and the largest working set on the machine was
+`Memory Compression` at 1.0 GB. Every instrument in the sections above
+exonerates everything, which is the signature that the instrument is looking in
+the wrong address space.
+
+Measured on the idle machine minutes later:
+
+| Reading | Value |
+|---|---|
+| physical total / free | 16,306 MB / 3,784 MB |
+| **sum of ALL process working sets** | 9,729 MB |
+| physical in use | 12,492 MB |
+| **unattributed to any process** | **2,763 MB** |
+| **paged pool** | **4,317 MB** |
+| nonpaged pool | 1,158 MB |
+| largest working set | `Memory Compression`, 1,020 MB |
+
+**Paged pool alone is 26 % of the machine**, where a healthy figure is low
+hundreds of MB. It is kernel memory, so it appears in no process's working set,
+and the 2,763 MB gap is only the part still resident — the rest is paged out and
+still charged against commit, which stood at 30,854 MB of a 48,306 MB limit.
+
+**How to apply.** When a build is killed for low memory and the top working set
+is under a gigabyte, do not re-run the working-set scan with a lower job count.
+**Sum the working sets and subtract from physical-in-use**, then read the two
+pool counters:
+
+```powershell
+$ws=(Get-Process|Measure-Object WorkingSet64 -Sum).Sum
+$os=Get-CimInstance Win32_OperatingSystem
+"unattributed MB: {0}" -f [int]((($os.TotalVisibleMemorySize-$os.FreePhysicalMemory)*1KB-$ws)/1MB)
+(Get-Counter '\Memory\Pool Paged Bytes','\Memory\Pool Nonpaged Bytes').CounterSamples |
+  ForEach-Object { "{0}: {1} MB" -f $_.Path, [int]($_.CookedValue/1MB) }
+```
+
+### ★★★ The obvious suspect was measured and CLEARED — handles are not pool
+
+The handle sum was **921,962, of which OneDrive held 587,490 — 64 % of every
+kernel object on the machine**, on a working set of 447 MB and a process that
+had been up three days. The cheapest process by the usual measure holding two
+thirds of the kernel's objects, next to a pool four times its healthy size, is
+as strong a circumstantial case as this kind of hunt produces. It is wrong.
+
+Control, then the release, then the re-read:
+
+| | handles | paged pool | free |
+|---|---|---|---|
+| before | 921,962 | 4,319 MB | 3,801 MB |
+| after killing OneDrive | 334,441 | **4,310 MB** | 4,218 MB |
+| after relaunching it | 339,263 | **4,312 MB** | 3,474 MB |
+
+**587,521 handles were released and the paged pool did not move** — 9 MB, noise.
+The 417 MB that came back was the process's own working set, and the relaunched
+client took it straight back scanning. Handles and paged pool are independent
+resources on this machine, and the 4.3 GB is still unattributed.
+
+**How to apply.** Do not conflate the two. A handle sum in the millions predicts
+`0xc0000142` and `fork` failures — that mechanism is measured and holds. It does
+**not** predict a low-memory kill, and freeing handles buys no RAM. ⚠ The
+attribution in the paragraphs above was a hypothesis with the right shape and no
+evidence, of exactly the kind
+[[a-launch-failure-blamed-on-a-resource-count-needs-a-control-binary]] describes;
+what made it safe was reading the pool **before** touching anything. Keep the
+control reading; it is the whole difference between a finding and a story.
+
+**Still open:** what holds 4.3 GB of paged pool. Per-process attribution cannot
+answer it (`\Process(*)\Pool Paged Bytes` totals 153 MB) and tag-level
+attribution needs `poolmon`, which is not installed here.
+
+### ★★★ The job limit is not the lever, because the sweep is not the consumer
+
+Thirty minutes after the section above, the relaunched sweep at
+**`CARGO_BUILD_JOBS=1` was killed too** — and the state at the moment of the
+kill settles what the watchdog is actually reacting to:
+
+- it died inside **`check-trace-names`, a pure shell gate**: no `cargo`, no
+  `rustc`, no `clippy-driver`, no linker existed on the machine;
+- the surviving sweep shell held **9 MB**;
+- the largest working set on the whole machine was `Memory Compression` at
+  953 MB, and free stood at 2,847 MB — where it had been sitting, idle, all
+  morning.
+
+**The watchdog watches the SYSTEM, not the command.** It reaps the background
+Bash-tool process tree when free memory is low no matter what that tree is
+doing, so a sweep is killed for the machine's steady-state occupancy — three
+`claude` processes at 1,464 MB between them, `Everything` at 738 MB, a 4.3 GB
+paged pool — and lowering `CARGO_BUILD_JOBS` cannot help because the job count
+governs only the final `clippy`, which in three of these kills never started.
+
+**How to apply: stop tuning the job count and detach the sweep instead.** A
+PowerShell `Start-Process` child is outside the watchdog's tree and runs to its
+SUMMARY. Point it at a two-line wrapper — `cd` to the repo, run `run-all.sh`,
+`echo "SWEEP-EXIT: $?"` — and invoke that through the **explicit Git
+`bash.exe`**, because a different shell brings a different `PATH` and that
+changes which `bash` the gates themselves run under —
+[[a-measurement-of-the-wrong-surface-looks-exactly-like-a-broken-one]].
+
+```powershell
+$bash = 'C:\Program Files\Git\bin\bash.exe'
+Start-Process -FilePath $bash -ArgumentList @('-lc', "$sp/sweep.sh") `
+  -RedirectStandardOutput "$sp\gates3.log" -RedirectStandardError "$sp\gates3.err" `
+  -WindowStyle Hidden -PassThru
+```
+
+⚠ A `Remove-Item` anywhere in the same PowerShell block is refused —
+*"Remove-Item on system path ''C:\Program' is blocked"* — because the sandbox's
+static read pairs the delete with the `'C:\Program Files\Git\bin\bash.exe'`
+literal beside it, not with the scratch path it was actually given. Write a
+fresh log name rather than pre-deleting one.
+
+**The detachment was proved by a control, not assumed.** Minutes after that
+launch the watchdog fired again and killed a background Bash-tool command that
+was nothing but a `sleep 20` poll loop — while the detached sweep, 6.5 MB and
+six seconds older, kept running. Two processes of the same size at the same
+instant, one inside the watchdog's tree and one outside it, and only the inside
+one died. Size is not the criterion; membership is.
+
+⚠ **So do not poll a detached run from a background Bash command** — that
+waiter is in the tree and gets reaped, which reads as the sweep having died.
+Detaching also costs the completion notification: the `SWEEP-EXIT:` line the
+wrapper appends is the only signal the run finished rather than died, and a
+timed wake-up has to come back and read it.

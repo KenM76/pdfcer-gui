@@ -164,10 +164,27 @@ tab away. `edit.redact_selection` is now a row in the canvas object menu, and
 the driven check reaches it that way rather than through the ribbon,
 so the route is proved by use rather than asserted.
 
-**Bullet three is built and not driven.** A shift-click or rubber-band set
-marks one `/Redact` carrying one quad per held chunk — one gesture, one mark,
-one undo — because the verb consumes every outline in the selection rather
-than a single target. No check drives the plural case yet.
+**Bullet three is built and driven.** A shift-click or rubber-band set marks
+one `/Redact` carrying one quad per held chunk — one gesture, one mark, one
+undo — because the verb consumes every outline in the selection rather than a
+single target. Driven by
+`marking_two_chunks_makes_one_mark_and_two_regions`, which marks chunks 0 and
+2 of the same six-line block, leaving chunk 1 unselected between them.
+
+**Two fields, pulling opposite ways, and neither is an oracle alone.** The
+panel's census must rise by exactly one — a build writing one annotation per
+line satisfies the region count and costs the operator an undo per line — and
+the verb must report two regions — a build that unioned the pair into one
+rectangle satisfies the census and destroys the line between them. Both were
+planted separately and each turned the check red on the assertion the other
+one could not see. Measured: one line 11.1 pt, the pair's union 43.1 pt, 3.9×,
+and one press of undo takes the whole mark back.
+
+**⚠ What it does not prove.** The trace publishes the union of the regions,
+not each one, so this says two regions were built and what they span together
+— not that each is the box of its own line. The end-to-end proof that the
+unselected line survives is the apply report, which lists the text a removal
+will destroy region by region.
 
 Status stays **FILED**. The row closes when a driven check marks one chunk of a
 table row on `SW41177.pdf` and asserts its neighbours survive, and **that is

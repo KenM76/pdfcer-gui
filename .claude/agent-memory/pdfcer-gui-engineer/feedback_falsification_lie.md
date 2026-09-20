@@ -1,6 +1,6 @@
 ---
 name: a-falsification-can-lie-in-both-directions
-description: A red falsification proves the check as a whole, not each assertion in it; a green one may mean the planting script's anchor rotted and it mutated nothing; and a script that scores the run by scanning cargo output can call every working plant a broken build; and a plant goes green when the fixture cannot produce the input its two spellings differ on; and a plant on a branch no fixture executes goes green too, which reads as a weak assertion and is a missing fixture
+description: A red falsification proves the check as a whole, not each assertion in it; a green one may mean the planting script's anchor rotted and it mutated nothing; and a script that scores the run by scanning cargo output can call every working plant a broken build; and a plant goes green when the fixture cannot produce the input its two spellings differ on; and a plant on a branch no fixture executes goes green too, which reads as a weak assertion and is a missing fixture; and a red plant proves a TWO-FIELD oracle only when it leaves the other field's assertion green; and a plant fires ONE failure branch, so every other failure message the check can emit ships unexercised
 metadata:
   type: feedback
 ---
@@ -236,3 +236,66 @@ comes to mind, because it is the reason falsification exists at all.
 Related: [[a-check-that-cannot-fail-is-not-evidence]],
 [[a-check-whose-input-is-chosen-for-convenience-tests-the-assertion]].
 Full write-up: `D:/dev/rag/rust/a_falsification_that_patches_an_unexercised_branch_passes_and_reads_as_a_weak_assertion.md`.
+
+---
+
+## Red, and it proves a TWO-FIELD oracle — only if each plant leaves the other half GREEN — 2026-09-20
+
+The constructive case, and the one worth copying. A check whose oracle is two
+fields is only two oracles if a plant exists that reddens one of them **while
+the other stays satisfied**. If every plant reddens both, the second field is a
+restatement of the first and the check is one assertion wearing two hats.
+
+O217's plural-redaction row asserts a panel census rising by exactly one AND
+the verb reporting two regions. Two plants, each aimed at one field:
+
+- fold the outlines into an enclosing rectangle → regions read **1**, census
+  still **+1**. The census half stayed green, and it had to.
+- issue one annotation per outline → census reads **+2**, regions still **2**.
+  The region half stayed green, and it had to.
+
+★ **The green half is the evidence, not a gap.** Each plant is a build that a
+one-field check would have passed, so the surviving assertion is the proof that
+the other field is load-bearing. Design the plants to prove that, and say so in
+the check's header — a recipe predicting BOTH halves red is describing a check
+with one oracle in it.
+
+★★ **Predict each plant's reading in the header and then correct it from the
+run.** Mine predicted the split plant would report one region; it reported two,
+because the count is taken from the outlines and the grouping happens later. A
+wrong prediction in a falsification recipe is worse than none: the next reader
+runs the plant, sees a number the header did not name, and concludes the plant
+did not land.
+
+**How to apply:** any check whose PASS rests on more than one field — and
+prefer that shape whenever a single field is
+[[an-assertion-both-outcomes-satisfy-is-not-a-measurement-of-which-one-shipped]].
+Measure a CONTROL for each field in the same launch, or `quads=2` cannot be
+distinguished from a build that always writes two.
+
+## Two plants, four failure branches — the other two shipped unread — 2026-09-20
+
+The plural-redaction check above was driven green twice and falsified twice, and
+a source gate then found that one of its failure messages was mangled: two runs
+of padding baked mid-sentence, because the branch was written late as one long
+line and never had its continuation backslashes. It would have reached the
+operator exactly when they most needed a readable sentence.
+
+**Why neither falsification saw it.** A plant fires **one** branch. The union
+plant tripped the region count, the split plant tripped the census, and the
+`ratio > MAX_PLURAL_RATIO` branch — a *third* way for the same check to fail —
+was executed by nothing. A passing run never reaches a failure message by
+definition, and a falsifying run reaches only the one it aimed at. **The more
+failure modes a check discriminates, the more of its own output is unexercised
+by the exercise that proved it works.**
+
+**How to apply.** After falsifying a check, **read every failure branch a plant
+did not fire** — they are the branches with no evidence at all behind them. And
+keep the source gates in the loop for this class: `check-string-gaps` caught it
+by reading the literal, which is the only instrument that looks at a branch
+nothing executes. ⚠ Do not read "the check was falsified" as "the check was
+exercised" — [[a-check-that-cannot-fail-is-not-evidence]] is about the check
+having a red path at all; this is about the paths it has and never took.
+
+Related: [[an-assertion-both-outcomes-satisfy-is-not-a-measurement-of-which-one-shipped]],
+[[an-oracle-built-from-the-system-under-test-needs-an-independent-calibration]], [[a-check-that-cannot-fail-is-not-evidence]].

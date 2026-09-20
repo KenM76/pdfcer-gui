@@ -1083,6 +1083,12 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // lost redaction entirely reports redaction once, rather than
         // reporting a chunk defect on top of it.
         Box::new(redact_chunk::RedactingAClickedChunkMarksOnlyThatChunk),
+        // O217 again, and AFTER the row above for the same reason that one
+        // follows `redact_selection`: that one proves a mark is bounded by the
+        // ONE line clicked, and this one asks what a gesture over a SET of them
+        // produces. A build that cannot address a single chunk reports that
+        // once here, rather than reporting a grouping defect on top of it.
+        Box::new(redact_plural::MarkingTwoChunksMakesOneMarkAndTwoRegions),
         // O61 — the document-safety disclosure.
         Box::new(reach_out::ADocumentThatPhonesHomeSaysSo),
         // O62 — the rotation direction, which is one sign and invisible.

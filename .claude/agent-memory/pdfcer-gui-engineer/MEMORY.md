@@ -16,7 +16,7 @@
 - [Requests live in a file, not a chat](feedback_operator_requests.md) — file at once; only Ken closes a row.
 - [A guard on repetition does not stop creep](feedback_guard_stops.md) — needs a direction bound and a floor.
 - [Wrong surface looks like a broken one](feedback_measurement_wrong.md) — ask what it SAMPLED.
-- [Disk AND RAM are tight](project_disk_tight_target.md) — an engine tree per pin bump; 0xc0000142 is handles, not RAM.
+- [Disk AND RAM are tight](project_disk_tight_target.md) — a tree per pin bump; 0xc0000142 is handles; the unblamed GB are kernel pool.
 - [A backlog row is a record, not evidence](feedback_backlog_row_record.md) — verify absence against source.
 - [One row hides its neighbours](feedback_agent_given_one_row.md) — two other rows had already declined it.
 - [A SKIP is not red](feedback_skip_red_check_stop.md) — a check stops unnoticed; a SKIP can be a misfiled FAIL.
@@ -144,3 +144,4 @@
 - [A symbol beats a line only if it's small](feedback_symbol_citation_worse.md) — 46 citations, 24 symbols, 11 in one function.
 - [A permanent sentence can't carry a perishable clause](feedback_permanent_sentence.md) — 3 paragraphs named "the slot he runs"; 2 were wrong.
 - [The gate's header already had the answer](feedback_bulk_edit_safety.md) — I argued a bulk rename safe from memory; it said otherwise.
+- [Type the wrap's backslash as you type it](feedback_wrapped_message_backslash.md) — same defect twice in 90 min; a commit message is not an instrument.

@@ -928,6 +928,18 @@ pub mod redact_preview;
 /// it sits in, and that he can reach the verb without leaving the canvas.
 pub mod redact_chunk;
 
+/// **The canvas object menu's redact row, shared.** Not a check: the gesture
+/// `redact_chunk` and `redact_plural` both press, held in one place because
+/// they differ only in the selection standing when they press it, and a second
+/// copy of a route is a second place for it to drift unnoticed.
+pub mod redact_menu;
+
+/// **O217's third ask — one gesture over a set of lines is ONE mark.** Its
+/// neighbours prove a mark is bounded by the line clicked; this proves a set of
+/// them yields one undo and one region PER LINE, so the unselected line between
+/// two marked ones survives.
+pub mod redact_plural;
+
 pub mod redact_selection;
 
 pub mod redaction;

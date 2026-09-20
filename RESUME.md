@@ -54,8 +54,10 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
 1. **O215 / O216 / O217 — the text chunk as a thing the operator can aim at.
    Five of O215's six asks are built and driven; the sixth is the engine's and
-   is filed as `G032`. O216's two are built and driven. O217 has three of four,
-   and the fourth is the plural mark, built and not yet driven.**
+   is filed as `G032`. O216's two are built and driven. All four of O217's
+   asks are built and driven; its row stays FILED because its closing
+   criterion is a driven check on a table row of `SW41177.pdf`, which is
+   blocked behind `G032`.**
    **What shipped.** Clicking a block of text draws a hairline box round every
    chunk inside it, off a toggle — View ▸ Navigate ▸ *Text chunks*, and the
    same row on the rail, live in Content Edit, persisted (ask 3). With the
@@ -156,7 +158,10 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    `paint_rect` equals the page rect at every zoom below the pixmap ceiling,
    so the ink-coverage question is **unfalsified**, not merely weak, and
    exercising it needs this gesture driven at the region tier.
-   **What is next, in order.** O217's third bullet — the plural mark — driven.
+   **What is next, in order.** Three source files sit 14–15 lines under R2's
+   1,500-line cap — `text/markup.rs`, `app/save.rs` and
+   `egui-shell/src/manifest/merge.rs` — so the next edit to any of them is
+   blocked by the gate. Find the seam; do not raise the limit.
    **O215's ask 2 is the engine's and is filed as `G032`**: `runs_share_a_line` never
    reads the horizontal translation, so a table row welds into one line — 565
    welded lines on his own drawing, the widest spanning 709.4 pt of blank paper.
@@ -228,6 +233,29 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    so the route is proved by use. Falsified by deleting the `part_bounds` arm
    from `outline_rect` — both bounds become 91.1 pt and the row reddens at
    100%.
+   **O217's third bullet is BUILT and DRIVEN — a gesture over a SET of lines
+   is ONE mark holding one region per line.**
+   `marking_two_chunks_makes_one_mark_and_two_regions` marks chunks 0 and 2 of
+   the same six-line block — two apart, so chunk 1 is left unselected between
+   them and a union cannot hide behind adjacency — after taking a singular
+   mark as the control in the same launch. Measured: one line 11.1 pt, the
+   pair's union 43.1 pt, 3.9×, and one `Ctrl+Z` takes the whole mark back.
+   ★★ **Its oracle is two fields pulling opposite ways, and neither is an
+   oracle alone.** The panel's census must rise by exactly one — a build
+   writing one annotation per line reports the right region count and costs an
+   undo per line — and the verb must report two regions — a build that
+   unioned the pair reports the right census and destroys the line between
+   them. Falsified twice, separately: folding the outlines into an enclosing
+   rectangle reddens the region half while the census half stays green, and
+   issuing one `add_redaction` per outline reddens the census half while the
+   region half stays green. Each plant leaving the other assertion satisfied
+   is the proof the second field is a second oracle and not a restatement.
+   ⚠ The trace publishes the **union**, not each quad, so the check proves
+   there are two regions and what they span together, never that each is its
+   own line's box. That proof is the apply report, region by region.
+   The menu gesture both redaction checks press lives in
+   `checks/redact_menu.rs` — one copy, because a second would be a second
+   place for the route to drift with both copies still passing.
    ★ The check exists in that shape because `quads=` alone is **an assertion
    both outcomes satisfy**: `quads=1` is written for a chunk-sized mark and a
    block-sized one alike. The trace carries `bbox=llx,lly,urx,ury` for that
