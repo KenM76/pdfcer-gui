@@ -35,7 +35,7 @@ grepping it — a count only goes stale, a name can be born false.
 | Engine version | `grep -A1 'name = "pdfcer-core"' Cargo.lock` | — |
 | Last release | `git fetch --tags origin && gh api repos/KenM76/pdfcer-gui/releases/latest` | **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in an unfetched tree answers with an older tag and reports a commits-unreleased count wrong by a factor. Read every field back out of the API rather than inferring it from the flags passed in, and check the local zip's byte count against the asset's — agreement to the unit is the cheapest proof the upload is the file and not a truncation. The binary's own stamp and `published_at` sit twelve to twenty minutes apart on every release; label which clock |
 | Driven checks | `ui-verify --list \| grep -cE '^  [a-z0-9_]+$'` | **Rebuild the harness first** — `--list` sits behind `refuse_if_self_is_stale`, and a stale harness prints nothing, which `grep -c` reports as zero and reads as a roster. The `$` is load-bearing: `--list` also prints a profiles table whose rows are two-space-indented lowercase words. It prints two lines per check, so a `wc -l` answers about double |
-| Gates | `bash tools/gates/run-all.sh` | Three states, not two: `0` pass, `1` fail, `3` a gate was SKIPPED for an absent precondition. A skip is not a pass. **Tally on the `RESULT:` line, never on a pipeline's exit code** — `run-all.sh \| tail` reports `tail`'s zero. A stable pass-count across an engine pin bump proves nothing about whether the documents survived it; the tally moves only when a gate is added. **Run `cargo fmt --all` before starting one** — `cargo fmt` is the LAST gate, so a formatting slip in hand-written Rust is found forty minutes in and costs the entire run |
+| Gates | `bash tools/gates/run-all.sh` | Three states, not two: `0` pass, `1` fail, `3` a gate was SKIPPED for an absent precondition. A skip is not a pass. **Tally on the `RESULT:` line, never on a pipeline's exit code** — `run-all.sh \| tail` reports `tail`'s zero. A stable pass-count across an engine pin bump proves nothing about whether the documents survived it; the tally moves only when a gate is added. **Run `cargo fmt --all` before starting one** — `cargo fmt` is the LAST gate, so a formatting slip in hand-written Rust is found forty minutes in and costs the entire run. **And start it `CARGO_BUILD_JOBS=2`**: clippy runs after fmt, `--all-targets` spawns a `clippy-driver` per TARGET, and by then the sweep has spent the session's handles on one `sed` per source file — several drivers then die together with `exit code: 0xc0000142, STATUS_DLL_INIT_FAILED` and no diagnostic at all, which reads as four crates breaking at once. It is process count, not memory, whatever a supervisor's kill reason says; the same command alone finishes green in seconds. A sweep killed before its SUMMARY has no verdict, and hand-summing the PASS lines cannot see a gate that never ran |
 | Unit tests | `cargo test --workspace` | Summed over the `test result:` lines, then cross-counted by `cargo test --workspace -- --list \| grep -cE ': test$'`; passing plus ignored must equal the cross-count. Two methods, because a summed figure nobody cross-checks is how the last count drift got in. The cross-count is also how you know a new test RAN: three `#[test]` functions once compiled clean, reported nothing and executed zero times, because they were nested inside another function |
 | Source files | `find crates -name '*.rs' \| wc -l` | **The command's scope is a claim.** `find crates tools` answers larger, because `tools/ui-verify` is a Rust crate and is not under `crates/`. Neither figure is wrong; quoting one under the other's command is |
 | Backlog register | `python tools/walk-engine-backlog.py` | Rewrite the five headings from the walker's own printed figures, never by arithmetic on the old ones. A row is a verdict plus one paragraph, capped at 1,200 characters and checked by `--check`; file the row and set the headings in one edit with `--write YYYY-MM-DD` |
@@ -154,7 +154,7 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    `paint_rect` equals the page rect at every zoom below the pixmap ceiling,
    so the ink-coverage question is **unfalsified**, not merely weak, and
    exercising it needs this gesture driven at the region tier.
-   **What is next, in order.** O217, then O216 ask 2.
+   **What is next, in order.** O217's first three bullets, then O216 ask 2.
    **Ask 2 is the engine's and is filed as `G032`**: `runs_share_a_line` never
    reads the horizontal translation, so a table row welds into one line — 565
    welded lines on his own drawing, the widest spanning 709.4 pt of blank paper.
@@ -171,10 +171,30 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    his own drawing; ★ every keystroke in it is calibrated from the draft's
    own `text-select` line, because an absent commit has five causes and four
    of them are the harness. Ask 2 — delete the chunk as an object — is a
-   separate drive and is not measured. **O217 is
-   unbuilt** and is the one that cannot ship the old unit: redaction on a
-   welded row would silently take the part number and the description with the
-   quantity, and he would find out after the file was written.
+   separate drive and is not measured.
+   **O217's fourth bullet is BUILT and DRIVEN; its first three are not.**
+   The apply report now lists the text the marks will destroy, one quoted
+   line per region in the order it was drawn, deduped so identical removals
+   appear once. That is the disclosure half of the row: redaction on a welded
+   table row still takes the part number and the description with the
+   quantity, but he now reads those words above the commit button instead of
+   finding out after the file is written. Every other figure in that report
+   is a count, and a count cannot be checked against an intention.
+   `the_apply_report_lists_the_text_it_will_destroy` generates a page whose
+   only content is a string the harness wrote itself, marks the whole page,
+   opens the report, and fails four ways: no block, the wrong branch, fewer
+   characters listed than the page carries, or a block that never published a
+   rectangle. Falsified twice on a release build — the deleted call site, and
+   a zeroed character count, which reddens the content arm alone.
+   ★ The trace carries `state`, `entries`, `chars` and `lines` and never a
+   character of the document: `PDFCER_DIAG` is redirected into files, and a
+   redaction surface that copied confidential strings into a second file
+   would have undone its own job. That is also the harness's limit — it
+   proves the block exists, was laid out, found text and listed at least as
+   many characters as the page carries; it cannot prove the strings read
+   correctly.
+   **The unbuilt three are the ones that let him mark less in the first
+   place**, and they are still the ones that cannot ship the old unit.
 
 
 2. **O213 / O214 — the shell addresses the visual line everywhere, driven and

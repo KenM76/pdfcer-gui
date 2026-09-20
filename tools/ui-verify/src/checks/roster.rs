@@ -896,6 +896,12 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // taken in the process that produced it. See its header.
         Box::new(signing::ADocumentCanBeSignedAndTheSignatureIsInTheFile),
         Box::new(redaction::RedactionRemovesAndProvesIt),
+        // Immediately after `redaction`, which it shares a fixture generator
+        // with. Read in this order the two answer the same question from
+        // opposite ends: `redaction` asks whether the words left the file,
+        // this asks whether the operator was told which words they were
+        // while cancelling was still possible.
+        Box::new(redact_preview::TheApplyReportListsTheTextItWillDestroy),
         // Immediately after `redaction`, and the order is load-bearing in one
         // direction: this check writes a preference into the profile and
         // restores it on the way out, so a failure to restore is cheapest to

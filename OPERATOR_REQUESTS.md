@@ -140,9 +140,18 @@ cosmetic.** A preview of *what is about to be destroyed* is the only defence
 against an inference the operator cannot see, and that is squarely rule R8b:
 render normally, report off-canvas, and never let an inference act silently.
 
-**Nothing on this row is built.** Status stays **FILED** until a driven check
-marks one chunk of a table row on `SW41177.pdf` and asserts its neighbours
-survive.
+**The fourth bullet is built; the first three are not.** The apply report now
+lists the text the marks will destroy, quoted region by region, above the
+commit button — so an operator whose mark took a whole welded row instead of
+the one cell he aimed at reads the extra words before the removal is
+permanent. Driven by `the_apply_report_lists_the_text_it_will_destroy`, which
+generates a page whose text it wrote itself and fails if the report lists
+fewer characters than the page carries.
+
+Status stays **FILED**. The list discloses a mark that took too much; it does
+not let him make a narrower one, and that is what the first three bullets are
+for. The row closes when a driven check marks one chunk of a table row on
+`SW41177.pdf` and asserts its neighbours survive.
 
 ## O216 — **FILED** — emptying a text chunk does not save, and a selected chunk must be deletable
 

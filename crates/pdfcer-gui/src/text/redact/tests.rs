@@ -158,15 +158,25 @@ fn only_the_verification_line_and_the_clean_outcome_say_verified() {
         ("residual_carrier_line(xfa)", residual_carrier_line("xfa")),
         ("engine_notes_heading", engine_notes_heading(4)),
         ("engine_notes_lead", engine_notes_lead().to_owned()),
-        // ★★ …and four that have been in this catalog for weeks and were never
-        // in this sweep at all. Found while adding the six above, and they are
-        // the point of the module header's warning: this list is hand-written,
-        // hand-written lists go stale silently, and every one of these is a
-        // sentence in the report body that rule 2 was simply not reaching.
+        // ★★ Every sentence below is drawn into the report BODY, which
+        // is where rule 2 is easiest to break and hardest to notice: the body
+        // is prose about what happened, and "verified" reads as a natural
+        // word there. This list is hand-written and therefore goes stale
+        // silently; a new catalog entry is covered only when it is added here.
         ("info_scrubbed", info_scrubbed(2)),
         ("annotations_removed", annotations_removed(2)),
         ("containers_decomposed", containers_decomposed(1, 4)),
         ("marks_retained_line", marks_retained_line(1)),
+        ("removed_text_heading", removed_text_heading().to_owned()),
+        ("removed_text_lead", removed_text_lead().to_owned()),
+        ("removed_text_entry", removed_text_entry("BRACKET")),
+        (
+            "removed_text_entry(cut)",
+            removed_text_entry(&"x".repeat(MAX_CHARS + 1)),
+        ),
+        ("removed_text_more", removed_text_more(4)),
+        ("removed_text_none", removed_text_none().to_owned()),
+        ("removed_text_undecodable", removed_text_undecodable(9)),
     ];
     for (name, line) in &everything {
         assert!(

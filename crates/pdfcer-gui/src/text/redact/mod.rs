@@ -854,6 +854,19 @@ pub fn confirm_checkbox() -> &'static str {
 // ---------------------------------------------------------------------------
 // The destination — where the redacted document goes
 //
+// ---------------------------------------------------------------------------
+// The text itself -- the half of the engine's report this shell only ever
+// grepped
+//
+// `pub use` rather than a `removed::` path at every call site, matching the
+// two splits above, so the catalog keeps one flat namespace.
+// ---------------------------------------------------------------------------
+mod removed;
+pub use removed::{
+    MAX_CHARS, MAX_ENTRIES, removed_text_entry, removed_text_heading, removed_text_lead,
+    removed_text_more, removed_text_none, removed_text_undecodable,
+};
+
 mod destination;
 pub use destination::{
     cancel_button_staged, cancel_button_staged_tooltip, confirm_button_into_document,

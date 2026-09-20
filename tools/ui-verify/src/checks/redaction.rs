@@ -146,7 +146,7 @@ pub(super) const REDACT: (&str, &str) = ("ribbon.item.edit.redact", "edit.redact
 const COPY_PAGE_TEXT: (&str, &str) = ("ribbon.item.file.copy_page_text", "file.copy_page_text");
 
 /// The panel's whole-page marking control.
-const WHOLE_PAGE_REGION: &str = "redact-whole-page";
+pub(super) const WHOLE_PAGE_REGION: &str = "redact-whole-page";
 
 /// The panel's control that opens the apply report.
 pub(super) const APPLY_REGION: &str = "redact-apply";

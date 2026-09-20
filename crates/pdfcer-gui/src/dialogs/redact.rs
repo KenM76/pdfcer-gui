@@ -785,6 +785,12 @@ impl RedactDialog {
                         report.objects_promoted,
                     ));
                 }
+                // ★★ …and now WHAT, rather than how much. `OPERATOR_REQUESTS.md`
+                // O217's fourth bullet: every line above is a count, and a count
+                // cannot be checked against an intention. Last in the removal
+                // block because it is the only part of it that can run to
+                // hundreds of lines, and the counts must stay above the fold.
+                disclosures::removed_text(ui, theme, report);
                 ui.add_space(4.0);
                 ui.label(t::single_revision_note());
 

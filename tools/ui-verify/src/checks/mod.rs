@@ -915,6 +915,13 @@ pub mod read_mode_chrome;
 /// its neighbour it can run beside somebody working.
 pub mod read_mode_exit;
 
+/// **What the removal will destroy, in words.** `redaction` below proves
+/// that the removal happens and that the text is gone from the bytes; this
+/// proves the operator was shown WHAT was going while he could still cancel.
+/// The two share a fixture generator for one reason: a content assertion
+/// needs a page whose text the harness wrote itself.
+pub mod redact_preview;
+
 pub mod redact_selection;
 
 pub mod redaction;
