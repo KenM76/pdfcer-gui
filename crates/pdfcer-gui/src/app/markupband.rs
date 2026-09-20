@@ -657,10 +657,10 @@ struct Current {
     /// departure from this struct's rule — it is the same exception `/CA` is,
     /// one property along. A dash cuts across `MarkupSpec`'s variants rather
     /// than belonging to any of them, so the engine carries it in
-    /// `AppearanceOptions` beside the spec instead of inside it
-    /// (`pdfcer-core` `annot_author.rs:1633-1673`), and `spec_from_dict`
-    /// therefore does not return one. The engine's own reader is `pub(crate)`
-    /// (`annot_author.rs:840`), so
+    /// `pdfcer_core::annot_author::AppearanceOptions` beside the spec instead
+    /// of inside it, and `spec_from_dict` therefore does not return one. The
+    /// engine's own reader, `annot_author::read_border_dash`, is
+    /// `pub(crate)`, so
     /// [`crate::canvas::markup::linestyle::read`] is this shell's copy of it —
     /// with the copy declared as a copy in that function's header, and the
     /// bound on what a divergence can cost written down beside it.

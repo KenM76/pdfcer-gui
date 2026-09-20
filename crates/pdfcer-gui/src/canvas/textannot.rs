@@ -153,10 +153,13 @@ pub const STAMPS: &[StampName] = &[
 ///
 /// # ★★★ The ENGINE's set, enumerated from the engine's own enum
 ///
-/// `pdfcer_core::annot_author::StickyIcon` (`annot_author.rs:2813`) models
-/// seven variants — `Comment`, `Key`, `Note`, `Help`, `NewParagraph`,
-/// `Paragraph`, `Insert` — and that is exactly §12.5.6.4 Table 172's standard
-/// set, which is exactly the seven Acrobat's note tool offers. So unlike
+/// `pdfcer_core::annot_author::StickyIcon` models seven standard names —
+/// `Comment`, `Key`, `Note`, `Help`, `NewParagraph`, `Paragraph`, `Insert` —
+/// and that is exactly §12.5.6.4 Table 172's standard set, which is exactly
+/// the seven Acrobat's note tool offers. Its eighth variant, `Other(Vec<u8>)`,
+/// carries a `/Name` a foreign file used and is deliberately **not** here: it
+/// is a value this shell preserves when it meets one, never one it authors.
+/// So unlike
 /// [`STAMPS`], which is a **subset** this shell chose out of fourteen for a
 /// drafting workflow, this list is the whole enum and there is no editorial
 /// decision in it.
@@ -578,120 +581,32 @@ pub fn spec(
             border: Some(Color::Rgb(r, g, b)),
             border_width: 1.0,
         },
+        // ★ **The icon is real in the file and invisible on pdfcer's own
+        // page**, and that is disclosed rather than left to be discovered.
         //
-        // §12.5.6.4 Table 172 defines **seven** — `/Comment`, `/Key`,
-        // `/Note`, `/Help`, `/NewParagraph`, `/Paragraph`, `/Insert` — and
-        // `pdfcer_core::annot_author::StickyIcon` has modelled all seven since
-        // sticky notes shipped (`annot_author.rs:2311-2327`), written straight
-        // into `/Name` at `annot_author.rs:3206`. Acrobat offers the same
-        // seven on its note tool. **This shell has never asked for any but the
-        // default.**
+        // The engine's sticky author — the private `sticky_note` behind
+        // `TextAnnotSpec::Sticky` — passes the icon to `/Name` and **nowhere
+        // else**. The marker artwork is pdfcer's own dog-eared page glyph for
+        // all seven, deliberately, to stay clear of Acrobat's trade dress. So
+        // an operator who picks *Key* sees no change in this reader and a key
+        // in another, which is why `text::textannot::sticky_icon_bound` says
+        // so in a sentence under the chooser.
         //
-        // # Why it is still hardcoded after being found
+        // Not an R8b breach: applied content still renders exactly as saved
+        // content will *in this reader*, and the disclosure is off-canvas.
+        // But it is precisely the kind of gap between file and picture an
+        // operator should meet in a sentence rather than in Acrobat.
         //
-        // Not an engine gap — the capability is there and free. It is blocked
-        // on **where the operator's choice would travel**, and all three
-        // routes are outside this work's reach:
+        // ⚠ **The default is [`DEFAULT_STICKY_ICON`], not
+        // `StickyIcon::default()`.** The engine's own default is `Note`; this
+        // shell authors `Comment`, which is Acrobat's, measured. That
+        // constant carries the provenance and the caveat.
         //
-        // 1. a field on `Action::CommitTextAnnot` — `app/actions/action.rs`
-        //    sits at **exactly 1,500 lines**, R2's ceiling, so a field with
-        //    its doc comment means splitting a file seven concurrent tracks
-        //    are editing;
-        // 2. a payload on `TextAnnotKind` — it is also the **tool identity**
-        //    (`canvas::tool::CanvasTool::TextAnnot`), so two stickies with
-        //    different icons would become two different armed tools;
-        // 3. a field on the markup `Pen` — the natural home, since the pen
-        //    already carries the ink and the opacity this same call reads live
-        //    — but the control for it belongs on Markup ▸ Style, and the
-        //    ribbon manifest is a concurrent track's.
-        //
-        // ⇒ Route 3 is the right one and it is one field plus one ribbon
-        // control. Recorded here, in the code, rather than in a document
-        // nobody re-reads — and recorded as a **shell** gap so nobody files it
-        // at the engine, which has already done its half.
-        //
-        // R9 is satisfied meanwhile: no chooser is drawn, no greyed control,
-        // no placeholder. The note gets `/Note`, which is what every sticky
-        // this program has ever authored carries.
-        //
-        //
-        // The paragraph above is kept verbatim rather than rewritten, because
-        // what changed is a *measurement* and the correction is the useful
-        // part. `wc -l app/actions/action.rs` is **1,479** — twenty-one lines
-        // of R2 headroom, where the note above recorded exactly 1,500. A
-        // concurrent track split that file after this was written.
-        //
-        // ⇒ Route 1 now costs a field and its doc comment, and it is the
-        // RIGHT route, not merely the newly-affordable one. The reason is the
-        // one the stamp already proves: **`StampName` travels this exact path
-        // today.** `dialogs/textannot.rs:77` holds the gallery's choice,
-        // `:262` puts it on `Action::CommitTextAnnot`, `action.rs:1367`
-        // carries it, `app/actions/textannot.rs:63` lands it on `Placement`,
-        // and `:148` hands it to this function as the `stamp` argument. An
-        // icon is the same shape of operand as a stamp name and belongs in
-        // the same carrier — route 3 would put two answers to *"what did the
-        // operator pick?"* in two different places, one on the pen and one on
-        // the action.
-        //
-        // # The whole remaining change, so it is one sitting for whoever owns
-        // # these files
-        //
-        // 1. `canvas/textannot.rs` (here): `STICKY_ICONS` + `DEFAULT_STICKY_ICON`
-        //    beside `STAMPS`/`DEFAULT_STAMP`, and an `icon: StickyIcon`
-        //    parameter on `spec` replacing `StickyIcon::default()` below;
-        // 2. `text/textannot.rs`: `sticky_icon_label`, beside `stamp_label`;
-        // 3. `app/actions/action.rs`: one field on `CommitTextAnnot`;
-        // 4. `app/actions/textannot.rs`: one field on `Placement`, threaded
-        //    at `apply.rs:751`;
-        // 5. `dialogs/textannot.rs`: the radio group at `:399-405` again, over
-        //    `STICKY_ICONS`, gated on `Sticky` as the stamp's is on `Stamp`.
-        //
-        //
-        // ★ R9 still holds and that has not changed: nothing is drawn. The
-        // seven icons are `pdfcer_core::annot_author::StickyIcon`'s, which is
-        // §12.5.6.4 Table 172's complete set and exactly the seven Acrobat's
-        // note tool offers — so the gallery needs no list of ours, the way
-        // `STAMPS` needed one.
-        //
-        //
-        //
-        // What changed, in the order the paragraphs above predicted it:
-        //
-        // * **The authoring half is this line.** The five-item plan two
-        //   paragraphs up was followed exactly and in full —
-        //   [`STICKY_ICONS`] and [`DEFAULT_STICKY_ICON`] above,
-        //   `text::textannot::sticky_icon_label`, one field on
-        //   `Action::CommitTextAnnot`, one on
-        //   `app::actions::textannot::Placement`, and the radio group in
-        //   `dialogs::textannot`. Route 1, for route 1's stated reason:
-        //   `StampName` already travels this path, and an icon is the same
-        //   shape of operand as a stamp name.
-        // * **The editing half was answered by the engine the same day.**
-        //   `EditSession::set_text_annot_style` (`edit.rs:27124`) with
-        //   `edit::TextAnnotStyle` (`edit.rs:15969`), `Annotation::icon`
-        //   (`annot.rs:449`), `Annotation::color`, and `StickyIcon::name` /
-        //   `from_name` made public. The consumer is
-        //   `panels::properties::markup::textannot`, not this module — this
-        //   one places, that one restyles, and the request's own closing
-        //   line drew that seam before either existed.
-        //
-        // ⚠ **The default moved and the engine's did not.** `StickyIcon`'s
-        // own `Default` is still `Note`; this shell now authors `Comment`,
-        // which is Acrobat's, measured. [`DEFAULT_STICKY_ICON`] carries the
-        // provenance and the caveat that goes with it.
-        //
-        // ★ **What the operator sees does not change with the icon**, and
-        // that is disclosed rather than left to be discovered:
-        // `annot_author::sticky_note` (`annot_author.rs:3712`) passes `icon`
-        // to `/Name` at `:3759` and **nowhere else** — the marker artwork is
-        // pdfcer's own dog-eared page glyph for all seven, deliberately, to
-        // stay clear of Acrobat's trade dress (`annot_author.rs:2794`). So
-        // the choice is real in the file and invisible on pdfcer's own page,
-        // and `text::textannot::sticky_icon_bound` says so under the
-        // chooser. Not an R8b breach — applied content still renders exactly
-        // as saved content will, in *this* reader — but it is precisely the
-        // kind of gap between file and picture an operator should meet in a
-        // sentence rather than in Acrobat.
+        // ⇒ [`STICKY_ICONS`] offers the seven §12.5.6.4 Table 172 defines and
+        // not `StickyIcon::Other`, which is a value a *file* can carry and not
+        // one a gallery may author. This module PLACES a sticky;
+        // `panels::properties::markup::textannot` restyles an existing one,
+        // and that is where a foreign `/Name` is preserved rather than offered.
         TextAnnotKind::Sticky => TextAnnotSpec::Sticky {
             rect,
             icon: icon.clone(),

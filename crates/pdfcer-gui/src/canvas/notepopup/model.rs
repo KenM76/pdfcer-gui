@@ -34,11 +34,11 @@
 //!
 //! ## ★★ What the file already contained, and what it did not
 //!
-//! `pdfcer-core` writes a `/Popup` companion for every sticky note it authors
-//! (`D:\Dev\pdfcer\crates\pdfcer-core\src\annot_author.rs:3223`), with its
-//! `/Open` state (`:3224`) and a rectangle 150 pt wide placed to the right of
-//! the note (`:3217-3222`). **Nothing in this shell had ever drawn one.** The
-//! data was in the operator's files the whole time.
+//! `pdfcer-core`'s sticky author — the private `sticky_note` behind
+//! `annot_author::TextAnnotSpec::Sticky` — writes a `/Popup` companion for
+//! every sticky note it authors, carrying the note's own `/Open` state and a
+//! rectangle 150 pt wide placed to the right of the note. So the data is in
+//! the operator's files already; this module is what draws it.
 //!
 //! ### ★★★ `/Open` is READ from the file, never defaulted
 //!
@@ -375,7 +375,8 @@ pub fn notes_on<G: ObjectGraph + ?Sized>(graph: &G, page: &Page) -> Vec<NoteView
 ///
 /// Both carry the key and the standard gives both the same meaning — Table 172
 /// for a `/Text` annotation, Table 183 for the `/Popup`. `pdfcer-core`'s author
-/// writes the **same** value to both (`annot_author.rs:3212` and `:3224`), so
+/// writes the **same** value to both — the note's `/Open` is copied onto the
+/// companion in the same call that creates it — so
 /// on a file pdfcer wrote the order cannot matter. It matters on a file
 /// somebody else wrote, and the note wins because it is the annotation the
 /// operator interacts with — and because Table 170 gives a `/Square` or an

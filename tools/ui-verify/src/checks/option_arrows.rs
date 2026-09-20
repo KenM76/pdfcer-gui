@@ -192,8 +192,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     if seam.get("found") != Some("true") {
         return Err(Error::new(format!(
             "the seam found no field named `{FIELD}` in the placement census: `{}`. The census \
-             excludes any widget with no appearance stream, so this is a fact about the fixture \
-             rather than about the arrows. {METHOD}",
+             admits a widget on the strength of its rectangle alone, so the miss is a fact about \
+             the NAME or the fixture and not about the arrows: either the name does not match a \
+             fully-qualified field in the file, or no widget of that field has a place on a \
+             rendered page. It is NOT a statement about appearance streams — a widget with no \
+             `/AP` is in this census and is selectable; it is only unfillable. {METHOD}",
             seam.raw
         )));
     }

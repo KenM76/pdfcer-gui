@@ -139,7 +139,7 @@ pub const fn stamp_label(stamp: StampName) -> &'static str {
 ///
 /// `StampName` is `#[non_exhaustive]`, so that function needs a `_ =>` arm and
 /// returns the empty string for a stamp it has no prose for. `StickyIcon` is
-/// **not** `#[non_exhaustive]` (`pdfcer-core` `annot_author.rs:2812`), so this
+/// **not** `#[non_exhaustive]`, so this
 /// `match` is exhaustive and an eighth icon is a **compile error here** rather
 /// than a blank line in a chooser. That is the stronger arrangement and it is
 /// available only because the engine's enum is closed — worth saying out loud,
@@ -196,12 +196,12 @@ pub const fn sticky_icon_heading() -> &'static str {
 ///
 /// # Why this sentence has to exist
 ///
-/// `annot_author::sticky_note` (`pdfcer-core` `annot_author.rs:3712`) takes the
-/// icon and uses it in exactly one place: `/Name`, at `:3759`. The appearance
-/// it bakes is **the same dog-eared page glyph for all seven**, and that is a
-/// decision the engine documents rather than an omission — `annot_author.rs`'s
-/// own header at `:2794` records it as trade-dress avoidance: *"pdfcer authors
-/// its OWN plain marker … never a reproduction of Acrobat's icon set"*.
+/// The engine's sticky author takes the icon and uses it in exactly one
+/// place: `/Name`. The appearance it bakes is **the same dog-eared page glyph
+/// for all seven**, and that is a decision the engine documents rather than an
+/// omission — `annot_author` records it as *R44 choice (a)*, trade-dress
+/// avoidance: *"pdfcer authors its OWN plain marker … never a reproduction of
+/// Acrobat's icon set"*.
 ///
 /// ⇒ So an operator who picks *Key* sees no change in pdfcer and a key in
 /// Acrobat. Without this sentence they meet that difference in the other

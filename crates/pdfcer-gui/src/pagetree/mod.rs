@@ -67,9 +67,9 @@
 //! reference. The temptation — *"we know the right `/Count`, just fix it"* — is
 //! refused on the boundary argument this project applies everywhere:
 //!
-//! `pdfcer-core` **owns** the page tree. It is the only writer of `/Count`
-//! (`edit.rs:31918`, `:32636-32647`, `:33296-33304`,
-//! `pageops/assemble.rs:540`). A shell that silently patched the same key would
+//! `pdfcer-core` **owns** the page tree. Every write of a page-tree `/Count`
+//! is in `pdfcer_core::edit` or `pdfcer_core::pageops::assemble`, and this
+//! shell issues none. A shell that silently patched the same key would
 //! be a **second writer of one structure**, and the two would drift — pdfcer
 //! would then be repairing files against a rule the engine had since changed,
 //! on documents nobody was looking at, with the operator told nothing. The
@@ -114,7 +114,7 @@
 //!
 //! ★★ Worth recording, because it is the engine stating the very contract it
 //! then broke: `PageSlot::ancestors`' own doc comment
-//! (`page_tree.rs:346-348`) reads *"Every ancestor `Pages` node, root first,
+//! reads *"Every ancestor `Pages` node, root first,
 //! excluding the page itself. **A delete must decrement `/Count` on all of
 //! them.**"* The requirement is written into the type. It is `delete_pages`
 //! that does not do it.
@@ -456,8 +456,8 @@ fn walk<G: ObjectGraph + ?Sized>(
         return 0;
     };
 
-    // The engine's own node-kind dispatch (`page_tree::is_pages_node`,
-    // `page_tree.rs:531`), reproduced rather than called because it is
+    // The engine's own node-kind dispatch (`page_tree::is_pages_node`),
+    // reproduced rather than called because it is
     // private. Stated here so a future divergence is visible as a difference
     // between two written rules rather than as a silent one:
     //   /Type /Pages  -> intermediate node

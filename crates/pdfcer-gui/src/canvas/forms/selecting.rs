@@ -55,12 +55,16 @@ use super::*;
 /// # What it deliberately cannot do
 ///
 /// It resolves the name against **the same census [`select_click`] hit-tests**,
-/// `boxes::Placed::targets`. A widget the census excludes — one with no
-/// appearance stream, which `super::boxes` will not admit — is therefore
-/// unreachable through this seam exactly as it is unreachable by clicking. A
-/// seam that resolved names against the AcroForm dictionary instead would let a
-/// check pass on a field no operator can select, which is the defect class R1
-/// exists to catch rather than a convenience worth having.
+/// `boxes::Placed::targets`, so its reach is the click's reach exactly. That
+/// census admits a widget on the strength of its rectangle alone — every widget
+/// with a place on the canvas is in it, including the ones `boxes::classify`
+/// refuses as unfillable — and excludes one only when it has no place at all:
+/// no entry in the placement, or a page transform that will not invert. Such a
+/// widget is unreachable through this seam for the same reason it is
+/// unreachable by pointing at it. A seam that resolved names against the
+/// AcroForm dictionary instead would let a check pass on a field no operator
+/// can select, which is the defect class R1 exists to catch rather than a
+/// convenience worth having.
 ///
 /// And it raises the same [`FieldAction::Select`] the click raises, through the
 /// same queue, so what it substitutes is the gesture and not the selection.

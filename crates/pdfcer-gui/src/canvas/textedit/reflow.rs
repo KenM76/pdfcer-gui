@@ -26,8 +26,8 @@
 //! and the difference is the whole defect. `EditSession::reflow_block` does not
 //! receive a paragraph. It receives an integer, throws away everything the
 //! caller knew, re-extracts the page itself, and re-recognises it with
-//! [`pdfcer_core::text_edit::reflow_recognition_options`] —
-//! `reflow_apply.rs:465` — a **relaxed** config that pushes `indent_ratio` out
+//! [`pdfcer_core::text_edit::reflow_recognition_options`] — a **relaxed**
+//! config that pushes `indent_ratio` out
 //! of reach so ragged-left lines merge into one block instead of fragmenting
 //! into one block per line. Then it indexes *that* list.
 //!
@@ -189,8 +189,8 @@ mod tests {
     /// `fixtures/paragraph.pdf`, where both recognitions say *block 0 of 1*.
     ///
     /// ★★ The right-hand side is built from [`reflow_recognition_options`], the
-    /// engine's own published function — the same one `reflow_block` calls at
-    /// `reflow_apply.rs:465`. An oracle taken from the system under test needs
+    /// engine's own published function — the same one `reflow_block` calls
+    /// internally. An oracle taken from the system under test needs
     /// independent calibration, and the calibration is the round trip below:
     /// the index is handed to the real verb and the real refusal is read.
     #[test]

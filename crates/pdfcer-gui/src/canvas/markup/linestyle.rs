@@ -43,8 +43,8 @@
 //!
 //! The content-stream `d` operator takes an array **and** a phase, but Table
 //! 166's `/D` carries the array alone and the standard says the phase *"shall be
-//! assumed 0"* — the engine states it at
-//! `D:\Dev\pdfcer\crates\pdfcer-core\src\annot_author.rs:141-149`, and emits `0`
+//! assumed 0"* — the engine states it under the *"There is no phase"* heading
+//! on `annot_author::BorderDash` itself, and emits `0`
 //! when it bakes the appearance. A phase control here would be a value the file
 //! cannot hold: the operator would set it, the writer would ignore it, and the
 //! control would look like completeness while being a lie. It is written down
@@ -60,8 +60,7 @@ use crate::text::markup as t;
 ///
 /// # ★★★ Why this type exists rather than a `BorderDash` on the pen
 ///
-/// `annot_author::BorderDash` owns a `Vec<f64>`
-/// (`D:\Dev\pdfcer\crates\pdfcer-core\src\annot_author.rs:157`), so it is
+/// `annot_author::BorderDash` owns a `Vec<f64>`, so it is
 /// `Clone` and **not** `Copy`. [`super::pen::Pen`] is `Copy` and is passed by
 /// value through every gesture commit in `canvas::markup`; both restyle
 /// surfaces pass a `Copy` `Current` by value through half a dozen control
@@ -75,7 +74,7 @@ use crate::text::markup as t;
 ///
 /// # ★★ `BorderDash::new` returns `Option`, and this shell REFUSES IN THE UI
 ///
-/// `annot_author.rs:185` refuses a pattern §8.4.3.6 does not admit: empty
+/// `pdfcer_core::BorderDash::new` refuses a pattern §8.4.3.6 does not admit: empty
 /// (which *is* the standard's solid line, so it is not a dash), negative,
 /// non-finite, or every element zero. The reply that shipped the field said to
 /// *"refuse in your own UI or let the `None` refuse for you"*. This shell does
@@ -102,7 +101,8 @@ use crate::text::markup as t;
 ///
 /// [`Self::Dashed`] is **sourced**: `[3]` is Table 166's own default for `/D` —
 /// the pattern the standard gives an annotation that declares `/S /D` and no
-/// array (`annot_author.rs:196-203`). It is the one entry here that is not this
+/// array, and the value `annot_author::BorderDash::table_166_default` builds.
+/// It is the one entry here that is not this
 /// shell's choice, and it is deliberately the first dash in the list.
 ///
 /// The other two are this shell's, argued rather than measured, and the
@@ -328,18 +328,17 @@ impl DashReading {
 /// # ★★★ Why this is a SECOND reader of a key the engine already reads
 ///
 /// Because the engine's reader is not public. `annot_author::read_border_dash`
-/// is `pub(crate)` (`D:\Dev\pdfcer\crates\pdfcer-core\src\annot_author.rs:840`,
-/// read 2026-09-06), and `spec_from_dict` does **not** carry the dash: a dash
+/// is `pub(crate)`, and `spec_from_dict` does **not** carry the dash: a dash
 /// cuts across `MarkupSpec`'s variants rather than belonging to any one of them,
-/// so it travels in `AppearanceOptions` beside the spec instead of inside it
-/// (`annot_author.rs:1633-1673`). There is therefore no public route from an
+/// so it travels in `annot_author::AppearanceOptions` beside the spec instead
+/// of inside it. There is therefore no public route from an
 /// annotation dictionary to *"is this mark dashed, and how"* — and a control
 /// that cannot show the current value is a control that shows an invented one,
 /// which is the `fontband::size` defect this project has already paid for.
 ///
 /// ⇒ So this is the copy, and it is **written down as a copy** rather than
 /// presented as a reading. The table below is transcribed from
-/// `read_border_dash`'s own doc comment (`annot_author.rs:810-830`); it was not
+/// `read_border_dash`'s own doc comment; it was not
 /// derived independently:
 ///
 /// | `/S` | `/D` | read as |
@@ -478,8 +477,8 @@ mod tests {
     ///
     /// This is the assertion that makes *"refuse in the UI"* a real decision
     /// rather than a hope. §8.4.3.6 refuses an empty, negative, non-finite or
-    /// all-zero array, and `BorderDash::new` answers `None` for each
-    /// (`annot_author.rs:185`). A `None` reaching [`LineStyle::dash`] would
+    /// all-zero array, and `BorderDash::new` answers `None` for each.
+    /// A `None` reaching [`LineStyle::dash`] would
     /// collapse into the same answer as *solid* — so a fifth pattern typed with
     /// a stray minus sign would produce a chooser entry that silently drew a
     /// solid line, with no error anywhere.

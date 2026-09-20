@@ -470,9 +470,9 @@ const POPUP_BOX_WIDTH: f32 = POPUP_WIDTH + 16.0;
 ///    producer said where the window belongs and honouring it is what makes a
 ///    document look here the way it looked in the reader that wrote it.
 /// 2. **Beside the note**, to the right and top-aligned, when there is no
-///    `/Popup` or its rectangle is unusable. Where `pdfcer-core`'s own author
-///    puts one (`annot_author.rs:3217-3222`) and where every reader in the
-///    class puts one.
+///    `/Popup` or its rectangle is unusable. Where `pdfcer-core`'s own sticky
+///    author puts one — 150 pt wide, to the right of the note — and where
+///    every reader in the class puts one.
 ///
 /// …and then one **invariant that outranks both**:
 ///

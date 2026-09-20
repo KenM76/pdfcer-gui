@@ -851,11 +851,12 @@ impl TextAnnotDialog {
     /// the same act (*pick one of seven*) and a window that answered it two
     /// ways would be teaching the operator a distinction that does not exist.
     ///
-    /// ★★ The disclosure under it is not optional. `annot_author::sticky_note`
-    /// (`pdfcer-core` `annot_author.rs:3712`) passes the icon to `/Name` at
-    /// `:3759` and **nowhere else** — the marker artwork is the same dog-eared
-    /// page glyph for all seven, by a trade-dress decision the engine records
-    /// at `annot_author.rs:2794`. So an operator who picks *Key* sees no change
+    /// ★★ The disclosure under it is not optional. The engine's sticky author
+    /// passes the icon to `/Name` and **nowhere else** — the marker artwork is
+    /// the same dog-eared page glyph for all seven, by the trade-dress
+    /// decision `annot_author` records as *R44 choice (a)*: the spec supplies
+    /// no icon artwork, so pdfcer authors its own plain marker and never a
+    /// reproduction of Acrobat's set. So an operator who picks *Key* sees no change
     /// here and a key in another reader, and
     /// [`crate::text::textannot::sticky_icon_bound`] is where they are told
     /// that before it happens rather than after.
