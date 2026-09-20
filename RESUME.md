@@ -34,6 +34,7 @@ grepping it — a count only goes stale, a name can be born false.
 | Engine HEAD | `git -C /d/Dev/pdfcer log --oneline -1 main` | The question is never whether the two shas MATCH — it is whether CODE has landed since the pin, because only that can falsify a sentence beginning *"the engine cannot"*. `git -C /d/Dev/pdfcer diff --stat <pin>..main -- '*.rs'` is the test; empty means such a sentence may be written. Read this log in the same breath as listing `open/`: a delivery has arrived here as a commit before it arrived as a reply three times |
 | Engine version | `grep -A1 'name = "pdfcer-core"' Cargo.lock` | — |
 | Last release | `git fetch --tags origin && gh api repos/KenM76/pdfcer-gui/releases/latest` | **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in an unfetched tree answers with an older tag and reports a commits-unreleased count wrong by a factor. Read every field back out of the API rather than inferring it from the flags passed in, and check the local zip's byte count against the asset's — agreement to the unit is the cheapest proof the upload is the file and not a truncation. The binary's own stamp and `published_at` sit twelve to twenty minutes apart on every release; label which clock |
+| Which slot he runs | `grep -H '^Shell:' /c/Users/Ken/OneDrive/pdfcer-gui{1,2}/BUILD-INFO.txt` | **The slot name carries no version and the rotation alternates**, so the newer slot is 1 on one release and 2 on the next. Never carry "the slot he runs" forward in prose — a paragraph about what a past release contained must say *first published in* and stop, because a sentence naming the live slot is true for one release and silently wrong for every one after. The older slot is the fallback by construction: `package-portable.py` replaces the older, so the previous build always survives |
 | Driven checks | `ui-verify --list \| grep -cE '^  [a-z0-9_]+$'` | **Rebuild the harness first** — `--list` sits behind `refuse_if_self_is_stale`, and a stale harness prints nothing, which `grep -c` reports as zero and reads as a roster. The `$` is load-bearing: `--list` also prints a profiles table whose rows are two-space-indented lowercase words. It prints two lines per check, so a `wc -l` answers about double |
 | Gates | `bash tools/gates/run-all.sh` | Three states, not two: `0` pass, `1` fail, `3` a gate was SKIPPED for an absent precondition. A skip is not a pass. **Tally on the `RESULT:` line, never on a pipeline's exit code** — `run-all.sh \| tail` reports `tail`'s zero. A stable pass-count across an engine pin bump proves nothing about whether the documents survived it; the tally moves only when a gate is added. **Run `cargo fmt --all` before starting one** — `cargo fmt` is the LAST gate, so a formatting slip in hand-written Rust is found forty minutes in and costs the entire run. **And start it `CARGO_BUILD_JOBS=2`**: clippy runs after fmt, `--all-targets` spawns a `clippy-driver` per TARGET, and by then the sweep has spent the session's handles on one `sed` per source file — several drivers then die together with `exit code: 0xc0000142, STATUS_DLL_INIT_FAILED` and no diagnostic at all, which reads as four crates breaking at once. It is process count, not memory, whatever a supervisor's kill reason says; the same command alone finishes green in seconds. A sweep killed before its SUMMARY has no verdict, and hand-summing the PASS lines cannot see a gate that never ran |
 | Unit tests | `cargo test --workspace` | Summed over the `test result:` lines, then cross-counted by `cargo test --workspace -- --list \| grep -cE ': test$'`; passing plus ignored must equal the cross-count. Two methods, because a summed figure nobody cross-checks is how the last count drift got in. The cross-count is also how you know a new test RAN: three `#[test]` functions once compiled clean, reported nothing and executed zero times, because they were nested inside another function |
@@ -122,9 +123,7 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    `diag::trace_changed` emits only on a change, so a plural arm that draws the
    same 1 the singular arm drew is SILENT. The absence message names both
    causes for that reason.
-   Published as `v0.5.0-dev.20260920.1`, which is the slot he runs; the
-   slot beside it still holds the build before it, so the fallback is a
-   build that never had this code in it.
+   First published in `v0.5.0-dev.20260920.1`.
    **The preview is asserted in pixels as well as in the trace.**
    `Driver::drag_observed` holds a drag open: it presses, walks to the
    destination, rests there with one-pixel nudges so a frame runs with the
@@ -241,9 +240,7 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    **The row still does not close.** Its closing criterion is a chunk of a
    table row on `SW41177.pdf`, and there is no separate chunk to aim at there
    until `G032` lands.
-   Published as `v0.5.0-dev.20260920.2`, which is the slot he runs; the slot
-   beside it holds the build before it. **The menu row and the driven check
-   are NOT in that build** — they are committed and unpublished.
+   First published in `v0.5.0-dev.20260920.2`.
 
 
 2. **O213 / O214 — the shell addresses the visual line everywhere, driven and
@@ -281,8 +278,8 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    0 on the commit that moved his line +240.16 pt, which is how the defect
    reached him through a check already watching reflow scope.
    **The narrowing landed after the release he had**, which is why he saw the
-   defect and this tree did not. Published as `v0.5.0-dev.20260919.1`; both rows
-   now wait on his word, not on a measurement.
+   defect and this tree did not. First published in `v0.5.0-dev.20260919.1`;
+   both rows now wait on his word, not on a measurement.
    **The grouping is the engine's own**, not a second opinion:
    `pdfcer_core::vector::edit::text_object_split_points(obj, SplitGranularity::Line)`
    is called rather than re-derived from baselines, so the box that is drawn and
