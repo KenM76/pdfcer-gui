@@ -217,8 +217,32 @@ that the engine took it. Every keystroke is calibrated from the draft's own
 `text-select` line, because an absent commit has five causes and four of them
 are the harness.
 
-**Ask 2 is not measured.** `DeleteTextLine` exists; whether the canvas gesture
-he uses reaches it is a separate question and a separate drive.
+**★ Ask 2 is BUILT, and it was the route that needed proving rather than the
+verb.** `DeleteTextLine` was already wired and already driven — but through the
+**Points** tool, which the operator has never been told about. A verb and the
+door to it fail separately, and a build can pass the verb's row while ask 2
+stays unmet.
+
+`deleting_a_clicked_chunk_leaves_the_rest_of_the_block_alone` drives the door he
+has: chunk boxes on, a plain left click on the block, a plain left click inside
+one of the boxes O215 gave him to aim at, then Delete through the OS. Same
+fixture, same line, same verb as the Points-tool row — so a difference between
+the two is a difference in the route and nothing else. The verdict is the
+standing pair: the page's object count unchanged **and** the block's line count
+down by exactly one.
+
+⚠ **A ladder still at the Object rung is reported as a FAILURE here, not as a
+skipped precondition**, and that distinction is the row's point. The other rungs
+may legitimately fail to descend — their point can land on an object with no
+parts. This one's point is pinned and its boxes were switched on, so a second
+click that does not reach a chunk *is* the unmet ask. A SKIP would say *the
+harness could not arrange the case* where the truth is *the program does not
+offer it*, and those two sentences point at opposite people.
+
+Falsified twice, in two different halves: shutting `ClickHit::chunk` reddens it
+on the shut door, and making the Part rung reach no verb reddens it on the
+application's own `canvas-delete-declined` line — which is the shape *"it
+doesn't work"* actually has.
 
 Ask 1 shipped in `v0.5.0-dev.20260920.2`.
 

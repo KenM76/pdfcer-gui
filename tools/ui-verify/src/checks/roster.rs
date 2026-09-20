@@ -849,6 +849,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(deeper_rung_delete::DeletingALineLeavesTheRestOfTheShapeAlone),
         Box::new(deeper_rung_delete::DeletingAPointLeavesTheRestOfTheLineAlone),
         Box::new(deeper_rung_delete::DeletingALabelLeavesTheOtherLabelsAlone),
+        Box::new(deeper_rung_delete::DeletingAClickedChunkLeavesTheRestOfTheBlockAlone),
         // Immediately after the label delete, and deliberately: it stands on
         // the SAME rung of the SAME fixture, reached by the same chord and the same
         // click, and differs only in the gesture that follows. So a failure here

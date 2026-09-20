@@ -154,8 +154,8 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    `paint_rect` equals the page rect at every zoom below the pixmap ceiling,
    so the ink-coverage question is **unfalsified**, not merely weak, and
    exercising it needs this gesture driven at the region tier.
-   **What is next, in order.** O217's first three bullets, then O216 ask 2.
-   **Ask 2 is the engine's and is filed as `G032`**: `runs_share_a_line` never
+   **What is next, in order.** O217's first three bullets.
+   **O215's ask 2 is the engine's and is filed as `G032`**: `runs_share_a_line` never
    reads the horizontal translation, so a table row welds into one line — 565
    welded lines on his own drawing, the widest spanning 709.4 pt of blank paper.
    **Not worked around**, deliberately: a post-split on bounds would make the
@@ -170,8 +170,21 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    a caret. `emptying_a_chunk_commits_the_emptying` drives his own gesture on
    his own drawing; ★ every keystroke in it is calibrated from the draft's
    own `text-select` line, because an absent commit has five causes and four
-   of them are the harness. Ask 2 — delete the chunk as an object — is a
-   separate drive and is not measured.
+   of them are the harness.
+   **O216 ask 2 is BUILT and DRIVEN, and it was the ROUTE that needed
+   proving.** `DeleteTextLine` was already wired and already driven — through
+   the **Points** tool, which he has never been told about. A verb and the
+   door to it fail separately, so the verb's row can be green while the ask
+   stays unmet. `deleting_a_clicked_chunk_leaves_the_rest_of_the_block_alone`
+   is the fourth rung of `deeper_rung_delete` and drives the door he has:
+   boxes on, click the block, click the box, Delete. Same fixture, same line,
+   same verb as the Points-tool rung, so any difference between them is the
+   route and nothing else. ★ A ladder still at `Object` is a **FAILURE** in
+   that rung and a SKIP in the other three — its point is pinned and its
+   boxes were switched on, so a second click that does not reach a chunk is
+   the unmet ask, not an arrangement the harness could not make. Falsified
+   twice: `ClickHit::chunk` shut reddens the door, and a Part rung reaching
+   no verb reddens on the application's own decline line.
    **O217's fourth bullet is BUILT and DRIVEN; its first three are not.**
    The apply report now lists the text the marks will destroy, one quoted
    line per region in the order it was drawn, deduped so identical removals

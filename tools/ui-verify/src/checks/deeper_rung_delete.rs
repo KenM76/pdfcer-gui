@@ -1,6 +1,12 @@
 //! `deeper_rung_delete` — **Delete removes ONE line, ONE label or ONE corner
 //! point, and leaves the rest of the object standing.**
 //!
+//! Four rungs, three verbs. The fourth — [`Rung::Chunk`] — is the label's verb
+//! reached through the operator's own gesture rather than through the Points
+//! tool, because a verb and the door to it fail separately and only a driven
+//! gesture can tell which one is shut. Its argument is on
+//! [`Rung::narrows_by_clicking_a_chunk_box`].
+//!
 //!
 //! # ★★★ THE ASSERTION THAT MATTERS IS "THE OTHERS SURVIVE"
 //!
@@ -66,6 +72,7 @@
 //! | label | `fixtures/paragraph.pdf` | `0,120,704` | needs a text object holding **several** runs; on a one-run object `delete_text_run` correctly deletes the object and the check cannot tell right from wrong. Measured by walking its content stream: one `BT`…`ET` block, **six** `Tj` operators, 12 pt, on a 612 × 792 page — so its text is also legible at fit zoom, which the A1 sheet's is not |
 //! | line | `fixtures/hole-in-a-big-object.pdf` | `0,336,500` | needs a path object holding **several** subpaths. Measured: **41** — a circle and forty unrelated segments in ONE object, which is the shape of the operator's own export |
 //! | point | `fixtures/polyline-nodes.pdf` | `0,150,260` | needs a subpath with **three or more** anchors — `delete_node` refuses one that would leave fewer than two, correctly. Measured: **6** |
+//! | chunk | `fixtures/paragraph.pdf` | `0,100,704` | the **same line of the same document as the label rung**, borrowed from `crate::fixture::text_chunk_point` so the two cannot drift. The rungs differ in the door, not the target, which is the whole reason both exist |
 //!
 //!
 //! ★★★ **The line rung's fixture was WRONG in the first version of this table
@@ -98,6 +105,7 @@
 //!    trace lines and the route that does exist.
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV, click_mode_segment};
+use crate::checks::text_chunks::{Verdict, press_the_toggle, verdict};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
 use crate::error::{Error, Result};
@@ -118,6 +126,13 @@ const ANCHORS_EVENT: &str = "canvas-anchors";
 /// `canvas::overlay::PUBLISHED_ANCHORS`.
 const PUBLISHED_ANCHORS: usize = 6;
 
+/// Which chunk of `fixtures/paragraph.pdf` the chunk rung aims at.
+///
+/// The first line, which is also [`Rung::Label`]'s target — so the two doors
+/// are measured against the same line of the same document and a difference
+/// between them is a difference in the route and nothing else.
+const CHUNK_AIM: usize = 0;
+
 /// Which of the three rungs a run of this check exercises.
 ///
 /// One enum rather than three copies of `drive`, because the three differ in
@@ -137,13 +152,24 @@ enum Rung {
     Line,
     /// One anchor out of a subpath — `delete_node`.
     Point,
+    /// The same unit as [`Self::Label`], reached the way the **operator**
+    /// reaches it: chunk boxes on, a plain left click on the block, a plain
+    /// left click inside one of the boxes he can see.
+    ///
+    /// ★★★ **A rung is a verb plus a door, and this row is the second door.**
+    /// `Label` proves `delete_text_run` is wired and proves nothing about
+    /// whether a hand holding a mouse can get to it — it arms the Points tool
+    /// first, which is a route the operator has never been told about. O216
+    /// ask 2 is about the route, not the verb: *"select and delete them as
+    /// well"*, with the left button, after O215 gave him boxes to aim at.
+    Chunk,
 }
 
 impl Rung {
     /// The trace label `app::actions::vector` writes the census under.
     const fn applied(self) -> &'static str {
         match self {
-            Self::Label => "delete-text-line-applied",
+            Self::Label | Self::Chunk => "delete-text-line-applied",
             Self::Line => "delete-subpath-applied",
             Self::Point => "delete-node-applied",
         }
@@ -152,7 +178,7 @@ impl Rung {
     /// The funnel's own label — the line that says the **engine** accepted it.
     const fn funnel(self) -> &'static str {
         match self {
-            Self::Label => "delete-text-line",
+            Self::Label | Self::Chunk => "delete-text-line",
             Self::Line => "delete-subpath",
             Self::Point => "delete-node",
         }
@@ -166,7 +192,7 @@ impl Rung {
     /// census and report a pass.
     const fn unit(self) -> &'static str {
         match self {
-            Self::Label => "text-lines",
+            Self::Label | Self::Chunk => "text-lines",
             Self::Line => "lines",
             Self::Point => "points",
         }
@@ -185,6 +211,7 @@ impl Rung {
             Self::Label => "deeper_rung_delete.label",
             Self::Line => "deeper_rung_delete.line",
             Self::Point => "deeper_rung_delete.point",
+            Self::Chunk => "deeper_rung_delete.chunk",
         }
     }
 
@@ -194,6 +221,7 @@ impl Rung {
             Self::Label => "label",
             Self::Line => "line",
             Self::Point => "corner point",
+            Self::Chunk => "chunk",
         }
     }
 
@@ -204,9 +232,16 @@ impl Rung {
     ///
     /// ★★★ **Zero for the label, and that is a fact about the program rather
     /// than a shortcut.** See [`Self::arms_the_points_tool`].
+    ///
+    /// ★★ Zero for the chunk too, for the same underlying reason and by a
+    /// different route: its descent is a second **plain** click, not a
+    /// double-click, so it is counted by
+    /// [`Self::narrows_by_clicking_a_chunk_box`] rather than here. A
+    /// double-click anywhere in this rung's sequence would open the caret and
+    /// the ladder would never move.
     const fn descents(self) -> usize {
         match self {
-            Self::Label => 0,
+            Self::Label | Self::Chunk => 0,
             Self::Line => 1,
             Self::Point => 2,
         }
@@ -254,10 +289,61 @@ impl Rung {
         matches!(self, Self::Label)
     }
 
+    /// ★★★ **Whether this rung is reached by clicking a chunk box with the
+    /// plain left button**, which is the only route the operator has been
+    /// shown, and the answer is *only the chunk*.
+    ///
+    /// # Why a second row for a verb that already has one
+    ///
+    /// [`Self::Label`] and [`Self::Chunk`] end at the same verb, on the same
+    /// fixture, on the same line of it. Everything between the pointer and
+    /// that verb is different:
+    ///
+    /// | | label | chunk |
+    /// |---|---|---|
+    /// | preparation | arm the Points tool (chord `A`) | switch the chunk boxes on |
+    /// | gesture | one click | click the block, then click a box |
+    /// | what the operator was told | nothing — the tool is not advertised for text | O215 built the boxes so he could aim at them |
+    ///
+    /// So a build can pass `label` and leave O216 ask 2 unmet, and that is not
+    /// hypothetical: it is the state this row was added into. **A capability
+    /// the operator cannot reach is not a capability**, and the only
+    /// instrument that can tell the two apart is a driven gesture.
+    ///
+    /// # The sequence, and why each step is where it is
+    ///
+    /// 1. **Boxes on, before the first click.** The chunk rung is offered
+    ///    exactly where a box is drawn — `canvas::clicking` sets
+    ///    `ClickHit::chunk` from `chunks::boxed`, which reads the preference.
+    ///    The preference is persisted beside the exe, so a previous run that
+    ///    left it off is a fact about the machine and not about the build, and
+    ///    a run that began with it off would measure the switch and file the
+    ///    result as a delete defect.
+    /// 2. **First click: the block.** Not asserted here —
+    ///    `clicking_a_chunk_selects_that_chunk` owns that rule, including the
+    ///    R6 half that a build descending on first contact has made dragging a
+    ///    whole block unreachable.
+    /// 3. **Second click, same point, plain left button: one chunk.** The part
+    ///    index comes from `ClickHit::part`, the same probe the Points tool
+    ///    reads, so the two doors select the identical unit and this row's
+    ///    census is comparable with the label row's.
+    ///
+    /// # ⚠ Where this row's reach ends
+    ///
+    /// The census says *one text line went and the block survived*. It cannot
+    /// say *the line under the pointer* went: both halves of the pair are
+    /// counts, and the `part=` on the applied line is the selection's own
+    /// number passed through, so comparing them would assert nothing. Which
+    /// line was removed has one oracle, a rendered page, and it is not this
+    /// check's subject.
+    const fn narrows_by_clicking_a_chunk_box(self) -> bool {
+        matches!(self, Self::Chunk)
+    }
+
     /// The rung name the application publishes on `canvas-selection level=`.
     const fn level(self) -> &'static str {
         match self {
-            Self::Label | Self::Line => "Part",
+            Self::Label | Self::Line | Self::Chunk => "Part",
             Self::Point => "Node",
         }
     }
@@ -274,7 +360,7 @@ impl Rung {
     /// fewer than two anchors, so its floor is three.
     const fn needs_parts(self) -> usize {
         match self {
-            Self::Label | Self::Line => 2,
+            Self::Label | Self::Line | Self::Chunk => 2,
             Self::Point => 3,
         }
     }
@@ -297,6 +383,14 @@ impl Rung {
     fn fixture(self) -> (std::path::PathBuf, DocPoint) {
         let (name, page, x, y) = match self {
             Self::Label => ("paragraph.pdf", 0, 120.0, 704.0),
+            // ★★ The chunk rung borrows `clicking_a_chunk_selects_that_chunk`'s
+            // own aim rather than restating it. The two checks are the same
+            // gesture on the same line of the same document — one asks whether
+            // the click lands, the other whether Delete then works — and a
+            // second copy of the coordinate is a second thing to drift.
+            // `text_chunk_point` also owns the assertion that the index is one
+            // of the six this fixture holds.
+            Self::Chunk => return crate::fixture::text_chunk_point(CHUNK_AIM),
             Self::Line => ("hole-in-a-big-object.pdf", 0, 336.0, 500.0),
             Self::Point => ("polyline-nodes.pdf", 0, 150.0, 260.0),
         };
@@ -362,6 +456,26 @@ impl Check for DeletingAPointLeavesTheRestOfTheLineAlone {
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
         report_for(self.name(), self.defect(), Rung::Point, ctx)
+    }
+}
+
+/// See [`Rung::narrows_by_clicking_a_chunk_box`].
+pub struct DeletingAClickedChunkLeavesTheRestOfTheBlockAlone;
+
+impl Check for DeletingAClickedChunkLeavesTheRestOfTheBlockAlone {
+    fn name(&self) -> &'static str {
+        "deleting_a_clicked_chunk_leaves_the_rest_of_the_block_alone"
+    }
+
+    fn defect(&self) -> &'static str {
+        "the chunk a plain left click selects cannot be deleted — Delete at that moment reaches \
+         no verb and says nothing, or reaches `delete_objects` and takes the whole text block — \
+         so O215 gave the operator boxes he can see and pick, and O216 ask 2's *\"select and \
+         delete them as well\"* is still unmet through the only gesture he has been shown"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        report_for(self.name(), self.defect(), Rung::Chunk, ctx)
     }
 }
 
@@ -473,6 +587,24 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, rung: Rung) -> Result<Opt
     click_mode_segment(&session, &driver, ui_rect, MODE)?;
     session.settle(20);
 
+    // --- 1b: the chunk rung's precondition, switched on rather than assumed --
+    //
+    // Step 1 of the sequence on `Rung::narrows_by_clicking_a_chunk_box`. The
+    // preference is persisted beside the exe, so its state at launch is a fact
+    // about the machine this ran on.
+    if rung.narrows_by_clicking_a_chunk_box()
+        && verdict(&session.trace()?, 0) == Some(Verdict::Declined("switched-off".to_owned()))
+    {
+        report.note(
+            "the chunk boxes were OFF at launch. Turning them on: the chunk rung is offered only \
+             where a box is drawn, so a run that left them off would measure the switch and file \
+             the answer as a delete defect.",
+        );
+        if let Some(failure) = press_the_toggle(&session, &driver, ui_rect, true, report)? {
+            return Ok(Some(failure));
+        }
+    }
+
     // --- 2: select the object, then descend to the rung ---------------------
     //
     // ★★★ The label rung arms the **Points** tool first, because a
@@ -513,6 +645,16 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, rung: Rung) -> Result<Opt
             target.page,
             session.trace_path().display()
         )));
+    }
+
+    // ★★ The chunk rung's descent: a second PLAIN click at the same point.
+    // Step 3 of the sequence on `Rung::narrows_by_clicking_a_chunk_box`. It is
+    // deliberately not a double-click — on text that opens the caret (O70) and
+    // the ladder never moves — and deliberately at the same point, because the
+    // operator's gesture is *click the block, then click the box you meant*.
+    if rung.narrows_by_clicking_a_chunk_box() {
+        driver.click_at(at)?;
+        session.settle(16);
     }
 
     for _ in 0..rung.descents() {
@@ -569,6 +711,31 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, rung: Rung) -> Result<Opt
             .last(SELECTION_EVENT)
             .and_then(|l| l.get("level").map(str::to_owned))
             .unwrap_or_else(|| "none".to_owned());
+        // ★★★ For the chunk rung this is a FAILURE, not a skipped precondition,
+        // and the difference is the whole reason the row exists.
+        //
+        // The other three rungs can legitimately fail to descend: their point
+        // may land on an object with no parts, and a harness that cannot
+        // establish its precondition must not report on the property beyond it.
+        // The chunk rung has no such excuse. Its point is pinned, its boxes
+        // were switched on above, and the two clicks are the operator's own
+        // gesture — so a ladder still at `Object` **is** O216 ask 2 unmet. A
+        // SKIP here would say *the harness could not arrange the case*, when
+        // what happened is *the program does not offer it*, and those two
+        // sentences point at opposite people.
+        if rung.narrows_by_clicking_a_chunk_box() {
+            return Ok(Some(format!(
+                "★★★ THE SECOND CLICK DID NOT REACH A CHUNK: the ladder is at `{seen}` after a \
+                 left click on the block and a second left click inside it, with the chunk \
+                 boxes on. The operator can see the boxes and cannot get inside one, so Delete \
+                 at this moment would take the whole text block — which on his drawing is every \
+                 label on the sheet. `ClickHit::chunk` carries the permission to narrow and \
+                 `canvas::clicking` is the only place that sets it; \
+                 `clicking_a_chunk_selects_that_chunk` is the row that isolates which half is \
+                 broken. Trace: {}.",
+                session.trace_path().display()
+            )));
+        }
         return Err(Error::new(format!(
             "the ladder is at `{seen}` and this check needs `{}`, so the {} was never \
              selected and the Delete below would be testing the Object rung instead. On a \
