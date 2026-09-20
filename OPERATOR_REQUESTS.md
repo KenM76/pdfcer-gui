@@ -177,7 +177,43 @@ are different results — an emptied run may still hold position, style and a
 place in the stream that following runs depend on. Both are asked for here and
 both are owed; neither substitutes for the other.
 
-**Nothing on this row is built or measured.** Status stays **FILED**.
+**★ Ask 1 is MEASURED, and it is cause 1 of the four — by design, with the
+design written down.** `canvas::textedit::commit_into`'s `Anchor::Run` arm is
+guarded `draft.text != *original && !draft.text.is_empty()`, so an emptied
+chunk raises **no action at all**: no `CommitTextEdit`, no `text-edit-plan`,
+no engine call, no refusal to classify, nothing on the status line. The
+document is untouched and the operator is told nothing, which is why it reads
+as *"it doesn't save"*. The behaviour is asserted by
+`an_emptied_draft_pushes_no_action`, whose doc gives the reasoning: *deleting
+every character and clicking away is ambiguous — "remove this text" and "I
+changed my mind" look identical — and the recoverable reading is the one that
+writes nothing.*
+
+That reasoning is **overruled by this row**, and the measurement rules out the
+other three causes rather than merely doubting them: the engine has no
+`replace.is_empty()` guard anywhere in `pdfcer-core`, and `edit_text` already
+has a defined behaviour for the case (an emptied show operator stays as
+`() Tj`, and the following `Td` steps on the line are re-spaced by the net
+advance), so causes 2 and 3 cannot be reached and cause 4 is never given
+anything to drop.
+
+**What the fix has to be, and the precedent it takes.** Acrobat's Edit Text
+commits an emptied text object and leaves undo as the recovery, which is R11's
+answer to the ambiguity the test's doc names: the recoverable reading is *undo*,
+not *refuse*. So the guard comes off the `Run` arm and stays on `Origin` and
+`Box`, where it is right — an Add caret with nothing typed is a caret, not a
+write. `an_emptied_draft_pushes_no_action` is rewritten to assert the opposite
+and keeps the argument in its doc, because the next reader will ask.
+
+**And the silence is a second defect whatever is decided.** A guard that
+declines an operator's edit and says nothing is exactly what the disclosure
+rule forbids; if an empty replacement were genuinely not allowed, he would be
+owed a sentence, not a no-op.
+
+**Ask 2 is not measured.** `DeleteTextLine` exists; whether the canvas gesture
+he uses reaches it is a separate question and a separate drive.
+
+**Status stays FILED** — only the operator closes a row.
 
 ## O215 — **FILED** — moving one text chunk inside a block must be a left-click gesture with boxes, multi-select and a live preview
 

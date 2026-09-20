@@ -154,17 +154,24 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    `paint_rect` equals the page rect at every zoom below the pixmap ceiling,
    so the ink-coverage question is **unfalsified**, not merely weak, and
    exercising it needs this gesture driven at the region tier.
-   **What is next, in order.** Measure O216 before designing anything for it,
-   then O217.
+   **What is next, in order.** Build O216 ask 1, which is now measured and
+   is one guard; then O217.
    **Ask 2 is the engine's and is filed as `G032`**: `runs_share_a_line` never
    reads the horizontal translation, so a table row welds into one line — 565
    welded lines on his own drawing, the widest spanning 709.4 pt of blank paper.
    **Not worked around**, deliberately: a post-split on bounds would make the
    shell's unit differ from `delete_text_run`'s with neither side able to
    detect it.
-   **O216 is unmeasured** — emptying a chunk does not save, and four causes fit
-   the symptom; `text-edit-plan`, `edit-text-target`, `edit-text-left-edge` and
-   `committed=` separate them, so measure before designing. **O217 is
+   **O216 ask 1 is MEASURED and it is cause 1**, found by reading rather than
+   driving: `canvas::textedit::commit_into`'s `Anchor::Run` arm carries
+   `&& !draft.text.is_empty()`, so an emptied chunk raises no action at all —
+   no plan, no engine call, no refusal, no sentence. It is deliberate and the
+   reasoning is in `an_emptied_draft_pushes_no_action`'s doc, and this row
+   overrules it: `pdfcer-core` has no `replace.is_empty()` guard anywhere and
+   `edit_text` already defines the emptied-operator case, so causes 2–4 cannot
+   be reached. The guard comes off the `Run` arm and stays on `Origin` and
+   `Box`; undo is the recovery, which is what Acrobat does. Ask 2 — delete the
+   chunk as an object — is a separate drive and is not measured. **O217 is
    unbuilt** and is the one that cannot ship the old unit: redaction on a
    welded row would silently take the part number and the description with the
    quantity, and he would find out after the file was written.
