@@ -95,7 +95,7 @@
 - [An assertion both outcomes satisfy](feedback_assertion_both.md) — name what the WRONG one can't produce.
 - [A hit inside the repo is no outside mandate](feedback_gate_hit_inside_repo.md) — a half-renamed archive is worse.
 - [A branch pin moves on its own](feedback_branch_pinned.md) — it changed mid-session with no command.
-- [Python-to-a-file does not protect an escape](feedback_write_python_file.md) — and a 700-line heredoc never spawns.
+- [Python-to-a-file does not protect an escape](feedback_write_python_file.md) — a 700-line heredoc never spawns; an LF anchor misses a CRLF file.
 - [A guard's placement picks its explainer](feedback_guards_placement.md) — reading the predicate isn't reading the guard.
 - [A doc quoting its own command](feedback_document_quotes.md) — a verbatim newline split a row.
 - [A fix naming its victims misses one](feedback_fix_names_victims.md) — a write-path guard skips the DELETE path.

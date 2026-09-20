@@ -162,3 +162,36 @@ line, and it has none of the three quoting layers above either.
   put a literal newline inside a python string literal and left the file at
   `SyntaxError: unterminated string literal`. Prose or code going INTO a file
   belongs in `Edit`, whatever the delivery verb is called.
+
+---
+
+**★ A MULTI-LINE ANCHOR MUST NOT ASSUME THE FILE'S LINE ENDING, AND THIS TREE
+MIXES THEM.**
+
+`io.open(p, encoding="utf-8", newline="\n")` does **no** translation on read, so
+a CRLF file arrives with every `\r` intact and a two-line anchor built with
+`"…first" + chr(10) + "    /// second"` matches **zero** times. The failure is
+`AssertionError: 0` from the anchor guard — which reads as *"I got the text
+wrong"* and sends the next command at `grep`/`cat -A`, where the two lines look
+exactly as typed, because `cat -A` was run on the wrong range or the `$` was
+read as end-of-line rather than as *the absence of `^M`*.
+
+**Why it bites here specifically:** the repository is mixed. `save.rs` and
+`markup.rs` are LF; `manifest/merge/report.rs` is CRLF — and it is CRLF because
+a splitter wrote it as LF and **`cargo fmt` rewrote the whole file in the
+prevailing ending**. So a file's ending can change between the command that
+creates it and the next command that patches it.
+
+**How to apply:**
+- Read with `newline=""` — no translation, endings preserved — then derive the
+  separator once: `NL = chr(13) + chr(10) if chr(13) + chr(10) in s else chr(10)`
+  and build every anchor and every inserted line by joining on `NL`. Write back
+  with `newline=""` too, or python re-expands `\n` to `os.linesep`.
+- Never call `.split(chr(10))` on source you are about to rejoin: every line
+  then carries a trailing `\r` and the rejoined file gains one `\r` per line at
+  the wrong place.
+- When an anchor assert reports `0`, print `repr()` of a window around the
+  target **before** re-reading the bytes any other way. `repr` shows `\r\n`;
+  `cat -A` shows `$` for both endings unless the `^M` is read for.
+- Related: [[a-detectors-scope-is-a-claim]] — 16 % of
+  this tree's files are CRLF, which is the same measurement from the other side.

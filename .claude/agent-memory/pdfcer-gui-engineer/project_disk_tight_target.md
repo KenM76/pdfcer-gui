@@ -331,6 +331,18 @@ Start-Process -FilePath $bash -ArgumentList @('-lc', "$sp/sweep.sh") `
   -WindowStyle Hidden -PassThru
 ```
 
+⚠ **Pass the wrapper path as the whole `-lc` string. Do not nest a `bash` in
+front of it.** `-lc "bash <path>"` left a live `Git\usr\bin\bash.exe` that never
+ran the script: three shells, 0.4 s of CPU in seven minutes, a zero-byte log,
+and — the tell — **no `grep`, `python` or `cargo` child anywhere on the
+machine**, where a running sweep always has one. It reads exactly like a stall
+inside the first gate, so the diagnosis goes to the gate rather than to the
+launcher. It failed the same way twice, including once with a POSIX path and
+`< /dev/null`; the recorded `@('-lc', "$sp/sweep.sh")` form runs. When a
+detached launch will not start, fall back to an ordinary background Bash-tool
+run — the watchdog may or may not reap it, and a reaped sweep is recoverable
+where a silent one is not.
+
 ⚠ A `Remove-Item` anywhere in the same PowerShell block is refused —
 *"Remove-Item on system path ''C:\Program' is blocked"* — because the sandbox's
 static read pairs the delete with the `'C:\Program Files\Git\bin\bash.exe'`

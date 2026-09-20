@@ -1638,3 +1638,143 @@ in `D:/dev/rag/egui/`.
 - **A drop indicator is a gesture-only overlay**, so the `ui-rect` trace records
   its appearance as a change and cannot report its disappearance. Assert on the
   appearance, and on the layout the release produced.
+
+## Where the seam is in each file now crowding the size limit
+
+R2's remedy is *find the seam*, never *raise the limit*, and the seam is a
+property of the file rather than of the number. Eight files sit between 1,452
+and 1,473 lines against the 1,500 cap, so the next ordinary edit to any of them
+turns a green gate red mid-task. This section is the seam for each, so that
+work is a patch rather than a re-derivation. **Every one of the eight is LF**;
+the mixed-ending hazard recorded against a patch script does not apply to this
+batch.
+
+Line numbers below are an aid to the eye only. The anchor in every case is the
+named item or the quoted banner, because a citation into a moving file goes
+wrong silently.
+
+**`text/settings/look.rs` → `text/settings/shell.rs`.** Cut at the banner
+*"Appearance — how big pdfcer's own controls are drawn"*. Above it are settings
+the PDF specification is silent about, answered for the **document's** pixels —
+CMYK intent, JPEG polarity, blend space, comment author, mask resampling,
+minification. Below it are the **shell's own** preferences, and the file already
+says so in its own words two banners later: *"★ These two are not spec
+ambiguities."* The theme block moves with them, because `ui_scale`'s doc calls
+itself *"The theme's twin"* and splitting twins across files is the drift this
+exercise exists to prevent. `settings/mod.rs` glob-re-exports and every call
+site uses a bare name, so the whole edit outside the two files is two lines in
+`mod.rs`. `check-ui-strings.sh`'s `CATALOG_RELPATHS` carries `text/*`, whose
+shell `case` glob spans `/`, so the new path stays catalog. **This is the one to
+take first** — it is the only one of the eight that costs nothing outside the
+two files, and it corrects a module header that no longer describes its own
+bottom half.
+
+**`ribbon/width_tests.rs` → `ribbon/strip_width_tests.rs`.** The banner in the
+middle already writes the sentence: *"Everything below is failure mode #8 one
+row up."* Above it, nine tests assert group reservation **inside the band**;
+below it, ten assert four-claimant contention **on the tab-strip row** — QAT,
+tabs, the tab affordance and the mode selector — and need their own seven-tab
+manifest to overflow at all. The halves share no fixture below the harness:
+`strip_shell` is called only by the lower half, `render_view_tab` only by the
+upper. `render_shell` is the one private helper both call and must widen to
+`pub(super)`; everything else shared is `pub(super)` already and `super` is
+`ribbon` for both files, so no visibility changes meaning. **Do not extract the
+harness into a third file** — `ribbon/mod.rs` documents on purpose that
+`height_tests` borrows this one rather than standing up a second.
+
+**`canvas/keys/tests.rs` → `canvas/keys/tests/escape.rs`.** Two precedence
+ladders are interleaved here rather than blocked. Escape's claimants are the
+transient things in flight and the property under test is *which rung got it*;
+Delete's claimants are the selected objects and the property is *did a deletion
+gate refuse, audibly*. `keys.rs` carries a rung table for Escape and nothing of
+the sort for Delete. The child must say `use super::*`, which resolves to
+`keys::tests::*` and transitively re-exposes the parent's own imports and its
+four helpers; `use super::super::*` compiles and loses them. `pub(super)` on
+`Keys` and `canvas_keys` already means `pub(in crate::canvas)`, so going one
+level deeper is free. This file's header is stale in three checkable ways — it
+claims no case presses Tab, no assertion presses an arrow, and every case passes
+`page: None`, and all three are now false — so the split carries a header
+rewrite with it.
+
+⇒ **Those last two are the same split twice** and belong in one commit: a single
+test file enumerating two independent claimant-contention ladders, cut between
+them, harness staying with the half that keeps the filename, exactly one private
+helper widening because the other half calls it.
+
+**`canvas/measure/mod.rs` → `canvas/measure/preview.rs`.** Drawing what the next
+click would commit is a different subject from advancing the pick. `Preview`,
+`preview`, `PICKED_RING_SCALE`, `page_to_screen` and the projection test move;
+the `Pick` state machine, `click` and `trace_pick` stay. ⚠ `Preview` and
+`preview` are spelled `pub(super)`, which **silently narrows** one level deeper
+from `crate::canvas` to `crate::canvas::measure` and breaks `canvas::painting`;
+they must be respelled `pub(in crate::canvas)` and re-exported.
+`doc.settings.parallel_epsilon_degrees` is read inside `click`, which stays, so
+`check-settings-funnel.py` is unaffected. A smaller fallback seam exists:
+`MeasureKind` and its tests to `measure/kind.rs`.
+
+**`panels/mod.rs` → `panels/state.rs`.** The catalog and the dispatch say which
+panels exist and how the dock calls one; `PanelsState` is the per-frame scratch
+the bodies keep between calls, and its header is entirely an argument about
+cache lifetime. `PanelsState`, `ObjectTreeUi` and both impls move. `fn sync` is
+private and `Panel::show` calls it, so it widens to `pub(super)`; `pub use
+state::{ObjectTreeUi, PanelsState};` is mandatory for the call sites naming
+`crate::panels::PanelsState`. `panels/tests.rs` uses `use super::*` and needs
+nothing. ⚠ `FEATURES.md` cites this file **by line number** for `Panel::ALL`,
+and `RESUME.md` greps it for `pub const ALL` — a cut below `Panel::ALL` leaves
+both correct, a cut above it breaks the first silently. A second cut to
+`panels/layout.rs` for `scroll_style`, `content_width`, `ELLIPSIS`,
+`elide_to_width` and `text_width` is re-export-transparent, because sibling
+modules already name them by full path.
+
+**`app/dispatch.rs` → `app/dispatch/workspace.rs`.** Nine arms —
+`file.properties`, `markup.comments`, `view.read_mode`, `view.fullscreen`,
+`view.reset_layout`, the three `mode.*`, and the two panel guards — have the
+shell's arrangement as their operand and none of them pushes an `Action`. That
+sentence is `dispatch/panels.rs`'s header, verbatim. `tools.render_diagnostics`
+stays: it is a dialog verb in the shape of `file.print`. ⚠ This is the
+fail-closed one. The unreachable-command checker under `shell/commands/reach/`
+requires a **free** `pub(super) fn dispatch` rather than an inherent method, a
+`match` scrutinising a binding literally named `id`, and a guard named `handles`
+or `claims` — both of which are already in `EVALUATED_GUARDS`, so registration
+is one `if` in `reach/guards.rs`. `handles` must be `pub(crate)` because
+`guards.rs` sits outside `app`. Add a fourth `include_str!` in `reach/mod.rs` so
+the moved literals stay covered by `no_literal_arm_names_an_unregistered_command`.
+Two orderings must survive the lift: `file.properties` and `markup.comments`
+stay **above** `Panel::from_command_id` or they silently become toggles, and the
+`panels::claims` guard stays **below** it. The reset-layout prose block sits
+about eighty lines above the arm it explains; reunite them rather than lifting a
+span. A second seam is `dispatch/document.rs` — bring a document in, put one
+away.
+
+**`app/actions/action.rs` — there is no seam, only a sub-enum.** The file is
+three `use` lines and one enum of about sixty-five variants, and its own header
+already states the growth path. The move that is available is a **correction**:
+`actions/text.rs`'s header claims *"the caret commit, the free-text commit, the
+restyle and the reflow"* while `TextAction` holds only three of those, so
+`CommitTextEdit`, `CommitAddText` and `TextStyle` fold into it and the header
+stops being a false statement. It costs about forty call-site rewrites.
+`BeginTextAnnot` and `CommitTextAnnot` are an equally defensible second family.
+
+**`tools/ui-verify/src/checks/mod.rs` — there is no seam left, and that is the
+honest answer.** The file is 240 `pub mod` declarations carrying their per-check
+prose, then the harness vocabulary. `roster.rs`'s header already took the
+tempting seam and forecloses it: moving a `pub mod` there renames the check and
+breaks every reference to it. Extracting `CheckContext`, its impl and `trait
+Check` to `checks/context.rs` buys about 155 lines and is a **deferral, not a
+fix**. The durable remedy is folding check families into subdirectories, for
+which `checks/signing/` and `checks/raster_wall/` are precedent, at the cost of
+rewriting the references to `crate::checks::driving::…`. ⚠ The other tempting
+move — pushing per-check prose down into each check's own header — is
+prose-shaving, which is the thing `check-file-size.sh` exists to refuse.
+
+⇒ **The last two are the same non-seam twice.** A flat closed vocabulary — 240
+module declarations, sixty-five enum variants — has no prose seam, every
+candidate cut renames the moved items' paths, and the only honest remedies are
+the sub-enum and the subdirectory. The worst outcome for either is a cut chosen
+to hit a line count.
+
+One standing hazard for the whole batch: `canvas/selection/tests.rs` justifies
+its own existence by citing the ribbon's test-file splits, and its count is
+already wrong — it says three where `ribbon/` holds five. Whoever takes the
+`width_tests.rs` seam corrects that sentence in the same commit, because a
+precedent cited by count is a claim that decays.
