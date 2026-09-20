@@ -10,6 +10,14 @@
 
 use crate::ui_text;
 
+// EXCLUSION 2a — a module declared `#[cfg(test)] mod X;` lives in its OWN
+// file, which the compiler never emits into a release build. That file is
+// dropped from the scan whole, so the operator-shaped literals it holds are
+// legal. Break the exclusion and assertion A turns red on
+// `state/gated_fixture.rs`.
+#[cfg(test)]
+mod gated_fixture;
+
 /// Errors this fixture module can report.
 #[derive(Debug)]
 pub enum StateError {
@@ -69,9 +77,11 @@ mod diag {
     }
 }
 
-// EXCLUSION 2 — everything from here to end of file is test-only prose and is
-// truncated by the scanner. Nothing below this line is scanned, which is also
-// why nothing non-test may be placed below it.
+// EXCLUSION 2b — the BODY of a braced `#[cfg(test)]` item, and nothing else.
+// The skip starts at the attribute and ends at the item's closing brace at
+// column 0. Test assertion messages inside it are not operator copy; a shipped
+// item AFTER it is scanned normally, which is what the dirty fixture proves by
+// planting a violation there.
 #[cfg(test)]
 mod tests {
     #[test]
@@ -82,4 +92,14 @@ mod tests {
             "the delete label must come from the catalog, not a bare literal"
         );
     }
+}
+
+/// A shipped item BELOW the braced test module, legal because it names the
+/// catalog.
+///
+/// Present so the clean fixture has the same shape as the dirty one. If the
+/// scan ever failed to resume after a test module, only the dirty fixture
+/// would notice; this line is the clean half of that pair.
+pub fn save_label() -> &'static str {
+    ui_text::SETTINGS_APPEARANCE
 }

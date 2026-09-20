@@ -198,38 +198,48 @@ Two lessons under this number, both general:
 - A codepoint shipping in the launch screen went unseen because the gate looked
   only at the status bar. Point a predicate at everything it is true of.
 
-### D13 — OPEN: `check-ui-strings.sh` stops scanning at the first column-0 `#[cfg(test)]`
+### D13 — RULE: a source scanner's skip is bounded, and a scanner that crashes is not clean
 
-The truncation is deliberate — test assertion messages are prose nobody renders,
-and they were the largest source of the noise floor this gate was written to
-remove. The **assumption** underneath it is not: nothing requires the test module
-to be last, and where it is not, every non-test item after it is unscanned **and
-the gate reports clean**. `#![cfg(test)]` on a whole file exits the same way and
-is correct.
+A skip that begins at a marker and never ends converts a checker into a
+formality. **508 files here carry a column-0 `#[cfg(test)]`, and 66 of them
+declare shipped items below it** — so a scanner that stops at the first one
+reads almost nothing and prints the same words as one that read everything.
 
-**Measured: 508 files carry a column-0 `#[cfg(test)]`, and 66 of them declare
-shipped items below the point the gate stops reading.** The fail-open is live,
-not hypothetical, and the dominant shape is not the one "test module last"
-describes: it is `#[cfg(test)] mod tests;` — a one-line declaration whose body
-lives in a sibling file — placed with the other `mod` declarations near the
-top. `crates/pdfcer-gui/src/ocr/mod.rs` stops the scanner at its 108th line and
-has 21 shipped item declarations after it. There is no test module in that file
-to be last.
+The convention cannot be the remedy, because the files are not breaking one.
+The dominant shape is `#[cfg(test)] mod tests;` — a one-line declaration whose
+body lives in a sibling file — sitting with the other `mod` declarations near
+the top. "Keep the test module last" does not describe it: there is no test
+module in those files to be last, and the declaration gates out nothing.
 
-So the convention cannot be the remedy, because the files that break it are not
-breaking a convention — they are following the ordinary one. Of the two
-candidate fixes, only the first survives the measurement: scan the whole file
-and exclude only items *inside* a braced `mod tests` block, recognising the
-one-line `mod tests;` form as excluding nothing at all. A self-test must plant
-an operator-facing string below each of the two shapes and require both to be
-caught.
+The three parts of the repair, each of which a `--self-test` assertion
+falsifies on its own:
 
-`icons::glyphs`' own scanner does not repeat this — it skips exactly the braced
-item and resumes, proven by
+- **Inspect the attribute line.** A `;`-terminated declaration skips that line
+  only. A braced item is skipped to its close, in both spellings — attribute on
+  its own line, and attribute and item on one line. A skip that never starts
+  and a skip that never ends both leave a bare "does the dirty fixture fail?"
+  assertion green, so each is planted separately.
+- **End the skip at `}` in column 0**, never a brace counter, which desyncs
+  silently on a brace inside a string literal and is confidently wrong for the
+  rest of the file.
+- **Drop a cfg-gated FILE whole.** `#[cfg(test)] mod X;` names a file the
+  compiler never emits into a release build. The in-file skip cannot see that
+  — it reads the named file from line 1 as shipped source — so the declaration
+  is resolved to `<name>.rs` / `<name>/mod.rs` and that subtree is excluded.
+  In this tree that is the difference between 24 reported literals and 5.
+
+**A scanner that crashes must not report clean.** The gate captured `awk` into
+`$( )` and discarded both its stderr and its status, so a syntax error in the
+scanner made every file fail to parse and the run still exited 0 — the same
+fail-open shape, arriving through the tool rather than through the rule. A
+nonzero `awk` is now fatal, with a headline that says the fault is in the gate
+rather than in the tree.
+
+`icons::glyphs` has an independent implementation of the same job and asserts
+the same property itself, in
 `a_mid_file_test_module_does_not_blind_the_scanner`.
 
-This is the fail-open class `check-file-size.sh` records: *"found no violations"*
-and *"looked at almost nothing"* are byte-identical output.
+Enforced by `tools/gates/check-ui-strings.sh --self-test`.
 
 ### D14 — RULE: a diagnostic prints its input beside its output
 

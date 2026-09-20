@@ -308,10 +308,11 @@ pub fn write_os_flag(on: bool) -> String {
          # document you may send to somebody else, and which font that is, is a\n\
          # licensing question -- so pdfcer does not answer it for you.\n",
     );
-    // ui-text-exempt: a file KEY and its VALUE, never displayed in the UI.
     out.push_str(if on {
+        // ui-text-exempt: a file KEY and its VALUE, never displayed in the UI.
         "use_os_fonts = true\n"
     } else {
+        // ui-text-exempt: a file KEY and its VALUE, never displayed in the UI.
         "use_os_fonts = false\n"
     });
     out

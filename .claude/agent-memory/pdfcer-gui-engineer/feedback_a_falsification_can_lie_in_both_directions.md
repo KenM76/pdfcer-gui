@@ -1,6 +1,6 @@
 ---
 name: a-falsification-can-lie-in-both-directions
-description: A red falsification proves the check as a whole, not each assertion in it; a green one may mean the planting script's anchor rotted and it mutated nothing; and a script that scores the run by scanning cargo output can call every working plant a broken build; and a plant goes green when the fixture cannot produce the input its two spellings differ on
+description: A red falsification proves the check as a whole, not each assertion in it; a green one may mean the planting script's anchor rotted and it mutated nothing; and a script that scores the run by scanning cargo output can call every working plant a broken build; and a plant goes green when the fixture cannot produce the input its two spellings differ on; and a plant on a branch no fixture executes goes green too, which reads as a weak assertion and is a missing fixture
 metadata:
   type: feedback
 ---
@@ -200,3 +200,39 @@ check's doc comment, in the imperative, with the expected red output quoted.
 Related: [[an-unevidenced-excuse-is-worse-than-silence]],
 [[a-check-that-cannot-fail-is-not-evidence]],
 [[an-oracle-built-from-the-system-under-test-needs-an-independent-calibration]].
+
+---
+
+## Green, because the plant landed on a branch NO FIXTURE EXECUTES — 2026-09-20
+
+The fifth direction, and the one that costs the most, because the green result
+reads as a finding about the *assertion* and sends you to rewrite a correct one.
+
+`check-ui-strings.sh`'s test-item skip has two entry branches — the attribute
+and the item on one line, or on two. Falsifying "the skip actually starts" by
+patching the same-line branch to `in_test = 0` left the self-test **green**.
+That is the exact signature of six assertions that do not depend on the skip.
+They do: the dirty fixture only ever contained the two-line shape, so the
+patched line never ran. Patching the other branch reddened it immediately.
+
+★ **A green falsification has two explanations demanding OPPOSITE responses —
+the assertion is weak (strengthen it) or the fixture never arrives (extend it)
+— and nothing in the output distinguishes them.** The first is the one that
+comes to mind, because it is the reason falsification exists at all.
+
+**How to apply:**
+
+- Before concluding anything from a green plant, **prove the patched line
+  executed**: `print "REACHED" > "/dev/stderr"` in awk, `panic!("reached")` in
+  Rust. A panic cannot be swallowed by the same gap that swallowed the
+  behaviour change, which a changed return value can.
+- When the fixture turns out to be the gap, that is worth more than a red
+  result would have been — it names a branch **no test has ever executed**.
+  Here it produced a third fixture shape (`#[cfg(test)] mod x {` on one line)
+  and two more assertions.
+- A falsification measures the pair **(assertion, fixture)**, never the
+  assertion alone. Say which one a green result indicted, in the commit.
+
+Related: [[feedback_a_check_that_cannot_fail_is_not_evidence]],
+[[feedback_a_check_whose_input_is_chosen_for_convenience_tests_the_assertion]].
+Full write-up: `D:/dev/rag/rust/a_falsification_that_patches_an_unexercised_branch_passes_and_reads_as_a_weak_assertion.md`.

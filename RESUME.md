@@ -316,7 +316,13 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    `#[expect(..., reason = "...")]` fails un-continued and passes
    backslash-continued. Exempt it with a `// ui-text-exempt:` block inside the
    attribute rather than re-wrapping to dodge the scanner; the gate's own
-   header now says so.
+   header now says so. Two more of its edges, both easy to misread: a
+   `// ui-text-exempt:` comment covers exactly **one** following non-comment
+   line, so placing it above `out.push_str(if on {` exempts that line and not
+   the literals two lines below it — put the comment inside the call; and a
+   `#[cfg(test)] mod x;` declaration causes `x.rs` / `x/mod.rs` to be dropped
+   from the scan **whole**, which is why a fixture living in a sibling file
+   needs no exemptions of its own.
 4. **O208 is built, driven and falsified — what is left is his word.** Both
    clauses are built: the page drags on the
    sheet, the four shortcuts and reset-all are there, the offset is typed or

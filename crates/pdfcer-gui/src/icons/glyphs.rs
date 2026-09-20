@@ -100,9 +100,9 @@
 //! could have. But if that assumption were ever wrong — a font grows
 //! coverage, `epaint` swaps its bundled set — the sentinel would become a
 //! real glyph, nothing else would match it, and **the gate would pass
-//! everything.** That is the `check-file-size` fail-open class named in
-//! `DEFECTS.md` D13: "found no violations" and "could not have found one"
-//! printing the same thing.
+//! everything.** That is the fail-open class `DEFECTS.md` D13 names: a check
+//! that found nothing and a check that could not have found anything print
+//! the same thing.
 //!
 //! So [`GlyphProbe::new`] lays out **three** mutually unrelated unassigned
 //! codepoints — U+0870, U+2FFFF and U+10FFFD, from three different planes —
@@ -310,14 +310,12 @@ pub enum ScanError {
 ///    asserts a note body survives byte for byte using `"多行\ntext"`, and
 ///    CJK is genuinely absent from the bundled fonts.
 ///
-///    **This is `DEFECTS.md` D13's bug, not repeated.** `check-ui-strings.sh`
-///    excludes test code by *truncating the file* at the first column-0
-///    `#[cfg(test)]`, so every non-test item below a mid-file test module is
-///    silently unscanned while the gate reports clean. This scanner instead
-///    skips exactly the braced item the attribute is attached to and
-///    **resumes** — so a test module in the middle of a file costs nothing,
-///    and `tests::a_mid_file_test_module_does_not_blind_the_scanner` proves
-///    it on the shape that defeats the shell gate.
+///    **The skip is bounded, which is `DEFECTS.md` D13.** This scanner skips
+///    exactly the braced item the attribute is attached to and **resumes**, so
+///    a test module in the middle of a file costs nothing. Asserted here
+///    independently of `check-ui-strings.sh`, which holds the same property
+///    through a different implementation:
+///    `tests::a_mid_file_test_module_does_not_blind_the_scanner`.
 ///
 /// ## What it does not attempt
 ///
@@ -736,12 +734,13 @@ fn f() -> &'static str { "kept —" }
         );
     }
 
-    /// **`DEFECTS.md` D13's bug, proven absent here.**
+    /// **A mid-file test module must not hide the rest of the file.**
     ///
-    /// `check-ui-strings.sh` truncates the file at the first `#[cfg(test)]`,
-    /// so anything below a mid-file test module is unscanned while the gate
-    /// prints clean. This is that exact shape: a test module in the middle,
-    /// with an operator-visible literal after it. The literal must be found.
+    /// The shape that once defeated `check-ui-strings.sh`: a test module in
+    /// the middle, with an operator-visible literal after it. This scanner is
+    /// a different implementation of the same job, so it is asserted here
+    /// independently — a literal after the module must be found, and nothing
+    /// inside the module may be.
     #[test]
     fn a_mid_file_test_module_does_not_blind_the_scanner() {
         let src = r#"
@@ -766,8 +765,8 @@ pub fn after() -> &'static str { "after —" }
 
         assert!(
             got.iter().any(|s| s == "after —"),
-            "the literal AFTER the test module was not scanned — this is \
-             exactly D13's fail-open, reproduced in the new gate: {got:?}"
+            "the literal AFTER the test module was not scanned — the skip \
+             ran past the item, which is D13's fail-open shape: {got:?}"
         );
         assert!(
             got.iter().any(|s| s == "before —"),

@@ -1,6 +1,6 @@
 ---
 name: a-command-judged-through-a-pipe-reports-the-pipes-exit-code
-description: `cargo build ... | tail -15` reported exit 0 on a build that FAILED — the rc belongs to `tail`. Redirect to a file and read the command's own `$?`.
+description: `cargo build ... | tail -15` reported exit 0 on a build that FAILED — the rc belongs to `tail`. Redirect to a file and read the command's own `$?`. Same family: `hits=$(awk … "$f")` discards awk's status, so a gate whose scanner crashed on all 545 files printed "clean".
 metadata:
   type: feedback
 ---
@@ -51,3 +51,36 @@ Related: [[feedback_a_commit_message_can_describe_work_that_never_landed]] (a
 `;` chain let a failed edit look committed — same family: the shell reported on
 something other than the step that mattered), and
 [[feedback_the_thing_you_measured_is_never_the_thing_you_ship]].
+
+**Third recurrence, 2026-09-20, and here the exit code was never read at all.**
+`check-ui-strings.sh` printed `ui-strings: clean` with rc=0 while its awk
+program did not compile, over a tree holding **64 known violations** — twice in
+one session, two different awk defects. The loop was the natural shape:
+
+```bash
+file_hits=$(awk '…program…' "$file")
+[ -n "$file_hits" ] && violations+=("$file_hits")
+```
+
+Command substitution captures **stdout only**; awk's diagnostics went to stderr
+and into a per-gate log nobody reads unless the gate is red. `var=$(cmd)` does
+set `$?`, but nothing read it, and `set -e` does not fire on a status consumed
+by a later conditional. So a fatal parse error produced empty stdout — read as
+*"this file is clean"* — 545 times in a row.
+
+★ **A scanner's "no findings" output and its "I could not run" output are the
+same bytes.** Every source-scanning gate in this repo has that shape.
+
+**How to apply:**
+
+- Guard every per-file scan with `|| { … exit 1; }`, and make the banner name
+  the **gate** as the fault, not the file — a reader's first instinct on red is
+  to go open the file the gate named.
+- Falsify the guard by planting a deliberate awk syntax error
+  (`BEGIN { rawhash = index(1,2,3) }`) and running against the real tree. A gate
+  scanning two roots has two invocations and needs two guards.
+- ⇒ **Decide what a CRASH looks like before deciding what a violation looks
+  like.** A `--self-test` proves only that a planted *violation* reddens it, and
+  says nothing about the case where the scanner never ran.
+
+Recipe: `C:/personal_rag/claude_code/lesson_20260920_command_substitution_hides_awk_crash_gate_reports_clean.md`.

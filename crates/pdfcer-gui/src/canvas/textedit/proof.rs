@@ -53,25 +53,6 @@
 
 #![cfg(test)]
 
-// ---------------------------------------------------------------------------
-// ★ The line below is a DELIBERATE DUPLICATE of the `#![cfg(test)]` above, and
-// it is here for `tools/gates/check-ui-strings.sh` rather than for rustc.
-//
-// That gate stops scanning a file at the first line matching `^#\[cfg\(test\)\]`
-// — an *outer* attribute at column zero — because everything after it is
-// test-only and test literals are not operator copy. An **inner** attribute
-// (`#!`) does not match that anchor, so a file that is test-only in its
-// entirety is scanned in its entirety, and every `expect("…")` in it is
-// reported as user-facing copy.
-//
-// `DEFECTS.md` D13 records the same anchor from the other side: a mid-file
-// `#[cfg(test)]` switches the gate off for the REST of the file, which is a
-// hole. Here the anchor is doing its job and simply cannot see this file's
-// shape, so the shape is adjusted to be visible. The cost is one redundant
-// attribute; the alternative is 38 `ui-text-exempt` tags on test assertions,
-// which would be noise that a real violation could hide in.
-// ---------------------------------------------------------------------------
-#[cfg(test)]
 use std::path::PathBuf;
 
 use pdfcer_core::document::Document;

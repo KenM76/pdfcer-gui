@@ -933,6 +933,8 @@ fn reports_confidence() -> bool {
                 _h: u32,
                 _p: &[u8],
             ) -> Result<Vec<pdfcer_core::ocr::RecognizedWord>, Self::Error> {
+                // ui-text-exempt: a panic message on a branch that cannot be
+                // taken; it reaches stderr, never the operator.
                 unreachable!("the shim is never recognised with")
             }
             fn reports_confidence(&self) -> bool {

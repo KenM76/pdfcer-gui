@@ -622,6 +622,8 @@ fn anchor_trace(anchors: &Anchors) -> String {
         Anchors::NoStore { .. } => "none".to_owned(),
         Anchors::Unreadable { .. } => "unreadable".to_owned(),
         Anchors::Used { counts, .. } => format!(
+            // ui-text-exempt: a trace token a driven check matches on, as the
+            // header above argues; translating it would break `ui-verify`.
             "used:{} aatl={} eutl={} adbe={} other={}",
             counts.total, counts.aatl, counts.eutl, counts.adbe, counts.other
         ),

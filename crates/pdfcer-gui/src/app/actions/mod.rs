@@ -335,23 +335,11 @@ pub use vector::VectorAction;
 pub use crate::app::status::decline::CanvasDecline;
 
 // ---------------------------------------------------------------------------
-// EVERYTHING BELOW THIS LINE IS TEST-ONLY, AND THAT IS A GATE REQUIREMENT
-//   RATHER THAN A HOUSE STYLE.
+// Everything below this line is test-only.
 //
-// `tools/gates/check-ui-strings.sh` truncates each file at its FIRST
-// column-0 `#[cfg(test)]` and scans nothing after it — its own header states
-// the limit in as many words ("any non-test code placed AFTER the test module
-// is invisible to the checker").
-//
-// So a `#[cfg(test)]` item in the MIDDLE of a file silently disarms rule R1
-// for the rest of that file: a violation planted after such a line passes the
-// gate, measured rather than assumed. `plant_edit_disclosure_for_test` belongs
-// beside the store it plants into, next to `record_edit_disclosure`, and
-// putting it there would leave everything below that point unscanned.
-//
-// Keeping the test-only helper here, below all real code, costs one level of
-// distance from the thing it plants into and buys back the rest of the file's
-// coverage.
+// A reading convention, not a constraint: `check-ui-strings.sh` skips a
+// `#[cfg(test)]` item and resumes at its closing brace, so a mid-file test
+// module no longer hides the rest of the file from rule R1.
 // ---------------------------------------------------------------------------
 
 /// Plant a disclosure, for tests in other modules that must draw one.
