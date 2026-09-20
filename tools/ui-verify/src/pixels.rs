@@ -316,6 +316,36 @@ pub fn region_not_uniform(img: &Image, region: PixRect) -> UniformityReport {
     }
 }
 
+/// **How LIGHT a region is, in one number.**
+///
+/// The companion to [`contrast_at`] for a different question. That one asks
+/// *is this ink readable* and answers with a ratio between two quantised
+/// buckets; this one asks *is this the same ink, weaker* and answers with the
+/// mean over every pixel.
+///
+/// A translucent copy of a region composited over the same paper is lighter
+/// than the original at every ink pixel and identical at every paper pixel, so
+/// its mean rises - monotonely with the alpha, with no bucket boundary and no
+/// threshold able to sit between the two readings. That is the property a
+/// pre-commit affordance drawn as a tinted blit has to be measured on, and
+/// neither [`contrast_at`] nor [`ink_run_into`] has it: both quantise, and a
+/// tint small enough to leave every pixel in its own bucket moves neither.
+///
+/// `None` for a region with no pixels. A mean over nothing is not zero, and a
+/// caller comparing two regions must be able to tell the empty case apart
+/// from a black one.
+#[must_use]
+pub fn mean_luminance(img: &Image, region: PixRect) -> Option<f64> {
+    let mut total = 0.0;
+    let mut n = 0u64;
+    for px in img.pixels_in(region) {
+        total += relative_luminance(px);
+        n += 1;
+    }
+    #[allow(clippy::cast_precision_loss)]
+    (n > 0).then(|| total / n as f64)
+}
+
 /// **How much INK a strip carries, as distinct from how varied it is.**
 ///
 /// # Why this exists beside [`region_not_uniform`]
@@ -447,6 +477,44 @@ mod tests {
     }
 
     const WHOLE: PixRect = PixRect::new(0, 0, 100, 40);
+
+    /// A translucent copy over the same paper reads LIGHTER, and an identical
+    /// copy does not - both directions, because a statistic that only ever
+    /// rose would pass a build whose tint was never applied.
+    ///
+    /// The grey is what a black glyph becomes at the raster ghost's alpha over
+    /// white paper: 255 * (1 - 190/255) = 65.
+    #[test]
+    fn a_translucent_copy_reads_lighter_and_an_identical_one_does_not() {
+        let white = Rgb::new(255, 255, 255);
+        let source = text_on(white, Rgb::new(0, 0, 0), 100, 40, 0.25);
+        let ghost = text_on(white, Rgb::new(65, 65, 65), 100, 40, 0.25);
+        let twin = text_on(white, Rgb::new(0, 0, 0), 100, 40, 0.25);
+
+        let src = mean_luminance(&source, WHOLE).expect("the source region has pixels");
+        let gho = mean_luminance(&ghost, WHOLE).expect("the ghost region has pixels");
+        let two = mean_luminance(&twin, WHOLE).expect("the twin region has pixels");
+
+        assert!(
+            gho > src,
+            "a copy at the ghost's alpha must read lighter than the content it copies - \
+             source {src}, ghost {gho}"
+        );
+        assert!(
+            (two - src).abs() < 1e-9,
+            "an untinted copy must read the SAME, or the statistic is measuring something \
+             other than the tint - source {src}, twin {two}"
+        );
+    }
+
+    /// A mean over nothing is not zero, and a caller comparing two regions has
+    /// to be able to tell the empty case from a black one.
+    #[test]
+    fn a_region_off_the_edge_of_the_image_has_no_mean() {
+        let img = text_on(Rgb::new(255, 255, 255), Rgb::new(0, 0, 0), 10, 10, 0.5);
+        assert!(mean_luminance(&img, PixRect::new(50, 50, 10, 10)).is_none());
+        assert!(mean_luminance(&img, PixRect::new(0, 0, 0, 0)).is_none());
+    }
 
     #[test]
     fn black_on_white_is_the_maximum_ratio() {

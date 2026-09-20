@@ -151,6 +151,26 @@ const DRAG_STEP_SETTLE: Duration = Duration::from_millis(25);
 /// a CAD sheet behind a compass.
 const CARRY_SETTLE: Duration = Duration::from_millis(400);
 
+/// How long the pointer rests at the destination of a [`Driver::drag_observed`]
+/// before the observer runs.
+///
+/// Long enough that a frame is certain to have run with the pointer at rest
+/// where the observer is about to photograph it, on a machine that is also
+/// rasterizing a CAD sheet. It is not a threshold the application has to
+/// beat - nothing in pdfcer waits on a timer to draw a pre-commit
+/// affordance - so it buys frames, not a dwell.
+const OBSERVE_DWELL: Duration = Duration::from_millis(400);
+
+/// Ticks that dwell is split into, with a one-pixel nudge between them.
+///
+/// A stationary pointer generates no input, and an application that repaints
+/// only on input would never run the frame being photographed. Same argument
+/// as [`Driver::drag_via`]'s dwell, and the same count.
+const DWELL_NUDGE_TICKS: u32 = 8;
+
+/// The mid-gesture verb: hold a drag open and hand control to an observer.
+mod observed;
+
 /// The OS-level input driver.
 ///
 /// Owns the operator's pointer position for its lifetime and returns it on

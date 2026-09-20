@@ -122,18 +122,40 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    Published as `v0.5.0-dev.20260920.1`, which is the slot he runs; the
    slot beside it still holds the build before it, so the fallback is a
    build that never had this code in it.
-   **What is next, in order.** S4c: the mid-gesture oracle for pre-commit
-   affordances. Nothing in `ui-verify` can photograph a gesture while it is
-   happening — every `Driver` gesture presses and releases inside one call —
-   so that the copy is VISIBLE at its alpha, unclipped, and sampled from the
-   right part of the texture is asserted nowhere. The instrument is a
-   hold-capable drag that walks to the destination, hands control to an
-   observer with the button still down, and releases on the way out whatever
-   the observer did. It serves every affordance of this class: the rubber
-   band, the rotate ghost, the snap indicator, the resize handles.
-   Designed in full in `DESIGNS.md` under *the mid-gesture oracle for
-   pre-commit affordances*, including the inset that separates lettering from
-   the outline already shipping, and the before-capture that calibrates it.
+   **The preview is asserted in pixels as well as in the trace.**
+   `Driver::drag_observed` holds a drag open: it presses, walks to the
+   destination, rests there with one-pixel nudges so a frame runs with the
+   pointer where it will be photographed, and hands control to an observer
+   with the button still down. The release is in a guard’s `Drop`, so an
+   observer that fails — or panics — cannot leave the physical button pressed
+   with the operator’s desktop left rubber-banding.
+   `the_travelling_copy_is_on_the_glass` photographs the gesture and asks five
+   questions in the order they have to be asked: the destination is blank
+   before the press, it carries ink during the hold, the SOURCE reads the same
+   in both frames, the copy reads lighter than the line it copies, and its ink
+   coverage is comparable. `pixels::mean_luminance` is the new oracle;
+   `contrast_at` and `ink_run_into` both quantise, so a tint small enough to
+   leave every pixel inside its own bucket moves neither of them.
+   ⚠ The third question is the R8b one and it must come before the fourth.
+   A build that washes the un-moved line while a move is in flight fails the
+   fourth as well, and the fourth names the opposite defect — *the copy looks
+   like content*, where the truth is *the content was made to look like a copy*.
+   It measures at zoom 2 for arithmetic reasons: one 8.4 pt line is six device
+   pixels tall at fit zoom, and nothing survives a 3 px inset. Every region is
+   clipped to `canvas-viewport` first, because a 267 pt line at that zoom runs
+   off the canvas into the dock beside it and `logical_to_capture_pixels`
+   clamps to the WINDOW, not the canvas — dock grey then reads as content.
+   **Falsified three ways, and one of the three is a measured no-op.**
+   `RASTER_GHOST_ALPHA` at `255` is the plant that justifies the row existing:
+   `dragging_a_chunk_shows_where_it_is_going` stays GREEN on that build — the
+   painter still decides to blit, and still says so — and this one goes red.
+   Deleting the call site reddens both, so it separates nothing. Taking the UV
+   against the page rect rather than `paint_rect` changes nothing at all:
+   `paint_rect` equals the page rect at every zoom below the pixmap ceiling,
+   so the ink-coverage question is **unfalsified**, not merely weak, and
+   exercising it needs this gesture driven at the region tier.
+   **What is next, in order.** Measure O216 before designing anything for it,
+   then O217.
    **Ask 2 is the engine's and is filed as `G032`**: `runs_share_a_line` never
    reads the horizontal translation, so a table row welds into one line — 565
    welded lines on his own drawing, the widest spanning 709.4 pt of blank paper.

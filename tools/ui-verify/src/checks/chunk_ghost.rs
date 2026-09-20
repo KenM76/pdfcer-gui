@@ -206,13 +206,13 @@ const RUNG_EVENT: &str = "status-rung"; // ui-text-exempt: a trace event name, n
 
 /// `move-text-line …` — the singular verb, read as evidence the preview was of
 /// a move that could actually happen.
-const MOVED_ONE_EVENT: &str = "move-text-line"; // ui-text-exempt: a trace event name, never displayed
+pub(crate) const MOVED_ONE_EVENT: &str = "move-text-line"; // ui-text-exempt: a trace event name, never displayed
 
 /// `move-text-lines page=… n=… epoch=… disclosures=…` — the plural twin.
 const MOVED_MANY_EVENT: &str = "move-text-lines"; // ui-text-exempt: a trace event name, never displayed
 
 /// `canvas-move-declined level=… sel=… reason=… detail=…`, on release only.
-const MOVE_DECLINED_EVENT: &str = "canvas-move-declined"; // ui-text-exempt: a trace event name, never displayed
+pub(crate) const MOVE_DECLINED_EVENT: &str = "canvas-move-declined"; // ui-text-exempt: a trace event name, never displayed
 
 /// The chunk step B descends to, and step C drags.
 ///
@@ -280,7 +280,7 @@ impl Check for DraggingAChunkShowsWhereItIsGoing {
 /// The outer `Result` is this harness's: its `Err` is a SKIP, *the check could
 /// not run*. The inner one separates *the assertion did not hold* from *here is
 /// the number it read*.
-type Step<T> = Result<std::result::Result<T, String>>;
+pub(crate) type Step<T> = Result<std::result::Result<T, String>>;
 
 /// Drag from `from` by [`DRAG_PX`] on both axes, resting halfway, and read the
 /// ghost line the drag wrote.
@@ -461,7 +461,7 @@ fn held_now(session: &Session, mark: usize, label: &str) -> Step<usize> {
 
 /// Two clicks at `at`, which selects the object and then descends into the
 /// chunk under the pointer.
-fn descend(session: &Session, driver: &Driver, at: ScreenPoint) -> Step<usize> {
+pub(crate) fn descend(session: &Session, driver: &Driver, at: ScreenPoint) -> Step<usize> {
     driver.press(vk::ESCAPE)?;
     session.settle(12);
     driver.press(vk::ESCAPE)?;

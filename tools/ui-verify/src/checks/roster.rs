@@ -442,6 +442,12 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // it cannot mean anything on a build that cannot build one. Placed
         // after the band because it uses a band to build its plural arm.
         Box::new(chunk_ghost::DraggingAChunkShowsWhereItIsGoing),
+        // Sixth and last of the same row, and it must run after the one above:
+        // that check asserts the painter's account of the preview, this one
+        // photographs the preview. Ordered so that a build which draws nothing
+        // at all fails the cheaper trace check first and names the defect
+        // without a pixel comparison having to.
+        Box::new(chunk_ghost_pixels::TheTravellingCopyIsOnTheGlass),
         // `OPERATOR_REQUESTS.md` O71. Beside the Smart-Selector
         // check because both are about what a plain click MEANS — that one in
         // Edit, this one in Read, which is the stance where the answer had
