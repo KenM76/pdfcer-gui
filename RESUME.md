@@ -38,7 +38,8 @@ grepping it — a count only goes stale, a name can be born false.
 | Gates | `bash tools/gates/run-all.sh` | Three states, not two: `0` pass, `1` fail, `3` a gate was SKIPPED for an absent precondition. A skip is not a pass. **Tally on the `RESULT:` line, never on a pipeline's exit code** — `run-all.sh \| tail` reports `tail`'s zero. A stable pass-count across an engine pin bump proves nothing about whether the documents survived it; the tally moves only when a gate is added. **Run `cargo fmt --all` before starting one** — `cargo fmt` is the LAST gate, so a formatting slip in hand-written Rust is found forty minutes in and costs the entire run. **And start it `CARGO_BUILD_JOBS=2`**: clippy runs after fmt, `--all-targets` spawns a `clippy-driver` per TARGET, and by then the sweep has spent the session's handles on one `sed` per source file — several drivers then die together with `exit code: 0xc0000142, STATUS_DLL_INIT_FAILED` and no diagnostic at all, which reads as four crates breaking at once. It is process count, not memory, whatever a supervisor's kill reason says; the same command alone finishes green in seconds. A sweep killed before its SUMMARY has no verdict, and hand-summing the PASS lines cannot see a gate that never ran |
 | Unit tests | `cargo test --workspace` | Summed over the `test result:` lines, then cross-counted by `cargo test --workspace -- --list \| grep -cE ': test$'`; passing plus ignored must equal the cross-count. Two methods, because a summed figure nobody cross-checks is how the last count drift got in. The cross-count is also how you know a new test RAN: three `#[test]` functions once compiled clean, reported nothing and executed zero times, because they were nested inside another function |
 | Source files | `find crates -name '*.rs' \| wc -l` | **The command's scope is a claim.** `find crates tools` answers larger, because `tools/ui-verify` is a Rust crate and is not under `crates/`. Neither figure is wrong; quoting one under the other's command is |
-| Backlog register | `python tools/walk-engine-backlog.py` | Rewrite the five headings from the walker's own printed figures, never by arithmetic on the old ones. A row is a verdict plus one paragraph, capped at 1,200 characters and checked by `--check`; file the row and set the headings in one edit with `--write YYYY-MM-DD` |
+| Backlog register | `python tools/walk-engine-backlog.py` | Rewrite the five headings from the walker's own printed figures, never by arithmetic on the old ones. A row is a verdict plus one paragraph, capped at 1,200 characters and checked by `--check`; file the row and set the headings in one edit with `--write YYYY-MM-DD`. **`--check` prints "the headings do not agree with the walk" on ANY non-zero exit, including a pure over-cap failure** — read the section above the banner before re-writing headings that are already right |
+| Backlog verdicts | `python tools/check-backlog-verdict-drift.py` | The walker counts a row by the section it SITS IN; this one asks whether an absence row is contradicted by `crates/pdfcer-gui/src`. Registered in `run-all.sh`, so it is normally green already — run it by hand after moving rows. It reads only the FIRST cell, so a symbol that shipped must leave that cell even when the row's narrowed remainder still cites it in the body. An exemption is per SYMBOL, `<!--namesake:IDENT-->`, never per row |
 | Request channel | `ls /d/Dev/FeatureRequests/pdfce_FeatureRequests/open \| wc -l` | The invariant is *a session lists `open/` and nothing else, and empty means nothing is owed* — so a closed exchange left there mis-states the outstanding work by an order of magnitude. Closing is part of doing the work: archive both files AND write the `INDEX.md` row in the same sitting as the `done_*`. A move without a row is not a close, it is a deletion that leaves a file behind. **Nothing in that folder is in a git repository, so no gate can ever see this** |
 | Registered commands | `grep -rn --include='*.rs' -E 'command\(' crates/pdfcer-gui/src/shell/commands/catalog/ \| grep -vE ':\s*(///\|//)' \| wc -l` | The obvious command is wrong, not merely its answer: a raw `grep -rhoE` over that directory counts one extra, a line of prose in `catalog/file.rs` that quotes the very pattern being searched for. The build's own `pdfcer-diag shell commands=` trace (`app/mod.rs:925`) is the tie-breaker |
 | Dockable panels | `grep -n 'pub const ALL' crates/pdfcer-gui/src/panels/mod.rs` | — |
@@ -619,11 +620,18 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
 16. **O176 — his verdict, not a repair.** At fit zoom a form field is about 28 px
     wide and its corner grips eat every point on it; the fix is a grip that yields
     the body below some size, not a harness zoom that hides it.
-17. **Wire `SignReport::appearance_lines`** — the one engine delivery genuinely
-    owed. It is what the engine drew into the signature box, and here it reaches
-    only a trace the source marks as never displayed, so he signs without seeing
-    what the stamp says while the engine records *a rectangle too small for them*
-    as a real outcome. Off-canvas, in the signing dialog's result.
+17. **Wire `EditSession::page_objects`, and decide cache invalidation first** —
+    the one engine delivery of substance still unconsumed. Every edit pays two
+    decompositions of the same page: the engine memoises its own against the
+    session revision, and this shell runs a second parse in
+    `panels::objects::provider` cached on `OpenDoc` by `app::cache` against a
+    key of our own. The two are not interchangeable by name — ours is
+    `OpenDoc::page_objects(&self)`, the engine's
+    `EditSession::page_objects(&mut self, page_index)` — so measure the cost
+    before assuming it, `tools/render-profile` in the engine tree being the
+    instrument. The blocker is not the call: it is that dropping our cache means
+    trusting the session's revision key for every invalidation our panels
+    currently drive themselves.
 18. **Re-run a full driven sweep, and read the SKIP set before the tally.** The
     last one reported `passed=86 failed=3 skipped=141` and **128 of those skips
     were one stuck notification toast**, so it measured nothing for more than

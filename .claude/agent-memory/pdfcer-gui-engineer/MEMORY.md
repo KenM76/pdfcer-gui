@@ -18,6 +18,7 @@
 - [A measurement of the wrong surface looks like a broken one](feedback_a_measurement_of_the_wrong_surface_looks_exactly_like_a_broken_one.md) — ask what the check SAMPLED, not only what it was asked.
 - [Disk AND RAM are tight — and the biggest item is not in `target/`](project_disk_is_tight_and_target_grows_unbounded.md) — one engine tree per pin bump under `~/.cargo`; 0xc0000142 = handle exhaustion, not RAM.
 - [A backlog row is a record, not evidence](feedback_a_backlog_row_is_a_record_not_evidence.md) — verify absence claims against source.
+- [An agent given one row cannot see its neighbours](feedback_an_agent_given_one_row_cannot_see_its_neighbours.md) — two other rows had already declined it.
 - [A SKIP is not red, so a check can stop running unnoticed](feedback_a_skip_is_not_red_so_a_check_can_stop_running_unnoticed.md) — and a SKIP can be a misfiled FAIL.
 - [A check that cannot fail is not evidence](feedback_a_check_that_cannot_fail_is_not_evidence.md) — falsify before quoting green; a self-excusing SKIP is inert.
 - [Ken's sentences are reports, not measurements](feedback_kens_sentences_are_reports_not_measurements.md) — "up to 800%" named an old setting, not a threshold; measure it.
@@ -89,6 +90,7 @@
 - [A count command can be wrong, not just its answer](feedback_a_count_command_can_be_wrong_not_just_its_quoted_answer.md) — 3rd: `xargs` batches, so `tail -1` reads one batch.
 - [A checker named in every document and registered in no runner](feedback_a_checker_named_in_every_document_and_registered_in_no_runner.md) — grep the runner, not the prose.
 - [A gate crashing after its headline reads as a broken tool](feedback_a_gate_that_crashes_after_its_headline_reads_as_a_broken_tool.md) — the named row sat unfixed.
+- [One remedy banner on any non-zero exit](feedback_one_remedy_banner_on_any_nonzero_exit_sends_the_reader_to_break_a_right_figure.md) — it told the reader to rewrite five correct figures.
 - [An assertion both outcomes satisfy](feedback_an_assertion_both_outcomes_satisfy_is_not_a_measurement_of_which_one_shipped.md) — name what the WRONG mechanism cannot produce.
 - [A gate hit inside the repo is not a mandate outside](feedback_a_gate_hit_inside_the_repo_is_not_a_mandate_to_sweep_outside_it.md) — a half-renamed archive is worse than none.
 - [A branch-pinned dependency moves on its own](feedback_a_branch_pinned_dependency_moves_without_cargo_update.md) — the pin changed mid-session with no update command.
@@ -111,6 +113,7 @@
 - [One property differs; an absence needs a witness](feedback_control_differs_in_one_property.md) — a healthy file satisfies it three ways.
 - [A type reached by field access is invisible to the drift gate](feedback_a_type_reached_only_by_field_access_is_invisible_to_the_drift_gate.md) — bind it, don't mention it.
 - [Falsify the gate on real files, the fix on a control binary](feedback_falsify_on_real_files.md) - a self-test says nothing.
+- [A pattern over a human-written document is a claim about its notation](feedback_a_pattern_over_a_human_document_is_a_claim_about_notation.md) — measure the widening's yield.
 - [A classification in a rule invites the next exception](feedback_a_rule_with_a_classification_in_it_is_where_the_next_exception_goes.md) — one token plus a written exemption, not a list.
 - [An inherited session summary is not a source](feedback_an_inherited_session_summary_is_not_a_source.md) — quotes AND fixture formulas cross it unmeasured.
 - [Scope a use-measurement the way the language does](feedback_a_use_measurement_must_be_scoped_the_way_the_language_scopes_it.md) - a namesake discharges a twin.

@@ -634,6 +634,44 @@ run "check-engine-backlog" bash "$HERE/check-engine-backlog.sh"
 # would teach people to re-baseline it.
 run "walk-engine-backlog" python "$ROOT/tools/walk-engine-backlog.py" --check
 
+# ★★★ `check-backlog-verdict-drift` — the blind spot the two
+# gates above both document and neither measures.
+#
+# `check-engine-backlog` fails when a capability is discussed NOWHERE; it does
+# not judge the verdict. `walk-engine-backlog` counts a row by the section it
+# SITS IN, never by what its body states. Both prove a capability is accounted
+# for. Neither proves the account is TRUE — so a row can say `wanted` for weeks
+# after the shell shipped the verb, and a register wrong in the SHIPPED
+# direction is worse than one that is incomplete: it schedules work already
+# done, and under-reports the program to the person who paid for it.
+#
+# ★★ This one falsifies the absence. For every row under `wanted` or `blocked`
+# — the only two verdicts that assert an absence — it takes the engine symbols
+# named in the row's first cell and looks for them in `crates/pdfcer-gui/src`.
+# A hit means the source contradicts the register.
+#
+# ★ The hit rule, and why it is shaped this way. `.ident` counts a METHOD CALL
+# **and a FIELD READ** — `SignReport::appearance_lines` is consumed as a field,
+# which is exactly how that row stayed `wanted` after it shipped. `::ident`
+# counts a qualified path. A bare identifier counts only inside a file that
+# imports it from an engine crate, because an absence claim has to name the
+# RECEIVER: every `page_objects` hit in this repository is the shell's own
+# `OpenDoc::page_objects`, never the engine's. Comment lines are excluded, and
+# identifiers under six characters are skipped as namesakes.
+#
+# ★ Scope is a claim, so it is written here to be checked: `crates/pdfcer-gui/src/**/*.rs`
+# only. NOT `tools/ui-verify` — a driven check is not operator reach. NOT
+# `crates/egui-shell` — R7 means it cannot name an engine symbol at all. NOT
+# `tests/` — `split_text_object` is the live example, called from a probe test
+# and correctly still `wanted`.
+#
+# ★ An exemption is per SYMBOL and never per row: `<!--namesake:IDENT-->` with
+# the reason beside it. A row-wide mute would hide the day that row's OTHER
+# symbols get wired. The exempt count prints on a clean run, because an
+# exemption nobody can see is a rule quietly narrowing itself.
+run "check-backlog-verdict-drift --self-test" python "$ROOT/tools/check-backlog-verdict-drift.py" --self-test
+run "check-backlog-verdict-drift" python "$ROOT/tools/check-backlog-verdict-drift.py"
+
 # ★★★ `check-engine-api-drift` — and it exists because the
 # two gates immediately above are BLIND TO THE SAME THING.
 #

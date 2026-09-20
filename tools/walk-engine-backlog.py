@@ -416,16 +416,20 @@ def main() -> int:
     claimed = headings(text)
 
     print(f"walked {where}")
-    bad = False
+    # Two independent failures, tracked apart. The closing banner tells the
+    # reader to rewrite the headings, and a cap failure is not a reason to
+    # touch a heading that is already right — a banner printed on every
+    # non-zero exit sends a reader to correct figures that agree.
+    headings_wrong = False
     for v in VERDICTS:
         c = claimed.get(v)
         note = ""
         if c is None:
             note = "  <- heading states no figure"
-            bad = True
+            headings_wrong = True
         elif c != (counts[v], total):
             note = f"  <- heading claims {c[0]} of {c[1]}"
-            bad = True
+            headings_wrong = True
         print(f"  {v:<9} {counts[v]:>4} of {total}{note}")
     print(f"  {'TOTAL':<9} {total:>4}")
 
@@ -457,18 +461,23 @@ def main() -> int:
         print()
         print("A register row is a VERDICT PLUS ONE PARAGRAPH. Cut the narration of")
         print("how the conclusion was reached, the re-statements, and the quotations")
-        print("from the engine's own docs — keep the opening clause verbatim (a gate")
-        print("keys on it), the verdict, the one load-bearing reason, and the anchors")
-        print("somebody would need to find the work.")
-        bad = True
+        print("from the engine's own docs — keep the opening clause verbatim, the")
+        print("verdict, the one load-bearing reason, and the anchors somebody would")
+        print("need to find the work.")
+        print()
+        print("The opening clause is NOT yours to narrow: `check-engine-backlog.sh`")
+        print("keys on it, and it is the ENGINE row's opening words. Narrowing a row")
+        print("to the part still missing goes in the VERDICT cell. Editing the first")
+        print("cell orphans the engine's row and that gate fails with the capability")
+        print("reported as discussed nowhere.")
 
-    if bad:
+    if headings_wrong:
         print()
         print("The headings do not agree with the walk. Rewrite them FROM THESE")
         print("FIGURES — do not adjust the old ones arithmetically. A number")
         print("reached by arithmetic from a number nobody re-measured is not a")
         print("measurement; that is the seventh recurrence, 2026-09-10.")
-    return 1 if (bad and args.check) else 0
+    return 1 if ((headings_wrong or long_rows) and args.check) else 0
 
 
 if __name__ == "__main__":

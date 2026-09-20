@@ -157,3 +157,8 @@ line, and it has none of the three quoting layers above either.
   and no partial file, which looks identical to "I have not got there yet".
 - The same limit applies to a long python script delivered by heredoc — split it
   or write it to `$SCRATCH` with `Write` and run the file.
+- **A `sed -i 's/…/…/'` replacement is a shell payload too**, and carries every
+  one of these layers with it. A replacement text containing an escaped newline
+  put a literal newline inside a python string literal and left the file at
+  `SyntaxError: unterminated string literal`. Prose or code going INTO a file
+  belongs in `Edit`, whatever the delivery verb is called.
