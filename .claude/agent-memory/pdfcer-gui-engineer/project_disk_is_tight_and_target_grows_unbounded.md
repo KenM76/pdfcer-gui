@@ -102,6 +102,20 @@ the kill holding 1 GB, so the relaunch must wait for it rather than race it.
 Relaunch with `CARGO_BUILD_JOBS=2` for the sweep specifically — clippy peaks
 higher than `cargo test`, and 4 was not enough head-room here.
 
+**What the watchdog actually kills is the REBUILD, not the checks — 2026-09-19.**
+Four background packaging runs in a row were killed for low memory while
+4.3–3.1 GB was free, no orphaned `rustc`/`cargo`/`clippy-driver` was running and
+every working set was far below that. The common factor was not the gates or the
+tests: it was that each run followed a **commit**, and `build.rs` stamps the
+commit into the binary, so every commit forces a full rebuild of the
+167k-line `pdfcer-gui` crate — one `rustc` holding several GB. **How to apply:**
+pre-compile by hand in the FOREGROUND Bash tool (600 s ceiling, not watched)
+after any commit, then run the packager with `--no-build`; or detach it through
+PowerShell `Start-Process`, whose children the watchdog does not reap — but read
+[[a-measurement-of-the-wrong-surface-looks-exactly-like-a-broken-one]] first,
+because a different shell brings a different `PATH` and that changed which
+`bash` the gates ran under.
+
 ## ★★★ The biggest item is NOT in `target/` — 2026-09-10
 
 Every entry above treats `target/` as the problem. Measured on 2026-09-10 with
