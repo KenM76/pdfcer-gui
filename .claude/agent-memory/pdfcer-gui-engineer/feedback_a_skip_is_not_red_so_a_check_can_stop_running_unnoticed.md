@@ -1,6 +1,6 @@
 ---
 name: a-skip-is-not-red-so-a-check-can-stop-running-unnoticed
-description: A driven check that drifts into permanent SKIP is invisible — diff the SKIP set, and when a fix is "call one extra function", grep for every site
+description: A driven check that drifts into permanent SKIP is invisible — diff the SKIP set, re-drive the movers, and decide SKIP-vs-FAIL by who owned the state the branch found missing
 metadata:
   type: feedback
 ---
@@ -106,3 +106,35 @@ class plus the host’s full executable path, never on image name, per
 [[never-kill-pdfcer-gui-by-name-he-uses-it-all-day]]. And a sweep runner should
 refuse to print a bare tally when one skip reason dominates: see
 [[a-runners-sentinel-is-a-claim-about-the-runner]].
+
+## ★★★ 2026-09-20 — the SKIP was mine, and it should have been a FAIL
+
+The three entries above are about a SKIP appearing where a PASS belonged. This
+one is a SKIP written where a **FAIL** belonged, at authoring time, by me.
+
+A parameterised driven check returns `Err` = SKIP, `Ok(Some)` = FAIL,
+`Ok(None)` = PASS, and has one shared branch for *"the ladder never reached the
+level this check needs"*. For three of its four parameters SKIP is right — the
+target point is a caller argument, so an unreachable state means the harness
+could not arrange the case. For the fourth the point is **pinned in the check**
+and its precondition is **switched on by the check itself**, so the same state
+is not an unarrangeable case: it is the defect. The row would have gone quiet
+in a `61 passed, 0 failed, 1 skipped` sweep.
+
+⇒ **Ask, per parameter, who owned the state the branch found missing.** Caller
+input ⇒ SKIP, *the case could not be arranged*. Something the check pinned or
+set up itself ⇒ FAIL, *the program did not produce it*. Those two sentences
+blame opposite people and a shared branch can only say one.
+
+⇒ **Adding a parameter to an existing parameterised check silently inherits
+every `Err`/`Ok(Some)` split in the shared body, and the compiler cannot see
+it.** Re-read them all when adding one.
+
+**The other half of the same window, worth as much:** the verb under test had
+been green and driven for a fortnight — through a tool the operator had never
+been told about. **A verb and the door to it fail separately; a green row
+naming the verb is no evidence about the door.** When a request names a gesture
+(*"select them and delete them"*), drive that gesture, not an equivalent one.
+Related: [[a-request-for-something-shipped-is-a-discoverability-report]] and
+[[adding-a-second-route-is-an-audit-of-the-capability]]. Full finding in
+`D:/dev/rag/rust/a_skip_and_a_fail_for_the_same_unreached_state_depend_on_who_was_supposed_to_arrange_it.md`.
