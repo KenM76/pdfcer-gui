@@ -652,6 +652,56 @@ fn shift_picking_a_selected_anchor_removes_it() {
     );
 }
 
+/// **The same toggle one rung up, read through
+/// [`SelectionState::selected_parts_on`]** — O215 ask 4.
+///
+/// The Part rung has held several entries since normalisation was written:
+/// entries differing only by `subpath` survive, because the collapse to
+/// `Object` fires only when they differ by object or page. Nothing read it that
+/// way, so `canvas::moving` asked for the first entry and a set of four chunks
+/// moved one. This asserts the accessor the plural move and the plural delete
+/// refusal both read, not the entry count, for the reason the anchor twin
+/// gives: a model holding two entries and reporting one chunk satisfies a
+/// length check and still fails the operator.
+#[test]
+fn shift_picking_a_second_chunk_adds_it_rather_than_replacing() {
+    let targets = stub(0);
+    let mut sel = SelectionState::default();
+    let at = |part| ClickHit {
+        object: Some(TargetId::Object(0)),
+        part: Some(part),
+        node: None,
+        chunk: true,
+    };
+
+    // The chunk rung's own entrance: a plain click on a block already selected
+    // whole narrows to the chunk under it.
+    sel.click(0, hit_object(0), false, false);
+    sel.click(0, at(1), false, false);
+    sel.resolve(Some(&targets), 0, 0);
+    assert_eq!(
+        sel.level(),
+        SelectionLevel::Part,
+        "the rung must be entered"
+    );
+    assert_eq!(sel.selected_parts_on(0, TargetId::Object(0)), vec![1]);
+
+    sel.click(0, at(3), true, false);
+    assert_eq!(
+        sel.selected_parts_on(0, TargetId::Object(0)),
+        vec![1, 3],
+        "shift on a second chunk must ADD it — this is what the plural move carries"
+    );
+    assert_eq!(sel.level(), SelectionLevel::Part, "and must not fall back");
+
+    sel.click(0, at(3), true, false);
+    assert_eq!(
+        sel.selected_parts_on(0, TargetId::Object(0)),
+        vec![1],
+        "and shift on a chunk already in the set takes it back out"
+    );
+}
+
 /// A plain click on empty paper clears; a shift click on empty paper does
 /// not. The asymmetry is deliberate — an over-shot shift-click must not
 /// destroy a set that took five clicks to build.

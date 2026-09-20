@@ -61,7 +61,7 @@
 //! | 6 | **the row is on screen** | `menu.item.canvas.object.format.select_text_line` | O188(A), unfixed: no route |
 //! | 7 | the press found the parked operand | `text-run-command pick=line:N/6 outcome=raised` | `outcome=declined`, i.e. the memory key died with the popup |
 //! | 8 | the ladder entered the Part rung on **that** run | `selection-set … part=N level=part via=select-text-line` | a different N, i.e. the operand was re-derived and drifted |
-//! | 9 | the bar says which line | `status-rung kind=text part=N of=6` | the rung is entered and nothing discloses it |
+//! | 9 | the bar says which line | `status-rung kind=text part=N held=1 of=6` | the rung is entered and nothing discloses it |
 //! | 10 | the bar drew it | `ui-rect status-group:selected` | a sentence computed and never painted |
 //!
 //! ★★★ **Steps 8 and 9 carry the same `N` as step 5, and that is the real
@@ -225,7 +225,7 @@ const VIA_ROW: &str = "select-text-line";
 /// coincidence.
 const PART_LEVEL_TOKEN: &str = "part";
 
-/// `status-rung kind=text|path part=N of=M` — `app::status::selected`, the
+/// `status-rung kind=text|path part=N held=H of=M` — `app::status::selected`, the
 /// clause the status bar appended. See the module header for why the rect is
 /// not enough.
 const RUNG_EVENT: &str = "status-rung";
@@ -771,18 +771,26 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let kind = rung.get("kind").unwrap_or("?");
     let rung_part = rung.get_usize("part");
     let rung_of = rung.get_usize("of");
-    if kind != RUNG_TEXT || rung_part != Some(n) || rung_of != Some(of) {
+    // HELD is the size of the Part-rung set. This route descends to ONE line,
+    // so anything but 1 means the menu command left an earlier set standing and
+    // the sentence is about a different operand from the one just chosen.
+    let rung_held = rung.get_usize("held");
+    if kind != RUNG_TEXT || rung_part != Some(n) || rung_of != Some(of) || rung_held != Some(1) {
         return Ok(Some(format!(
             "★★★ THE BAR DISCLOSED THE WRONG RUNG: `{}`. Expected `kind={RUNG_TEXT} part={n} \
-             of={of}`. {} The clause the operator reads is built from exactly these three \
-             numbers, so a wrong one here is a wrong sentence on his screen — and the two \
+             held=1 of={of}`. {} The clause the operator reads is built from exactly these \
+             four numbers, so a wrong one here is a wrong sentence on his screen — and the two \
              wordings are not interchangeable: both rungs offer the same two verbs, drag and \
              Delete, but they name different things to do them to. This one must say *line* of \
              a *block of text*; the path rung says *part* of a *shape*. An operator told he is \
              holding a shape goes looking for corner handles a line of text has not got. \
              Trace: {}.",
             rung.raw,
-            if kind == RUNG_TEXT {
+            if kind == RUNG_TEXT && rung_held != Some(1) {
+                "The kind and the index are right and `held` is not, so a Part-rung set built \
+                 before this gesture survived a command whose whole meaning is to descend to \
+                 the ONE line under the pointer."
+            } else if kind == RUNG_TEXT {
                 "The kind is right and a number is not, so the clause was computed from a \
                  different selection than the one that was made."
             } else {

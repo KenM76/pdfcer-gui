@@ -208,9 +208,21 @@ fn take(
         // of them — the chunk the operator already had. Staying put is the
         // conservative answer and it is the one that keeps a drag begun just
         // outside a glyph on the chunk it was aimed at.
+        //
+        // ★ The test is *membership of the whole set*, never
+        // `entered.subpath`: [`SelectionState::entered_object`] answers with the
+        // FIRST entry and [`SelectionState::select_part`] replaces the entry
+        // list outright, so a Shift-built set of four chunks would re-pick — and
+        // collapse to one — on a press that landed on any of the other three.
+        //
+        // `covers` normally claims such a press before this runs, because
+        // [`crate::canvas::pressing::body_under`] asks membership of the chunk
+        // under the point at this rung. This is what makes the collapse
+        // impossible on the paths where it does NOT — a withheld grip box, for
+        // one — rather than a second opinion about the same geometry.
         if let Some(part) =
             crate::canvas::chunks::under(doc, page_index, object, point, map.tolerance())
-            && entered.subpath != Some(part)
+            && !holds_part(selection, page_index, object, part)
         {
             selection.select_part(page_index, object, part, "press");
         }
@@ -223,6 +235,21 @@ fn take(
     }
     selection.select_only(page_index, object, "press");
     true
+}
+
+/// Whether `part` is already one of the chunks selected on this object.
+///
+/// Part-rung only: at the Node rung `subpath` names the container an anchor
+/// lives in, not a chunk, so a node selection would answer this question about
+/// a different index space.
+fn holds_part(
+    selection: &SelectionState,
+    page: usize,
+    object: crate::canvas::target::TargetId,
+    part: usize,
+) -> bool {
+    selection.level() == crate::canvas::selection::SelectionLevel::Part
+        && selection.selected_parts_on(page, object).contains(&part)
 }
 
 /// Whether a press this frame may select what is under it.
@@ -449,6 +476,7 @@ fn covers(
     // `Grip::Move` on the very next statement after this one runs.
     !grabbable.content
         || crate::canvas::pressing::body_under(
+            ctx,
             doc,
             selection,
             map,

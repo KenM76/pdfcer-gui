@@ -392,7 +392,17 @@ pub fn for_move_subject(
         //
         // On a rung the shape preview cannot serve — a line of text, an
         // image, a form XObject — the outline is the whole answer.
-        MoveSubject::TextLine { .. } | MoveSubject::TextLineInForm { .. } => None,
+        //
+        // The plural pair joins them for the same reason and gets the same
+        // answer, which is better than it sounds: the ghost is a displacement
+        // the canvas applies to the SELECTION OUTLINES, and a multi-chunk
+        // selection already draws one box per chunk. So four selected chunks
+        // preview as four boxes travelling together, which is what the gesture
+        // is about to do.
+        MoveSubject::TextLine { .. }
+        | MoveSubject::TextLineInForm { .. }
+        | MoveSubject::TextLines { .. }
+        | MoveSubject::TextLinesInForm { .. } => None,
         MoveSubject::Subpath {
             object, subpath, ..
         } => {

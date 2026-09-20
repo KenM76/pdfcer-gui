@@ -91,6 +91,15 @@ pub const fn refusal(reason: Refusal) -> Option<&'static str> {
         Refusal::ManyNodes(_) => {
             Some("pdfcer removes one corner point at a time. Click a single point, then Delete.")
         }
+        // ★ The twin one rung up, and the asymmetry it has to survive: the
+        // same set of lines CAN be dragged together, so an operator who has just
+        // moved four of them at once has every reason to expect Delete to
+        // remove four. The sentence says the limit is Delete's rather than the
+        // selection's, so the set they built does not look wrong to them.
+        Refusal::ManyLines(_) => Some(
+            "pdfcer removes one line at a time, although it can move several together. Click a \
+             single line, then Delete.",
+        ),
         // ★★★ The page will not decompose, so nothing INSIDE an object can be
         // named — see this module's header for why this one is new. The
         // sentence names what the operator can still do, because they can: the
@@ -130,6 +139,7 @@ mod tests {
             Refusal::RunWouldMoveNext(3),
             Refusal::InsideForm,
             Refusal::ManyNodes(4),
+            Refusal::ManyLines(3),
             Refusal::NoObjectModel,
         ] {
             let sentence = refusal(reason).expect("this refusal is meant to speak");
@@ -157,6 +167,7 @@ mod tests {
             Refusal::RunWouldMoveNext(0),
             Refusal::InsideForm,
             Refusal::ManyNodes(2),
+            Refusal::ManyLines(2),
             Refusal::NoObjectModel,
         ] {
             if let Some(sentence) = refusal(reason) {

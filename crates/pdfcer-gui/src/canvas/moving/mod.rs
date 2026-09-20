@@ -115,7 +115,7 @@ use egui::{Pos2, Vec2};
 use pdfcer_core::page_tree::Page;
 use pdfcer_core::vector::Point;
 
-use crate::app::actions::{Action, CanvasDecline, VectorAction};
+use crate::app::actions::{Action, VectorAction};
 use crate::canvas::gesture::Phase;
 use crate::canvas::selection::{SelectionLevel, SelectionState};
 use crate::panels::objects::provider::{ObjectModelProvider, PartKind, RunMoveBlock};
@@ -295,6 +295,56 @@ pub enum MoveSubject {
         /// [`ObjectModelProvider::text_line_count_of`] counts.
         line: usize,
     },
+    /// **Several chunks of one text object, moved by one drag.**
+    ///
+    /// The plural twin of [`Self::TextLine`], reached when the operator has
+    /// Shift- or Ctrl-clicked more than one chunk inside a block. Every line
+    /// travels by the same delta, and the whole set commits as **one undo
+    /// entry** — `VectorAction::MoveTextLines` translates each line to its run
+    /// range, calls `move_text_run` once per run, and coalesces the lot.
+    ///
+    /// # ★ Why this is a second variant and not `TextLine` with a `Vec`
+    ///
+    /// [`Self::Nodes`]' argument, one rung up: the singular case is a member
+    /// and the plural case is a set, and which of the two the shell is holding
+    /// decides what it owes the operator before the drag starts. The engine's
+    /// move guard is asked of **every** line here rather than of the entered
+    /// one, so a set containing one unmovable chunk refuses whole — see
+    /// [`MoveContext::run_move`]. A `Vec` on the singular variant would have
+    /// made that distinction an `if` in the ghost-drawing path instead of a
+    /// thing the type says.
+    ///
+    /// ⚠ **The whole set refuses, or the whole set moves.** Moving the chunks
+    /// that qualify and leaving the rest behind would read as a rendering
+    /// fault rather than as a refusal — `move_objects`' own contract, applied
+    /// at this rung by hand because the engine has no plural run verb (`G030`).
+    TextLines {
+        /// The page.
+        page: usize,
+        /// The enclosing text object, by paint-order index.
+        object: usize,
+        /// The visual lines, numbered as
+        /// [`ObjectModelProvider::text_line_count_of`] counts, ascending and
+        /// unique.
+        ///
+        /// Never empty and never of length one — [`eligible`] produces
+        /// [`Self::TextLine`] for the singular case, so a reader of this
+        /// variant may assume two or more without checking.
+        lines: Vec<usize>,
+    },
+    /// **Several chunks of one text object INSIDE a form XObject.**
+    ///
+    /// [`Self::TextLines`] for a leaf, and it inherits
+    /// [`Self::TextLineInForm`]'s warning: the form's stream is shared, so one
+    /// commit changes every sheet the form is drawn on.
+    TextLinesInForm {
+        /// The page the leaf is on.
+        page: usize,
+        /// The enclosing text object, by **leaf** index.
+        leaf: usize,
+        /// The visual lines, ascending and unique, never fewer than two.
+        lines: Vec<usize>,
+    },
     /// The Part rung of a **path** object: `move_subpath`.
     Subpath {
         /// The page.
@@ -366,9 +416,13 @@ pub struct MoveContext {
     /// What kind of part the entered object decomposes into, at the Part and
     /// Node rungs. `None` for an object with no Part rung at all (an image).
     pub part_kind: Option<PartKind>,
-    /// ★★★ **Whether the engine would refuse to move the entered RUN**, and
-    /// why — `None` when it would not, or when the entered thing is not a
-    /// run at all.
+    /// ★★★ **Whether the engine would refuse to move any SELECTED chunk**,
+    /// and why — `None` when every one of them would move, or when the
+    /// selection is not text at all.
+    ///
+    /// Asked of the whole set rather than of the entered chunk, so a
+    /// multi-chunk drag refuses whole instead of drawing a ghost over four
+    /// lines and committing three. See [`run_move`] for that argument.
     ///
     /// Carried here, alongside [`Self::part_kind`], for the reason the whole
     /// struct exists: [`eligible`] must stay a pure function of *what is
@@ -383,283 +437,6 @@ pub struct MoveContext {
     /// the argument in full, and for the one place this crate still keeps a
     /// hand-rolled copy of a rule like this.
     pub run_move: Option<RunMoveBlock>,
-}
-
-/// Why a move drag committed nothing.
-///
-/// Reported rather than silently absorbed, and reported with enough detail to
-/// act on, because *"nothing happened"* has several causes with opposite
-/// responses: a drag that ended where it started is correct behaviour, a text
-/// object at the Part rung is a missing verb, and a degenerate page is a
-/// broken document.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Refusal {
-    /// The page has no readable object model, so nothing can be verified and
-    /// nothing may be promised. Reachable when the page failed to decompose.
-    NoObjectModel,
-    /// Nothing is selected on this page.
-    NothingSelected,
-    /// The selection names an object index that does not fit a `usize`.
-    ///
-    /// Structurally unreachable on any real document — [`TargetId`] is a `u64`
-    /// and a paint-order index is bounded by the page's operator count — and
-    /// refused rather than truncated because a truncating cast would address a
-    /// *different* object, which is the one outcome
-    /// `docs/core-api/02` §1.10.1 marks as dangerous.
-    ///
-    /// [`TargetId`]: crate::canvas::target::TargetId
-    UnaddressableObject,
-    /// **The selection is inside a form XObject**, so no page paint-order
-    /// verb can address it.
-    ///
-    /// ★ Distinct from [`Self::NothingSelected`], and the distinction is the
-    /// whole point: something *is* selected, the operator can see its outline,
-    /// and answering "nothing selected" would be a flat contradiction of what
-    /// is on screen. This is the refusal that has an explanation to give, and
-    /// [`crate::app::status::decline`] gives it.
-    ///
-    ///
-    /// It said: *"[`pdfcer_core::vector::FormLeaf::is_editable`] is `false` for
-    /// every leaf the engine produces"*, dated 2026-08-27 against
-    /// `pdfcer-core` v0.14.0, and ended *"when editing-through-recursion
-    /// lands, the remedy is to route to the form-scoped verb"*.
-    ///
-    /// **Editing-through-recursion landed at `Pass 188.0`, this shell routed
-    /// to all six form-scoped verbs on 2026-09-01, and the sentence stayed.**
-    /// `is_editable` did not change signature, so nothing broke and nothing
-    /// warned; it changed MEANING. It now answers *"is this leaf a path"*,
-    /// and the engine's own doc says in as many words that a shell greying
-    /// out the whole container on `false` is now wrong.
-    ///
-    ///
-    /// # What actually reaches this variant
-    ///
-    /// Exactly one condition, in the Part and Node arms of `eligible`: the
-    /// entered thing is inside a form **and its part kind could not be read
-    /// as a path**. The page-order twin of that state refuses with
-    /// [`Self::NotAPath`], carrying the page-object index a leaf does not
-    /// have. So the fact is *not a path*, and containment is only how it got
-    /// here — which is why the sentence the operator reads is
-    /// [`crate::text::status::InsideFormRefusal::NotAPath`] and not a
-    /// statement about forms at all.
-    InsideForm,
-    /// A selected object is not a path, so the whole move is refused. Carries
-    /// its paint-order index.
-    NotAPath(usize),
-    /// The Part rung is entered but no part is named — an inconsistent state
-    /// [`SelectionState`] does not produce, refused rather than guessed at.
-    NoPartEntered,
-    /// The entered part has no move verb.
-    ///
-    /// **Not the Part rung's answer for text.** [`eligible`] routes a movable
-    /// line to [`MoveSubject::TextLine`] and an unmovable one to
-    /// [`Self::TextRunCannotMove`], which carries the engine's reason. What is
-    /// left here is the **Node** rung: a text line has no anchors, so there is
-    /// no `move_node` to reach, and `PartKind::TextLine` arriving at that rung
-    /// is an inconsistent selection rather than a missing capability.
-    ///
-    /// Kept rather than deleted because the Node arm genuinely needs an arm,
-    /// and because [`Self::token`] still distinguishes the two part kinds — a
-    /// driven check that could not tell them apart would be asserting the
-    /// wrong cause.
-    NoVerbForPart(PartKind),
-    /// ★★★ **The engine would refuse to move this line, and it said so before
-    /// the operator let go of the mouse.**
-    ///
-    /// `OPERATOR_REQUESTS.md` O188. Distinct from [`Self::NoVerbForPart`] in
-    /// the way that matters to whoever reads the sentence: that one meant
-    /// *pdfcer cannot do this at all*, this one means *pdfcer cannot do it to
-    /// THIS line, because of how the file was written*. The remedy is the
-    /// same — select the whole block and drag that — but the fact is not,
-    /// and a sentence that got them the wrong way round would send the
-    /// operator looking for a setting that does not exist.
-    ///
-    /// ★★ **Raised from [`eligible`], not from the edit funnel**, which is
-    /// the placement that makes it honest. The engine would refuse this move
-    /// too, and would do it after the gesture — so the operator would have
-    /// watched an outline slide across the sheet and then snap back. Asking
-    /// [`ObjectModelProvider::text_line_move_refusal_of`] first means no ghost
-    /// is ever drawn for a move that will not happen, which is obligation 3
-    /// in this module's header.
-    TextRunCannotMove(RunMoveBlock),
-    /// The Node rung is entered but no anchor is named. Same nature as
-    /// [`Self::NoPartEntered`].
-    NoNodeEntered,
-    /// The entered anchor is not in the object's current anchor list — the
-    /// selection out-ran a decomposition. Carries the object-scoped index.
-    NodeNotFound(usize),
-    /// The gesture ended where it began. See [`PageDelta::is_travel`].
-    NoTravel,
-    /// The page's device transform is not invertible, so there is no
-    /// well-defined page-space displacement. Declining is the only honest
-    /// answer; authoring garbage geometry is not.
-    DegeneratePage,
-}
-
-impl Refusal {
-    /// The stable identifier this refusal is **traced** under.
-    ///
-    /// # ★★★ Why a token, when `{reason:?}` was already printing something
-    ///
-    /// Because `Debug` renders the **source**, not a contract. The trace line
-    /// below is grepped by `tools/ui-verify`, and a `{:?}` field moves whenever
-    /// a variant is renamed or gains a payload, with no compiler diagnostic and
-    /// no failing test — the check simply stops matching and goes quietly green
-    /// on an absence. Two of the eleven variants below already put a `usize`
-    /// inside the field.
-    ///
-    /// ★★ **The `Debug` rendering is kept, beside this rather than instead of
-    /// it**, in the trace's `detail=` field. [`Self::NotAPath`] and
-    /// [`Self::NodeNotFound`] carry the only indication of *which object*, and
-    /// dropping it to gain stability would have traded one loss for another.
-    /// One field a machine reads, one field a human reads.
-    ///
-    /// ★ Kebab-case, one word per concept, on
-    /// [`crate::canvas::pick::PickClass::token`]'s precedent — including the
-    /// per-arm `// ui-text-exempt:` comment, which `check-ui-strings.sh`
-    /// requires arm by arm rather than once per function.
-    ///
-    /// ⇒ **The unit is a distinguishable cause, not a variant**, which is why
-    /// there are sixteen tokens for twelve variants: `NoVerbForPart` splits by
-    /// part kind and `TextRunCannotMove` splits by block, because in each case
-    /// one variant is worn by causes a harness must tell apart — and one that
-    /// could not would assert the wrong cause while looking green.
-    #[must_use]
-    pub const fn token(self) -> &'static str {
-        match self {
-            // ui-text-exempt: stable diagnostic tokens, never displayed.
-            Self::NoObjectModel => "no-object-model",
-            // ui-text-exempt: stable diagnostic tokens, never displayed.
-            Self::NothingSelected => "nothing-selected",
-            // ui-text-exempt: stable diagnostic tokens, never displayed.
-            Self::UnaddressableObject => "unaddressable-object",
-            // ui-text-exempt: stable diagnostic tokens, never displayed.
-            Self::InsideForm => "inside-form",
-            // ui-text-exempt: stable diagnostic tokens, never displayed.
-            Self::NotAPath(_) => "not-a-path",
-            // ui-text-exempt: stable diagnostic tokens, never displayed.
-            Self::NoPartEntered => "no-part-entered",
-            // ★★★ Split by part kind. **The unit a token names is a
-            // distinguishable CAUSE, not an enum variant.** Both of these are
-            // silent to the operator, so the status bar cannot tell them
-            // apart and only the trace can: the text-line case is a selection
-            // that reached the Node rung, the subpath case is unreachable.
-            // Those are different faults to go looking for, and `detail=` is
-            // the `Debug` field a check must not parse to make up the
-            // difference.
-            // ui-text-exempt: stable diagnostic tokens, never displayed.
-            Self::NoVerbForPart(PartKind::TextLine) => "no-verb-for-text-line",
-            // ui-text-exempt: stable diagnostic tokens, never displayed.
-            Self::NoVerbForPart(PartKind::Subpath) => "no-verb-for-subpath",
-            // ★★★ Split by BLOCK, for the reason the pair above is split by
-            // part kind: these are three distinguishable causes wearing one
-            // variant, and two of them put different sentences on the status
-            // bar. A driven check asserting "the drag was refused" learns
-            // nothing; one asserting WHICH refusal fired is the only kind that
-            // can tell a correct decline from a decline for the wrong reason.
-            // ui-text-exempt: stable diagnostic tokens, never displayed.
-            Self::TextRunCannotMove(RunMoveBlock::NoPositionOfItsOwn) => "run-has-no-position",
-            // ui-text-exempt: stable diagnostic tokens, never displayed.
-            Self::TextRunCannotMove(RunMoveBlock::WouldMoveNextRun) => "run-would-move-next",
-            // ui-text-exempt: stable diagnostic tokens, never displayed.
-            Self::TextRunCannotMove(RunMoveBlock::InteriorPieceHasNoPosition) => {
-                "line-piece-has-no-position"
-            }
-            // ui-text-exempt: stable diagnostic tokens, never displayed.
-            Self::TextRunCannotMove(RunMoveBlock::NotThere) => "run-not-there",
-            // ui-text-exempt: stable diagnostic tokens, never displayed.
-            Self::NoNodeEntered => "no-node-entered",
-            // ui-text-exempt: stable diagnostic tokens, never displayed.
-            Self::NodeNotFound(_) => "node-not-found",
-            // ui-text-exempt: stable diagnostic tokens, never displayed.
-            Self::NoTravel => "no-travel",
-            // ui-text-exempt: stable diagnostic tokens, never displayed.
-            Self::DegeneratePage => "degenerate-page",
-        }
-    }
-
-    /// What this refusal owes the operator in words, or `None` if the answer
-    /// is silence.
-    ///
-    /// # ★★★ Exhaustive on purpose — a `_ => None` would be the defect
-    ///
-    /// Four arms return a sentence and the rest return `None`, and it would be
-    /// shorter to write the four and catch the rest with a wildcard. That
-    /// shorter version has one property this one does not: **a thirteenth
-    /// refusal would join the silent ones without anybody deciding that it
-    /// should.**
-    ///
-    /// Written out, adding a variant to [`Refusal`] is a compile error until
-    /// somebody answers *does this one owe the operator a sentence?* — which is
-    /// the question that was never asked about `NoVerbForPart`, and
-    /// `OPERATOR_REQUESTS.md` **O188** is what that costs: a box drawn round one
-    /// label, a drag across the sheet, and nothing happening with no sentence
-    /// anywhere.
-    ///
-    /// # Why the other nine stay silent, and why it is still the right default
-    ///
-    /// They describe states the operator put themselves in and can see: nothing
-    /// selected, a drag that travelled no distance, a rung entered with nothing
-    /// named in it. A status bar that narrates the obvious is a status bar that
-    /// stops being read, which would cost the two sentences that matter. The
-    /// test is not *is this a refusal* but **can the operator see the cause**.
-    ///
-    /// ★★ [`PartKind::Subpath`] is answered explicitly rather than folded in
-    /// with `NoVerbForPart(_)`. `eligible` routes a subpath at the Part rung to
-    /// `move_subpath`, so that combination is unreachable today — and an
-    /// unreachable arm that is written down is a claim the next reader can
-    /// check, where one hidden behind a wildcard is an assumption.
-    pub(crate) const fn worded(self) -> Option<CanvasDecline> {
-        match self {
-            Self::InsideForm => Some(CanvasDecline::InsideFormNotAPath),
-            //
-            // Both halves of the Part rung for text reach a verb or a REASON,
-            // and neither is this one: a movable line goes to
-            // `MoveSubject::TextLine`, an unmovable one to
-            // `Self::TextRunCannotMove` below. What is left of
-            // `NoVerbForPart(TextLine)` is the Node rung, where a line has no
-            // anchors and the state is inconsistent rather than unsupported —
-            // the operator has not been refused a capability, so there is
-            // nothing to tell them.
-            Self::NoVerbForPart(PartKind::TextLine) => None,
-            // Unreachable: `eligible` sends a subpath at the Part rung to
-            // `move_subpath`. Named anyway — see the docs above.
-            Self::NoVerbForPart(PartKind::Subpath) => None,
-            // ★★★ **The replacement pair, and they say opposite things about
-            // WHICH line is the problem** — which is exactly why they are two
-            // sentences and not one parameterised one. `NoPositionOfItsOwn` is
-            // about the line the operator grabbed; `WouldMoveNextRun` is about
-            // the line under it, which looks fine and is the reason the grabbed
-            // one cannot go. An operator told the wrong one of those goes
-            // looking for a fault in the wrong place.
-            Self::TextRunCannotMove(RunMoveBlock::NoPositionOfItsOwn) => {
-                Some(CanvasDecline::TextRunHasNoPositionOfItsOwn)
-            }
-            Self::TextRunCannotMove(RunMoveBlock::WouldMoveNextRun) => {
-                Some(CanvasDecline::TextRunWouldDragTheNextLine)
-            }
-            // The third of the set, and the one whose subject is a join the
-            // operator cannot see. `NoPositionOfItsOwn`'s sentence is false for
-            // it — see [`RunMoveBlock::InteriorPieceHasNoPosition`].
-            Self::TextRunCannotMove(RunMoveBlock::InteriorPieceHasNoPosition) => {
-                Some(CanvasDecline::TextRunPieceHasNoPositionOfItsOwn)
-            }
-            // ★ Silence, deliberately. The selection named a run the object
-            // does not have — it outlived an edit — and the operator did
-            // nothing wrong and has nothing to do differently. Saying so would
-            // be the bar narrating this program's own bookkeeping.
-            Self::TextRunCannotMove(RunMoveBlock::NotThere) => None,
-            Self::NoObjectModel
-            | Self::NothingSelected
-            | Self::UnaddressableObject
-            | Self::NotAPath(_)
-            | Self::NoPartEntered
-            | Self::NoNodeEntered
-            | Self::NodeNotFound(_)
-            | Self::NoTravel
-            | Self::DegeneratePage => None,
-        }
-    }
 }
 
 /// Convert a **canvas-space** drag delta into a **PDF page-space** one.
@@ -801,6 +578,12 @@ pub fn eligible(
         SelectionLevel::Part => {
             let entry = entered_entry(selection, page)?;
             let subpath = entry.subpath.ok_or(Refusal::NoPartEntered)?;
+            // Ascending, unique, and never empty — `subpath` above is one of
+            // them. Only the text arms consume it: a path's subpaths have no
+            // plural move verb, so a multi-subpath selection still moves the
+            // entered one, which is what shipped before and is not this
+            // change's business to alter silently.
+            let lines = selection.selected_parts_on(page, entry.object);
             if let Some(leaf) = entry.object.leaf_index() {
                 return match ctx.part_kind {
                     Some(PartKind::Subpath) => Ok(MoveSubject::SubpathInForm {
@@ -814,6 +597,9 @@ pub fn eligible(
                     // object cannot come to disagree about whether a run moves.
                     Some(PartKind::TextLine) => match ctx.run_move {
                         Some(block) => Err(Refusal::TextRunCannotMove(block)),
+                        None if lines.len() > 1 => {
+                            Ok(MoveSubject::TextLinesInForm { page, leaf, lines })
+                        }
                         None => Ok(MoveSubject::TextLineInForm {
                             page,
                             leaf,
@@ -844,6 +630,18 @@ pub fn eligible(
                 // planner.
                 Some(PartKind::TextLine) => match ctx.run_move {
                     Some(block) => Err(Refusal::TextRunCannotMove(block)),
+                    // ★★ **Every selected chunk, not just the entered one** — the
+                    // Node rung's lesson one rung up. `pick_within` has always
+                    // pushed a Shift-clicked part in as its own entry, so the
+                    // model could hold a multi-chunk selection from the day the
+                    // Part rung landed, and this function read `entered_object`,
+                    // which is the FIRST entry. An operator could Shift-click
+                    // four chunks, watch four outline, drag, and move one.
+                    None if lines.len() > 1 => Ok(MoveSubject::TextLines {
+                        page,
+                        object,
+                        lines,
+                    }),
                     None => Ok(MoveSubject::TextLine {
                         page,
                         object,
@@ -1024,6 +822,28 @@ pub fn action(
             dy: delta.dy,
         }
         .into()),
+        MoveSubject::TextLines {
+            page,
+            object,
+            lines,
+        } => Ok(VectorAction::MoveTextLines {
+            page,
+            object,
+            lines,
+            dx: delta.dx,
+            dy: delta.dy,
+        }
+        .into()),
+        MoveSubject::TextLinesInForm { page, leaf, lines } => {
+            Ok(VectorAction::MoveTextLinesInForm {
+                page,
+                leaf,
+                lines,
+                dx: delta.dx,
+                dy: delta.dy,
+            }
+            .into())
+        }
         MoveSubject::Subpath {
             page,
             object,
@@ -1114,23 +934,50 @@ fn context(
             .into_iter()
             .find(|&i| provider.part_kind(i) != Some(PartKind::Subpath)),
         part_kind: entered.and_then(|target| provider.part_kind_of(target)),
-        // ★★★ **The engine's own move guard, run once per frame of the drag.**
-        //
-        // Asked unconditionally rather than behind an `if part_kind == TextLine`,
-        // and the reason is the one this whole struct is built around: a
-        // condition evaluated in two places is a condition that can be
-        // evaluated differently in two places. `text_line_move_refusal_of`
-        // already answers `None` for anything that is not a text object, so the
-        // guard would buy nothing but a second opinion about what a line is.
-        //
-        // ★ The cost is a `Vec::get` and two enum comparisons inside the
-        // engine, over a decomposition this provider has already built — the
-        // same order as the `part_kind` scan on the line above, which the
-        // header argues is affordable on every frame for the same reason.
-        run_move: entry
-            .and_then(|e| e.subpath.map(|line| (e.object, line)))
-            .and_then(|(target, line)| provider.text_line_move_refusal_of(target, line)),
+        run_move: run_move(selection, page, provider),
     })
+}
+
+/// **The engine's own move guard, asked of EVERY selected chunk**, run once
+/// per frame of the drag.
+///
+/// Answers the first block found over the whole selected set, or `None` when
+/// every one of them would move. That is what makes a multi-chunk drag refuse
+/// *whole*: obligation 3 in this module's header says no ghost may be drawn
+/// for a move that will not happen, and a set is a move that will not happen
+/// as soon as one member of it cannot go.
+///
+/// # Asked of the set rather than of the entered chunk
+///
+/// The entered chunk is `entries[0]`, and a selection of four chunks whose
+/// first one happens to be movable would otherwise draw a ghost over all four
+/// and then refuse at the commit — the operator watching an outline slide
+/// across the sheet and snap back, which is the exact failure O188 is about.
+///
+/// # ★ Asked at the Part rung only
+///
+/// At the Node rung the entries carry a `subpath` too, naming the *enclosing*
+/// part of each selected anchor, so
+/// [`SelectionState::selected_parts_on`] would answer about containers rather
+/// than about the operator's selection. Nothing downstream reads `run_move` at
+/// that rung, and the condition is written here once rather than being
+/// re-derived where it is read.
+///
+/// The cost is a `Vec::get` and two enum comparisons inside the engine per
+/// selected chunk, over a decomposition the provider has already built.
+fn run_move(
+    selection: &SelectionState,
+    page: usize,
+    provider: &ObjectModelProvider,
+) -> Option<RunMoveBlock> {
+    if selection.level() != SelectionLevel::Part {
+        return None;
+    }
+    let object = selection.entered_object()?.object;
+    selection
+        .selected_parts_on(page, object)
+        .into_iter()
+        .find_map(|line| provider.text_line_move_refusal_of(object, line))
 }
 
 /// The entered anchor's current page-space position, or `None` if the object's
@@ -1410,6 +1257,9 @@ fn decline(selection: &SelectionState, reason: Refusal, actions: &mut Vec<Action
 /// silent failure `viewer`'s header warns about. See that module's own header
 /// for the whole argument, the step it takes and whose convention it is.
 pub(crate) mod nudge;
+mod refusal;
+
+pub use refusal::Refusal;
 
 #[cfg(test)]
 mod tests;

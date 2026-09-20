@@ -860,7 +860,9 @@ pub fn click(
             // the same gesture, which is two rungs for one act and is not what
             // Inkscape does either.
             selection.click(page_index, hit, shift, false);
-            super::trace::selection_event(selection, "enter-form", true);
+            // `shift` for the same reason as the click arm below: the
+            // modifier the operator held, never a constant that reads as one.
+            super::trace::selection_event(selection, "enter-form", shift);
             return;
         }
         // ★★★ **A DOUBLE-CLICK ON TEXT EDITS THE TEXT** —
@@ -965,7 +967,14 @@ pub fn click(
         if let Some(object) = hit.object {
             crate::canvas::depth::remember(ctx, depth, under, page_index, object);
         }
-        super::trace::selection_event(selection, "click", double);
+        // ★★★ `shift`, not `double`. The field is named `mod=` and is
+        // documented as *whether the modifier was held*, so a driven check
+        // asserting that a Shift-click reached `pick_within` reads it — and a
+        // double-click flag under that name answers `false` for a genuine
+        // Shift-click and `true` for an unmodified double one, which is wrong
+        // in both directions at once. `via=` already separates the gestures;
+        // nothing needs the double-click flag on this line.
+        super::trace::selection_event(selection, "click", shift);
         if under > 1 {
             crate::diag::trace(move || {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI

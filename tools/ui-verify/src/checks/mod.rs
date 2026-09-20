@@ -1293,6 +1293,13 @@ pub mod text_chunks;
 /// needs three clicks and why the chunk index is compared rather than pinned.
 pub mod chunk_click;
 
+/// The third of that row: **O215 ask 4, driven** — Shift-clicking a second
+/// line of a text block builds a set the whole program acts on, and a press on
+/// the unselected line between two selected ones re-picks that line rather than
+/// dragging the set. Its header carries why the gap press is the only step that
+/// can see the narrowing it tests.
+pub mod chunk_multi_move;
+
 /// ★ The operator's own report, driven: Edit text on a REAL CAD sheet, aimed at a
 /// point the ENGINE says carries text. Its header carries why two passing text
 /// checks were not enough — both drive fixtures this repository generated to

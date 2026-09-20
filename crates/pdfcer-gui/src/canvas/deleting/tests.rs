@@ -299,6 +299,32 @@ fn several_selected_points_refuse_and_say_how_many() {
     );
 }
 
+/// **Several chunks refuse, and the same set can be dragged.**
+///
+/// The asymmetry is the point: `moving::eligible` builds `MoveSubject::TextLines`
+/// out of exactly this selection, because `move_text_run` rewrites an operand
+/// in place and renumbers nothing. `delete_text_run` excises a show operator, so
+/// the second index of a loop would address a line the first moved. A shell that
+/// looped both would corrupt a drawing on the press after the one that worked.
+#[test]
+fn several_selected_lines_refuse_and_say_how_many() {
+    let doc = crate::app::state::open_local_fixture(SIX_LABELS);
+    let object = text_object_with(&doc, 3);
+    let mut selection = at_part(object as u64, 0);
+    selection.click(
+        0,
+        ClickHit {
+            object: Some(TargetId::Object(object as u64)),
+            part: Some(2),
+            node: None,
+            chunk: false,
+        },
+        true,
+        false,
+    );
+    assert_eq!(against(&doc, &selection), Err(Refusal::ManyLines(2)));
+}
+
 /// The Node rung on **text** has no verb: a glyph is not an anchor, and
 /// `pdfcer-core` has nothing that removes one character from a show operator.
 #[test]

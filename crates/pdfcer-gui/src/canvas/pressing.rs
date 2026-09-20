@@ -368,7 +368,30 @@ pub fn grabbable(
 /// `true` would yield a move of a selection the operator may not have pressed
 /// on, which changes the document. When the question cannot be answered, the
 /// gesture that cannot damage anything is the right default.
+///
+/// # ★★ At the chunk rung the OBJECT is not the subject
+///
+/// `Grabbable::bounds` at the Part rung is
+/// [`crate::canvas::selection::SelectionState::outline_union`] of the selected
+/// chunks, so a set built from the first and fifth lines of a note spans the
+/// three unselected lines between them. Asking only *"is the topmost hit one of
+/// my objects?"* answers yes for a press on any of those three — the whole
+/// block is one object — so the press is claimed as a move of the set and
+/// [`crate::canvas::presspick`] never gets to re-pick the line the operator
+/// actually aimed at. O215 ask 1 read through a multi-chunk selection.
+///
+/// So where the chunk boxes are drawn and the rung is Part, membership is asked
+/// of the **chunk** under the point. `None` — inside the block's box but on
+/// no line of it, which is most of a CAD note — keeps the object-rung answer,
+/// which leaves the press in the white between two lines a move exactly as it
+/// has always been.
+///
+/// Eight parameters, for [`look`]'s reason and not a weaker one: each is a
+/// borrow both callers already hold, and the two of them must pass the same
+/// values or the predicate stops being one predicate.
+#[allow(clippy::too_many_arguments)]
 pub fn body_under(
+    ctx: &egui::Context,
     doc: &OpenDoc,
     selection: &SelectionState,
     map: &PageMapping,
@@ -378,16 +401,25 @@ pub fn body_under(
     scope: crate::canvas::smart::Scope,
 ) -> bool {
     let page_point = map.to_page(point);
-    doc.page_objects()
-        .and_then(|provider| {
-            crate::canvas::input::topmost(&*provider, page_index, page_point, map, pick, scope)
-        })
-        .is_some_and(|hit| {
-            selection
-                .entries()
-                .iter()
-                .any(|e| e.page == page_index && e.object == hit)
-        })
+    let Some(hit) = doc.page_objects().and_then(|provider| {
+        crate::canvas::input::topmost(&*provider, page_index, page_point, map, pick, scope)
+    }) else {
+        return false;
+    };
+    if !selection
+        .entries()
+        .iter()
+        .any(|e| e.page == page_index && e.object == hit)
+    {
+        return false;
+    }
+    if selection.level() != SelectionLevel::Part || !crate::canvas::chunks::boxed(ctx, doc, hit) {
+        return true;
+    }
+    match crate::canvas::chunks::under(doc, page_index, hit, page_point, map.tolerance()) {
+        Some(part) => selection.selected_parts_on(page_index, hit).contains(&part),
+        None => true,
+    }
 }
 
 /// The pick filter [`body_under`] asks with.
@@ -528,6 +560,7 @@ pub fn look(
             if content
                 && !origin.is_some_and(|p| {
                     body_under(
+                        ctx,
                         doc,
                         selection,
                         map,

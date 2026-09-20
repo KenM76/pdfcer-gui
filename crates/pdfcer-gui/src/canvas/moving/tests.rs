@@ -25,6 +25,7 @@
 #![cfg(test)]
 
 use super::*;
+use crate::app::actions::CanvasDecline;
 use crate::canvas::selection::ClickHit;
 use crate::canvas::target::{StubTargets, TargetId};
 use egui::{Rect, vec2};
@@ -569,6 +570,113 @@ fn a_line_of_text_at_the_part_rung_moves_that_line() {
         .into()),
         "the delta must reach the verb unmodified — a run has no anchors, so \
          nothing here may snap, clamp or round it"
+    );
+}
+
+/// ★★★ **Several Shift-clicked chunks move as SEVERAL chunks, in one undo
+/// entry** — O215 ask 4.
+///
+/// The Node rung's defect, one rung up and found by looking rather than by a
+/// report: the model has held several `subpath` entries on one object since
+/// normalisation was written, the overlay outlines every one of them, and
+/// `eligible` asked `entered_object()` — the FIRST entry. Four chunks
+/// highlighted, one moved.
+///
+/// ★★ The plural arm is reached on COUNT, never on a flag, so a set that
+/// shrinks back to one chunk takes the singular verb again with no second
+/// decision anywhere. The next test asserts that half.
+#[test]
+fn several_selected_chunks_move_as_one_command() {
+    let mut sel = run_entered();
+    for part in [2_usize, 5] {
+        sel.click(
+            0,
+            ClickHit {
+                object: Some(TargetId::Object(0)),
+                part: Some(part),
+                node: None,
+                chunk: false,
+            },
+            true,
+            false,
+        );
+    }
+    assert_eq!(
+        sel.selected_parts_on(0, TargetId::Object(0)),
+        vec![0, 2, 5],
+        "the model must hold every Shift-picked chunk"
+    );
+
+    let ctx = MoveContext {
+        non_path: None,
+        part_kind: Some(PartKind::TextLine),
+        run_move: None,
+    };
+    assert_eq!(
+        eligible(&sel, 0, ctx),
+        Ok(MoveSubject::TextLines {
+            page: 0,
+            object: 0,
+            lines: vec![0, 2, 5],
+        }),
+        "a multi-chunk selection must produce the PLURAL subject — the singular \
+         one moves the first entry and says nothing about the other two"
+    );
+    assert_eq!(
+        action(
+            MoveSubject::TextLines {
+                page: 0,
+                object: 0,
+                lines: vec![0, 2, 5],
+            },
+            PageDelta { dx: 4.0, dy: -1.25 },
+            None,
+            &[],
+        ),
+        Ok(VectorAction::MoveTextLines {
+            page: 0,
+            object: 0,
+            lines: vec![0, 2, 5],
+            dx: 4.0,
+            dy: -1.25,
+        }
+        .into()),
+        "one action carrying every chunk, so the fold gives one undo entry"
+    );
+}
+
+/// ★ A set that is back down to ONE chunk takes the singular verb again.
+///
+/// The count is the only condition, so this needs no separate mechanism — but
+/// it needs a test, because the plural arm shadowing the singular one is a
+/// silent change of verb and `move_text_run` is the planner the engine's own
+/// singular path is tested against.
+#[test]
+fn one_selected_chunk_still_takes_the_singular_verb() {
+    let mut sel = run_entered();
+    // Add a second chunk and take it straight back out again.
+    let second = ClickHit {
+        object: Some(TargetId::Object(0)),
+        part: Some(2),
+        node: None,
+        chunk: false,
+    };
+    sel.click(0, second, true, false);
+    sel.click(0, second, true, false);
+    assert_eq!(sel.selected_parts_on(0, TargetId::Object(0)), vec![0]);
+
+    let ctx = MoveContext {
+        non_path: None,
+        part_kind: Some(PartKind::TextLine),
+        run_move: None,
+    };
+    assert_eq!(
+        eligible(&sel, 0, ctx),
+        Ok(MoveSubject::TextLine {
+            page: 0,
+            object: 0,
+            line: 0,
+        })
     );
 }
 

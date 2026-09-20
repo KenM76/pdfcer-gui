@@ -305,7 +305,7 @@ O17 ruling cannot simply be applied; and **`ClickHit.part` already carries the
 line** on the very first click, computed by `probe` and then discarded by
 `click_at_object_rung`. The information is not missing; it is thrown away.
 
-**Asks 1, 3 and 6 are built and driven; asks 4 and 5 are not, and ask 2 is the
+**Asks 1, 3, 4 and 6 are built and driven; ask 5 is not, and ask 2 is the
 engine's.** Clicking a block of text outlines every chunk inside it, off a
 toggle — **View ▸ Navigate ▸ Text chunks**, and the same row on the rail, live
 in Content Edit — which is his own proposal for the shape, and which remembers
@@ -330,10 +330,37 @@ Both have been falsified: a loop that draws nothing reports `drawn=0`, and
 disabling the press path's entered-object branch makes the return-click ascend
 to the whole block, each turning its check red with a message naming the step.
 
-**Status stays FILED.** Ask 4 — shift-click, ctrl-click and rubber-band across
-chunks, moving several as one drag — and ask 5 — the chunk itself following the
-pointer rather than a rectangle — are unbuilt, and ask 2 is the engine's
-(`G032`).
+**Ask 4's modifier half is built and driven.** Shift — or Ctrl, which reaches
+the same arm one `||` upstream in `canvas::interact` — adds the chunk under the
+pointer, and clicking a held one takes it back out. The set was representable
+from the day the Part rung landed; what no consumer *read* was the set, so the
+operator could hold four labels, watch four outline, drag, and move one.
+`canvas::moving::eligible` now forks on `selected_parts_on(...).len()` into
+`MoveSubject::TextLines`, which is one `EditSession` call and therefore one
+undo entry however many chunks are in it, and the status row counts the set.
+
+The press path is the half with teeth. `Grabbable::bounds` at the chunk rung is
+the **union** of the held outlines, so a set built from lines 0 and 2 spans line
+1: a `covers` predicate asking only whether the topmost object is one of the
+selection's claims a press anywhere in that span, and the operator aims at a
+label, drags, and two *other* labels move while the one under his pointer stays
+put. `canvas::pressing::body_under` narrows the question to the chunk under the
+point, and `presspick::take` tests membership of the whole set rather than the
+first entry.
+
+`shift_click_builds_a_chunk_set_the_whole_program_honours` drives all of it on
+`paragraph.pdf` and has been falsified in both directions with one plant per
+half: a `shift` arm that replaces reddens the build step on `sel=1`; a deleted
+plural arm reddens the drag step naming the singular verb; and a `body_under`
+that answers on the object alone leaves every earlier step green and reddens
+the gap press alone.
+
+**Status stays FILED.** The **rubber-band** half of ask 4 is unbuilt —
+`SelectionState::marquee` hard-sets `SelectionLevel::Object`, so a band dragged
+while standing inside a text block ascends out of it and takes the block. Ask 5
+— the chunk itself following the pointer rather than a rectangle — is unbuilt:
+`canvas::shapes::for_move_subject` answers `None` for every text-line subject.
+Ask 2 is the engine's (`G032`).
 
 ## O213 — ✅ **CLOSED BY HIM** — editing one line of a title-block shifts that line to the right
 

@@ -214,6 +214,18 @@ pub enum Refusal {
     /// removed, nothing said. Carries the count, because a refusal that cannot
     /// say how many were selected is one the operator cannot act on.
     ManyNodes(usize),
+    /// **Several chunks are selected and `delete_text_run` is singular.**
+    ///
+    /// The Part-rung twin of [`Self::ManyNodes`], and it refuses for the
+    /// stronger of that variant's two reasons. A plural MOVE is safe and is
+    /// built — `move_text_run` rewrites an operand in place, adds no operator a
+    /// run index counts, so a loop over N lines renumbers nothing. Deleting
+    /// **excises** a show operator, so every later run index shifts down by one
+    /// and the second call in a loop would address a line the first moved.
+    ///
+    /// Carries the count, for the same reason `ManyNodes` does: a refusal that
+    /// cannot say how many were selected is one the operator cannot act on.
+    ManyLines(usize),
     /// **§9.4.2 — removing this label would slide the next one.** R83, asked
     /// before the press. Carries the run index the operator picked; the remedy
     /// is to delete the later one first. See the module header for why this one
@@ -307,6 +319,15 @@ fn part_rung(
             subpath: part,
         }),
         Some(PartKind::TextLine) => {
+            // The whole selected set, not the entered entry — `moving::eligible`
+            // reads it the same way one line below and builds a plural move out
+            // of it. There is no plural DELETE, and looping this one is not the
+            // same judgement as looping the move: excising a show operator
+            // renumbers every later run. See `Refusal::ManyLines`.
+            let lines = selection.selected_parts_on(page, entry.object);
+            if lines.len() > 1 {
+                return Err(Refusal::ManyLines(lines.len()));
+            }
             // R83, and the whole reason this function takes a provider rather
             // than a `PartKind`. See the module header.
             if provider.text_line_delete_would_move_next(object, part) {
@@ -412,9 +433,8 @@ pub fn action(subject: DeleteSubject) -> crate::app::actions::VectorAction {
 ///
 /// # ★★ Which refusals get a sentence, and the rule behind the split
 ///
-/// Four do, and they are the four an operator meets **without having made a
+/// Five do, and they are the five an operator meets **without having made a
 /// mistake**:
-///
 ///
 /// * [`Refusal::RunWouldMoveNext`] — they picked a label, pressed Delete, and
 ///   the file's own structure forbids it. There is a remedy and it always
@@ -423,6 +443,11 @@ pub fn action(subject: DeleteSubject) -> crate::app::actions::VectorAction {
 ///   gone and the key does nothing. From where they sit, Delete is broken.
 /// * [`Refusal::ManyNodes`] — they Shift-clicked four anchors and watched four
 ///   highlight. Removing one silently would be worse than refusing.
+/// * [`Refusal::ManyLines`] — the same press one rung up, and the operator has
+///   more reason to be surprised: the identical set can be dragged as one.
+/// * [`Refusal::NoObjectModel`] — the page will not decompose, so nothing
+///   inside an object can be named. The Object rung still works and the
+///   sentence says so.
 ///
 /// The rest describe states the operator put themselves in and can see —
 /// nothing selected, an image with no parts, the Node rung on a line of text —

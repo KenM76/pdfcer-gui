@@ -81,12 +81,22 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    a selection defect. Plants: a loop that draws nothing turns the first red at
    `drawn=0`, and disabling the press path's entered-object branch turns the
    second red on the return click.
-   **What is next, in order.** S3: shift-click, ctrl-click and a rubber-band
-   over chunks, which needs a plural `MoveSubject`, `select_part`'s one-entry
-   guarantee relaxed, `normalise`'s collapse-to-Object and `marquee`'s hard-set
-   (ask 4). S4: real live-preview geometry —
-   `canvas::shapes::for_move_subject` returns `None` for both text-line
-   subjects, so a drag previews a rectangle (ask 5).
+   **Ask 4's modifier half shipped.** Shift — or Ctrl, one `||` upstream in
+   `canvas::interact` — adds the chunk under the pointer and takes a held one
+   back out. `canvas::moving::eligible` forks on `selected_parts_on(...).len()`
+   into `MoveSubject::TextLines`: one `EditSession` call, one undo entry,
+   however many chunks. The press half is the one with teeth —
+   `Grabbable::bounds` at the chunk rung is the UNION of the held outlines, so
+   a set of lines 0 and 2 spans line 1, and a `covers` asking only about the
+   object claims a press in the gap: he aims at a label, drags, and two OTHER
+   labels move. `pressing::body_under` narrows to the chunk under the point.
+   `shift_click_builds_a_chunk_set_the_whole_program_honours` drives it and is
+   falsified by three plants, one per half.
+   **What is next, in order.** S3b: the rubber-band half of ask 4 —
+   `SelectionState::marquee` hard-sets `SelectionLevel::Object`, so a band
+   inside a text block ascends out of it and takes the block. S4: real
+   live-preview geometry — `canvas::shapes::for_move_subject` returns `None`
+   for both text-line subjects, so a drag previews a rectangle (ask 5).
    **Ask 2 is the engine's and is filed as `G032`**: `runs_share_a_line` never
    reads the horizontal translation, so a table row welds into one line — 565
    welded lines on his own drawing, the widest spanning 709.4 pt of blank paper.

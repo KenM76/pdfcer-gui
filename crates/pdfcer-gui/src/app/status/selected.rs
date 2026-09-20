@@ -62,8 +62,8 @@ use crate::text::status as t;
 /// The region this line publishes, so a driven check can find it.
 pub const REGION: &str = "status-group:selected"; // ui-text-exempt: trace region name, never displayed
 
-/// `status-rung kind=text|path part=N of=M` — the rung clause this bar
-/// appended, stated on the channel a harness can read.
+/// `status-rung kind=text|path part=N held=H of=M` — the rung clause this
+/// bar appended, stated on the channel a harness can read.
 ///
 /// # Why a label's own words need a trace line at all
 ///
@@ -88,9 +88,9 @@ pub const REGION: &str = "status-group:selected"; // ui-text-exempt: trace regio
 ///
 /// It is a trace of the DECISION, not a transcription of the string.
 /// Echoing the rendered text would make every wording change a harness
-/// change and would tempt a check into asserting English; `kind`, `part`
-/// and `of` are the three facts the clause is computed from, and a build
-/// that gets any of them wrong gets the sentence wrong too.
+/// change and would tempt a check into asserting English; `kind`, `part`,
+/// `held` and `of` are the four facts the clause is computed from, and a
+/// build that gets any of them wrong gets the sentence wrong too.
 ///
 /// Routed through [`crate::diag::trace_changed`] rather than
 /// [`crate::diag::trace`], because this is drawn sixty times a second and
@@ -304,6 +304,10 @@ fn with_part(
     }
     let kind = provider.part_kind(index);
     drop(provider);
+    // How many chunks are held, not how many the first entry is. A Shift-click
+    // at this rung adds a second, and every consumer below — the drag, Delete,
+    // this sentence — takes the whole set as its operand.
+    let held = doc.selection.selected_parts_on(page, first).len().max(1);
 
     // **The trace is emitted from INSIDE the producing arms, and that
     // placement is the whole of its value.**
@@ -328,16 +332,16 @@ fn with_part(
     // counts lines.
     match kind {
         Some(PartKind::TextLine) => {
-            trace_rung(RUNG_TEXT, part, of);
+            trace_rung(RUNG_TEXT, part, held, of);
             (
-                t::selection_part_of_text(&line, of),
+                t::selection_part_of_text(&line, held, of),
                 Some(t::selection_part_of_text_hint()),
             )
         }
         Some(PartKind::Subpath) => {
-            trace_rung(RUNG_PATH, part, of);
+            trace_rung(RUNG_PATH, part, held, of);
             (
-                t::selection_part_of_path(&line, of),
+                t::selection_part_of_path(&line, held, of),
                 Some(t::selection_part_of_path_hint()),
             )
         }
@@ -370,10 +374,15 @@ const RUNG_PATH: &str = "path";
 /// mark. A line identical to one already written is suppressed, and a
 /// mark-relative assertion would read that suppression as the feature being
 /// broken.
-fn trace_rung(kind: &str, part: usize, of: usize) {
+///
+/// `held=` is the size of the set, and it is a separate field from `part=`
+/// rather than a plural spelling of it: a check asserting the set survived the
+/// press that began its drag needs a number it can compare, and `part=` names
+/// only the first entry.
+fn trace_rung(kind: &str, part: usize, held: usize, of: usize) {
     crate::diag::trace_changed(RUNG_SLOT, || {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
-        format!("{RUNG_SLOT} kind={kind} part={part} of={of}")
+        format!("{RUNG_SLOT} kind={kind} part={part} held={held} of={of}")
     });
 }
 

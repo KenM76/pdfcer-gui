@@ -869,6 +869,39 @@ impl SelectionState {
             .collect()
     }
 
+    /// Every selected **part** on one object of one page, object-scoped,
+    /// ascending and unique — a text object's chunks, or a path's subpaths.
+    ///
+    /// The Part-rung twin of [`Self::selected_nodes_on`], and it exists for
+    /// the same reason: [`Self::pick_within`] has always pushed a
+    /// Shift-clicked part in as its own entry, and normalisation only
+    /// collapses a deeper rung when the entries name different *objects* or
+    /// *pages*, so several parts of one object survive. Nothing read them that
+    /// way, so an operator could Shift-click four chunks, watch four outline,
+    /// drag, and move one.
+    ///
+    /// # Why it filters on the object as well as the page
+    ///
+    /// Every Part-rung verb addresses parts **within one object**, so a set
+    /// spanning two objects is not one command. `normalise` already prevents
+    /// that state, and filtering here means a caller cannot build an operand
+    /// list out of a state this type does not produce.
+    ///
+    /// ⚠ **Ask this at the Part rung only.** At the Node rung the entries
+    /// carry a `subpath` as well, naming the enclosing part of each selected
+    /// anchor, so this would answer about containers rather than about the
+    /// operator's selection.
+    #[must_use]
+    pub fn selected_parts_on(&self, page: usize, object: TargetId) -> Vec<usize> {
+        self.entries
+            .iter()
+            .filter(|e| e.page == page && e.object == object)
+            .filter_map(|e| e.subpath)
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect()
+    }
+
     /// Ascend one rung, or clear, or decline the key. See [`EscapeOutcome`].
     ///
     /// **One press, one rung** — decision 025's L1. The old shell shipped

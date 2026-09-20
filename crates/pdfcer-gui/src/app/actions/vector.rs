@@ -471,6 +471,60 @@ pub enum VectorAction {
         /// Vertical displacement, PDF user-space points (Y is up).
         dy: f64,
     },
+    /// ★★★ **Displace SEVERAL chunks of one text object by one drag** —
+    /// `EditSession::move_text_run` once per run of every named line, folded
+    /// into one undo entry.
+    ///
+    /// # Why a loop is safe here, where the module header forbids one
+    ///
+    /// *"Never loop the singular verbs over a selection"* is about verbs that
+    /// **excise byte spans**: each call invalidates the offsets the next was
+    /// planned against. The move family rewrites operands **in place** and adds
+    /// no operator that a run index counts, so nothing renumbers and every
+    /// index in `lines` still names the same chunk after the call before it.
+    /// [`Self::MoveTextLine`] already depends on exactly that to walk one
+    /// line's runs; this walks several lines' runs for the identical reason.
+    ///
+    /// The engine has no plural run verb — `G030` — so `pieces` counts every
+    /// run across every line and `coalesce_last` folds them. One drag is one
+    /// press of Undo, as it is for the singular variant.
+    ///
+    /// # The refusal is asked of every line, before the ghost
+    ///
+    /// `crate::canvas::moving::run_move` asks the engine's own guard of each
+    /// selected chunk and refuses the set whole if any one of them is blocked,
+    /// so this arm cannot be reached holding a line the planner will decline.
+    /// Moving the movable ones and leaving the rest would read as a rendering
+    /// fault rather than as a refusal.
+    MoveTextLines {
+        /// The 0-based page.
+        page: usize,
+        /// The enclosing text object, by paint-order index.
+        object: usize,
+        /// The visual lines, ascending and unique, never fewer than two.
+        lines: Vec<usize>,
+        /// Horizontal displacement, PDF user-space points.
+        dx: f64,
+        /// Vertical displacement, PDF user-space points (Y is up).
+        dy: f64,
+    },
+    /// [`Self::MoveTextLines`] for a text object **inside a form XObject**.
+    ///
+    /// ⚠ One call changes every sheet the form is drawn on, for
+    /// [`Self::MoveTextLineInForm`]'s reason: the form's stream is shared, and
+    /// the engine's own reach sentence is what tells the operator so.
+    MoveTextLinesInForm {
+        /// The 0-based page.
+        page: usize,
+        /// The enclosing text object, by **leaf** index.
+        leaf: usize,
+        /// The visual lines, ascending and unique, never fewer than two.
+        lines: Vec<usize>,
+        /// Horizontal displacement, PDF user-space points.
+        dx: f64,
+        /// Vertical displacement, PDF user-space points (Y is up).
+        dy: f64,
+    },
     /// Drag **one anchor** of one path object to an absolute page-space point
     /// — the Node rung's move verb.
     ///
@@ -1090,6 +1144,73 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                 vector_edit_on_page(doc, "move-text-line-in-form", page, pieces, |session| {
                     let mut disclosures = Vec::new();
                     for run in runs.clone() {
+                        disclosures.extend(
+                            session
+                                .move_text_run_in_form(page, leaf, run, dx, dy)
+                                .map(|outcome| outcome.disclosures)?,
+                        );
+                    }
+                    fold_undo(session, pieces, CommandKind::MoveTextRun, &mut disclosures);
+                    Ok::<_, pdfcer_core::edit::EditError>(disclosures)
+                });
+            }
+        }
+        VectorAction::MoveTextLines {
+            page,
+            object,
+            lines,
+            dx,
+            dy,
+        } => {
+            // Every run of every line, resolved BEFORE the session opens.
+            // `text_line_runs` reads the provider, which borrows the document;
+            // resolving inside the edit closure would ask the model about a
+            // revision the closure is in the middle of replacing.
+            let runs: Vec<usize> = doc
+                .page_objects()
+                .map(|provider| {
+                    lines
+                        .iter()
+                        .filter_map(|&line| provider.text_line_runs(object, line))
+                        .flatten()
+                        .collect()
+                })
+                .unwrap_or_default();
+            if !runs.is_empty() {
+                let pieces = runs.len();
+                vector_edit_on_page(doc, "move-text-lines", page, pieces, |session| {
+                    let mut disclosures = Vec::new();
+                    for &run in &runs {
+                        disclosures.extend(session.move_text_run(page, object, run, dx, dy)?);
+                    }
+                    fold_undo(session, pieces, CommandKind::MoveTextRun, &mut disclosures);
+                    Ok::<_, pdfcer_core::edit::EditError>(disclosures)
+                });
+            }
+        }
+        VectorAction::MoveTextLinesInForm {
+            page,
+            leaf,
+            lines,
+            dx,
+            dy,
+        } => {
+            let target = crate::panels::objects::provider::TargetId::Leaf(leaf as u64);
+            let runs: Vec<usize> = doc
+                .page_objects()
+                .map(|provider| {
+                    lines
+                        .iter()
+                        .filter_map(|&line| provider.text_line_runs_of(target, line))
+                        .flatten()
+                        .collect()
+                })
+                .unwrap_or_default();
+            if !runs.is_empty() {
+                let pieces = runs.len();
+                vector_edit_on_page(doc, "move-text-lines-in-form", page, pieces, |session| {
+                    let mut disclosures = Vec::new();
+                    for &run in &runs {
                         disclosures.extend(
                             session
                                 .move_text_run_in_form(page, leaf, run, dx, dy)

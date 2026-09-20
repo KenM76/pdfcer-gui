@@ -427,6 +427,11 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // the boxes reports the boxes, once, rather than reporting a selection
         // defect twice.
         Box::new(chunk_click::ClickingAChunkSelectsThatChunk),
+        // Third of the same row, and last of the three for the same reason:
+        // it builds a set of chunks, so it cannot mean anything on a build
+        // that cannot select one. A failure here on top of a failure above is
+        // one defect reported twice; in this order the first row names it.
+        Box::new(chunk_multi_move::ShiftClickBuildsAChunkSetTheWholeProgramHonours),
         // `OPERATOR_REQUESTS.md` O71. Beside the Smart-Selector
         // check because both are about what a plain click MEANS — that one in
         // Edit, this one in Read, which is the stance where the answer had

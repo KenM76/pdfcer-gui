@@ -287,13 +287,22 @@ pub fn selection_many(count: usize) -> String {
 /// line), and how much there is (twenty-seven), and it cannot disagree with
 /// the panel because it does not name a position.
 ///
+/// # ★★ `held` is counted, never assumed
+///
+/// A Shift-click at this rung adds a second chunk, and the operand of the next
+/// drag or Delete is then the whole set. A sentence with the literal `1` in it
+/// says *1 line of 27* while four are outlined and four are about to move,
+/// which is the module header's failure mode exactly: confidently wrong beats
+/// silent at nothing.
+///
 /// # ★ Rule 4
 ///
 /// Nothing is drawn on the drawing to express the rung. The selection
 /// outline is the cursor and is untouched; this is the off-canvas half.
 #[must_use]
-pub fn selection_part_of_text(line: &str, of: usize) -> String {
-    format!("{line} · 1 line of {of}")
+pub fn selection_part_of_text(line: &str, held: usize, of: usize) -> String {
+    let word = if held == 1 { "line" } else { "lines" };
+    format!("{line} · {held} {word} of {of}")
 }
 
 /// The same clause for a **path**'s part, where the word is *part* rather
@@ -306,8 +315,9 @@ pub fn selection_part_of_text(line: &str, of: usize) -> String {
 /// Objects panel's row builder also asks — so the two surfaces cannot
 /// disagree about which kind of part is selected.
 #[must_use]
-pub fn selection_part_of_path(line: &str, of: usize) -> String {
-    format!("{line} · 1 part of {of}")
+pub fn selection_part_of_path(line: &str, held: usize, of: usize) -> String {
+    let word = if held == 1 { "part" } else { "parts" };
+    format!("{line} · {held} {word} of {of}")
 }
 
 /// The hover behind the text clause: what Delete does here, and the way
@@ -960,4 +970,29 @@ pub fn too_many_anchors_in_part(count: usize, cap: usize) -> String {
         "This part has {count} points and pdfcer draws at most {cap} at a time, so none are \
          shown here. Zoom in to see the ones you are looking at."
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{selection_part_of_path, selection_part_of_text};
+
+    /// The clause counts what is held, and the noun agrees with the count.
+    ///
+    /// The wording carried a literal `1` for as long as one chunk was all the
+    /// rung could hold. A Shift-click now adds a second, and the drag that
+    /// follows moves the set — so a sentence that cannot say *2 lines of 27* is
+    /// a confident, wrong statement about the operand of the next keystroke.
+    #[test]
+    fn the_rung_clause_counts_what_is_held() {
+        assert_eq!(selection_part_of_text("Text", 1, 27), "Text · 1 line of 27");
+        assert_eq!(
+            selection_part_of_text("Text", 4, 27),
+            "Text · 4 lines of 27"
+        );
+        assert_eq!(selection_part_of_path("Shape", 1, 6), "Shape · 1 part of 6");
+        assert_eq!(
+            selection_part_of_path("Shape", 3, 6),
+            "Shape · 3 parts of 6"
+        );
+    }
 }

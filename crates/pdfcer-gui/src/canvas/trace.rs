@@ -214,7 +214,11 @@ pub(super) fn text_selection(
 /// ```
 ///
 /// * `via=` — the gesture: `click`, `marquee`, `key`, `escape`, and the rest.
-/// * `mod=` — whether the modifier (Shift) was held.
+/// * `mod=` — whether the modifier (Shift) was held. ★ Every caller passes
+///   the operator's modifier and nothing else: a flag that happens to be a
+///   `bool` at the call site — double-click, additive-marquee, a constant —
+///   reads as the modifier here and is wrong in both directions for a check
+///   asserting that Shift arrived.
 /// * `sel=` — how many entries the selection holds.
 /// * `level=` — which rung of the ladder: `Object`, `Part` or `Node`.
 /// * `first=` — **`object:N`, `leaf:N` or `none`.** Which of the page's two
