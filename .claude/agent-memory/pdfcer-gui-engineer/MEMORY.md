@@ -21,6 +21,7 @@
 - [One row hides its neighbours](feedback_agent_given_one_row.md) — two other rows had already declined it.
 - [A SKIP is not red](feedback_skip_red_check_stop.md) — a check stops unnoticed; a SKIP can be a misfiled FAIL.
 - [A check that cannot fail is not evidence](feedback_check_cannot_fail.md) — falsify before quoting green.
+- [A check's failure messages never run](feedback_failure_messages_unrun.md) — a plant fires one arm; the rest say anything.
 - [His sentences are reports, not measurements](feedback_kens_sentences.md) — "800%" named a setting.
 - [Read a better instrument](feedback_measurement_runs_out.md) — extreme-end failure is usually resolution.
 - [A measured limit belongs to a revision](feedback_measured_limit.md) — date it, name the commit.

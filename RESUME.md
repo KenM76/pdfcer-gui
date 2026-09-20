@@ -158,12 +158,7 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    `paint_rect` equals the page rect at every zoom below the pixmap ceiling,
    so the ink-coverage question is **unfalsified**, not merely weak, and
    exercising it needs this gesture driven at the region tier.
-   **What is next, in order.** A check's FAILURE messages are the half nothing
-   executes — a green run formats none of them and a plant fires only the branch
-   it aims at — so the source-reading gates are the only instrument for the
-   class. `Skip`'s `Display` and `MergeReport`'s accessors in
-   `egui-shell/src/manifest/merge/report.rs` carry no unit test at all and are
-   the same shape. After that, the size cap: eight files now sit between 1,452
+   **What is next, in order.** The size cap: eight files sit between 1,452
    and 1,473 lines, so the next seam-finding pass is a batch rather than a
    one-off. The seam for each of the eight is already argued in `DESIGNS.md`
    under *Where the seam is in each file now crowding the size limit* —

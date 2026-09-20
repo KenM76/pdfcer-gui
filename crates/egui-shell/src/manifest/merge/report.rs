@@ -171,3 +171,236 @@ impl MergeReport {
         });
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A site with both ids filled, so a sentence that drops one is visible.
+    fn site() -> Site {
+        Site::Group {
+            tab: "review".to_owned(),
+            group: "markup".to_owned(),
+        }
+    }
+
+    fn unknown_command(layer: Layer) -> Skip {
+        Skip {
+            layer,
+            site: site(),
+            reason: SkipReason::UnknownCommand {
+                command: "markup.chisel".to_owned(),
+            },
+        }
+    }
+
+    /// The same command id and the same site as [`unknown_command`], so the
+    /// only thing that can make the two sentences differ is the reason. Given
+    /// distinct ids they would differ whatever the wording said, and the test
+    /// that compares them would pass on a pair that had collapsed.
+    fn capability_absent(layer: Layer) -> Skip {
+        Skip {
+            layer,
+            site: site(),
+            reason: SkipReason::CapabilityAbsent {
+                capability: "ocr".to_owned(),
+                command: "markup.chisel".to_owned(),
+            },
+        }
+    }
+
+    fn unknown_tab(layer: Layer) -> Skip {
+        Skip {
+            layer,
+            site: Site::Mode {
+                mode: "read".to_owned(),
+            },
+            reason: SkipReason::UnknownTab {
+                tab: "drafting".to_owned(),
+            },
+        }
+    }
+
+    fn unsupported_schema(layer: Layer) -> Skip {
+        Skip {
+            layer,
+            site: Site::Document,
+            reason: SkipReason::UnsupportedSchema {
+                found: 4,
+                supported: 2,
+            },
+        }
+    }
+
+    fn one_of_each(layer: Layer) -> [Skip; 4] {
+        [
+            unknown_command(layer),
+            capability_absent(layer),
+            unknown_tab(layer),
+            unsupported_schema(layer),
+        ]
+    }
+
+    const LAYERS: [Layer; 3] = [Layer::BuiltIn, Layer::AppOverride, Layer::Operator];
+
+    #[test]
+    fn every_sentence_names_the_layer_the_item_came_from() {
+        for layer in LAYERS {
+            for skip in one_of_each(layer) {
+                let said = skip.to_string();
+                assert!(
+                    said.contains(&layer.to_string()),
+                    "a skip that does not say WHICH file to edit sends the operator to three \
+                     of them. layer {layer:?}, said: {said}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn a_dropped_item_says_where_it_was() {
+        for skip in [
+            unknown_command(Layer::Operator),
+            capability_absent(Layer::Operator),
+            unknown_tab(Layer::Operator),
+        ] {
+            let where_it_was = skip.site.to_string();
+            let said = skip.to_string();
+            assert!(
+                said.contains(&where_it_was),
+                "the layer names a file and the site names the line in it; without the site the \
+                 operator has a sentence they cannot act on. Wanted {where_it_was}, said: {said}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_capability_this_build_lacks_does_not_read_as_a_mistake() {
+        let absent = capability_absent(Layer::Operator).to_string();
+        let unknown = unknown_command(Layer::Operator).to_string();
+        assert_ne!(absent, unknown);
+        assert!(
+            absent.contains("does not include"),
+            "the operator's file is correct and this build is the narrow one; a sentence that \
+             does not say so reads as a typo they must go and find. Got: {absent}"
+        );
+        assert!(
+            absent.contains("ocr"),
+            "naming the capability is what turns the sentence into an action — install it, or \
+             delete the entry. Got: {absent}"
+        );
+        assert!(
+            !unknown.contains("does not include"),
+            "the opposite failure: a genuine typo worded as a missing capability sends the \
+             operator looking for an installer. Got: {unknown}"
+        );
+    }
+
+    #[test]
+    fn only_the_schema_skip_says_a_whole_layer_was_dropped() {
+        let schema = unsupported_schema(Layer::AppOverride).to_string();
+        assert!(
+            schema.contains("that layer was not applied"),
+            "an unsupported schema drops EVERY customization in the file, not one item, and a \
+             sentence that says otherwise understates it by however many the file held. \
+             Got: {schema}"
+        );
+        for skip in [
+            unknown_command(Layer::AppOverride),
+            capability_absent(Layer::AppOverride),
+            unknown_tab(Layer::AppOverride),
+        ] {
+            let said = skip.to_string();
+            assert!(
+                !said.contains("that layer was not applied"),
+                "the other three drop one item; saying the layer went would send the operator \
+                 looking for customizations that are still there. Got: {said}"
+            );
+        }
+    }
+
+    #[test]
+    fn the_schema_sentence_carries_both_version_numbers() {
+        let said = unsupported_schema(Layer::Operator).to_string();
+        assert!(
+            said.contains("schema 4"),
+            "without the number the file declared, the operator cannot tell which of several \
+             files is the new one. Got: {said}"
+        );
+        assert!(
+            said.contains("(2)"),
+            "without the number this build supports, the operator cannot tell whether to update \
+             the application or the file — and the two remedies are opposite. Got: {said}"
+        );
+    }
+
+    #[test]
+    fn no_two_reasons_share_a_sentence() {
+        let said: Vec<String> = one_of_each(Layer::Operator)
+            .iter()
+            .map(ToString::to_string)
+            .collect();
+        for (i, a) in said.iter().enumerate() {
+            for b in said.iter().skip(i + 1) {
+                assert_ne!(
+                    a, b,
+                    "two reasons reading alike is one the operator cannot act on"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn the_three_layers_are_told_apart_in_the_operators_words() {
+        let said: Vec<String> = LAYERS.iter().map(ToString::to_string).collect();
+        assert_ne!(said[0], said[1]);
+        assert_ne!(said[1], said[2]);
+        assert_ne!(said[0], said[2]);
+        assert!(
+            said[2].contains("your"),
+            "the operator's own file is the one he can edit, and it is named as his. Got: {}",
+            said[2]
+        );
+        for one in &said {
+            assert!(
+                !one.contains("Layer") && !one.contains("::"),
+                "a debug spelling reaching a sentence is the vocabulary leaking. Got: {one}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_report_counts_what_it_holds_and_keeps_the_order() {
+        let mut report = MergeReport::default();
+        assert!(report.is_empty());
+        assert_eq!(report.len(), 0);
+        assert!(report.skips().is_empty());
+
+        report.push(
+            Layer::Operator,
+            site(),
+            SkipReason::UnknownCommand {
+                command: "markup.chisel".to_owned(),
+            },
+        );
+        report.push(
+            Layer::AppOverride,
+            Site::Document,
+            SkipReason::UnsupportedSchema {
+                found: 4,
+                supported: 2,
+            },
+        );
+
+        assert!(!report.is_empty());
+        assert_eq!(report.len(), 2);
+        assert_eq!(report.skips().len(), report.len());
+        assert_eq!(
+            report.skips()[0].layer,
+            Layer::Operator,
+            "the skips are in the order they occurred, so a caller can read them as a story of \
+             the merge rather than as a set"
+        );
+        assert_eq!(report.skips()[1].layer, Layer::AppOverride);
+    }
+}

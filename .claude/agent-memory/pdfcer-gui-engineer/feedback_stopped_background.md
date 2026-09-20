@@ -83,6 +83,22 @@ out.
 before quoting any sweep green, grep its log for the `RESULT:` line rather
 than reading the task notification.
 
+## Fourth instance — the kill notice arrives BEFORE the log is finished
+
+A gate sweep was reported *"stopped because the system is running low on
+memory"*. Tailing the log at that moment showed 65 gate headers and
+`>> cargo fmt` as the last line, which reads exactly like a run cut off two
+gates from home. Minutes later the same file held
+`RESULT: PASS — 65 passed, 0 failed, 0 skipped`, fmt and clippy included. The
+tell that it was still alive was in a command run for another purpose: a manual
+`cargo clippy` printed *"Blocking waiting for file lock on build directory"*,
+which is a live cargo saying so.
+
+⇒ **A `tail` taken at the instant of the kill notice measures the log's lag,
+not the run's state.** Grep for `RESULT:` — and if it is absent, grep again
+later before re-running anything. Re-running a 95-minute sweep that had already
+passed is the cost of reading the tail once.
+
 Related: [[a-runners-sentinel-is-a-claim-about-the-runner]],
 [[a-launch-failure-blamed-on-a-resource-count-needs-a-control-binary]],
 [[a-measurement-of-the-wrong-surface-looks-exactly-like-a-broken-one]].
