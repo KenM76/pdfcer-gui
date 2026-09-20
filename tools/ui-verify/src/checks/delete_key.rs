@@ -11,15 +11,15 @@
 //!
 //! 1. **Click-select works with no gating.** The canvas hit-tests and assigns
 //!    the selection. The object visibly selects.
-//! 2. **The canvas grabs egui keyboard focus on every click**
-//!    (`main.rs:16891`): `if image_response.clicked() { image_response
+//! 2. **The canvas grabs egui keyboard focus on every click**:
+//!    `if image_response.clicked() { image_response
 //!    .request_focus(); }`. Deliberate and reasonable — the canvas was meant to
 //!    be a real Tab stop rather than an inert image. Because the widget is
 //!    recreated every frame its id stays live, so the focus never lapses.
-//! 3. **The keyboard guard tests the wrong thing** (`main.rs:13777`):
+//! 3. **The keyboard guard tests the wrong thing**:
 //!    `let typing = ctx.egui_wants_keyboard_input();`. In egui 0.35 that is
 //!    **not** "a text field is focused" — verified in the vendored source at
-//!    `context.rs:2884`, it is `self.memory(|m| m.focused().is_some())`, i.e.
+//!    `egui-0.35.0/src/context.rs:2884`, it is `self.memory(|m| m.focused().is_some())`, i.e.
 //!    *any* focused widget, the canvas included. The doc comment directly above
 //!    it promises the opposite. This is an egui API footgun, not a careless
 //!    read.

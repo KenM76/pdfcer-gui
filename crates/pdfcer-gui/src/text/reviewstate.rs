@@ -40,8 +40,8 @@
 //!
 //! ## ★★ THE SECOND FACT: THE ENGINE DOES NOT INTERPRET THE STRINGS
 //!
-//! `Annotation::state` (`annot.rs:480`) and `::state_model` (`annot.rs:492`)
-//! are `Option<String>`, decoded verbatim, and the field's own doc says why:
+//! `Annotation::state` and `Annotation::state_model` are `Option<String>`,
+//! decoded verbatim, and `state`'s own doc says why:
 //!
 //! > *"Neither key carries a 'shall be one of' anywhere in either edition, so
 //! > a value outside Table 171's vocabulary is **unhandled, not illegal**.
@@ -88,8 +88,8 @@
 ///
 /// The one place a word is added rather than changed is `None`, which alone is
 /// ambiguous on screen: Table 171 makes it a **writable value** in the `Review`
-/// model and *not* a spelling of "no status recorded" — `annot.rs:472-479`
-/// says so in as many words — and a bare *None* in a chooser would read as the
+/// model and *not* a spelling of "no status recorded" — `Annotation::state`'s
+/// doc says so in as many words — and a bare *None* in a chooser would read as the
 /// empty entry. See [`state_none`].
 #[must_use]
 pub fn state_name(state: pdfcer_core::edit::ReviewState) -> &'static str {
@@ -134,8 +134,8 @@ pub fn state_none() -> &'static str {
 /// would be this shell claiming an incapacity it does not have.
 ///
 /// `model` is carried because the value alone is not interpretable —
-/// `annot.rs:472-479`: *"a caller that wants the effective state must read both
-/// fields together."*
+/// `Annotation::state`: *"a caller that wants the effective state must read
+/// both fields together."*
 #[must_use]
 pub fn state_unmodelled(state: &str, model: &str) -> String {
     format!("{state} — a status pdfcer does not recognise, in the {model} model")

@@ -357,7 +357,8 @@ impl PdfcerApp {
     ///
     /// [`crate::app::blank`] carries the whole argument. In one sentence:
     /// `pdfcer-core` has no way to create a document and states in
-    /// `document.rs:10-19` that it never will (*"No separate
+    /// `pdfcer_core::document`'s module header, under *"THE named invariant:
+    /// one `Document`, both directions"*, that it never will (*"No separate
     /// builder/generation model may ever be introduced"*), so New parses a
     /// 443-byte template that ships as an asset — which makes it an **open**,
     /// which is the thing this shell already does well.

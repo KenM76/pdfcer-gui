@@ -90,8 +90,7 @@
 //! start one by accident, at three in the morning, on the office plotter.
 //!
 //! The old shell's diagnostic harness reached the same conclusion in the same
-//! words (`diag.rs:606-609`), and it is worth restating rather than
-//! rediscovering.
+//! words, and it is worth restating rather than rediscovering.
 //!
 //! What that costs is real and should be named: this check proves the dialog
 //! **reaches the spooler**, not that a sheet comes out correctly placed. The

@@ -43,7 +43,8 @@
 //! non-Windows `list_printers` returns `Err(Unsupported)` rather than an
 //! empty `Vec`, because *"reporting the same value for 'this platform cannot
 //! enumerate printers at all' would collapse two different facts into one and
-//! send a caller looking for hardware"* (`lib.rs:1859-1866`). The error type
+//! send a caller looking for hardware"* — `list_printers`'s
+//! `#[cfg(not(windows))]` stub. The error type
 //! carries that distinction across the port in
 //! [`crate::dialogs::print::spooler`]; these three sentences are what it is
 //! carried *for*.
@@ -373,7 +374,7 @@ pub const fn subset_even() -> &'static str {
 ///
 /// **Says which numbering is meant**, because the answer is not obvious and
 /// getting it wrong prints the wrong half of the document. `pdfcer-print`
-/// (`lib.rs:1217-1224`): *"an operator printing '2-9, odd' means document
+/// (`PageSubset::Odd`): *"an operator printing '2-9, odd' means document
 /// pages 3, 5, 7, 9 — the numbers printed on the paper."*
 #[must_use]
 pub const fn subset_tooltip() -> &'static str {
@@ -416,7 +417,7 @@ pub const fn scale_custom() -> &'static str {
 /// **Names the difference between Fit and Shrink**, which is the one thing
 /// about this group an operator can get wrong without noticing. `pdfcer-print`
 /// keeps them as separate modes because collapsing them *"silently blows a
-/// business card up to A4"* (`lib.rs:490-494`), and a UI that does not say so
+/// business card up to A4"* — `ScaleMode`'s own doc — and a UI that does not say so
 /// re-creates the confusion the engine avoided.
 #[must_use]
 pub const fn sizing_tooltip() -> &'static str {
@@ -1053,7 +1054,8 @@ pub const fn no_pages_selected() -> &'static str {
 ///
 /// This is the GUI half of the divergence `pdfcer-print` was built for:
 /// *"Acrobat's documented behaviour here is to clip SILENTLY … pdfcer reports
-/// it instead"* (`lib.rs:522-528`). That divergence is worth nothing if the
+/// it instead"* — the doc on `Placement::clipped`, which
+/// `SpoolReport::clipped_pages` counts. That divergence is worth nothing if the
 /// shell reduces it to a number an operator can look past, which is why the
 /// same fact also reaches [`commit_with_clipping`].
 #[must_use]

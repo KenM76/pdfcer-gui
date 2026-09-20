@@ -564,7 +564,7 @@ def self_test() -> int:
         ("in_a_block", False),
         ("only_in_tests", False),
         # A test item mid-file must not swallow the program below it: a
-        # test-only `const` at `canvas/measure/mod.rs:259` did exactly
+        # test-only `MeasureKind::ARMED_ELSEWHERE` did exactly
         # that and hid the real consumer 586 lines further down.
         ("below_a_test_const", True),
         # And an unpaired `{` inside a test string must not derail the

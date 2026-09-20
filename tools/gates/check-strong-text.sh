@@ -162,7 +162,7 @@ scan() {
         # fourth recurrence, and the funniest one in the tree.
         #
         # `egui::Spinner` resolves its OWN colour from
-        # `visuals.strong_text_color()` (egui-0.35 `widgets/spinner.rs:44`) and
+        # `visuals.strong_text_color()` (`egui-0.35.0/src/widgets/spinner.rs:44`) and
         # draws it on whatever is behind it. That accessor is
         # `widgets.active.fg_stroke.color` — the ink for the accent FILL — so on
         # a dialog background it measures a luminance gap of **17.9 / 5.0 /

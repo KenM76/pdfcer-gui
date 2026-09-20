@@ -130,9 +130,8 @@ pub struct RenderKey {
     ///
     /// # ★ Why the engine's enum and not a `bool`
     ///
-    /// `StrokeDisplay` derives `Eq` and `Hash` (checked at
-    /// `pdfcer-render/src/font/mod.rs:943`), so it is a key component as it
-    /// stands. It is `#[non_exhaustive]` with room for a third variant — the
+    /// `StrokeDisplay` derives `Eq` and `Hash` — checked on the enum's own
+    /// `#[derive]` in `pdfcer-render` — so it is a key component as it stands. It is `#[non_exhaustive]` with room for a third variant — the
     /// **opposite** convention, Acrobat's *enhance thin lines* — and a `bool`
     /// here would silently collapse that third state onto one of these two the
     /// day it arrives, which is a stale-raster bug that would look like a

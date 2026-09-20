@@ -139,8 +139,9 @@ const RESET_ALL: &str = "print.position.reset-all";
 /// holds the two numbers against each other.
 const DRAG_PT: f32 = 120.0;
 
-/// egui's own click-versus-drag distance, logical points: `Options::max_click_dist`,
-/// `egui-0.36.2/src/input_state/mod.rs:113`.
+/// egui's own click-versus-drag distance, logical points:
+/// `InputOptions::max_click_dist`, whose default is 6.0
+/// (`egui-0.35.0/src/input_state/mod.rs:115`).
 ///
 /// A press becomes a drag on the first frame whose travel from the press origin
 /// exceeds this, and that frame's `drag_delta()` carries its entire step. So a

@@ -424,11 +424,11 @@ fn the_selection_channel_resolves_to_the_selected_plate_pair_in_every_preset() {
 /// `egui` spends `selection.stroke.color` twice, on two different grounds,
 /// and offers no way to separate them:
 ///
-/// 1. as the **ink on a selected widget's plate** — `widget_style.rs:151-154`
+/// 1. as the **ink on a selected widget's plate** — `egui-0.35.0/src/widget_style.rs:151-154`
 ///    substitutes `selection.bg_fill` into both fills and
 ///    `selection.stroke.color` into the text of anything `.selected(true)`;
 /// 2. as the **frame stroke of a focused, mutable `TextEdit`** —
-///    `widgets/text_edit/builder.rs:699-706`, drawn over
+///    `egui-0.35.0/src/widgets/text_edit/builder.rs:699-706`, drawn over
 ///    `text_edit_bg_color()`, which falls back to `extreme_bg_color`, which
 ///    [`Theme::write_style`] points at [`Palette::panel`]. `TextEdit` has
 ///    **no `.frame_stroke()`**: there is no per-widget escape hatch.

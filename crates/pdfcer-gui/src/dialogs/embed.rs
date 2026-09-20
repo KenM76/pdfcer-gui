@@ -35,8 +35,8 @@
 //! file the operator then distributes**, carrying that licence's attribution
 //! condition with it. `pdfcer`'s own CLI says so in the argument's doc comment
 //! and draws the only defensible conclusion: *"That is your decision to make,
-//! so pdfcer does not make it for you."* — `pdfcer-cli/src/main.rs:1598`,
-//! `--use-bundled-fonts`, off by default.
+//! so pdfcer does not make it for you."* — `pdfcer-cli`'s
+//! `EmbedFont::use_bundled_fonts` (`--use-bundled-fonts`), off by default.
 //!
 //!
 //! ## What did NOT change

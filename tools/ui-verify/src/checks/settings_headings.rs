@@ -9,7 +9,7 @@
 //!
 //! ## Cause
 //!
-//! `theme.rs:434-450` loops over all five widget states setting
+//! the old GUI's `theme.rs` loops over all five widget states setting
 //! `corner_radius`, `bg_stroke` and `fg_stroke`, and then:
 //!
 //! ```text

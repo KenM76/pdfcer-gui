@@ -40,10 +40,10 @@
 //!    > 'checked, clean' has taken away the one thing that distinguishes a
 //!    > diligence sweep from a no-op."*
 //!
-//!    ★ And this is not a theoretical variant. `carrier_info` reports
-//!    `CheckedClean` at the engine's `redact.rs:2791` and the residual sweep at
-//!    `redact.rs:3138` — the two commonest carriers on the operator's own
-//!    files.
+//!    ★ And this is not a theoretical variant. `pdfcer_core::redact`'s
+//!    `carrier_info` reports `CheckedClean` from its own final `else`, and so
+//!    does `carrier_residual_sweep` — the two commonest carriers on the
+//!    operator's own files.
 //!
 //! ## The wording rule this group adds to the three it inherits
 //!
@@ -73,12 +73,18 @@
 
 /// **A carrier's engine key, in the operator's words.**
 ///
-/// The fourteen keys are the vocabulary `pdfcer_core::redact::CarrierStatus`
-/// documents at its own `redact.rs:270-272`, which is a superset of the twelve
-/// any build currently emits: `thumbnails` and `overlapping_annotations` are
-/// named by the engine's contract and are not produced by `369d4de`. They are
-/// listed anyway, because the cost of an unused arm is nothing and the cost of
-/// a missing one is the raw key on screen.
+/// The fourteen keys are the **union** of two sets that do not coincide: the
+/// ten `pdfcer_core::redact::CarrierStatus::carrier` documents, and the twelve
+/// `pdfcer_core::redact`'s own `add_carrier` calls actually emit. `thumbnails`
+/// and `overlapping_annotations` are documented and never produced;
+/// `residual_sweep`, `images`, `vector_paths` and `shadings` are produced and
+/// never documented. Both halves are matched anyway, because the cost of an
+/// unused arm is nothing and the cost of a missing one is the raw key on
+/// screen.
+///
+/// ★ Grep `add_carrier(` in the engine to re-measure the emitted set; it is a
+/// set that grows without a signature change, which is exactly why this match
+/// falls through to the key itself rather than to an `unreachable!`.
 ///
 /// Returns the input unchanged for a key it does not know — see the module
 /// header for why that beats returning nothing.
@@ -146,8 +152,8 @@ pub fn residual_carrier_line(carrier: &str) -> String {
 ///
 /// | cause | engine site | what happened |
 /// |---|---|---|
-/// | the sweep never ran | `redact.rs:2962` | every removed piece is shorter than the engine's match floor, so searching for them would edit on a coincidence |
-/// | the sweep ran and stopped short | `redact.rs:3126` | some stream objects hold the text and are not safe to blank — a font programme, an image, or text drawn through a subset font whose operand bytes are glyph codes rather than characters |
+/// | the sweep never ran | `carrier_residual_sweep`, its `evidence.is_empty()` branch | every removed piece is shorter than the engine's match floor, so searching for them would edit on a coincidence |
+/// | the sweep ran and stopped short | `carrier_residual_sweep`, its `disclosed` branch | some stream objects hold the text and are not safe to blank — a font programme, an image, or text drawn through a subset font whose operand bytes are glyph codes rather than characters |
 ///
 /// ★★★ **The second cause is the operator's own files.** `OPERATOR_REQUESTS.md`
 /// O142's finding is that his CAD sheets draw text one glyph at a time through

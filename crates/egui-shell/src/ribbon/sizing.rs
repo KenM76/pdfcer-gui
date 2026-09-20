@@ -325,7 +325,7 @@ pub(crate) fn render_large(
     // is the only thing that makes `enabled` mean anything here.
     //
     // `Ui::interact` passes `self.enabled` into the response's `ENABLED` flag
-    // (egui 0.35 `ui.rs:928`, `context.rs:1385`). Allocating from an *enabled*
+    // (`egui-0.35.0/src/ui.rs:928`, `egui-0.35.0/src/context.rs:1385`). Allocating from an *enabled*
     // `Ui` and merely painting greyed — choosing `visuals.widgets.inactive` by
     // hand fifteen lines below — therefore leaves `response.enabled()`
     // **true**, with two consequences:
@@ -525,7 +525,7 @@ mod tests {
     /// That call is only safe if two things are true of egui, and neither is
     /// obvious from the method's one-line doc:
     ///
-    /// 1. **The button does not move.** `button.rs:363` keeps
+    /// 1. **The button does not move.** `egui-0.35.0/src/widgets/button.rs:364-368` keeps
     ///    `frame.inner_margin` in *both* branches — the framed one and the
     ///    margin-only one — so a control that loses its resting ink keeps its
     ///    rectangle. Everything the band plans is built on

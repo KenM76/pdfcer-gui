@@ -1228,10 +1228,10 @@ fn show_in(
 /// the bars allocate no space, are drawn **over** the content, and are fully
 /// transparent until hovered (`dormant_handle_opacity: 0.0`). Their press
 /// target is nonetheless real on every frame the bar is shown — egui 0.35's
-/// `scroll_area.rs:1316` interacts with `outer_rect.with_min_x(max_cross -
+/// `egui-0.35.0/src/containers/scroll_area.rs:1318-1325` interacts with `outer_rect.with_min_x(max_cross -
 /// bar_width)`, the rightmost **10 logical points** of the viewport, with
 /// `Sense::CLICK | Sense::DRAG` — and a press anywhere on it centres the handle
-/// on the pointer (`scroll_area.rs:1405`), i.e. **jumps the scroll**.
+/// on the pointer (`egui-0.35.0/src/containers/scroll_area.rs:1405-1418`), i.e. **jumps the scroll**.
 ///
 /// At a fit zoom the page's right edge sits a few points inside the viewport's
 /// right edge — measured: page `max.x = 726.0` against viewport `max.x = 732.0`

@@ -9,8 +9,10 @@
 //!
 //! > *"Every hit-test and snap `tolerance` is a PAGE-space radius, and
 //! > nothing checks it. Pass raw screen pixels and it compiles, runs, and
-//! > merely drifts with zoom"* (`hit.rs:118-120`, quoted in
-//! > `D:\Dev\FeatureRequests\pdfce_FeatureRequests\README.md`).
+//! > merely drifts with zoom"* (`D:\Dev\FeatureRequests\pdfce_FeatureRequests\README.md`,
+//! > describing `pdfcer_core::vector::hit::hit_test_point`'s `tolerance` — and
+//! > `hit_test_point_all`, `_deep`, `hit_test_text_runs`, `hit_test_subpaths`
+//! > and `_of` take the same unchecked `f64`).
 //!
 //! Both failures are the same mistake — *a screen number used where a page
 //! number was meant* — and both are silent. So this module is the **single

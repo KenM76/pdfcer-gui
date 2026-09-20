@@ -113,7 +113,7 @@
 //!
 //! ## Why one page per frame rather than the old shell's two
 //!
-//! The old shell used `THUMBNAILS_PER_FRAME = 2` (`main.rs:392`) with no time
+//! The old shell used `THUMBNAILS_PER_FRAME = 2` with no time
 //! bound at all. Two is twice the worst-case hitch for the same throughput,
 //! and throughput is not what a thumbnail grid is short of — an operator
 //! reads a rail one screenful at a time. One page per frame means the window

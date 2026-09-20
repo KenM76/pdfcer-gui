@@ -257,9 +257,11 @@ pub fn notes_on<G: ObjectGraph + ?Sized>(graph: &G, page: &Page) -> Vec<NoteView
     // One walk, two collections. The pop-ups have to be gathered in the same
     // pass because a parent names its companion by id and the id alone carries
     // no rectangle — §12.5.6.14's `/Parent` back-reference is deliberately not
-    // modelled by `pdfcer-core` (`annot.rs:81-87`: *"the authoritative
-    // direction is the parent's `/Popup`"*), so the pairing is ours to make
-    // and it is made from the parent's side.
+    // modelled by `pdfcer-core`, whose `annot` module doc lists it under *"what
+    // this module deliberately does NOT model yet"* and says *"the authoritative
+    // direction is the parent's `/Popup`"*. The modelled direction is the field
+    // `Annotation::popup`, so the pairing is ours to make and it is made from
+    // the parent's side.
     //
     for annot in page_annotations(graph, page.id) {
         if annot.is_popup {
@@ -539,8 +541,9 @@ pub struct Reply {
     /// the standard says the subordinate's own `/Contents`, `/M`, `/T` and the
     /// rest *"shall be ignored"* in favour of the primary's, so the words
     /// displayed beside it are words a conforming reader is instructed **not**
-    /// to use. `pdfcer-core` deliberately does not apply that rule
-    /// (`annot.rs:347-348`), so pdfcer shows the raw value — and rule 4 makes
+    /// to use. `pdfcer-core` deliberately does not apply that rule —
+    /// `Annotation::contents` stays *"the raw value the dictionary carries"* —
+    /// so pdfcer shows the raw value, and rule 4 makes
     /// saying so mandatory, which is what this flag is for.
     pub group_member: bool,
 }
@@ -564,8 +567,8 @@ pub struct Reply {
 /// thread. `MAX_THREAD_DEPTH` bounds it, because a file may legally contain a
 /// cycle (`a` replies to `b`, `b` replies to `a`) — §7.3.10 says a dangling
 /// reference is not an error and says nothing at all about a circular one, and
-/// `pdfcer-core` surfaces `/IRT` *"unresolved, same as `popup`: a dangling
-/// `/IRT` is modelled, not repaired"* (`annot.rs:431`). A depth bound is the
+/// `pdfcer-core` surfaces `/IRT` in `Annotation::in_reply_to` *"unresolved,
+/// same as `popup`: a dangling `/IRT` is modelled, not repaired"*. A depth bound is the
 /// only thing standing between that and a hang.
 ///
 /// # Order

@@ -50,8 +50,8 @@
 //! * `remove_encryption` calls `self.base.clear_encryption()` **and**
 //!   `self.trailer.remove(b"Encrypt")`.
 //!
-//! Now read `crate::writer::save_incremental`'s first guard, at
-//! `writer/save.rs:316`: a document whose base is encrypted is refused with
+//! Now read `crate::writer::save_incremental`'s encryption guard: a document
+//! whose base is encrypted is refused with
 //! `WriteError::EncryptedSaveUnsupported`, and that error's own doc explains
 //! why in terms this shell must not undo — saving an encrypted document
 //! verbatim would produce *"one that no reader can open, including pdfcer, and

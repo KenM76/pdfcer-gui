@@ -296,7 +296,7 @@ impl eframe::App for PdfcerApp {
         //
         // # ★ Why the epsilon guard, given that egui already guards
         //
-        // `Context::set_zoom_factor` (`context.rs:2269-2280` in 0.35) does test
+        // `Context::set_zoom_factor` (`egui-0.35.0/src/context.rs:2269-2280`) does test
         // before acting — but on **exact float equality**. A bit-identical
         // `f32` handed straight back is absorbed and costs nothing, so this
         // guard is not covering a naive upstream.
@@ -308,12 +308,12 @@ impl eframe::App for PdfcerApp {
         // `normalise_ui_scale`. Those land a hair off the stored value, egui's
         // equality test sees a change, and the cost is real — a trip requests a
         // repaint on **every viewport** and re-derives `screen_rect` on the
-        // next pass (`context.rs:431-443`). An epsilon is the right *kind* of
+        // next pass (`egui-0.35.0/src/context.rs:431-443`). An epsilon is the right *kind* of
         // guard for a quantity with no exact representation; exact equality is
         // the right kind for a token.
         //
         // Note also that `zoom_factor()` does not reflect a set until the pass
-        // **ends** (`context.rs:2258`), so this read returns what the previous
+        // **ends** (`egui-0.35.0/src/context.rs:2258`), so this read returns what the previous
         // frame settled on — which is exactly what "has it changed since last
         // frame?" wants, and is why a set-then-read-back within one frame would
         // prove nothing.

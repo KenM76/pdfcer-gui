@@ -43,8 +43,8 @@
 //! that are about to change.
 //!
 //! `pdfcer-core` pins that with a test named for the trap
-//! (`style.rs:643 factory_sourced_properties_still_follow_a_group_edit`), and
-//! this module never re-derives the predicate: it calls the engine's.
+//! (`factory_sourced_properties_still_follow_a_group_edit`), and this module
+//! never re-derives the predicate: it calls `StyleSource::follows_group`.
 
 use egui::Ui;
 use pdfcer_core::dimension::{

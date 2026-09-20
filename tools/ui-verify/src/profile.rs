@@ -199,14 +199,13 @@ impl Vocabulary {
         }
     }
 
-    /// The vocabulary of the OLD binary at `D:\Dev\pdfcer`.
+    /// The vocabulary of the OLD binary, whose source is archived at
+    /// `D:\Dev\pdfce\crates\pdfce-gui\src\main.rs`.
     ///
-    ///
-    /// * `canvas … rect= zoom= sel=` — `main.rs:16866`, traced only on pointer
-    ///   events
-    /// * `vector-click … hits= newsel=` — `main.rs:22163`
-    /// * `delete-objects n=` — `main.rs:5293`
-    /// * `start` — `main.rs:624`, emitted unconditionally
+    /// * `canvas … rect= zoom= sel=` — traced only on pointer events
+    /// * `vector-click … hits= newsel=`
+    /// * `delete-objects n=`
+    /// * `start` — emitted unconditionally
     ///
     /// `object_count_event` and `ui_rect_event` are `None` because this binary
     /// has neither, and **that is load-bearing rather than incidental**. It is
@@ -504,9 +503,9 @@ pub const PDFCER_LEGACY: Profile = Profile {
     // old-name-exempt: the variable the OLD binary reads. Renaming it turns
     // its diagnostics off silently, which reads as a build that says nothing.
     diag_env: ("PDFCE_DIAG", "1"),
-    // old-name-exempt: the old GUI's `diag.rs:746` prints this exact prefix.
+    // old-name-exempt: the old GUI's `diag` module prints this exact prefix.
     trace_prefix: "pdfce-diag",
-    // old-name-exempt: the old GUI's `main.rs:601` reads this exact spelling.
+    // old-name-exempt: the old GUI reads this exact spelling.
     viewport_env: Some("PDFCE_DIAG_VIEWPORT"),
     vocab: Vocabulary::pdfcer_legacy(),
     region_sets: &[SETTINGS_HEADINGS_LEGACY],

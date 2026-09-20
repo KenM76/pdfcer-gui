@@ -482,7 +482,8 @@ fn renaming_a_field_nothing_names_records_no_second_sentence() {
 ///
 /// What replaces them is nothing, deliberately. The behaviour they gestured at
 /// is the engine's and is asserted in the engine's own suite
-/// (`tests/form_field_merge.rs:1241`); re-asserting it here would rebuild the
+/// (`a_dotted_path_may_not_nest_under_an_existing_terminal_field`);
+/// re-asserting it here would rebuild the
 /// duplicate model whose deletion this module now documents.
 mod dotted_names {
     /// **`author` reads the engine's refusal, and does not model it.**

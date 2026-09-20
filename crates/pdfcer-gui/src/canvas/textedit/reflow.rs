@@ -37,7 +37,8 @@
 //! a subscript into a different array. The engine's own doc comment states the
 //! contract in as many words: *"the GUI's caret-block resolution … call THIS
 //! function, so the block index the GUI targets means the SAME block the engine
-//! previews and the surgery re-emits"* (`reflow.rs:144`). It believed we did.
+//! previews and the surgery re-emits"* — the doc on
+//! `pdfcer_core::text_edit::reflow_recognition_options`. It believed we did.
 //!
 //! ### What it measured, on `SW41177.pdf` page 0, run 100
 //!

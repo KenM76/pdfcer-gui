@@ -138,7 +138,7 @@
 //!
 //! ★ Surfacing it costs this module nothing, and that is by design rather than
 //! by omission: `app::actions::funnel::vector_edit`'s `Err` arm
-//! (`funnel.rs:276`) already routes every `EditError` to the decline channel —
+//! already routes every `EditError` to the decline channel —
 //! `crate::text::status::edit_declined_by_engine` on screen, the engine's own
 //! sentence into `PDFCER_DIAG` — and `check-ui-strings.sh`'s exclusion 3 says
 //! in as many words that an error's `Display` is *"not permission to route UI

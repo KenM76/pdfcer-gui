@@ -187,7 +187,7 @@ run "check-plate-colour" bash "$HERE/check-plate-colour.sh"
 # `egui::Visuals::selection` is egui's styling channel for a selected WIDGET:
 # `Style::button_style` takes both fills AND the text colour from it for every
 # `Button::selected(true)` and every `ui.selectable_label(true, …)`
-# (`widget_style.rs:151-154`). This theme had handed that channel to the
+# (`egui-0.35.0/src/widget_style.rs:151-154`). This theme had handed that channel to the
 # CANVAS — a 27 % object tint and the canvas outline ink — because 33 readers
 # across 13 files depended on it. The canvas won, so nineteen selected chrome
 # controls painted accent text on a wash: luminance gap 72.5 under Dark,

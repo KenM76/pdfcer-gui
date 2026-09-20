@@ -99,7 +99,7 @@
 //! ## ★ A click with no drag places NOTHING for the band kinds, and that is a
 //! ## decision
 //!
-//! The old shell answered the other way: `default_markup_at` (`main.rs:19770`)
+//! The old shell answered the other way: `default_markup_at`
 //! turned a bare click into a 120 × 60 point box centred on the pointer, with
 //! a `MIN_DRAG` of 4 **PDF points** below which a real drag was also treated as
 //! a click. Neither half is carried across, and the reasons are specific rather
@@ -625,7 +625,7 @@ const CLOUD_INTENSITY: f64 = 1.0;
 ///
 /// # ★ An arrow keeps its RAW endpoints; a rectangle kind is normalised
 ///
-/// Carried across from the old shell's `commit_markup` (`main.rs:5624-5627`),
+/// Carried across from the old shell's `commit_markup`,
 /// which states it in one sentence: *"the direction the operator dragged is the
 /// direction the line points, and its arrowheads make that visible.
 /// Normalising here would silently flip half of all drawn arrows."*

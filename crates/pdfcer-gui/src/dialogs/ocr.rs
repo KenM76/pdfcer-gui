@@ -570,7 +570,7 @@ impl OcrDialog {
                 //
                 // ★ It works today without this line, and that is the trap.
                 // `egui::Spinner` calls `ui.request_repaint()` itself because
-                // it is animated (egui 0.35, `widgets/spinner.rs:40`). So the
+                // it is animated (`egui-0.35.0/src/widgets/spinner.rs:40`). So the
                 // whole visibility of this feature currently rests on a
                 // side effect of a decorative widget, and anyone replacing the
                 // spinner with a progress bar — a completely reasonable change,
@@ -588,7 +588,7 @@ impl OcrDialog {
                     //
                     // `egui::Spinner` resolves its own colour from
                     // `visuals.strong_text_color()` (egui-0.35
-                    // `widgets/spinner.rs:44`) and draws it on
+                    // `egui-0.35.0/src/widgets/spinner.rs:44`) and draws it on
                     // `window_fill`. That accessor **is**
                     // `widgets.active.fg_stroke.color` — the ink meant for the
                     // accent FILL — so on a dialog background the luminance gap

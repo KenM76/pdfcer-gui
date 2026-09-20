@@ -77,7 +77,7 @@
 //!
 //! And the answer changed for the most ordinary reason there is.
 //! `pointer_on_page` is read from `Response::contains_pointer`, which is
-//! layer-aware — egui's own words, `response.rs:323`: *"also checks that no
+//! layer-aware — egui's own words, `egui-0.35.0/src/response.rs:323-324`: *"also checks that no
 //! other widget is covering this response rectangle."* **The open menu is
 //! that other widget.** Cursor enters menu ⇒ menu covers page ⇒ page does
 //! not contain the pointer ⇒ [`Surface::Pasteboard`] ⇒ menu destroyed,

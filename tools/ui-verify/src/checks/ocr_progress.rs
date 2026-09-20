@@ -56,7 +56,7 @@
 //! no input events, so **nothing would have requested the next frame** and the
 //! window would have held the frame it drew when the run started. It worked
 //! anyway — because `egui::Spinner` calls `request_repaint()` for its own
-//! animation (egui 0.35, `widgets/spinner.rs:40`). The entire visibility of
+//! animation (`egui-0.35.0/src/widgets/spinner.rs:40`). The entire visibility of
 //! this feature rested on a side effect of a decorative widget. `dialogs::ocr`
 //! now asks for the repaint explicitly and says why; anyone who later swaps the
 //! spinner for a progress bar will not silently take live progress with it.

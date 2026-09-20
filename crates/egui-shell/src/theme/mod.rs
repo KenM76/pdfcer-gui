@@ -184,7 +184,7 @@ pub struct Palette {
     /// `ui.selectable_label(true, …)`, every `Button::selected(true)`, the
     /// highlight behind selected text in a `TextEdit`, a `ProgressBar`'s fill
     /// and a `Slider`'s trail are painted with it — `egui` substitutes it at
-    /// paint time (`widget_style.rs:151-154`), so it reaches all of them
+    /// paint time (`egui-0.35.0/src/widget_style.rs:151-154`), so it reaches all of them
     /// together whether or not any call site mentions it.
     ///
     /// # ★★★ WHAT THIS IS NOT: it is not [`Self::selection_fill`]
@@ -214,7 +214,7 @@ pub struct Palette {
     /// Because one channel has to serve two roles and `egui` gives no way to
     /// separate them. `visuals.selection.stroke` is BOTH the ink on this plate
     /// AND the frame stroke of a **focused, mutable `TextEdit`**
-    /// (`widgets/text_edit/builder.rs:699-706`), which is drawn on
+    /// (`egui-0.35.0/src/widgets/text_edit/builder.rs:699-706`), which is drawn on
     /// `text_edit_bg_color()` — [`Self::panel`] in this theme. `TextEdit` has
     /// no `.frame_stroke()`, so there is no per-widget override to escape with.
     ///
@@ -848,7 +848,7 @@ impl Theme {
     ///
     /// `egui` styles a selected widget correctly on its own — it substitutes
     /// both fills and the text colour out of this channel at paint time
-    /// (`widget_style.rs:151-154`). A `ui.selectable_label(true, …)` needs no
+    /// (`egui-0.35.0/src/widget_style.rs:151-154`). A `ui.selectable_label(true, …)` needs no
     /// colour from anyone. Reach for this **only** when you are drawing an
     /// extra mark on top of a plate `egui` painted, because that mark is the
     /// one thing `egui` cannot colour for you.
@@ -1159,7 +1159,7 @@ impl Theme {
         // ═══════════════════════════════════════════════════════════════════
         //
         // `egui` reuses `selection.stroke` as the frame stroke of a **focused,
-        // mutable `TextEdit`**. Verbatim, `widgets/text_edit/builder.rs:699-706`:
+        // mutable `TextEdit`**. Verbatim, `egui-0.35.0/src/widgets/text_edit/builder.rs:699-706`:
         //
         // ```text
         // let background_color = background_color
@@ -1218,7 +1218,7 @@ impl Theme {
         //     momentary, the second is a persistent state — and it is what
         //     `egui`'s stock themes do.
         //  2. Selected TEXT inside a `TextEdit` rides on the same pair.
-        //     `text_selection/visuals.rs:39-40` takes its highlight from
+        //     `egui-0.35.0/src/text_selection/visuals.rs:39-40` takes its highlight from
         //     `bg_fill` and its text from `stroke.color`, so it clears the
         //     floor by the same 103 / 119 / 123.
         //  3. A `ProgressBar` benefits most. It fills with `bg_fill` but

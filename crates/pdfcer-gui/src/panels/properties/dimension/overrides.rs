@@ -38,10 +38,11 @@
 //!
 //! ## ★ Four properties can never report `Factory`, and that is not a bug
 //!
-//! `unit`, `fraction`, `decimal_marker` and `standard` have **concrete fields**
-//! on `Group` rather than `Option`s, so the group always has a value for them
-//! and their provenance is `Group` or `Dimension` and nothing else
-//! (`style.rs:527-539`). Saying "factory" for them *"would be a lie an operator
+//! `unit`, `fraction`, `decimal_marker` and `standard` are **concrete**, not
+//! `Option`s — the first three inside `Group::format`, the last as
+//! `Group::standard` — so the group always has a value for them
+//! and their provenance is `Group` or `Dimension` and nothing else — that is
+//! `style_provenance`'s `two` closure. Saying "factory" for them *"would be a lie an operator
 //! could act on"* — the engine's words. Nothing here special-cases them,
 //! because nothing here derives provenance; they simply never render the
 //! factory sentence.
@@ -49,7 +50,8 @@
 //! ## Why there is no scale row
 //!
 //! By refusal, and the refusal is structural: `StyleOverrides` has **no scale
-//! field**, asserted at `style.rs:650`. A ce dimension quietly measuring at a
+//! field**, asserted by `scale_is_never_overridable_per_ce_dimension`. A ce
+//! dimension quietly measuring at a
 //! different scale from its group would print a number that is wrong in a way
 //! nothing on the page discloses, which rule 4 makes a refusal rather than a
 //! feature. Scale is set on the group, in the Set-scale window, and this

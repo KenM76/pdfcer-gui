@@ -63,7 +63,8 @@
 //! `Err(Unsupported)` rather than an empty `Vec`, since *"reporting the same
 //! value for 'this platform cannot enumerate printers at all' would collapse
 //! two different facts into one and send a caller looking for hardware"*
-//! (`lib.rs:1859-1866`). [`Unavailable`] carries that distinction across the
+//! — `list_printers`'s `#[cfg(not(windows))]` stub, in its own words.
+//! [`Unavailable`] carries that distinction across the
 //! port; see [`crate::text::print`]'s header for the three sentences it
 //! feeds.
 //!
@@ -187,7 +188,7 @@ impl fmt::Display for Unavailable {
 /// **Four modes, not three**, and the fourth is not a rounding error:
 /// `pdfcer-print` keeps `Fit` and `ShrinkOversized` apart because collapsing
 /// them — *"the natural simplification"* — *"silently blows a business card
-/// up to A4"* (`lib.rs:490-494`). Fit scales in both directions; Shrink only
+/// up to A4"* — `ScaleMode`'s own doc. Fit scales in both directions; Shrink only
 /// ever reduces.
 ///
 /// Maps to `pdfcer_print::ScaleMode`, variant for variant.

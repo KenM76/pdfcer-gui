@@ -290,7 +290,7 @@ pub(crate) fn command_button(
             //
             //  1. Only the **Inactive** state loses its ink.
             //     `WidgetState::Hovered` and `WidgetState::Active`
-            //     (`widget_style.rs:105-113`: pointer down, focused, or
+            //     (`egui-0.35.0/src/widget_style.rs:105-113`: pointer down, focused, or
             //     clicked) still paint `frame` in full — fill *and* stroke. So
             //     hover feedback and pressed feedback survive intact; what
             //     goes away is the box around forty resting controls.
@@ -307,7 +307,7 @@ pub(crate) fn command_button(
             // pressed-looking while nobody is touching it, i.e. it is in the
             // Inactive state and must still draw its plate. This is exactly
             // the composition `egui::Button::selectable` performs
-            // (`button.rs:78-83`), and the plate it draws is
+            // (`egui-0.35.0/src/widgets/button.rs:78-83`), and the plate it draws is
             // `visuals.selection.bg_fill` = `Palette::selected_plate` with
             // `selection.stroke` = `Palette::accent` as ink — bit for bit the
             // mockup's `background: var(--plate); color: var(--accent)`.
@@ -318,7 +318,7 @@ pub(crate) fn command_button(
             // hovered state paints both. Zeroing `widgets.hovered.bg_stroke`
             // to match would change that state's `inner_margin` — it is
             // `button_padding + expansion − bg_stroke.width`
-            // (`widget_style.rs:163`) — so the button would grow by a point
+            // (`egui-0.35.0/src/widget_style.rs:163`) — so the button would grow by a point
             // in each direction the moment the pointer touched it. A control
             // that twitches under the cursor is a worse defect than a
             // hairline the operator only ever sees on the one control they

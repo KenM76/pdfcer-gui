@@ -10,11 +10,11 @@
 # widgets**. Its own doc comment says "Selected text, selected elements etc",
 # and `egui` reads it in exactly the places that sentence implies:
 #
-#   · `Style::button_style`, `SELECTED_CLASS` branch — `widget_style.rs:151-154`
-#   · the selected-text highlight — `text_selection/visuals.rs:39-40`
-#   · the progress bar's fill and its label — `widgets/progress_bar.rs:159,199`
-#   · the slider's trail — `widgets/slider.rs:802`
-#   · a focused `TextEdit`'s frame stroke — `widgets/text_edit/builder.rs:704`
+#   · `Style::button_style`, `SELECTED_CLASS` branch — `egui-0.35.0/src/widget_style.rs:151-154`
+#   · the selected-text highlight — `egui-0.35.0/src/text_selection/visuals.rs:39-40`
+#   · the progress bar's fill and its label — `egui-0.35.0/src/widgets/progress_bar.rs:159,199`
+#   · the slider's trail — `egui-0.35.0/src/widgets/slider.rs:802`
+#   · a focused `TextEdit`'s frame stroke — `egui-0.35.0/src/widgets/text_edit/builder.rs:704`
 #
 # ★★★ THIS PROJECT HANDED THAT CHANNEL TO THE CANVAS, AND THE CANVAS WON.
 #
@@ -331,7 +331,7 @@ if [ "$rc" -eq 1 ]; then
 
 `egui::Visuals::selection` is how `egui` styles a SELECTED WIDGET. It supplies
 both fills AND the text colour for every `Button::selected(true)` and every
-`ui.selectable_label(true, …)` in the application — `widget_style.rs:151-154`.
+`ui.selectable_label(true, …)` in the application — `egui-0.35.0/src/widget_style.rs:151-154`.
 It is not a canvas role, it is not a general-purpose accent, and it is not a
 focus-ring colour.
 

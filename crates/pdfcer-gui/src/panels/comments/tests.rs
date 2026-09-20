@@ -442,7 +442,7 @@ fn a_reply_resolves_to_the_comment_at_the_head_of_its_thread() {
 ///
 /// §7.3.10 makes a dangling reference not an error and says nothing at all
 /// about a circular one, and `pdfcer-core` models `/IRT` *"unresolved … a
-/// dangling `/IRT` is modelled, not repaired"* (`annot.rs:431`). So a file that
+/// dangling `/IRT` is modelled, not repaired"* in `Annotation::in_reply_to`. So a file that
 /// says `a` replies to `b` and `b` replies to `a` is a file this panel must
 /// survive — and an unbounded upward walk over one hangs **the frame that is
 /// trying to draw**, which is the worst available outcome on a display surface.

@@ -68,8 +68,8 @@
 //!
 //! ## ★★★ FACT TWO — THE ENGINE READS THE STRINGS **VERBATIM**
 //!
-//! `Annotation::state` (`annot.rs:480`) and `::state_model` (`annot.rs:492`)
-//! are `Option<String>`, and the field's own doc says why it is not an enum:
+//! `Annotation::state` and `Annotation::state_model` are `Option<String>`, and
+//! `state`'s own doc says why it is not an enum:
 //!
 //! > *"Neither key carries a 'shall be one of' anywhere in either edition, so a
 //! > value outside Table 171's vocabulary is **unhandled, not illegal**.
@@ -202,7 +202,7 @@ pub const REGION_STATUS_FILTER: &str = "comments.status_filter"; // ui-text-exem
 /// `Review`'s five first, then `Marked`'s two, because the `Review` model is
 /// what a comment workflow uses and `Marked` is a two-value tick that Acrobat
 /// surfaces separately. Grouped rather than alphabetical: the two models are
-/// different vocabularies (`annot.rs:472-479` — *"a caller that wants the
+/// different vocabularies (`Annotation::state` — *"a caller that wants the
 /// effective state must read both fields together"*) and an alphabetical list
 /// would interleave them into one seven-item menu that implies they are
 /// alternatives within a single scale.
@@ -953,7 +953,7 @@ fn record_control(
         .show_ui(ui, |ui| {
             // Grouped by model, with each model's own name above it. The two
             // are different vocabularies rather than seven points on one scale
-            // — `annot.rs:472-479`: "a caller that wants the effective state
+            // — `Annotation::state`: "a caller that wants the effective state
             // must read both fields together" — and a flat list would invite
             // the operator to read `Marked` as a sixth `Review` value.
             //

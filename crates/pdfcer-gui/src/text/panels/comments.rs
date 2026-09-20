@@ -199,7 +199,7 @@ pub fn comment_row_heading(subtype: &str, page_number: usize) -> String {
 ///
 /// The subtype is kept **in brackets rather than replaced**, and that is the
 /// whole reason this reads the way it does. The old shell's exclusion argument
-/// (`main.rs:7031-7051`) turns on ce dimensions being ordinary `/Line`
+/// (`comments_panel`'s own doc) turns on ce dimensions being ordinary `/Line`
 /// annotations — that is why they cannot be filtered out by subtype without
 /// also hiding a genuine `/Line` markup somebody drew. A heading that hid the
 /// `/Line` would quietly contradict the argument that put the row here.
@@ -217,8 +217,7 @@ pub fn comment_row_ce_dimension_heading(subtype: &str, page_number: usize) -> St
 ///
 /// `/T` is a **Table 170 markup key**, so it is legitimately absent on a
 /// `/Link` or a `/PrinterMark`, where `None` means *"this subtype has no such
-/// concept"* rather than *"anonymous"*
-/// (`D:\Dev\pdfcer\crates\pdfcer-core\src\annot.rs:340-347`). Printing an
+/// concept"* rather than *"anonymous"* (`Annotation::title`). Printing an
 /// "(unknown author)" placeholder would turn a correct fact about a subtype
 /// into a claim about a person.
 ///
@@ -382,7 +381,7 @@ pub fn comment_row_is_reply() -> &'static str {
 /// rule** — `Annotation::contents` is the raw dictionary value, because
 /// *"silently substituting a primary's `/Contents` for a subordinate's would
 /// make the model disagree with the file, which is the one thing
-/// `pdfcer-core`'s read half must never do"* (`annot.rs:326-335`).
+/// `pdfcer-core`'s read half must never do"* — `Annotation::contents`'s own doc.
 ///
 /// Both halves of that are right, and together they mean the note text on this
 /// row is text the standard instructs a conforming reader **not** to display.

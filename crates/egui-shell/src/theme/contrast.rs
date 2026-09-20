@@ -257,7 +257,7 @@ pub enum Ground {
     PanelFill,
     /// `visuals.window_fill` — every `Window`, every menu and every popup,
     /// via `Frame::window` / `Frame::menu` / `Frame::popup`
-    /// (`frame.rs:195-220`). In this application that is all twenty-odd
+    /// (`egui-0.35.0/src/containers/frame.rs:195-220`). In this application that is all twenty-odd
     /// dialogs and the whole menu system.
     WindowFill,
     /// `visuals.text_edit_bg_color()` — the inside of a `TextEdit`, which
@@ -312,17 +312,17 @@ pub enum TextRole {
     /// (`egui-0.35.0/src/style.rs:1130-1133`).
     ///
     /// Ordinary body text: every `ui.label`, every heading, the text
-    /// inside a `TextEdit` (`widgets/text_edit/builder.rs:463-466`). The
+    /// inside a `TextEdit` (`egui-0.35.0/src/widgets/text_edit/builder.rs:463-466`). The
     /// widget matrix covers this colour only *inside* a widget; this
     /// covers it where most of it actually is, which is loose on a panel
     /// or in a dialog.
     Body,
     /// `visuals.weak_text_color()` — `text_color()` gamma-multiplied by
     /// `weak_text_alpha` (0.6 by default) unless `weak_text_color` is set
-    /// (`style.rs:1135-1138`).
+    /// (`egui-0.35.0/src/style.rs:1135-1138`).
     ///
-    /// `RichText::weak()` (`widget_text.rs:487`) and a `TextEdit`'s hint
-    /// text (`text_edit/builder.rs:591`). **This project uses it heavily**
+    /// `RichText::weak()` (`egui-0.35.0/src/widget_text.rs:487`) and a `TextEdit`'s hint
+    /// text (`egui-0.35.0/src/widgets/text_edit/builder.rs:591`). **This project uses it heavily**
     /// — every explanatory note under a control in Settings and in the
     /// Print dialog, every count and hint in the status bar, the ribbon's
     /// group captions — which makes it the single most likely place for
@@ -335,10 +335,10 @@ pub enum TextRole {
     /// passes, the theme is fine and `weak_text_alpha` is the dial.
     Weak,
     /// `visuals.strong_text_color()` — `widgets.active.fg_stroke.color`
-    /// (`style.rs:1141-1143`).
+    /// (`egui-0.35.0/src/style.rs:1141-1143`).
     ///
-    /// `RichText::strong()` (`widget_text.rs:485`) and `egui::Spinner`
-    /// (`widgets/spinner.rs:44`).
+    /// `RichText::strong()` (`egui-0.35.0/src/widget_text.rs:485`) and `egui::Spinner`
+    /// (`egui-0.35.0/src/widgets/spinner.rs:44`).
     ///
     /// ⚠ **This role carries the module's only [`Exemption`]**, and the
     /// reason is structural rather than a tuning miss. See
@@ -403,7 +403,7 @@ impl TextRole {
     ///
     /// - [`Self::Body`] and [`Self::Weak`] reach [`Ground::TextEditBg`]
     ///   because a `TextEdit` draws its content and its hint there
-    ///   (`text_edit/builder.rs:463-466` and `:591`).
+    ///   (`egui-0.35.0/src/widgets/text_edit/builder.rs:463-466` and `:591`).
     /// - Nothing draws `strong`, a hyperlink, a warning or an error
     ///   *inside* a text field, so those four stop at the two chrome
     ///   grounds.
@@ -548,7 +548,7 @@ impl Origin {
             Origin::Text {
                 role: TextRole::Body,
                 ground: Ground::TextEditBg,
-            } => "the text you type into a TextEdit (text_edit/builder.rs:463-466)",
+            } => "the text you type into a TextEdit",
             Origin::Text {
                 role: TextRole::Body,
                 ..
@@ -556,15 +556,15 @@ impl Origin {
             Origin::Text {
                 role: TextRole::Weak,
                 ground: Ground::TextEditBg,
-            } => "a TextEdit's hint text when the field is empty (text_edit/builder.rs:591)",
+            } => "a TextEdit's hint text when the field is empty",
             Origin::Text {
                 role: TextRole::Weak,
                 ..
-            } => "RichText::weak() — captions, hints and counts (widget_text.rs:487)",
+            } => "RichText::weak() — captions, hints and counts",
             Origin::Text {
                 role: TextRole::Strong,
                 ..
-            } => "RichText::strong() and egui::Spinner (widget_text.rs:485, spinner.rs:44)",
+            } => "RichText::strong() and egui::Spinner",
             Origin::Text {
                 role: TextRole::Hyperlink,
                 ..
@@ -578,12 +578,10 @@ impl Origin {
                 ..
             } => "every call site reading visuals().error_fg_color",
             Origin::SelectedWidget { .. } => {
-                "every selectable_label(true, …) and Button::selected(true) \
-                 (widget_style.rs:151-154)"
+                "every selectable_label(true, …) and Button::selected(true)"
             }
             Origin::FocusRing => {
-                "the frame of a focused, mutable TextEdit — no .frame_stroke() exists \
-                 (text_edit/builder.rs:699-706)"
+                "the frame of a focused, mutable TextEdit — no .frame_stroke() exists"
             }
         }
     }
@@ -762,7 +760,7 @@ pub const EXEMPTIONS: &[Exemption] = &[
 /// header on what a `Style`-level gate cannot see.
 ///
 /// ⚠ **One widget escapes both**: `egui::Spinner` resolves
-/// `strong_text_color()` itself (`widgets/spinner.rs:44`) unless the call
+/// `strong_text_color()` itself (`egui-0.35.0/src/widgets/spinner.rs:44`) unless the call
 /// site passes `.color(...)`, and a bare `ui.spinner()` names no colour
 /// for a source gate to check. A spinner is therefore invisible on a
 /// window in every preset. That is a call-site defect, not a theme one,
@@ -774,7 +772,7 @@ FILL, and egui offers no separate emphasis role — so no theme value can read o
 accent and a panel. DEFECTS.md D11 rules `RichText::strong()` out of this application and \
 tools/gates/check-strong-text.sh enforces it at the call site, which is where the \
 information is. The one widget that reaches the role without naming a colour is \
-egui::Spinner (widgets/spinner.rs:44); a bare `ui.spinner()` is invisible on a window in \
+egui::Spinner; a bare `ui.spinner()` is invisible on a window in \
 every preset and must pass `.color(...)`.";
 
 /// The exemption covering `origin`, if any.
