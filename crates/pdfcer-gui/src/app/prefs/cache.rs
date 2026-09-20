@@ -37,7 +37,7 @@
 //! *"Large"* is not a number anybody can budget against. An operator with 8 GB
 //! and an operator with 64 GB are making different decisions, and neither can
 //! make theirs from an adjective. So the labels carry the figure —
-//! `crate::text::settings::look::page_cache_label` renders it — and the figures
+//! `crate::text::settings::shell::page_cache_label` renders it — and the figures
 //! are exact rather than rounded up, because a memory number that flatters
 //! itself is the one kind of disclosure worse than none.
 //!

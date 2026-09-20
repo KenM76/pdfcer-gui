@@ -1642,32 +1642,16 @@ in `D:/dev/rag/egui/`.
 ## Where the seam is in each file now crowding the size limit
 
 R2's remedy is *find the seam*, never *raise the limit*, and the seam is a
-property of the file rather than of the number. Eight files sit between 1,452
-and 1,473 lines against the 1,500 cap, so the next ordinary edit to any of them
+property of the file rather than of the number. Seven files sit between 1,452
+and 1,471 lines against the 1,500 cap, so the next ordinary edit to any of them
 turns a green gate red mid-task. This section is the seam for each, so that
-work is a patch rather than a re-derivation. **Every one of the eight is LF**;
+work is a patch rather than a re-derivation. **Every one of the seven is LF**;
 the mixed-ending hazard recorded against a patch script does not apply to this
 batch.
 
 Line numbers below are an aid to the eye only. The anchor in every case is the
 named item or the quoted banner, because a citation into a moving file goes
 wrong silently.
-
-**`text/settings/look.rs` → `text/settings/shell.rs`.** Cut at the banner
-*"Appearance — how big pdfcer's own controls are drawn"*. Above it are settings
-the PDF specification is silent about, answered for the **document's** pixels —
-CMYK intent, JPEG polarity, blend space, comment author, mask resampling,
-minification. Below it are the **shell's own** preferences, and the file already
-says so in its own words two banners later: *"★ These two are not spec
-ambiguities."* The theme block moves with them, because `ui_scale`'s doc calls
-itself *"The theme's twin"* and splitting twins across files is the drift this
-exercise exists to prevent. `settings/mod.rs` glob-re-exports and every call
-site uses a bare name, so the whole edit outside the two files is two lines in
-`mod.rs`. `check-ui-strings.sh`'s `CATALOG_RELPATHS` carries `text/*`, whose
-shell `case` glob spans `/`, so the new path stays catalog. **This is the one to
-take first** — it is the only one of the eight that costs nothing outside the
-two files, and it corrects a module header that no longer describes its own
-bottom half.
 
 **`ribbon/width_tests.rs` → `ribbon/strip_width_tests.rs`.** The banner in the
 middle already writes the sentence: *"Everything below is failure mode #8 one

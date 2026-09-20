@@ -158,13 +158,13 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    `paint_rect` equals the page rect at every zoom below the pixmap ceiling,
    so the ink-coverage question is **unfalsified**, not merely weak, and
    exercising it needs this gesture driven at the region tier.
-   **What is next, in order.** The size cap: eight files sit between 1,452
-   and 1,473 lines, so the next seam-finding pass is a batch rather than a
-   one-off. The seam for each of the eight is already argued in `DESIGNS.md`
-   under *Where the seam is in each file now crowding the size limit* —
-   including the two that have none — so that pass is a patch, not a
-   re-derivation. Take `text/settings/look.rs` first: it is the only one whose
-   split costs nothing outside the two files.
+   **What is next, in order.** The size cap: seven files sit between 1,452
+   and 1,471 lines, so the seam-finding pass is a batch rather than a one-off.
+   The seam for each is already argued in `DESIGNS.md` under *Where the seam
+   is in each file now crowding the size limit* — including the two that have
+   none — so that pass is a patch, not a re-derivation. `canvas/keys/tests.rs`
+   and `ribbon/width_tests.rs` are the same split twice and belong in one
+   commit.
    **O215's ask 2 is the engine's and is filed as `G032`**: `runs_share_a_line` never
    reads the horizontal translation, so a table row welds into one line — 565
    welded lines on his own drawing, the widest spanning 709.4 pt of blank paper.
@@ -883,16 +883,16 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
   tree is not a frozen-correct one, because its citations kept drifting right
   up to the freeze, so what froze was the error.
 
-- **Eight source files sit within fifty lines of the hard limit.**
-  `crates/pdfcer-gui/src/text/settings/look.rs` is 1473 against
-  `check-file-size.sh`'s 1,500, `tools/ui-verify/src/checks/mod.rs` and
-  `crates/pdfcer-gui/src/canvas/measure/mod.rs` are 1471, and five more run
-  from 1470 down to 1452. Adding one ordinary
-  function to any of them turns a green gate red mid-task, and the remedy R2
-  requires is *find the seam*, never *raise the limit* — which is a refactor,
-  not an edit, and it will arrive at the worst moment unless it is done first.
-  The seam for each is argued in `DESIGNS.md`; two of the eight have none, and
-  knowing which two is what stops a cut being chosen to hit a line count.
+- **Seven source files sit within fifty lines of the hard limit.**
+  `tools/ui-verify/src/checks/mod.rs` and
+  `crates/pdfcer-gui/src/canvas/measure/mod.rs` are 1471 against
+  `check-file-size.sh`'s 1,500, and five more run from 1470 down to 1452.
+  Adding one ordinary function to any of them turns a green gate red
+  mid-task, and the remedy R2 requires is *find the seam*, never *raise the
+  limit* — which is a refactor, not an edit, and it will arrive at the worst
+  moment unless it is done first. The seam for each is argued in `DESIGNS.md`;
+  two of the seven have none, and knowing which two is what stops a cut being
+  chosen to hit a line count.
   Re-measure before quoting these:
   `find crates tools -name '*.rs' -not -path '*/target/*' -print0 | xargs -0 wc -l | grep -v ' total$' | sort -rn | head`
   — the `grep -v` is load-bearing, because `xargs` batches and emits one

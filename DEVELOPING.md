@@ -865,9 +865,9 @@ narrate the *what*.
 A design decision is worth keeping when knowing it changes what a reader would
 write next. It is not worth keeping because it was hard-won.
 
-**One formatting trap, in one file.**
-`crates/pdfcer-gui/src/text/settings/look.rs` keeps its long operator-facing
-string literals on single lines, and the convention is mechanical rather than
+**One formatting trap, in one module.**
+`crates/pdfcer-gui/src/text/settings/` keeps its long operator-facing string
+literals on single lines, and the convention is mechanical rather than
 stylistic. Rust's backslash continuation eats the newline *and* the next line's
 indentation; drop the backslash and the literal still compiles, still passes
 every test that does not compare it to a hand-written expectation, and now
