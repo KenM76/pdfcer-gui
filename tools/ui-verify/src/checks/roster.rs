@@ -448,6 +448,12 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // at all fails the cheaper trace check first and names the defect
         // without a pixel comparison having to.
         Box::new(chunk_ghost_pixels::TheTravellingCopyIsOnTheGlass),
+        // O216 ask 1. Beside the chunk row because it is the same unit of
+        // selection, and after it because a build that cannot place a caret
+        // in a chunk should fail on the caret checks first: this one's
+        // failure sentence names a guard, and it is only worth reading once
+        // the cheaper checks have ruled out the aim.
+        Box::new(chunk_empty::EmptyingAChunkCommitsTheEmptying),
         // `OPERATOR_REQUESTS.md` O71. Beside the Smart-Selector
         // check because both are about what a plain click MEANS — that one in
         // Edit, this one in Read, which is the stance where the answer had

@@ -648,6 +648,23 @@ pub fn load(ctx: &egui::Context, page: usize, kind: TextEditKind) -> Option<Draf
 /// an operator who typed a character and deleted it again would put a no-op
 /// entry on the undo stack every time they clicked away — the old shell's own
 /// finding, and it matters more here because clicking out commits.
+///
+/// ## ★★ An emptied RUN is a write; an empty ADD caret is not
+///
+/// The two look like one rule and they are opposite ones, so the emptiness
+/// guard sits on `Origin` and `Box` and not on `Run`.
+///
+/// Deleting every character of a run and clicking away is ambiguous — *remove
+/// this text* and *I changed my mind* are the same gesture — and this shell
+/// takes the operator's reading, leaving **undo** as the recovery, which is
+/// what Acrobat does with the same gesture. The other reading wrote nothing,
+/// and its cost was not the lost edit: with no action raised there is no
+/// plan, no `edit_text` call, no refusal to classify and **no sentence
+/// anywhere the operator could read one**, so an edit that was declined was
+/// indistinguishable from one that failed to save. O216.
+///
+/// An `Add` caret with nothing typed is genuinely not a write — there is no
+/// content to remove and nothing to undo — so those two arms keep the guard.
 pub(super) fn commit_into(
     ctx: &egui::Context,
     draft: &Draft,
@@ -655,7 +672,7 @@ pub(super) fn commit_into(
 ) {
     use crate::app::actions::Action;
     match &draft.anchor {
-        Anchor::Run { run, original } if draft.text != *original && !draft.text.is_empty() => {
+        Anchor::Run { run, original } if draft.text != *original => {
             actions.push(Action::CommitTextEdit {
                 page: draft.page,
                 run: *run,
@@ -929,14 +946,19 @@ mod tests {
         ));
     }
 
-    /// **An emptied draft is not a deletion.**
+    /// ★★ **An emptied run commits the emptying.**
     ///
     /// Deleting every character of a run and clicking away is ambiguous —
-    /// "remove this text" and "I changed my mind" look identical — and the
-    /// recoverable reading is the one that writes nothing. Removing text is
-    /// redaction's job, and it is a security operation with its own surface.
+    /// "remove this text" and "I changed my mind" are the same gesture — and
+    /// the recoverable reading is **undo**, not refusal, which is what Acrobat
+    /// does. The refusing reading raised no action at all, so there was no
+    /// plan, no engine call and no sentence: a declined edit and a failed save
+    /// looked the same from the operator's side.
+    ///
+    /// The emptiness guard stays on the `Origin` and `Box` arms, where
+    /// `an_empty_add_text_draft_places_nothing` holds it.
     #[test]
-    fn an_emptied_draft_pushes_no_action() {
+    fn an_emptied_run_draft_commits_the_emptying() {
         let draft = Draft {
             page: 0,
             kind: TextEditKind::Edit,
@@ -955,7 +977,17 @@ mod tests {
         // engine's own default, so these assertions are about the ACTION's
         // shape and not about a pen nobody set.
         commit_into(&egui::Context::default(), &draft, &mut actions);
-        assert!(actions.is_empty());
+        assert_eq!(actions.len(), 1);
+        assert_eq!(
+            actions[0],
+            crate::app::actions::Action::CommitTextEdit {
+                page: 0,
+                run: 1,
+                original: "A".to_owned(),
+                replacement: String::new(),
+            },
+            "emptying a run is an edit, not a change of mind"
+        );
     }
 
     /// **A changed draft pushes exactly one action, carrying both texts.**
@@ -992,25 +1024,47 @@ mod tests {
     }
 
     /// **An empty add-text draft places nothing.** A click with the Add tool and
-    /// no typing is a caret, not a write.
+    /// no typing is a caret, not a write, and a dragged box nobody typed into is
+    /// the same thing with a size.
+    ///
+    /// ★ **Both** add anchors are asserted here, because this is the whole of
+    /// the emptiness guard: `commit_into`'s `Run` arm deliberately does not
+    /// carry one (`an_emptied_run_draft_commits_the_emptying`), so an assertion
+    /// covering `Origin` alone would leave the `Box` arm's guard held by
+    /// nothing while its header claimed otherwise.
     #[test]
     fn an_empty_add_text_draft_places_nothing() {
-        let draft = Draft {
-            page: 0,
-            kind: TextEditKind::Add,
-            anchor: Anchor::Origin { x: 10.0, y: 20.0 },
-            text: String::new(),
-            caret: 0,
-            mark: None,
-            seeded: true,
-        };
-        let mut actions = Vec::new();
         // ★ A bare `Context`, and it is the honest one for a pure-commit test:
         // the pen it reads is whatever `TextPen::default()` is, which is the
         // engine's own default, so these assertions are about the ACTION's
         // shape and not about a pen nobody set.
-        commit_into(&egui::Context::default(), &draft, &mut actions);
-        assert!(actions.is_empty());
+        let ctx = egui::Context::default();
+
+        for anchor in [
+            Anchor::Origin { x: 10.0, y: 20.0 },
+            Anchor::Box {
+                llx: 10.0,
+                lly: 20.0,
+                urx: 210.0,
+                ury: 90.0,
+            },
+        ] {
+            let draft = Draft {
+                page: 0,
+                kind: TextEditKind::Add,
+                anchor: anchor.clone(),
+                text: String::new(),
+                caret: 0,
+                mark: None,
+                seeded: true,
+            };
+            let mut actions = Vec::new();
+            commit_into(&ctx, &draft, &mut actions);
+            assert!(
+                actions.is_empty(),
+                "an Add draft with nothing typed is a caret, not a write: {anchor:?}"
+            );
+        }
     }
 
     /// **The two kinds name the two registered commands, and they are

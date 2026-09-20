@@ -1258,6 +1258,11 @@ pub mod chunk_band;
 pub mod chunk_ghost;
 pub mod chunk_ghost_pixels;
 
+/// O216 ask 1, driven: empty a text chunk and find out whether the engine is
+/// ever asked. Its header carries why an absent commit line has five causes
+/// and how each keystroke is calibrated from a line the shell already emits.
+pub mod chunk_empty;
+
 /// ★ The operator's own report, driven: Edit text on a REAL CAD sheet, aimed at a
 /// point the ENGINE says carries text. Its header carries why two passing text
 /// checks were not enough — both drive fixtures this repository generated to

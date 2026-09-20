@@ -35,7 +35,7 @@ grepping it — a count only goes stale, a name can be born false.
 | Engine version | `grep -A1 'name = "pdfcer-core"' Cargo.lock` | — |
 | Last release | `git fetch --tags origin && gh api repos/KenM76/pdfcer-gui/releases/latest` | **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in an unfetched tree answers with an older tag and reports a commits-unreleased count wrong by a factor. Read every field back out of the API rather than inferring it from the flags passed in, and check the local zip's byte count against the asset's — agreement to the unit is the cheapest proof the upload is the file and not a truncation. The binary's own stamp and `published_at` sit twelve to twenty minutes apart on every release; label which clock |
 | Driven checks | `ui-verify --list \| grep -cE '^  [a-z0-9_]+$'` | **Rebuild the harness first** — `--list` sits behind `refuse_if_self_is_stale`, and a stale harness prints nothing, which `grep -c` reports as zero and reads as a roster. The `$` is load-bearing: `--list` also prints a profiles table whose rows are two-space-indented lowercase words. It prints two lines per check, so a `wc -l` answers about double |
-| Gates | `bash tools/gates/run-all.sh` | Three states, not two: `0` pass, `1` fail, `3` a gate was SKIPPED for an absent precondition. A skip is not a pass. **Tally on the `RESULT:` line, never on a pipeline's exit code** — `run-all.sh \| tail` reports `tail`'s zero. A stable pass-count across an engine pin bump proves nothing about whether the documents survived it; the tally moves only when a gate is added |
+| Gates | `bash tools/gates/run-all.sh` | Three states, not two: `0` pass, `1` fail, `3` a gate was SKIPPED for an absent precondition. A skip is not a pass. **Tally on the `RESULT:` line, never on a pipeline's exit code** — `run-all.sh \| tail` reports `tail`'s zero. A stable pass-count across an engine pin bump proves nothing about whether the documents survived it; the tally moves only when a gate is added. **Run `cargo fmt --all` before starting one** — `cargo fmt` is the LAST gate, so a formatting slip in hand-written Rust is found forty minutes in and costs the entire run |
 | Unit tests | `cargo test --workspace` | Summed over the `test result:` lines, then cross-counted by `cargo test --workspace -- --list \| grep -cE ': test$'`; passing plus ignored must equal the cross-count. Two methods, because a summed figure nobody cross-checks is how the last count drift got in. The cross-count is also how you know a new test RAN: three `#[test]` functions once compiled clean, reported nothing and executed zero times, because they were nested inside another function |
 | Source files | `find crates -name '*.rs' \| wc -l` | **The command's scope is a claim.** `find crates tools` answers larger, because `tools/ui-verify` is a Rust crate and is not under `crates/`. Neither figure is wrong; quoting one under the other's command is |
 | Backlog register | `python tools/walk-engine-backlog.py` | Rewrite the five headings from the walker's own printed figures, never by arithmetic on the old ones. A row is a verdict plus one paragraph, capped at 1,200 characters and checked by `--check`; file the row and set the headings in one edit with `--write YYYY-MM-DD` |
@@ -154,24 +154,24 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    `paint_rect` equals the page rect at every zoom below the pixmap ceiling,
    so the ink-coverage question is **unfalsified**, not merely weak, and
    exercising it needs this gesture driven at the region tier.
-   **What is next, in order.** Build O216 ask 1, which is now measured and
-   is one guard; then O217.
+   **What is next, in order.** O217, then O216 ask 2.
    **Ask 2 is the engine's and is filed as `G032`**: `runs_share_a_line` never
    reads the horizontal translation, so a table row welds into one line — 565
    welded lines on his own drawing, the widest spanning 709.4 pt of blank paper.
    **Not worked around**, deliberately: a post-split on bounds would make the
    shell's unit differ from `delete_text_run`'s with neither side able to
    detect it.
-   **O216 ask 1 is MEASURED and it is cause 1**, found by reading rather than
-   driving: `canvas::textedit::commit_into`'s `Anchor::Run` arm carries
-   `&& !draft.text.is_empty()`, so an emptied chunk raises no action at all —
-   no plan, no engine call, no refusal, no sentence. It is deliberate and the
-   reasoning is in `an_emptied_draft_pushes_no_action`'s doc, and this row
-   overrules it: `pdfcer-core` has no `replace.is_empty()` guard anywhere and
-   `edit_text` already defines the emptied-operator case, so causes 2–4 cannot
-   be reached. The guard comes off the `Run` arm and stays on `Origin` and
-   `Box`; undo is the recovery, which is what Acrobat does. Ask 2 — delete the
-   chunk as an object — is a separate drive and is not measured. **O217 is
+   **O216 ask 1 is BUILT and DRIVEN.** Emptying a chunk commits the emptying
+   and undo is the recovery, which is what Acrobat does. It was cause 1 of
+   the four: `canvas::textedit::commit_into`'s `Anchor::Run` arm carried
+   `&& !draft.text.is_empty()`, so an emptied chunk raised no action at all —
+   no plan, no engine call, no refusal, no sentence. The guard now sits on
+   `Origin` and `Box` alone, where an Add caret with nothing typed really is
+   a caret. `emptying_a_chunk_commits_the_emptying` drives his own gesture on
+   his own drawing; ★ every keystroke in it is calibrated from the draft's
+   own `text-select` line, because an absent commit has five causes and four
+   of them are the harness. Ask 2 — delete the chunk as an object — is a
+   separate drive and is not measured. **O217 is
    unbuilt** and is the one that cannot ship the old unit: redaction on a
    welded row would silently take the part number and the description with the
    quantity, and he would find out after the file was written.
