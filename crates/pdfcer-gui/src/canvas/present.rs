@@ -630,7 +630,12 @@ fn show_in(
                 doc.strip_page_texture(placement.page, key)
                     .map(|t| (t.texture.clone(), t.key.region()))
             };
-            let has_raster = held.is_some();
+            // ★ The texture's ID, taken while the handle is in hand. A later
+            // layer draws a piece of this same picture — see
+            // `canvas::overlay::draw_raster_ghost` — and asking the cache a
+            // second time could answer with a DIFFERENT region's raster,
+            // which is the O24c fault wearing a new coat.
+            let raster = held.as_ref().map(|(texture, _)| texture.id());
             // ★★ Where the texture goes. A whole-page raster fills the page's
             // rect; a REGION raster covers only part of the page and must be
             // drawn at that part's rect, or the operator sees the right pixels
@@ -786,7 +791,7 @@ fn show_in(
                 page: placement.page,
                 rect,
                 response,
-                has_raster,
+                raster,
                 paint_rect,
             });
         }
@@ -931,6 +936,8 @@ fn show_in(
                 viewer::page_extent_pts(&doc.pages[d.page]),
                 doc.view.zoom,
             ),
+            raster: d.raster,
+            paint_rect: d.paint_rect,
         })
         .collect();
 
@@ -1087,7 +1094,7 @@ fn show_in(
         scroll_offset,
         selected,
         drawn.len(),
-        drawn.iter().filter(|d| d.has_raster).count(),
+        drawn.iter().filter(|d| d.raster.is_some()).count(),
     );
     // ★★ The pan position, in `f64`, from whichever tier owns it.
     //

@@ -5,9 +5,12 @@
 //! # The request
 //!
 //! `OPERATOR_REQUESTS.md` **O215** ask 5 asks for a live preview — *"the chunk
-//! follows the pointer"*. The full ask is the glyphs travelling; this row
-//! measures the floor beneath it, which is that **anything at all** moves on
-//! screen while the pointer does.
+//! follows the pointer, not a rectangle."* Both halves are measured here and
+//! on ONE gesture: the **outline** that says where the set will land, and the
+//! translucent **copy of the line's own pixels** that says what will land
+//! there. A build with the first and not the second meets the floor and misses
+//! the ask — which is a real state this program has been in — and the two
+//! trace lines separate those cases by name rather than by degree.
 //!
 //! # The defect it was written against
 //!
@@ -30,8 +33,10 @@
 //! # The oracle — and the negative that names the defect exactly
 //!
 //! ```text
-//! fixed build   canvas-move-ghost boxes=3 rung=part suppressed=no
-//! defect        canvas-move-ghost boxes=0 rung=part suppressed=o63
+//! fixed build   canvas-move-ghost   boxes=3 rung=part suppressed=no
+//!               canvas-raster-ghost drawn=3 clipped=0 reason=none
+//! no feedback   canvas-move-ghost   boxes=0 rung=part suppressed=o63
+//! empty boxes   canvas-raster-ghost drawn=0 clipped=0 reason=geometry
 //! ```
 //!
 //! Both were measured by driving the release binary. They are mutually
@@ -43,6 +48,8 @@
 //! | `boxes=` | did the painter draw anything? It is the painter's claim about itself, counted in the loop that strokes |
 //! | `rung=` | read from `SelectionState::level`, **not** from the flag being tested — a field that restated its own gate could not witness the gate being wrong |
 //! | `suppressed=` | `o63` names the one correct withholding; `no` is every other frame |
+//! | `drawn=` | how many pieces of the page texture were actually blitted — the copy's own claim about itself, counted in the loop that blits |
+//! | `reason=` | why a zero. `geometry` is the one correct one; `no-raster` is a page with no picture yet |
 //!
 //! ★★ `boxes=` is asserted against `held=` on `status-rung`, because a preview
 //! of *one* box while *three* lines are held is the ask failing in the way the
@@ -51,9 +58,16 @@
 //!
 //! # Where this check's reach ends
 //!
-//! It reads what the painter wrote down, not the pixels. That the outline is
-//! **visible** — not clipped, not drawn in the backdrop colour — has one oracle,
-//! a rendered screenshot, and it is not this row's subject.
+//! It reads what the painter wrote down, not the pixels. That the outline and
+//! the travelling copy are **visible** — not clipped away, not blitted at an
+//! alpha that vanishes against the page, not sampled out of the wrong part of
+//! the texture above the pixmap ceiling — has one oracle, a rendered
+//! screenshot, and it is not this row's subject.
+//!
+//! `clipped=` is read and deliberately **not asserted**. A cropped copy is a
+//! correct copy, and the number moves with the region tier rather than with
+//! this feature: asserting zero would make a change in `render::strategy` fail
+//! a row about dragging text.
 //!
 //! It does not drive the object rung either. `overlay::ghost_is_owed` answers
 //! `true` whenever `outline` is, so the narrowing cannot reach the object rung
@@ -106,12 +120,34 @@
 //!    `the_ghost_is_withheld_only_for_a_preview_that_has_something_in_it`,
 //!    whose middle row is the trap: a preview that EXISTS and is empty, which
 //!    is what a text object produces, must not count as geometry travelling.
-//! 5. **Prove the plant is in the artifact.** `cargo build --release -p
+//! 5. **Remove the call site.** Delete the `overlay::draw_raster_ghost(…)`
+//!    statement in `canvas::painting::draw`. Step C goes red with no
+//!    `canvas-raster-ghost` line anywhere in the trace, while the outline still
+//!    travels — which is exactly the half-met state this row exists to name.
+//! 6. **Blit only the first held chunk.** Put `.take(1)` on
+//!    `selection.outlines()` inside `overlay::draw_raster_ghost`. Step F goes
+//!    red. ⚠ It goes red through the ABSENCE arm rather than the count arm,
+//!    and that is not a harness defect: the planted build writes `drawn=1` in
+//!    the plural arm, which is what it already wrote in the singular one, and
+//!    `diag::trace_changed` emits only on a change. The absence message names
+//!    both causes for that reason.
+//!
+//! ⚠ **The `reason=geometry` arm cannot be falsified on this fixture, and
+//! that is a property of the fixture rather than of the arm.**
+//! `shapes::for_move_subject` answers `None` for every text-line subject, so a
+//! chunk drag carries NO preview at all — and the wrong spelling
+//! `already_travelling.is_none()` therefore agrees with the right one here and
+//! the check stays green. That arm is pinned by
+//! `the_travelling_copy_is_withheld_only_when_the_geometry_itself_moves`, which
+//! hands the predicate the preview this fixture cannot produce. A driven row
+//! reaches it only once a subject that carries geometry becomes draggable at an
+//! inner rung.
+//! 7. **Prove the plant is in the artifact.**
 //!    pdfcer-gui` AND `-p ui-verify`, then confirm the exe is newer than the
 //!    source: a stale binary is the commonest cause of a falsification that
 //!    "did not reproduce", and its tell is an **absent** trace line rather than
 //!    a wrong one.
-//! 6. **Require the `[FAIL]` line**, not the exit code — a SKIP exits the way a
+//! 8. **Require the `[FAIL]` line**
 //!    PASS does.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment, declared, declared_names, list};
@@ -143,6 +179,21 @@ const NOT_SUPPRESSED: &str = "no"; // ui-text-exempt: a trace token, never displ
 /// `suppressed=` on the one frame where withholding is correct — a path node,
 /// whose real anchors are already travelling.
 const SUPPRESSED_O63: &str = "o63"; // ui-text-exempt: a trace token, never displayed
+
+/// `canvas-raster-ghost drawn=… clipped=… reason=…` —
+/// `overlay::draw_raster_ghost`'s own account of the translucent copy of the
+/// page's own pixels that travels with the pointer.
+const RASTER_EVENT: &str = "canvas-raster-ghost"; // ui-text-exempt: a trace event name, never displayed
+
+/// `reason=` on a frame where the copy was blitted.
+const RASTER_DREW: &str = "none"; // ui-text-exempt: a trace token, never displayed
+
+/// `reason=` on the one frame where withholding the copy is correct — the
+/// real geometry is already travelling, so a second picture of it says nothing.
+const RASTER_GEOMETRY: &str = "geometry"; // ui-text-exempt: a trace token, never displayed
+
+/// `reason=` when the page has no picture yet to take a copy of.
+const RASTER_NO_RASTER: &str = "no-raster"; // ui-text-exempt: a trace token, never displayed
 
 /// `marquee-parts page=… object=… mode=… reached=… kept=… combine=…` —
 /// `marquee::take_chunks`' own line, read here only to establish step E's set.
@@ -209,9 +260,9 @@ impl Check for DraggingAChunkShowsWhereItIsGoing {
     }
 
     fn defect(&self) -> &'static str {
-        "Dragging a line of a note previews nothing — no ghost, no outline, and the chunk boxes \
-         stay where they were — so the operator moves text blind and learns where it went only \
-         after he lets go"
+        "Dragging a line of a note previews nothing, or previews an empty rectangle with none \
+         of the lettering in it — so the operator moves text blind, or watches a box travel \
+         while his words stay put, and learns where they actually went only after he lets go"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
@@ -316,6 +367,72 @@ fn drag_and_read_ghost(
              `SelectionState::outlines` entry, so a short count is that iterator disagreeing with \
              what the status bar says is held.",
             line.raw
+        )));
+    }
+
+    // ★★★ THE LITERAL ASK — *the chunk follows the pointer, not a
+    // rectangle.* The outline above is the floor. This is the half that makes
+    // the drag legible, and it is asserted on the SAME gesture: a second drag
+    // would be a second sample of something that has to be true of this one.
+    let Some(raster) = trace.last_after(RASTER_EVENT, mark) else {
+        return Ok(Err(format!(
+            "★★ {label}: THE OUTLINE TRAVELLED AND THE LETTERING DID NOT — no new \
+             `{RASTER_EVENT}` line after this gesture began. Two causes produce that \
+             silence and BOTH are failures of this row, so read the trace before choosing \
+             one. (1) `overlay::draw_raster_ghost` was never reached — the call site is \
+             gone or gated, and no line exists anywhere in the trace. (2) The line it wrote \
+             is IDENTICAL to the last one written to its slot: `diag::trace_changed` emits \
+             only on a change, so once the singular arm has written `drawn=1`, a plural arm \
+             that also draws 1 is SILENT. That second case is {expected_boxes} chunk(s) held \
+             with one travelling — the set moving as an empty frame. Either way the \
+             operator sees a box travel with none of his words in it. Trace: {}.",
+            session.trace_path().display()
+        )));
+    };
+    if raster.get("reason") == Some(RASTER_GEOMETRY) {
+        return Ok(Err(format!(
+            "★★★ {label}: `{}` — the travelling copy was withheld on the grounds that \
+             the REAL GEOMETRY is already moving. A text chunk has no path geometry, and \
+             `shapes::transformed` returns a preview that EXISTS and is EMPTY for a text \
+             object — so a gate asking `is_some()` restates the O215 defect one layer up, in \
+             a spelling that looks like a fix. `overlay::raster_ghost_is_owed` must read what \
+             the preview CONTAINS, never whether it is there.",
+            raster.raw
+        )));
+    }
+    if raster.get("reason") == Some(RASTER_NO_RASTER) {
+        return Ok(Err(format!(
+            "★★ {label}: `{}` — the copy was withheld because the page had no picture \
+             to take one from. On this fixture at fit zoom the page is rastered long before \
+             the drag begins, so this is the settle above returning early rather than a \
+             decision about the gesture — read it as a timing failure in the harness first.",
+            raster.raw
+        )));
+    }
+    if raster.get("reason") != Some(RASTER_DREW) {
+        return Ok(Err(format!(
+            "{label}: `{}` — `reason=` carries a value this check does not know. The \
+             vocabulary is fixed by `canvas::trace::RasterGhostReason`, so a new one is a \
+             change to the trace that nobody told the harness about, and every assertion \
+             below it is then about a field of unknown meaning.",
+            raster.raw
+        )));
+    }
+    let Some(copies) = raster.get_usize("drawn") else {
+        return Ok(Err(format!(
+            "{label}: `{}` carries no readable `drawn=`. That field is the blit loop's claim \
+             about itself, and it is the only thing here that witnesses pixels being placed \
+             rather than a decision to place them.",
+            raster.raw
+        )));
+    };
+    if copies != expected_boxes {
+        return Ok(Err(format!(
+            "★★ {label}: `{}` — {copies} line(s) of lettering travelled where \
+             {expected_boxes} are held, and the outline count agreed with the held count on \
+             the same frame. Boxes without their contents is the set moving as an empty \
+             frame — the ask half-met, in the way hardest to notice in a still.",
+            raster.raw
         )));
     }
     Ok(Ok(()))
@@ -535,7 +652,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     if let Err(why) = drag_and_read_ghost(&session, &driver, &frame, at_anchor, 1, "C")? {
         return Ok(Some(why));
     }
-    report.note("C: dragging one line previewed one outline travelling with the pointer");
+    report.note("C: dragging one line moved one outline AND a copy of the line's own pixels with the pointer");
 
     // --- D: and require that the preview was of a move that could happen ----
     //
@@ -623,8 +740,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note(format!(
-        "F: dragging {WIDE_REACH} lines previewed {WIDE_REACH} outlines travelling together, and \
-         the release moved all {WIDE_REACH}"
+        "F: dragging {WIDE_REACH} lines moved {WIDE_REACH} outlines and {WIDE_REACH} copies of \
+         the lines' own pixels together, and the release moved all {WIDE_REACH}"
     ));
 
     Ok(None)

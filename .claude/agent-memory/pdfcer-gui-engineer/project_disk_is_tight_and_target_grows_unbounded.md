@@ -1,6 +1,6 @@
 ---
 name: disk-is-tight-and-target-grows-unbounded
-description: Disk AND RAM are tight; clear debug/doc target routinely, run the suite with a job limit, wait for orphaned linkers after a kill — and the BIGGEST item is not in target/ at all, it is one full engine source tree per pin bump under ~/.cargo
+description: Disk AND RAM are tight; clear debug/doc target routinely, run the suite with a job limit, wait for orphaned linkers after a kill; the BIGGEST disk item is one full engine source tree per pin bump under ~/.cargo; and 0xc0000142 / fork failures are usually HANDLE exhaustion by an orphaned process, not free RAM
 metadata:
   type: project
 ---
@@ -175,3 +175,48 @@ report the session total — never the per-step delta.**
 
 Full method, with the pitfalls, in `D:/dev/rag/rust/`
 (`cargo_git_pin_checkouts_accumulate_one_full_tree_per_rev.md`).
+
+## ★★★ 0xc0000142 was HANDLE exhaustion, not free RAM — 2026-09-20
+
+The section above says to check free RAM when a process dies with
+`0xc0000142 / STATUS_DLL_INIT_FAILED`. That is one cause and it was not this
+one. A gate sweep began failing to `fork` with **3.3 GB free**, which does not
+fit the story. Two commands named the real cause:
+
+```powershell
+(Get-Process | Measure-Object -Property HandleCount -Sum).Sum
+Get-Process | Sort-Object HandleCount -Descending | Select-Object -First 6 Id, Name, HandleCount
+```
+
+**9,661,559 handles system-wide, of which 8,873,053 belonged to one process** —
+an orphaned `find.exe / -name *.rs -path *pdfcer*core*` started the previous
+afternoon and still walking the whole volume twenty-four hours later, its parent
+gone. Killing that single PID took the system total to **788,123** and the sweep
+resumed forking within seconds.
+
+**Why the code misleads.** Windows builds a process by handing it handles; when
+the system table is exhausted `CreateProcess` fails during DLL initialisation
+and reports `0xc0000142` regardless of free memory. The same code means two
+different things and a free-RAM reading cannot separate them.
+
+**How to apply.** On any `0xc0000142`, any `fork: Resource temporarily
+unavailable`, or any stall with no memory-pressure reading to justify it,
+**measure the handle sum first** — it is one command and it names the offending
+process, where free RAM only confirms that the thing you already suspected is
+not the cause. Two riders:
+
+- **`find /` on Git-Bash walks every mounted volume**, OneDrive placeholders
+  included, and nothing in the habit that spawns it adds `-xdev`. Scope the
+  search to the tree, or use `Everything`, which is already resident here. An
+  unscoped one survives the session that launched it and keeps accumulating.
+- ⚠ **The 2026-09-19 clippy failures blamed on RAM above overlap this orphan's
+  lifetime**, so that attribution is unproven. What is measured here is the
+  mechanism, not which of the two causes a given failure —
+  [[a-launch-failure-blamed-on-a-resource-count-needs-a-control-binary]].
+- ⚠ **A gate that loses a subprocess to the fork storm still prints its clean
+  sentence.** `check-selection-channel` emitted `fork: retry: Resource
+  temporarily unavailable` mid-scan and then `clean — the widget channel is read
+  only where it is defined`, because the runner scores the gate on its exit code
+  and a lost child does not change it. Any gate whose log carries a fork error
+  has to be re-run on a healthy machine before its green is quoted —
+  [[a-runners-sentinel-is-a-claim-about-the-runner]].

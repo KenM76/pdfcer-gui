@@ -6,6 +6,8 @@
 use super::*;
 use egui::{Pos2, pos2};
 
+use super::raster::blit_of;
+
 /// ★★★ **A SELECTED ANNOTATION HAS A GHOST BOX** — `OPERATOR_REQUESTS.md`
 /// O154, and this is the assertion whose absence let the defect ship.
 ///
@@ -318,6 +320,124 @@ fn a_translucent_theme_colour_keeps_its_hue_through_the_ghost() {
     }
 }
 
+/// ★★★ **THE TRAVELLING COPY IS TAKEN FROM THE RECTANGLE THE TEXTURE IS A
+/// PICTURE OF, AND IT KEEPS ITS SCALE** — `OPERATOR_REQUESTS.md` O215 ask 5.
+///
+/// Every number below is worked out from the definition of the projection
+/// rather than read off [`blit_of`], because an expectation produced by the
+/// function under test agrees with it however wrong both are.
+///
+/// ⚠ The middle case is the decisive one. A chunk half off the painted
+/// raster must lose the same amount from BOTH rectangles: cropping the UV and
+/// clamping the destination to the full width would stretch the lettering to
+/// fill it, and a picture travelling at the wrong size looks like a rendering
+/// quirk rather than like clipping.
+#[test]
+fn a_travelling_copy_samples_the_painted_rect_and_never_stretches() {
+    // A raster of a REGION, not of the page: 200x200 points at (100, 100).
+    let source = Rect::from_min_max(pos2(100.0, 100.0), pos2(300.0, 300.0));
+    let shift = egui::vec2(40.0, 40.0);
+
+    // Wholly inside. UV is the offset into `source` over `source`'s size.
+    let inside = blit_of(
+        Rect::from_min_max(pos2(150.0, 120.0), pos2(250.0, 140.0)),
+        source,
+        shift,
+    )
+    .expect("a chunk wholly over the raster has a blit");
+    assert!(
+        !inside.cropped,
+        "nothing was cut, so nothing may be reported cut"
+    );
+    assert_eq!(
+        inside.to,
+        Rect::from_min_max(pos2(190.0, 160.0), pos2(290.0, 180.0)),
+        "the piece lands at the chunk's own rect moved by the shift"
+    );
+    for (got, want, axis) in [
+        (inside.uv.min.x, 0.25, "uv.min.x"),
+        (inside.uv.min.y, 0.10, "uv.min.y"),
+        (inside.uv.max.x, 0.75, "uv.max.x"),
+        (inside.uv.max.y, 0.20, "uv.max.y"),
+    ] {
+        assert!(
+            (got - want).abs() < 1e-6,
+            "{axis}: {got} vs {want} — the UV is relative to the painted \
+             rect, and reading it off the page rect samples the wrong pixels \
+             wherever a region's raster is in flight"
+        );
+    }
+
+    // Straddling the left edge: 40 of its 100 points hang off the raster.
+    let straddling = blit_of(
+        Rect::from_min_max(pos2(60.0, 120.0), pos2(160.0, 140.0)),
+        source,
+        shift,
+    )
+    .expect("a chunk partly over the raster has a blit of the part that is");
+    assert!(
+        straddling.cropped,
+        "40 of 100 points were cut and that is disclosed"
+    );
+    assert!(
+        (straddling.to.width() - 60.0).abs() < 1e-6,
+        "the destination lost exactly what the source lost: {} wide, not 60. \
+         Clamping one side alone stretches the lettering.",
+        straddling.to.width()
+    );
+    assert_eq!(
+        straddling.to,
+        Rect::from_min_max(pos2(140.0, 160.0), pos2(200.0, 180.0)),
+        "the surviving piece lands where that piece was, moved by the shift"
+    );
+    assert!(
+        (straddling.uv.min.x - 0.0).abs() < 1e-6 && (straddling.uv.max.x - 0.30).abs() < 1e-6,
+        "the UV starts at the raster's own edge: {:?}",
+        straddling.uv
+    );
+
+    assert!(
+        blit_of(
+            Rect::from_min_max(pos2(400.0, 400.0), pos2(450.0, 420.0)),
+            source,
+            shift
+        )
+        .is_none(),
+        "a chunk scrolled clear of the painted raster has no piece to copy, \
+         which is a position rather than an error"
+    );
+    assert!(
+        blit_of(
+            Rect::from_min_max(pos2(150.0, 120.0), pos2(250.0, 140.0)),
+            Rect::from_min_max(pos2(100.0, 100.0), pos2(100.0, 100.0)),
+            shift
+        )
+        .is_none(),
+        "a degenerate raster would divide the UV by zero"
+    );
+}
+
+/// A shape preview carrying **real geometry** — the one input for which
+/// withholding is correct.
+///
+/// Its subpath list is empty, because every predicate under test reads
+/// `ShapePreview::is_empty`, which asks whether there is a SHAPE — one shape
+/// is what makes the operator see anchors travel.
+fn a_preview_with_geometry_in_it() -> crate::canvas::shapes::ShapePreview {
+    crate::canvas::shapes::ShapePreview {
+        shapes: vec![crate::canvas::shapes::PreviewShape {
+            subpaths: Vec::new(),
+            style: pdfcer_core::vector::PaintStyle {
+                fill: None,
+                stroke: true,
+            },
+            line_width: 1.0,
+        }],
+        erase: Vec::new(),
+        capped: false,
+    }
+}
+
 /// ★★★ **THE GHOST IS WITHHELD ONLY WHERE SOMETHING BETTER IS ON SCREEN** —
 /// `OPERATOR_REQUESTS.md` O63 and O215 ask 5.
 ///
@@ -356,5 +476,51 @@ fn the_ghost_is_withheld_only_for_a_preview_that_has_something_in_it() {
     assert!(
         ghost_is_owed(true, Some(&empty)),
         "the object rung is always owed a ghost, whatever the preview says"
+    );
+
+    // ★★ The FALSE case. Without it every assertion above is satisfied by a
+    // function that returns `true` and reads nothing.
+    let travelling = a_preview_with_geometry_in_it();
+    assert!(
+        !ghost_is_owed(false, Some(&travelling)),
+        "the real anchors are already travelling at the inner rung, so a ghost \
+         of the same thing draws it twice"
+    );
+    assert!(
+        ghost_is_owed(true, Some(&travelling)),
+        "the object rung states the SET, so its box is owed even while the \
+         geometry inside it travels"
+    );
+}
+
+/// ★★★ **THE TRAVELLING COPY IS WITHHELD ONLY WHERE THE GEOMETRY ITSELF
+/// MOVES** — `OPERATOR_REQUESTS.md` O215 ask 5.
+///
+/// [`raster_ghost_is_owed`] decides whether a translucent copy of the page's
+/// own pixels travels with the pointer. It withholds on exactly one ground:
+/// the real geometry is already moving on screen.
+///
+/// ⚠ The empty preview is the trap. `shapes::transformed` returns a preview
+/// that EXISTS and is EMPTY for a text object, so a predicate spelled
+/// `already_travelling.is_none()` withholds the lettering while the outline
+/// still draws — a box travelling with none of the operator's words in it,
+/// which is the O215 defect in a spelling that reads as a fix.
+#[test]
+fn the_travelling_copy_is_withheld_only_when_the_geometry_itself_moves() {
+    let empty = crate::canvas::shapes::ShapePreview::default();
+    assert!(
+        raster_ghost_is_owed(None),
+        "a text chunk drag has no shape preview at all, and it is the gesture \
+         this copy exists for"
+    );
+    assert!(
+        raster_ghost_is_owed(Some(&empty)),
+        "a preview that exists and paints nothing shows the operator nothing, \
+         so it may not stand in for the travelling copy"
+    );
+    assert!(
+        !raster_ghost_is_owed(Some(&a_preview_with_geometry_in_it())),
+        "the anchors are already visibly travelling, and a blitted copy of the \
+         same content doubles it"
     );
 }

@@ -75,6 +75,14 @@ pub use anchors::{
     draw_handles, handle_region,
 };
 
+/// The travelling copy of the selection's own pixels.
+///
+/// Re-exported below so `canvas/` writes `overlay::draw_raster_ghost` and
+/// nothing outside this module learns that it has a file of its own.
+mod raster;
+
+pub(super) use raster::{draw_raster_ghost, raster_ghost_is_owed};
+
 /// The region the selection's grip box publishes.
 ///
 /// ★ It is the box the eight grips are laid out on, not the union of the
@@ -704,7 +712,7 @@ pub(super) fn ghost_is_owed(
     outline: bool,
     already_travelling: Option<&crate::canvas::shapes::ShapePreview>,
 ) -> bool {
-    outline || !already_travelling.is_some_and(|preview| !preview.is_empty())
+    outline || raster_ghost_is_owed(already_travelling)
 }
 
 /// Paint the **rotate ghost**: the selection's outlines turned about the

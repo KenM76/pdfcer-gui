@@ -1,6 +1,6 @@
 ---
 name: a-falsification-can-lie-in-both-directions
-description: A red falsification proves the check as a whole, not each assertion in it; a green one may mean the planting script's anchor rotted and it mutated nothing; and a script that scores the run by scanning cargo output can call every working plant a broken build
+description: A red falsification proves the check as a whole, not each assertion in it; a green one may mean the planting script's anchor rotted and it mutated nothing; and a script that scores the run by scanning cargo output can call every working plant a broken build; and a plant goes green when the fixture cannot produce the input its two spellings differ on
 metadata:
   type: feedback
 ---
@@ -164,3 +164,39 @@ wrongly before the runner was fixed.
 **How to apply:** a falsification score has three inputs — the plant applied,
 the check ran, the probe matched — and all three can fail silently in the
 direction that looks like success. Print all three per plant.
+
+
+---
+
+## Green, because the FIXTURE cannot produce the input the plant turns on — 2026-09-20
+
+The fourth direction. The plant is real, the check is sound, and the two
+spellings it separates **agree on every input this fixture can generate**.
+
+Ask 5's travelling-copy gate reads *does the shape preview CONTAIN anything*.
+The documented plant was the plausible wrong spelling, `is_none()`. It went
+**green**, and the recipe in the check's own header had asserted it would go
+red quoting a named trace field. The reason: `shapes::for_move_subject` answers
+`None` for every text-line subject, so a chunk drag carries no preview at all
+— and `None` satisfies both spellings. The empty-preview trap the plant was
+written from is real one layer down, at a *different* function, on a subject
+this fixture does not contain.
+
+★ **A falsification recipe written from the design rather than run is a
+claim, and it reads exactly like a measurement.** It had been written into the
+check's doc comment, in the imperative, with the expected red output quoted.
+
+**How to apply:**
+
+- Run every plant in the list before shipping the list. A recipe nobody
+  executed belongs in the same class as a quoted count nobody re-measured.
+- When a plant goes green, the first question is *which input separates these
+  two spellings, and can this fixture produce it?* If it cannot, say so in the
+  doc, name the unit test that hands the predicate the input directly, and say
+  what would have to become draggable before a driven row could reach it.
+- Replace it with plants the fixture CAN separate. Here: delete the call site
+  (absence), and blit only the first held chunk (count).
+
+Related: [[an-unevidenced-excuse-is-worse-than-silence]],
+[[a-check-that-cannot-fail-is-not-evidence]],
+[[oracle-needs-calibration]].

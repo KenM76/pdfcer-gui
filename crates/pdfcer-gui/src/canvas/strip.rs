@@ -41,12 +41,17 @@ pub(crate) struct DrawnPage {
     pub(crate) rect: Rect,
     /// Its own sensing widget.
     pub(crate) response: egui::Response,
-    /// Whether a raster was painted into it, as opposed to a state sentence.
+    /// The raster painted into it, if one was rather than a state sentence.
     ///
-    /// Recorded here rather than re-derived for the trace, because the caches
-    /// are asked once — during the draw — and a second reading afterwards
-    /// could disagree with what the operator is looking at.
-    pub(super) has_raster: bool,
+    /// Recorded here rather than re-derived, because the caches are asked
+    /// once — during the draw — and a second reading afterwards could
+    /// disagree with what the operator is looking at.
+    ///
+    /// The texture's ID rather than a `bool`, because a later layer draws a
+    /// piece of this same picture: [`crate::canvas::overlay::draw_raster_ghost`]
+    /// blits the dragged chunk out of it, and a handle fetched from the cache
+    /// a second time could be of a different region.
+    pub(super) raster: Option<egui::TextureId>,
     /// Where its raster was actually PAINTED, which is not [`Self::rect`]
     /// once the region tier is engaged.
     ///
@@ -72,6 +77,20 @@ pub(super) struct PageView {
     pub(super) page: usize,
     /// Its screen ⟷ canvas map.
     pub(super) map: PageMapping,
+    /// The raster painted into this page this frame — see
+    /// [`DrawnPage::raster`].
+    pub(super) raster: Option<egui::TextureId>,
+    /// Where that raster was painted, in screen points — see
+    /// [`DrawnPage::paint_rect`].
+    ///
+    /// ⚠ The texture's pixels are a picture of THIS rectangle and of
+    /// nothing else. Anything sampling the texture takes its UV relative to
+    /// this, never to [`Self::map`]'s page rect: the two differ for as long
+    /// as a new region's raster is in flight, so deriving the UV from the
+    /// page rect samples the wrong part of the picture at exactly the zooms
+    /// the region tier exists for — `OPERATOR_REQUESTS.md` O24c's fault in a
+    /// second place.
+    pub(super) paint_rect: Rect,
 }
 
 /// What the **current** page has instead of a raster, if it has none.

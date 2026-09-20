@@ -371,13 +371,35 @@ a non-combining `Add` arm reddens the Shift band alone; a no-op `Subtract` arm
 reddens the Ctrl band alone; and a deleted plural move arm leaves every band
 step green and reddens the drag.
 
-**Ask 5's floor is built and driven; its literal wording is not met yet.**
-Dragging a chunk draws one travelling outline per held chunk, so the set is
-visible on its way to where it is going rather than only after it lands:
-`canvas-move-ghost boxes=3 rung=part suppressed=no` for a three-chunk set.
-What travels is the outline, not the glyphs. `canvas::shapes::for_move_subject`
-answers `None` for every text-line subject because a `ShapePreview` is path
-anchors and a show operator has none, and the glyph-level preview is S4b.
+**Ask 5 is met: the chunk follows the pointer, not a rectangle.** Dragging a
+chunk draws one travelling outline per held chunk AND a translucent copy of the
+piece of the page's own picture that stands under it, displaced by the live
+delta: `canvas-move-ghost boxes=3 rung=part suppressed=no` alongside
+`canvas-raster-ghost drawn=3 clipped=0 reason=none`. The outline is kept and
+stroked on top, because it is what states the SET when several chunks are held
+and what survives at a zoom where the page has no picture yet.
+
+The route is a displaced blit rather than a shape preview because
+`canvas::shapes::for_move_subject` answers `None` for every text-line subject:
+a `ShapePreview` is path anchors and a show operator has none.
+`overlay::draw_raster_ghost` reads the texture and the rectangle it is a picture
+of off `strip::PageView`, both recorded during the draw that made them.
+
+⚠ **The UV is relative to the painted rectangle, never to the page rect.**
+The two differ for as long as a new region's raster is in flight, so a UV
+derived from the page rect samples the wrong pixels at exactly the zooms the
+region tier exists for. Source and destination are cropped by the same amount,
+because clamping the destination alone stretches the lettering — a subtler
+wrong than a missing corner, and `blit_of`'s truth table is hand-computed from
+the projection rather than read off the function.
+
+⚠ **What is not yet asserted is the pixels.** That the copy is visible at
+its alpha, unclipped, and sampled from the right part of the texture has one
+oracle — a screenshot taken while the button is still down — and `ui-verify`
+has no hold-capable drag primitive to take one with. Every driver gesture
+presses and releases in one call. The instrument, the three assertions it
+owes and the inset that separates lettering from the outline already
+shipping are designed in `DESIGNS.md`.
 
 **The condition that withholds the ghost is about the geometry, not the rung,
 and getting that wrong withholds the ghost from every text chunk.**

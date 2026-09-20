@@ -102,21 +102,35 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    means everywhere else. `a_rubber_band_inside_a_note_takes_its_lines` drives
    three bands, the status row, one plural move and one undo, and is falsified
    four ways — one per arm it can lose.
-   Ask 5 has its floor: dragging a line of a note now previews one outline per
-   chunk, travelling with the pointer. The gate that withheld it read *is this
-   an inner rung* where it meant *is the real geometry already travelling* —
-   the two coincided until a text chunk became selectable, and then a chunk
-   drag showed nothing at all until the operator let go.
-   `dragging_a_chunk_shows_where_it_is_going` drives both the singular and the
-   band-built plural arm and goes red on the restored gate, quoting
-   `boxes=0 rung=part suppressed=o63`.
-   **What is next, in order.** S4b: make the GLYPHS travel, which is ask 5's
-   literal wording — an outline is the floor, not the close.
-   `canvas::shapes::for_move_subject` returns `None` for both text-line
-   subjects, so there is no shape preview to carry them; the route is a
-   displaced blit of the page texture, which needs `paint_rect` threaded from
-   `canvas::present::show` into `canvas::painting::draw` rather than derived a
-   second time.
+   Ask 5 is met: dragging a line of a note moves one outline per held chunk
+   AND a translucent copy of the line's own pixels, both following the pointer.
+   The gate that withheld the outline read *is this an inner rung* where it
+   meant *is the real geometry already travelling*; the copy is withheld on
+   that second condition alone, and it asks whether the shape preview CONTAINS
+   anything rather than whether it exists — `for_move_subject` answers `None`
+   for every text-line subject, so `is_none()` and the right spelling agree on
+   this fixture and a driven row cannot tell them apart.
+   `dragging_a_chunk_shows_where_it_is_going` drives the singular and the
+   band-built plural arm, reading `boxes=3` and `drawn=3 clipped=0 reason=none`
+   on one gesture. Falsified three ways: the restored rung-keyed gate
+   (`boxes=0 rung=part suppressed=o63`), the deleted `draw_raster_ghost` call
+   site, and a `.take(1)` that blits only the first held chunk.
+   ⚠ That third plant reddens through the ABSENCE arm, not the count arm:
+   `diag::trace_changed` emits only on a change, so a plural arm that draws the
+   same 1 the singular arm drew is SILENT. The absence message names both
+   causes for that reason.
+   **What is next, in order.** S4c: the mid-gesture oracle for pre-commit
+   affordances. Nothing in `ui-verify` can photograph a gesture while it is
+   happening — every `Driver` gesture presses and releases inside one call —
+   so that the copy is VISIBLE at its alpha, unclipped, and sampled from the
+   right part of the texture is asserted nowhere. The instrument is a
+   hold-capable drag that walks to the destination, hands control to an
+   observer with the button still down, and releases on the way out whatever
+   the observer did. It serves every affordance of this class: the rubber
+   band, the rotate ghost, the snap indicator, the resize handles.
+   Designed in full in `DESIGNS.md` under *the mid-gesture oracle for
+   pre-commit affordances*, including the inset that separates lettering from
+   the outline already shipping, and the before-capture that calibrates it.
    **Ask 2 is the engine's and is filed as `G032`**: `runs_share_a_line` never
    reads the horizontal translation, so a table row welds into one line — 565
    welded lines on his own drawing, the widest spanning 709.4 pt of blank paper.
@@ -687,9 +701,10 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
   The same sweep also took **833 lines carrying the operator's own words**
   out of 351 files — his sentence is why a module is shaped the way it is,
   and no gate watches for it. The oracle is a count, not a diff: comment
-  lines matching the `*"` quote marker, per file, before and after. There
-  are 3,755 of them; if a comment pass lowers that number, it removed
-  evidence, whatever else it removed.
+  lines carrying the `*"` quote marker, before and after. Measure it with
+  `grep -rn '^\s*//.*\*"' --include='*.rs' crates/ tools/ | wc -l`, which reads
+  **7,375** over the tree of 2026-09-20. If a comment pass lowers that
+  number, it removed evidence, whatever else it removed.
   Those restored paragraphs carry 662 dated lines, 220 star markers and 170
   history phrasings, every one of them inside a block that holds one of his
   quotes. The global rule against dates, decoration and history is about

@@ -1638,3 +1638,113 @@ in `D:/dev/rag/egui/`.
 - **A drop indicator is a gesture-only overlay**, so the `ui-rect` trace records
   its appearance as a change and cannot report its disappearance. Assert on the
   appearance, and on the layout the release produced.
+
+---
+
+## O215 ask 5 - the mid-gesture oracle for pre-commit affordances
+
+### What is true
+
+A drag now carries an outline per held chunk and a translucent copy of each
+chunk's own pixels, and `dragging_a_chunk_shows_where_it_is_going` asserts
+both through the `PDFCER_DIAG` trace: `boxes=3`, and
+`canvas-raster-ghost drawn=3 clipped=0 reason=none`.
+
+What the trace cannot say is whether anything was **seen**. It records what
+`overlay::draw_raster_ghost` decided, not what the frame put on the glass - a
+blit at alpha 0, a blit behind an opaque panel, and a blit sampling the wrong
+corner of the texture all write exactly that line. The arithmetic is pinned by
+`blit_of`'s unit tests against hand-computed rectangles; the paint is pinned
+nowhere.
+
+And the reason it is pinned nowhere is a gap in the harness rather than an
+oversight in the check. **Every `Driver` gesture presses and releases inside
+one call.** `drag`, `drag_with_modifier`, `drag_via` and `carry` all end with
+`sys::mouse_button(false)` before they return, so no caller has ever held a
+frame open. Nothing in `ui-verify` can photograph a gesture while it is
+happening, which makes this the one class of behaviour the harness is blind
+to: the rubber band, the rotate ghost, the snap indicator, the resize handles
+and now the travelling copy.
+
+### The instrument
+
+One new `Driver` verb, shaped like `drag_via` up to the dwell and then
+handing control out:
+
+```rust
+pub fn drag_observed<T>(
+    &self,
+    from: ScreenPoint,
+    to: ScreenPoint,
+    observe: impl FnOnce() -> Result<T>,
+) -> Result<T>
+```
+
+Raise, confirm both endpoints uncovered, press at `from`, `walk` to `to`,
+jiggle for a dwell so a frame runs with the pointer resting at the
+destination, call `observe()`, then release **whatever the observer did** and
+return the observer's result.
+
+⚠ The release must survive a panic, not only an `Err`. A harness that
+leaves the physical button down has handed the operator a machine that
+rubber-bands the desktop, and a `?` on the observer's result is enough to do
+it. The release belongs in a guard's `Drop`, not on the happy path.
+
+⚠ The observer may not move the pointer. Capture is passive; anything
+that sets the cursor position mid-hold changes the gesture being photographed.
+
+### What the observer asserts, and the trap in each
+
+**1. The lettering is there.** `capture::window` at the hold, and
+`pixels::region_not_uniform` over the displaced rect **inset by several
+pixels on every edge**.
+
+⚠ The inset is the whole assertion. The outline ghost strokes the
+boundary of that same rectangle, so ink anywhere in the un-inset region is
+satisfied by the affordance that already shipped - an assertion both outcomes
+satisfy. Only the strict interior separates lettering from a box.
+
+**2. It is a copy, not the content.** The source line still renders at full
+opacity while the drag is in flight, because applied content renders exactly
+as saved content will render. So the destination interior must be measurably
+**lighter** than the source interior. That single comparison rules out both
+the outline-only build (no ink at all) and a blit that forgot its tint (ink at
+full strength).
+
+**3. It came from the right part of the texture.** Compare ink coverage in the
+destination interior against the source interior. A UV taken against the page
+rect instead of `paint_rect` samples blank paper or a neighbouring line, and
+the coverage fraction moves.
+
+⚠ This third one is the weakest and must be labelled as weak. It is a
+similarity test, not an identity test, and a build that sampled a *different*
+line of the same paragraph would pass it. Tightening it means a per-row ink
+profile, which is worth building only if a defect of that shape ever appears.
+
+### Calibration, before any of it is trusted
+
+The oracle must be built from the specification and not from the running
+program. Choose the destination over blank paper, capture that region
+**before** the press, and assert it is uniform. A region that already fails
+the before-check makes every after-check meaningless, and an oracle calibrated
+against the build it is measuring agrees with whatever that build does.
+
+The precedent is `tools/ui-verify/tests/pixel_oracle_against_real_evidence.rs`,
+which calibrates the contrast oracle by pointing it at a real screenshot and
+asserting **both** directions - the unreadable heading below threshold, and the
+readable prose eighty pixels away above it. Same discipline here: the
+before-capture is the second direction, and without it the after-capture is a
+one-sided claim.
+
+### Falsification
+
+Three plants, and the first two are the ones the trace-only check already
+catches - they are here to prove the pixel arm is wired, not to find anything
+new:
+
+1. Delete the `draw_raster_ghost` call site. Interior goes blank.
+2. `RASTER_GHOST_ALPHA` to `255`. Assertion 2 fires, 1 and 3 stay green.
+3. Take the UV against the page rect rather than `paint_rect`. Assertion 3
+   fires at a zoom where the two differ, and **green at a zoom where they
+   coincide** - so the plant is only evidence at the tier that separates them.
+

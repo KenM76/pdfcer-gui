@@ -329,6 +329,20 @@ pub(super) fn draw(
         // `held_preview_to_draw`'s fallback: that one exists to survive the
         // release frame, and a ghost is only ever drawn while a drag is in
         // flight.
+        // ★★★ The lettering travels FIRST, and the outline is stroked on
+        // top of it. O215 ask 5 asks for the chunk to follow the pointer
+        // rather than a rectangle; the rectangle is still drawn, because it
+        // is what states the SET when several chunks are held and what
+        // survives at a zoom where the page has no picture yet.
+        overlay::draw_raster_ghost(
+            &painter,
+            pages,
+            page_index,
+            map,
+            selection,
+            delta,
+            f.shape_preview,
+        );
         overlay::draw_move_ghost(
             &painter,
             map,

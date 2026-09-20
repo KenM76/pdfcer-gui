@@ -234,6 +234,20 @@ fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
 /// * A call site does not have to invent an epsilon, or keep a parallel copy
 ///   of its own state to compare against. There is one rule, in one place.
 ///
+/// # ⚠ A repeated value is silent, and a consumer must expect that
+///
+/// Suppression is invisible from outside. A call site reporting the same
+/// result twice in a row writes ONE line, not two, so a consumer that marks
+/// a point in the trace and then reads the next line for this slot finds
+/// nothing at all when the second occasion produced an identical result.
+///
+/// A driven check written that way reddens through its absence branch rather
+/// than through the branch comparing the value, and the two causes mean
+/// different things: the call site was never reached, or it produced exactly
+/// what it produced last time. An absence message must name both. A check
+/// that has to tell two occasions apart needs something in the formatted
+/// line that differs between them.
+///
 /// # Slots
 ///
 /// A slot is the event name, plus a discriminator when one event has several

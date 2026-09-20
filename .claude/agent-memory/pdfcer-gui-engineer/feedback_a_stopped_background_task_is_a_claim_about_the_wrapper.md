@@ -1,6 +1,6 @@
 ---
 name: a-stopped-background-task-is-a-claim-about-the-wrapper
-description: "'The background command was stopped' kills the task handle, not the detached bash it launched; check for the script's own command line before writing a recovery plan"
+description: "'The background command was stopped' kills the task handle, not the detached bash it launched; a quiet log lags the run and is not a stall; and killing the runner makes the wrapper report exit 0, so only the RESULT: line separates a killed sweep from a passed one"
 metadata:
   type: feedback
 ---
@@ -59,6 +59,29 @@ convenient wrong one cost twenty-seven gates re-run by hand.
 **A completion notification CAN still arrive after a kill notice**, so the
 earlier entry's *"no completion notification is coming"* is a property of that
 2026-09-12 case, not a rule.
+
+## Third instance, and killing it reports EXIT 0 - 2026-09-20
+
+The same wrong inference with the right instrument in hand. I ran the process
+query this entry prescribes, it answered that `check-strong-text.sh` was ALIVE,
+and I killed the sweep anyway - because I had also watched the log sit at the
+same byte count for two minutes and believed the log over the process. It was
+not stalled: seconds after the kill the tree still held a live
+`check-plate-colour.sh`, two gates further on. **The log lags the run. The
+process list does not.** When the two disagree, the process list is the
+measurement and the log is a cache.
+
+The new half, and it is the dangerous one: **killing the runner makes the
+wrapper report `[exited with code 0]`.** A sweep destroyed mid-flight and a
+sweep that passed are indistinguishable by exit code, and the notification
+says *completed*. The only thing separating them is the runner's own
+`RESULT:` line, which a killed sweep never writes - the same rule as
+[[a-command-judged-through-a-pipe-reports-the-pipes-exit-code]], one layer
+out.
+
+**How to apply:** never conclude a stall from a static byte count alone; and
+before quoting any sweep green, grep its log for the `RESULT:` line rather
+than reading the task notification.
 
 Related: [[a-runners-sentinel-is-a-claim-about-the-runner]],
 [[a-launch-failure-blamed-on-a-resource-count-needs-a-control-binary]],

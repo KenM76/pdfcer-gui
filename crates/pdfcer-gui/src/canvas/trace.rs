@@ -1025,3 +1025,66 @@ pub(super) fn move_ghost(boxes: usize, part_rung: bool, suppressed: bool) {
         format!("canvas-move-ghost boxes={boxes} rung={rung} suppressed={why}")
     });
 }
+
+/// The trace slot for the **travelling copy of the page's own pixels**.
+pub(super) const RASTER_GHOST_SLOT: &str = "canvas-raster-ghost"; // ui-text-exempt: trace slot name, never displayed
+
+/// Why [`raster_ghost`] drew what it drew — the `reason=` field's vocabulary.
+///
+/// An enum rather than a `&str` at the call site because the value is what a
+/// driven check matches on, and a misspelling in a trace field is a check that
+/// silently stops asserting anything.
+#[derive(Clone, Copy)]
+pub(super) enum RasterGhostReason {
+    /// It drew. Read `drawn=` for how many.
+    Drew,
+    /// The real geometry is already travelling under a shape preview, so a
+    /// second picture of it would state nothing. The one correct zero.
+    GeometryTravels,
+    /// The page has no picture yet, so there is nothing to take a copy of.
+    NoRaster,
+    /// Every held outline's source fell outside the rastered part of the page.
+    OffRaster,
+    /// Nothing is selected.
+    NoSelection,
+}
+
+impl RasterGhostReason {
+    // ui-text-exempt: trace field VALUES, never displayed in the UI.
+    const fn as_field(self) -> &'static str {
+        match self {
+            Self::Drew => "none",
+            Self::GeometryTravels => "geometry",
+            Self::NoRaster => "no-raster",
+            Self::OffRaster => "off-raster",
+            Self::NoSelection => "no-selection",
+        }
+    }
+}
+
+/// **Whether the glyphs themselves travelled, and if not, why not** —
+/// `OPERATOR_REQUESTS.md` **O215** ask 5.
+///
+/// `canvas-raster-ghost drawn=N clipped=M reason=none|geometry|no-raster|off-raster|no-selection`
+///
+/// # What it is evidence of
+///
+/// `drawn=` is the number of sub-rectangles of the page texture this frame
+/// actually blitted, so a zero is the painter's own statement rather than an
+/// absence a check has to infer — the same property [`move_ghost`]'s `boxes=`
+/// has, for the same reason, and the two together separate *"the outline moved
+/// but the lettering did not"* from *"nothing moved"*.
+///
+/// `clipped=` is how many of those had their source cropped to the part of the
+/// page that has actually been rastered. Separate from `drawn=` because a
+/// cropped copy is still a correct copy — the alternative, stretching the
+/// source to fill the destination, is a subtler wrong than a missing one —
+/// and because a check that starts seeing crops where it saw none is reading a
+/// change in the region tier rather than in this feature.
+pub(super) fn raster_ghost(drawn: usize, clipped: usize, reason: RasterGhostReason) {
+    let reason = reason.as_field();
+    crate::diag::trace_changed(RASTER_GHOST_SLOT, || {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!("canvas-raster-ghost drawn={drawn} clipped={clipped} reason={reason}")
+    });
+}
