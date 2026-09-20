@@ -644,7 +644,8 @@ what pdfcer replaces, so it sets what an operator already expects a PDF tool to
 do. **Inkscape** is the vector editor whose dock and tool model this shell
 benchmarks, so it settles selection, handles, snapping and panel behaviour.
 **SolidWorks** is where the operator's drawings and his muscle memory come
-from, so it settles anything about dimensions, sheets and drawing convention.
+from, so it settles anything about ce dimensions, sheets and drawing
+convention.
 
 The operative half is the second sentence. **Do not ask the operator how an
 interaction should behave** — look at what those three do, pick one, and write
@@ -802,6 +803,34 @@ was.**
 Git holds the history. A reader — human or agent — opening a file wants the
 current contract in the fewest words that carry it, and every sentence about a
 past state is a sentence they must read and discard.
+
+**One word is never written bare, and it is "dimension".** A **ce dimension**
+is one pdfcer authors; a **pdf dimension** is CAD-exported page content pdfcer
+reads and must not silently alter. The engine's Rule 15 draws that line, and
+the two have opposite properties — one is pdfcer's to move, restyle and
+delete, the other is the operator's drawing and has to come back out of a save
+unchanged. A sentence that says only *"dimension"* is a sentence whose reader
+has to guess which set of properties applies, and guessing wrong has already
+sent one investigation down the wrong path.
+
+The rule binds code, comments, commit messages, requests to the engine and
+every document in this repository. **Operator-facing strings are the
+exception**: the window says *"dimension"* plainly, because the operator only
+ever authors the one kind and that is the word he uses for it — R11's own
+source, SolidWorks, calls them dimensions.
+
+No gate enforces this. What a reader of a given file can rely on is measured
+with
+
+```sh
+grep -rlwiE "dimensions?" --include=*.rs --include=*.md . | grep -v '^./target' \
+  | xargs -r grep -LiE '\b(ce|pdf)[ -]dimension'
+```
+
+which lists the files that mention the word and never once say which kind they
+mean. In a file that can only hold one kind — everything under
+`canvas/measure/`, for instance — that is harmless. In a file that reads page
+content **and** authors it, it is the defect this rule exists to prevent.
 
 ### 5.1 Rust
 
