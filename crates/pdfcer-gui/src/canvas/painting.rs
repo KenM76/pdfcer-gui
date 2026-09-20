@@ -322,13 +322,21 @@ pub(super) fn draw(
     // exactly the object the operator is aligning to it.
     guides::draw(ui, doc, pages, clip);
     if let Some(delta) = ghost {
+        // ★★★ The second argument is *is the real geometry already
+        // travelling*, and the whole condition lives in `overlay::ghost_is_owed`
+        // rather than here — including the trap that an EMPTY preview does not
+        // count. The in-flight value is passed, deliberately without
+        // `held_preview_to_draw`'s fallback: that one exists to survive the
+        // release frame, and a ghost is only ever drawn while a drag is in
+        // flight.
         overlay::draw_move_ghost(
             &painter,
             map,
             selection,
             delta,
-            // ★ O69: no ghost box at an inner rung either. See the parameter.
+            // ★ O69: see the two parameters.
             offer.outline,
+            f.shape_preview,
         );
     }
     // The annotation ghost, on the same layer and under the same contract:

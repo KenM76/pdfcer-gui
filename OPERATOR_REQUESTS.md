@@ -371,9 +371,36 @@ a non-combining `Add` arm reddens the Shift band alone; a no-op `Subtract` arm
 reddens the Ctrl band alone; and a deleted plural move arm leaves every band
 step green and reddens the drag.
 
-**Status stays FILED.** Ask 5 — the chunk itself following the pointer rather
-than a rectangle — is unbuilt: `canvas::shapes::for_move_subject` answers
-`None` for every text-line subject. Ask 2 is the engine's (`G032`).
+**Ask 5's floor is built and driven; its literal wording is not met yet.**
+Dragging a chunk draws one travelling outline per held chunk, so the set is
+visible on its way to where it is going rather than only after it lands:
+`canvas-move-ghost boxes=3 rung=part suppressed=no` for a three-chunk set.
+What travels is the outline, not the glyphs. `canvas::shapes::for_move_subject`
+answers `None` for every text-line subject because a `ShapePreview` is path
+anchors and a show operator has none, and the glyph-level preview is S4b.
+
+**The condition that withholds the ghost is about the geometry, not the rung,
+and getting that wrong withholds the ghost from every text chunk.**
+`overlay::ghost_is_owed` withholds the outline only where the real geometry is
+ALREADY travelling — a path node, whose `ShapePreview` carries the moved
+anchors, and which is why O63 asked for no perimeter box there. Keyed on the
+RUNG instead, the same gate reads a text chunk as an inner rung and draws
+nothing whatsoever for the length of the drag. The two conditions agreed until
+a text chunk became selectable.
+
+⚠ A `ShapePreview` that exists and is EMPTY does not count as travelling
+geometry. `transformed` returns exactly that for a text object — it skips
+anything that is not a path — so a gate asking `is_some()` restates the defect
+in a spelling that looks like a fix. `overlay`'s
+`the_ghost_is_withheld_only_for_a_preview_that_has_something_in_it` pins the
+truth table, and `dragging_a_chunk_shows_where_it_is_going` drives the singular
+and plural arms on `paragraph.pdf`, quoting `boxes=0 rung=part suppressed=o63`
+when the rung-keyed gate is planted back. Every other check on this row —
+including the multi-chunk move and the rubber-band — passed green while the
+ghost was withheld, because the defect lies entirely between the set they build
+and the move they assert the release committed.
+
+**Status stays FILED.** Ask 2 is the engine's (`G032`).
 
 ## O213 — ✅ **CLOSED BY HIM** — editing one line of a title-block shifts that line to the right
 

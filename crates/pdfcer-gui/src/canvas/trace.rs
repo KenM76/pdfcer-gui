@@ -983,3 +983,45 @@ pub(super) fn confined(x: bool, y: bool) {
         format!("canvas-confined axes={axes}")
     });
 }
+
+/// Its own slot rather than sharing [`SELECTION_SLOT`]: a selection line
+/// changes when the operator picks something, and this one changes when a
+/// gesture starts and stops. Sharing would make each silence the other on
+/// exactly the frames the other is about.
+pub(super) const MOVE_GHOST_SLOT: &str = "canvas-move-ghost"; // ui-text-exempt: trace slot name, never displayed
+
+/// **Whether the move ghost was drawn, and if not, why not** —
+/// `OPERATOR_REQUESTS.md` **O215** ask 5.
+///
+/// `canvas-move-ghost boxes=N rung=object|part suppressed=no|o63`
+///
+/// # What it is evidence of
+///
+/// A ghost that is withheld looks exactly like a ghost that is drawn at zero
+/// displacement, and both look exactly like a drag the shell declined to
+/// preview at all. The operator's report for all three is the same sentence:
+/// *nothing follows the pointer*. `boxes=` separates them — it is the number
+/// of rectangles this frame actually stroked, so `0` is a claim the painter
+/// makes about itself rather than an absence a check has to infer.
+///
+/// `suppressed=o63` names the one case where withholding is correct: an inner
+/// rung whose real geometry is already travelling, where a perimeter box on
+/// top of it is O63's complaint word for word. Any other zero is a defect.
+///
+/// # No delta, deliberately
+///
+/// The slot is de-duplicated through [`crate::diag::trace_changed`], and a
+/// displacement changes on every frame of a drag — carrying it would emit one
+/// line per mouse-move and bury the transition a check is looking for. The
+/// magnitude a check needs is on the commit's own `move-text-line(s)` line,
+/// published by the code that applied it.
+pub(super) fn move_ghost(boxes: usize, part_rung: bool, suppressed: bool) {
+    // ui-text-exempt: trace field VALUES, never displayed in the UI.
+    let rung = if part_rung { "part" } else { "object" };
+    // ui-text-exempt: trace field VALUES, never displayed in the UI.
+    let why = if suppressed { "o63" } else { "no" };
+    crate::diag::trace_changed(MOVE_GHOST_SLOT, || {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!("canvas-move-ghost boxes={boxes} rung={rung} suppressed={why}")
+    });
+}

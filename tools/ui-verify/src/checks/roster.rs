@@ -438,6 +438,10 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // one, and its modifier arms are the same arms that check measures on
         // clicks. In this order the first row to fail names the defect.
         Box::new(chunk_band::ARubberBandInsideANoteTakesItsLines),
+        // Fifth of the same row, and last of it: it drags a set of chunks, so
+        // it cannot mean anything on a build that cannot build one. Placed
+        // after the band because it uses a band to build its plural arm.
+        Box::new(chunk_ghost::DraggingAChunkShowsWhereItIsGoing),
         // `OPERATOR_REQUESTS.md` O71. Beside the Smart-Selector
         // check because both are about what a plain click MEANS — that one in
         // Edit, this one in Read, which is the stance where the answer had

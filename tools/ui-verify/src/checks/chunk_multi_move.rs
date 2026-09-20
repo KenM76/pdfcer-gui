@@ -92,9 +92,14 @@
 //! # ⚠ What this check can see, and where its reach ends
 //!
 //! It reads what four subsystems wrote down, not the pixels. That both lines
-//! *drew* an outline, and that the ghost travelled over both while the drag was
-//! in flight, have one oracle — a rendered screenshot — and they are
+//! *drew* an outline has one oracle — a rendered screenshot — and it is
 //! `text_chunks`' subject rather than this one's.
+//!
+//! That the ghost travelled over both while the drag was in flight is
+//! [`crate::checks::chunk_ghost`]'s, which reads the painter's own count of
+//! the outlines it stroked. It is a separate row because the defect it names
+//! lies entirely between what this check asserts — the set that was built, and
+//! the move the release committed — and passed here undetected.
 //!
 //! # ⚠ HOW TO FALSIFY THIS CHECK — do this before believing a PASS
 //!

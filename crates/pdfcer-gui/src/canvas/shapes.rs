@@ -399,6 +399,14 @@ pub fn for_move_subject(
         // selection already draws one box per chunk. So four selected chunks
         // preview as four boxes travelling together, which is what the gesture
         // is about to do.
+        //
+        // That last sentence is load-bearing on `overlay::draw_move_ghost`
+        // actually drawing at this rung. It withholds the ghost only where the
+        // real geometry is already travelling, which for a text line it never
+        // is; a gate that withheld on the RUNG instead would leave every
+        // sentence above describing feedback nobody receives.
+        // `dragging_a_chunk_shows_where_it_is_going` is what keeps the two in
+        // step.
         MoveSubject::TextLine { .. }
         | MoveSubject::TextLineInForm { .. }
         | MoveSubject::TextLines { .. }

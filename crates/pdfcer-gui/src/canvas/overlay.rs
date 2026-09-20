@@ -61,7 +61,7 @@ use egui::{Color32, CornerRadius, Painter, Rect, Stroke, StrokeKind, Visuals};
 
 use crate::canvas::handles;
 use crate::canvas::mapping::PageMapping;
-use crate::canvas::selection::SelectionState;
+use crate::canvas::selection::{SelectionLevel, SelectionState};
 
 /// The anchor marks and the Bézier handles.
 ///
@@ -639,28 +639,72 @@ pub fn draw_move_ghost(
     mapping: &PageMapping,
     selection: &SelectionState,
     delta: egui::Vec2,
-    // ★★★ The same flag `draw_selection` takes, for the same reason and then
-    // some — `OPERATOR_REQUESTS.md` O69. `MovePreview` returns a ghost for
-    // `MoveSubject::Node` and `Nodes` as well, so without this gate dragging a
-    // point draws the subpath's box *and* a translated copy of it: O63's
-    // complaint word for word — *"it just had a perimeter box around it"* — in
-    // the one gesture O63 is about.
-    //
-    // Nothing is lost by withholding it, because O63's shape preview already
-    // draws the real geometry moving, which is what he asked to see instead.
+    // ★★★ The same flag `draw_selection` takes — `OPERATOR_REQUESTS.md` O69.
+    // At the object rung the ghost is always owed; at an inner rung it depends
+    // on the companion below.
     outline: bool,
+    // ★★★ **Whether the operator can already see the real thing moving.**
+    // `MovePreview` returns a ghost for `MoveSubject::Node` and `Nodes` as
+    // well, and there the shape preview draws the actual anchors travelling.
+    // A perimeter box on top of that is O63's complaint word for word — *"it
+    // just had a perimeter box around it"* — in the one gesture O63 is about,
+    // so it is withheld.
+    //
+    // ⚠ The condition is *geometry is travelling*, not *an inner rung*. Those
+    // coincided until a text chunk became selectable, and then they did not:
+    // a chunk is an inner rung with no path geometry at all, so gating on the
+    // rung withheld the only feedback the gesture had and a drag showed the
+    // operator nothing whatsoever. The ghost is the feedback of **last
+    // resort** and is suppressed only when something better is already on
+    // screen.
+    //
+    // It is the PREVIEW rather than a boolean derived from it, so that the
+    // reduction lives in [`ghost_is_owed`] where it can be tested, rather than
+    // at a call site where it cannot.
+    already_travelling: Option<&crate::canvas::shapes::ShapePreview>,
 ) {
-    if !outline {
+    // Read from the selection rather than inferred from `outline`: the two
+    // agree today because `pressing::grabbable` sets that flag from this very
+    // comparison, and a trace field that restates its own gate cannot witness
+    // the gate being wrong.
+    let part_rung = selection.level() != SelectionLevel::Object;
+    if !ghost_is_owed(outline, already_travelling) {
+        crate::canvas::trace::move_ghost(0, part_rung, true);
         return;
     }
     let stroke = Stroke::new(1.5, ghost(ink(painter)));
+    let mut boxes = 0_usize;
     for (_, page_rect) in selection.outlines() {
         let screen = visible_outline_rect(
             mapping.rect_to_screen(page_rect.translate(delta)),
             MIN_OUTLINE_EXTENT_PX,
         );
         painter.rect_stroke(screen, CornerRadius::ZERO, stroke, StrokeKind::Middle);
+        boxes += 1;
     }
+    crate::canvas::trace::move_ghost(boxes, part_rung, false);
+}
+
+/// **Whether the move ghost is owed** — `OPERATOR_REQUESTS.md` O69 and O63.
+///
+/// The ghost is the feedback of **last resort**: an outline per selected thing,
+/// displaced by the drag. It is withheld in exactly one case — something better
+/// is already on screen, which means a shape preview carrying the real anchors
+/// travelling, and a perimeter box on top of that is O63's complaint.
+///
+/// `outline` is `pressing::grabbable`'s flag, true at the object rung, where
+/// the ghost is always owed.
+///
+/// ⚠ **A preview that exists and is EMPTY does not count**, and that is the
+/// whole subtlety: `shapes::transformed` returns a preview with no shapes for a
+/// text object, having no path to transform. An empty preview shows the
+/// operator nothing, so it may not stand in for the ghost — a gate that tested
+/// `is_some()` would withhold the only feedback a text-chunk drag has.
+pub(super) fn ghost_is_owed(
+    outline: bool,
+    already_travelling: Option<&crate::canvas::shapes::ShapePreview>,
+) -> bool {
+    outline || !already_travelling.is_some_and(|preview| !preview.is_empty())
 }
 
 /// Paint the **rotate ghost**: the selection's outlines turned about the

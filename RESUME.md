@@ -102,8 +102,21 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    means everywhere else. `a_rubber_band_inside_a_note_takes_its_lines` drives
    three bands, the status row, one plural move and one undo, and is falsified
    four ways — one per arm it can lose.
-   **What is next, in order.** S4: real live-preview geometry — `canvas::shapes::for_move_subject` returns `None`
-   for both text-line subjects, so a drag previews a rectangle (ask 5).
+   Ask 5 has its floor: dragging a line of a note now previews one outline per
+   chunk, travelling with the pointer. The gate that withheld it read *is this
+   an inner rung* where it meant *is the real geometry already travelling* —
+   the two coincided until a text chunk became selectable, and then a chunk
+   drag showed nothing at all until the operator let go.
+   `dragging_a_chunk_shows_where_it_is_going` drives both the singular and the
+   band-built plural arm and goes red on the restored gate, quoting
+   `boxes=0 rung=part suppressed=o63`.
+   **What is next, in order.** S4b: make the GLYPHS travel, which is ask 5's
+   literal wording — an outline is the floor, not the close.
+   `canvas::shapes::for_move_subject` returns `None` for both text-line
+   subjects, so there is no shape preview to carry them; the route is a
+   displaced blit of the page texture, which needs `paint_rect` threaded from
+   `canvas::present::show` into `canvas::painting::draw` rather than derived a
+   second time.
    **Ask 2 is the engine's and is filed as `G032`**: `runs_share_a_line` never
    reads the horizontal translation, so a table row welds into one line — 565
    welded lines on his own drawing, the widest spanning 709.4 pt of blank paper.

@@ -317,3 +317,44 @@ fn a_translucent_theme_colour_keeps_its_hue_through_the_ghost() {
         );
     }
 }
+
+/// ★★★ **THE GHOST IS WITHHELD ONLY WHERE SOMETHING BETTER IS ON SCREEN** —
+/// `OPERATOR_REQUESTS.md` O63 and O215 ask 5.
+///
+/// The gate [`ghost_is_owed`] replaced read *is this an inner rung*, which is
+/// not the same question and had the same answer until a text chunk became
+/// selectable. Then a chunk drag previewed **nothing at all**: the ghost was
+/// withheld, `draw_selection` is gated on the same flag so no outline was
+/// drawn, and the chunk boxes are painted where the text still is.
+///
+/// ⚠ **The middle row is the one that matters.** `shapes::transformed` returns
+/// a preview with an EMPTY `shapes` vec for a text object, having no path to
+/// transform. A gate that asked `is_some()` would read that as *the real
+/// geometry is travelling* and withhold, which is the defect restated in a
+/// different word.
+#[test]
+fn the_ghost_is_withheld_only_for_a_preview_that_has_something_in_it() {
+    let empty = crate::canvas::shapes::ShapePreview {
+        shapes: Vec::new(),
+        erase: Vec::new(),
+        capped: false,
+    };
+    assert!(
+        ghost_is_owed(false, None),
+        "an inner rung with no shape preview at all is a text chunk being \
+         dragged, and withholding there leaves the gesture with no feedback"
+    );
+    assert!(
+        ghost_is_owed(false, Some(&empty)),
+        "a preview that exists and draws nothing shows the operator nothing, \
+         so it may not stand in for the ghost"
+    );
+    assert!(
+        ghost_is_owed(true, None),
+        "the object rung is always owed a ghost"
+    );
+    assert!(
+        ghost_is_owed(true, Some(&empty)),
+        "the object rung is always owed a ghost, whatever the preview says"
+    );
+}

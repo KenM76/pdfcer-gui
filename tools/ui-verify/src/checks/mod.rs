@@ -1307,6 +1307,13 @@ pub mod chunk_multi_move;
 /// aimed along the vertical axis alone.
 pub mod chunk_band;
 
+/// The fifth of that row: **O215 ask 5's floor, driven** — dragging a line of
+/// a note previews where it will land, and dragging several previews all of
+/// them. Its header carries the one withholding that is correct (a path node,
+/// whose real anchors already travel) and why gating on the RUNG instead of on
+/// that condition left a chunk drag with no feedback at all.
+pub mod chunk_ghost;
+
 /// ★ The operator's own report, driven: Edit text on a REAL CAD sheet, aimed at a
 /// point the ENGINE says carries text. Its header carries why two passing text
 /// checks were not enough — both drive fixtures this repository generated to

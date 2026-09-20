@@ -138,3 +138,4 @@
 - [A doc-range edit eats the attribute under it](feedback_doc_edit_eats_the_attribute.md) — a #[test] vanished; the count is the only witness.
 - [A blocker can be inherited from an unlinked dependency](feedback_a_blocker_can_be_inherited_from_a_dependency_that_is_not_linked.md) — four docs blocked a feature on a crate not in the lock.
 - [A preview must be replayed, not read off the target's current rect](feedback_a_preview_must_be_replayed_not_read_off_the_targets_current_rect.md) — and the calibration test is blind to an error both sides share.
+- [Before-and-after checks are blind to the gesture](feedback_before_and_after_checks_are_blind_to_the_gesture.md) — the whole roster passed while the drag showed nothing.
