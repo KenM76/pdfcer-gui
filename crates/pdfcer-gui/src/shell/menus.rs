@@ -94,7 +94,7 @@
 //!
 //! | Context id | Right-click site | Items | The reasoning |
 //! |---|---|---|---|
-//! | [`CANVAS_OBJECT`] | a selected object on the page | `view.zoom_selection`, `format.properties`, `format.select_text_line`, `format.select_form`, `format.unshare_form`, `format.delete` | ★ The Items column was **wrong** until 2026-08-28 — it had never been updated for `format.select_form`, added the previous day, which is this project's recurring shape of a prose claim beside the thing it describes decaying while a test pins the truth one screen down. The two form commands arrived with the form-XObject work: `format.select_form` because a click now reaches *inside* a form and the container has to be reachable on purpose, and `format.unshare_form` because O53 forbids a command existing only on the ribbon — and because the operator who needs it is mid-gesture, about to type into a title block, and the pointer is where they are looking. Zoom to selection is here because **SolidWorks and Acrobat both reach it by right-click** and only Inkscape binds a key for it — operator instruction of 2026-08-14 to match those three; see the registration site for why no chord was invented. Then §5.8 lists Delete in **every** selection type's row. It is the one command in that section that exists (see `manifest::DIRECTED`), and it is wired: `PdfcerApp::dispatch_token` reads `SelectionState::deletable_objects_on`, the same rule the Delete key reads. **`format.properties` joined them on 2026-08-18**, with the ce-dimension properties section: a selected ce dimension's group, measurement, style overrides and radius/diameter switch are otherwise reachable only by noticing that a contextual tab appeared or by opening a dock panel by name, and the operator's report was *"I click and can't figure out how to enable some of the basic stuff."* It sits above Delete because the destructive row is last in every menu here. **`format.select_text_line` joined on 2026-09-14** (O188(A)) and is the only row here that is absent rather than greyed when it does not apply: it descends to ONE LINE of a multi-line text object, a rung that until then was reachable only by arming the Points tool with a chord nobody had been told about. It is a re-aim, not an edit, which is why `DESIGNS.md` §6.2's ban on a context-menu item does not reach it — see the registration site. |
+//! | [`CANVAS_OBJECT`] | a selected object on the page | `view.zoom_selection`, `format.properties`, `format.select_text_line`, `format.select_form`, `format.unshare_form`, `edit.redact_selection`, `format.delete` | ★ The Items column was **wrong** until 2026-08-28 — it had never been updated for `format.select_form`, added the previous day, which is this project's recurring shape of a prose claim beside the thing it describes decaying while a test pins the truth one screen down. The two form commands arrived with the form-XObject work: `format.select_form` because a click now reaches *inside* a form and the container has to be reachable on purpose, and `format.unshare_form` because O53 forbids a command existing only on the ribbon — and because the operator who needs it is mid-gesture, about to type into a title block, and the pointer is where they are looking. Zoom to selection is here because **SolidWorks and Acrobat both reach it by right-click** and only Inkscape binds a key for it — operator instruction of 2026-08-14 to match those three; see the registration site for why no chord was invented. Then §5.8 lists Delete in **every** selection type's row. It is the one command in that section that exists (see `manifest::DIRECTED`), and it is wired: `PdfcerApp::dispatch_token` reads `SelectionState::deletable_objects_on`, the same rule the Delete key reads. **`format.properties` joined them on 2026-08-18**, with the ce-dimension properties section: a selected ce dimension's group, measurement, style overrides and radius/diameter switch are otherwise reachable only by noticing that a contextual tab appeared or by opening a dock panel by name, and the operator's report was *"I click and can't figure out how to enable some of the basic stuff."* It sits above Delete because the destructive row is last in every menu here. **`format.select_text_line` joined on 2026-09-14** (O188(A)) and is the only row here that is absent rather than greyed when it does not apply: it descends to ONE LINE of a multi-line text object, a rung that until then was reachable only by arming the Points tool with a chord nobody had been told about. It is a re-aim, not an edit, which is why `DESIGNS.md` §6.2's ban on a context-menu item does not reach it — see the registration site. |
 //! | [`CANVAS_MARKUP`] | a selected markup shape on the page | `format.properties`, `markup.add_node`, `markup.remove_node`, `edit.cut`, `edit.copy`, `edit.paste`, `format.delete` | ★★★ **The sixth canvas context, 2026-09-06, and the reason it is not [`CANVAS_OBJECT`] is that four of that menu's five rows are meaningless on an annotation.** `format.select_form` and `format.unshare_form` are about page content inside a form XObject; a markup annotation is not page content and is never inside one, so both would resolve, draw and do nothing — the *live and silently inert* class this project's `DEFECTS.md` is made of. What replaces them is the pair the operator asked for by name: *"I also can't edit or delete nodes of a markup shape once it is drawn."* See the block comment at the registration for the order, and [`crate::canvas::annotnodes::menu`] for why one of them can be greyed and the other absent on the very same shape. |
 //! | [`CANVAS_EMPTY`] | blank page, or the paper beside the drawing | `view.zoom_fit_page`, `view.zoom_fit_width`, `view.zoom_fit_height`, `view.zoom_actual` | The four **named** zoom levels, all of which have a live dispatch arm today. A right-click on paper is about the *view*, because there is no object to be about. |
 //! | [`DOCK_TAB`] | a panel tab in the dock | `view.reset_layout` | The only registered command that acts on the dock. The **command** is wired (`PdfcerApp::dispatch_command` calls `Modes::reset` with `ResetScope::All`); the **menu** still cannot be attached — see the warning below. |
@@ -533,6 +533,59 @@ pub fn built_in() -> Menus {
             // form, by the same R9 reading the catalog entry argues, and on the
             // same `selection.in_form` predicate as the row above it.
             Item::command("format.unshare_form"),
+            // ★★★ **Mark what was pointed at for redaction**, at the pointer —
+            // `OPERATOR_REQUESTS.md` O217, whose requirement is that redaction
+            // address *the same unit, by the same gestures* as everything else
+            // the operator aims at.
+            //
+            // ## The unit is already right; the route is what this row supplies
+            //
+            // `app::actions::redactsel::mark_selection` builds its quads from
+            // `SelectionState::outlines()`, and `SelectionState::outline_rect`
+            // answers `part_bounds` whenever the entry carries a subpath. So a
+            // selection standing at the **Part** rung on one chunk of a text
+            // block marks that chunk's box and never the block's, and a set
+            // built by shift-click or a rubber band marks one `/Redact` with
+            // one quad per held chunk. Nothing about the unit is restated here
+            // — the mark is the outline the operator can see, which is the
+            // whole of `redactsel`'s "why the bounds and not the shape".
+            //
+            // O53 is the rest of the argument: **a command must not exist only
+            // on the ribbon.** The operator who needs this one has just clicked
+            // a chunk and is looking at it; Edit ▸ Protect is the correct
+            // *second* home.
+            //
+            // ## Why a marking row is allowed where `DESIGNS.md` §6.2 bans an
+            // editing one
+            //
+            // That ruling is about inventing a menu row for a gesture the
+            // conventional interaction already owns — *Move* instead of a drag.
+            // There is no conventional gesture that marks a region for
+            // redaction; Acrobat's own route is the right-click on the
+            // selection, which is this row.
+            //
+            // ## Placement: last of the non-destructive rows
+            //
+            // A `/Redact` annotation **removes nothing** — applying is
+            // `edit.redact_apply`, a separate confirmed act — so this is not
+            // the destructive row and does not displace Delete, which stays
+            // last here as it does in every menu in this file. It sits
+            // immediately above it because it is the act that *precedes* the
+            // irreversible one, and the group reads describe → re-aim → detach
+            // → mark → destroy.
+            //
+            // ## Greyed, not absent, and no mode gate
+            //
+            // The catalog's `selection.any` is the only gate, and it cannot be
+            // false here: this menu is chosen because an object is under the
+            // pointer. No mode predicate is added, and that is not an omission
+            // — `canvas::rightclick` computes `reading = !caps.edit_content`
+            // and downgrades every mode that cannot edit content to
+            // `CANVAS_READ_OBJECT`, so this menu is reachable in Edit alone,
+            // which is the same mode the Edit tab's Protect group is shown in.
+            // A second statement of that fact here would be a second thing to
+            // keep in step.
+            Item::command("edit.redact_selection"),
             // ★★★ **Absent, not greyed, where the engine would refuse it.** The
             // same condition and the same constant the Format tab's Delete
             // carries — `manifest::format::DELETE_VISIBLE_WHEN` — so this menu

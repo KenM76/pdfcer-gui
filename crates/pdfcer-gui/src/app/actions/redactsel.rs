@@ -90,7 +90,7 @@ pub fn mark_selection(doc: &mut OpenDoc, appearance: &RedactAppearance) {
     // operator was looking at. Deriving them again from the decomposition would
     // be a second answer to a question the canvas has already answered, and the
     // two would disagree the first time one of them was corrected.
-    let quads: Vec<Quad> = doc
+    let rects: Vec<pdfcer_core::page_tree::Rect> = doc
         .selection
         .outlines()
         .iter()
@@ -101,7 +101,7 @@ pub fn mark_selection(doc: &mut OpenDoc, appearance: &RedactAppearance) {
             // is the one place that arithmetic lives.
             let min = crate::viewer::canvas_to_pdf_space(canvas.min, &page)?;
             let max = crate::viewer::canvas_to_pdf_space(canvas.max, &page)?;
-            Some(Quad::from_rect(pdfcer_core::page_tree::Rect {
+            Some(pdfcer_core::page_tree::Rect {
                 // NORMALISED, because the y flip inverts the corners: the
                 // canvas rect's `min` is its TOP-left and the PDF rect's `llx`
                 // / `lly` is its BOTTOM-left. A quad built from the unswapped
@@ -111,9 +111,10 @@ pub fn mark_selection(doc: &mut OpenDoc, appearance: &RedactAppearance) {
                 lly: f64::from(min.y.min(max.y)),
                 urx: f64::from(min.x.max(max.x)),
                 ury: f64::from(min.y.max(max.y)),
-            }))
+            })
         })
         .collect();
+    let quads: Vec<Quad> = rects.iter().copied().map(Quad::from_rect).collect();
 
     if quads.is_empty() {
         crate::diag::trace(|| {
@@ -124,6 +125,31 @@ pub fn mark_selection(doc: &mut OpenDoc, appearance: &RedactAppearance) {
     }
 
     let count = quads.len();
+    // ★★★ **`bbox` is what makes this line able to name the UNIT that was
+    // marked**, and without it the line cannot.
+    //
+    // `quads=1` is written whether the operator marked one chunk of a text
+    // block or the whole block — the two outcomes `OPERATOR_REQUESTS.md` O217
+    // exists to separate — so a driven check reading the count alone asserts
+    // something both builds satisfy. The union of the marked rectangles is the
+    // smallest fact that tells them apart: a chunk's box is one line tall where
+    // its block's is the whole paragraph, so a check can calibrate one mark
+    // against the other in the same launch instead of pinning a number.
+    //
+    // ⚠ It is GEOMETRY, never text. `PDFCER_DIAG` is redirected into files and
+    // a redaction surface that copied the strings it is about to destroy into a
+    // second file would have undone its own job — the same rule
+    // `dialogs::redact::disclosures` states for the apply report, which
+    // publishes counts and never a character.
+    let bbox = rects
+        .iter()
+        .copied()
+        .reduce(|acc, r| pdfcer_core::page_tree::Rect {
+            llx: acc.llx.min(r.llx),
+            lly: acc.lly.min(r.lly),
+            urx: acc.urx.max(r.urx),
+            ury: acc.ury.max(r.ury),
+        });
     // `-requested`, not the bare label: `vector_edit` writes
     // `redact-mark-selection page=… n=… epoch=…` for the same edit, and
     // `Trace::last()` matches on the FIRST TOKEN. Two lines with one name means
@@ -131,8 +157,18 @@ pub fn mark_selection(doc: &mut OpenDoc, appearance: &RedactAppearance) {
     // that the verb did nothing — which `tools/gates/check-trace-names.py`
     // exists to prevent.
     crate::diag::trace(|| {
+        // `none` rather than a zero rect for the empty case, which the early
+        // return above already makes unreachable. A `0,0,0,0` is a LEGAL
+        // bounding box, so a check reading one cannot tell "the union was
+        // empty" from "the mark landed in the page's bottom-left corner" — and
+        // a default that spells itself as a plausible measurement is how a
+        // broken producer reads as a working one.
+        let bbox = bbox.map_or_else(
+            || "none".to_owned(),
+            |r| format!("{:.1},{:.1},{:.1},{:.1}", r.llx, r.lly, r.urx, r.ury),
+        );
         // ui-text-exempt: diagnostic trace, never displayed.
-        format!("redact-mark-selection-requested page={page_index} quads={count}")
+        format!("redact-mark-selection-requested page={page_index} quads={count} bbox={bbox}")
     });
 
     // ONE annotation carrying every quad, not one annotation per object.

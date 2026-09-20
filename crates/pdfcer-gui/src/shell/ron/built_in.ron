@@ -612,6 +612,7 @@
                 Command(id: "format.select_text_line", visible_when: "canvas.run_select_offered"),
                 Command(id: "format.select_form"),
                 Command(id: "format.unshare_form"),
+                Command(id: "edit.redact_selection"),
                 Command(id: "format.delete", visible_when: "selection.delete_permitted"),
             ],
         ),

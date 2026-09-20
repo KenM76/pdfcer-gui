@@ -922,6 +922,12 @@ pub mod read_mode_exit;
 /// needs a page whose text the harness wrote itself.
 pub mod redact_preview;
 
+/// **O217 — the unit, the gesture and the route.** `redact_selection`
+/// below proves a selected object can be marked at all; this proves the
+/// mark is bounded by the LINE the operator clicked rather than the block
+/// it sits in, and that he can reach the verb without leaving the canvas.
+pub mod redact_chunk;
+
 pub mod redact_selection;
 
 pub mod redaction;

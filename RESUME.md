@@ -52,7 +52,9 @@ row's argument is in `OPERATOR_REQUESTS.md`, which **only Ken closes**; the open
 set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
 1. **O215 / O216 / O217 — the text chunk as a thing the operator can aim at.
-   Three of the six asks are built and driven; three are not.**
+   Five of O215's six asks are built and driven; the sixth is the engine's and
+   is filed as `G032`. O216's two are built and driven. O217 has three of four,
+   and the fourth is the plural mark, built and not yet driven.**
    **What shipped.** Clicking a block of text draws a hairline box round every
    chunk inside it, off a toggle — View ▸ Navigate ▸ *Text chunks*, and the
    same row on the rail, live in Content Edit, persisted (ask 3). With the
@@ -155,7 +157,7 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    `paint_rect` equals the page rect at every zoom below the pixmap ceiling,
    so the ink-coverage question is **unfalsified**, not merely weak, and
    exercising it needs this gesture driven at the region tier.
-   **What is next, in order.** O217's first three bullets.
+   **What is next, in order.** O217's third bullet — the plural mark — driven.
    **O215's ask 2 is the engine's and is filed as `G032`**: `runs_share_a_line` never
    reads the horizontal translation, so a table row welds into one line — 565
    welded lines on his own drawing, the widest spanning 709.4 pt of blank paper.
@@ -186,7 +188,7 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    the unmet ask, not an arrangement the harness could not make. Falsified
    twice: `ClickHit::chunk` shut reddens the door, and a Part rung reaching
    no verb reddens on the application's own decline line.
-   **O217's fourth bullet is BUILT and DRIVEN; its first three are not.**
+   **O217's fourth bullet is BUILT and DRIVEN.**
    The apply report now lists the text the marks will destroy, one quoted
    line per region in the order it was drawn, deduped so identical removals
    appear once. That is the disclosure half of the row: redaction on a welded
@@ -207,10 +209,41 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    proves the block exists, was laid out, found text and listed at least as
    many characters as the page carries; it cannot prove the strings read
    correctly.
-   **The unbuilt three are the ones that let him mark less in the first
-   place**, and they are still the ones that cannot ship the old unit.
+   **O217's first two bullets are BUILT and DRIVEN, and the gap was the
+   ROUTE.** The unit was already right everywhere redaction reads it:
+   `redactsel::mark_selection` builds its quads from the selection's own
+   outlines, and `SelectionState::outline_rect` answers `part_bounds` for any
+   entry carrying a subpath — so a selection standing at the Part rung has
+   always marked that chunk's box. What did not exist was a way to reach the
+   verb from the chunk. `edit.redact_selection` lived on the Edit ribbon tab
+   alone, which is the defect **O53** names, and the operator's hand is on the
+   line he just clicked. It is now a row in the canvas object menu, between
+   *Unshare form* and *Delete* — a marking verb, not an editing one, so
+   `DESIGNS.md` §6.2's context-menu ban does not reach it, and
+   `canvas.object` is structurally Edit-only (`reading = !caps.edit_content`)
+   so the row needs no mode predicate of its own.
+   `redacting_a_clicked_chunk_marks_only_that_chunk` marks the whole block and
+   then one line of it **in one launch** and compares the two bounds: 91.1 pt
+   against 11.1 pt on `paragraph.pdf`, 12%, with an undo between them so both
+   gestures aim at the same document. Both marks go through the context menu,
+   so the route is proved by use. Falsified by deleting the `part_bounds` arm
+   from `outline_rect` — both bounds become 91.1 pt and the row reddens at
+   100%.
+   ★ The check exists in that shape because `quads=` alone is **an assertion
+   both outcomes satisfy**: `quads=1` is written for a chunk-sized mark and a
+   block-sized one alike. The trace carries `bbox=llx,lly,urx,ury` for that
+   reason, which is geometry and never text — the same R8b rule the apply
+   report holds. No number is pinned; a fixture whose leading moved would move
+   both bounds together.
+   **Bullet three is built and not driven.** A shift-click or band set marks
+   one `/Redact` with one quad per held chunk, because the verb consumes every
+   outline in the selection. No check drives the plural case.
+   **The row still does not close.** Its closing criterion is a chunk of a
+   table row on `SW41177.pdf`, and there is no separate chunk to aim at there
+   until `G032` lands.
    Published as `v0.5.0-dev.20260920.2`, which is the slot he runs; the slot
-   beside it holds the build before it.
+   beside it holds the build before it. **The menu row and the driven check
+   are NOT in that build** — they are committed and unpublished.
 
 
 2. **O213 / O214 — the shell addresses the visual line everywhere, driven and

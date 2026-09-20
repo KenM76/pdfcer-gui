@@ -140,20 +140,40 @@ cosmetic.** A preview of *what is about to be destroyed* is the only defence
 against an inference the operator cannot see, and that is squarely rule R8b:
 render normally, report off-canvas, and never let an inference act silently.
 
-**The fourth bullet is built; the first three are not.** The apply report now
-lists the text the marks will destroy, quoted region by region, above the
-commit button — so an operator whose mark took a whole welded row instead of
-the one cell he aimed at reads the extra words before the removal is
-permanent. Driven by `the_apply_report_lists_the_text_it_will_destroy`, which
-generates a page whose text it wrote itself and fails if the report lists
-fewer characters than the page carries.
+**The fourth bullet is built.** The apply report lists the text the marks will
+destroy, quoted region by region, above the commit button — so an operator
+whose mark took a whole welded row instead of the one cell he aimed at reads
+the extra words before the removal is permanent. Driven by
+`the_apply_report_lists_the_text_it_will_destroy`, which generates a page whose
+text it wrote itself and fails if the report lists fewer characters than the
+page carries.
 
-Shipped in `v0.5.0-dev.20260920.2`, on GitHub and in the OneDrive slot he runs.
+**Bullets one and two are built and driven.** Clicking a chunk and marking it
+marks **that chunk**: the verb builds its quads from the selection's own
+outlines, and a selection standing at the Part rung answers the chunk's box.
+Driven by `redacting_a_clicked_chunk_marks_only_that_chunk`, which marks the
+whole block and then one line of it **in one launch** and compares the two
+bounds — measured on `fixtures/paragraph.pdf`, a six-line block: 91.1 pt for
+the block, 11.1 pt for the line, 12%. Nothing is pinned, so a fixture whose
+leading or position changed moves both together.
 
-Status stays **FILED**. The list discloses a mark that took too much; it does
-not let him make a narrower one, and that is what the first three bullets are
-for. The row closes when a driven check marks one chunk of a table row on
-`SW41177.pdf` and asserts its neighbours survive.
+**★ The gap was the ROUTE, not the unit.** The verb had no home on the canvas
+— it existed only on the Edit ribbon tab, which is what **O53** forbids — so
+the operator's hand was on the chunk he had just clicked and the command was a
+tab away. `edit.redact_selection` is now a row in the canvas object menu, and
+the driven check reaches it that way rather than through the ribbon,
+so the route is proved by use rather than asserted.
+
+**Bullet three is built and not driven.** A shift-click or rubber-band set
+marks one `/Redact` carrying one quad per held chunk — one gesture, one mark,
+one undo — because the verb consumes every outline in the selection rather
+than a single target. No check drives the plural case yet.
+
+Status stays **FILED**. The row closes when a driven check marks one chunk of a
+table row on `SW41177.pdf` and asserts its neighbours survive, and **that is
+blocked on the engine**: `runs_share_a_line` never reads the horizontal
+translation, so a table row welds into one line and there is no separate chunk
+to aim at. Filed as `request_G032`, unanswered.
 
 ## O216 — **FILED** — emptying a text chunk does not save, and a selected chunk must be deletable
 

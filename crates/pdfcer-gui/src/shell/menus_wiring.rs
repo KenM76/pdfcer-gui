@@ -276,7 +276,7 @@ mod tests {
         // registration, and would have to be argued here too.
         assert_eq!(
             (glyph, blank, absent),
-            (34, 1, 0),
+            (35, 1, 0),
             "menu rows by icon slot state; per-menu breakdown:\n{report}"
         );
         assert_eq!(

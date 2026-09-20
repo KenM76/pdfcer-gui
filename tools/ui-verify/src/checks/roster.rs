@@ -1076,6 +1076,13 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(cut_gate::CuttingARedactionMarkIsRefusedBeforeAnythingIsRemoved),
         // O60 — redacting what is selected, the third marking route.
         Box::new(redact_selection::ASelectedObjectCanBeMarkedForRedaction),
+        // O217, and it must run AFTER the row above: that one establishes
+        // that a selected object can be marked at all, and this one asks a
+        // narrower question about the SAME verb — which unit it addresses
+        // and whether the canvas can reach it. In this order a build that
+        // lost redaction entirely reports redaction once, rather than
+        // reporting a chunk defect on top of it.
+        Box::new(redact_chunk::RedactingAClickedChunkMarksOnlyThatChunk),
         // O61 — the document-safety disclosure.
         Box::new(reach_out::ADocumentThatPhonesHomeSaysSo),
         // O62 — the rotation direction, which is one sign and invisible.

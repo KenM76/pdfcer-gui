@@ -727,7 +727,7 @@ block:
 
 | Context | Commands, in order |
 |---|---|
-| `canvas.object` | Zoom to selection · Properties · Select this line of text *(when a run pick is offered)* · Select the form · Give this page its own copy · Delete *(when deletion is permitted)* |
+| `canvas.object` | Zoom to selection · Properties · Select this line of text *(when a run pick is offered)* · Select the form · Give this page its own copy · Mark this for redaction · Delete *(when deletion is permitted)* |
 | `canvas.read-object` | Copy · Zoom to selection |
 | `canvas.empty` | Fit page · Fit width · Fit height · Actual size |
 | `canvas.field` | Properties · Delete *(when permitted)* |
