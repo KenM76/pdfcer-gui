@@ -39,4 +39,4 @@ clockwise.
 
 Related: [[a-limitation-sentence-is-a-citation-with-an-hours-long-shelf-life]],
 [[a-compile-error-is-an-invitation-to-read-the-reply]],
-[[a-tripwire-keyed-on-your-own-intention-is-not-a-tripwire]].
+[[a-temporary-shim-needs-a-tripwire-that-names-its-own-deletion]].

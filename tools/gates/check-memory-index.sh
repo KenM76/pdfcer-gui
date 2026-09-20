@@ -66,19 +66,24 @@
 # since cut to 23,987 (= 24.0 KB, under the limit, not truncated). A session
 # that believes such a warning is minutes from renaming all 136 memory files to
 # claw back bytes that are not the problem. **This gate is the live instrument.
-# The prompt is not.** See
-# `feedback_the_injected_memory_warning_is_a_snapshot.md`.
+# The prompt is not.** The memory is `an-injected-file-is-a-dated-snapshot`
+# — cited by its `name:` slug, which survives a rename of the file, unlike
+# the filename this line used to carry.
 #
-# ★★ WHERE THE BYTES ACTUALLY ARE, measured over 135 rows:
+# ★★ WHERE THE BYTES ACTUALLY ARE: **the gate prints the split itself** —
+# `titles / FILENAMES / hooks / markup`, on every run that is inside
+# NEAR_INDEX of the ceiling. No figure is quoted here, because the largest
+# share is filenames and the remedy on offer is shortening them, so any number
+# written into this header recommends its own obsolescence.
 #
-#     titles 6,914   FILENAMES 8,942   hooks 6,900   markup 1,080
-#
-# ⚠ The hook is the obvious place to look for slack and it is the WRONG one:
-# it is the smallest third and the least compressible. Rewriting the **36
+# ⚠ The hook is the obvious place to look for slack and it is the WRONG one,
+# and the reason is compressibility rather than size. Rewriting the **36
 # fattest rows** with intent — keeping every actionable clause, pushing counts
 # and second examples down into the topic file where they already live — freed
 # **506 bytes, 14 a row**. A hook is a relevance decision, not a summary, and at
-# one clause each the next trim costs meaning rather than bytes.
+# one clause each the next trim costs meaning rather than bytes. Do not read the
+# census as a ranking of where to cut: it ranks where the bytes ARE, and the two
+# orders are different.
 #
 # ⇒ THE LEVERS, IN THE ORDER THEY ARE NOW WORTH PULLING:
 #
@@ -90,11 +95,19 @@
 #      average and nothing needs it; the `name:` frontmatter carries the slug
 #      that `[[wikilinks]]` resolve against, and `MEMORY.md`'s title carries
 #      the prose. A 30-byte name costs the index half of a 60-byte one.
-#   3. **Renaming the existing 136** is the big win (≈4,000 bytes) and the one
-#      to resist: it rewrites 309 `[[wikilinks]]`, every citation of a memory
-#      filename anywhere in the tree, and every filename a past session ever
-#      grepped for. *Tidying an input changes every instrument that reads it.*
-#      Do it only when 1 and 2 are exhausted, and in a commit of its own.
+#   3. **Renaming the existing files** is the big win — filenames are the
+#      single largest share of the index, and the headroom line prints the
+#      current figure — and it is still lever three, not lever one.
+#      ★ Its cost is smaller than this header used to claim, and the correction
+#      matters because the old figure is what argued a session out of it.
+#      `[[wikilinks]]` resolve against a memory's `name:` frontmatter OR its
+#      filename stem, and the folder uses both forms: measured, two thirds are
+#      the slug form, which a rename does not touch at all. Only the stem-form
+#      links need rewriting, and CROSSREF below reddens on any the rewrite
+#      misses. Nothing outside this folder cites a memory filename — verify
+#      that with a grep before believing it, rather than re-quoting this line.
+#      *Tidying an input changes every instrument that reads it*, so still: do
+#      it only when 1 and 2 are exhausted, and in a commit of its own.
 #   4. **Shortening hooks** — spent, see above. Listed last deliberately,
 #      because it is the one a session reaches for first.
 #
@@ -109,6 +122,14 @@
 #                   silently-skipped row is the failure mode being guarded.
 #   4. HOOK LONG  — a hook over MAX_HOOK bytes. RED.
 #   5. OVERSIZE   — the index over MAX_INDEX bytes. RED. See the note above.
+#   6. CROSSREF   — a `[[link]]` inside a memory file that resolves to nothing
+#                   while nearly naming a real memory. RED: that is a rename or
+#                   a typo, and it breaks a reference nothing else can see. An
+#                   unresolved link with no near match is the documented way to
+#                   mark a memory worth writing later and is left alone — the
+#                   self-test plants both directions, because a rule that
+#                   reddened on every unresolved link would forbid the
+#                   convention the folder is written in.
 #
 # Exit: 0 clean, 1 a violation, 2 precondition absent (no agent-memory tree).
 #
@@ -153,7 +174,7 @@ NEAR_INDEX=2400  # bytes of headroom below which a GREEN run says so loudly.
 # one that is mid-commit.
 
 # ---------------------------------------------------------------------------
-# check_folder <dir> — all five rules against one agent's memory folder.
+# check_folder <dir> — all six rules against one agent's memory folder.
 # Echoes findings; returns 1 if any rule failed.
 # ---------------------------------------------------------------------------
 check_folder() {
@@ -189,6 +210,55 @@ check_folder() {
         rc=1
     fi
 
+    # ★★★ CROSSREF. A `[[link]]` inside a memory file resolves against another
+    # memory's `name:` slug or its filename stem. An unresolved link is
+    # DELIBERATELY allowed — the convention uses one to mark a memory worth
+    # writing later — so a gate that reddened on every unresolved link would
+    # forbid the convention and be turned off. What is red is an unresolved link
+    # that NEARLY names a real target: that is a rename or a typo, and the
+    # reference it broke is invisible, because nothing but a reading session ever
+    # follows these links and a session that cannot follow one does not know it
+    # was there. Eight of them had accumulated when this rule was written.
+    #
+    # "Nearly" is two deterministic tests, both cheap and both explainable:
+    # equal after normalising (lowercase, `_`→`-`, drop a `feedback`/`project`/
+    # `user` prefix), or a shared 20-character prefix. Twenty is chosen so that
+    # `write-the-lesson-to-the-rag-not-the-chat` — a genuine forward marker that
+    # shares `write-the-` with a real memory — stays green, while
+    # `the-engine-session-runs-in-parallel`, which is a real memory's slug with
+    # its tail lopped off, goes red.
+    local targets links crossref
+    targets=$( { sed -n 's/^name:[[:space:]]*//p' "$dir"/*.md 2>/dev/null
+                 ls "$dir" | grep -E '\.md$' | grep -v '^MEMORY\.md$' | sed 's/\.md$//'
+               } | sed 's/[[:space:]]*$//' | grep -v '^$' | sort -u )
+    links=$(grep -ho '\[\[[^]]*\]\]' "$dir"/*.md 2>/dev/null \
+                | sed 's/^\[\[//; s/\]\]$//' | sort -u)
+    crossref=$(printf '%s\n' "$links" | awk -v known="$targets" '
+        function norm(s) {
+            s = tolower(s); gsub(/_/, "-", s)
+            sub(/^(feedback|project|user)-/, "", s)
+            return s
+        }
+        BEGIN {
+            n = split(known, k, "\n")
+            for (i = 1; i <= n; i++) if (k[i] != "") { raw[k[i]] = 1; nk[norm(k[i])] = k[i] }
+        }
+        $0 != "" {
+            if ($0 in raw) next
+            l = norm($0)
+            if (l in nk) { printf "%s\t%s\n", $0, nk[l]; next }
+            for (t in nk) {
+                m = 0
+                while (m < length(l) && m < length(t) && substr(l, m + 1, 1) == substr(t, m + 1, 1)) m++
+                if (m >= 20) { printf "%s\t%s\n", $0, nk[t]; next }
+            }
+        }')
+    if [[ -n "$crossref" ]]; then
+        echo "  CROSSREF: $rel — [[link]](s) resolving to nothing but nearly naming a real memory:"
+        printf '%s\n' "$crossref" | awk -F'\t' '{ printf "    [[%s]]\n      did you mean  [[%s]]\n", $1, $2 }'
+        rc=1
+    fi
+
     # Row shape and hook length, in one awk pass.
     local rows
     rows=$(awk -v maxhook="$MAX_HOOK" '
@@ -216,7 +286,10 @@ check_folder() {
 }
 
 # ---------------------------------------------------------------------------
-# --self-test — five planted violations, each of which the gate must catch.
+# --self-test — eight plants: six the gate must catch, and two it must leave
+# alone — an untouched folder, and the forward-marker wikilink CROSSREF is
+# deliberately blind to. A rule with no green plant beside it drifts wider
+# every time someone tightens it.
 #
 # A grep over files is the category that fails SILENTLY: a pattern that stops
 # matching and a directory that stops resolving both print exactly what a clean
@@ -255,19 +328,42 @@ if [[ "${1:-}" == "--self-test" ]]; then
     b_oversize() { good_index
                    head -c 30000 < /dev/zero | tr '\0' 'x' >> "$TMP/m/MEMORY.md"; }
 
+    # A folder whose one memory has a filename long enough for the 20-character
+    # prefix rule to have something to bite on.
+    long_index() {
+        printf '%s\n' '# Memory index' '' \
+            '- [A thing](a_thing_with_a_long_enough_name.md) — a short hook.' \
+            > "$TMP/m/MEMORY.md"
+        printf '%s\n' 'body' > "$TMP/m/a_thing_with_a_long_enough_name.md"
+    }
+    b_crossref() { long_index
+                   printf '%s\n' 'see [[a-thing-with-a-long-enough-namex]]' \
+                       >> "$TMP/m/a_thing_with_a_long_enough_name.md"; }
+    # ★ The other direction, and it is the one that keeps the rule honest: an
+    # unresolved link with no near match is the documented way to mark a memory
+    # not yet written, and must stay GREEN. Without this plant the cheapest way
+    # to make CROSSREF pass would be to redden on every unresolved link, which
+    # would forbid the convention the folder is written in.
+    b_forward()  { long_index
+                   printf '%s\n' 'see [[something-entirely-different]]' \
+                       >> "$TMP/m/a_thing_with_a_long_enough_name.md"; }
+
     plant "clean folder"        0 b_clean
     plant "orphan file"         1 b_orphan
     plant "dangling link"       1 b_dangling
     plant "unparsed row"        1 b_unparsed
     plant "over-long hook"      1 b_hook
     plant "oversize index"      1 b_oversize
+    plant "broken crossref"     1 b_crossref
+    plant "forward marker"      0 b_forward
 
     if [[ "$FAILURES" -gt 0 ]]; then
-        echo "memory-index --self-test: FAIL — $FAILURES of 6 sabotages went undetected."
+        echo "memory-index --self-test: FAIL — $FAILURES of 8 sabotages went undetected."
         exit 1
     fi
-    echo "memory-index --self-test: clean — all 6 sabotages detected (clean, orphan,"
-    echo "                          dangling, unparsed, long hook, oversize)."
+    echo "memory-index --self-test: clean — all 8 sabotages detected (clean, orphan,"
+    echo "                          dangling, unparsed, long hook, oversize, broken"
+    echo "                          crossref, and a forward marker left alone)."
     exit 0
 fi
 
@@ -312,6 +408,13 @@ exactly the ones a cold session needs. The remedy is NOT "shorten hooks"; that
 yields about 14 bytes a row now, measured. Consolidate two entries of the same
 shape, which frees a whole row and loses only a pointer — the header lists the
 levers in the order they are worth pulling.
+
+A CROSSREF is a reference that used to work. Fix the link; do not delete it and
+do not rename the target back. It is reported only when the dead name nearly
+matches a live one, so it is a rename or a typo rather than a forward marker —
+and it is invisible without this rule, because the only reader that follows
+these links is a session, and a session that cannot follow one does not learn
+it was there.
 MSG
     exit 1
 fi
@@ -330,12 +433,23 @@ for entry in "${SIZES[@]}"; do
         echo "                left (the harness truncates at 24400). Hook-shortening is"
         echo "                SPENT: 36 rewritten rows freed 14 bytes each. CONSOLIDATE"
         echo "                two entries of the same shape, and give new memories short"
-        # ★ MEASURED, not quoted. This line used to name a constant, which
-        # cannot track a rename — and shortening filenames is the remedy it
-        # recommends, so it went stale the first time anyone took its advice.
-        fnbytes=$(grep -oE '\]\([a-z0-9_.-]+\.md\)' "$ROOT/$rel/MEMORY.md"                   | sed 's/^](//; s/)$//' | tr -d '
-' | wc -c | tr -d ' ')
-        echo "                filenames — filenames are $fnbytes of these bytes."
+        # ★ MEASURED, not quoted. A census the gate computes cannot go stale,
+        # and a frozen one recommends its own obsolescence: shortening filenames
+        # is the remedy on offer, so the figure moves the first time anyone takes
+        # the advice. The four shares are printed together because the obvious
+        # target — the hook — is the least compressible of them.
+        # "hooks" includes each row's " — " separator; "markup" is whatever the
+        # other three do not account for.
+        census=$(LC_ALL=C awk -v total="$size" '
+            substr($0, 1, 3) == "- [" {
+                p = index($0, "](");   if (p == 0) next
+                rest = substr($0, p + 2)
+                q = index(rest, ")");  if (q == 0) next
+                t += p - 4; fn += q - 1; hk += length(rest) - q
+            }
+            END { printf "titles %d  FILENAMES %d  hooks %d  markup %d",
+                         t, fn, hk, total - t - fn - hk }' "$ROOT/$rel/MEMORY.md")
+        echo "                filenames — they are the largest share: $census."
     else
         echo "              $rel/MEMORY.md: $size bytes, $head of $MAX_INDEX to spare."
     fi

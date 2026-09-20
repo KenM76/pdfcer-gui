@@ -43,5 +43,5 @@ let dropped: &[pdfcer_core::recover::DroppedObject] = &report.objects_dropped;
   struct destructured by pattern.
 
 Related: [[feedback_an_api_drift_hit_is_sometimes_a_feature_not_paperwork]],
-[[feedback_a_tripwire_keyed_on_your_own_intention_is_not_a_tripwire]],
+[[a-temporary-shim-needs-a-tripwire-that-names-its-own-deletion]],
 [[feedback_a_gate_keyed_on_a_name_is_discharged_by_prose]].

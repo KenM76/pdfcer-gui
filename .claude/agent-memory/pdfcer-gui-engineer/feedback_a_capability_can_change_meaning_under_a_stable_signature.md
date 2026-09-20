@@ -51,5 +51,5 @@ works, and he has no reason to doubt it.
   edits, and only the first one has a compiler.
 - Related: [[a-limitation-sentence-is-a-citation-with-an-hours-long-shelf-life]],
   [[triage-the-reply-channel-the-engine-fixes-faster-than-we-notice]],
-  [[a-tripwire-keyed-on-your-own-intention-is-not-a-tripwire]],
+  [[a-temporary-shim-needs-a-tripwire-that-names-its-own-deletion]],
   [[a-wrong-refusal-sentence-hides-a-defect-in-whoever-believes-it]].

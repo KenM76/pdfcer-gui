@@ -31,7 +31,7 @@ head because nothing else was.
 - **Shipped ≠ closed.** Built, gated and driven moves a row to *Shipped —
   awaiting your verdict*. It leaves the file only when Ken has used it and said
   so. This matters because several things this project called done were broken
-  on screen (see [[feedback_smoke_launch_offscreen_when_the_desktop_is_blocked]]
+  on screen (see [[smoke-launch-before-every-release-it-is-ninety-seconds]]
   and the ui-verify R1 rule).
 - **Never silently rescope.** Shipping half an ask leaves the row open, saying
   which half.

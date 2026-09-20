@@ -37,7 +37,7 @@ out to be unreachable, the two cases are not the same defect:
 
 Related: [[feedback_a_check_that_cannot_fail_is_not_evidence]],
 [[feedback_an_assertion_both_outcomes_satisfy_is_not_a_measurement_of_which_one_shipped]],
-[[feedback_a_long_green_check_can_be_aiming_at_nothing]].
+[[a-measurement-of-the-wrong-surface-looks-exactly-like-a-broken-one]].
 
 
 ## Green, because nothing was actually planted
@@ -77,7 +77,7 @@ Two adjacent failures of the same family, same day:
 Related: [[feedback_the_write_python_to_a_file_workaround_does_not_protect_an_escape]],
 [[feedback_a_check_that_cannot_fail_is_not_evidence]],
 [[feedback_never_git_checkout_to_undo_an_experiment]],
-[[feedback_a_long_green_check_can_be_aiming_at_nothing]].
+[[a-measurement-of-the-wrong-surface-looks-exactly-like-a-broken-one]].
 
 ---
 
@@ -133,7 +133,7 @@ instead, so the assert was never reached; it had to be falsified by deleting
 that intermediate line in one test.
 
 Related: [[a-check-that-cannot-fail-is-not-evidence]],
-[[a-tripwire-keyed-on-your-own-intention-is-not-a-tripwire]].
+[[a-temporary-shim-needs-a-tripwire-that-names-its-own-deletion]].
 
 ---
 
@@ -199,4 +199,4 @@ check's doc comment, in the imperative, with the expected red output quoted.
 
 Related: [[an-unevidenced-excuse-is-worse-than-silence]],
 [[a-check-that-cannot-fail-is-not-evidence]],
-[[oracle-needs-calibration]].
+[[an-oracle-built-from-the-system-under-test-needs-an-independent-calibration]].

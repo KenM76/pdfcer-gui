@@ -85,3 +85,26 @@ changes under you), and
 [[a-hand-written-list-inside-a-completeness-test-is-the-gap]] (a scope
 enumerated by hand). And the two-leg discipline above is the same one as
 [[falsify-the-gate-against-the-real-files-and-the-fix-against-a-control-binary]].
+
+## The rule's NAME can be the whole claim
+
+`check-memory-index.sh` had a rule called **DANGLING**, described as *"a link
+with no file behind it"*. It read the markdown links in `MEMORY.md` and nothing
+else. But a memory folder has **two** kinds of link — the index's `(file.md)`
+pointers and the `[[wikilink]]` cross-references inside the bodies — and only
+the first was ever checked. Eight cross-references had rotted through renames
+and prefix typos, and the gate had been green over every one of them, because
+its name described link-checking in general and its body did one kind.
+
+⇒ **When a rule's name is a general noun, ask which instances of that noun it
+actually enumerates.** "Links", "tests", "modules", "surfaces", "commands" —
+each has more than one population in a codebase of any size, and the gate
+usually walks the population that was convenient to walk when it was written.
+
+★ The second half is a design note, not a scope note. Widening the rule to
+redden on *every* unresolved wikilink would have been wrong: an unresolved
+`[[name]]` is the documented way to mark a memory worth writing later, so that
+version forbids the convention and gets switched off. The rule that shipped
+reddens only when the dead name **nearly** matches a live one. A scope widened
+past what the convention allows is not a stricter gate; it is a gate with a
+short life.

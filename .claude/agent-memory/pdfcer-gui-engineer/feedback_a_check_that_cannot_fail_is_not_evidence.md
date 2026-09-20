@@ -137,7 +137,7 @@ assertion to run, and whether the check is in a position to MAKE it true.**
 - *"the document lacks the feature"* → fixture defect, repair the input.
 - *"the default setting does not produce the condition"* → **the check is inert**;
   it must drive the setting itself, not wait for it. Same family as
-  [[a-fixture-that-defeats-a-default-does-not-defeat-a-starting-state]].
+  [[a-checks-own-gesture-can-satisfy-the-condition-it-was-written-to-catch]].
 - *"expected on most machines"*, *"usually"*, *"on a typical setup"* — any
   hedge about the environment in a SKIP message is the mechanism announcing
   that it was written to be skipped.

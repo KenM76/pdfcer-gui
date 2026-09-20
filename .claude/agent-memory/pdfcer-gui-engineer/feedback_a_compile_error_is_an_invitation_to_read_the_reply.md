@@ -43,4 +43,4 @@ somebody read the reply looking for it.
   and passing the stem to both compiles perfectly.
 - The engine session answers within hours, so replies are usually on disk in
   `D:\Dev\FeatureRequests\pdfce_FeatureRequests\open\` before the bump reaches
-  us — see [[the-engine-session-runs-in-parallel]].
+  us — see [[the-engine-session-runs-in-parallel-and-answers-within-the-hour]].

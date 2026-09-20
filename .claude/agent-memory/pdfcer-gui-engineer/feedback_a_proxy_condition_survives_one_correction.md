@@ -80,6 +80,6 @@ conditions.
 Related: [[feedback_a_check_that_cannot_fail_is_not_evidence]],
 [[feedback_a_measurement_of_the_wrong_surface_looks_exactly_like_a_broken_one]],
 [[feedback_a_temporary_shim_needs_a_tripwire_that_names_its_own_deletion]],
-[[feedback_the_engine_session_runs_in_parallel]].
+[[the-engine-session-runs-in-parallel-and-answers-within-the-hour]].
 Full write-up:
 `D:\dev\rag\rust\a_git_path_dependency_reads_committed_history_so_a_gate_on_the_working_tree_asks_the_wrong_question.md`

@@ -79,4 +79,4 @@ whatever it is over.
 
 Related: [[feedback_a_measurement_of_the_wrong_surface_looks_exactly_like_a_broken_one]],
 [[feedback_a_proxy_condition_survives_one_correction]],
-[[feedback_a_long_green_check_can_be_aiming_at_nothing]].
+[[a-measurement-of-the-wrong-surface-looks-exactly-like-a-broken-one]].

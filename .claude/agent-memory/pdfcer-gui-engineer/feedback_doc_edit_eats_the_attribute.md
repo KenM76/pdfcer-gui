@@ -1,6 +1,6 @@
 ---
 name: doc-edit-eats-the-attribute
-description: Replacing lines from a doc comment up to the `fn` line deletes the #[test] / #[must_use] / #[cfg] sitting between them — the test then compiles, reads as present, and runs zero times
+description: Replacing lines from a doc comment up to the fn line deletes the #[test] / #[must_use] / #[cfg] sitting between them — the test compiles, reads as present, runs zero times, and the test COUNT is the only witness
 metadata:
   type: feedback
 ---
@@ -34,7 +34,7 @@ and then **re-run the test count**, because for a `#[test]` the count is the
 only witness. An identical count after adding or editing a test is the finding,
 not a coincidence.
 
-Related: [[a-new-test-that-does-not-raise-the-count-did-not-run]] — the count
+Related: [[doc-edit-eats-the-attribute]] — the count
 rule this is the mechanism for; that entry blamed nesting, and this is a second,
 different way to produce the same zero. [[verify-the-result-not-the-diff]],
 [[a-rewrite-of-a-cell-deletes-what-only-that-cell-held]].
@@ -63,3 +63,30 @@ closing `}` of the previous body) or on a blank line at column 0, never on
 prose. After inserting near a doc comment, print the ten lines above and below
 the seam and read whose doc each heading now belongs to — the compiler has
 no opinion about which item a doc comment describes.
+
+## The detection rule — a new test that does not raise the count did not run
+
+**After adding tests, check the total went up by the number you added.**
+
+**Why:** 2026-09-08. Three `#[test]` functions were appended to the end of a
+file by a script that inserted before the file's final `}` — a brace belonging
+to a *function*, not the module. All three landed as **nested `fn`s inside
+another `fn`**, where `#[test]` is not collected. They compiled. They produced
+no failure. They ran **zero times**. The only signal was three
+`function is never used` warnings inside a build that reported success, and I
+nearly committed them on the grounds that the file compiled and the suite was
+green.
+
+**How to apply:**
+- The number is in `cargo test`'s own output. `3,881 → 3,884` for three added
+  tests is the whole check.
+- ⚠ The same run reported `test result: ok` for the module they were *supposed*
+  to be in — a green result for a module is not evidence that a specific test in
+  it ran. Grep the run for the test's **name** if the count is ambiguous.
+- Same family: a source-scanning test that reads the file it lives in matches
+  its own assertion string, and a script that cuts Rust by counting `{`/`}` will
+  swallow whatever follows a `{:?}` in a format string. Cut by column-0 anchors.
+
+Related: [[a-check-that-cannot-fail-is-not-evidence]],
+[[a-skip-is-not-red-so-a-check-can-stop-running-unnoticed]],
+[[unit-tests-that-call-the-verb-cannot-see-the-chain-in-front-of-it]].

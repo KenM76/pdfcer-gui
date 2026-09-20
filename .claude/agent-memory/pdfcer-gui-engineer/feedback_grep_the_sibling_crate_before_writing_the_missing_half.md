@@ -31,5 +31,5 @@ Legitimate reasons to still wrap rather than delegate wholesale: the engine's
 type is missing something the operator is owed (a source path), or its grading
 is coarser than a disclosure needs. Wrap and re-grade; do not re-implement.
 
-See [[the-engine-session-runs-in-parallel]] and
+See [[the-engine-session-runs-in-parallel-and-answers-within-the-hour]] and
 [[a-backlog-row-is-a-record-not-evidence]].

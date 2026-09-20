@@ -47,8 +47,12 @@ before the second link could be asserted at all.
 - When you meet a re-validation guard, write down the condition under which the
   thing being guarded is recorded, and the condition the guard tests. If they
   are complements, the guard is a delete.
+- When you write a `still_true` predicate, ask *what raised this?* If the
+  answer is "the absence of X" and the predicate tests for X, the sentence
+  cannot survive. The staleness condition for such an arm is almost always
+  **"the selection changed"**, not "the precondition is still absent".
 - **Silence is a test case.** An absence check needs a planted subject — see
-  [[a-fixture-that-defeats-a-default-does-not-defeat-a-starting-state]] — and
+  [[a-checks-own-gesture-can-satisfy-the-condition-it-was-written-to-catch]] — and
   the operator will never file the report that would have found it.
 - Related: [[unit-tests-that-call-the-verb-cannot-see-the-chain-in-front-of-it]],
   [[a-stages-trace-records-what-the-stage-decided]],

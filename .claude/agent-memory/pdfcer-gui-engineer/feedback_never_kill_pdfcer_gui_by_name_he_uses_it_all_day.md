@@ -35,4 +35,4 @@ correction is the thing worth keeping. -->
 
 Related: [[ui-verify-competes-for-the-machine]],
 [[never-drive-the-published-build]],
-[[smoke-launch-offscreen-when-the-desktop-is-blocked]].
+[[smoke-launch-before-every-release-it-is-ninety-seconds]].

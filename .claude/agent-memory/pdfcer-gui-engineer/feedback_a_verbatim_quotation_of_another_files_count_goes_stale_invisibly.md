@@ -1,6 +1,6 @@
 ---
 name: a-verbatim-quotation-of-another-files-count-goes-stale-invisibly
-description: when a doc comment quotes another module's header verbatim, adding a finding there silently falsifies the quote here — the file that changed does not contain the number that went wrong
+description: a quoted count decays three ways — the other file changes, the prose around the cell is rewritten without re-running its command, or the figure sits beside the very remedy that moves it; the last one is fixed by making the instrument print it, not by re-measuring
 metadata:
   type: feedback
 ---
@@ -101,3 +101,36 @@ both times, because the edit was *about* the number without being *of* it.
 - ★ **The suspect is every `.rs`-touching commit since the row was last
   MEASURED**, which is not the same set as *since it was last edited*. Those two
   sets diverged by two commits here.
+
+---
+
+## ★★★ Tenth instance — **the figure was falsified by the advice printed
+## beside it**
+
+`check-memory-index.sh`'s header carried a measured byte census of the memory
+index — titles, filenames, hooks, markup — and, three paragraphs below it, the
+lever list telling the next session to **shorten filenames and consolidate
+rows**. Filenames are the largest share. So the header's own recommendation,
+taken even once, moves the number the header quotes.
+
+⇒ **A figure written next to a remedy that changes it is self-invalidating,
+and the decay rate is the rate at which the advice is followed.** It is not
+someone else's edit (instances 1–8) and not prose rewritten around the cell
+(instance 9): the document falsifies itself, and the more useful it is, the
+faster.
+
+**The remedy is different from the nine above, and that is the point.** The
+other instances end in *re-measure before quoting*. This one ends in **do not
+quote it at all — make the instrument print it**. The gate already walks the
+index; computing the four shares while it is there costs one `awk` pass, and
+the header now says only *which* share is largest and why the obvious target is
+the wrong one. A ranking is an argument and survives; a byte count is a
+measurement and does not.
+
+★ **The census that replaced it was falsified against two independent
+parsers** — an `awk` walk of the rows and a `grep -o`/`sed` pair — which agreed
+to the byte, and whose four shares sum exactly to the file size. An arithmetic
+identity that must close is the cheapest check a census can carry, and a census
+printing four numbers that do not add up to the total is visibly broken rather
+than quietly wrong. Sibling:
+[[a-lesson-in-a-docstring-is-not-an-instrument]].

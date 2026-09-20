@@ -51,5 +51,5 @@ everything.
   missing members of one feature — those make the feature permanently partial,
   and the partiality gets discovered by a user rather than by us.
 - Enumerating what is missing is still required (see
-  [[feedback-ui-verify-competes-for-the-machine]] on honest reporting) — it is
+  [[ui-verify-competes-for-the-machine]] on honest reporting) — it is
   just not a substitute for building it.

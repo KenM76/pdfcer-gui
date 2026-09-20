@@ -30,7 +30,7 @@ was expected to run from the pdfcer tree.
   substitute that actually preserves the work is the one this project already
   uses: write findings to `D:/dev/rag/egui/`, `D:/dev/rag/rust/` and
   `C:\personal_rag\`, and re-measure `RESUME.md` — see
-  [[feedback-ui-verify-competes-for-the-machine]] for the sibling rule about
+  [[ui-verify-competes-for-the-machine]] for the sibling rule about
   reporting unverified work honestly rather than softening it.
 - This is worth re-checking rather than trusting forever: adding the four
   definitions under `D:\Dev\pdfcer-gui\.claude\agents\` would fix it, and is a

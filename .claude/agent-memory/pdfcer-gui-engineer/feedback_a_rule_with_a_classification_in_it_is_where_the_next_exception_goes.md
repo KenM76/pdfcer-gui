@@ -36,6 +36,6 @@ A site the gate silently fails to notice is a decision nobody made.
   widening the predicate to admit them.
 - If a real site genuinely cannot take the token, that is an exemption with a
   written reason — never a new branch in the rule.
-- Related: [[an-assertion-both-outcomes-satisfy-measures-neither]] and
+- Related: [[an-assertion-both-outcomes-satisfy-is-not-a-measurement-of-which-one-shipped]] and
   [[a-gate-keyed-on-a-name-is-discharged-by-prose]] — both are the same family:
   the predicate's shape decides what can hide from it.

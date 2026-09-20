@@ -1,6 +1,6 @@
 ---
 name: a-checks-own-gesture-can-satisfy-the-condition-it-was-written-to-catch
-description: A scroll that travels through every page leaves nothing for the neighbour-prefetch path to order, so the check can never reach its subject
+description: The check's own arrangement satisfies the condition it was written to catch — a scroll through every page leaves nothing for prefetch to order, and a fixture that defeats a default still does not defeat a starting state
 metadata:
   type: feedback
 ---
@@ -32,7 +32,7 @@ appearing to test different things.
   arrives without visiting the intermediate state is the one that leaves the
   intermediate state unsatisfied.
 - A bigger input is the instinctive repair and is often the wrong axis entirely;
-  see [[feedback_a_fixture_that_defeats_a_default_does_not_defeat_a_starting_state]],
+  see [[a-checks-own-gesture-can-satisfy-the-condition-it-was-written-to-catch]],
   which is this same family.
 - Assert on the **positive** event (`...-evicted`) rather than inferring it from
   the absence of a request. An inference from an absence is green when the
@@ -40,3 +40,31 @@ appearing to test different things.
 - The program was correct throughout. A check that cannot reach its subject is a
   harness defect, and in this repository's measured experience that is the way to
   bet — twenty-one harness defects to nil across two full sweeps.
+
+## The fixture variant — defeating a default is not defeating a starting state
+
+For any assertion of the form *"X must not have happened"*, ask what state the
+defect would leave behind and whether the run is **already standing in it**. If
+it is, the check cannot fail — and it fails in the direction that reads as
+success. Then plant the defect and confirm red. A planted defect that passes
+means the check is decorative, however carefully the fixture was chosen.
+
+**Why:** 2026-09-01, driving PDF link following. The engine's fixtures were
+built deliberately so that **no link targets page 1**, against exactly the
+defect of a resolver returning a defaulted `0` — and the author said so in the
+fixtures' own notes. The navigation check aimed at the furthest target. All of
+that was right and the *sibling* check was still vacuous: it asserted only that
+the page had not changed after clicking a non-navigable link, the fixture opens
+on page 0, and the planted defect navigates to page 0. It **passed**.
+
+The distinction that was missed: the fixture's property is *"the correct answer
+is not the default"*; what an absence assertion needs is *"the STARTING STATE is
+not the default"*. Two different variables. Fixing one does not fix the other.
+
+**How to apply:** move the pre-state away from the defect's destination — here,
+zoom in before clicking — and assert on **everything the defect could have
+moved** (page, zoom *and* scroll offset), not the single field that first comes
+to mind. This is the sharper version of [[a-check-that-cannot-fail-is-not-evidence]]:
+that one is about checks that never saw the mechanism, this one is about checks
+that saw it and could not distinguish it from the status quo. Filed to
+`D:/dev/rag/rust/`.

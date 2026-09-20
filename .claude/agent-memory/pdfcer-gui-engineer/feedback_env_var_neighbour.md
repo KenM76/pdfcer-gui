@@ -41,7 +41,7 @@ and capture. It is named in the prompt, it is session-scoped, and it needs no
 env var to be resolved correctly, which removes this whole class. Reserve `$TMP`
 and `$TMPDIR` for cases where a tool demands them, and measure both when so.
 
-Related: [[the-injected-memory-warning-is-a-snapshot]],
+Related: [[an-injected-file-is-a-dated-snapshot]],
 [[a-quotation-i-wrote-myself-can-carry-a-line-number]],
 [[verify-the-result-not-the-diff]],
 [[never-git-checkout-to-undo-an-experiment]].

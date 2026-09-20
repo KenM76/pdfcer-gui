@@ -46,7 +46,7 @@ explanation of MY results, not as a demand.
   *unverified*, and must be reported in exactly those words — this project was
   founded on a commit that said *"analysis-confirmed, NOT empirically
   verified"* and was treated as done anyway. A green `cargo test` is not a
-  substitute and saying so is the whole point of [[r1-drive-the-binary]].
+  substitute and saying so is the whole point of R1.
 
 ## ★ Asking: one line, at the end, with the cost — and then sweep everything
 

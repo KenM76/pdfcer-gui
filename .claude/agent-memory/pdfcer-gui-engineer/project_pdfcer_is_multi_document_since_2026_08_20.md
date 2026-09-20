@@ -39,4 +39,4 @@ cannot be dragged to reorder; parked documents keep their page rasters
 unboundedly (deliberate — 877 ms per full-page render on the benchmark
 drawing).
 
-See also [[smoke-launch-offscreen-when-the-desktop-is-blocked]].
+See also [[smoke-launch-before-every-release-it-is-ninety-seconds]].
