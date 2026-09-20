@@ -834,21 +834,62 @@ def self_test() -> int:
         if again != made or again.stat().st_mtime_ns != stamp:
             failures.append("archive_build overwrote an archive that already existed")
 
+    # 5. The gates are never run by the WSL launcher.
+    #
+    #    Planted rather than observed: read straight, `_bash()` returns Git
+    #    Bash on this machine under the shell a person uses, so the failure
+    #    this asserts against cannot occur while the assertion is being made.
+    #    The condition is therefore CREATED — `PATH` reduced to the Windows
+    #    system directory, which is the environment a launch from PowerShell,
+    #    Task Scheduler or an IDE actually presents — and the answer read back.
+    #
+    #    What it costs when it is wrong is a verification that measures the
+    #    wrong interpreter and reports a clean tree as two dozen violations.
+    #    Nothing in that report names bash, so it reads as a broken repository.
+    system_root = os.environ.get("SystemRoot", r"C:\Windows")
+    saved_path = os.environ.get("PATH", "")
+    try:
+        os.environ["PATH"] = str(Path(system_root) / "system32")
+        picked = _bash()
+        if _is_wsl_launcher(Path(picked)):
+            failures.append(
+                f"_bash() returned the WSL launcher ({picked}) when PATH offered nothing "
+                "else; the gates would run under a Linux interpreter that cannot see "
+                "cargo and reports a clean tree as a wall of violations"
+            )
+    finally:
+        os.environ["PATH"] = saved_path
+
     for msg in failures:
         print(f"package-portable --self-test: FAIL — {msg}")
     if failures:
         return 1
     print(
-        "package-portable --self-test: 4 invariants hold "
-        "(name collision, digest, asset copy, release asset is folder-rooted)."
+        "package-portable --self-test: 5 invariants hold "
+        "(name collision, digest, asset copy, release asset is folder-rooted, "
+        "the gates' bash is not WSL's)."
     )
     return 0
 
 
-def _bash() -> str:
-    """The bash to run the gates with, **by absolute path**.
+def _is_wsl_launcher(path: Path) -> bool:
+    """Is *path* `C:\Windows\System32\bash.exe`, the WSL launcher?
 
-    THE GATES READING AS "SKIPPED" UNDER `--verify` IS NOT A PATH PROBLEM.
+    Matched on the parent directory rather than on the name, because the name
+    is `bash.exe` for both interpreters and the directory is the only thing
+    that tells them apart. `SysWOW64` and the `WindowsApps` alias folder are
+    included: both re-export the same launcher under the same name.
+    """
+    parent = path.parent.name.casefold()
+    grandparent = path.parent.parent.name.casefold()
+    return parent in {"system32", "syswow64"} or grandparent == "windowsapps"
+
+
+def _bash() -> str:
+    """The bash to run the gates with, **by absolute path**, never WSL's.
+
+    THE GATES READING AS "SKIPPED" OR "FAILED" UNDER `--verify` IS NOT A PATH
+    PROBLEM.
 
     The tempting diagnosis — *a spawned bash does not inherit `~/.cargo/bin`,
     so run the gates by hand and state the result in `--note`* — is wrong,
@@ -875,14 +916,43 @@ def _bash() -> str:
     with a line-ending error while the same file runs fine by hand. One root
     cause, two unrecognisable symptoms.
 
-    `shutil.which` uses Python's own resolution and returns Git Bash here.
-    Passing its absolute path removes the ambiguity entirely.
+    **`shutil.which("bash")` is not the answer on its own, and which answer it
+    gives depends on who launched this script.** Python's resolution walks the
+    inherited `PATH`, so it returns Git Bash when the packager is started from
+    a Git Bash shell and `C:\Windows\system32\bash.EXE` when it is started
+    from PowerShell, Task Scheduler or an IDE — the same tree, the same
+    command, two different interpreters and no signal that anything changed.
+    The wrong one reports violations that do not exist: a gate suite that is
+    `61 passed, 0 failed, 0 skipped` by hand comes back `25 passed, 22 failed,
+    14 skipped`, which reads as a broken tree rather than as a broken
+    measurement.
 
-    Falls back to the bare name if `which` finds nothing, so a machine with a
+    So the launcher is **excluded by identity** ([`_is_wsl_launcher`]) and Git
+    Bash's own install locations are searched directly. `PATH` is consulted
+    first because a deliberately-installed bash belongs ahead of a guess, and
+    discarded when it names the launcher.
+
+    Falls back to the bare name when nothing survives, so a machine with a
     differently-installed bash still gets an attempt rather than a crash — and
     on such a machine the gates' own SKIPPED reasons are the honest report.
     """
-    return shutil.which("bash") or "bash"
+    candidates: list[Path] = []
+    found = shutil.which("bash")
+    if found:
+        candidates.append(Path(found))
+    for var in ("ProgramFiles", "ProgramFiles(x86)", "ProgramW6432", "LOCALAPPDATA"):
+        base = os.environ.get(var)
+        if not base:
+            continue
+        for git in (Path(base) / "Git", Path(base) / "Programs" / "Git"):
+            candidates.append(git / "bin" / "bash.exe")
+            candidates.append(git / "usr" / "bin" / "bash.exe")
+    for candidate in candidates:
+        if _is_wsl_launcher(candidate):
+            continue
+        if candidate.is_file():
+            return str(candidate)
+    return "bash"
 
 
 #: How many dated build folders to keep in ``D:\\builds``.

@@ -242,3 +242,31 @@ is asking a present-tense question about a past-tense subject.**
 Full write-ups: `D:\dev\rag\egui\a_ui_rect_change_log_produces_confident_wrong_failures_in_BOTH_directions.md`
 (§ the tell) and
 `D:\dev\rag\egui\a_panels_presence_in_a_dock_must_be_asserted_on_its_body_because_a_tab_strip_is_a_property_of_the_compartment.md`.
+
+### ★ SIXTH INSTANCE — the check ran under a DIFFERENT INTERPRETER because of who launched it — 2026-09-19
+
+`tools/gates/run-all.sh` by hand: **61 passed, 0 failed, 0 skipped**. The same
+script, same tree, same minute, spawned by `package-portable.py --verify`:
+**25 passed, 22 failed, 14 skipped**.
+
+The packager resolves its shell with `shutil.which("bash")`, which walks the
+**inherited** `PATH`. Launched from Git Bash it finds Git Bash; launched from
+PowerShell — which is how I had detached it to dodge a background-task memory
+watchdog — it finds `C:\Windows\system32ash.EXE`, the **WSL launcher**. That
+interpreter sees a Linux `PATH` with no `cargo.exe` (14 SKIPs) and Windows
+paths it cannot walk (22 FAILs).
+
+★★ **The variable was MY LAUNCH METHOD, not the tree.** Nothing in the 22-line
+failure report names bash. The function's own docstring asserted the safe case
+as unconditional — *"`shutil.which` uses Python's own resolution and returns
+Git Bash here"* — and "here" silently meant *under the shell a person uses*.
+
+**How to apply:** when a check's verdict changes and the tree did not, the
+first suspect is **how you invoked it**, not what it measured. Any resolution
+that reads the ambient environment — `which`, `PATH`, `SHELL`, a bare command
+name handed to `subprocess` — is a hidden input, and a wrapper that changes the
+environment is an experiment with an uncontrolled variable. Exclude the wrong
+answer **by identity** rather than by ranking, and plant the condition in a
+self-test (`PATH` cut to the system directory), because read straight the
+failure cannot occur on the machine asserting it.
+

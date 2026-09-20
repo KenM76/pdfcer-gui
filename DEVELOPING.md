@@ -582,6 +582,19 @@ second cost: `changelog` diffs against the build it finds in the destination,
 which is now the retracted one, so the corrected package reports a single
 pin-bump commit for a release carrying the whole run of them.
 
+**Launch it from a shell whose `PATH` names Git Bash first, or know what it
+picks instead.** `--verify` spawns `tools/gates/run-all.sh`, and the interpreter
+it spawns is resolved from the inherited `PATH`. From PowerShell, Task Scheduler
+or an IDE that is `C:\Windows\system32ash.exe` — the **WSL launcher** — which
+sees a Linux `PATH` with no `cargo.exe` on it and Windows paths it cannot walk.
+A tree that is `61 passed, 0 failed, 0 skipped` by hand then comes back
+`25 passed, 22 failed, 14 skipped`, and nothing in that report names bash, so it
+reads as a broken repository rather than as a measurement of the wrong
+interpreter. `_bash()` excludes the launcher by identity and searches Git Bash's
+own install locations; `--self-test` plants the condition — `PATH` cut down to
+the system directory — rather than observing it, because read straight the
+failure cannot occur on a machine where it is being asserted.
+
 The packager also mirrors the finished build into the older of two OneDrive
 slots, so the previous build stays reachable to fall back to and to compare
 against. **That mirror can be refused, and the refusal is safe but not free.**
