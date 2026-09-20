@@ -821,6 +821,26 @@ run "check-pin-citation" bash "$HERE/check-pin-citation.sh"
 # older pin, which a naive whole-file grep would fail on for ever.
 run "check-pin-citation --self-test" bash "$HERE/check-pin-citation.sh" --self-test
 
+# `check-engine-citation` asserts the OTHER half of the same problem. The gate
+# above measures whether a document quoting the pin quotes the right one;
+# this one measures whether a document cites the engine in a form that can go
+# wrong at all. A line number into a branch-pinned dependency rots with no
+# local event -- no cargo update here, no edit here -- and it rots into
+# readable prose about a real function rather than a dangling reference, which
+# is why it survives review. On the sweep this was written for, 66 of 92
+# citations had drifted and two pairs had come to name each other's type.
+#
+# The archived GUI is deliberately IN scope: a frozen tree is not a
+# frozen-correct one, because its citations kept drifting until the freeze, so
+# what froze was the error.
+run "check-engine-citation" bash "$HERE/check-engine-citation.sh"
+# Four detectors, four sabotages, plus the case it must stay QUIET about -- a
+# version-anchored vendor path, which cannot move without a Cargo.toml bump --
+# and the case where it must SKIP rather than pass: D3 and D4 borrow
+# check-file-size's invariant, so a tree carrying an over-limit .rs has
+# falsified their premise and a clean report would not be earned.
+run "check-engine-citation --self-test" bash "$HERE/check-engine-citation.sh" --self-test
+
 # `check-third-party-licences` regenerates THIRD_PARTY_LICENSES.md and fails if
 # the committed one differs. It is a second gate for the same underlying shape
 # as `check-verb-coverage`: an ADDITION on the other side

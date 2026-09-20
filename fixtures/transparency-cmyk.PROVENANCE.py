@@ -37,16 +37,16 @@ in `fixtures/` that can put it in row 2 or row 3 — ⇒ this file.
 This is the part that is easy to get wrong, and the reason this header is long.
 Measured in the engine on 2026-09-11, against the pin in `Cargo.lock`:
 
-* `pdfcer-render/src/lib.rs:649` — **the switch**:
+* `pdfcer_render`'s `render_impl_rasterize` — **the switch**:
   `let mut cmyk = if page_space.is_subtractive() { CmykBuffer::new(..) } else { None }`.
   Its own comment: *"A colorant buffer is engaged ONLY for a page whose group
   declares a subtractive blending space."*
-* `pdfcer-render/src/lib.rs:804` — `diagnostics.cmyk_buffer_engaged = true` is
+* In the same function, `diagnostics.cmyk_buffer_engaged = true` is
   set **only inside `if let Some(buffer) = cmyk`**. That flag is what the
   shell's `raster-blend-space cmyk_buffer=…` trace line reports, and it is what
   the check reads.
 * `page_space` comes from `interpret::page_blend_space(..)`
-  (`pdfcer-core/src/.../interpret.rs:2042`), which answers a page whose dict
+  — which lives in `pdfcer-render`, not `pdfcer-core` — and answers a page whose dict
   **declares** `/Group << /S /Transparency /CS … >>` from ISO 32000-1
   Table 147 **unconditionally** — no setting reaches that branch. Only an
   *undeclared* page falls through to the `PageBlendSpaceSource` policy
@@ -226,7 +226,8 @@ objects = [
     # `/Group` on the PAGE dictionary, `/S /Transparency`, `/CS /DeviceCMYK`.
     # `/I true` (isolated) is written explicitly: an isolated page group is
     # what §11.4.7's second formula composites over the medium's white
-    # backdrop, which is the code path at `pdfcer-render/src/lib.rs:786-830`.
+    # backdrop, which is the code path `pdfcer_render`'s `render_impl`
+    # takes into `render_impl_rasterize`.
     # Leaving it to the default would make this fixture's path depend on a
     # reader's reading of the default rather than on the file.
     b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 %.4f %.4f] "

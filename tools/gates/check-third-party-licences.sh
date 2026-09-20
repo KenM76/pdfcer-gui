@@ -64,8 +64,12 @@
 # EXIT CODES
 # ---------------------------------------------------------------------------
 #   0  the committed file is what the generator produces
-#   1  it is not — the build links something the file does not describe, or
-#      describes something it no longer links
+#   1  it is not, and the message says which of the two shapes it is: either the
+#      crate SET differs — the build links something the file does not describe,
+#      or describes something it no longer links — or the set matches and only
+#      the generated body differs, which is a stale file and not an attribution
+#      gap. The two have different remedies and the wrong headline sends a
+#      reader hunting a dependency change that never happened.
 #
 # ★ SKIPs, loudly, when `cargo-about` is absent or fails. A gate that passed
 # quietly when it could not measure would be worse than no gate — the rule this
@@ -121,10 +125,6 @@ if diff -q "$FRESH" "$LICENCES" >/dev/null 2>&1; then
   exit 0
 fi
 
-echo "FAIL: $LICENCES does not match what cargo-about produces from the current"
-echo "      Cargo.lock. The build links something the shipped attribution file"
-echo "      does not describe, or describes something it no longer links."
-echo
 # ★★ Named by SET DIFFERENCE, not by reading the diff hunks. A line-diff of a
 # 5,700-line generated file reports the NEIGHBOURS of a change as well as the
 # change, so the first version of this message listed four `accesskit` crates
@@ -134,13 +134,48 @@ echo
 names() { sed -n 's/^- \[\([^]]*\)\].*/\1/p' "$1" | sort -u; }
 names "$FRESH"    > "$FRESH.want"
 names "$LICENCES" > "$FRESH.have"
+ADDED=$(comm -23 "$FRESH.want" "$FRESH.have")
+GONE=$(comm -13 "$FRESH.want" "$FRESH.have")
+
+# ★★★ The two outcomes need two headlines, because they are different
+# problems with different remedies. The files can differ BYTE-WISE while
+# describing exactly the same crate set — a licence body that regenerated with
+# different line endings does it — and the dependency-drift headline then sends
+# the reader hunting a dependency change that never happened, with an empty
+# list underneath contradicting the sentence above it. A message both outcomes
+# satisfy is not a diagnosis of which one occurred.
+if [ -z "$ADDED" ] && [ -z "$GONE" ]; then
+    echo "FAIL: $LICENCES differs from what cargo-about produces, but describes"
+    echo "      exactly the same crate set. Nothing was added or dropped: the"
+    echo "      difference is in the generated BODY — licence text, ordering or"
+    echo "      line endings — so this is a stale file rather than an"
+    echo "      attribution gap. Regenerate it; do not go looking for a"
+    echo "      dependency change."
+    rm -f "$FRESH" "$FRESH.want" "$FRESH.have"
+    cat <<'EOF'
+
+  The remedy is one command:
+
+      cargo about generate about.hbs -o THIRD_PARTY_LICENSES.md
+EOF
+    exit 1
+fi
+
+echo "FAIL: $LICENCES does not match what cargo-about produces from the current"
+echo "      Cargo.lock. The build links something the shipped attribution file"
+echo "      does not describe, or describes something it no longer links."
+echo
+# `printf '%s\n' "$EMPTY"` prints a BLANK LINE, not nothing, so an empty side
+# has to say so in words. A silent gap under a heading reads as output that got
+# cut off, which is the same ambiguity this branch was split to remove.
+show() { if [ -z "$1" ]; then echo "    (none)"; else printf '%s\n' "$1" | sed 's/^/    /' | head -40; fi; }
 echo "  Linked by this build and NOT in the shipped file:"
 echo
-comm -23 "$FRESH.want" "$FRESH.have" | sed 's/^/    /' | head -40
+show "$ADDED"
 echo
 echo "  In the shipped file and no longer linked:"
 echo
-comm -13 "$FRESH.want" "$FRESH.have" | sed 's/^/    /' | head -40
+show "$GONE"
 rm -f "$FRESH" "$FRESH.want" "$FRESH.have"
 cat <<'EOF'
 

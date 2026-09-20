@@ -800,6 +800,33 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
   font, and its tallest text is about 2.4 px at fit zoom. Each absence is some
   check's unwritten precondition, so a text failure on it is that until measured
   otherwise; give a check its own `const FIXTURE`.
+- **A line citation into the engine rots into something that still READS
+  correct.** The lock takes pdfcer by branch with no `rev`, so the source moves
+  with no command run here. Upstream insertion shifts a file uniformly rather
+  than scrambling it, so a drifted number still lands inside readable prose
+  about a real function in the right file — `edit.rs` line 48704, written against
+  the `/AA` removal, now lands inside `add_image`. **A repair keyed on *does
+  this line exist* passes every one of them**; 66 of 92 measured had drifted
+  and none dangled. `check-engine-citation.sh` is registered and green, but it
+  is a shape checker with a stated blind spot: a bare citation into a SMALL
+  engine file — `forms.rs`, `form_script/mod.rs`, `dimension/length_parse.rs`
+  — carries a line number a local file could plausibly hold, so nothing sees
+  it. Cite by symbol; that is what R5 says and it is the only form that
+  survives. The same argument covers `D:\Dev\pdfce\crates\pdfce-gui`: a frozen
+  tree is not a frozen-correct one, because its citations kept drifting right
+  up to the freeze, so what froze was the error.
+
+- **Two source files sit 14 lines below the hard limit, and a third sits 15.**
+  `crates/pdfcer-gui/src/text/markup.rs` and `crates/pdfcer-gui/src/app/save.rs`
+  are both 1486 lines against `check-file-size.sh`'s 1,500;
+  `crates/egui-shell/src/manifest/merge.rs` is 1485. Adding one ordinary
+  function to any of them turns a green gate red mid-task, and the remedy R2
+  requires is *find the seam*, never *raise the limit* — which is a refactor,
+  not an edit, and it will arrive at the worst moment unless it is done first.
+  Re-measure before quoting these:
+  `find crates tools -name '*.rs' -not -path '*/target/*' -print0 | xargs -0 wc -l | grep -v ' total$' | sort -rn | head`
+  — the `grep -v` is load-bearing, because `xargs` batches and emits one
+  `total` line per batch.
 
 ## Do not
 

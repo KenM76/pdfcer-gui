@@ -2271,7 +2271,7 @@ in a fortnight.
 - `request_hit_test_has_no_distance_bound_so_a_click_on_blank_paper_finds_text.md`
  — unrelated to fonts; see the note on O142 below.
 
-Cited: `edit.rs:31362`, `text_edit/addtext.rs:96`.
+Cited, engine: `EditSession::edit_text`, `text_edit::add_text`.
 
 Checks: `a_refused_character_offers_a_face_that_can_type_it`.
 
@@ -2572,10 +2572,9 @@ after any edit, and now says so where he will see it.
 
 **The relation was requested rather than invented**, filed as
 `request_which_layer_is_this_object_on.md`, and `pdfcer-core`'s `Pass 250.0`
-answered it the same session. `oc: Option<ObjId>` now sits on `PathObject`
-(`vector/decompose.rs:386`), `TextObject` (`:484`) and `ImageObject` (`:780`),
-read through `VectorObject::oc()` (`:1064`) and `FormLeaf::oc()` (`:1300`).
-Engine v0.38.0.
+answered it the same session. `oc: Option<ObjId>` now sits on
+`vector::decompose`'s `PathObject`, `TextObject` and `ImageObject`, read
+through `VectorObject::oc()` and `FormLeaf::oc()`. Engine v0.38.0.
 
 Building the page-object route beside the annotation route found **two engine
 divergences**, both filed on the `ENGINE_BACKLOG.md` row rather than absorbed:
@@ -3138,7 +3137,7 @@ Checks: `text_on_a_scan_can_still_be_swept_over_the_image`.
 run twice — once on a committed eight-page synthetic fixture and once on his
 scan.
 
-Cited: `widgets/spinner.rs:40`.
+Cited: `egui-0.35.0/src/widgets/spinner.rs:40`.
 
 Checks: `cancelling_ocr_throws_away_what_it_had_done`, `ocr_recognises_a_page_and_the_document_keeps_it`, `ocr_says_how_far_it_has_got_while_it_runs`, `stopping_ocr_keeps_the_pages_it_had_already_done`.
 
@@ -4075,7 +4074,8 @@ add one. Measured: it does.
 **Status:** ✅ **SHIPPED, LOSSLESS, OPTIONAL AND DRIVEN — awaiting your
 verdict.** Nothing is open on this row and no question is outstanding.
 
-Cited: `edit.rs:9364`, `edit.rs:13523`, `canvas/selection/annot.rs:189`.
+Cited, engine: `EditSession::copy_field`, `EditSession::paste_field`.
+Shell: `canvas::selection::annot`.
 
 ## O57 — ✅ The grips swallow small objects — BOTH halves closed
 
@@ -4246,7 +4246,7 @@ picker opens.
 > BSD-3-Clause … and embedding one puts it inside a document you then
 > distribute — which carries that licence's attribution condition with it.
 > **That is your decision to make, so pdfcer does not make it for you.**"*
-> — `D:\Dev\pdfcer\crates\pdfcer-cli\src\main.rs:1598`
+> — the doc comment on `pdfcer`'s `--use-bundled-fonts` flag
 
 **No window was rendered.** You were at the machine, so `ui-verify` was not run.
 `embedding_works_with_no_font_folder_at_all` was rewritten to drive **both**
@@ -4302,17 +4302,21 @@ the next day** — Passes 136.0, 136.1 and 136.2:
 
 | | |
 |---|---|
-| **You cannot edit an object inside a form** | not a shell decision: `pdfcer-core` writes a paint-order edit to the *page's* content stream, and a form-interior object lives in the form's. `FormLeaf::is_editable()` is `false` for every one of them today. Select the form and move that, or wait for the engine |
-| **Double-click will not descend into one** | the Part and Node rungs exist to act on geometry, and there is no geometry to act on here. It stops at the whole object rather than descending into something you then cannot change |
-| **The measure tools cannot pick a line inside a form** | the engine's line-pick does not see the leaf list. Filed. On the benchmark CAD sheet that is 10,256 lines the tool cannot see, and it was equally true before today — it was just hidden behind the selection defect |
-| **`pdfcer object-list --hit` still answers with the form** | the CLI has not consumed the deep hit test, and its help says it is authoritative for the GUI's behaviour, which is now false. Filed |
+| **You can edit an object inside a form** | `pdfcer_core` grew form-scoped edit verbs and this shell routes to all six. `FormLeaf::is_editable` answers *“is this leaf a path”* — it is `true` for a path leaf — so the only refusal left is the honest one: a leaf whose part kind is not a path, which `canvas::moving::refusal`'s `InsideForm` variant explains in a sentence |
+| **Double-click descends into one** | the Part and Node rungs reach a form-interior object's subpaths and nodes, which is what `canvas::selection`'s *“A LEAF DESCENDS TOO”* note records |
+| **The measure tools pick a line inside a form** | `pdfcer_core::vector::linepick::pick_line_in_page` walks `PageObjects::leaves` as well as `::objects`, and `canvas::measure::pick` calls it. The hover highlight was moved onto the deep hit test in the same pass, because a shallow highlight over a deep pick promises one line and takes another |
+| **`pdfcer object-list --hit` answers with the object** | the CLI calls `pdfcer_core::vector::hit_test_point_deep` and renders a `HitTarget::Leaf` as a leaf, so its help is authoritative for this shell's behaviour again |
 
 **DRIVEN, AND THEN CONFIRMED BY THE OPERATOR.**
 
 *"All I get is the page selected"* was a precise and accurate report: he was
 selecting a page-sized object. It just was not the one I guessed.
 
-Cited: `edit.rs:14728`, `app/actions/vector.rs:773`, `vector/decompose.rs:1373`, `canvas/clicking.rs:805`, `canvas/smart.rs:146`, `vector/linepick.rs:475`, `canvas/measure/mod.rs:833`, `pdfcer-cli/src/main.rs:9277`, `canvas/target.rs:571`.
+Cited, engine: `pdfcer_core::vector::FormLeaf::is_editable`,
+`vector::linepick::pick_line_in_page`, `vector::hit_test_point_deep`, and
+`pdfcer object-list --hit` in the CLI. Shell: `app::actions::vector`,
+`canvas::clicking`, `canvas::smart`, `canvas::measure`, `canvas::target`,
+`canvas::moving::refusal`.
 
 Checks: `a_click_inside_a_form_selects_what_is_drawn_there`.
 
@@ -4801,7 +4805,9 @@ had re-published it an hour earlier — see `O20`.
 > I am having to ask for all the minute details as if you'd never been trained
 > on it."*
 
-Cited: `crates/pdfcer-core/src/edit.rs:7512`, `vector/edit.rs:996`, `edit.rs:8486`, `edit.rs:8542`, `canvas/moving.rs:560`, `app/actions/vector.rs:469`, `canvas/resizing.rs:172`.
+Cited, engine: `pdfcer_core::vector::edit::plan_transform_many`, whose doc
+carries the kind-agnostic `q…cm…Q` argument this row turns on. Shell:
+`canvas::moving`, `app::actions::vector`, `canvas::resizing`.
 
 ## O20 — Dragging and rotating TEXT on the canvas
 

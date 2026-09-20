@@ -20,10 +20,21 @@ filed in the request channel. One the engine can reach and the shell does not
 call is **GUI work** and is ours. Keeping those two apart is the whole point of
 the table — without it every gap looks like the same size of job.
 
-**Measured 2026-09-16** against engine pin `20e539a2` (what
-`pdfcer-gui/Cargo.lock` pins) and Acrobat DC `AcroForm.api` file version
-`25.1.20435.0`. Re-measure before quoting any count below; the commands are in
-§10.
+**Measured 2026-09-16** at engine revision `20e539a2` and Acrobat DC
+`AcroForm.api` file version `25.1.20435.0`. That sha records **when this
+table was taken**, not what the build uses: the engine is a branch pin with
+no `rev`, so it moves with no command run in this repository. Read the live
+pin out of `Cargo.lock` — `RESUME.md`'s measured-state table carries the
+command — and re-measure before quoting any count below; the rest of the
+commands are in §10.
+
+**A second measurement point, because the pin moved past the first.** Every
+row describing engine work later than `20e539a2` — §8.1 row 28 and E3 (`/AA`
+scripting, Pass 308.6), E9 (Pass 308.8), E16 (Pass 308.7) — was measured
+**2026-09-20** at `c5a80c3b`. Two dates on one table is the honest form: a
+single header sha re-typed to the newest pin would silently re-date the rows
+that were never re-checked, which is the re-baselining
+`check-engine-backlog.sh` exists to resist.
 
 **The headline, in one paragraph.** The engine is far ahead of the shell. Of the
 capabilities Acrobat offers and a PDF may legally carry, the shell reaches
@@ -59,7 +70,7 @@ equivalent and it is a real convenience gap, recorded in §8.
 | **LB** | List Box | `/Ch`, bit 18 clear | ✅ — a radio sub-option of the Choice command, not a command of its own (`dialogs/formfield.rs:661-662`) |
 | **PB** | Button (push button) | `/Btn` + bit 17 | ✅ |
 | **SG** | Digital Signature | `/Sig` | ❌ — only as a side effect of signing. `FormFieldKind::ALL` is `[Self; 5]` (`canvas/formfield.rs:89-95`) |
-| **BC** | Barcode Field | `/Btn` + `/AA` + barcode params | ❌ **permanent non-goal**, engine side too (`03-capabilities.md:620`) |
+| **BC** | Barcode Field | `/Btn` + `/AA` + barcode params | ❌ **permanent non-goal**, engine side too — the engine's `03-capabilities.md` lists barcode fields under *Cannot today*, marked *(never)* |
 
 **Two things to fix in passing.** `canvas/formfield/action.rs:64-79` says "six"
 above a list of five, and this document is the first place the "list box is a
@@ -141,14 +152,14 @@ Acrobat labels, verbatim from `ACRO:strings.txt:3326`: `&Name:` `&Tooltip:`
 
 | Acrobat control | Kinds | Key | Engine | Shell | Verdict |
 |---|---|---|---|---|---|
-| Name | all | `/T` | ✅ `rename_field` ENGINE:`edit.rs:25971`; validator `forms_author.rs:465` | ✅ `formfield.rs:486-566` | ✅ |
-| Tooltip | all | `/TU` | ✅ `TooltipChoice{Undecided,Text,Declined}` ENGINE:`edit.rs:1751`, writes `:25736`/`:25739` | ✅ `fieldedit.rs:487-514` | ✅ — but no `PDFCER_DIAG` region, so it cannot be driven-asserted |
-| Form Field (visibility) | all | `/F` | ✅ `Visibility{VisibleAndPrints,ScreenOnly,PrintOnly,Hidden}` ENGINE:`edit.rs:1540` | ✅ `widgetedit.rs:546-591` | ✅ — exactly Acrobat's four. NoView/NoZoom/NoRotate are 🚫 in both (ENGINE `set_annotation_flags` refuses a `/Widget` by name, deliberately) |
-| Orientation | all | `/MK /R` | ✅ ENGINE:`edit.rs:25026` — writes the key and turns the artwork for every kind pdfcer drew, buttons included (`:38508`) | ✅ controls present `widgetedit.rs:337-338` | ✅ — and a widget whose `/AP` pdfcer did not author still gets `/MK /R` plus the `appearance_stale` sentence, because redrawing somebody else’s artwork is the one thing worse than not turning it |
+| Name | all | `/T` | ✅ `rename_field` ENGINE:`edit.rs`; validator ENGINE:`forms_author::validate_partial_name` | ✅ `properties::formfield::rename_row` | ✅ |
+| Tooltip | all | `/TU` | ✅ `TooltipChoice{Undecided,Text,Declined}` ENGINE:`FieldEdit::with_tooltip`, written by `EditSession::edit_field` | ✅ `fieldedit.rs:487-514` | ✅ — but no `PDFCER_DIAG` region, so it cannot be driven-asserted |
+| Form Field (visibility) | all | `/F` | ✅ `Visibility{VisibleAndPrints,ScreenOnly,PrintOnly,Hidden}` ENGINE:`edit.rs` | ✅ `widgetedit.rs:546-591` | ✅ — exactly Acrobat's four. NoView/NoZoom/NoRotate are 🚫 in both (ENGINE `set_annotation_flags` refuses a `/Widget` by name, deliberately) |
+| Orientation | all | `/MK /R` | ✅ ENGINE:`EditSession::rotate_widget` — writes the key and turns the artwork for every kind pdfcer drew, buttons included, through `EditSession::regen_field_appearance` | ✅ controls present `widgetedit.rs:337-338` | ✅ — and a widget whose `/AP` pdfcer did not author still gets `/MK /R` plus the `appearance_stale` sentence, because redrawing somebody else’s artwork is the one thing worse than not turning it |
 | Read Only | all | `/Ff` 1 | ✅ `FieldEdit::read_only` | ✅ `fieldedit.rs:163-176` | ✅ |
 | Required | all | `/Ff` 2 | ✅ `FieldEdit::required` | ✅ `fieldedit.rs:150-162` | ✅ |
-| *(no Acrobat control)* | all | `/Ff` 3 NoExport | ✅ `with_no_export` ENGINE:`edit.rs:21857` | ❌ | ❌ `GUI` — Acrobat hides this one under Options for some kinds; the engine has it and the shell has nowhere for it. Row goes beside `fieldedit.rs:150-176` |
-| *(no Acrobat control)* | all | `/TM` mapping name | ✅ `with_mapping_name` ENGINE:`edit.rs:21551`, writes `:25776`/`:25779` | ❌ | ❌ `GUI` |
+| *(no Acrobat control)* | all | `/Ff` 3 NoExport | ✅ `with_no_export` ENGINE:`edit.rs` | ❌ | ❌ `GUI` — Acrobat hides this one under Options for some kinds; the engine has it and the shell has nowhere for it. Row goes beside `fieldedit.rs:150-176` |
+| *(no Acrobat control)* | all | `/TM` mapping name | ✅ `with_mapping_name` ENGINE:`FieldEdit::with_mapping_name`, written by `EditSession::edit_field` | ❌ | ❌ `GUI` |
 | Group Name | all | `/T` parent path | ✅ as a naming consequence; no create/merge/split verbs | ❌ delete-only `panels/forms/groups.rs` | ❌ `ENGINE` for split/promote, `GUI` for create-by-naming |
 | Locked (dialog checkbox) | all | — | ➖ UI-only in Acrobat (locks the dialog, not the field) | ❌ | 🚫 not worth copying; the field-level `/Lock` dictionary is a different thing and is `ENGINE` |
 
@@ -162,15 +173,15 @@ and `&Digits:` (`0123456789`).
 
 | Acrobat control | Kinds | Key | Engine | Shell | Verdict |
 |---|---|---|---|---|---|
-| Border Color | all | `/MK /BC` | ✅ `MkColorEdit{Set,Remove}` ENGINE:`edit.rs:21942`; gray/RGB/**CMYK** painted natively | ✅ `widgetedit.rs:718-743` | ✅ — and it is also the tick/dot ink |
+| Border Color | all | `/MK /BC` | ✅ `MkColorEdit{Set,Remove}` ENGINE:`edit.rs`; gray/RGB/**CMYK** painted natively | ✅ `widgetedit.rs:718-743` | ✅ — and it is also the tick/dot ink |
 | Fill Color | all | `/MK /BG` | ✅ same | ✅ `widgetedit.rs:692-716` | ✅ |
-| Line Thickness | all | `/BS /W` | ✅ `BorderSpec` ENGINE:`edit.rs:1513`, write `:25202` | ⚠ `widgetedit.rs:507-532` — **the row vanishes when `border` is `None`** (`:504-506`), so a field with no border cannot be given one | ⚠ `GUI`. Also ENGINE limit: `/BS /W` does not change a CB/RB's drawn frame, fixed at 1.0 |
+| Line Thickness | all | `/BS /W` | ✅ `BorderSpec` ENGINE:`WidgetEdit::border`, written by `EditSession::edit_widget` | ⚠ `widgetedit.rs:507-532` — **the row vanishes when `border` is `None`** (`:504-506`), so a field with no border cannot be given one | ⚠ `GUI`. Also ENGINE limit: `/BS /W` does not change a CB/RB's drawn frame, fixed at 1.0 |
 | Line Style | all | `/BS /S` | ✅ all five of Acrobat's, exactly | ✅ in Properties `widgetedit.rs:465-499`; ❌ at placement `author.rs:77-80` | ⚠ `GUI` — placement can't choose it, Properties can |
-| Font | TX CO LB PB | `/DA` | ✅ `FieldAppearance` ENGINE:`edit.rs:21287`, write `:25766`. Std-14 under Acrobat's short keys; a `Resource` face is checked and the available list returned on refusal | ✅ `fieldedit.rs:700-847`, gate `:283-286` | ✅ — gate excludes CB/RB/SG, which matches Acrobat |
+| Font | TX CO LB PB | `/DA` | ✅ `FieldAppearance` ENGINE:`FieldEdit::with_appearance`, written by `EditSession::edit_field`. Std-14 under Acrobat's short keys; a `Resource` face is checked and the available list returned on refusal | ✅ `fieldedit.rs:700-847`, gate `:283-286` | ✅ — gate excludes CB/RB/SG, which matches Acrobat |
 | Font Size (incl. Auto) | TX CO LB PB | `/DA` | ✅ `size == 0.0` is auto | ✅ | ✅ — ENGINE limit: a `Resource` face auto-sizes on Helvetica metrics |
 | Text Color | TX CO LB PB | `/DA` | ✅ | ✅ | ✅ |
 | Digits (digit shape) | TX | — | ❌ | ❌ | 🚫 — Arabic-Indic digit shaping; not in scope for either repo |
-| *(no Acrobat control)* | all | `/BS /W` scale on resize | ✅ `ResizeOptions::scale_stroke_width` ENGINE:`edit.rs:17624` | ❌ | ❌ `GUI` — a resize option the shell never offers |
+| *(no Acrobat control)* | all | `/BS /W` scale on resize | ✅ `ResizeOptions::scale_stroke_width` ENGINE:`edit.rs` | ❌ | ❌ `GUI` — a resize option the shell never offers |
 
 ### 3.3 Position tab
 
@@ -179,11 +190,11 @@ and `Do not change height and width when changing the position.`
 
 | Acrobat control | Kinds | Key | Engine | Shell | Verdict |
 |---|---|---|---|---|---|
-| Left / Bottom / Right / Top | all | `/Rect` | ✅ `move_widget` ENGINE:`edit.rs:26145` (no regen needed — §12.5.5 step b is a pure translation) | ✅ `widgetedit.rs:363-424` | ✅ |
-| Height / Width | all | `/Rect` | ✅ `WidgetEdit::rect` ENGINE:`edit.rs:25136` — a changed extent **rebuilds** the appearance, deliberately | ✅ | ✅ |
+| Left / Bottom / Right / Top | all | `/Rect` | ✅ `move_widget` ENGINE:`edit.rs` (no regen needed — §12.5.5 step b is a pure translation) | ✅ `widgetedit.rs:363-424` | ✅ |
+| Height / Width | all | `/Rect` | ✅ `WidgetEdit::rect` ENGINE:`edit.rs` — a changed extent **rebuilds** the appearance, deliberately | ✅ | ✅ |
 | **Units** | all | — | ➖ presentation | ❌ points only | ❌ `GUI` — **this is O207**, and it is not scoped to this tab; see §6 |
 | Do not change H/W when moving | all | — | ➖ | ❌ | ❌ `GUI`, small |
-| *(no Acrobat control)* | all | `/RD` preserve | ✅ `ResizeOptions::keep_rect_differences` ENGINE:`edit.rs:17632` | ❌ | ❌ `GUI` |
+| *(no Acrobat control)* | all | `/RD` preserve | ✅ `ResizeOptions::keep_rect_differences` ENGINE:`edit.rs` | ❌ | ❌ `GUI` |
 
 ---
 
@@ -202,16 +213,16 @@ Acrobat: `&Alignment:` `&Default Value:` `Field is used for &file selection`
 
 | Acrobat control | Key | Engine | Shell | Verdict |
 |---|---|---|---|---|
-| Alignment | `/Q` | ⚠ at this table’s pin: `with_quadding` ENGINE:`edit.rs:25751`, validated `0..=2`, **but `/Q` is not in `layout_changed` (`:25825`), so the baked `/AP` keeps the old alignment**. **Fixed on engine `main` in `503ad9d4`, one commit past the pin** — not in this shell until the pin moves | ✅ `fieldedit.rs:608-636`; clear-`/Q` ❌ | ⚠ **Was G022, now shipped upstream.** Shell row present and correct. **The clear control cannot be labelled "Left":** `/Q` is inheritable (§12.7.3.2) and the fix resolves a clear through `EditSession::inherited_quadding`, so the honest word is *inherit* |
-| Default Value | `/DV` | ✅ three-state ENGINE:`edit.rs:21382`, writes `:25790`/`:25793` | ✅ `fieldedit.rs:544-581` | ✅ TX only — see 4.2/4.4 for the siblings |
-| File selection | `/Ff` 21 | ✅ `with_file_select` ENGINE:`edit.rs:21871` | ❌ | ❌ `GUI` |
-| Limit of N characters | `/MaxLen` | ✅ set **and remove** ENGINE:`edit.rs:25726`/`:25729`; shortening discloses `value_no_longer_fits`, never truncates | ✅ `fieldedit.rs:371-408` | ✅ |
+| Alignment | `/Q` | ✅ `FieldEdit::with_quadding` ENGINE:`edit.rs`, validated `0..=2`, and `edit.quadding` is one of the conditions in `edit_field`'s `layout_changed`, so writing `/Q` regenerates the baked `/AP` rather than leaving it claiming one alignment and drawing another | ✅ `fieldedit.rs`; clear-`/Q` ❌ | ✅ **Was G022, shipped upstream and live at the pin.** Shell row present and correct. **The clear control cannot be labelled "Left":** `/Q` is inheritable (§12.7.3.2) and a clear resolves through `EditSession::inherited_quadding`, so the honest word is *inherit* |
+| Default Value | `/DV` | ✅ three-state ENGINE:`FieldEdit::with_default_value`/`clearing_default_value`, written by `EditSession::edit_field` | ✅ `fieldedit.rs:544-581` | ✅ TX only — see 4.2/4.4 for the siblings |
+| File selection | `/Ff` 21 | ✅ `with_file_select` ENGINE:`edit.rs` | ❌ | ❌ `GUI` |
+| Limit of N characters | `/MaxLen` | ✅ set **and remove** ENGINE:`FieldEdit::with_max_len`, whose `Option<Option<i64>>` keeps *set* and *remove* apart; shortening discloses `value_no_longer_fits`, never truncates | ✅ `fieldedit.rs:371-408` | ✅ |
 | Comb of N | `/Ff` 25 | ✅ — requires `/MaxLen`, else `CombPreconditionUnmet` | ✅ `fieldedit.rs:427-463` | ✅ |
 | Multi-line | `/Ff` 13 | ✅ | ✅ `fieldedit.rs:187-200` | ✅ |
 | Password | `/Ff` 14 | ✅ | ✅ `fieldedit.rs:201-214` | ✅ |
-| Scroll long text | `/Ff` 24 (inverted) | ✅ `with_no_scroll` ENGINE:`edit.rs:21530` | ❌ | ❌ `GUI` |
-| Check spelling | `/Ff` 23 (inverted) | ✅ `with_no_spell_check` ENGINE:`edit.rs:21878` | ❌ | ❌ `GUI` |
-| Allow Rich Text Formatting | `/Ff` 26 | ⚠ **clear-only.** Nothing authors `/RV` or `/DS`; the one write is `remove(b"RV")` ENGINE:`edit.rs:36381` | ⚠ display + a disclosed downgrade `rows.rs:333-391` | ⚠ `ENGINE` to author; the shell's downgrade is correct and honest |
+| Scroll long text | `/Ff` 24 (inverted) | ✅ `with_no_scroll` ENGINE:`edit.rs` | ❌ | ❌ `GUI` |
+| Check spelling | `/Ff` 23 (inverted) | ✅ `with_no_spell_check` ENGINE:`edit.rs` | ❌ | ❌ `GUI` |
+| Allow Rich Text Formatting | `/Ff` 26 | ⚠ **clear-only.** Nothing authors `/RV` or `/DS`; the one write is `remove(b"RV")` ENGINE:`EditSession::fill_text_field_downgrading_rich_text` | ⚠ display + a disclosed downgrade `panels::forms::rows::rich_text_row` | ⚠ `ENGINE` to author; the shell's downgrade is correct and honest |
 | Right-to-left / left-to-right | — | ❌ | ❌ | 🚫 both repos |
 
 ### 4.2 Options — Check Box (CB)
@@ -225,7 +236,7 @@ only one item can be selected, use radio button fields."*
 
 | Acrobat control | Key | Engine | Shell | Verdict |
 |---|---|---|---|---|
-| Check Box Style — all six | `/MK /CA` char | ⚠ **creation only.** `NewCheckBox::style` ENGINE:`edit.rs:2282`; no `style` member on `FieldEdit` or `WidgetEdit`. The only route afterwards is writing the mapped `/MK /CA` **character** and letting the rebuild decode it (`annot_author.rs:3742-3760`) | ⚠ **works, via a row labelled "Caption"** `widgetedit.rs:604-629` | ⚠ `GUI` — the capability is reachable and shipping; the label is wrong. Needs a kind fork so CB shows a glyph picker and PB shows a word box |
+| Check Box Style — all six | `/MK /CA` char | ⚠ **creation only.** `NewCheckBox::style` ENGINE:`edit.rs`; no `style` member on `FieldEdit` or `WidgetEdit`. The only route afterwards is writing the mapped `/MK /CA` **character** and letting the rebuild decode it (`annot_author::CheckStyle::mk_caption_char` and its inverse `from_mk_caption_char`) | ⚠ **works, via a row labelled "Caption"** `widgetedit.rs:604-629` | ⚠ `GUI` — the capability is reachable and shipping; the label is wrong. Needs a kind fork so CB shows a glyph picker and PB shows a word box |
 | Export Value | on-state name | ✅ as the on-state | ✅ `author.rs:172-176` | ✅ |
 | Checked by default | `/DV` (a **name** for `/Btn`) | ✅ `FieldEdit::default_value` — type follows `/V`, so a name | ❌ | ❌ `GUI` — **the clearest O206 instance in the whole document.** `/DV` shipped for TX and for nothing else, though the engine verb is kind-agnostic |
 
@@ -238,10 +249,10 @@ the same name but different button choices."*
 
 | Acrobat control | Key | Engine | Shell | Verdict |
 |---|---|---|---|---|
-| Button Style — all six | `/MK /CA` char | ⚠ creation only, as CB. `NewRadioButton::style` ENGINE:`edit.rs:2385` | ❌ — the Caption row is not offered for RB | ❌ `GUI` — a sibling of 4.2 that did not get the same treatment |
+| Button Style — all six | `/MK /CA` char | ⚠ creation only, as CB. `NewRadioButton::style` ENGINE:`edit.rs` | ❌ — the Caption row is not offered for RB | ❌ `GUI` — a sibling of 4.2 that did not get the same treatment |
 | Radio Button Choice | on-state name | ✅ | ✅ | ✅ |
 | Checked by default | `/DV` | ✅ | ❌ | ❌ `GUI` — sibling of 4.2 |
-| Radios in unison | `/Ff` 26 (`/Btn`) | ✅ `radios_in_unison` ENGINE:`edit.rs:21419`; also at creation `:2364` | ❌ | ❌ `GUI` — row goes beside `fieldedit.rs:228-243` |
+| Radios in unison | `/Ff` 26 (`/Btn`) | ✅ `radios_in_unison` ENGINE:`edit.rs`; also at creation, `NewRadioButton::radios_in_unison` | ❌ | ❌ `GUI` — row goes beside `fieldedit.rs:228-243` |
 | *(no Acrobat control)* | `/Ff` 15 NoToggleToOff | ✅ | ✅ `fieldedit.rs:228-243` — RB with >1 widget only | ✅ |
 
 ### 4.4 Options — Dropdown (CO) and List Box (LB)
@@ -254,19 +265,19 @@ make it the default choice."*
 
 | Acrobat control | Key | Engine | Shell | Verdict |
 |---|---|---|---|---|
-| **Item List — add** | `/Opt` | ✅ `FieldEdit::with_options` ENGINE:`edit.rs:21815`, write `:25744`; whole-list replace by design | ✅ both — placement dialog `dialogs/formfield.rs:648-655`, and after placement in `panels/properties/choiceopts.rs` (`add` + `add_button` regions) | ✅ O205's second named defect, closed |
+| **Item List — add** | `/Opt` | ✅ `FieldEdit::with_options` ENGINE:`FieldEdit::with_options`, written by `EditSession::edit_field`; whole-list replace by design | ✅ both — placement dialog `dialogs/formfield.rs:648-655`, and after placement in `panels/properties/choiceopts.rs` (`add` + `add_button` regions) | ✅ O205's second named defect, closed |
 | Item List — delete | `/Opt` | ✅ — whole list with one fewer; stale selection **disclosed** via `value_no_longer_fits`, never silently repaired | ✅ `panels/properties/choiceopts.rs`, `row{n}.remove` | ✅ |
 | Item List — reorder (Up/Down) | `/Opt` | ✅ — `/Opt` order is display order (Table 230) | ✅ `panels/properties/choiceopts.rs`, `row{n}.up`/`.down`, each greyed at its own end of the list rather than swallowing the press | ✅ driven `the_option_arrows_are_greyed_only_at_the_ends_of_the_list` |
 | Item List — rename display text | `/Opt` | ✅ | ✅ `panels/properties/choiceopts.rs`, `row{n}.shown` | ✅ |
-| Export Value ≠ display | `/Opt` pair | ✅ two-string option writes `[export display]` ENGINE:`forms.rs:375` | ✅ `panels/properties/choiceopts.rs` draws both columns — `row{n}.shown` and `row{n}.sent` | ✅ |
-| Duplicate item | — | ✅ **refused** `ChoiceOptionDuplicate` ENGINE:`edit.rs:7354` | ➖ | ✅ the refusal is the right behaviour; surface it |
-| Sort items | `/Ff` 20 | ✅ flag written, and **`sort_choice_options` is exported** (Pass 308.8) so one comparator serves both sides; bit 20 set *alone* still reorders nothing and is still disclosed as `sort_claim_unmet` ENGINE:`edit.rs:22080` | ✅ author-only `dialogs/formfield.rs:673`, and afterwards in `panels/properties/choiceopts.rs` (`sort` region), which calls the engine's sorter rather than a copy of it | ✅ E9 delivered; the 058 report closed by the export, and `FieldEditOutcome::options_sorted` is consumed as the drift tripwire |
-| Allow custom text (CO) | `/Ff` 19 Edit | ✅ `editable`; `Edit` without `Combo` refused; `set_choice_value` already accepts a value absent from `/Opt` for this case ENGINE:`edit.rs:39790-39818` | ✅ **canvas** — `canvas/forms/choosing/typing.rs`. The census now carries the bit as a conjunction (`boxes/mod.rs::classify`, `COMBO && EDIT`, asserted both ways by `the_edit_flag_is_a_capability_only_alongside_the_combo_flag`), and an editable combo draws a live text box with a chevron drop button instead of a ring: a click in the text area seats a select-all caret, a click on the button opens the same popup a plain combo drops, Alt+Down or F4 opens it from the keyboard, and Enter or focus loss commits the typed string. The **panel** row is still pick-only, which is the canvas-primacy rule working as intended rather than a second gap: the canvas is the route, the panel is the second door | ✅ O209; 8.1 row 15 closed |
+| Export Value ≠ display | `/Opt` pair | ✅ two-string option writes `[export display]` ENGINE:`forms.rs` | ✅ `panels/properties/choiceopts.rs` draws both columns — `row{n}.shown` and `row{n}.sent` | ✅ |
+| Duplicate item | — | ✅ **refused** `ChoiceOptionDuplicate` ENGINE:`edit.rs` | ➖ | ✅ the refusal is the right behaviour; surface it |
+| Sort items | `/Ff` 20 | ✅ flag written, and **`sort_choice_options` is exported** (Pass 308.8) so one comparator serves both sides; bit 20 set *alone* still reorders nothing and is still disclosed as `sort_claim_unmet` ENGINE:`edit.rs` | ✅ author-only `dialogs/formfield.rs:673`, and afterwards in `panels/properties/choiceopts.rs` (`sort` region), which calls the engine's sorter rather than a copy of it | ✅ E9 delivered; the 058 report closed by the export, and `FieldEditOutcome::options_sorted` is consumed as the drift tripwire |
+| Allow custom text (CO) | `/Ff` 19 Edit | ✅ `editable`; `Edit` without `Combo` refused; `set_choice_value` already accepts a value absent from `/Opt` for this case ENGINE:`edit.rs` | ✅ **canvas** — `canvas/forms/choosing/typing.rs`. The census now carries the bit as a conjunction (`boxes/mod.rs::classify`, `COMBO && EDIT`, asserted both ways by `the_edit_flag_is_a_capability_only_alongside_the_combo_flag`), and an editable combo draws a live text box with a chevron drop button instead of a ring: a click in the text area seats a select-all caret, a click on the button opens the same popup a plain combo drops, Alt+Down or F4 opens it from the keyboard, and Enter or focus loss commits the typed string. The **panel** row is still pick-only, which is the canvas-primacy rule working as intended rather than a second gap: the canvas is the route, the panel is the second door | ✅ O209; 8.1 row 15 closed |
 | Commit immediately (CO) | `/Ff` 27 | ✅ `with_commit_on_sel_change` | ❌ | ❌ `GUI` |
 | Multiple selection (LB) | `/Ff` 22 | ✅ | ✅ `fieldedit.rs:261-274` | ✅ |
 | Check spelling | `/Ff` 23 | ✅ | ❌ | ❌ `GUI` — sibling of 4.1 |
 | Default choice | `/DV` | ✅ | ✅ `panels/properties/choiceopts.rs::default_row`, which offers *"Nothing — Reset clears the field"* as its first entry because a reset to empty is a different fact from the chooser having nothing selected, and writes the **export** value since `/DV` takes `/V`'s type (Table 228) | ✅ CO and LB done; CB and RB are still 8.1 row 4 |
-| **Pick a value (fill)** | `/V` `/I` `/TI` | ✅ `set_choice_value` ENGINE:`edit.rs:38709` — export-first matching, `/I` and `/TI` maintained | ✅ both. Panel: `panels/forms/rows.rs:810` → `FormEdit::SetChoice` → `panels/forms/edit.rs:765`. Canvas: `canvas/forms/choosing.rs` — a click opens the option list on the field's own answered row, and **`Combo` decides where it is drawn** (`choosing.rs:473`): a combo drops outside the widget, a list box draws opaquely inside its own rectangle with a scroll bar when the rows do not fit, which is what Acrobat does | ✅ O205's first named defect closed, and O209's C1–C3 with it |
+| **Pick a value (fill)** | `/V` `/I` `/TI` | ✅ `set_choice_value` ENGINE:`edit.rs` — export-first matching, `/I` and `/TI` maintained | ✅ both. Panel: `panels/forms/rows.rs:810` → `FormEdit::SetChoice` → `panels/forms/edit.rs:765`. Canvas: `canvas/forms/choosing.rs` — a click opens the option list on the field's own answered row, and **`Combo` decides where it is drawn** (`choosing.rs:473`): a combo drops outside the widget, a list box draws opaquely inside its own rectangle with a scroll bar when the rows do not fit, which is what Acrobat does | ✅ O205's first named defect closed, and O209's C1–C3 with it |
 
 ### 4.5 Options — Button / push button (PB)
 
@@ -279,15 +290,15 @@ Acrobat: `La&yout:` (`Icon top, label bottom` `Label top, icon bottom`
 
 | Acrobat control | Key | Engine | Shell | Verdict |
 |---|---|---|---|---|
-| Label | `/MK /CA` | ✅ `with_caption`; `Some("")` removes; **redraws** ENGINE:`edit.rs:21582`, `:25301-25336` | ✅ `dialogs/formfield.rs:680`, `widgetedit.rs:604-629` | ✅ |
+| Label | `/MK /CA` | ✅ `with_caption`; `Some("")` removes; **redraws** ENGINE:`WidgetEdit::with_caption`, redrawn by `EditSession::edit_widget` | ✅ `dialogs/formfield.rs:680`, `widgetedit.rs:604-629` | ✅ |
 | Label for Down state | `/MK /AC` | ❌ `grep 'b"AC"'` → **0 hits** | ❌ | ❌ `ENGINE` |
-| Label for Rollover state | `/MK /RC` | ❌ 1 hit, a FreeText `drop_keys` entry ENGINE:`edit.rs:32360` | ❌ | ❌ `ENGINE` |
+| Label for Rollover state | `/MK /RC` | ❌ 1 hit, a FreeText `drop_keys` entry ENGINE:`edit.rs` | ❌ | ❌ `ENGINE` |
 | Icon (normal / rollover / down) | `/MK /I` `/RI` `/IX` | ❌ zero hits each | ❌ | ❌ `ENGINE` |
 | Icon fit / scale / fit-to-bounds | `/MK /IF` | ❌ 0 hits | ❌ | ❌ `ENGINE` |
 | Layout (icon vs label position) | `/MK /TP` | ❌ 0 hits | ❌ | ❌ `ENGINE` |
 | Behavior (highlight mode) | `/H` | ❌ no verb | ❌ | ❌ `ENGINE` |
-| Button actions | `/A` | ✅ six subtypes ENGINE:`edit.rs:36852`; `Foreign(String)` names one pdfcer would never author, so a control knows not to offer to replace it | ✅ `dialogs/buttonaction.rs:67-138`, `panels/forms/button.rs:72-172` | ✅ — the shell's strongest per-kind surface |
-| *(disclosure)* | — | ✅ `push_button_inert` ENGINE:`edit.rs:1908` — *the only creation verb whose successful result is a control that does not work* | ✅ | ✅ |
+| Button actions | `/A` | ✅ six subtypes ENGINE:`edit.rs`; `Foreign(String)` names one pdfcer would never author, so a control knows not to offer to replace it | ✅ `dialogs/buttonaction.rs:67-138`, `panels/forms/button.rs:72-172` | ✅ — the shell's strongest per-kind surface |
+| *(disclosure)* | — | ✅ `push_button_inert` ENGINE:`edit.rs` — *the only creation verb whose successful result is a control that does not work* | ✅ | ✅ |
 
 ### 4.6 Digital Signature (SG) — the Signed tab
 
@@ -298,11 +309,11 @@ Acrobat: `&Nothing happens when signed` / `&Mark as read-only:` (`All fields` /
 | Acrobat control | Key | Engine | Shell | Verdict |
 |---|---|---|---|---|
 | Place an empty signature field | `/FT /Sig` | ✅ via `sign(...)`/`CommandKind::AddSignatureField`; no `add_signature_field` of its own | ❌ not a placeable kind | ❌ `GUI` + `ASK` — Acrobat treats "prepare a form with a signature box" as ordinary authoring |
-| Mark as read-only on sign | `/Lock` | ❌ **read-only in the engine** — 2 hits, one a read at signing time ENGINE:`edit.rs:27041`, one a carried-key list | ❌ DOC:`ENGINE_BACKLOG.md:117` | ❌ `ENGINE` |
+| Mark as read-only on sign | `/Lock` | ❌ **read-only in the engine** — 2 hits, one a read at signing time ENGINE:`EditSession::reusable_sig_field`, one the carried-key list `formclip::FIELD_CARRIED_KEYS` | ❌ — nothing to route to | ❌ `ENGINE` |
 | Script on sign | `/AA` | ❌ | ❌ | ❌ `ENGINE` (part of the `/AA` hole) |
 | Seed value enforcement | `/SV` | ✅ enforced in full when signing into a pre-placed field | ➖ | ✅ engine-side |
-| Delete a signature field | — | ✅ | ✅ gated `formfield.rs:597-647` | ✅ |
-| Fill / set a value | `/V` | 🚫 by design — a signature value comes only from signing | 🚫 blocked `rows.rs:279-283` | ✅ correct |
+| Delete a signature field | — | ✅ | ✅ gated `properties::formfield::delete_row` | ✅ |
+| Fill / set a value | `/V` | 🚫 by design — a signature value comes only from signing | 🚫 blocked `panels::forms::rows::row_label` | ✅ correct |
 
 ### 4.7 Format, Validate, Calculate, Selection Change — the `/AA` tabs
 
@@ -322,13 +333,13 @@ average · product (x) · minimum · maximum] of the following fields:` /
 
 | Acrobat control | Key | Engine | Shell | Verdict |
 |---|---|---|---|---|
-| Read + disclose that a field has actions | `/AA` | ✅ `has_no…`/`has_additional_actions` ENGINE:`forms.rs:1584`; `FieldClip::carries_actions()` `formclip.rs:378` | ✅ read paths exist | ✅ |
-| Classify a script without running it | `/AA` | ✅ `form_script::classify` ENGINE:`form_script/mod.rs:355`; *"a false positive is far worse than a false negative"* | partial | ✅ engine-side, strong |
-| **Author or edit any `/AA` entry** | `/AA` | ❌ **every hit is a read, a `contains_key`, or an allowlist — except two removals** (ENGINE:`edit.rs:48704`, `:49030`) | ❌ **no `/AA` surface exists anywhere** | ❌ `ENGINE` — **the single largest Acrobat-parity hole in the product** |
-| Number / date / percentage format presets | `/AA /F` | ❌ | ❌ | ❌ `ENGINE` |
-| Range validation | `/AA /V` | ❌ | ❌ | ❌ `ENGINE` |
-| Sum / average / product / min / max | `/AA /C` | ❌ as an author; ✅ as a **recognised** built-in via `CalcHelper` ENGINE:`form_script/mod.rs:185` | ❌ | ❌ `ENGINE` |
-| Calculation order | `/CO` | ⚠ pruned on delete, appended on paste; **no reorder verb** ENGINE:`edit.rs:40109-40145` | ❌ | ❌ `ENGINE` |
+| Read + disclose that a field has actions | `/AA` | ✅ `has_no…`/`has_additional_actions` ENGINE:`forms.rs`; ENGINE:`FieldClip::carries_actions` | ✅ read paths exist | ✅ |
+| Classify a script without running it | `/AA` | ✅ `form_script::classify` ENGINE:`form_script/mod.rs`; *"a false positive is far worse than a false negative"* | partial | ✅ engine-side, strong |
+| **Author or edit any `/AA` entry** | `/AA` | ✅ three verbs — `EditSession::set_field_format`, `set_field_validation` and `set_field_calculation`, each taking an `Option<Helper>` so setting and clearing are the same undoable command. The engine owns both traps a caller would otherwise have to know about: a format writes its `/K` keystroke twin as a pair, saying so through `FieldScriptChange::keystroke_paired`, and a calculation maintains `/CO` in the same verb. The emitter is closed over what `form_script::classify` can read back, so pdfcer will not author a script it cannot then describe | ❌ **no `/AA` surface exists anywhere** | ❌ `GUI` — the engine side shipped whole; §8.1 carries the row |
+| Number / date / percentage format presets | `/AA /F` | ✅ `FormatHelper` covers `Number`, `Percent`, `Date`, `DateEx`, `Time` and `Special` (zip, zip+4, phone, SSN), written by `EditSession::set_field_format`. A format is display-only by construction — it never touches `/V` — so a shell showing a formatted value owes the stored one beside it wherever the two differ | ❌ | ❌ `GUI` |
+| Range validation | `/AA /V` | ✅ `AdvisoryHelper::RangeValidate` through `EditSession::set_field_validation`. pdfcer writes the constraint and deliberately does not start enforcing it: a range is disclosed, never used to reject a fill, so this authors a constraint for **other** readers. `AdvisoryHelper::Keystroke` is refused by name with `EditError::FieldScriptNotEmittable`, because the classifier keeps such a helper's name and discards its arguments — re-emitting it would destroy an input filter while reporting success | ❌ | ❌ `GUI` |
+| Sum / average / product / min / max | `/AA /C` | ✅ all five — `CalcHelper::Simple` over `SimpleOp::{Sum,Average,Product,Minimum,Maximum}`, written by `EditSession::set_field_calculation`, which also appends the field to `/CO`. An operand naming no field, or naming a grouping node, is refused at author time with `EditError::FieldScriptOperandUnusable` rather than silently contributing zero | ❌ | ❌ `GUI` |
+| Calculation order | `/CO` | ⚠ maintained by three verbs — `EditSession::set_field_calculation` appends or prunes, deleting a field prunes, and pasting one appends, all through `patch_calculation_order` — but **nothing reorders an existing `/CO`**. `FieldScriptChange::calculation_order` reports the `position`, the entry count, and whether the array was created or removed, which is the off-canvas half: setting a calculation changes what OTHER fields compute and that is invisible on the page. Carried knowingly: an **indirect** `/CO` becomes a fresh direct array | ❌ | ⚠ `ENGINE` for the reorder verb alone; `GUI` for everything else |
 | Execute any of it | — | 🚫 **permanent non-goal** — no interpreter, no `event`, no trigger dispatch. Recompute is operator-invoked and undoable | 🚫 | ✅ correct and deliberate |
 | Apply a recompute plan | — | ⚠ `apply_recompute` → 0 hits; **the shell writes the loop** over `plan.changes` | whole-form only `panels/forms/edit.rs:381-405` | ⚠ `GUI` for per-field |
 
@@ -385,7 +396,7 @@ tab; **every CAD input on his desktop goes further and parses the unit inline.**
 
 | Piece | State | Citation |
 |---|---|---|
-| The parser | ✅ **already exists in the engine** — `pdfcer_core::dimension::parse_length(input: &str, default_unit: Unit)` | ENGINE:`length_parse.rs:139` |
+| The parser | ✅ **already exists in the engine** — `pdfcer_core::dimension::parse_length(input: &str, default_unit: Unit)` | ENGINE:`length_parse.rs` |
 | Its grammar | ✅ accepts `12 mm`, `1/2"`, bare numbers against a default unit | ENGINE:`length_parse.rs` |
 | The shell's helper module | ⚠ `crates/pdfcer-gui/src/units.rs` has ten public functions and **all of them convert; none parse** | `src/units.rs` |
 | The entry sites | ❌ ~68 `DragValue` sites take a bare number as points | — |
@@ -439,44 +450,45 @@ Owner tags as defined in §1. `GUI` rows are ours and need no one's permission.
 
 | # | Gap | Where it goes | Engine verb |
 |---|---|---|---|
-| 1 | ~~`/Opt` list editing after placement (7 operations)~~ **BUILT** — `panels/properties/choiceopts.rs`, drawn at the end of the `FieldType::Choice` branch. All seven: add, remove, move up, move down, rename display, export separate from display, and keep-sorted; plus the default choice, and bits 19, 23 and 27 because Acrobat's Options tab groups them (O206). **Driven** — `the_option_arrows_are_greyed_only_at_the_ends_of_the_list` asserts all six arrow states across three rows through `PDFCER_DIAG_SELECT_FIELD`, and was falsified against a planted live top-row arrow and against a broken seam | `panels/properties/choiceopts.rs` | ENGINE:`edit.rs:21815` |
-| 2 | ~~Canvas fill for CO and LB~~ **BUILT** — `canvas/forms/choosing.rs`. A click on a combo or list widget opens its option list on the field's own answered row; Up/Down move the highlight and write nothing; Enter or Space, or a click on a row, writes one `SetChoice`; a multi-select list adds a value per tick and stays open; Escape closes the list on the first press and gives up the ring on the second. **Driven** — `a_drop_down_can_be_answered_on_the_page` asserts all seven steps on `fixtures/all-field-kinds.pdf` and was falsified three ways: a reverted focus lock, an arrow that answers the form, and a multi-select tick that replaces instead of adding. The driving is what found the defect — egui moves keyboard focus on a bare arrow and surrenders it on Escape unless the focused widget locks them, so the list opened, took one arrow, and then went dead to every further key, silently. Fixed by `canvas/forms.rs::keyboard_box`, which both on-page field editors now share | `canvas/forms/choosing.rs` | ENGINE:`edit.rs:38709` | **Rebuilt against Acrobat under O209**, which reported three defects in it: a pick was not remembered (the popup gave up on the *press* frame, because egui surrenders a focused widget's focus on any press that does not land on it and `choose()` early-returned on the loss — a click is a press and a release, and the popup has to survive the gap); the open list looked nothing like Acrobat's (a *maximum* width let it shrink to its longest label, 57 px under a 370 px field, inside egui's rounded shadowed pop-up card — now a fixed width in a square unshadowed zero-margin frame flush against the field, zero row spacing, full-width rows, and a selected row painted as a solid `Theme::accent_pair` plate, which is Acrobat's treatment in this shell's palette); and a list box was drawn as a drop-down (`/Ff` bit 18 `Combo` never reached the census — it now forks the presentation at `choosing.rs:473`). **Driven** — the pick, both presentations, the multi-select plate, and the scroll bar appearing with the last row clipped at a smaller zoom
+| 1 | ~~`/Opt` list editing after placement (7 operations)~~ **BUILT** — `panels/properties/choiceopts.rs`, drawn at the end of the `FieldType::Choice` branch. All seven: add, remove, move up, move down, rename display, export separate from display, and keep-sorted; plus the default choice, and bits 19, 23 and 27 because Acrobat's Options tab groups them (O206). **Driven** — `the_option_arrows_are_greyed_only_at_the_ends_of_the_list` asserts all six arrow states across three rows through `PDFCER_DIAG_SELECT_FIELD`, and was falsified against a planted live top-row arrow and against a broken seam | `panels/properties/choiceopts.rs` | ENGINE:`FieldEdit::with_options` |
+| 2 | ~~Canvas fill for CO and LB~~ **BUILT** — `canvas/forms/choosing.rs`. A click on a combo or list widget opens its option list on the field's own answered row; Up/Down move the highlight and write nothing; Enter or Space, or a click on a row, writes one `SetChoice`; a multi-select list adds a value per tick and stays open; Escape closes the list on the first press and gives up the ring on the second. **Driven** — `a_drop_down_can_be_answered_on_the_page` asserts all seven steps on `fixtures/all-field-kinds.pdf` and was falsified three ways: a reverted focus lock, an arrow that answers the form, and a multi-select tick that replaces instead of adding. The driving is what found the defect — egui moves keyboard focus on a bare arrow and surrenders it on Escape unless the focused widget locks them, so the list opened, took one arrow, and then went dead to every further key, silently. Fixed by `canvas/forms.rs::keyboard_box`, which both on-page field editors now share | `canvas/forms/choosing.rs` | ENGINE:`EditSession::set_choice_value` | **Rebuilt against Acrobat under O209**, which reported three defects in it: a pick was not remembered (the popup gave up on the *press* frame, because egui surrenders a focused widget's focus on any press that does not land on it and `choose()` early-returned on the loss — a click is a press and a release, and the popup has to survive the gap); the open list looked nothing like Acrobat's (a *maximum* width let it shrink to its longest label, 57 px under a 370 px field, inside egui's rounded shadowed pop-up card — now a fixed width in a square unshadowed zero-margin frame flush against the field, zero row spacing, full-width rows, and a selected row painted as a solid `Theme::accent_pair` plate, which is Acrobat's treatment in this shell's palette); and a list box was drawn as a drop-down (`/Ff` bit 18 `Combo` never reached the census — it now forks the presentation at `choosing.rs:473`). **Driven** — the pick, both presentations, the multi-select plate, and the scroll bar appearing with the last row clipped at a smaller zoom
 | 3 | `NotOffered` is silent — nothing can explain a dead click. Narrower than it was: CO and LB now have a gesture, so what is left unexplained is PB, SG, a rich-text field and a choice field with an empty `/Opt` | `boxes/mod.rs:699-706` + `panels/forms/mod.rs:508-520` | ➖ |
-| 4 | `/DV` for CB and RB. **CO and LB are done** — the default-choice chooser in `choiceopts.rs`, which offers *"Nothing — Reset clears the field"* as its first entry because a reset to empty is a different fact from the chooser having nothing selected | `fieldedit.rs:544-581` | ENGINE:`edit.rs:21382` |
+| 4 | `/DV` for CB and RB. **CO and LB are done** — the default-choice chooser in `choiceopts.rs`, which offers *"Nothing — Reset clears the field"* as its first entry because a reset to empty is a different fact from the chooser having nothing selected | `fieldedit.rs:544-581` | ENGINE:`FieldEdit::with_default_value`/`clearing_default_value` |
 | 5 | Glyph-style picker for RB, and a kind fork so the row is labelled right | `widgetedit.rs:604-629` | `/MK /CA` char |
-| 6 | Radios-in-unison | beside `fieldedit.rs:228-243` | ENGINE:`edit.rs:21419` |
-| 7 | Do-not-scroll | `fieldedit.rs:186-225` | ENGINE:`edit.rs:21530` |
-| 8 | Do-not-spell-check (TX, CO, LB) | same | ENGINE:`edit.rs:21878` |
-| 9 | File-select | same | ENGINE:`edit.rs:21871` |
-| 10 | No-export `/Ff` 3 | beside `fieldedit.rs:150-176` | ENGINE:`edit.rs:21857` |
+| 6 | Radios-in-unison | beside `fieldedit.rs:228-243` | ENGINE:`FieldEdit::with_radios_in_unison` |
+| 7 | Do-not-scroll | `fieldedit.rs:186-225` | ENGINE:`FieldEdit::with_no_scroll` |
+| 8 | Do-not-spell-check (TX, CO, LB) | same | ENGINE:`FieldEdit::with_no_spell_check` |
+| 9 | File-select | same | ENGINE:`FieldEdit::with_file_select` |
+| 10 | No-export `/Ff` 3 | beside `fieldedit.rs:150-176` | ENGINE:`FieldEdit::with_no_export` |
 | 11 | Commit-on-selection-change | choice rows | `with_commit_on_sel_change` |
-| 12 | Sort flag after placement, with `sort_claim_unmet` shown | choice rows | ENGINE:`edit.rs:22080` |
-| 13 | Mapping name `/TM` | field rows | ENGINE:`edit.rs:21551` |
-| 14 | Alignment `/Q` for CO and LB; clear-`/Q` for all, **labelled *inherit* rather than *Left*** — the engine resolves a clear through the `/Parent` chain and then `/AcroForm`, which this shell cannot see | `fieldedit.rs:608-636` | ENGINE:`edit.rs:21835` |
+| 12 | Sort flag after placement, with `sort_claim_unmet` shown | choice rows | ENGINE:`FieldEdit::with_sort`, disclosed by `FieldEditOutcome::sort_claim_unmet` |
+| 13 | Mapping name `/TM` | field rows | ENGINE:`FieldEdit::with_mapping_name` |
+| 14 | Alignment `/Q` for CO and LB; clear-`/Q` for all, **labelled *inherit* rather than *Left*** — the engine resolves a clear through the `/Parent` chain and then `/AcroForm`, which this shell cannot see | `fieldedit.rs:608-636` | ENGINE:`FieldEdit::with_quadding`/`clearing_quadding` |
 | 15 | ~~Free-text entry for an editable combo~~ **BUILT on the canvas** — `canvas/forms/choosing/typing.rs`. The census forked on `Combo` and `MultiSelect` only, so `/Ff` bit 19 reached nothing and an editable combo opened the same closed picker a plain one does. `BoxKind::Choice` now carries `editable` (the conjunction `COMBO && EDIT`, which is what Table 230's *"used only with Combo"* says and what `set_choice_value` gates its free-text branch on) and `align`, and an editable combo is drawn as a live text box with a chevron drop button. Typed text leaves as the same `FormEdit::SetChoice` a pick does, because the engine resolves against `/Opt` first — so a typed *Large* and a picked *Large* are one command and the shell never has to tell them apart. The text box is `canvas/forms/textbox.rs`, extracted from the `/Tx` editor rather than copied, so `/Q` and `/MK` `/BG` are stated once. **Measured, not designed**: `tools/acrobat-form-study.ps1` photographed `ComboEdit` in Acrobat — unfocused it is indistinguishable from a plain combo, focused it is a white box with the value selected end to end and a rounded chevron button, and the list drops flush, field-width, square-cornered and exactly as tall as its rows. Falsified: dropping the `COMBO &&` conjunction fails `the_edit_flag_is_a_capability_only_alongside_the_combo_flag`, and moving the button's hit boundary by one comparison fails `a_click_in_the_text_area_is_not_a_click_on_the_button`. **Not yet driven** — R1 needs the pointer and the operator is at the machine; `ui-verify` coverage is 8.1 row 26's sibling and is owed | `canvas/forms/choosing/typing.rs`, `canvas/forms/textbox.rs` | ENGINE:`edit.rs` `editable_combo` |
-| 16 | Border width row when `border` is `None` | `widgetedit.rs:504-532` | ENGINE:`edit.rs:25202` |
-| 17 | Border style at placement | `author.rs:77-80` | ENGINE:`edit.rs:1652` |
-| 18 | Resize options — scale stroke width, keep `/RD` | resize path | ENGINE:`edit.rs:17624`, `:17632` |
-| 19 | **Units typed beside numbers** (O207), product-wide | `src/units.rs` + ~68 sites | ENGINE:`length_parse.rs:139` |
-| 20 | Tab order by buttons / numeric entry / keyboard | asserted absent `tab_order/mod.rs:991-1006` | ENGINE:`edit.rs:30278` |
+| 16 | Border width row when `border` is `None` | `widgetedit.rs:504-532` | ENGINE:`WidgetEdit::border`, applied by `EditSession::edit_widget` |
+| 17 | Border style at placement | `author.rs:77-80` | ENGINE:`NewTextField::border`, a `BorderSpec` |
+| 18 | Resize options — scale stroke width, keep `/RD` | resize path | ENGINE:`ResizeOptions::with_scale_stroke_width`/`with_keep_rect_differences` |
+| 19 | **Units typed beside numbers** (O207), product-wide | `src/units.rs` + ~68 sites | ENGINE:`pdfcer_core::dimension::parse_length` |
+| 20 | Tab order by buttons / numeric entry / keyboard | asserted absent `tab_order/mod.rs:991-1006` | ENGINE:`EditSession::reorder_annotations` |
 | 21 | Per-field flatten / reset / regenerate / recompute | `panels/forms/edit.rs:381-405` | verbs take a name list |
 | 22 | Group create / rename by naming | `panels/forms/groups.rs` | naming consequence |
 | 23 | Place an empty signature field | `canvas/formfield.rs:89-95` | signing path |
 | 24 | Distinct placement ghost per kind | `canvas/formfield/ghost.rs:79-127` | ➖ |
-| 25 | Per-kind tool defaults (Acrobat's "*Tool* Properties") | new | `FieldDefaults` ENGINE:`edit.rs:1953` |
+| 25 | Per-kind tool defaults (Acrobat's "*Tool* Properties") | new | `FieldDefaults` ENGINE:`edit.rs` |
 | 26 | Driven `ui-verify` coverage for RB, CO, LB. **CO and LB are done** — `the_option_arrows_are_greyed_only_at_the_ends_of_the_list` drives the Properties pane and `a_drop_down_can_be_answered_on_the_page` drives the page, both pinning `fixtures/all-field-kinds.pdf` and both falsified. **RB is not** — no driven check presses a radio button, so the arrow-key sibling walk in `canvas/forms/tabbing.rs` is asserted only by unit test, and it shares the focus-lock defect row 2 found: a press that finds no sibling abandons the ring | `fixtures/all-field-kinds.pdf`; `D:\Dev\pdfcer\fixtures\synthetic\forms\radio-choice-form.pdf` also exists | ➖ |
-| 27 | ~~A multi-select list carried a stored value the options do not list into an engine refusal~~ **BUILT** — `panels/forms/rows.rs::multi_choice_ticks`. The check-box stack copied `/V` and edited it, so a `/V` entry matching no `/Opt` entry — set by another program, or left behind when the option list was edited — rode along, and the operator's first tick arrived at `set_choice_value` as that value plus theirs, which the engine refuses as `ChoiceValueNotInOptions`: a refusal naming a value they never touched, in answer to a gesture that was valid. The row now rebuilds the selection by asking each option whether it is selected — the rule `canvas::forms::choosing::wanted` already followed, and whose doc comment already said *"which is not what the panel does"* — and discloses the drop in words, because a check-box stack has no box to show the value in and the single-select wording (*"It is shown as it is stored"*) is false there. Falsified both halves: copying `/V` back makes `a_value_the_options_do_not_list_is_dropped_and_disclosed` and `a_selection_stored_by_display_string_is_recognised` fail, and forcing the disclosure flag false fails the first alone. **Not driven** — the visible half needs a fixture whose `/V` names no option, which `fixtures/all-field-kinds.pdf` does not have; the defect itself was invisible on screen, which is why eight green unit tests of the verb never saw it | `panels/forms/rows.rs` | ENGINE:`edit.rs:38709` |
+| 27 | ~~A multi-select list carried a stored value the options do not list into an engine refusal~~ **BUILT** — `panels/forms/rows.rs::multi_choice_ticks`. The check-box stack copied `/V` and edited it, so a `/V` entry matching no `/Opt` entry — set by another program, or left behind when the option list was edited — rode along, and the operator's first tick arrived at `set_choice_value` as that value plus theirs, which the engine refuses as `ChoiceValueNotInOptions`: a refusal naming a value they never touched, in answer to a gesture that was valid. The row now rebuilds the selection by asking each option whether it is selected — the rule `canvas::forms::choosing::wanted` already followed, and whose doc comment already said *"which is not what the panel does"* — and discloses the drop in words, because a check-box stack has no box to show the value in and the single-select wording (*"It is shown as it is stored"*) is false there. Falsified both halves: copying `/V` back makes `a_value_the_options_do_not_list_is_dropped_and_disclosed` and `a_selection_stored_by_display_string_is_recognised` fail, and forcing the disclosure flag false fails the first alone. **Not driven** — the visible half needs a fixture whose `/V` names no option, which `fixtures/all-field-kinds.pdf` does not have; the defect itself was invisible on screen, which is why eight green unit tests of the verb never saw it | `panels/forms/rows.rs` | ENGINE:`EditSession::set_choice_value` |
+| 28 | **Field scripts — format, validate, calculate** (`/AA` `/F` `/V` `/C`, plus `/CO`) | new; beside the `/Ff` rows in `fieldedit.rs` | ENGINE:`EditSession::set_field_format`/`set_field_validation`/`set_field_calculation`. Three things are owed here. A kind gate whose answer is not the obvious one — a text field and a **combo** get all three, a **list box gets none**, though both are `/Ch`. `FieldScriptChange::replaced` is an `Option<ScriptClass>`, so ask before displacing a script that classifies `Custom`. And a sentence for `EditError::FieldScriptNotEmittable`, which refuses `AdvisoryHelper::Keystroke` by name |
 
 ### 8.2 `ENGINE` — hand-offs
 
 | # | Gap | Status |
 |---|---|---|
 | E1 | A `/Btn` rotation is written, reports success, and never turns | **CLOSED — `20e539a2`, Pass 308.5, and live in this shell.** `build_button_states` now takes the quarter turn, authors into an `h x w` `/BBox` for 90/270 and emits `quarter_turn_matrix`. Verified at the pin, not taken from the commit message |
-| E2 | `/Q` written but never redrawn | **CLOSED — `503ad9d4`, Pass 308.4, and live in this shell.** `edit.rs:25912` gates the redraw on `edit.quadding.is_some()` and `inherited_quadding` resolves a clear to *inherit*. The shell still owes the clear control that says so — `GUI` work, not engine |
-| E3 | `/AA` authoring: format, keystroke, validate, calculate | **FILED — `request_G024`.** Asks for an **emitter** over the three enums `classify` already parses, plus `/CO` maintenance and the `/F`+`/K` pairing, as one set per O206 |
+| E2 | `/Q` written but never redrawn | **CLOSED — `503ad9d4`, Pass 308.4, and live in this shell.** `edit_field`'s `layout_changed` gates the redraw on `edit.quadding.is_some()` and `inherited_quadding` resolves a clear to *inherit*. The shell still owes the clear control that says so — `GUI` work, not engine |
+| E3 | `/AA` authoring: format, keystroke, validate, calculate | **DELIVERED — `request_G024` is archived and the verbs are carried by the pin.** `set_field_format`, `set_field_validation` and `set_field_calculation` emit over the three enums `classify` already parses, and the two traps the ask named — `/CO` maintenance and the `/F`+`/K` pairing — are inside the verbs rather than left to a caller. Nothing in this shell calls any of them |
 | E4 | `/MK` button icons and state captions: `/I` `/RI` `/IX` `/IF` `/TP` `/AC` `/RC` | to file |
 | E5 | `/H` highlight behaviour (None/Push/Outline/Invert) | to file |
-| E6 | `/Lock` authoring | to file; `ENGINE_BACKLOG.md:117` |
+| E6 | `/Lock` authoring | to file. The two engine hits are a read at signing time in `EditSession::reusable_sig_field` and the carried-key list `formclip::FIELD_CARRIED_KEYS`; no verb writes the key |
 | E7 | `/CO` reordering | to file |
 | E8 | `/Tabs` writing — the verb `reorder_annotations`' own doc says should exist | to file |
 | E9 | `/Opt` actually sorted when bit 20 is set | **DELIVERED - engine `Pass 308.8`, carried by the pin.** Both halves of the ask landed: `choice_option_order` and `sort_choice_options` are public, and `edit_field` sorts when `options` and `sort` arrive in one `FieldEdit`. Bit 20 set alone still reorders nothing and is still disclosed as `sort_claim_unmet`, which was never the complaint. **The shell's copy is deleted** - `choiceopts::sort_by_display` calls the engine's sorter - and `FieldEditOutcome::options_sorted` is consumed as the tripwire for the drift the export prevents |
@@ -526,7 +538,7 @@ Re-derive with the commands in §10 before quoting these anywhere.
 |---|---|---|
 | Acrobat | `evidence/acrobat-forms/strings.txt` (5,033 runs), `form-dialogs.txt` — **not committed; regenerate with `python tools/acrobat-form-strings.py`.** This repository is public and those files are Adobe's resource strings verbatim; see `evidence/acrobat-forms/README.md` | `tools/acrobat-form-strings.py` — UTF-16LE runs out of `AcroForm.api` (20,508,568 bytes, v25.1.20435.0) and `AcrobatRes.dll`. **Vocabulary, verbatim; structure by adjacency** — see A1. ⚠ Line numbers and offsets in every `ACRO:` citation are version-specific: search for the quoted label, do not seek to the offset |
 | Spec ceiling | `evidence/forms-parity/spec-field-properties.md` | ISO 32000-1 Tables 220/221/226/228/230, §12.7.3–§12.7.5, §12.5.5, erratum #56 |
-| Engine | `evidence/forms-parity/engine-form-verbs.md` | measured against `git show HEAD:` at pin `5d43d2ea`, which is one revision behind the pin this table now quotes. E1 and E2 were re-measured against `20e539a2` directly; nothing else in the engine changed between the two |
+| Engine | `evidence/forms-parity/engine-form-verbs.md` | measured against `git show HEAD:` at pin `5d43d2ea`. **Two** revisions separate it from this table's first header sha, and both are gap closures already recorded above: `503ad9d4` is E2 (`/Q` redraw) and `20e539a2` is E1 (button rotation). Both were re-measured directly; nothing else in the engine changed across that span. The artifact is a frozen snapshot at its own named revision and is not re-pointed — read it against `5d43d2ea`, and read §8.2 for what has closed since |
 | Shell | `evidence/forms-parity/shell-form-surface.md`, `canvas-per-kind.md` | two independent measurements of the same surface; they agree on every mechanism |
 
 ```

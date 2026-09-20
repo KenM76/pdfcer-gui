@@ -109,8 +109,7 @@ operator's range. A `const` cannot follow anything.
 
 ### The dash can be written and cannot be read back publicly
 
-`annot_author::read_border_dash` is `pub(crate)`
-(`D:\Dev\pdfcer\crates\pdfcer-core\src\annot_author.rs:840`), and
+`pdfcer_core::annot_author::read_border_dash` is `pub(crate)`, and
 `spec_from_dict` carries no dash: a dash cuts across `MarkupSpec`'s variants, so
 the engine travels it in `AppearanceOptions` beside the spec rather than inside
 it. There is therefore no public route from an annotation dictionary to *is
@@ -281,8 +280,7 @@ actually move.
 
 ## 5. Engine render counters no operator can see
 
-`pdfcer_render::Diagnostics`
-(`D:\Dev\pdfcer\crates\pdfcer-render\src\interpret.rs:207`) carries far more
+`pdfcer_render::Diagnostics` (its `interpret` module) carries far more
 counters than this shell reads. Two routes read any of them:
 
 | route | what it shows |

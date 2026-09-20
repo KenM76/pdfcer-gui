@@ -97,7 +97,7 @@ coverage gap.
 **Fifth, same day, and this one had a CORRECT instrument standing beside it.**
 To check a generated work list for stray CR bytes I ran
 `od -c f | grep -c '\r'` and got **187** — alarming, on a 128-line file. The
-truth was **0**: `tr -cd '' < f | wc -c` said zero, and a `grep -qx`
+truth was **0**: `tr -cd '\r' < f | wc -c` said zero, and a `grep -qx`
 round-trip selected from the file correctly. I never did establish what the
 backslash pattern matched after two layers of shell quoting, and that is the
 point — **I did not need to.**

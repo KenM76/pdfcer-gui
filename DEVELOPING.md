@@ -836,12 +836,21 @@ narrate the *what*.
   `pdfcer-render` and `pdfcer-print` by symbol — a function, a type, a method,
   a doc heading — never by `file.rs:NNNN`. The engine is a branch dependency
   (§1), so its source is split and edited under this repository with no command
-  run here, and a line citation drifts downward until it names unrelated code or
-  no code at all. `EditSession::set_text_run` survives a rewrite of the engine's
-  file layout; `edit.rs:4211` does not — and a rotted citation is
-  indistinguishable from a good one at the moment a reader checks it. A line
-  citation of a file *inside* this repository is fine; it is the moving external
-  pin that makes the engine different.
+  run here, and a line citation drifts. `EditSession::set_text_run` survives a
+  rewrite of the engine's file layout; `edit.rs` line 4211 does not. **It does
+  not drift into a dangling reference, which is what makes the class
+  dangerous**: upstream insertion shifts a file uniformly rather than
+  scrambling it, so the number still lands inside readable prose about a real
+  function in the right file and reads exactly as a correct citation reads. Of
+  92 engine citations measured in one sweep, 66 had drifted and none dangled;
+  two pairs had come to name each other's type. A repair keyed on *does this
+  line exist* passes every one of them — resolve the enclosing symbol instead.
+  `check-engine-citation.sh` enforces the shape and states its own blind spot.
+  A line citation of a file *inside* this repository is fine; it is the moving
+  external pin that makes the engine different. The same argument covers the
+  archived GUI at `D:\Dev\pdfce\crates\pdfce-gui`: a frozen tree is not
+  frozen-correct, because
+  its citations kept drifting until the freeze, so what froze was the error.
 
 **Keep, always:**
 

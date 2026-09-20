@@ -10,7 +10,7 @@ metadata:
 
 **Why:** on 2026-09-12, rewriting the repository landing page for humans at
 Ken's request, a bullet read *"Lengths, areas and angles in real units."*
-`FEATURES.md:908-932` marks **Area and Angular as ⬜ — not shipped.** Nothing
+`FEATURES.md`'s **Area and Angular** row marks both ⬜ — not shipped. Nothing
 prompted the error: the claim was generated from the *shape* of the measure
 feature ("a measuring tool measures these things") rather than from its rows.
 `DimensionKind::Angular` existing in the engine makes the invention more

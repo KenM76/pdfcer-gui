@@ -21,6 +21,16 @@ is indistinguishable from a remedy that was diagnosed, and it is wrong more
 often than it is right — here, any of the 184 rows growing past the cap
 triggered it while every heading was correct.
 
+**The same shape appears in the HEADLINE, not only the remedy**, and there it
+is harder to spot because the evidence sits directly beneath it.
+`check-third-party-licences.sh` opened every failure with *"the build links
+something the shipped attribution file does not describe"* and then printed two
+**empty** crate lists — because the real cause was a byte difference in the
+generated licence body with the crate set unchanged. The sentence and its own
+evidence contradicted each other in the same screen, and the sentence is what a
+reader acts on. An empty list under a heading also has to say `(none)`: a
+silent gap reads as output that got truncated.
+
 **How to apply:** when adding a second failure condition to an existing
 checker, split the flag before writing the message, and falsify **both
 directions**: plant a violation of each kind in a copy of the real input and

@@ -207,17 +207,22 @@ to be last, and where it is not, every non-test item after it is unscanned **and
 the gate reports clean**. `#![cfg(test)]` on a whole file exits the same way and
 is correct.
 
-The convention that makes the limit safe — test module last — is the thing to
-hold. Candidates:
+**Measured: 508 files carry a column-0 `#[cfg(test)]`, and 66 of them declare
+shipped items below the point the gate stops reading.** The fail-open is live,
+not hypothetical, and the dominant shape is not the one "test module last"
+describes: it is `#[cfg(test)] mod tests;` — a one-line declaration whose body
+lives in a sibling file — placed with the other `mod` declarations near the
+top. `crates/pdfcer-gui/src/ocr/mod.rs` stops the scanner at its 108th line and
+has 21 shipped item declarations after it. There is no test module in that file
+to be last.
 
-```sh
-grep -rn '^#\[cfg(test)\]' crates/*/src --include=*.rs
-```
-
-and read what follows each hit's closing brace. Two candidate fixes, and the
-second is better: scan the whole file and exclude only items *inside* a `mod
-tests` block; or keep the early exit and add a gate assertion that the test
-module is the last thing in the file, which a self-test can prove it catches.
+So the convention cannot be the remedy, because the files that break it are not
+breaking a convention — they are following the ordinary one. Of the two
+candidate fixes, only the first survives the measurement: scan the whole file
+and exclude only items *inside* a braced `mod tests` block, recognising the
+one-line `mod tests;` form as excluding nothing at all. A self-test must plant
+an operator-facing string below each of the two shapes and require both to be
+caught.
 
 `icons::glyphs`' own scanner does not repeat this — it skips exactly the braced
 item and resumes, proven by
@@ -584,6 +589,69 @@ differ only in which line is last.
 
 ---
 
+### D32 — RULE: a citation into the engine names a symbol, and never a line
+
+`pdfcer-core/src/edit.rs` is tens of thousands of lines and **grows at the head**,
+and the engine is pinned by *branch*, so a line citation into it drifts with no
+event on this side at all — no `cargo update`, no commit here, nothing to notice.
+
+The rule's mechanism is `tools/gates/check-engine-citation.sh`, registered in
+`run-all.sh`, which fails on four shapes: a path naming the engine or the
+archived GUI; an `ENGINE:`-tagged citation carrying a line number; any `.rs:N`
+whose N exceeds `check-file-size.sh`'s limit, since no file here may be that
+long; and a bare `` `:N` `` continuing the citation before it. A vendor citation
+survives only version-anchored (`egui-0.35.0/src/style.rs:1135`), and an
+evidence artifact is exempt only where it declares the revision it was measured
+at. The gate states its own blind spot: a bare citation into a *small* engine
+file is indistinguishable from a local one, and it is the shape a reader will
+not re-check.
+
+**What makes the class dangerous is that it does not dangle.** Upstream
+insertion shifts a file uniformly rather than scrambling it, so the drifted
+number lands inside readable prose about a real function in the right file and
+reads exactly as a correct citation reads. Measured across the living documents
+and the forms parity table: of 92 engine citations, 66 had drifted and **not one
+dangled**; two pairs had come to name each other's type. A repair keyed on *does
+this line exist* therefore confirms every wrong one — resolve the enclosing
+symbol instead.
+
+The same argument covers the archived GUI at `D:\Dev\pdfce\crates\pdfce-gui`:
+a frozen tree is
+not frozen-correct, because its citations kept drifting until the freeze, so
+what froze was the error.
+
+### D28 — RULE: an `f32` step size belongs to the CONTENT EXTENT, not to a zoom
+
+The canvas's scroll offset is an `f32` over a content space of `page x zoom`
+where one unit is one screen pixel, so the spacing between representable
+positions is the `f32` ulp **at that extent**. Quoting it against a zoom instead
+hides the page size, and a comment that did so was wrong by 256x: 2,048 px is
+the ulp at an extent of 2.05e10, not at the trillion-percent zoom the sentence
+named.
+
+**State the extent, and state the sheet any percentage was derived on.** Two
+documents at the same zoom are at different extents, so a step quoted against a
+zoom is true of one sheet and false of the next.
+
+### D29 — RULE: a zoom percentage derived from a constant is not written down
+
+The sub-pixel hand-over predicate is `longest * zoom > SUB_PIXEL_CONTENT_EXTENT`
+(`crates/pdfcer-gui/src/viewer/ceiling.rs`), and the constant is `1_048_576.0`
+= 2^20 — about 132,000 % on US Letter and about 86,000 % on a large sheet. Four
+prose sites had gone on quoting *"about two million percent"* and
+*"~1,000,000 %"*, the figures that were right while the constant was 2^24.
+
+**Cite `SUB_PIXEL_CONTENT_EXTENT`; derive the percentage only where a reader
+needs a feel for the magnitude, and name the sheet it was derived for.** A bare
+percentage is a claim that decays the moment the constant moves, and the file
+that moves the constant does not contain the percentage — so nothing recomputes
+and nothing goes red.
+
+Two of the four sites were `detects:` lines, which print the stale figure in
+**every sweep report**: a wrong number gains readership as it ages.
+
+---
+
 ## Constraints
 
 ### D4 — CONSTRAINT: the edit unit is one show-text operator
@@ -666,57 +734,6 @@ Unquantified on real scanned material, because there is none in the tree. If a
 scanned drawing arrives, measure this first; if it reproduces, the honest fix is
 upstream or a documented refusal, not a magic number here.
 
-### D32 — CONSTRAINT: engine line-number citations rot, and a rotted one protects its claim
-
-`pdfcer-core/src/edit.rs` is tens of thousands of lines and **grows at the head**,
-so every hard-coded line citation into it drifts downward and nothing in this
-repository detects it.
-
-```sh
-grep -rnoE '(edit|document|page_tree|text_extract|settings|pageops)\.rs:[0-9]+' crates/ tools/ | wc -l
-```
-
-A rotted citation does not merely fail to support its claim: the reader who checks
-it finds plausible code at that address and stops. The worked example is a
-`style.dash` guard whose cited range has become embedded-file-stream and name-tree
-documentation — the substance still right, only the address wrong, which is
-precisely why it is invisible.
-
-**Cite by symbol name, or pair the line with the engine pin.** OPEN: the existing
-citations have not been swept; a sample of eight all landed on unrelated code.
-
-### D28 — RULE: an `f32` step size belongs to the CONTENT EXTENT, not to a zoom
-
-The canvas's scroll offset is an `f32` over a content space of `page x zoom`
-where one unit is one screen pixel, so the spacing between representable
-positions is the `f32` ulp **at that extent**. Quoting it against a zoom instead
-hides the page size, and a comment that did so was wrong by 256x: 2,048 px is
-the ulp at an extent of 2.05e10, not at the trillion-percent zoom the sentence
-named.
-
-**State the extent, and state the sheet any percentage was derived on.** Two
-documents at the same zoom are at different extents, so a step quoted against a
-zoom is true of one sheet and false of the next.
-
-### D29 — RULE: a zoom percentage derived from a constant is not written down
-
-The sub-pixel hand-over predicate is `longest * zoom > SUB_PIXEL_CONTENT_EXTENT`
-(`crates/pdfcer-gui/src/viewer/ceiling.rs`), and the constant is `1_048_576.0`
-= 2^20 — about 132,000 % on US Letter and about 86,000 % on a large sheet. Four
-prose sites had gone on quoting *"about two million percent"* and
-*"~1,000,000 %"*, the figures that were right while the constant was 2^24.
-
-**Cite `SUB_PIXEL_CONTENT_EXTENT`; derive the percentage only where a reader
-needs a feel for the magnitude, and name the sheet it was derived for.** A bare
-percentage is a claim that decays the moment the constant moves, and the file
-that moves the constant does not contain the percentage — so nothing recomputes
-and nothing goes red.
-
-Two of the four sites were `detects:` lines, which print the stale figure in
-**every sweep report**: a wrong number gains readership as it ages.
-
----
-
 ## Open defects
 
 ### D25 — OPEN: `dock.<side>.body_min` is a trace region nothing consumes
@@ -785,7 +802,7 @@ this check's subset. They follow from `TABS`, so the repair above fixes them.
 `crates/pdfcer-gui/src/app/blank.rs:9` heads a section *"1. The engine cannot
 create a document, and that is deliberate"*, echoed at
 `crates/pdfcer-gui/src/app/lifecycle.rs:366-367`. The engine has
-`pdfcer-core/src/text_edit/placetext.rs:1375`, `pub fn blank_document(`.
+`pdfcer_core::text_edit::placetext::blank_document`, `pub fn`.
 
 The claim is load-bearing: it is the stated reason this shell synthesises blanks
 from a 443-byte template asset rather than asking the engine. Either the reason
@@ -826,18 +843,19 @@ label closes it in about ten lines.
 
 ### D36 — OPEN: `/BleedBox`, `/TrimBox` and `/ArtBox` overhang is not disclosed on a sheet resize
 
-`MediaBoxChange` has a field for `/CropBox` overhang and none for the other three
-(`D:\Dev\pdfcer\crates\pdfcer-core\src\edit.rs:3151-3171`). Measured: a
+`MediaBoxChange` has `crop_box_outside` for `/CropBox` overhang and no field
+for the other three. Measured: a
 `/BleedBox [10 10 1000 1000]` survives a resize to 595x842 with no disclosure, so
 a press or CAD export gets one overhang reported and three not.
 
-`FEATURES.md:1136` records that the three boxes are left byte-identical without
+`FEATURES.md`'s `pages.resize` row records that the three boxes are left
+byte-identical without
 drawing the consequence. This is an engine gap and is **not** in
 `ENGINE_BACKLOG.md`; it belongs there.
 
 ### D37 — OPEN: raster images are box-hit-tested, not alpha-tested
 
-`D:\Dev\pdfcer\crates\pdfcer-core\src\vector\hit.rs:708` dispatches
+`pdfcer_core::vector::hit`'s `object_hit` dispatches
 `VectorObject::Image(i) => i.page_bbox.inflate(tolerance).contains(point)`, while
 the Path and Text arms call real geometry predicates. So a click anywhere in a
 transparent image's bounding box selects the image, and a click on visible ink

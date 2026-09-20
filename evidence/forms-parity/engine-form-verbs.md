@@ -18,7 +18,8 @@ that is GUI work, and O205 is about exactly those rows.
 > source comments; the *citations* are not. Two further doc defects:
 > `edit.rs:25133` cites `EditError::DegenerateFieldRect`, a variant that does
 > not exist (the real one is `FieldRectDegenerate`, `edit.rs:7162`), and
-> `03-capabilities.md:617` says "other `/MK` keys are not read" while `/BG`,
+> `03-capabilities.md`'s `/I`/`/TI`/`/MK /CA` row says "other `/MK` keys are
+> not read" while `/BG`,
 > `/BC` and `/R` are all modelled.
 
 ---
@@ -250,7 +251,7 @@ checked against the RESULT, not the request.**
 | Create push button | `add_push_button(&mut self, spec: &NewPushButton) -> …` | `edit.rs:26527` | **PRESENT** — `FieldAuthorDisclosures::push_button_inert` (`:1908`): *the only creation verb whose successful result is a control that does not work* |
 | Create combo / list box | `add_choice_field(&mut self, spec: &NewChoiceField) -> …` | `edit.rs:26764` | **PRESENT** |
 | Create signature field | via `sign(...)` with a `field_name`; `CommandKind::AddSignatureField` | signing path | **PRESENT** — no `add_signature_field` verb of its own |
-| Create barcode field | — | — | **ABSENT, never planned** (`03-capabilities.md:620`) |
+| Create barcode field | — | — | **ABSENT, never planned** — `03-capabilities.md` lists it under *Cannot today*, marked *(never)* |
 | Creation atomicity | field dict + widget + baked `/AP` + page `/Annots` + `/AcroForm /Fields` in **one undo entry**, `CommandKind::AddFormField` | | **PRESENT** |
 | Creation disclosures | `FieldAuthorDisclosures { tooltip_declined, tagged_document, structure_tab_order, has_no_options, group_flags_ignored, defaults_type_mismatch, defaults_on_state_ambiguous, push_button_inert, push_button_no_caption }` | `edit.rs:1805` | **PRESENT** |
 | Delete a field | `delete_field(&mut self, fqn: &str) -> Result<FieldDeletion, EditError>` | `edit.rs:24224` | **PRESENT** — every widget + dict + registration + emptied grouping nodes |

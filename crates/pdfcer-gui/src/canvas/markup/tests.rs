@@ -63,7 +63,8 @@ fn the_three_families_partition_every_kind() {
 /// ★ **An arrow dragged up-and-left keeps its head at the end the operator
 /// dragged to.**
 ///
-/// The `:5624-5627` decision, asserted in the direction that a normalising
+/// The salvaged arrow-direction decision, asserted in the direction a
+/// normalising
 /// implementation fails. A normalised rect would report
 /// `start = (min, min)`, which for this drag is the **head**, so the
 /// arrowhead would be at the tail — and, with a single head, nothing in the

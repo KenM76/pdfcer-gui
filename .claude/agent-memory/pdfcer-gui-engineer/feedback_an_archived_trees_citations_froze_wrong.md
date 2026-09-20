@@ -10,7 +10,8 @@ The citations were written against an *in-flight* tree and kept drifting until
 the freeze — so what froze was the error. Measure before trusting one.
 
 **Why:** a commit in this repo recorded the opposite as settled — citations
-into the archived `D:\Dev\pdfce` "cannot rot at all… frozen evidence" — and
+into the archived `D:\Dev\pdfce\crates\pdfce-gui` "cannot rot at all… frozen
+evidence" — and
 the next sitting measured eleven of them against the archive. Seven were wrong
 by +2 to +29 lines. Only two landed exactly. Every wrong one still landed
 inside readable prose, because upstream *insertion* shifts a whole file in one

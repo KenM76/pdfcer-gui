@@ -137,3 +137,8 @@
 - [Before-and-after is blind to the gesture](feedback_before_and_after_checks_are_blind_to_the_gesture.md) — the roster passed while the drag showed nothing.
 - [An archived tree's citations froze wrong](feedback_an_archived_trees_citations_froze_wrong.md) — 7 of 11 off by +2 to +29; the freeze preserved the error.
 - [Anchoring without opening freezes the error](feedback_anchoring_a_citation_without_opening_it_freezes_the_error.md) — 4 of 31 were wrong; the pass IS the audit.
+- [A drifted citation lands on a real symbol](feedback_a_drifted_citation_lands_on_a_real_unrelated_symbol.md) — 66 of 92 drifted; none dangled.
+- [A shell gate costs spawns, not work](feedback_a_shell_gates_cost_on_windows_is_process_spawns_not_work.md) — 4,100 spawns = 5 min; three greps = 3 s.
+- [A teaching example IS the violation](feedback_a_document_that_teaches_a_rule_cannot_use_a_well_formed_example_of_the_violation.md) — break the shape, keep the meaning.
+- [A full-form sweep misses the shorthand](feedback_a_sweep_keyed_on_the_full_form_cannot_see_the_abbreviated_form.md) — the abbreviation accumulates fastest.
+- [A symbol beats a line only if it's small](feedback_a_symbol_citation_is_worse_than_a_line_when_the_symbol_is_long.md) — 46 citations, 24 symbols, 11 in one function.

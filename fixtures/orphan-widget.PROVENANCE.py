@@ -53,7 +53,7 @@ either reads them that way or does not.
 THE SHAPE, AND EVERY PRECONDITION IT HAS TO MEET
 ===========================================================================
 
-`adopt_plan` (engine `edit.rs:41004`) refuses in five ways before it reaches the
+`EditSession::adopt_plan` refuses in five ways before it reaches the
 dotted-name guard. The fixture has to clear all five, so each is listed with the
 byte in this file that satisfies it:
 
