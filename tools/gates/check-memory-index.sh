@@ -64,11 +64,11 @@
 # into a session, warning and all, is a SNAPSHOT that can be a day and a half
 # behind the file — the quotation above describes 25,411 bytes against a file
 # since cut to 23,987 (= 24.0 KB, under the limit, not truncated). A session
-# that believes such a warning is minutes from renaming all 136 memory files to
-# claw back bytes that are not the problem. **This gate is the live instrument.
-# The prompt is not.** The memory is `an-injected-file-is-a-dated-snapshot`
-# — cited by its `name:` slug, which survives a rename of the file, unlike
-# the filename this line used to carry.
+# that believes such a warning is minutes from renaming every file in the
+# folder to claw back bytes that are not the problem. **This gate is the live
+# instrument. The prompt is not.** The memory is
+# `an-injected-file-is-a-dated-snapshot`, cited by its `name:` slug because
+# that is the half of a memory's identity a rename does not move.
 #
 # ★★ WHERE THE BYTES ACTUALLY ARE: **the gate prints the split itself** —
 # `titles / FILENAMES / hooks / markup`, on every run that is inside
@@ -91,21 +91,23 @@
 #      nothing but a pointer, and the folder has several families (absence
 #      claims, stale citations, checks that cannot fail) whose members differ
 #      by less than a row's worth of meaning.
-#   2. **Write SHORTER FILENAMES for new memories.** 66 bytes is the current
-#      average and nothing needs it; the `name:` frontmatter carries the slug
-#      that `[[wikilinks]]` resolve against, and `MEMORY.md`'s title carries
-#      the prose. A 30-byte name costs the index half of a 60-byte one.
-#   3. **Renaming the existing files** is the big win — filenames are the
-#      single largest share of the index, and the headroom line prints the
-#      current figure — and it is still lever three, not lever one.
-#      ★ Its cost is smaller than this header used to claim, and the correction
-#      matters because the old figure is what argued a session out of it.
-#      `[[wikilinks]]` resolve against a memory's `name:` frontmatter OR its
-#      filename stem, and the folder uses both forms: measured, two thirds are
-#      the slug form, which a rename does not touch at all. Only the stem-form
-#      links need rewriting, and CROSSREF below reddens on any the rewrite
-#      misses. Nothing outside this folder cites a memory filename — verify
-#      that with a grep before believing it, rather than re-quoting this line.
+#   2. **Write SHORTER FILENAMES for new memories.** The existing stems are
+#      capped at 30 characters; a new memory arriving with a 60-character one
+#      costs the index twice as much and buys nothing, because the filename is
+#      an address and carries no meaning that is not carried better elsewhere —
+#      the `name:` frontmatter holds the slug `[[wikilinks]]` resolve against,
+#      and `MEMORY.md`'s title holds the prose.
+#   3. **Renaming the existing files** is largely spent — the stems are already
+#      at the cap, and the headroom line prints what that left. Before any
+#      further sweep, know the invariant that makes one cost more than it looks:
+#      ★ `[[wikilinks]]` resolve against a memory's `name:` frontmatter **OR**
+#      its filename stem. A link written in the slug form survives any rename;
+#      a link written in the stem form is broken by one, silently, because
+#      nothing but a reading session ever follows these links. Every link in
+#      the folder is currently the slug form, and new ones must be written that
+#      way. CROSSREF below is what reddens when a rename outruns the rewrite.
+#      Nothing outside this folder cites a memory filename — verify that with a
+#      grep before believing it, rather than re-quoting this line.
 #      *Tidying an input changes every instrument that reads it*, so still: do
 #      it only when 1 and 2 are exhausted, and in a commit of its own.
 #   4. **Shortening hooks** — spent, see above. Listed last deliberately,
