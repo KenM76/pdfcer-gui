@@ -119,6 +119,9 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    `diag::trace_changed` emits only on a change, so a plural arm that draws the
    same 1 the singular arm drew is SILENT. The absence message names both
    causes for that reason.
+   Published as `v0.5.0-dev.20260920.1`, which is the slot he runs; the
+   slot beside it still holds the build before it, so the fallback is a
+   build that never had this code in it.
    **What is next, in order.** S4c: the mid-gesture oracle for pre-commit
    affordances. Nothing in `ui-verify` can photograph a gesture while it is
    happening — every `Driver` gesture presses and releases inside one call —
