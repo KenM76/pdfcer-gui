@@ -37,11 +37,13 @@ GUI's concept happen to coincide.
 - If the operator has reported a bug, check that your blocker and his report
   describe the same thing. Twice they did not, and the mismatch sat unnoticed
   for weeks.
-- Write every external blocker as a **dated, falsifiable citation**
-  (`MarkupSpec has no Cloud variant — annot_author.rs:280, checked
-  2026-08-14`), never as a verdict. A blocker naming a repo this project does
-  not build cannot fail a test, so CI stays green *because the feature is
-  absent*.
+- Write every external blocker as a **dated, falsifiable citation naming a
+  SYMBOL** (`pdfcer_core::annot_author::MarkupSpec` has no variant for X,
+  checked <date>), never as a verdict and **never as a line number**. The
+  engine is a branch pin with no `rev`, so its source moves with no local
+  event and a line citation rots into prose about a different function. A
+  blocker naming a repo this project does not build cannot fail a test, so CI
+  stays green *because the feature is absent*.
 - A genuine blocker still exists sometimes — the object clipboard is one, and
   the correct response was to record it as a dated measurement and **not** file
   a request, because nothing was measured about how he wants paste to behave.

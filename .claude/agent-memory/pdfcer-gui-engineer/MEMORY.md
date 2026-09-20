@@ -135,3 +135,5 @@
 - [A blocker inherited from an unlinked dep](feedback_a_blocker_can_be_inherited_from_a_dependency_that_is_not_linked.md) — four docs, a crate not in the lock.
 - [A preview must be replayed](feedback_a_preview_must_be_replayed_not_read_off_the_targets_current_rect.md) — calibration is blind to a shared error.
 - [Before-and-after is blind to the gesture](feedback_before_and_after_checks_are_blind_to_the_gesture.md) — the roster passed while the drag showed nothing.
+- [An archived tree's citations froze wrong](feedback_an_archived_trees_citations_froze_wrong.md) — 7 of 11 off by +2 to +29; the freeze preserved the error.
+- [Anchoring without opening freezes the error](feedback_anchoring_a_citation_without_opening_it_freezes_the_error.md) — 4 of 31 were wrong; the pass IS the audit.

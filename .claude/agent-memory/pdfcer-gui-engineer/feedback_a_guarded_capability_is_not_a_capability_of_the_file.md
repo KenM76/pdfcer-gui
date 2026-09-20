@@ -14,7 +14,7 @@ authored in CMYK is composited as ink on separate colorant planes."* Every
 word of that is supported by `pdfcer-render/src/cmyk_buffer.rs` — the four
 `f32` colorant planes are there, the spot planes are there, they are wired to
 fills, images and shadings. What is not there is the *reach*.
-`pdfcer-render/src/lib.rs:931` gates the whole thing on
+`pdfcer_render`'s `render_impl_rasterize` gates the whole thing on
 `page_space.is_subtractive()`, and the comment beside the switch counts it:
 **13 of 51 print-conformance files and 15 of 4,012 external fixtures.**
 Everything else keeps the sRGB path, and ISO 32000-1 §8.6.6.4 makes that the
