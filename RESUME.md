@@ -195,6 +195,8 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    correctly.
    **The unbuilt three are the ones that let him mark less in the first
    place**, and they are still the ones that cannot ship the old unit.
+   Published as `v0.5.0-dev.20260920.2`, which is the slot he runs; the slot
+   beside it holds the build before it.
 
 
 2. **O213 / O214 — the shell addresses the visual line everywhere, driven and

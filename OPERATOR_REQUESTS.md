@@ -148,6 +148,8 @@ permanent. Driven by `the_apply_report_lists_the_text_it_will_destroy`, which
 generates a page whose text it wrote itself and fails if the report lists
 fewer characters than the page carries.
 
+Shipped in `v0.5.0-dev.20260920.2`, on GitHub and in the OneDrive slot he runs.
+
 Status stays **FILED**. The list discloses a mark that took too much; it does
 not let him make a narrower one, and that is what the first three bullets are
 for. The row closes when a driven check marks one chunk of a table row on
@@ -217,6 +219,8 @@ are the harness.
 
 **Ask 2 is not measured.** `DeleteTextLine` exists; whether the canvas gesture
 he uses reaches it is a separate question and a separate drive.
+
+Ask 1 shipped in `v0.5.0-dev.20260920.2`.
 
 **Status stays FILED** — only the operator closes a row.
 

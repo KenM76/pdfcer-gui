@@ -562,6 +562,14 @@ nothing and leaves no folder behind. When it is not run, `BUILD-INFO.txt` says
 so in those words; an omitted line would read as "nothing to report" when it
 means nobody checked.
 
+**The test row of that block is a total over every `test result:` line, and it
+has to be.** The tail of a workspace run is the *doctest* summary, which on
+crates carrying no doctests reads `0 passed; 0 failed` — so a block quoting the
+last lines is one a suite that ran 4,600 tests and a suite that ran none both
+produce, identically. A run yielding no `test result:` line at all, or a total
+of zero passed, is recorded as FAIL whatever the exit code was. `--self-test`
+plants the last-line reading and requires the check to catch it.
+
 **The packager moves the engine pin itself, as its first step, and two things
 follow that catch people out.** It runs `cargo update` over the three engine
 crates before it reads the build's identity — because `Cargo.lock` is what

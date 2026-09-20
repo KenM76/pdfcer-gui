@@ -615,6 +615,39 @@ def copy_asset_dirs(out: Path, engine: Path) -> tuple[list[str], list[str]]:
     return copied, missing
 
 
+def summarise_test_run(output: str) -> tuple[int, str]:
+    """Total every `test result:` line; return `(binaries, one-line summary)`.
+
+    The tail of a workspace test run is the DOCTEST summary, and on a
+    workspace whose crates carry no doctests that reads
+    `0 passed; 0 failed`. Quoting the tail as the evidence therefore
+    produces a block a build that ran nothing at all would produce
+    identically — the one outcome the evidence exists to exclude.
+
+    `binaries` is the number of `test result:` lines seen. Zero means the
+    suite produced no summary at all, which is a failure whatever the exit
+    code says, and the caller treats it as one.
+    """
+    counts = {"passed": 0, "failed": 0, "ignored": 0}
+    binaries = 0
+    for line in output.splitlines():
+        if not line.startswith("test result:"):
+            continue
+        binaries += 1
+        # `test result: ok. 12 passed; 0 failed; 1 ignored; 0 measured; ...`
+        # Parsed by walking pairs rather than by a regex, so a new trailing
+        # field added by a future cargo cannot shift what is read.
+        words = line.replace(";", " ").replace(".", " ").split()
+        for i, word in enumerate(words):
+            if word in counts and i > 0 and words[i - 1].isdigit():
+                counts[word] += int(words[i - 1])
+    summary = (
+        f"{counts['passed']} passed, {counts['failed']} failed, "
+        f"{counts['ignored']} ignored, over {binaries} test binaries"
+    )
+    return binaries, summary
+
+
 def run_verification(repo: Path) -> tuple[bool, str]:
     """Run the test suite and the CI gates; return `(ok, report)`.
 
@@ -670,10 +703,27 @@ def run_verification(repo: Path) -> tuple[bool, str]:
             check=False,
         )
         passed = r.returncode == 0
+        output = (r.stdout or "") + (r.stderr or "")
+        evidence: list[str] = []
+        if label == "tests":
+            # A total, not a tail — see `summarise_test_run`. A suite that
+            # produced no summary line is a failure even at exit 0, because
+            # the exit code cannot distinguish "everything passed" from
+            # "nothing was run".
+            binaries, summary = summarise_test_run(output)
+            if binaries == 0:
+                passed = False
+                evidence.append("no `test result:` line — the suite produced no summary")
+            elif summary.startswith("0 passed"):
+                passed = False
+                evidence.append(f"{summary} — nothing executed, whatever the exit code says")
+            else:
+                evidence.append(summary)
+        else:
+            evidence.extend(output.strip().splitlines()[-3:])
         ok = ok and passed
-        tail = (r.stdout or r.stderr or "").strip().splitlines()[-3:]
         lines.append(f"  {label}: {'PASS' if passed else 'FAIL'}")
-        lines.extend(f"    {t}" for t in tail)
+        lines.extend(f"    {t}" for t in evidence)
     return ok, "\n".join(lines)
 
 
@@ -860,14 +910,55 @@ def self_test() -> int:
     finally:
         os.environ["PATH"] = saved_path
 
+    # 6. The test evidence is a TOTAL, never the tail of the run.
+    #
+    #    `cargo test --workspace` ends with the DOCTEST summary, and on a
+    #    workspace whose crates carry none that last line reads
+    #    `0 passed; 0 failed`. Quoting the tail therefore stamps a build
+    #    whose suite ran 4,600 tests and a build whose suite ran none with
+    #    the same block — an assertion both outcomes satisfy, which is not a
+    #    measurement of which one shipped.
+    #
+    #    The fixture is the real shape, doctest line last, because that
+    #    ordering is the whole defect. A summariser that read only the final
+    #    line would answer 0 here and the assertion names the number.
+    real_run = (
+        "running 12 tests\n"
+        "test result: ok. 12 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; "
+        "finished in 0.05s\n"
+        "\n"
+        "running 4588 tests\n"
+        "test result: ok. 4588 passed; 0 failed; 61 ignored; 0 measured; 0 filtered out; "
+        "finished in 9.10s\n"
+        "\n"
+        "   Doc-tests pdfcer_gui\n"
+        "test result: ok. 0 passed; 0 failed; 6 ignored; 0 measured; 0 filtered out; "
+        "finished in 0.00s\n"
+    )
+    binaries, summary = summarise_test_run(real_run)
+    if binaries != 3:
+        failures.append(f"summarise_test_run counted {binaries} test binaries, expected 3")
+    if not summary.startswith("4600 passed, 0 failed, 68 ignored"):
+        failures.append(
+            f"summarise_test_run totalled {summary!r}; it must sum EVERY `test result:` "
+            "line, not read the last one — the last one is the doctest summary"
+        )
+    #    And a run that produced no summary at all must be distinguishable
+    #    from a clean one, because the exit code cannot tell them apart.
+    if summarise_test_run("warning: unused import\n")[0] != 0:
+        failures.append(
+            "summarise_test_run found a test binary in output containing no `test result:` "
+            "line; a suite that never ran would be stamped with a healthy-looking total"
+        )
+
     for msg in failures:
         print(f"package-portable --self-test: FAIL — {msg}")
     if failures:
         return 1
     print(
-        "package-portable --self-test: 5 invariants hold "
+        "package-portable --self-test: 6 invariants hold "
         "(name collision, digest, asset copy, release asset is folder-rooted, "
-        "the gates' bash is not WSL's)."
+        "the gates' bash is not WSL's, test evidence is a total not a tail)."
     )
     return 0
 
