@@ -118,12 +118,12 @@ pub const fn opacity_suffix() -> &'static str {
 /// header gives.
 ///
 /// ★ It also names the one subtype family the setting does nothing for.
-/// `MarkupOptions::dash` is *"ignored by the text-markup family"*
-/// (`D:\Dev\pdfcer\crates\pdfcer-core\src\edit.rs:4776-4781`): a highlight is a
-/// colour wash and an underline is its own line, and neither draws a `/BS`
-/// border for a dash to be in. The chooser is on the Style group beside the pen
-/// colour, which serves the highlighter too, so an operator who set it and then
-/// drew a highlight would otherwise be owed an explanation nobody gave them.
+/// `MarkupOptions::dash` is *"ignored by the text-markup family"*: a highlight
+/// is a colour wash and an underline is its own line, and neither draws a
+/// `/BS` border for a dash to be in. The chooser is on the Style group beside
+/// the pen colour, which serves the highlighter too, so an operator who set it
+/// and then drew a highlight would otherwise be owed an explanation nobody
+/// gave them.
 #[must_use]
 pub const fn pen_dash_tooltip() -> &'static str {
     "Whether the next shape, arrow, line or freehand mark is drawn with a solid \
@@ -197,12 +197,12 @@ pub const fn line_style_dash_dot() -> &'static str {
 /// # ★★★ It names the FILE, and that is the whole job of this string
 ///
 /// The engine preserves a foreign dash through a restyle that does not mention
-/// one (`D:\Dev\pdfcer\crates\pdfcer-core\src\edit.rs:4396-4425`), so this state
-/// is not a defect and is not going to be corrected by anything the operator
-/// does — it is simply what their producer wrote. Showing *Dashed* for it would
-/// be the quiet lie the colour swatch's CMYK arm was rewritten to stop telling:
-/// a control claiming a value that is not the file's, which the operator would
-/// discover by pressing something else and watching the pattern change.
+/// one, so this state is not a defect and is not going to be corrected by
+/// anything the operator does — it is simply what their producer wrote.
+/// Showing *Dashed* for it would be the quiet lie the colour swatch's CMYK arm
+/// was rewritten to stop telling: a control claiming a value that is not the
+/// file's, which the operator would discover by pressing something else and
+/// watching the pattern change.
 ///
 /// ★ The parenthetical is what keeps it from reading as an error. *"Dashed (the
 /// file's own pattern)"* says **this is fine and it is theirs**; a bare

@@ -439,8 +439,9 @@ fn an_engine_decline_with_no_discriminant_names_no_cause_and_promises_no_remedy(
     use crate::text::textedit::ReflowRefusal;
     use pdfcer_core::text_edit::ReflowApplyError as E;
 
-    // The ten real sentences at engine `527b1523`, read from
-    // `text_edit/reflow_apply.rs` and `edit.rs:10409`. They are listed in full
+    // Every sentence `ReflowApplyError::Unsupported` carries, read from the
+    // engine's `text_edit::reflow_apply` and from `EditSession::reflow_block`,
+    // which raises the no-`/Contents` one itself. They are listed in full
     // rather than sampled, because the point of this test is that the shell
     // must give the SAME honest answer to every one of them — a test that tried
     // one string would pass against a build that special-cased that string.

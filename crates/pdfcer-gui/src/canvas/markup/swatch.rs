@@ -275,15 +275,15 @@ pub fn show(ui: &mut Ui, pen: &mut Pen) {
         // ★★★ LINE STYLE — `RIBBON_IA.md` §5.8's eighth control, and the last
         // of the eight to get an engine verb.
         //
-        // It is on the **Style** group rather than only on the contextual Format
-        // tab because this group's whole subject is *what the next mark looks
-        // like*, and "solid or dashed" is as much a property of the next mark as
-        // its colour and its width are. `MarkupOptions::dash` is the author-time
-        // half the engine shipped alongside the restyle half
-        // (`D:\Dev\pdfcer\crates\pdfcer-core\src\edit.rs:4782`), so a shape can
-        // be DRAWN dashed rather than drawn solid and then corrected — which is
-        // one gesture and one undo entry instead of two, the same argument
-        // `add_markup_with` makes about opacity three controls to the left.
+        // It is on the **Style** group rather than only on the contextual
+        // Format tab because this group's whole subject is *what the next mark
+        // looks like*, and "solid or dashed" is as much a property of the next
+        // mark as its colour and its width are. `MarkupOptions::dash` is the
+        // author-time half the engine shipped alongside the restyle half, so a
+        // shape can be DRAWN dashed rather than drawn solid and then corrected
+        // — which is one gesture and one undo entry instead of two, the same
+        // argument `add_markup_with` makes about opacity three controls to the
+        // left.
         //
         // ★ A ComboBox and not a set of toggle buttons: four entries whose
         // difference is a line pattern cannot be told apart by a 16-point icon,

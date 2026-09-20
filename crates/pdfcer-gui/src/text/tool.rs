@@ -164,7 +164,8 @@ pub const fn node_instruction() -> &'static str {
 /// ★★ It is a **stopgap and is recorded as one.** The discoverable form of
 /// these two verbs is a right-click menu on the shape — *"add a point here"*,
 /// *"remove this point"* — which is the shape `pdfcer-core`'s own doc comments
-/// describe them in (`edit.rs:37927`, `edit.rs:37955`). That surface is
+/// on `insert_dimension_vertex` and `remove_dimension_vertex` describe them
+/// in. That surface is
 /// `canvas::menus`, and the session that built these two verbs did not own that
 /// file. Reported rather than half-built; see `OPERATOR_REQUESTS.md` O132.
 #[must_use]

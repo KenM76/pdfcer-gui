@@ -40,9 +40,9 @@
 //!
 //! `EditSession::resize_annotation` refuses to scale an annotation whose
 //! appearance stream pdfcer did not draw, unless the scale is uniform or
-//! `ResizeOptions::allow_appearance_distortion` takes the distortion knowingly
-//! (`pdfcer-core` `edit.rs:24455`). It is a real refusal an operator can reach
-//! from these fields by typing a Width and leaving Height alone.
+//! `ResizeOptions::allow_appearance_distortion` takes the distortion
+//! knowingly. It is a real refusal an operator can reach from these fields by
+//! typing a Width and leaving Height alone.
 //!
 //! It gets **no string here**, because the condition is not one this panel can
 //! evaluate. The engine decides it by rebuilding the annotation's appearance

@@ -119,12 +119,11 @@
 //!   `insert_dimension_vertex` and `remove_dimension_vertex` are each one
 //!   engine command, so one gesture is one Ctrl+Z. ★ For the three vertex
 //!   verbs that is not an accident of granularity — they share one body,
-//!   `EditSession::apply_vertex_edit` (`D:/Dev/pdfcer/crates/pdfcer-core/src/
-//!   edit.rs:38002`), which plans the edit, rewrites the record, regenerates
-//!   the annotation **and its baked `/AP`**, rewrites the sidecar catalog, and
-//!   commits all of it as a single `Command`. A shell that raised two actions
-//!   for one gesture would break that, which is why each gesture below pushes
-//!   exactly one.
+//!   `EditSession::apply_vertex_edit`, which plans the edit, rewrites the
+//!   record, regenerates the annotation **and its baked `/AP`**, rewrites the
+//!   sidecar catalog, and commits all of it as a single `Command`. A shell
+//!   that raised two actions for one gesture would break that, which is why
+//!   each gesture below pushes exactly one.
 //! - D5 modifiers-constrain: **Shift locks both drags to one axis**, applied
 //!   by `canvas::interact` before either reaches this module —
 //!   [`crate::canvas::constrain::translate`] for the label, whose outcome is a
@@ -165,17 +164,16 @@
 //! > *"I also can't edit or delete nodes of a markup shape once it is drawn."*
 //!
 //! That sentence is three separate facts. The one this module can close is the
-//! **ce dimension** half: `pdfcer-core` has had
-//! `insert_dimension_vertex` (`edit.rs:37927`) and `remove_dimension_vertex`
-//! (`edit.rs:37955`) since `Pass 107.0`, beside the `move_dimension_vertex`
-//! (`edit.rs:37892`) this module already drove, and **this shell called
+//! **ce dimension** half: `pdfcer-core` has had `insert_dimension_vertex` and
+//! `remove_dimension_vertex` since `Pass 107.0`, beside the
+//! `move_dimension_vertex` this module already drove, and **this shell called
 //! neither**. So *"delete a node"* was unbuilt on our side for the one shape
 //! where the engine can do it. The other two facts are not ours: a **markup**
 //! shape's `/Vertices` and `/InkList` are not modelled at all, which is filed
 //! (`request_a_markup_shapes_vertices_cannot_be_read_or_edited.md`) and
 //! deliberately **not** worked around here — re-parsing the annotation
-//! dictionary in the shell would be a second, weaker implementation of geometry
-//! the engine owns.
+//! dictionary in the shell would be a second, weaker implementation of
+//! geometry the engine owns.
 //!
 //! ### The gesture, and why both verbs are DRAGS
 //!
@@ -220,14 +218,13 @@
 //!
 //! ### ★★ The preflight, and why the shell asks before it acts
 //!
-//! `EditSession::vertex_edit_preview` (`edit.rs:37987`) is the engine's own
-//! refusal predicate — *"`vertex_edit_preview(id, edit).err()` is
-//! `Option<EditError>`: exactly the narrower `*_refusal` shape a shell needs"*
-//! — and it shares **one body** with the mutating verbs
-//! (`vertex_edit_plan`), so it cannot disagree with them. It is asked on every
-//! frame of a count-editing drag, for the reason the engine gives in the
-//! `adopt_widget` lesson it cites: *"a verb with no preflight makes the UI find
-//! out by pressing."*
+//! `EditSession::vertex_edit_preview` is the engine's own refusal predicate —
+//! *"`vertex_edit_preview(id, edit).err()` is `Option<EditError>`: exactly the
+//! narrower `*_refusal` shape a shell needs"* — and it shares **one body**
+//! with the mutating verbs (`vertex_edit_plan`), so it cannot disagree with
+//! them. It is asked on every frame of a count-editing drag, for the reason
+//! the engine gives in the `adopt_widget` lesson it cites: *"a verb with no
+//! preflight makes the UI find out by pressing."*
 //!
 //! What it buys, concretely, is that **the preview never promises a shape the
 //! release would refuse**. A closed perimeter with three corners cannot lose

@@ -50,10 +50,9 @@
 //!    2026-09-06.** It used to be *"`pdfcer-core` v0.38.0 reads `/IRT` and
 //!    `/RT` and has no verb of any kind that writes either"*, filed as
 //!    `request_a_reply_can_be_read_and_never_written.md`. **That is no longer
-//!    true**: `EditSession::add_reply` shipped as `Pass 253.0`
-//!    (`pdfcer-core/src/edit.rs:26948`) and this shell authors replies from
-//!    the **Comments panel**, whose catalog carries the wording
-//!    (`crate::text::panels::comments::comment_row_reply` and its four
+//!    true**: `EditSession::add_reply` shipped as `Pass 253.0` and this shell
+//!    authors replies from the **Comments panel**, whose catalog carries the
+//!    wording (`crate::text::panels::comments::comment_row_reply` and its four
 //!    neighbours).
 //!
 //!    ⇒ So the absence here is now a **scope** decision rather than a

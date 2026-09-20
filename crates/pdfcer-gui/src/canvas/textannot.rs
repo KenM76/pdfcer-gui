@@ -569,8 +569,9 @@ pub fn spec(
             // function is the only construction site of a `TextAnnotSpec`
             // there is — so there is no re-authoring path for the always-false
             // field to reach. If one is ever added, it must measure the value
-            // the way `edit.rs:27032` does (bake both ways, compare bytes) or
-            // supply it here, and re-baking a wrapped callout as unwrapped
+            // the way `measure_free_text_multiline` does — bake the spec's own
+            // text both ways and compare each against the appearance on disk —
+            // or supply it here, and re-baking a wrapped callout as unwrapped
             // would push the operator's second sentence off the page with
             // nothing on screen to say so.
             multiline: true,

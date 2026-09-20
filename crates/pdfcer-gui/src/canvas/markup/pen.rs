@@ -318,20 +318,18 @@ pub struct Pen {
     /// capability becomes choosable: *"a build which omits nothing must behave
     /// as it did before the choice existed, byte for byte."* Unlike the colour
     /// change of 2026-09-06, this one **does** keep it: the default is
-    /// [`super::linestyle::LineStyle::Solid`], `dash_option` answers `None`, and
-    /// `MarkupOptions::dash: None` authors *"the solid border pdfcer authored
-    /// exclusively before `Pass 258.0`"*
-    /// (`D:\Dev\pdfcer\crates\pdfcer-core\src\edit.rs:4772-4774`). An operator
-    /// who never opens the chooser gets the file they got yesterday.
+    /// [`super::linestyle::LineStyle::Solid`], `dash_option` answers `None`,
+    /// and `MarkupOptions::dash: None` authors *"the solid border pdfcer
+    /// authored exclusively before `Pass 258.0`"*. An operator who never opens
+    /// the chooser gets the file they got yesterday.
     ///
     /// # ⚠ Ignored by the text-markup family, and that is the format
     ///
     /// A highlight is a colour wash and an underline is its own line; neither
-    /// draws a `/BS` border, so `MarkupOptions::dash` is ignored for all four
-    /// (`edit.rs:4776-4781`). The pen carries one value and the highlighter
-    /// shares it, so the chooser's tooltip says so —
-    /// [`crate::text::markup::pen_dash_tooltip`] — rather than leaving an
-    /// operator to conclude the setting did not take.
+    /// draws a `/BS` border, so `MarkupOptions::dash` is ignored for all four.
+    /// The pen carries one value and the highlighter shares it, so the
+    /// chooser's tooltip says so — [`crate::text::markup::pen_dash_tooltip`] —
+    /// rather than leaving an operator to conclude the setting did not take.
     pub dash: super::linestyle::LineStyle,
 }
 
@@ -658,11 +656,11 @@ impl Pen {
     ///
     /// ⚠ **Not passed on the text-markup route.** `app::actions::apply`'s
     /// `CommitMarkup` arm sends it; `CommitTextMarkup` does not, because a
-    /// highlight, underline, strikeout and squiggly draw no `/BS` border and the
-    /// engine ignores the field for all four (`edit.rs:4776-4781`). Sending a
-    /// value that is documented as ignored would be this shell asking for
-    /// something and calling the silence success — which is the exact failure
-    /// shape `MarkupStyleSupport` was shipped to end.
+    /// highlight, underline, strikeout and squiggly draw no `/BS` border and
+    /// the engine ignores the field for all four. Sending a value that is
+    /// documented as ignored would be this shell asking for something and
+    /// calling the silence success — which is the exact failure shape
+    /// `MarkupStyleSupport` was shipped to end.
     #[must_use]
     pub fn dash_option(&self) -> Option<pdfcer_core::annot_author::BorderDash> {
         self.dash.dash()

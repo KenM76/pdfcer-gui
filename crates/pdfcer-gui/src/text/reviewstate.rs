@@ -17,7 +17,7 @@
 //! ## ★★★ THE FACT THAT DECIDES ALMOST EVERY STRING BELOW
 //!
 //! **A review status is APPENDED, not set.** `add_review_state`'s own doc
-//! comment (`edit.rs:26804`) states it twice with the standard's `shall`:
+//! comment states it twice with the standard's `shall`:
 //!
 //! > *"THE STATUS IS NOT WRITTEN ONTO THE ANNOTATION IT DESCRIBES … §12.5.6.3
 //! > puts it on a **separate** `/Text` annotation that points at the reviewed
@@ -191,9 +191,9 @@ pub fn row_status_by(who: &str, status: &str) -> String {
 /// Table 170 markup key and its absence is not a claim about a person.
 ///
 /// ★ It also has a consequence the operator can act on, and the sentence
-/// carries it: `add_review_state` chains on `/T` equality
-/// (`edit.rs:26865-26890`), so an unsigned status can never be continued by a
-/// signed one — a later status starts a fresh history beside it.
+/// carries it: `add_review_state` chains on `/T` equality, so an unsigned
+/// status can never be continued by a signed one — a later status starts a
+/// fresh history beside it.
 #[must_use]
 pub fn row_status_unsigned(status: &str) -> String {
     format!("{status} — recorded without a name, so it stands on its own")
@@ -360,8 +360,9 @@ pub fn status_recorded(state: &str, depth: usize) -> String {
 
 /// ★★ The second sentence, when the operator has **no name set**.
 ///
-/// `add_review_state` takes an author `&str` and uses it as the chain key
-/// (`edit.rs:26865-26890` matches `title == Some(author)`), so an empty one
+/// `add_review_state` takes an author `&str` and uses it as the chain key —
+/// its `deepest_state_for_author` matches on `title == Some(author)` — so an
+/// empty one
 /// writes an empty `/T` and **cannot be continued** by a later status recorded
 /// once a name is set: that one starts a fresh history beside it.
 ///

@@ -77,9 +77,9 @@
 //! > over one would be a control that accepts a value and discards it.*
 //!
 //! **That was true when it was written and stopped being true.**
-//! `EditSession::move_annotation` (`pdfcer-core` `edit.rs:25391`) and
-//! `EditSession::resize_annotation` (`edit.rs:24477`) both ship, and this shell
-//! was *already calling both of them* — `canvas::annotdrag` raises
+//! `EditSession::move_annotation` and `EditSession::resize_annotation` both
+//! ship, and this shell was *already calling both of them* —
+//! `canvas::annotdrag` raises
 //! [`AnnotAction::Move`](crate::app::actions::annot::AnnotAction::Move) on the
 //! release of a drag and `canvas::resizing` raises
 //! [`AnnotAction::Resize`](crate::app::actions::annot::AnnotAction::Resize) on

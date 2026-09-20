@@ -58,18 +58,18 @@
 //!
 //! The mechanism, read afterwards and stated here because the assertion alone
 //! does not explain it: [`EditSession::format_text`] allocates the new `/Font`
-//! object and puts it in the same undo command
-//! (`pdfcer-core/src/edit.rs:9556`, `font_resource_writes` — which correctly
-//! binds against `self.graph()`, the overlay, *"not `self.base`"*, and says so).
-//! [`EditSession::edit_text`] then plans with `plan_edit(&self.base, …)`
-//! (`edit.rs:9265`), and `resolve_font_dict` dereferences the `/Font` name
-//! through **that** document (`text_edit/edit.rs:3582-3595`,
-//! `o.map(|o| doc.resolve(o))`). The name the restyle wrote into the stream
-//! names an object that exists only in the overlay, so the deref against the
-//! base answers `None`, and `None` is reported as *"unresolvable in the target
-//! stream's resources"* (`edit.rs:1796`). The stream read is the session's
-//! (`current_page_content`, which is what makes sequential edits accumulate);
-//! only the object graph the names are resolved through is the base's.
+//! object and puts it in the same undo command, through the engine's own
+//! `font_resource_writes` — which correctly binds against `self.graph()`, the
+//! overlay, *"not `self.base`"*, and says so. [`EditSession::edit_text`] then
+//! plans with `plan_edit(&self.base, …)`, and `resolve_font_dict` dereferences
+//! the `/Font` name through **that** document, `doc.resolve(o)` against the
+//! `DocumentView` it was handed. The
+//! name the restyle wrote into the stream names an object that exists only in
+//! the overlay, so the deref against the base answers `None`, and `None` is
+//! reported as *"unresolvable in the target stream's resources"*. The stream
+//! read is the session's (`current_page_content`, which is what makes
+//! sequential edits accumulate); only the object graph the names are resolved
+//! through is the base's.
 //!
 //! ⇒ **Any session-path verb that creates an indirect object and then resolves
 //! a name that points at it will do this**, which is why it is filed as a class

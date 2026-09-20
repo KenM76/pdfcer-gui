@@ -843,10 +843,10 @@ pub fn prepare_redaction_apply(
     // ★★★ Asked FIRST — before the mark census — and the ORDER is load-bearing
     // twice over.
     //
-    // 1. While a redaction is staged the engine refuses `to_full_bytes` by name
-    //    (`edit.rs:8374-8378`), so without this the materialisation below would
-    //    fail and the operator would read *"this document cannot be rewritten
-    //    in full"* on a document that can.
+    // 1. While a redaction is staged the engine refuses `to_full_bytes` by
+    //    name, so without this the materialisation below would fail and the
+    //    operator would read *"this document cannot be rewritten in full"* on
+    //    a document that can.
     //
     // 2. ★★★ **It is what stops the operator being trapped.** Ask the mark
     //    census first and a staged document with **no marks left** — he took
@@ -1035,12 +1035,12 @@ pub struct StagedRedaction {
 ///
 /// # ★★ 2. Why nothing is proven here, and where the proof went
 ///
-/// `apply_redactions_deferred` runs the removal only to compute its preview and
-/// **discards the bytes** (`pdfcer-core/src/edit.rs:8517`). There is therefore
-/// no buffer for [`proof`] to sweep, and this function does not invent one — it
-/// would have to call `save_applying_redaction` a second time to get one, which
-/// is a second full rewrite of the document to prove something about bytes
-/// nobody will ever write.
+/// `apply_redactions_deferred` runs the removal only to compute its preview
+/// and **discards the bytes**. There is therefore no buffer for [`proof`] to
+/// sweep, and this function does not invent one — it would have to call
+/// `save_applying_redaction` a second time to get one, which is a second full
+/// rewrite of the document to prove something about bytes nobody will ever
+/// write.
 ///
 /// The proof lives at the save instead, in [`save_applying_pending`], over the
 /// exact buffer that is one statement from the file system. That is §2.2's rule
@@ -1152,10 +1152,10 @@ pub fn stage_into_session(
 /// again.
 ///
 /// It returns nothing because there is nothing to report. The engine's verb is
-/// `const fn cancel_pending_redaction(&mut self)` (`edit.rs:8542`) and is
-/// idempotent, so a cancel on a document with nothing staged is a no-op rather
-/// than an error — which is the right shape for a control a caller may reach
-/// from a stale frame.
+/// `const fn cancel_pending_redaction(&mut self)` and is idempotent, so a
+/// cancel on a document with nothing staged is a no-op rather than an error —
+/// which is the right shape for a control a caller may reach from a stale
+/// frame.
 ///
 /// ★ **The caller owes one thing beside this call**: clearing
 /// `OpenDoc::redaction_absence_claims`. Those strings are the shell's statement
@@ -1179,13 +1179,13 @@ pub const fn cancel_staged_redaction(session: &mut EditSession) {
 ///
 /// # ★★★ 1. This is the boundary, and the proof is at it
 ///
-/// The engine's `save_applying_redaction(&self, ..)` (`edit.rs:8569`) runs the
-/// removal over the session's **current** state and returns single-revision
-/// bytes with the content already gone. That is a guarantee about somebody
-/// else's code, and this shell's standing posture — §2.2, and the whole of
-/// [`PreparedRedaction::write_to`] — is that a guarantee must not depend on how
-/// the value was constructed. So the decoded-stream sweep runs here, over the
-/// buffer the caller is about to write, before the caller can see it.
+/// The engine's `save_applying_redaction(&self, ..)` runs the removal over the
+/// session's **current** state and returns single-revision bytes with the
+/// content already gone. That is a guarantee about somebody else's code, and
+/// this shell's standing posture — §2.2, and the whole of
+/// [`PreparedRedaction::write_to`] — is that a guarantee must not depend on
+/// how the value was constructed. So the decoded-stream sweep runs here, over
+/// the buffer the caller is about to write, before the caller can see it.
 ///
 /// ★ **Against the report the SAVE produced, not the one staging predicted.**
 /// The engine is explicit that the removal re-runs over the then-current state,

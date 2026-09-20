@@ -104,11 +104,10 @@
 //!
 //! [`replies_to`] walks **every page**, because §12.5.6.2 permits a reply to
 //! live on a different page from the comment it replies to and `pdfcer-core`'s
-//! own `locate_annotation` scans every page for exactly that reason
-//! (`edit.rs:25654-25669`). It is called only while a pop-up is open, never
-//! otherwise. `crate::panels::comments` pays the same walk every frame it is
-//! visible and states so in its own header; this is the same bound with a
-//! stricter gate.
+//! own `locate_annotation` scans every page for exactly that reason. It is
+//! called only while a pop-up is open, never otherwise.
+//! `crate::panels::comments` pays the same walk every frame it is visible and
+//! states so in its own header; this is the same bound with a stricter gate.
 
 use std::collections::BTreeSet;
 
@@ -550,10 +549,11 @@ pub struct Reply {
 ///
 /// # ★★ Every page, because a reply need not be on the parent's page
 ///
-/// §12.5.6.2 puts no page constraint on `/IRT`, and `pdfcer-core`'s own
-/// `locate_annotation` walks every page for exactly this reason —
-/// `edit.rs:24818-24821`: *"`all` is every annotation on every page, because a
-/// reply may live on a DIFFERENT page from the comment it replies to."*
+/// §12.5.6.2 puts no page constraint on `/IRT`, and `pdfcer-core` reaches the
+/// same conclusion where it plans a deletion: `plan_annotation_deletion` is
+/// handed every annotation on every page because *"a reply may live on a
+/// **different page** from the annotation it replies to — nothing in §12.5.6.2
+/// binds a thread to one page — so a per-page scan would under-report"*.
 /// Scanning the current page alone would silently drop replies on a
 /// forty-sheet drawing set, which is the shape of document this program is
 /// for.

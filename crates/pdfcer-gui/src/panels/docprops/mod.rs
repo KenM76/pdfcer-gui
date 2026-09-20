@@ -75,10 +75,9 @@
 //!
 //! ## ★ That last clause was TRUE when written and false when read
 //!
-//! `EditSession::info_text` (`edit.rs:4663`) and `info_bytes`
-//! (`edit.rs:4644`) both exist, both are `&self`, and both are documented as
-//! *"reflects unsaved edits"*. `InfoField::all()` (`edit.rs:224`) exists too,
-//! and its own doc comment was written **for this panel**:
+//! `EditSession::info_text` and `info_bytes` both exist, both are `&self`, and
+//! both are documented as *"reflects unsaved edits"*. `InfoField::all()`
+//! exists too, and its own doc comment was written **for this panel**:
 //!
 //! > Every editable field, in the order a properties panel should show them.
 //! > Provided so a front end enumerates the real list instead of hard-coding

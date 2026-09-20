@@ -9,9 +9,9 @@
 //!
 //! | half | engine | what it means here |
 //! |---|---|---|
-//! | **preserve** | a restyle that does not mention `dash` keeps one, *including a dash pdfcer never authored* (`edit.rs:4396-4425`) | this module has **nothing to build** for it, and the fact that leaving the control alone is safe is what makes [`DashReading::Foreign`] legitimate |
-//! | **author** | `MarkupOptions::dash` (`edit.rs:4782`) | [`super::pen::Pen::dash`] and the Markup ▸ Style chooser |
-//! | **restyle** | `MarkupStyle::dash: Option<StyleEdit<BorderDash>>` (`edit.rs:4422`) | the Format ▸ Markup chooser and the Properties panel row |
+//! | **preserve** | a restyle that does not mention `dash` keeps one, *including a dash pdfcer never authored* | this module has **nothing to build** for it, and the fact that leaving the control alone is safe is what makes [`DashReading::Foreign`] legitimate |
+//! | **author** | `MarkupOptions::dash` | [`super::pen::Pen::dash`] and the Markup ▸ Style chooser |
+//! | **restyle** | `MarkupStyle::dash: Option<StyleEdit<BorderDash>>` | the Format ▸ Markup chooser and the Properties panel row |
 //!
 //!
 //! ## ★★★ Why one module and not three controls
@@ -183,11 +183,11 @@ impl LineStyle {
 
     /// **The engine value this style authors with**, or `None` for solid.
     ///
-    /// What goes into `MarkupOptions::dash` (`edit.rs:4782`). `None` writes no
-    /// dash at all, which is byte-for-byte what this shell authored before the
-    /// control existed — so a build whose operator never touches the chooser
-    /// produces the same file it did before, which is this project's standing
-    /// rule for a capability becoming choosable.
+    /// What goes into `MarkupOptions::dash`. `None` writes no dash at all,
+    /// which is byte-for-byte what this shell authored before the control
+    /// existed — so a build whose operator never touches the chooser produces
+    /// the same file it did before, which is this project's standing rule for
+    /// a capability becoming choosable.
     ///
     /// ⚠ A `None` from `BorderDash::new` would collapse into the same answer as
     /// *solid*. That is why the refusal lives in the choice of constants rather
@@ -205,7 +205,7 @@ impl LineStyle {
     ///
     /// `StyleEdit::Clear` for [`Self::Solid`] — the engine's own spelling of
     /// *make it solid*, rather than the removal of a control's value — and
-    /// `StyleEdit::Set` for a dash (`edit.rs:4396-4400`).
+    /// `StyleEdit::Set` for a dash.
     ///
     /// ★ The `None` is what the two restyle surfaces decline on: they park
     /// nothing and raise nothing, so an unbuildable pattern produces no write
@@ -258,10 +258,10 @@ impl LineStyle {
 ///
 /// A producer's dash is not required to be one of the four this shell offers,
 /// and the engine now **preserves** it: a restyle that does not mention `dash`
-/// keeps it, *including a dash pdfcer never authored* (`edit.rs:4396-4425`). So
-/// a chooser that could only show four states would have to show one of them for
-/// a mark that is none of them — and whichever it picked would be a claim about
-/// the operator's file that the file does not make.
+/// keeps it, *including a dash pdfcer never authored*. So a chooser that could
+/// only show four states would have to show one of them for a mark that is
+/// none of them — and whichever it picked would be a claim about the
+/// operator's file that the file does not make.
 ///
 /// [`Self::Foreign`] is that state, named as what it is. It is **displayed and
 /// never offered**: picking an entry replaces it, and there is no entry meaning
@@ -527,12 +527,11 @@ mod tests {
 
     /// **Solid clears, a dash sets** — the engine's two arms, not one.
     ///
-    /// `Clear` makes the border solid and `Set` makes it dashed
-    /// (`edit.rs:4396-4400`). Getting this backwards, or answering `None` for
-    /// solid, would make the chooser's first entry a control that does nothing:
-    /// `MarkupStyle::dash: None` means *leave whatever the annotation already
-    /// has*, so a Solid that raised `None` would silently keep the dash it was
-    /// pressed to remove.
+    /// `Clear` makes the border solid and `Set` makes it dashed. Getting this
+    /// backwards, or answering `None` for solid, would make the chooser's
+    /// first entry a control that does nothing: `MarkupStyle::dash: None`
+    /// means *leave whatever the annotation already has*, so a Solid that
+    /// raised `None` would silently keep the dash it was pressed to remove.
     ///
     /// Falsified by returning `None` from the `Solid` arm of `style_edit`, which
     /// turned the first assertion red.

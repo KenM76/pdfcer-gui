@@ -453,13 +453,13 @@ pub enum Refusal {
     /// ★★★ **The engine refuses to put that annotation on a clipboard at
     /// all**, and the `/Subtype`s it named travel with the refusal.
     ///
-    /// `/Widget`, `/Popup` and `/Redact` — `EditSession::raw_copy_refusal`
-    /// (`edit.rs:10689`), and each for a stated reason rather than because it
-    /// is hard: a widget would need a field name in the destination's
-    /// `/AcroForm` that pdfcer cannot guess, a popup is not an independent
-    /// annotation (§12.5.6.14) and belongs to the comment that opens it, and a
-    /// redaction is a **pending destructive operation** — pasting one arms a
-    /// redaction in a document nobody reviewed.
+    /// `/Widget`, `/Popup` and `/Redact` — `EditSession::raw_copy_refusal`,
+    /// and each for a stated reason rather than because it is hard: a widget
+    /// would need a field name in the destination's `/AcroForm` that pdfcer
+    /// cannot guess, a popup is not an independent annotation (§12.5.6.14) and
+    /// belongs to the comment that opens it, and a redaction is a **pending
+    /// destructive operation** — pasting one arms a redaction in a document
+    /// nobody reviewed.
     ///
     /// ★ The list is read off the clip, never mirrored here. `canvas::cutgate`
     /// does keep a mirror of the same three, and its own header explains why
@@ -508,11 +508,11 @@ pub fn store(ctx: &egui::Context, clipped: Clipped) {
 ///
 /// # ★★★ ONE ENGINE CALL, TWO ADDRESS SPACES
 ///
-/// `EditSession::copy_selection` (`edit.rs:10456`) takes an object-index list
-/// **and** an annotation-index list, and its own doc comment says why they
-/// cannot be one list: *"an annotation is not content, so it has no paint-order
-/// index."* This function is the only place in the shell that fills both, and
-/// it fills them in **one call** rather than two, so that:
+/// `EditSession::copy_selection` takes an object-index list **and** an
+/// annotation-index list, and its own doc comment says why they cannot be one
+/// list: *"an annotation is not content, so it has no paint-order index."*
+/// This function is the only place in the shell that fills both, and it fills
+/// them in **one call** rather than two, so that:
 ///
 /// * a mixed selection is one clip, one paste and one gesture — the day the
 ///   selection model can hold one (see the header);
@@ -550,8 +550,8 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
     // undo entry without a `cut_selection` call: only the deletion is an edit.
     //
     // ★★ `copy_selection`, not `copy_objects` and not `copy_annotations`. The
-    // two narrow verbs are wrappers over this one body (`edit.rs:10415`,
-    // `edit.rs:10437`), so calling it directly costs nothing and removes the
+    // two narrow verbs are one-line wrappers over this one body, so calling it
+    // directly costs nothing and removes the
     // branch that would otherwise have to decide which wrapper to use — a
     // branch whose wrong answer is a silently half-copied selection.
     let clip = doc
@@ -571,8 +571,8 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
         return Err(Refusal::CannotCarry(plan.refused));
     }
 
-    // ★★ The clip's OWN bbox, unioned by the engine over both content items and
-    // annotation `/Rect`s (`edit.rs:10569`), converted to a centre.
+    // ★★ The clip's OWN bbox, unioned by the engine over both content items
+    // and annotation `/Rect`s, converted to a centre.
     //
     let anchor = (!clip.bbox().is_empty()).then(|| {
         let b = clip.bbox();
@@ -902,13 +902,13 @@ pub fn paste(
         // rule that decides it is.
         //
         // ★★ ONE verb plants BOTH halves. `paste_objects` commits the content
-        // command and then calls the private `paste_clip_annotations`
-        // (`edit.rs:10901`), so this shell raises **one** action for a mixed
-        // clip and does not have to sequence two. The engine's own note is that
-        // the annotation half lands as **its own undo entry**, which is
-        // disclosed here rather than discovered: `Ctrl+Z` after a mixed paste
-        // takes back the comments first and the geometry second. Not reachable
-        // today; filed on the clipboard row of `ENGINE_BACKLOG.md`.
+        // command and then calls the private `paste_clip_annotations`, so this
+        // shell raises **one** action for a mixed clip and does not have to
+        // sequence two. The engine's own note is that the annotation half
+        // lands as **its own undo entry**, which is disclosed here rather than
+        // discovered: `Ctrl+Z` after a mixed paste takes back the comments
+        // first and the geometry second. Not reachable today; filed on the
+        // clipboard row of `ENGINE_BACKLOG.md`.
         Some(Clipped::Selection {
             bytes,
             page: from,

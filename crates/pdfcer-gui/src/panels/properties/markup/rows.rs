@@ -188,9 +188,9 @@ pub(super) fn fill_row(
 /// all, so there was nothing for a control to reach.
 ///
 ///
-/// * `/BS` `/S` and `/D` are read back on the way IN, so a restyle that does not
-///   mention the dash **preserves** it — including a dash pdfcer never authored
-///   (`pdfcer-core` `edit.rs:4396-4425`);
+/// * `/BS` `/S` and `/D` are read back on the way IN, so a restyle that does
+///   not mention the dash **preserves** it — including a dash pdfcer never
+///   authored;
 /// * `MarkupOptions::dash` authors one, so a shape can be *drawn* dashed rather
 ///   than drawn and then corrected.
 ///
@@ -341,15 +341,13 @@ pub(super) fn width_row(
 ///
 /// `MarkupStyleSupport::takes_endings` is `true` for `/Line` and for nothing
 /// else, and [`Current::offers_endings`] is what asks it. A chooser on a
-/// polygon would be live and would be **refused** —
-/// `EditError::StylePropertyNotApplicable` at `edit.rs:26478` — so R9 says
-/// absent and the engine agrees in writing.
+/// polygon would be live and would be **refused** by `set_markup_style` with
+/// `EditError::StylePropertyNotApplicable` — so R9 says absent and the engine
+/// agrees in writing.
 ///
-/// ⚠ This paragraph used to read *"[`Current::endings`] is `Some` for a
-/// `MarkupSpec::Line` and nothing else, which matches `apply_markup_style`
-/// exactly."* True, and a restatement of the engine's list inside a shell. The
-/// spec arm still supplies the **pair**, because that is a value; it no longer
-/// decides whether the control exists.
+/// The `MarkupSpec` arm supplies the **pair**, because that is a value; it does
+/// not decide whether the control exists. Deriving existence from the arm would
+/// be a restatement of the engine's list inside a shell.
 pub(super) fn endings_row(
     ui: &mut Ui,
     current: &Current,

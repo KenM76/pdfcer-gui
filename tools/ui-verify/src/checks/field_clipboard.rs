@@ -622,7 +622,8 @@ fn drive_order(
             "★★★ The duplicate paste raised `{PASTE_LINE} mode=Duplicate` and page 1 still has \
              {boxes_after_dup} box(es), unchanged from {boxes_before_dup}. The duplicate paste \
              authors a field with the SOURCE'S OWN NAME and relies on `pdfcer-core` merging it \
-             into the existing field as a second widget (`edit.rs:13523`, `merged: true`). If \
+             into the existing field as a second widget — `paste_field` answering a \
+             `FieldPasteOutcome` with `merged: true`. If \
              nothing arrived, that merge did not happen — which would mean the engine now \
              REFUSES a duplicate name rather than merging, and the central claim in \
              `canvas::fieldclip`'s header is false. Check the trace for a refusal naming \

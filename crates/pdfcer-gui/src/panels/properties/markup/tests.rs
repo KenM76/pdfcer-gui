@@ -393,8 +393,8 @@ fn the_engines_answer_is_what_hides_a_row_not_the_spec_arm() {
         assert_eq!(c.offers_width(), width, "/{name}: width row");
         // The line-style chooser is the fourth reader of the same answer:
         // `/BS` `/D` is a border property, and `set_markup_style` refuses a
-        // `dash` on a text markup by the same predicate it refuses a
-        // `width` with (`edit.rs:26469`).
+        // `dash` on a text markup by the same predicate it refuses a `width`
+        // with.
         assert_eq!(c.offers_dash(), width, "/{name}: line-style row");
         assert_eq!(c.offers_endings(), endings, "/{name}: ending choosers");
         // …and each predicate is the engine's flag, not a table kept here.

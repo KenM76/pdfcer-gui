@@ -103,12 +103,13 @@
 //! > *"That list is the engine's to know. The first subtype that gains or loses
 //! > a border is the day our copy is wrong and nothing tells us."*
 //!
-//! ⇒ The engine shipped **`pdfcer_core::edit::MarkupStyleSupport::for_subtype`**
-//! (`edit.rs:4493`, the type at `edit.rs:4460`) with `takes_border`,
-//! `takes_interior` and `takes_endings` — and quoted that sentence into the
-//! type's own doc comment as its justification. [`Current::support`] is the
-//! answer, asked once per frame off the annotation's `/Subtype`; the three
-//! controls read it and **nothing here re-derives it**.
+//! ⇒ The engine answers it. **`pdfcer_core::edit::MarkupStyleSupport`** carries
+//! `takes_border`, `takes_interior` and `takes_endings`, and
+//! `MarkupStyleSupport::for_subtype` derives them from a `/Subtype`; that
+//! sentence is quoted into the type's own doc comment as its justification.
+//! [`Current::support`] is the answer, asked once per frame off the
+//! annotation's `/Subtype`; the three controls read it and **nothing here
+//! re-derives it**.
 //!
 //! ### ⚠ The distinction that must not be collapsed
 //!
@@ -127,12 +128,13 @@
 //!
 //! ### ★★ Belt and braces — a predicate to ask, and a refusal if you ask anyway
 //!
-//! The same Pass shipped `EditError::StylePropertyNotApplicable { id, subtype,
-//! property }` (`edit.rs:7353`), raised at `edit.rs:26460`–`26483` **before**
+//! The engine also refuses: `set_markup_style` raises
+//! `EditError::StylePropertyNotApplicable { id, subtype, property }` **before**
 //! anything is regenerated, so a width sent to a highlight leaves the file
-//! untouched. Both mechanisms are in use here and neither replaces the other:
-//! the predicate shapes the UI so the refusal is unreachable, and the refusal
-//! is what makes a drifted shell loud instead of silent.
+//! untouched. Both mechanisms are in use
+//! here and neither replaces the other: the predicate shapes the UI so the
+//! refusal is unreachable, and the refusal is what makes a drifted shell loud
+//! instead of silent.
 //!
 //! ★ Surfacing it costs this module nothing, and that is by design rather than
 //! by omission: `app::actions::funnel::vector_edit`'s `Err` arm
@@ -146,11 +148,10 @@
 //! ## ★★★ The genuine fifth state of the arrowhead chooser
 //!
 //! `MarkupStyle::endings` became `Option<StyleEdit<(LineEnding, LineEnding)>>`
-//! on the same day (`edit.rs:4390`): `Set` writes `/LE`, **`Clear` removes it**
-//! (`edit.rs:26557`). The four positions this chooser offers all *write* the
-//! key, so *"no arrowheads"* — `/LE [/None /None]` — and *"no line-ending entry
-//! at all"* are two different files that draw the same line, and only the first
-//! was reachable.
+//! on the same day: `Set` writes `/LE`, **`Clear` removes it**. The four
+//! positions this chooser offers all *write* the key, so *"no arrowheads"* —
+//! `/LE [/None /None]` — and *"no line-ending entry at all"* are two different
+//! files that draw the same line, and only the first was reachable.
 //!
 //! ### ★★ It is an ACTION below a separator, not a fifth peer — and here is why
 //!
@@ -338,19 +339,19 @@ pub enum MarkupEdit {
     Endings(StyleEdit<(LineEnding, LineEnding)>),
     /// ★★★ `/BS` `/S` + `/D` — the **line style**: dashed, or solid.
     ///
-    /// `RIBBON_IA.md` §5.8's eighth control, and the only one of the eight that
-    /// had *"no engine verb at all"* until the afternoon of 2026-09-06.
-    /// `MarkupStyle::dash` (`pdfcer-core` `edit.rs:4422`) is that verb, and its
-    /// two arms are the two things this chooser can mean: `Set(dash)` makes the
-    /// border dashed with that pattern, `Clear` makes it solid.
+    /// `RIBBON_IA.md` §5.8's eighth control, and the only one of the eight
+    /// that had *"no engine verb at all"* until the afternoon of 2026-09-06.
+    /// `MarkupStyle::dash` is that verb, and its two arms are the two things
+    /// this chooser can mean: `Set(dash)` makes the border dashed with that
+    /// pattern, `Clear` makes it solid.
     ///
     /// ★★ **The third arm is `None`, and it is what NOT touching the control
     /// does.** A restyle that does not mention `dash` preserves whatever the
-    /// annotation has, *including a dash pdfcer never authored*
-    /// (`edit.rs:4396-4425`) — so an operator who changes a foreign-dashed
-    /// mark's colour keeps their dash, which is exactly the defect this shell
-    /// filed and the reason [`crate::canvas::markup::linestyle::DashReading::Foreign`]
-    /// is a state the chooser can show and not one it has to repair.
+    /// annotation has, *including a dash pdfcer never authored* — so an
+    /// operator who changes a foreign-dashed mark's colour keeps their dash,
+    /// which is exactly the defect this shell filed and the reason
+    /// [`crate::canvas::markup::linestyle::DashReading::Foreign`] is a state
+    /// the chooser can show and not one it has to repair.
     ///
     /// The pattern is built by
     /// [`crate::canvas::markup::linestyle::LineStyle::style_edit`], which is
@@ -746,8 +747,8 @@ impl Current {
 
         // ★★★ **The capability question, asked of the engine, off the same key
         // the engine itself reads.** `set_markup_style` derives its
-        // `MarkupStyleSupport` from `/Subtype` on the annotation dictionary
-        // (`edit.rs:26453`–`26460`); so does this. One key, one function, one
+        // `MarkupStyleSupport` from `/Subtype` on the annotation dictionary; so
+        // does this. One key, one function, one
         // answer — which is what makes a control shown here and a call refused
         // there impossible to disagree.
         //

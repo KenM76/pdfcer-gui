@@ -16,7 +16,7 @@
 //! ## ★★★ FACT ONE — A STATUS IS **APPENDED**, NOT SET
 //!
 //! This is the fact the whole module is shaped around, and it is the engine's
-//! own, twice over (`edit.rs:26804`, `add_review_state`):
+//! own, twice over, in `add_review_state`'s doc comment:
 //!
 //! > *"★★ THE STATUS IS NOT WRITTEN ONTO THE ANNOTATION IT DESCRIBES —
 //! > §12.5.6.3 puts it on a **separate** `/Text` annotation that points at the

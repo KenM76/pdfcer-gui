@@ -25,9 +25,8 @@
 //! subtypes `set_markup_style` refuses: `/Text`, `/FreeText`, `/Stamp`. Every
 //! word was true **of the only annotation-style verb that existed when it was
 //! written**. `pdfcer-core` shipped a second one the same afternoon —
-//! `set_text_annot_style` (`edit.rs:27124`), a different reader, a different
-//! style struct — and it restyles a sticky note's icon and colour and a
-//! stamp's colour.
+//! `set_text_annot_style`, a different reader, a different style struct — and
+//! it restyles a sticky note's icon and colour and a stamp's colour.
 //!
 //! ⇒ From that moment the sentence made a **false claim about two of the three
 //! subtypes it was shown for**, and false in the direction that matters: it

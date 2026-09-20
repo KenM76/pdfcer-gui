@@ -327,65 +327,32 @@ pub const fn cancel() -> &'static str {
 // ===========================================================================
 //
 // ★★★ **A `/FreeText`'s `/Contents` and the words painted in it are kept in
-// step BY THE ENGINE now, in the same command and the same undo entry. The
-// disclosure this section carried for one morning is deleted; the shape of the
-// correction is kept, because the shape is the useful part.**
+// step BY THE ENGINE, in the same command and the same undo entry.**
 //
+// `annot_author::free_text` writes the operator's words TWICE — into the `/AP`
+// `/N` appearance stream, which is what the page actually shows, and into
+// `/Contents` — and R43 is the engine's own rule that *"pdfcer paints from
+// `/AP` or not at all."* A verb that rewrote only the dictionary would leave
+// the page showing the words the box was made with, and the divergence would
+// have no visible first moment, because at authoring time the two strings are
+// the same.
 //
-// At `pdfcer-core` v0.42.0 (`821ab47`, the pin this shell then took):
+// `EditSession::set_markup_note` closes that itself, opt-out-free. On a
+// `/FreeText` whose appearance pdfcer would have drawn, the command carries
+// **two** `ObjectWrite`s — the dictionary and the `/AP` stream — and
+// [`pdfcer_core::edit::MarkupNoteChange::appearance_rebaked`] reports whether
+// the second happened. `rebake_free_text_appearance` is what reads the
+// ORIGINAL dictionary back into a spec, re-bakes and commits, so the two
+// halves share one undo entry and can never be undone apart.
 //
-// 1. `annot_author::free_text` writes the operator's words TWICE — into the
-//    `/AP` `/N` appearance stream that is what the page actually shows, and
-//    into `/Contents`. At the moment a text box is placed the two are the same
-//    string, so the divergence had no visible first moment.
-// 2. `EditSession::set_markup_note` committed **one object** — the annotation
-//    dictionary. The `/AP` stream is a separate object and was not in the
-//    command.
-// 3. R43, in the engine's own words: *"pdfcer paints from `/AP` or not at
-//    all."*
+// ⇒ There is therefore **no hint before the write**, and no useful one is
+// available: whether an appearance is foreign is measured *inside* the verb,
+// by baking and comparing bytes, so no editor drawn before the call can know
+// it. The disclosure is off-canvas and after the fact, and it keys on the
+// engine's own answer rather than on a subtype this shell classified.
 //
-// ⇒ Editing a placed text box's note rewrote `/Contents` and left the page
-// showing the words the box was made with. Not a bug in the call — the call
-// did exactly what it documented — but an operator typing into a box and
-// watching the page not change had been told nothing.
-//
-// It could not be closed from this side. Regenerating an appearance needs the
-// annotation read back into a `TextAnnotSpec`, and there was no reader for the
-// text-bearing family anywhere in the crate. So this shell did the only two
-// things open to it: it **disclosed**, off-canvas and twice — a line in the
-// note editor before the write, and the first sentence of the status line
-// after it — and it **filed**
-// `request_a_text_boxs_painted_words_cannot_be_rewritten.md`, naming
-// `annot_author::text_spec_from_dict` as the single unblocker.
-//
-// # ★★ What replaced it, the same afternoon
-//
-// `pdfcer-core` `95a936e` (`Pass 258.1`) shipped that reader and did not stop
-// there: **`set_markup_note` re-bakes the appearance itself**, opt-out-free,
-// inside the same command, so the two halves share one undo entry and can
-// never be undone apart. Read, not quoted:
-//
-// * `edit.rs:26137` — `pub fn set_markup_note`.
-// * `edit.rs:26272-26289` — the `/FreeText` arm; on a hit the command carries
-//   **two** `ObjectWrite`s, the dictionary and the `/AP` stream, and
-//   `appearance_rebaked` is `rebake.is_some()`.
-// * `edit.rs:27000` — `rebake_free_text_appearance`, which reads the ORIGINAL
-//   dictionary into a spec, re-bakes and commits.
-//
-// So the before-the-write hint is **deleted**. There is nothing left for it to
-// warn about, and it could not warn about what remains: whether an appearance
-// is foreign is measured *inside* the verb, by baking and comparing bytes, so
-// no editor drawn before the call can know it. The two status-line sentences
-// survive, narrowed to the one case that is still real, and they key on the
-// engine's own answer instead of on a subtype this shell classified.
-//
-// ★ This deletion is the standing rule, not a tidy-up: *delete the workaround
-// when the cause is removed.* A mechanism with no caller rots, and a
-// limitation sentence has an hours-long shelf life. A shell still warning an
-// operator about a defect the engine closed the same afternoon is lying to
-// them, and it is the kind of lie nobody notices because it reads as caution.
-//
-// # ★★★ The half that survives, and why the subtype test is no longer enough
+// # ★★★ Which `appearance_rebaked == false` owes a sentence, and why the
+// subtype test is not enough
 //
 // [`pdfcer_core::edit::MarkupNoteChange::appearance_rebaked`] is `false` on
 // three quite different occasions and **only one of them owes an operator a
@@ -723,7 +690,7 @@ mod tests {
         // words, in one undo entry, and the operator can see it.
         assert!(
             note_edit_disclosure("FreeText", true).is_none(),
-            "set_markup_note re-baked the appearance (edit.rs:26272), so there \
+            "set_markup_note re-baked the appearance in the same command, so there \
              is no second half left to disclose"
         );
         assert!(

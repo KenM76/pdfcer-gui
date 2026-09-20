@@ -410,13 +410,13 @@ pub fn form_field_commit_tooltip() -> &'static str {
 ///
 /// The obvious sentence — *"the value changes but the page will not"* — is
 /// what the old shell's equivalent tried to say, and it is **false against
-/// this engine**. `EditSession::set_button_state` refuses any state other
-/// than `Off` that no widget defines, by name:
-/// `EditError::FieldStateUnknown { name, state, available }`
-/// (`edit.rs:12607-12629`). `pdfcer_core::forms::Widget::on_states` lists the
-/// states the widget's `/AP` `/N` sub-dictionary defines, **excluding `Off`**
-/// — so an empty list means there is no state pdfcer may select, and a tick
-/// here would be an affordance for a call that always errors (R83).
+/// this engine**. `EditSession::set_button_state` refuses any state other than
+/// `Off` that no widget defines, by name:
+/// `EditError::FieldStateUnknown { name, state, available }`.
+/// `pdfcer_core::forms::Widget::on_states` lists the states the widget's `/AP`
+/// `/N` sub-dictionary defines, **excluding `Off`** — so an empty list means
+/// there is no state pdfcer may select, and a tick here would be an affordance
+/// for a call that always errors (R83).
 ///
 /// The control is therefore drawn **disabled and explained**, exactly like a
 /// `/Locked` layer row, and this is the explanation. It says the document is

@@ -1,51 +1,41 @@
-//! # `annotation_rotation_grows` — the operator's *"the object gets larger with
-//! each enactment of the tool"*, reduced to pixels
+//! # `annotation_rotation_grows` — rotation composes, and the one annotation
+//! where it cannot
 //!
-//! ## ★★★ STATUS: THIS TEST ASSERTS A DEFECT, AND IT IS SUPPOSED TO PASS
+//! `pdfcer-core`'s `rotate_annotation` derives the new `/Rect` from the mark's
+//! own artwork: the transformed appearance `/BBox` where there is an `/AP`, the
+//! bounded rotated geometry keys where there is not. Both routes compose — N
+//! turns totalling θ draw the same picture as one turn of θ — and the outcome
+//! names the route it took through `RectDerivation`.
 //!
+//! An annotation with **neither** an appearance stream nor rotatable geometry
+//! has only `RectDerivation::PreviousRect` available, which bounds the previous
+//! bound and therefore compounds. §12.5.2 requires `/Rect` upright and such an
+//! annotation has nowhere else to record an orientation, so no rule can do
+//! better; what the shell owes is disclosure, not a fix.
 //!
+//! This file pins both ends of that fork. The first test measures that the
+//! composing route composes; the second that the non-composing route is still
+//! reachable, still grows, and still says which rule it took — because a
+//! disclosure whose trigger never fires is indistinguishable from one that is
+//! broken.
 //!
-//! > *"fixed the rotate bug in the review objects where the object gets larger
-//! > with each enactment of the tool."*
+//! ## Why the oracle is an A/B and not an expected number
 //!
-//! He is right, and the effect is **not** the one this shell already discloses.
-//! `pdfcer-core`'s `rotate_annotation` doc comment says *"`/Rect` grows, and
-//! that is correct … **The artwork does not grow**; only the rectangle that
-//! bounds it does."* That sentence is true of the **first** rotation and false
-//! of the second. Measured below: a mark turned 15° four times is drawn
-//! **1.93× wider and 1.42× taller** than the same mark turned 60° once.
+//! *"A rotated rectangle's bounding box is larger, and that is normative"* is a
+//! true sentence that can be used to justify almost any measurement. It cannot
+//! justify **two different pictures from the same total rotation**. One 60°
+//! turn and four 15° turns must produce the same file to within float noise,
+//! and no argument about bounding boxes can absorb their differing.
 //!
-//! ## The mechanism, from the engine's own source (`edit.rs` at pin `e1bdb6c`)
+//! ## Why the measurement is a DIFF against a bare render
 //!
-//! Two individually-correct things that diverge after one application:
-//!
-//! 1. `edit.rs:24997` sets the new `/Rect` to the upright bound of **the four
-//!    corners of the current `/Rect`**, rotated. §12.5.2 requires `/Rect`
-//!    upright, so bounding is unavoidable — but bounding the *previous bound*
-//!    compounds.
-//! 2. `edit.rs:25041` composes the rotation into the appearance's own
-//!    `/Matrix`, which is exactly right and is what makes rotation work on
-//!    artwork pdfcer did not draw.
-//!
-//! After turn 1 the appearance's transformed `/BBox` bounds to precisely the
-//! new `/Rect`, so §12.5.5 step (c)'s placement matrix **A** is a pure
-//! translation and the artwork is drawn at its true size. After turn 2 the
-//! `/Rect` has been bounded twice while the `/Matrix` has only accumulated to
-//! 2θ — so the transformed `/BBox` is *smaller* than the rectangle, and step
-//! (c) **scales it up to fit**, because §12.5.5 requires the appearance box to
-//! fill `/Rect` exactly. The picture grows. Every further turn multiplies it.
-//!
-//! ## ★★ Why the oracle is an A/B and not an expected number
-//!
-//! Because *"a rotated rectangle's bounding box is larger, and that is
-//! normative"* is a true sentence that can be used to justify almost any
-//! measurement. It cannot justify **two different pictures from the same total
-//! rotation**. One 60° turn and four 15° turns must produce the same file to
-//! within float noise; that they do not is a claim no argument about bounding
-//! boxes can absorb.
-//!
-//! ## ★ And why the measurement is a DIFF against a bare render
-//!
+//! Reading `/Rect` off the file would measure the rectangle, and the rectangle
+//! is not the complaint: §12.5.5 step (c) scales the appearance box to fill
+//! `/Rect` exactly, so it is the *placement matrix* that decides whether the
+//! artwork is drawn at its true size. Only a raster shows that. Diffing against
+//! a render of the same page with no annotation isolates the mark without the
+//! test needing to know anything about the page's own content, and it fails
+//! loudly — see `diff_box` — when the mark was not drawn at all.
 
 use pdfcer_core::annot_author::{Color, MarkupSpec};
 use pdfcer_core::edit::EditSession;
@@ -81,7 +71,7 @@ fn fixture() -> pdfcer_core::document::Document {
 
 /// Page 1 rendered at [`SCALE`], as raw RGB triples plus the row stride.
 ///
-/// ★ Through `render_page_with_view` on the **session's** view, not on the
+/// Through `render_page_with_view` on the **session's** view, not on the
 /// document, so what is rasterised is the session's unsaved state — the same
 /// route `render::worker` takes. Rendering the loaded document would show the
 /// page before any of these edits.
@@ -158,44 +148,39 @@ fn drawn_size(turns: usize, each: f64) -> (u32, u32) {
     (x1 - x0, y1 - y0)
 }
 
-/// ★★★ **THE REGRESSION NET. Same total angle, same picture — at 1, 4 and 24
-/// turns.**
-///
+/// The regression net: same total angle, same picture, at 1, 4 and 24 turns.
 ///
 /// | | drawn size (device px @ scale 2) |
 /// |---|---|
 /// | authored, unrotated | 279 × 120 — the 140 × 60 pt artwork, correct |
 /// | one 60° turn | **243 × 302** — 140·cos60 + 60·sin60 = 121.96 pt |
-/// | four 15° turns | **243 × 302** — identical, which is the fix |
+/// | four 15° turns | **243 × 302** — identical, which is the property |
 /// | twenty-four 2.5° turns | **243 × 302** — identical |
 ///
-/// # Why 24 and not just 4
+/// # Why 24 turns and not just 4
 ///
-/// The engine's own suggestion, and it is a good one: **the defect compounded
-/// multiplicatively**, so a residual too small for a four-turn tolerance to see
-/// is unmissable by twenty-four. A 1 % per-turn error is 4 % at four turns —
-/// inside a two-pixel window on a 243-pixel shape — and 80 % at twenty-four.
+/// A non-composing derivation compounds **multiplicatively**, so a per-turn
+/// residual too small for a four-turn tolerance to see is unmissable by
+/// twenty-four: 1 % per turn is 4 % at four turns — inside a two-pixel window
+/// on a 243-pixel shape — and 80 % at twenty-four.
 ///
-/// # ★★ The unrotated control is not decoration
+/// # The unrotated control is not decoration
 ///
 /// It is asserted **exactly**, and it is what makes the two equalities below it
 /// mean anything: a build that rotated **nothing at all** would satisfy every
-/// *"these two are equal"* assertion in this file perfectly. The engine makes
-/// the same point about its own A/B and pins a positive control for it.
+/// *"these two are equal"* assertion in this file perfectly.
 ///
-/// ⇒ So this asserts three things and needs all three: the instrument reads the
+/// So this asserts three things and needs all three: the instrument reads the
 /// right number on an untouched mark, one turn moves it to the trigonometric
 /// answer, and repeating the turn does not change the answer.
 ///
-/// # ★ A warning from the engine about the SHAPE, worth keeping
+/// # The shape is load-bearing
 ///
-/// They sabotaged their artwork rule and their own A/B **stayed green**, because
-/// their test shape was a `/Polygon` — which also carries `/Vertices` and fell
-/// through to the geometry rule, which composes too. Their A/B was measuring
-/// *"some rule composes"* while its name claimed it measured the artwork one.
-///
-/// This file uses a `/Square`, which has no rotatable geometry keys, so it can
-/// only be exercising `RectDerivation::Artwork`. **If the shape is ever
+/// A shape carrying `/Vertices` falls through to the geometry rule, which also
+/// composes — so an A/B built on a `/Polygon` stays green with the artwork rule
+/// sabotaged, measuring *"some rule composes"* while its name claims it
+/// measures the artwork one. A `/Square` has no rotatable geometry keys, so it
+/// can only be exercising `RectDerivation::Artwork`. **If the shape is ever
 /// changed, pin the route** — the second test in this file is what pins the
 /// other end of that fork.
 #[test]
@@ -220,8 +205,8 @@ fn the_same_total_rotation_draws_the_same_picture_however_many_turns_it_takes() 
         "one 60 degree turn measured {once:?} and trigonometry says about 244 x 302"
     );
 
-    // ★★★ THE PROPERTY. `pdfcer-core` `Pass 155.1` derives `/Rect` from the
-    // artwork rather than from the previous `/Rect`, so this composes.
+    // THE PROPERTY. `rotate_annotation` derives `/Rect` from the artwork rather
+    // than from the previous `/Rect`, so this composes.
     for (label, measured) in [
         ("four 15 degree turns", four),
         ("24 2.5 degree turns", twenty_four),
@@ -233,7 +218,7 @@ fn the_same_total_rotation_draws_the_same_picture_however_many_turns_it_takes() 
              A rotation must compose: N turns totalling theta draw the same picture as one turn \n\
              of theta. If these differ, `/Rect` has gone back to being derived from the PREVIOUS \n\
              rectangle instead of from the artwork, and the placement rule then scales the \n\
-             artwork up to fill an oversized box — the operator's own 2026-09-07 report, \n\
+             artwork up to fill an oversized box — the operator's own report, \n\
              \"the object gets larger with each enactment of the tool\".\n\
              \n\
              Read `rect_derived=` off a `set-annotation-rotation-applied` trace line, or run \n\
@@ -244,8 +229,8 @@ fn the_same_total_rotation_draws_the_same_picture_however_many_turns_it_takes() 
     }
 }
 
-/// ★★ **The one case that still does not compose, asserted so it is a KNOWN
-/// limit rather than a surprise.**
+/// The one case that does not compose, asserted so it is a known limit rather
+/// than a surprise.
 ///
 /// `RectDerivation::PreviousRect`: an annotation with **neither** an appearance
 /// stream **nor** rotatable geometry. Its artwork *is* its rectangle, §12.5.2
