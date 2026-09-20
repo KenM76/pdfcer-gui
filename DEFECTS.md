@@ -1484,6 +1484,49 @@ binary that does nothing but open a window belongs in the same run, so "the
 machine could not make a window at all" is separable from "this application could
 not".
 
+### D66 — OPEN: a recovered document cannot be saved, and the operator finds out after he has edited it
+
+`EditSession::to_incremental_bytes` refuses a document whose base was loaded
+through cross-reference recovery, with `WriteError::RecoveredBaseForbidsIncremental`.
+That refusal is the engine's **first** guard, ahead of the encrypted-base one —
+a recovered base's cross-reference table was invalid, so §5.6's never-normalize
+rule does not bind it and its save has to be a full rewrite.
+
+`app::save::write_copy` has exactly one fork, and it is the staged redaction
+(that module's §1.1). Nothing on the save path asks
+`Document::loaded_via_recovery()` — `grep -rn 'loaded_via_recovery' crates/`
+returns one hit, and it is `sign::Standing`'s `recovered` field, where the
+signing window reads it and refuses **with a sentence, before the operator
+commits to anything**. Save has no equivalent.
+
+So a recovered document reaches `to_incremental_bytes` from `write_copy`, the
+error propagates through `SaveError::Serialize`, and that variant's `Display`
+arm renders it as:
+
+> the engine could not build the update: incremental save of a recovered
+> document is refused; its base cross-reference was invalid, so its save must
+> be a full rewrite (save_full)
+
+`save_full` is an engine function. It is not a command in this shell, it is not
+in `RIBBON_IA.md`, and there is nothing the operator can do with the name.
+
+**Two separate defects, and the second is the worse one.**
+
+1. The sentence is the engine's, in the engine's vocabulary, for a state the
+   operator cannot act on. That is a text defect and it is cheap.
+2. **The shell knew before he started.** `loaded_via_recovery()` is answerable
+   at open. Letting an hour of editing accumulate against a document that
+   cannot be saved is the failure mode; saying so at open, or routing to the
+   full rewrite the engine names as the supported path, is the fix.
+
+`app/save.rs`'s §1 argues at length that incremental must never silently fall
+back to a full rewrite, and lists the staged redaction as *the* exception. A
+recovered base is a second case where the engine itself requires the full
+rewrite — the module's argument does not cover it, and the route does not
+exist. Whether the shell routes automatically or refuses at open with a
+sentence is an operator decision, because a full rewrite discards the previous
+revision and destroys existing signatures.
+
 ---
 
 ## Do not weaken
