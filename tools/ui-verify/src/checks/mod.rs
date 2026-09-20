@@ -1300,6 +1300,13 @@ pub mod chunk_click;
 /// can see the narrowing it tests.
 pub mod chunk_multi_move;
 
+/// The fourth of that row: **O215 ask 4's band half, driven** — a rubber-band
+/// drawn inside a text block takes the LINES it reaches rather than ascending
+/// to the block, and Shift and Ctrl refine that set. Its header carries why
+/// both bands must begin clear of the text object's box, and why they are
+/// aimed along the vertical axis alone.
+pub mod chunk_band;
+
 /// ★ The operator's own report, driven: Edit text on a REAL CAD sheet, aimed at a
 /// point the ENGINE says carries text. Its header carries why two passing text
 /// checks were not enough — both drive fixtures this repository generated to

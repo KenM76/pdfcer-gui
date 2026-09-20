@@ -355,12 +355,25 @@ plural arm reddens the drag step naming the singular verb; and a `body_under`
 that answers on the object alone leaves every earlier step green and reddens
 the gap press alone.
 
-**Status stays FILED.** The **rubber-band** half of ask 4 is unbuilt —
-`SelectionState::marquee` hard-sets `SelectionLevel::Object`, so a band dragged
-while standing inside a text block ascends out of it and takes the block. Ask 5
-— the chunk itself following the pointer rather than a rectangle — is unbuilt:
-`canvas::shapes::for_move_subject` answers `None` for every text-line subject.
-Ask 2 is the engine's (`G032`).
+**Ask 4's third gesture, the rubber-band, is built.** A band dragged while a
+chunk is entered sweeps at the chunk rung: `canvas::marquee::take_chunks` forks
+ahead of the object band, `canvas::chunks::within` measures each line against
+the band with the same call that draws the boxes, and the direction rule is the
+one every other band here obeys — left to right encloses, right to left
+crosses. The three modifier arms are the click's own `Combine`: plain replaces,
+Shift adds, Ctrl subtracts. What it leaves is an ordinary chunk set, so the
+plural verb, the single undo entry, the counting status row and the narrowed
+press all apply to it unchanged.
+`a_rubber_band_inside_a_note_takes_its_lines` drives it on `paragraph.pdf` and
+has been falsified four ways, one per arm it can lose: a `take_chunks` that
+never forks reddens the first band quoting the object-rung trace line by name;
+a non-combining `Add` arm reddens the Shift band alone; a no-op `Subtract` arm
+reddens the Ctrl band alone; and a deleted plural move arm leaves every band
+step green and reddens the drag.
+
+**Status stays FILED.** Ask 5 — the chunk itself following the pointer rather
+than a rectangle — is unbuilt: `canvas::shapes::for_move_subject` answers
+`None` for every text-line subject. Ask 2 is the engine's (`G032`).
 
 ## O213 — ✅ **CLOSED BY HIM** — editing one line of a title-block shifts that line to the right
 

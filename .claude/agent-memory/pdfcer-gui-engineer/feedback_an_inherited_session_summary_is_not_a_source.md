@@ -44,3 +44,40 @@ Related: [[feedback_a_backlog_row_is_a_record_not_evidence]],
 [[feedback_a_capability_claim_in_product_copy_needs_the_same_citation_as_a_limitation_claim]],
 [[feedback_a_citation_that_supports_my_theory_may_be_about_a_different_document]],
 [[feedback_operator_requests_live_in_a_file_not_a_conversation]].
+
+---
+
+**★ 2026-09-19 — a FORMULA carried across a summary is worse than a count,
+because it reads as re-derivable and nobody re-derives it.**
+
+An inherited summary described `fixtures/paragraph.pdf` as having its text
+baselines at `y = 704 − 16·index`. `fixture::text_block_target` actually states
+them literally — 700, 684, 668, 652, 636, 620 — and `704 − 16·index` is the
+formula for `text_chunk_point`, the **aim** point, which is `baseline + 4`. One
+helper's arithmetic had been carried across the summary under the other
+helper's name.
+
+The plan built on it put a driven rubber-band's floor at `y = 668`, which under
+the stated geometry is **exactly line 2's baseline**: a band whose edge lies on
+a glyph row, so whether it took two lines or three would have depended on the
+aim conversion's rounding. It would have passed, intermittently, and read as a
+selection defect when it failed.
+
+★★ A raw count (*"61 gates pass"*) announces itself as a measurement and this
+project re-measures it by standing rule. A **formula** announces itself as
+*derived*, which reads as self-justifying — and a formula naming the wrong
+subject is wrong by a constant at every index, so it is internally consistent
+and every spot-check agrees with it.
+
+**How to apply:**
+- Before aiming anything at a fixture, open the fixture **helper** and read the
+  numbers it states. Never take geometry from a summary, a prior plan, or a
+  check header — including one you wrote.
+- Treat *"baseline"*, *"top"*, *"aim point"* and *"box"* as four different
+  numbers until the helper says otherwise. The difference here was 4 pt and it
+  was the whole error.
+- Aim a driven gesture along the axis whose numbers the fixture **states**, and
+  leave several points of clearance from the nearest thing it must miss. An
+  edge that lands on a stated coordinate is a coin toss delegated to rounding.
+- Related: [[feedback_a_verbatim_quotation_of_another_files_count_goes_stale_invisibly]],
+  [[feedback_a_measured_note_that_names_the_wrong_axis_is_wrong_by_the_aspect_ratio]].

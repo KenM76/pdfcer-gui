@@ -141,6 +141,54 @@ pub fn under(
     hit
 }
 
+/// **Which chunks of `object` a released rubber-band takes**, ascending and
+/// unique, in the canvas space [`outlines`] draws in.
+///
+/// `crossing` is the band's own direction bit: a right-to-left drag takes
+/// anything it **touches**, a left-to-right one only what it **surrounds**.
+/// One rule at both rungs, because an operator who learns the direction on a
+/// page of objects and then finds it does not hold inside a text block has
+/// learned a rule with an exception in it.
+///
+/// Empty means the band reached no chunk, which is the caller's signal that
+/// this was not a chunk band at all — see [`crate::canvas::marquee::on_release`]
+/// for what it does with that.
+#[must_use]
+pub fn within(doc: &OpenDoc, object: TargetId, band: Rect, crossing: bool) -> Vec<usize> {
+    let Some(provider) = doc.page_objects() else {
+        return Vec::new();
+    };
+    let count = provider.text_line_count_of(object).min(MAX_CHUNK_BOXES);
+    let mut taken = Vec::with_capacity(count);
+    for line in 0..count {
+        // A chunk the provider will not measure cannot be reached by a band
+        // either: there is no rectangle to test, and guessing one would select
+        // a line the operator never saw a box around.
+        let Some(rect) = provider.text_line_bounds_canvas_of(object, line) else {
+            continue;
+        };
+        if reaches(band, rect, crossing) {
+            taken.push(line);
+        }
+    }
+    drop(provider);
+    taken
+}
+
+/// Whether a band takes one chunk, under the direction rule.
+///
+/// Its own function so the rule can be tested without a decomposed page: the
+/// failure it guards against is a build where both arms touch, which behaves
+/// identically for every crossing band and takes far too much for every
+/// enclosing one — and which no test of `within`'s plumbing would notice.
+fn reaches(band: Rect, chunk: Rect, crossing: bool) -> bool {
+    if crossing {
+        band.intersects(chunk)
+    } else {
+        band.contains_rect(chunk)
+    }
+}
+
 /// Why no chunk outlines were drawn.
 ///
 /// A fixed vocabulary rather than free text, for the reason
@@ -245,6 +293,32 @@ pub fn outlines(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// **A band that clips a chunk takes it only when it is a crossing one.**
+    ///
+    /// The one rectangle pair that tells the two directions apart: fully
+    /// outside is refused by both and fully inside is taken by both, so a build
+    /// in which the enclosing arm also merely touched would pass every other
+    /// case. Left-to-right encloses, right-to-left touches — the page-rung
+    /// band's rule, unchanged at this rung.
+    #[test]
+    fn only_a_crossing_band_takes_a_chunk_it_merely_clips() {
+        let chunk = Rect::from_min_max(egui::pos2(100.0, 100.0), egui::pos2(300.0, 112.0));
+        let clipping = Rect::from_min_max(egui::pos2(200.0, 90.0), egui::pos2(400.0, 130.0));
+        assert!(reaches(clipping, chunk, true), "a crossing band takes it");
+        assert!(
+            !reaches(clipping, chunk, false),
+            "an enclosing band does not, because it does not surround it"
+        );
+
+        let around = Rect::from_min_max(egui::pos2(90.0, 90.0), egui::pos2(400.0, 130.0));
+        assert!(reaches(around, chunk, false), "surrounded is taken");
+        assert!(reaches(around, chunk, true), "and touched, by both rules");
+
+        let elsewhere = Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(50.0, 50.0));
+        assert!(!reaches(elsewhere, chunk, true), "a miss is a miss");
+        assert!(!reaches(elsewhere, chunk, false));
+    }
 
     /// The default is ON, and it is the default a *fresh* context reports —
     /// which is the value an operator who has never touched the switch gets.

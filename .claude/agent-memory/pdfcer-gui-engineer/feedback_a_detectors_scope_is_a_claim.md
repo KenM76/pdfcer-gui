@@ -1,6 +1,6 @@
 ---
 name: a-detectors-scope-is-a-claim
-description: One gate reported clean over three different blind spots — 77% of the tree, 16% of files, 42% of titles — each time in the words a real all-clear uses; widen the input set, then falsify against the newly admitted shape
+description: Gates and cargo alike report clean over a scope nobody read - three blind spots in one gate, a line-unit trap, and a `-p` flag that narrows clippy to one package
 metadata:
   type: feedback
 ---
@@ -42,6 +42,17 @@ fix: re-wrapping to make it quiet teaches the next reader that the rule is line
 length. Exempt it in place instead, and write the asymmetry into the gate's
 header.
 
+**A fifth shape, and it is not a gate at all - it is a FLAG on the command
+you reach for while fixing one.** `cargo clippy --release -p ui-verify` came
+back clean on a change that touched two crates, and the workspace gate then
+failed on `too_many_arguments` in `pdfcer-gui`. `-p` is a scope, so a green
+`-p X` is a claim about X and nothing else - and the temptation to narrow is
+strongest exactly when a gate sweep is slow and you want a quick answer about
+the file you just wrote.
+
+The workspace command is the only one whose green means what the gate's green
+means. Anything narrower is a pre-check and must be reported as one.
+
 **How to apply:**
 
 - When you touch or trust a detector, read **what it globs, what it opens, and
@@ -58,6 +69,9 @@ header.
 - The narrow-regex leg is done by **overriding the constant on the imported
   module** from the falsification script, so nothing on disk changes and there
   is no restore to get wrong.
+- Before quoting a build or lint green, read its **scope flags** the same way
+  you read a gate's glob. `-p`, `--lib`, `--tests` and a bare `cargo check` all
+  answer about less than the gate does.
 - Suspect the scope first whenever a long-green instrument suddenly finds a lot.
   The finding is usually not "seven defects landed"; it is "seven defects were
   always there and the scope just moved".

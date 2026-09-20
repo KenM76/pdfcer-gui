@@ -50,6 +50,8 @@
 
 use pdfcer_core::vector::{FormMarquee, MarqueeMode};
 
+use crate::app::state::OpenDoc;
+use crate::canvas::selection::{SelectionLevel, SelectionState};
 use crate::canvas::target::TargetId;
 
 /// Which rule a band dragged in this direction selects by.
@@ -138,11 +140,10 @@ pub fn without_page_wrappers(
 /// **What a band does to the selection it lands on** — `OPERATOR_REQUESTS.md`
 /// O104.
 ///
-/// Until 2026-09-03 a band could only replace or add, which is half of the
-/// operator's report *"I can't unselect things once I have selected them"*. On
-/// a CAD sheet with hundreds of overlapping strokes, taking one object back out
-/// by clicking it precisely is often not practical; a band is how the work is
-/// actually done, and ours had no way to remove.
+/// A band subtracts as well as adds, because of the operator's report *"I can't
+/// unselect things once I have selected them"*. On a CAD sheet with hundreds of
+/// overlapping strokes, taking one object back out by clicking it precisely is
+/// often not practical; a band is how the work is actually done.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Combine {
     /// No modifier: the band's hits become the selection.
@@ -158,6 +159,47 @@ pub enum Combine {
     /// "toggle out". One modifier, one meaning: **Ctrl takes things out of a
     /// selection wherever you use it.**
     Subtract,
+}
+
+/// Every variant must appear in [`Combine::ALL`].
+///
+/// The arms are counted by the compiler, so adding a variant to [`Combine`]
+/// stops this crate compiling and names the variant it is missing. `ALL` is
+/// the declaration immediately below, which is where the answer goes.
+const _: () = {
+    const fn _combine_is_listed_in_all(combine: Combine) {
+        match combine {
+            Combine::Replace | Combine::Add | Combine::Subtract => (),
+        }
+    }
+};
+
+impl Combine {
+    /// **Every combine there is**, in the order a modifier reaches for them:
+    /// no modifier, Shift, Ctrl.
+    ///
+    /// The one authoritative list. Anything that has to visit each combine
+    /// walks this rather than writing its own copy, because a private copy
+    /// cannot go red when the set grows and the guard above only watches this
+    /// one.
+    pub const ALL: [Self; 3] = [Self::Replace, Self::Add, Self::Subtract];
+
+    /// The word the diagnostic trace spells this with.
+    ///
+    /// A word rather than the derived `Debug` form: a check reads this field by
+    /// equality, and a `Debug` spelling is a rename away from breaking one
+    /// silently.
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            // ui-text-exempt: diagnostic trace vocabulary, never displayed.
+            Self::Replace => "replace",
+            // ui-text-exempt: diagnostic trace vocabulary, never displayed.
+            Self::Add => "add",
+            // ui-text-exempt: diagnostic trace vocabulary, never displayed.
+            Self::Subtract => "subtract",
+        }
+    }
 }
 
 /// Which [`Combine`] a pair of modifiers asks for.
@@ -176,6 +218,27 @@ pub const fn mode(shift: bool, ctrl: bool) -> Combine {
     }
 }
 
+/// **A released band, described once**: where it was drawn, which way, and what
+/// it is to do with what it reached.
+///
+/// The three travel together through every arm of the release and are decided
+/// in one place, by the gesture. Bundling them is what keeps a rung's entry
+/// point from growing an argument list nobody can read a call site of, and it
+/// is also the seam that makes the two rungs' bands provably the same gesture:
+/// the chunk arm and the object arm are handed the same value, so neither can
+/// come to disagree about direction or about which modifier means what.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Band {
+    /// The rectangle swept, in **canvas** space — the space the chunk boxes
+    /// and `CanvasTargetProvider::bounds` are already in.
+    pub rect: egui::Rect,
+    /// Right to left, so the band takes whatever it **touches**. Left to right
+    /// encloses. See this function's own header for the operator's report.
+    pub crossing: bool,
+    /// What to do with what was reached.
+    pub combine: Combine,
+}
+
 /// **Everything a released selection band does**, so `canvas::interact` holds
 /// the wiring and this module holds the behaviour.
 ///
@@ -190,20 +253,133 @@ pub const fn mode(shift: bool, ctrl: bool) -> Combine {
 /// two are independent: *what the band reaches* and *what it then does with
 /// it*, which is why they are separate arguments rather than one flag.
 pub fn on_release(
+    ctx: &egui::Context,
+    doc: &OpenDoc,
     targets: Option<&dyn crate::canvas::target::CanvasTargetProvider>,
     page_index: usize,
-    rect: egui::Rect,
-    crossing: bool,
-    combine: Combine,
-    selection: &mut crate::canvas::selection::SelectionState,
+    band: Band,
+    selection: &mut SelectionState,
 ) {
-    select_with(targets, page_index, rect, crossing, combine, selection);
+    // ★★★ Inside a text block, the band takes CHUNKS — O215 ask 4. See
+    // [`take_chunks`] for the whole of that decision, including what it does
+    // when the band reaches none.
+    if take_chunks(ctx, doc, page_index, band, selection) {
+        return;
+    }
+    select_with(
+        targets,
+        page_index,
+        band.rect,
+        band.crossing,
+        band.combine,
+        selection,
+    );
     crate::canvas::trace::selection_event(
         selection,
         // ui-text-exempt: a diagnostic slot name, never displayed.
         "pv.marquee",
-        combine != Combine::Replace,
+        band.combine != Combine::Replace,
     );
+}
+
+/// **A band released inside a text block takes that block's chunks**, and
+/// whether it did.
+///
+/// `OPERATOR_REQUESTS.md` O215 ask 4 asks for the usual three multi-select
+/// gestures on chunks. Shift-click and Ctrl-click were the click path's; this
+/// is the band, and without it a rubber-band drawn across four lines of a note
+/// ascended out of the block and selected the whole block instead — because
+/// [`SelectionState::marquee`] resolves to the Object rung by construction.
+///
+/// # Why this is not a contradiction of that function's reasoning
+///
+/// Its argument is that *a region of the page contains objects*, and that
+/// "every subpath of some other object this box happens to cover" has no
+/// sensible reading. Both still hold. This is the different case those words
+/// were not about: the operator has **entered** one object, and that object's
+/// chunks are **drawn as boxes on the canvas**. The band is then a region over
+/// a set of visible rectangles belonging to the one thing being worked on,
+/// which is what every isolation mode — Illustrator's, Inkscape's,
+/// PowerPoint's — does with a band drawn inside a group.
+///
+/// ⇒ The gate is `chunks::boxed`, so the rung is offered exactly where the
+/// boxes are. A band can never take a unit the operator cannot see.
+///
+/// # What a band that reaches no chunk does
+///
+/// With **no modifier**, nothing here claims it and the object-rung band runs:
+/// a plain band over empty paper clears, which is the convention and is what
+/// leaving a text block ought to feel like. With **Shift or Ctrl held** it is
+/// claimed and changes nothing — a modifier says *refine what I have*, and a
+/// refinement that reached nothing must not instead throw the set away.
+fn take_chunks(
+    ctx: &egui::Context,
+    doc: &OpenDoc,
+    page_index: usize,
+    band: Band,
+    selection: &mut SelectionState,
+) -> bool {
+    let Band {
+        rect,
+        crossing,
+        combine,
+    } = band;
+    if selection.level() != SelectionLevel::Part {
+        return false;
+    }
+    let Some(entry) = selection.entered_object() else {
+        return false;
+    };
+    if entry.page != page_index || !crate::canvas::chunks::boxed(ctx, doc, entry.object) {
+        return false;
+    }
+    let reached = crate::canvas::chunks::within(doc, entry.object, rect, crossing);
+    if reached.is_empty() && combine == Combine::Replace {
+        return false;
+    }
+    let held = selection.selected_parts_on(page_index, entry.object);
+    let parts = combined(&held, &reached, combine);
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        //
+        // `reached` and `kept` are both on the line because they answer
+        // different failures: a band that reached nothing is an aim or a
+        // geometry fault, and a band that reached three while keeping one is
+        // the combining arm.
+        format!(
+            "marquee-parts page={page_index} object={} mode={} reached={} kept={} combine={}",
+            entry.object.raw(),
+            if crossing { "touched" } else { "enclosed" },
+            reached.len(),
+            parts.len(),
+            combine.label()
+        )
+    });
+    // ui-text-exempt: the `via=` word on a diagnostic line, never displayed.
+    selection.select_parts(page_index, entry.object, &parts, "band");
+    true
+}
+
+/// What the band leaves selected: `held` combined with `reached` under
+/// `combine`, ascending and unique.
+///
+/// Split out with no borrows in it so the three arms can be tested directly.
+/// The arms are [`Combine`]'s and mean there exactly what they mean at the
+/// Object rung — the rung changes what a hit *is*, never what a modifier
+/// *does*.
+fn combined(held: &[usize], reached: &[usize], combine: Combine) -> Vec<usize> {
+    let mut parts: Vec<usize> = match combine {
+        Combine::Replace => reached.to_vec(),
+        Combine::Add => held.iter().chain(reached.iter()).copied().collect(),
+        Combine::Subtract => held
+            .iter()
+            .copied()
+            .filter(|p| !reached.contains(p))
+            .collect(),
+    };
+    parts.sort_unstable();
+    parts.dedup();
+    parts
 }
 
 /// [`select_with`] with the pre-O104 signature: `shift` means add.
@@ -443,5 +619,69 @@ mod tests {
             kept,
             vec![TargetId::Object(5), TargetId::Leaf(2), TargetId::Object(9)]
         );
+    }
+
+    /// **A plain band at the chunk rung replaces**, and what was held before it
+    /// has no say.
+    ///
+    /// The arm a driven check cannot see on its own: a build that added instead
+    /// of replacing still ends up with the band's chunks selected, so the drag
+    /// that follows still moves several and the check still passes — while an
+    /// operator banding a second group of lines silently keeps the first.
+    #[test]
+    fn a_plain_chunk_band_replaces_what_was_held() {
+        assert_eq!(
+            combined(&[7, 9], &[0, 1, 2], Combine::Replace),
+            vec![0, 1, 2]
+        );
+        assert_eq!(combined(&[], &[3], Combine::Replace), vec![3]);
+    }
+
+    /// **Shift adds**, and the result is ascending and holds no chunk twice.
+    ///
+    /// The overlap is the point: a band dragged across lines the operator
+    /// already had must not select them twice, because every Part-rung verb
+    /// loops the entries and a duplicate would move one line the distance twice.
+    #[test]
+    fn a_shift_chunk_band_adds_without_duplicating() {
+        assert_eq!(combined(&[2, 0], &[1, 2], Combine::Add), vec![0, 1, 2]);
+    }
+
+    /// **Ctrl takes the band's chunks out** and leaves the rest alone.
+    #[test]
+    fn a_ctrl_chunk_band_subtracts_only_what_it_reached() {
+        assert_eq!(
+            combined(&[0, 1, 2, 3], &[1, 3], Combine::Subtract),
+            vec![0, 2]
+        );
+        assert_eq!(
+            combined(&[0, 1], &[4, 5], Combine::Subtract),
+            vec![0, 1],
+            "a subtracting band that reached none of the held chunks changes nothing"
+        );
+    }
+
+    /// **A subtracting band over the whole set empties it**, deliberately.
+    ///
+    /// The same answer Ctrl-clicking the last held chunk gives, and the
+    /// alternative — silently keeping one, or falling back to the whole block —
+    /// would be the program overruling an explicit gesture.
+    #[test]
+    fn subtracting_everything_leaves_nothing() {
+        assert!(combined(&[0, 1], &[0, 1], Combine::Subtract).is_empty());
+    }
+
+    /// The three trace words are distinct.
+    ///
+    /// A check reads `combine=` by equality, so two arms spelled the same would
+    /// collapse *the band added* and *the band replaced* into one answer — the
+    /// pair the tests above exist to tell apart.
+    #[test]
+    fn every_combine_label_is_its_own_word() {
+        let mut words: Vec<&str> = Combine::ALL.iter().map(|c| c.label()).collect();
+        let before = words.len();
+        words.sort_unstable();
+        words.dedup();
+        assert_eq!(words.len(), before);
     }
 }

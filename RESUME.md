@@ -92,10 +92,17 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    labels move. `pressing::body_under` narrows to the chunk under the point.
    `shift_click_builds_a_chunk_set_the_whole_program_honours` drives it and is
    falsified by three plants, one per half.
-   **What is next, in order.** S3b: the rubber-band half of ask 4 —
-   `SelectionState::marquee` hard-sets `SelectionLevel::Object`, so a band
-   inside a text block ascends out of it and takes the block. S4: real
-   live-preview geometry — `canvas::shapes::for_move_subject` returns `None`
+   **Ask 4's band half shipped too.** `marquee::take_chunks` forks ahead of
+   the object band, so a band dragged while a chunk is entered sweeps lines
+   rather than ascending to the block; `chunks::within` measures each line with
+   the same call that draws its box, the direction rule is unchanged — right to
+   left crosses — and the three arms are the click's own `Combine`. Four
+   preconditions and an empty replacing band all fall THROUGH to the object
+   band rather than doing nothing, so sweeping blank paper still means what it
+   means everywhere else. `a_rubber_band_inside_a_note_takes_its_lines` drives
+   three bands, the status row, one plural move and one undo, and is falsified
+   four ways — one per arm it can lose.
+   **What is next, in order.** S4: real live-preview geometry — `canvas::shapes::for_move_subject` returns `None`
    for both text-line subjects, so a drag previews a rectangle (ask 5).
    **Ask 2 is the engine's and is filed as `G032`**: `runs_share_a_line` never
    reads the horizontal translation, so a table row welds into one line — 565

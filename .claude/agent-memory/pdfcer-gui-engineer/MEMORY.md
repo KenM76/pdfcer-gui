@@ -97,7 +97,7 @@
 - [An assertion both outcomes satisfy](feedback_an_assertion_both_outcomes_satisfy_is_not_a_measurement_of_which_one_shipped.md) — name what the WRONG mechanism cannot produce.
 - [A gate hit inside the repo is not a mandate outside](feedback_a_gate_hit_inside_the_repo_is_not_a_mandate_to_sweep_outside_it.md) — a half-renamed archive is worse than none.
 - [A branch-pinned dependency moves on its own](feedback_a_branch_pinned_dependency_moves_without_cargo_update.md) — the pin changed mid-session with no update command.
-- [Writing python to a file does not protect an escape](feedback_the_write_python_to_a_file_workaround_does_not_protect_an_escape.md) — no backslash in the payload; a RAW one doubles it.
+- [Writing python to a file does not protect an escape](feedback_the_write_python_to_a_file_workaround_does_not_protect_an_escape.md) — no backslash; and a 700-line heredoc never spawns.
 - [A guard's placement decides which surface must explain it](feedback_a_guards_placement_decides_which_surface_must_explain_it.md) — reading the predicate is not reading the guard.
 - [A decline revalidating its own precondition deletes itself](feedback_a_decline_that_revalidates_its_own_precondition_deletes_itself.md) — silent, not wrong; tests pass.
 - [A doc quoting its measurement command can be broken by it](feedback_a_document_that_quotes_its_measurement_command_can_be_broken_by_it.md) — a verbatim newline split a row.
@@ -119,10 +119,10 @@
 - [A type reached by field access is invisible to the drift gate](feedback_a_type_reached_only_by_field_access_is_invisible_to_the_drift_gate.md) — bind it, don't mention it.
 - [Falsify the gate on real files, the fix on a control binary](feedback_falsify_on_real_files.md) - a self-test says nothing.
 - [A classification in a rule invites the next exception](feedback_a_rule_with_a_classification_in_it_is_where_the_next_exception_goes.md) — one token plus a written exemption, not a list.
-- [An inherited session summary is not a source](feedback_an_inherited_session_summary_is_not_a_source.md) — quoting across a summary has no re-measure rule; it reached a commit.
+- [An inherited session summary is not a source](feedback_an_inherited_session_summary_is_not_a_source.md) — quotes AND fixture formulas cross it unmeasured.
 - [Scope a use-measurement the way the language does](feedback_a_use_measurement_must_be_scoped_the_way_the_language_scopes_it.md) - a namesake discharges a twin.
 - [A guarded capability is not the file's capability](feedback_a_guarded_capability_is_not_a_capability_of_the_file.md) — count when the guard is true: 15 files in 4,012.
-- [A detector's scope is a claim](feedback_a_detectors_scope_is_a_claim.md) — one gate reported clean over three blind spots; falsify the widening.
+- [A detector's scope is a claim](feedback_a_detectors_scope_is_a_claim.md) — three blind spots, and a green `clippy -p X` is not a green gate.
 - [An injected file is a dated snapshot](feedback_an_injected_file_is_a_dated_snapshot.md) — 13 of 26 anchors from the in-context MEMORY.md were not on disk.
 - [A rewrite of a cell deletes what only that cell held](feedback_a_rewrite_of_a_cell_deletes_what_only_that_cell_held.md) - it held the only copy.
 - [A gesture named without its outcome](feedback_a_gesture_without_its_outcome.md) — drag copies, Shift moves; the header was wrong 4h44m later.

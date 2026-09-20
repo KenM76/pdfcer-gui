@@ -594,11 +594,15 @@ pub(super) fn interact(
             intent: MarqueeIntent::Select,
             phase: Phase::Complete,
         } => crate::canvas::marquee::on_release(
+            &ctx,
+            doc,
             targets.as_deref().map(|t| t as &dyn CanvasTargetProvider),
             page_index,
-            rect,
-            crossing,
-            crate::canvas::marquee::mode(shift, ctrl),
+            crate::canvas::marquee::Band {
+                rect,
+                crossing,
+                combine: crate::canvas::marquee::mode(shift, ctrl),
+            },
             &mut selection,
         ),
         // ★ The same rubber band, released with the other intent. **The

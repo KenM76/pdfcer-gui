@@ -432,6 +432,12 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // that cannot select one. A failure here on top of a failure above is
         // one defect reported twice; in this order the first row names it.
         Box::new(chunk_multi_move::ShiftClickBuildsAChunkSetTheWholeProgramHonours),
+        // Fourth of the same row, and after the Shift-click one for the
+        // same reason it came after the single-click one: a band builds a set
+        // of chunks, so it cannot mean anything on a build that cannot select
+        // one, and its modifier arms are the same arms that check measures on
+        // clicks. In this order the first row to fail names the defect.
+        Box::new(chunk_band::ARubberBandInsideANoteTakesItsLines),
         // `OPERATOR_REQUESTS.md` O71. Beside the Smart-Selector
         // check because both are about what a plain click MEANS — that one in
         // Edit, this one in Read, which is the stance where the answer had

@@ -702,6 +702,43 @@ fn shift_picking_a_second_chunk_adds_it_rather_than_replacing() {
     );
 }
 
+/// **The third of O215 ask 4's gestures: a rubber-band's chunks arrive whole.**
+///
+/// [`SelectionState::select_parts`] is the only writer of a Part-rung set that
+/// did not come from a click, and the three properties asserted here are the
+/// three its callers depend on: the rung is entered, the set is ascending and
+/// unique whatever order the band reached them in, and an empty answer leaves
+/// the **ground state** rather than an entry-less Part rung — which would put
+/// the next click's first selection into a rung the operator never entered.
+#[test]
+fn a_band_sets_several_chunks_of_one_object_at_once() {
+    let mut sel = SelectionState::default();
+
+    sel.select_parts(0, TargetId::Object(0), &[2, 0, 1, 1], "band");
+    assert_eq!(
+        sel.level(),
+        SelectionLevel::Part,
+        "the rung must be entered"
+    );
+    assert_eq!(sel.selected_parts_on(0, TargetId::Object(0)), vec![0, 1, 2]);
+    assert_eq!(sel.len(), 3, "a chunk reached twice is selected once");
+
+    sel.select_parts(0, TargetId::Object(0), &[4], "band");
+    assert_eq!(
+        sel.selected_parts_on(0, TargetId::Object(0)),
+        vec![4],
+        "it replaces: the combining happens in `canvas::marquee`, not here"
+    );
+
+    sel.select_parts(0, TargetId::Object(0), &[], "band");
+    assert!(sel.is_empty(), "an empty answer is an empty selection");
+    assert_eq!(
+        sel.level(),
+        SelectionLevel::Object,
+        "and the ladder goes back to the ground, not to an empty Part rung"
+    );
+}
+
 /// A plain click on empty paper clears; a shift click on empty paper does
 /// not. The asymmetry is deliberate — an over-shot shift-click must not
 /// destroy a set that took five clicks to build.

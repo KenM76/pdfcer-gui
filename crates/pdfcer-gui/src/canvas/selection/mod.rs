@@ -667,6 +667,14 @@ impl SelectionState {
     /// contains objects; there is no sensible reading of "every subpath of
     /// some other object that this box happens to cover".
     ///
+    /// ★ That argument is about a band over the **page**, and one case is
+    /// outside it: a band drawn while the operator is inside a text block whose
+    /// chunk boxes are on the canvas names a region over *visible rectangles of
+    /// the one thing being worked on*. [`crate::canvas::marquee::on_release`]
+    /// claims that band before this is reached and calls
+    /// [`Self::select_parts`]; everything else still arrives here and still
+    /// ascends.
+    ///
     /// Plain replaces, `Shift` adds. An empty plain marquee therefore clears,
     /// which is the Inkscape convention and is **not** the failure invariant
     /// 2 is about: that one is about a *press*, and this runs on release,
@@ -827,7 +835,69 @@ impl SelectionState {
             // back.
             let list = if object.is_leaf() { "leaf" } else { "object" };
             format!(
-                "selection-set page={page} {list}={} part={part} level=part via={why}",
+                "selection-set page={page} {list}={} part={part} level=part held=1 via={why}",
+                object.raw()
+            )
+        });
+    }
+
+    /// **Select several chunks of one object outright** — the plural twin of
+    /// [`Self::select_part`].
+    ///
+    /// # It replaces, and the combining happens above it
+    ///
+    /// `parts` is the whole answer, not an addition to one: a rubber-band at
+    /// this rung can add, replace or subtract, and
+    /// [`crate::canvas::marquee::on_release`] has already worked out which
+    /// before it calls this. Two places deciding what a band does to what was
+    /// already selected is how a Shift-band and a plain one come to disagree
+    /// about the same rect.
+    ///
+    /// An empty list clears rather than leaving an entry-less Part rung
+    /// standing: a rung with nothing in it puts the next click's first
+    /// selection into a rung the operator never entered, which is the trap
+    /// [`Self::clear`] exists to avoid.
+    ///
+    /// ⚠ Every entry names the **same object**. A Part-rung verb addresses
+    /// parts within one object, so a set spanning two is not one command —
+    /// [`Self::selected_parts_on`] carries the long form of that argument.
+    pub fn select_parts(
+        &mut self,
+        page: usize,
+        object: TargetId,
+        parts: &[usize],
+        why: &'static str,
+    ) {
+        if parts.is_empty() {
+            self.clear();
+            crate::diag::trace(move || {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!("selection-set page={page} part=none level=object held=0 via={why}")
+            });
+            return;
+        }
+        self.entries = parts
+            .iter()
+            .map(|&part| Selection {
+                page,
+                object,
+                subpath: Some(part),
+                node: None,
+            })
+            .collect();
+        self.level = SelectionLevel::Part;
+        self.normalise();
+        let held = self.entries.len();
+        let first = self.entries.first().and_then(|e| e.subpath).unwrap_or(0);
+        crate::diag::trace(move || {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            // `part=` still names the first entry and `held=` says how many
+            // there are, exactly as the status bar's rung line spells the same
+            // pair. A check that read `part=` alone off a set of four would
+            // report a working band as a broken one.
+            let list = if object.is_leaf() { "leaf" } else { "object" };
+            format!(
+                "selection-set page={page} {list}={} part={first} level=part held={held} via={why}",
                 object.raw()
             )
         });

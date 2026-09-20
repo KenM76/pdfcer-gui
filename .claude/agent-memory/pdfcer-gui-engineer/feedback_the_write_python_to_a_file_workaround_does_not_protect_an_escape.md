@@ -124,3 +124,36 @@ here: **no backslash in the payload at all.**
 because the wrong output is valid source. The only oracle for *"it compiled and
 it is wrong"* is reading the emitted region back with `sed -n` or `cat -A` and
 looking at it, which costs one command.
+
+---
+
+**★ 2026-09-19 — the Bash-first preference has a SIZE ceiling, and the error
+names neither size nor Bash.**
+
+A new `ui-verify` check of about 700 lines was delivered as a single
+`cat > path <<'RUSTEOF' … RUSTEOF`. It did not write a truncated file, and it
+did not report a quoting problem. It failed with:
+
+```
+ENAMETOOLONG: name too long, uv_spawn
+```
+
+The whole heredoc is part of the **command string** handed to the process
+spawner, so a large payload exceeds the spawn limit before any shell runs.
+Nothing is written; the file simply does not exist afterwards. ⚠ The tell is an
+absence, so the next step ("declare it in `mod.rs`") proceeds happily and the
+build is the first thing to notice.
+
+⇒ The session's standing *"prefer the Bash tool over Read/Edit/Write"* is a
+preference about **which tool reads and edits**, not a claim that Bash can
+deliver an arbitrarily large payload. Above roughly a few hundred lines, use the
+`Write` tool — it takes the content as a tool argument rather than as a command
+line, and it has none of the three quoting layers above either.
+
+**How to apply:**
+- New source file over ~300 lines ⇒ `Write`. Small targeted edits to an existing
+  file ⇒ Bash `sed`/python, unchanged.
+- After any `cat >` heredoc, `ls -l` the target. A spawn failure leaves no file
+  and no partial file, which looks identical to "I have not got there yet".
+- The same limit applies to a long python script delivered by heredoc — split it
+  or write it to `$SCRATCH` with `Write` and run the file.

@@ -275,6 +275,36 @@ impl Driver {
     /// The button is held across the walk rather than being pressed at each
     /// step: a released-and-pressed pointer is *n* gestures, not one.
     pub fn drag(&self, from: ScreenPoint, to: ScreenPoint) -> Result<()> {
+        self.drag_unmodified(from, to)
+    }
+
+    /// [`Self::drag`] with `key` held down for the **whole** gesture.
+    ///
+    /// The band gesture's combining arms are modifier-selected — plain
+    /// replaces, Shift adds, Ctrl subtracts — and the application samples the
+    /// modifier on the frame it handles the release. A harness that pressed the
+    /// key only at the last instant would pass against a build whose caption
+    /// and band colour never followed the key, so it is held across the press,
+    /// the walk and the release, which is what a hand does.
+    ///
+    /// # Errors
+    ///
+    /// As [`Self::drag`].
+    /// The foreground is established BEFORE the key goes down, and that is not
+    /// redundant with the raise [`Self::drag_unmodified`] does: `SendInput`
+    /// delivers to whatever window is in front at the instant it is called, so
+    /// a key-down issued while another window still holds the foreground is a
+    /// modifier pressed into the operator's own application — and released
+    /// there too, leaving a key stuck down in a window this harness never
+    /// touched.
+    pub fn drag_with_modifier(&self, from: ScreenPoint, to: ScreenPoint, key: Key) -> Result<()> {
+        self.raise_and_confirm()?;
+        sys::with_modifiers(&[key.vk()], || self.drag_unmodified(from, to))
+    }
+
+    /// [`Self::drag`]'s body, with whatever modifier state the caller has
+    /// already established.
+    fn drag_unmodified(&self, from: ScreenPoint, to: ScreenPoint) -> Result<()> {
         self.raise_and_confirm()?;
         //
         // See [`Self::confirm_uncovered`] for the whole argument. It had been
