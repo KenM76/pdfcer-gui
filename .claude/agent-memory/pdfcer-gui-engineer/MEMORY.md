@@ -147,3 +147,5 @@
 - [A permanent sentence can't carry a perishable clause](feedback_permanent_sentence.md) — 3 paragraphs named "the slot he runs"; 2 were wrong.
 - [The gate's header already had the answer](feedback_bulk_edit_safety.md) — I argued a bulk rename safe from memory; it said otherwise.
 - [Type the wrap's backslash as you type it](feedback_wrapped_message_backslash.md) — same defect twice in 90 min; a commit message is not an instrument.
+- [`git status` is not a content oracle](feedback_status_not_content.md) — 11 entries to 184, nothing changed; the reflex discards the commit.
+- [A sweep keyed on the symptom collects the healthy](feedback_sweep_keyed_symptom.md) — six correct files "repaired"; the rule was one command away.
