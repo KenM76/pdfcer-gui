@@ -406,7 +406,7 @@ disagree. The engine owns the question; the shell words the answer
 ### D22 — RULE: one key, one meaning, everywhere
 
 Enter means a new line in every text draft. `Ctrl+Enter` commits, so commit is
-never mouse-only; Escape abandons and clicking away commits. Where a line break
+never mouse-only; Escape and clicking away both commit, and no exit discards. Where a line break
 cannot go — a caret inside an existing show operator — Enter **declines in words**
 and leaves the draft alive, because that is the file's rule and not a shortcoming
 to hide: `edit_text` re-encodes into the run's own font, a line feed has no code

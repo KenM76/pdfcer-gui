@@ -650,8 +650,9 @@ impl PdfcerApp {
             // operator's own *copying is not authoring* ruling. Typing into the
             // page's content stream is authoring by every reading of that
             // sentence, so this declines by name in a mode that cannot author,
-            // and `canvas::tool::retire_forbidden` disarms the tool (and abandons
-            // any draft) from the other end. Reachable only by a chord or a
+            // and `canvas::tool::retire_forbidden` disarms the tool from the
+            // other end — which writes any draft in flight rather than dropping
+            // it, by way of `app::frame`'s step 2d. Reachable only by a chord or a
             // customized manifest, exactly like the markup and measure arms
             // below: the shipped manifest shows the Edit tab in Edit alone.
             // ★ The two pointer tools, armed directly rather than toggled.

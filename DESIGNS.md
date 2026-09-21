@@ -1740,7 +1740,7 @@ stops being a false statement. It costs about forty call-site rewrites.
 `BeginTextAnnot` and `CommitTextAnnot` are an equally defensible second family.
 
 **`tools/ui-verify/src/checks/mod.rs` — there is no seam left, and that is the
-honest answer.** The file is 240 `pub mod` declarations carrying their per-check
+honest answer.** The file is one `pub mod` declaration per check carrying its
 prose, then the harness vocabulary. `roster.rs`'s header already took the
 tempting seam and forecloses it: moving a `pub mod` there renames the check and
 breaks every reference to it. Extracting `CheckContext`, its impl and `trait
@@ -1751,8 +1751,8 @@ rewriting the references to `crate::checks::driving::…`. ⚠ The other temptin
 move — pushing per-check prose down into each check's own header — is
 prose-shaving, which is the thing `check-file-size.sh` exists to refuse.
 
-⇒ **The last two are the same non-seam twice.** A flat closed vocabulary — 240
-module declarations, sixty-five enum variants — has no prose seam, every
+⇒ **The last two are the same non-seam twice.** A flat vocabulary — a module
+declaration per check, sixty-five enum variants — has no prose seam, every
 candidate cut renames the moved items' paths, and the only honest remedies are
 the sub-enum and the subdirectory. The worst outcome for either is a cut chosen
 to hit a line count.

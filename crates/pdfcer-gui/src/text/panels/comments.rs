@@ -472,12 +472,15 @@ pub fn comment_row_note_remove_tooltip() -> &'static str {
 
 /// The hint under the editor while it is open.
 ///
-/// Names the two keys that are NOT obvious in a multi-line box: Enter inserts
-/// a line rather than saving, so the operator needs telling how to save, and
-/// Escape is the standard abandon.
+/// Names what is NOT obvious in a multi-line box, and one thing that is not
+/// obvious anywhere: Enter inserts a line rather than saving, so the operator
+/// needs telling how to save — and Escape **writes** rather than abandoning,
+/// which is the opposite of what the key usually means, so the sentence has to
+/// say it and has to name the control that does abandon. See
+/// `crate::panels::comments::editor::escape_commits` for the ruling.
 #[must_use]
 pub fn comment_row_note_hint() -> &'static str {
-    "Enter starts a new line. Press Save note to write it, or Escape to abandon it."
+    "Enter starts a new line. Save note and Escape both write it. Cancel leaves the note as it was."
 }
 
 /// **What the editor will write into `/T`, disclosed before it is written.**
@@ -748,13 +751,12 @@ pub fn comment_row_reply_save() -> &'static str {
 
 /// The hint under the reply editor.
 ///
-/// Names the two keys that are not obvious in a multi-line box, exactly as
-/// [`comment_row_note_hint`] does, and names *this* editor's commit rather
-/// than that one's — an operator with two editors in one panel needs the hint
-/// to say which button it is talking about.
+/// Says what [`comment_row_note_hint`] says, naming *this* editor's commit
+/// rather than that one's — an operator with two editors in one panel needs
+/// the hint to say which button it is talking about.
 #[must_use]
 pub fn comment_row_reply_hint() -> &'static str {
-    "Enter starts a new line. Press Post reply to write it, or Escape to abandon it."
+    "Enter starts a new line. Post reply and Escape both send it. Cancel discards it."
 }
 
 /// **What the reply will be signed with**, disclosed before it is written.

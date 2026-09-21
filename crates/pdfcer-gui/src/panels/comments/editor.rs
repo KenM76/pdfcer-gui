@@ -132,14 +132,7 @@ pub(super) fn note_controls(
         return;
     }
 
-    // The existing words, which seed the editor. `Note::Description` seeds it
-    // too — the operator is editing that string whichever of §12.5.2's two
-    // meanings it carries, and an editor that opened empty over a description
-    // would invite them to destroy it by typing.
-    let existing = match &comment.note {
-        Note::Text(text) | Note::Description(text) => text.as_str(),
-        Note::Absent => "",
-    };
+    let existing = note_text(&comment.note);
     let label = if existing.is_empty() {
         t::comment_row_add_note()
     } else {
@@ -303,6 +296,73 @@ pub(crate) fn keeps_author_name(author: Option<&str>) -> bool {
     author.is_some_and(|author| !author.trim().is_empty())
 }
 
+/// The words already on the annotation — what seeds an editor, and what a
+/// commit is compared against.
+///
+/// [`Note::Description`] counts as the words. The operator is editing that
+/// string whichever of §12.5.2's two meanings it carries, and an editor that
+/// opened empty over a description would invite them to destroy it by typing.
+///
+/// One function for both jobs on purpose: the seed and the comparison have to
+/// agree or Escape on an untouched editor writes an edit.
+fn note_text(note: &Note) -> &str {
+    match note {
+        Note::Text(text) | Note::Description(text) => text.as_str(),
+        Note::Absent => "",
+    }
+}
+
+/// ★★★ **What Escape writes** — the draft, not nothing.
+///
+/// # The ruling, and it is about asymmetric cost rather than about convention
+///
+/// A note committed by mistake is one `Ctrl+Z`. A note discarded by mistake is
+/// however long it took to type, gone, with no recovery — a draft lives in this
+/// panel's own state and never reaches the undo stack. Escape is easy to press
+/// by accident; `Ctrl+Z` is not hard to press on purpose.
+///
+/// *Cancel* keeps its meaning and is the discard. It is drawn on both editors,
+/// so nothing is lost by taking the destructive reading off the key.
+///
+/// ⇒ `crate::canvas::notepopup::controls::save_draft` is the same rule on the
+/// same editor reached from a comment's own window. The two surfaces are the
+/// same editor and must not behave differently according to which one opened
+/// it.
+///
+/// # What is written depends on the destination, and both cases can write nothing
+///
+/// | | writes | writes nothing when |
+/// |---|---|---|
+/// | a note | `set_markup_note` | the draft equals [`note_text`] — an untouched editor raises no undo entry |
+/// | a reply | `add_reply` | [`reply_is_postable`] refuses it, exactly as *Post reply* is not drawn |
+///
+/// A blank reply is the one case where nothing can be lost by closing, because
+/// there is nothing there.
+///
+/// ⇒ Returns the verb rather than writing it, so that the `None` cases assign
+/// nothing: [`RowSink::verb`] is one slot for the whole panel, and a row that
+/// wrote `None` into it would erase a verb an earlier row had raised in the
+/// same frame. Being a function of its arguments is also what makes it
+/// testable without a `Ui` — [`super::tests::escape_on_an_edited_note_writes_it`]
+/// and its siblings are the suite.
+pub(super) fn escape_commits(
+    comment: &CommentRow,
+    id: ObjId,
+    draft: &NoteDraft,
+) -> Option<AnnotAction> {
+    if draft.target() == Some(DraftTarget::Reply) {
+        return reply_is_postable(draft.text()).then(|| AnnotAction::Reply {
+            parent: id,
+            text: draft.text().to_owned(),
+        });
+    }
+    (draft.text() != note_text(&comment.note)).then(|| AnnotAction::SetNote {
+        id,
+        text: draft.text().to_owned(),
+        keep_author: keeps_author(comment),
+    })
+}
+
 /// The open editor: the box, the hint, the signature disclosure and the three
 /// controls.
 ///
@@ -315,13 +375,13 @@ pub(crate) fn keeps_author_name(author: Option<&str>) -> bool {
 /// their name on it. Two sentences, one per case, and the case is decided by
 /// the row rather than by a preference this panel cannot see.
 ///
-/// # ★ Escape closes it, and it does so through egui rather than by reading the
-/// keyboard
+/// # ★★★ Escape writes what was typed and then closes — see [`escape_commits`]
 ///
-/// `TextEdit` surrenders focus on Escape, so `lost_focus()` plus the key is the
-/// idiomatic test and — importantly for this codebase — it asks nothing about
-/// whether "the operator is typing". A panel that read the raw key would be a
-/// second claimant on a key the canvas caret and the tool arming both want, and
+/// It is detected through egui rather than by reading the keyboard: `TextEdit`
+/// surrenders focus on Escape, so `lost_focus()` plus the key is the idiomatic
+/// test and — importantly for this codebase — it asks nothing about whether
+/// "the operator is typing". A panel that read the raw key would be a second
+/// claimant on a key the canvas caret and the tool arming both want, and
 /// `tools/gates/check-typing-guard.sh` exists because that class of second
 /// claimant has already cost this project the Delete key and the space bar.
 fn editor(
@@ -347,6 +407,9 @@ fn editor(
     );
     crate::diag::ui_rect_visible(REGION_BOX, response.rect, ui.clip_rect());
     if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+        if let Some(verb) = escape_commits(comment, id, draft) {
+            *sink.verb = Some(verb);
+        }
         draft.close();
         return;
     }
@@ -439,7 +502,7 @@ fn editor(
 /// Reached from [`editor`] when the draft's destination is
 /// [`DraftTarget::Reply`], *after* that function has already drawn the text
 /// box, published [`REGION_BOX`] and handled Escape. That ordering is the
-/// whole reuse: the box, the region name, the abandon key and the
+/// whole reuse: the box, the region name, the exit key and the
 /// stale-draft rule are written once and cannot come to differ between
 /// writing a note and answering one.
 ///
@@ -515,8 +578,8 @@ fn reply_editor(
         }
         // Cancel is drawn either way, because an operator who opened the
         // editor by accident must be able to close it without typing into it
-        // first. Escape does the same thing and the hint above says so; the
-        // button is for the hand already on the mouse.
+        // first, and because it is the **only** discard: Escape posts what is
+        // there, per [`escape_commits`].
         if ui.button(t::comment_row_note_cancel()).clicked() {
             draft.close();
         }

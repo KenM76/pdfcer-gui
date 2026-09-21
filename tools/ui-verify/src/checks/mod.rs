@@ -786,6 +786,18 @@ pub mod dropped_file;
 /// desktop with anyone. See its header.
 pub mod enter_newline;
 
+/// ★★★ **Escape on a text draft WRITES it, and `Ctrl+Z` takes it back** —
+/// `OPERATOR_REQUESTS.md` O223.
+///
+/// Both halves are the assertion. The operator's case for committing is that
+/// the mistake it can cause is the cheap one, so a build that committed and
+/// could not undo would have swapped an unrecoverable loss for an
+/// unrecoverable gain.
+///
+/// ⬜ **NOT RUN** — it types at the real keyboard, so it cannot share the
+/// desktop with anyone. See its header.
+pub mod escape_commits_text;
+
 /// ★★★ **Zero clicks.** The only check in this suite that drives no gesture: it
 /// opens a document, enters Edit, and asks what an operator SEES. Every other
 /// test of the tool list asks whether a named command is present — a question

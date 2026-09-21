@@ -919,6 +919,12 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // check that exists and is not registered is a check nobody will ever
         // run. Whoever runs the suite next is the first thing that executes it.
         Box::new(enter_newline::EnterMakesASecondLineAndControlEnterCommits),
+        // O223, and registered before it has been run, on the same precedent.
+        // Its oracle is `add-text` rather than the Escape ladder's own line:
+        // the rung firing says Escape reached the draft, not that the draft
+        // landed, and the behaviour this replaces produces the rung's teardown
+        // and no commit at all.
+        Box::new(escape_commits_text::EscapeCommitsATextDraft),
         // O140, and it sits here rather than beside `text_edit_real`
         // deliberately: it is the same family and the OPPOSITE question. That
         // check asks whether the shell can place a caret and reach the engine

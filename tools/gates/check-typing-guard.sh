@@ -71,6 +71,26 @@
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 1
 
+# ★ This gate has no `--self-test`, and an unknown argument is therefore a
+# FAILURE rather than something to ignore.
+#
+# It is falsified against the real tree instead: the scan is a grep over
+# `crates/` and `tools/`, and every change that adds a call runs it. That is the
+# stronger falsification — a self-test proves the matcher works on a fixture the
+# gate's own author wrote, where a real red proves it works on the code.
+#
+# What it does NOT survive is being ASKED for a self-test it does not have. A
+# run that accepted the flag and scanned normally would print PASS for a
+# falsification that never happened, and the reader has no way to tell the two
+# greens apart. So say no, loudly, and exit 1 — not 2, which this project's
+# runner files as SKIPPED.
+if [ "$#" -gt 0 ]; then
+    echo "check-typing-guard: takes no arguments (got '$1')." >&2
+    echo "  There is no --self-test here; it is falsified against the real" >&2
+    echo "  tree. A silent PASS over an unknown flag is a green over nothing." >&2
+    exit 1
+fi
+
 echo "check-typing-guard: one predicate for \"is the operator typing?\"…"
 
 ALLOWED_FILE="crates/pdfcer-gui/src/canvas/textedit/mod.rs"
@@ -96,11 +116,11 @@ while IFS= read -r hit; do
     # contiguous comment block immediately above it.
     #
     # The block form is not laxity: every legitimate exemption here needs a
-    # paragraph, not a clause — "this is self-referential", "Escape must still
-    # reach the abandon rung", "this test asserts the harness reached the
-    # state". A rule that only accepts a trailing clause would push those
-    # reasons out of the file and leave a bare marker behind, which is the
-    # exemption without the argument.
+    # paragraph, not a clause — "this is the predicate itself", "this asks
+    # which egui widget holds the keyboard, not whether anybody is composing",
+    # "this test asserts the harness reached the state". A rule that only
+    # accepts a trailing clause would push those reasons out of the file and
+    # leave a bare marker behind, which is the exemption without the argument.
     if printf '%s' "$text" | grep -q 'typing-guard-exempt:'; then
         continue
     fi
@@ -131,10 +151,11 @@ on the same line, or in the comment block just above it, with
 `typing-guard-exempt:` and the reason.
 
 The block form is deliberate. Every legitimate exemption here needs a paragraph
-rather than a clause - "this is self-referential", "Escape must still reach the
-abandon rung", "this test asserts the harness reached the state" - and a rule
-that accepted only a trailing clause would push those reasons out of the file
-and leave a bare marker behind, which is the exemption without the argument.
+rather than a clause - "this is the predicate itself", "this asks which egui
+widget holds the keyboard, not whether anybody is composing", "this test asserts
+the harness reached the state" - and a rule that accepted only a trailing clause
+would push those reasons out of the file and leave a bare marker behind, which
+is the exemption without the argument.
 MSG
     echo
     echo "check-typing-guard: FAIL — $violations call site(s)."

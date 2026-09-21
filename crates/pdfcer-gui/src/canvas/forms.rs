@@ -339,7 +339,7 @@
 //! form-hit page=0 field=Name kind=text at=(126.4,203.1) rect=(120.0,198.0)+(200.0,14.0)
 //! form-focus page=0 field=Name widget=0
 //! form-commit field=Name chars=4
-//! form-abandon field=Name
+//! form-escape field=Name
 //! form-button field=Agree state=Yes
 //! ```
 //!
@@ -727,7 +727,9 @@ type BoxKey = (PathBuf, u64);
 // Escape's rung
 // ===========================================================================
 
-/// Record that this frame's Escape abandoned a draft.
+/// Record that this frame's Escape settled a draft — it wrote what was in the
+/// editor and closed it. The rung exists to stop one press also ascending the
+/// selection ladder, not to report a discard: nothing here discards.
 pub(super) fn note_escape(ctx: &egui::Context) {
     ctx.data_mut(|d| d.insert_temp(Id::new(ESCAPE_KEY), true));
 }

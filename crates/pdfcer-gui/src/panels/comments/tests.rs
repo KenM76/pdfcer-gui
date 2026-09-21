@@ -562,3 +562,125 @@ fn a_reading_stance_draws_no_reply_editor_even_with_a_reply_draft_open() {
          stance check must come before the draft branch rather than after it"
     );
 }
+
+// ===========================================================================
+// ESCAPE WRITES THE DRAFT — `editor::escape_commits`
+// ===========================================================================
+
+/// ★★★ **Escape writes what was typed.**
+///
+/// The whole point of the rule, and the only assertion here whose failure is a
+/// data-loss defect rather than a tidiness one: an operator who typed a
+/// paragraph and pressed the key that every other program treats as *discard*
+/// gets a `set_markup_note`, not silence. A commit by mistake is one `Ctrl+Z`;
+/// a discard by mistake is unrecoverable, because a draft lives in this panel's
+/// own state and never reaches the undo stack.
+#[test]
+fn escape_on_an_edited_note_writes_it() {
+    let comment = row_by(Some("Ken Mantle"));
+    let id = comment.id.expect("the fixture row carries an id");
+    let mut draft = super::note::NoteDraft::default();
+    draft.begin(id, 0, "");
+    draft.text_mut().push_str("check this weld");
+
+    let verb = super::editor::escape_commits(&comment, id, &draft);
+    assert!(
+        matches!(
+            &verb,
+            Some(AnnotAction::SetNote { text, .. }) if text == "check this weld"
+        ),
+        "Escape raised {verb:?} on a note with words in it — it must write \
+         them, because nothing else can and the draft is about to be closed"
+    );
+}
+
+/// ★★ The negative that keeps the positive honest: an editor opened and left
+/// alone raises **nothing**.
+///
+/// `set_markup_note` on text identical to what is already there is a call whose
+/// entire effect is an undo entry, and an operator who opens an editor to read
+/// a long note and presses Escape has changed nothing and must be told nothing.
+/// This is also the assertion a "write it unconditionally" implementation fails
+/// — the cheap way to satisfy the test above.
+#[test]
+fn escape_on_an_untouched_note_writes_nothing() {
+    let mut comment = row_by(Some("Ken Mantle"));
+    comment.note = Note::Text("check this weld".to_owned());
+    let id = comment.id.expect("the fixture row carries an id");
+    let mut draft = super::note::NoteDraft::default();
+    draft.begin(id, 0, "check this weld");
+
+    assert!(
+        super::editor::escape_commits(&comment, id, &draft).is_none(),
+        "an untouched editor raised a verb, which spends an undo entry on a \
+         document that has not changed"
+    );
+}
+
+/// ★★ A `Note::Description` is compared the same way a `Note::Text` is.
+///
+/// The editor seeds from either — §12.5.2's `/Contents` carries both meanings —
+/// so a comparison that only knew about `Note::Text` would read a description
+/// as an empty note and write an "edit" that changed nothing, on every Escape
+/// over a `/Link`.
+#[test]
+fn escape_over_an_untouched_description_writes_nothing() {
+    let mut comment = row_by(None);
+    comment.note = Note::Description("Opens the drawing index".to_owned());
+    let id = comment.id.expect("the fixture row carries an id");
+    let mut draft = super::note::NoteDraft::default();
+    draft.begin(id, 0, "Opens the drawing index");
+
+    assert!(
+        super::editor::escape_commits(&comment, id, &draft).is_none(),
+        "a description seeded the editor and then read as an edit, which is \
+         the seed and the comparison having come to disagree"
+    );
+}
+
+/// ★★★ **Escape posts a reply**, and posts it as a reply.
+///
+/// The destination is the one thing in this file that cannot be recovered
+/// afterwards: a `SetNote` raised from a reply draft writes the answer **over
+/// the comment being answered**, and on screen that looks exactly like the
+/// reply having worked.
+#[test]
+fn escape_on_a_reply_posts_it() {
+    let comment = row_by(Some("Jo Smith"));
+    let id = comment.id.expect("the fixture row carries an id");
+    let mut draft = super::note::NoteDraft::default();
+    draft.begin_reply(id, 0);
+    draft.text_mut().push_str("agreed");
+
+    let verb = super::editor::escape_commits(&comment, id, &draft);
+    assert!(
+        matches!(
+            &verb,
+            Some(AnnotAction::Reply { parent, text }) if *parent == id && text == "agreed"
+        ),
+        "Escape raised {verb:?} on a reply draft — a reply must reach \
+         `add_reply`, and writing `/Contents` instead would silently overwrite \
+         the comment it answers"
+    );
+}
+
+/// ★ A blank reply is the one draft where closing loses nothing, so it raises
+/// nothing — the same answer *Post reply* gives by not being drawn at all.
+///
+/// Whitespace counts as blank, per `reply_is_postable`: a reply containing one
+/// space is an annotation nobody can read and nobody meant to author.
+#[test]
+fn escape_on_a_blank_reply_posts_nothing() {
+    let comment = row_by(Some("Jo Smith"));
+    let id = comment.id.expect("the fixture row carries an id");
+    let mut draft = super::note::NoteDraft::default();
+    draft.begin_reply(id, 0);
+    draft.text_mut().push_str("   ");
+
+    assert!(
+        super::editor::escape_commits(&comment, id, &draft).is_none(),
+        "a blank reply was posted — the control that would author it is not \
+         even drawn, and the key must not be a second route to what the button \
+         refuses"
+    );
+}

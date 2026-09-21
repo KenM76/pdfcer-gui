@@ -1294,10 +1294,11 @@ impl eframe::App for PdfcerApp {
         // tool changes from the Navigate row, from `tool::disarm_any`, from
         // `tool::retire_forbidden` on a mode change, from `tool::arm_text_edit`
         // re-pressing the ribbon button, and from every manifest chord bound to
-        // any of those. Three of those sites discarded the draft, three ignored
-        // it, and the eighth tool somebody adds would ignore it too. The
-        // condition — *a draft exists and the armed tool is not its caret* — is
-        // a property of the state, so it is read from the state.
+        // any of those. A rule spelled at each of those sites is a rule the next
+        // one added does not carry, and the failure is silent — the draft simply
+        // stops existing. The condition — *a draft exists and the armed tool is
+        // not its caret* — is a property of the state, so it is read from the
+        // state.
         //
         // `selected` and not `resolve`: a SPACE-held hand is composed over the
         // operator's tool for as long as the bar is down and is not something

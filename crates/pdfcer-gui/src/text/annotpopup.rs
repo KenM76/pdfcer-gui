@@ -324,12 +324,17 @@ pub fn popup_tooltip(author: Option<&str>, contents: Option<&str>) -> String {
 
 /// The hint under the pop-up's editor.
 ///
-/// Escape rather than the Cancel button, because a reviewer typing has their
-/// hands on the keyboard and the key is the faster route — and because a
-/// keyboard route that nothing announces is a keyboard route nobody finds.
+/// Escape **writes**, which is the opposite of what the key usually means, so
+/// the sentence has to say it and has to name the control that does discard.
+/// The ruling is at `crate::panels::comments::editor::escape_commits`; this
+/// surface's half of it is `crate::canvas::notepopup::controls::save_draft`.
+///
+/// It announces a keyboard route at all because a reviewer typing has their
+/// hands on the keyboard, and a keyboard route that nothing announces is a
+/// keyboard route nobody finds.
 #[must_use]
 pub fn popup_note_hint() -> &'static str {
-    "Press Escape to leave the note unchanged."
+    "Save note and Escape both write the note. Cancel leaves it as it was."
 }
 
 // ===========================================================================

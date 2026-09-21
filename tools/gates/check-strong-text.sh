@@ -259,7 +259,12 @@ EOF
     exit 1
 fi
 
-echo ">> check-strong-text"
+# Deliberately NOT a `>>` banner. The runner prints one of those per gate, and
+# an audit that counts runner banners against the scoreboard is how a gate that
+# silently stopped being tallied gets found. A gate printing a runner-shaped
+# line of its own makes that audit disagree with itself for no reason -- it read
+# 68 banners against 67 tallies, and the discrepancy was this line.
+echo "check-strong-text: scanning crates/ and tools/"
 found=0
 for dir in crates tools; do
     [ -d "$dir" ] || continue

@@ -60,7 +60,9 @@ pub struct Click<'a> {
 /// finished"*, not *"throw it away"* — every editor behaves this way, and the
 /// old shell settled it under the name `commit_on_click`. So the caller is
 /// handed the commit as an [`crate::app::actions::Action`] before the new draft
-/// starts. Escape, and only Escape, discards.
+/// starts. **Nothing discards** — Escape writes the draft too, on the operator's
+/// ruling that a commit by mistake is one `Ctrl+Z` and a discard by mistake is
+/// unrecoverable, because a draft never reaches the undo stack.
 pub fn click(
     ctx: &egui::Context,
     click: &Click<'_>,

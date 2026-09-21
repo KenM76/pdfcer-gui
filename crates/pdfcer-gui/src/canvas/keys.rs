@@ -25,10 +25,10 @@
 //!
 //! | # | claimant | who decides | how it says it took the key |
 //! |---|---|---|---|
-//! | 0 | a **form field being typed into** | [`crate::canvas::forms`] | [`crate::canvas::forms::escape_spent`]: `true` when a draft was abandoned |
+//! | 0 | a **form field being typed into** | [`crate::canvas::forms`] | [`crate::canvas::forms::escape_spent`]: `true` when a draft was committed |
 //! | 1 | a **drag in flight**, including a markup band | [`crate::canvas::gesture::GestureState::update`] — the only thing that knows whether there is one | [`crate::canvas::gesture::GestureOutcome::Cancelled`], arriving here as `escape_consumed` |
 //! | 2 | a **guide drag in flight** | [`crate::canvas::guides::cancel_drag`] | its return value: `true` when there was one |
-//! | 3a | a **measure pick** or a **markup vertex run** in progress | [`crate::canvas::measure::abandon`] / [`crate::canvas::markup::vertex::abandon`] | its return value: `true` when there was one |
+//! | 3a | a **measure pick**, a **markup vertex run**, a **text draft** or a **pending placement** in progress | [`crate::canvas::measure::abandon`] / [`crate::canvas::markup::vertex::abandon`] / [`crate::canvas::textedit::settle`] / [`crate::dialogs::placing`] | its return value: `true` when there was one. Only the text draft **writes** what it retires |
 //! | 3b | an **armed markup or measure tool** | [`crate::canvas::tool::disarm_markup`] / [`crate::canvas::tool::disarm_measure`] | its return value: `true` when there was one armed |
 //! | — | ★ the **armed text tool** is deliberately **not** a claimant — see below | — | — |
 //! | 4 | an **armed region zoom** | [`crate::canvas::zoom::disarm_region_zoom`] | its return value: `true` when there was something to retire |
@@ -156,7 +156,7 @@
 //! hazard rather than a formality. `egui`'s own `TextEdit` surrenders focus on
 //! Escape, and it does so **before** this function runs — so by the time the
 //! guard above is asked, `text_edit_focused` is already false and the key
-//! falls straight through to the selection ladder. One press would abandon the
+//! falls straight through to the selection ladder. One press would commit the
 //! draft *and* ascend a rung: exactly the double effect L1 forbids, and exactly
 //! the shape the `escape_consumed` flag was invented for one row down.
 //! [`crate::canvas::forms::escape_spent`] is the same report-rather-than-
@@ -510,7 +510,7 @@ pub(super) fn canvas_keys(
     //
     // With nothing focused it is `false` and costs one map lookup, exactly as
     // an un-armed `disarm_region_zoom` costs one.
-    let form_abandoned = crate::canvas::forms::escape_spent(ctx);
+    let form_settled = crate::canvas::forms::escape_spent(ctx);
 
     // ★ Claimant 0b: a Tab the raw-input hook already took off egui, for the
     // object ring.
@@ -526,18 +526,18 @@ pub(super) fn canvas_keys(
     //
     // ★★ And deliberately NOT `textedit::composing` here, which is the wider
     // predicate this project otherwise insists on. A canvas draft must still
-    // reach rung 4 of the Escape ladder below — that rung is what ABANDONS the
-    // draft, and a draft in flight is exactly the state in which Escape has the
-    // most to do. Widening this guard would make Escape stop working for the
-    // one gesture that needs it most.
+    // reach rung 3a of the Escape ladder below — that rung is what SETTLES the
+    // draft, writing what was typed — and a draft in flight is exactly the
+    // state in which Escape has the most to do. Widening this guard would make
+    // Escape stop working for the one gesture that needs it most.
     //
     // Delete is the key that must yield to a draft, and it is guarded on its
     // own branch further down rather than at this door. See there.
     //
     // typing-guard-exempt: this asks whether a WIDGET holds the keyboard, so
-    // that Escape can still reach the rung that abandons a canvas draft.
+    // that Escape can still reach the rung that settles a canvas draft.
     if ctx.text_edit_focused() {
-        // typing-guard-exempt: Escape must reach the draft-abandon rung below;
+        // typing-guard-exempt: Escape must reach the draft-settling rung below;
         // Delete yields to a draft on its own branch. See the note above.
         return;
     }
@@ -608,11 +608,11 @@ pub(super) fn canvas_keys(
     // `disarm_region_zoom` reports whether there was anything armed, so an
     // Escape on an un-armed canvas falls straight through and still ascends,
     // exactly as it did before this branch existed.
-    let escape_available = escape && !escape_consumed && !form_abandoned;
-    if form_abandoned {
+    let escape_available = escape && !escape_consumed && !form_settled;
+    if form_settled {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "canvas-escape outcome=AbandonedFormDraft".to_owned()
+            "canvas-escape outcome=SettledFormDraft".to_owned()
         });
     }
 
@@ -683,7 +683,23 @@ pub(super) fn canvas_keys(
         && !measure_abandoned
         && !vertex_abandoned
         && crate::canvas::textedit::settle(ctx, actions);
-    let vertex_abandoned = vertex_abandoned || draft_settled;
+    if draft_settled {
+        // The rung publishes itself, as every other rung on this ladder does.
+        // `text-edit-abandon` is not a substitute: it is emitted by `settle`'s
+        // teardown half whatever brought the draft to an end, and its own
+        // contract says it is not evidence that anything was lost. Without a
+        // line here, the one rung that WRITES is the one rung a driven check
+        // cannot see, and a key with a ladder does the rung it reaches rather
+        // than the rung the check meant.
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "canvas-escape outcome=SettledTextDraft".to_owned()
+        });
+    }
+    // Rung 3a is spent by whichever of its claimants took the key. The name
+    // carries the rung rather than one occupant, so a later claimant added to
+    // it does not have to be folded into a neighbour's variable.
+    let rung_3a_spent = vertex_abandoned || draft_settled;
 
     // ★★★ **…and a PENDING PLACEMENT, fourth on the same rung** —
     // `OPERATOR_REQUESTS.md` O66.
@@ -712,9 +728,9 @@ pub(super) fn canvas_keys(
     let placement_cancelled = escape_available
         && !guide_cancelled
         && !measure_abandoned
-        && !vertex_abandoned
+        && !rung_3a_spent
         && crate::canvas::placing::cancel(ctx);
-    let vertex_abandoned = vertex_abandoned || placement_cancelled;
+    let rung_3a_spent = rung_3a_spent || placement_cancelled;
 
     // Claimant 3b: an armed markup tool. Above the region zoom deliberately —
     // see the header's own section on why the transience rule does not settle
@@ -725,7 +741,7 @@ pub(super) fn canvas_keys(
     let markup_disarmed = escape_available
         && !guide_cancelled
         && !measure_abandoned
-        && !vertex_abandoned
+        && !rung_3a_spent
         && crate::canvas::tool::disarm_markup(ctx);
     if markup_disarmed {
         crate::diag::trace(|| {
@@ -739,7 +755,7 @@ pub(super) fn canvas_keys(
     let measure_disarmed = escape_available
         && !guide_cancelled
         && !measure_abandoned
-        && !vertex_abandoned
+        && !rung_3a_spent
         && !markup_disarmed
         && crate::canvas::tool::disarm_measure(ctx);
     if measure_disarmed {
@@ -765,7 +781,7 @@ pub(super) fn canvas_keys(
     let tool_disarmed = escape_available
         && !guide_cancelled
         && !measure_abandoned
-        && !vertex_abandoned
+        && !rung_3a_spent
         && !markup_disarmed
         && !measure_disarmed
         && crate::canvas::tool::disarm_any(ctx);
@@ -780,7 +796,7 @@ pub(super) fn canvas_keys(
     let disarmed = escape_available
         && !guide_cancelled
         && !measure_abandoned
-        && !vertex_abandoned
+        && !rung_3a_spent
         && !markup_disarmed
         && !measure_disarmed
         // …and not if the general tool disarm above already spent this press.
@@ -800,7 +816,7 @@ pub(super) fn canvas_keys(
     if escape_available
         && !guide_cancelled
         && !measure_abandoned
-        && !vertex_abandoned
+        && !rung_3a_spent
         && !markup_disarmed
         && !measure_disarmed
         && !tool_disarmed
@@ -861,7 +877,7 @@ pub(super) fn canvas_keys(
     //
     // ★ Note where the guard is, and why it is not at this function's entry.
     // The entry test is deliberately `text_edit_focused()` alone, because
-    // **Escape must still reach rung 4**, which is what abandons the draft. A
+    // **Escape must still reach rung 3a**, which is what settles the draft. A
     // draft in flight is precisely the state in which Escape has the most to
     // do. So the two keys diverge here rather than at the door: Escape belongs
     // to the ladder, Delete belongs to whoever is composing.

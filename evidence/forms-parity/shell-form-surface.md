@@ -3,6 +3,11 @@
 The **shell column** of `FORMS_PARITY.md`. Read-only measurement, 2026-09-16, at
 `b26f741` with the engine pinned to `5d43d2ea`. No file was edited to produce it.
 
+> **One row no longer describes the program, and the body is left alone because
+> it is a dated measurement rather than a specification.** Escape on a field
+> editor **commits** the draft; it does not abandon it, and there is no exit
+> that discards one. `FEATURES.md` carries the live claim.
+
 Paths are relative to `crates/pdfcer-gui/src/` unless prefixed `ENGINE:`
 (= `D:\Dev\pdfcer\crates\pdfcer-core\src\`, read-only), `UV:`
 (= `tools/ui-verify/src/`) or `DOC:` (repo root).

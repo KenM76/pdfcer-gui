@@ -90,8 +90,8 @@
 //!   **This row exists because it failed twice** — Delete after a canvas click,
 //!   then the space bar, which the pan tool took because this caret is not an
 //!   `egui::TextEdit` and egui's own predicate cannot see it.
-//! - T6 enter-commits-escape-abandons: both, and a draft identical to what it
-//!   replaces raises no action.
+//! - T6 every-exit-commits: Enter and Escape both write the draft, and a draft
+//!   identical to what it replaces raises no action.
 //! - T7 no-control-characters: `insert` filters them; Enter and Escape arrive as
 //!   key events and mean something.
 //! - T8 selection: **GAP** — no Shift+arrow, no Ctrl+A, no drag-select within a

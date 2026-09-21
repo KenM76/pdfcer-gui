@@ -283,11 +283,27 @@ run "check-suite-name-absent" python "$ROOT/tools/check-suite-name-absent.py"
 # did not look like a trace name, which is exactly what makes a leftover a
 # leftover.
 #
+# ★★ Mechanism 5: a name a module header documents that NOTHING emits. The
+# header's sample block is where a harness author reads a name from, so a
+# rename that misses it produces the identical false negative by a fourth
+# route, and the most tempting one, because a header is written to be
+# authoritative. `form-abandon` outlived its emitter exactly this way.
+#
+# ⚠ The obvious design -- compare the headers against a census of emitted
+# names -- is UNSOUND and was rejected after it accused a live name. Names
+# reach the channel through `format!`, a bare literal, `eprintln!`, and helpers
+# taking a RUNTIME string no static census can enumerate. An incomplete census
+# does not miss cases, it blames live ones. The emitted side is a plain
+# substring search instead, loose in the safe direction.
+#
 # The self-test is registered up in section 0, per this repository's
-# rule that a `--self-test` absent from this list does not exist. Its five
-# planted inputs include one that is not a violation and one -- a PDF content
-# stream, `BT /F1 12 Tf` -- that pins the anchor: the first cut of mechanism 3
-# scanned whole files and reported 31 hits of which one was real.
+# rule that a `--self-test` absent from this list does not exist. Its planted
+# inputs pair a violation with the correct construct that most resembles it,
+# including a PDF content stream (`BT /F1 12 Tf`) that pins mechanism 3's
+# anchor -- the first cut of that rule scanned whole files and reported 31 hits
+# of which one was real. Mechanism 5 was additionally falsified against the
+# real sources at the commit before its defect was fixed, because a self-test
+# proves only that a mechanism fires on input its own author planted.
 run "check-trace-names" python "$HERE/check-trace-names.py"
 
 # `check-texture-census` protects an argument from ELIMINATION, which is the

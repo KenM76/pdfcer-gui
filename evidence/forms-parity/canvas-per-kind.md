@@ -7,6 +7,12 @@
      conclusion about why a drop-down cannot be filled on the page. -->
 # Canvas form-field interaction — mechanical truth
 
+> **One row no longer describes the program, and the body is left alone because
+> it is a verbatim record rather than a specification.** Escape on a field
+> editor **commits** the draft; it does not abandon it, and there is no exit
+> that discards one. The trace it names, `form-abandon`, is not emitted by
+> anything — the line is `form-escape`. `FEATURES.md` carries the live claim.
+
 ## 0. The two surfaces, decided by mode
 
 `canvas::forms::overlay` is the single entry point, called from `canvas/present.rs:949` (before `interact` at `present.rs:1065`), with `authoring = caps.edit_content`.

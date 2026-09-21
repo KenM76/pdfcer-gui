@@ -147,7 +147,8 @@
 //!   any page key answered by a bare `text_edit_focused()` is a key taken out
 //!   of a word the operator is visibly typing — Delete, and the space bar the
 //!   pan tool claims.
-//! - T6 enter-commits-escape-abandons: both, **and Enter has two meanings**.
+//! - T6 every-exit-commits: Enter and Escape both write the draft, **and Enter
+//!   has two meanings**.
 //!   Inside a dragged text BOX a plain Enter is a paragraph break and
 //!   `Ctrl+Enter` commits; everywhere else Enter commits. That is why
 //!   [`Anchor::Box`] is a variant rather than a flag: the keystroke handler has
@@ -600,10 +601,15 @@ pub(crate) fn store(ctx: &egui::Context, draft: Draft) {
 
 /// Forget the draft, returning whether there was one.
 ///
-/// The abandon half of the Escape ladder, and the retirement path
-/// `crate::canvas::tool::retire_forbidden` calls when the mode loses
-/// `edit_content`. Returns `bool` for the reason `measure::abandon` does: the
-/// ladder rung above it needs to know whether this rung consumed the key.
+/// The teardown half of an exit, never an exit in itself. Returns `bool` for
+/// the reason `measure::abandon` does: the ladder rung above it needs to know
+/// whether this rung consumed the key.
+///
+/// ★ **Every caller runs `commit_into` immediately before it**, so nothing in
+/// the program reaches this without writing what was typed — Escape included,
+/// which takes the [`settle`] route. Read the name as *forget*, not as *throw
+/// away*: a caller that meant to discard would be the first, and would be
+/// contradicting the ruling recorded on [`settle`].
 ///
 /// # `text-edit-abandon` is not evidence that an edit was lost
 ///
@@ -719,10 +725,12 @@ pub(super) fn commit_into(
 /// That is a ruling about **asymmetric cost**. A draft written by mistake is
 /// one `Ctrl+Z`; a draft discarded by mistake is minutes of typing with no
 /// recovery anywhere, because a draft lives in `egui::Memory` and never
-/// reaches the undo stack. So every exit that is not the operator explicitly
-/// saying *throw this away* comes through here rather than through
-/// [`abandon`], and today there is no such explicit exit — [`abandon`] is
-/// reached only as this function's own teardown half.
+/// reaches the undo stack. So every exit writes first and tears down second,
+/// and there is no exit that does the second without the first: [`abandon`] is
+/// reached only immediately after a [`commit_into`], here and at the two exits
+/// that inline the same pair (`Ctrl+Enter`, and a click that starts a new
+/// draft). An exit that meant *throw this away* would be the first, and there
+/// is none.
 ///
 /// ## ★ Why it is safe for the emptied-run case
 ///

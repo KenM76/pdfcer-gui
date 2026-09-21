@@ -115,6 +115,7 @@
 - [One property differs; absence needs a witness](feedback_control_differs_one.md) — a healthy file satisfies it three ways.
 - [Field access is invisible to the drift gate](feedback_type_reached_field.md) — bind it, don't mention it.
 - [Falsify the gate on real files](feedback_falsify_on_real_files.md) — the fix on a control binary; a self-test alone says nothing.
+- [A census of what the program emits can't be completed](feedback_census_cannot_complete.md) — an incomplete one accuses live code.
 - [A pattern claims a document's notation](feedback_pattern_over_human.md) — measure the widening's yield.
 - [A classification invites the next exception](feedback_rule_classification.md) — one token plus a written exemption.
 - [An inherited summary is not a source](feedback_inherited_session.md) — quotes AND formulas cross it unmeasured.

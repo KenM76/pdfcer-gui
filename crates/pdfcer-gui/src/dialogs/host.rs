@@ -61,7 +61,12 @@
 //!   `ctx.text_edit_focused()` first. A multi-line field would otherwise lose
 //!   the ability to type a newline the moment it sat in a dialog.
 //! - **Escape** is equivalent to Cancel *and* to the close button, so all three
-//!   routes out are one outcome.
+//!   routes out are one outcome — but **not on the press that leaves a text
+//!   field**. egui clears focus before any widget runs, so a guard that asks
+//!   `text_edit_focused()` about Escape is inert rather than weak, and the
+//!   dialog would cancel on the same keystroke that exits the box. The first
+//!   press leaves the field and the second cancels; [`Host::show`] holds the
+//!   mechanism and the argument.
 //! - The affirmative button is **drawn** as the default, from the theme's
 //!   **accent** and the foreground the theme pairs with it
 //!   (`Theme::accent_pair`), so the operator knows what Enter will do before
@@ -500,6 +505,17 @@ impl Host {
         ctx.data_mut(|d| d.insert_temp(self.key, at));
     }
 
+    /// Where *a field held the keyboard when the last pass ended* is kept — in
+    /// the **child** window's memory, not the parent's.
+    ///
+    /// Salted off [`Self::key`] so it cannot collide with the remembered
+    /// position even though the two live in different `Context`s. Read
+    /// [`Self::show`]'s Escape rung for why the fact has to be carried across a
+    /// pass at all.
+    fn field_focus_key(&self) -> egui::Id {
+        self.key.with("field-focus")
+    }
+
     /// **Draw one frame of this dialog in its own OS window.**
     ///
     /// `add` is handed a `Ui` inside the window and may do anything an
@@ -842,12 +858,34 @@ impl Host {
             // window, which is a different window and, once G3 lands, a
             // different focus.
             //
-            // typing-guard-exempt: this asks whether a WIDGET holds Escape, not
-            // whether anybody is composing. A canvas draft is not reachable from
-            // inside a dialog.
-            let escape =
-                !child.text_edit_focused() && child.input(|i| i.key_pressed(egui::Key::Escape));
-            frame.closed = escape || child.input(|i| i.viewport().close_requested());
+            // ★★★ **The question is asked of the PREVIOUS pass, because egui has
+            // already destroyed the answer by the time this line runs.**
+            // `Focus::begin_pass` clears `focused_widget` on Escape before any
+            // widget code executes, so `child.text_edit_focused()` is `false`
+            // here on exactly the frame where it matters. A guard written the
+            // obvious way is not a weak guard; it is inert, and the dialog
+            // cancels on the same press that leaves the field — up to a text
+            // annotation's worth of typing gone on one key.
+            //
+            // So the rung is: **first Escape leaves the field, second cancels
+            // the dialog**, which is what Acrobat, Word and every options window
+            // in Windows do, and therefore the spec under this project's
+            // use-the-conventional-interaction rule.
+            //
+            // The flag is not written on an Escape pass. egui may run this
+            // callback more than once per frame, and a flag cleared by the first
+            // run would let the second run of the *same* press close the window
+            // — the grace press consumed and spent inside one keystroke.
+            //
+            // typing-guard-exempt: this asks whether a WIDGET held the keyboard,
+            // not whether anybody is composing. A canvas draft is not reachable
+            // from inside a dialog.
+            let field_was_focused = child
+                .data(|d| d.get_temp::<bool>(self.field_focus_key()))
+                .unwrap_or(false);
+            let escape = child.input(|i| i.key_pressed(egui::Key::Escape));
+            frame.closed =
+                (escape && !field_was_focused) || child.input(|i| i.viewport().close_requested());
 
             //
             // The `Ui` egui hands a viewport callback is the child window's
@@ -912,6 +950,23 @@ impl Host {
             // second run is to draw again.
             let inner = framed.show(ui, |ui| (add(ui), ui.min_rect().size()));
             let (out, content) = inner.inner;
+
+            // ★ Recorded for the NEXT pass's Escape, per the rung above. Asked
+            // after the body has drawn, which is the only moment in an
+            // immediate-mode toolkit at which a field that has the keyboard has
+            // said so. Read `field_focused` out before taking the write lock:
+            // `text_edit_focused` reads the same memory `data_mut` holds.
+            //
+            // typing-guard-exempt: this asks whether an egui WIDGET held the
+            // keyboard — the fact the next pass's Escape needs in order to
+            // choose between leaving the field and cancelling the window. It is
+            // not a question about whether the operator is composing: a canvas
+            // text draft is not reachable from inside a dialog, and `composing`
+            // would answer about the application window rather than this one.
+            if !escape {
+                let field_focused = child.text_edit_focused();
+                child.data_mut(|d| d.insert_temp(self.field_focus_key(), field_focused));
+            }
 
             // ★ Measured AFTER the body has drawn, which is the only moment
             // the answer exists in an immediate-mode toolkit. See [`Self::fit`]

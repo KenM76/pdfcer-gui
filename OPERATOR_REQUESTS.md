@@ -231,6 +231,23 @@ enumerated in `canvas::keys`'s tests. The rung that currently abandons a text
 edit becomes a rung that commits it; what Escape does when there is *no* text
 in flight is untouched.
 
+**Where it holds now.** The canvas caret and the note window commit on Escape.
+The Comments panel's note editor and reply box commit on Escape, through
+`panels::comments::editor::escape_commits`, which decides the destination —
+`SetNote` for a note, `add_reply` for a reply — and writes nothing when the
+draft is unchanged or a reply is blank. The text-annotation dialog is the one
+surface where Escape still *reaches* a discard, because Cancel is what a dialog
+is for; the protection there is a rung rather than a commit, and the first press
+only leaves the field. Bookmark, ce dimension group and form field rename
+drafts have no Escape branch at all, so nothing was ever lost to the key.
+
+**What is owed before this row can be closed.** The parity sweep across the
+remaining text-bearing kinds — free text, callouts, form field values,
+text-bearing markup, ce dimension labels — counted against the parity table
+rather than found by hand; and the driven assertion, which is registered as
+`escape_commits_text` in `ui-verify` and has not yet been run. Unit tests
+cannot see the chain: they call the helper, not the key.
+
 ## O224 — **FILED** — export should keep text as text, and fonts embedded, where the format allows
 
 > *"Also I would like the option to keep text and embedded fonts if possible
@@ -247,10 +264,22 @@ that genuinely cannot carry text says so with a citation rather than silently
 outlining. SVG is his named case — `<text>` with the face embedded or
 referenced — and it is the one to drive first.
 
-**Whether the engine can emit it is an open question, not an assumption.** If
-`pdfcer-render`'s SVG path has no text mode, that is an engine gap, it gets
-written up in the request channel, and this row names that file rather than
-going quiet.
+**It is an engine gap, measured, and it is filed as `G033`.** The SVG and EMF
+writers consume `pdfcer_render::display_list::Op`, whose only variants are
+`Fill`, `Stroke` and `Layer` — `interpret`'s `paint_glyph` has already turned
+each glyph into a filled path by the time any writer sees the page, so there
+is no codepoint, no font reference and no text matrix left to emit. The enum
+is `pub(crate)`, so nothing outside `pdfcer-render` can even reach the gap.
+
+DXF is the exception and it is why his expectation is reasonable: it walks
+`pdfcer_core::vector::PageObjects`, which still carries text, and the shell
+already surfaces `DxfOptions::text` as a checkbox. The default for SVG is not
+in dispute — outlines render identically everywhere and should stay the
+default. What is missing is the option beside it, a **per-run** fallback when
+a run cannot be written as text, and a count of what fell back.
+
+Until it lands the option is not drawn at all (R9), and every SVG and EMF
+export already leads its report with the outline fact.
 
 ## O225 — **FILED** — draw page previews should default to no limit
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """check-trace-names.py — a module's own trace line must not share its first
-token with an edit-funnel label, read as a debugging leftover, or break in two.
+token with an edit-funnel label, read as a debugging leftover, break in two, or
+be named in a doc comment while nothing emits it.
 
 ===========================================================================
 THE PROPERTY ASSERTED
@@ -10,7 +11,7 @@ Every diagnostic line this crate writes is addressable: it has a name no other
 line answers to, a name somebody chose on purpose, and it arrives at a reader
 in one piece.
 
-All three mechanisms below defend the same downstream consumer. `tools/ui-verify`
+All four mechanisms below defend the same downstream consumer. `tools/ui-verify`
 reads a trace by its FIRST TOKEN:
 
     pub fn last(&self, name: &str) -> Option<&TraceLine> {
@@ -28,8 +29,8 @@ keys the module's line was written to publish.
 
 The failure mode is the worst shape a diagnostic can have: a driven check asks
 for `name=` or `chars=`, finds nothing, and reports **"the verb did nothing"**
-about a verb that worked perfectly. A confident false negative. Mechanisms 3
-and 4 produce the identical symptom by different routes, which is why they live
+about a verb that worked perfectly. A confident false negative. Mechanisms 3, 4
+and 5 produce the identical symptom by different routes, which is why they live
 in one gate.
 
   > An incident does not generalise itself. A grep does.
@@ -126,12 +127,65 @@ fixed window instead, could not reach past a fifteen-line comment block, and
 printed PASS over the live defect it had just been written for.
 
 ===========================================================================
+MECHANISM 5 — A NAME DOCUMENTED IN A MODULE HEADER THAT NOTHING EMITS
+===========================================================================
+
+Every module here that writes traces opens with a sample block naming its
+lines, and that block is where a harness author reads a name from:
+
+    //! form-escape field=Name
+
+If the emitter is renamed and the sample is not, the name in the header is a
+name nothing answers to. `Trace::last("form-abandon")` returns `None`, and the
+check reports *"the field editor did nothing"* about an editor that committed
+the draft correctly — the same confident false negative as mechanisms 1, 3 and
+4, arriving by a fourth route. It is the most tempting of the four to copy,
+because a module header is written to be authoritative.
+
+Measured when this was added: 26 documented sample names, one of them dead.
+
+★★ THE OBVIOUS DESIGN IS UNSOUND AND WAS REJECTED. The first cut compared the
+documented names against a CENSUS OF EMITTED NAMES — every first token of a
+`format!` inside a trace call — and immediately accused `ui-rect`, which is
+live. Names reach the channel by at least four routes: `format!`, a bare
+`"...".to_owned()` literal, `eprintln!` in `diag`, and helpers like
+`diag::ui_rect(name)` whose argument is a **runtime string that no static
+census can enumerate at all**. An incomplete census does not merely miss
+cases — it BLAMES LIVE NAMES, and a gate that fails on correct code is a gate
+somebody switches off.
+
+So the emitted side here is not a census. It is a plain substring search of all
+non-comment source text in both crates: a documented name must appear
+SOMEWHERE outside a comment. That is deliberately loose, and loose in the safe
+direction — the mechanism fires only when a name appears nowhere at all, so its
+errors are missed dead names rather than accusations against live ones.
+
+Comments of every kind are excluded from the searched text, not just doc
+comments. A name that survives only in an ordinary `//` note is not emitted
+either, and excluding only `//!` and `///` would let a header's own duplicate
+elsewhere in the file discharge it.
+
+===========================================================================
 WHAT IT PROVABLY CANNOT SEE
 ===========================================================================
 
-* **Anything outside `crates/pdfcer-gui/src/**.rs`.** The tree is walked with
-  `rglob`, so a trace written in `egui-shell`, in `tools/ui-verify` itself, or
-  in any other crate is not examined.
+* **Anything outside the two GUI crates' `src/**.rs`.** The trees are walked
+  with `rglob`, so a trace written in `egui-shell`, in `tools/ui-verify`
+  itself, or in any other crate is not examined. A name documented in one of
+  these crates but emitted from `egui-shell` would be reported dead by
+  mechanism 5; none exists today, and the fix would be to widen `SRCS` rather
+  than to exempt the line.
+* **A documented name with no `key=` field.** `DOC_SAMPLE` requires a
+  `name key=` shape, because that is what makes a line in a doc comment
+  unmistakably a trace sample rather than prose. A header that names a line
+  bare is not checked.
+* **A documented name that is a substring of an unrelated live one.** Per
+  mechanism 5's note above, the emitted side is a substring search, so
+  `form-escape` in a header is discharged by `form-escape-late` in code. The
+  looseness is chosen, and it is the safe direction.
+* **Whether a documented name's FIELDS are still emitted.** Mechanism 5 reads
+  the first token only. A sample promising `field=` beside a line that no
+  longer writes `field=` passes.
 * **A trace built without `format!`.** A bare `"...".to_owned()` literal is not
   matched by any mechanism. Deliberate for mechanism 4 — such a literal is
   written in one piece and has no continuation to double — but it also means
@@ -154,33 +208,43 @@ USAGE AND EXIT CODES
 ===========================================================================
 
   tools/gates/check-trace-names.py              scan the crate
-  tools/gates/check-trace-names.py --self-test  falsify all four mechanisms
+  tools/gates/check-trace-names.py --self-test  falsify all five mechanisms
 
-  0  clean  — every trace name is unique against the funnel, deliberate, and
-              emitted on one line
+  0  clean  — every trace name is unique against the funnel, deliberate,
+              emitted on one line, and emitted at all
   1  FAIL   — one or more violations of any mechanism, each printed with
               `file:line` and the offending source line
 
 There is deliberately **no SKIPPED state**. This gate reads a fixed path in
 this repository rather than a git query, so "no input" is not a legitimate
 condition here: an empty label set means the `vector_edit` pattern moved and
-mechanism 1 has gone blind, which is reported on stderr and exits 1. A gate
-whose pattern has stopped matching must not print what a clean run prints.
+mechanism 1 has gone blind, and an empty documented-name set means the header
+sample convention moved and mechanism 5 has. Both are reported on stderr and
+exit 1. A gate whose pattern has stopped matching must not print what a clean
+run prints.
 
 ===========================================================================
 HOW TO FALSIFY IT
 ===========================================================================
 
-`--self-test` plants inputs for all four mechanisms and asserts each fires on
+`--self-test` plants inputs for all five mechanisms and asserts each fires on
 its own defect AND declines the legitimate construct it would otherwise flood:
 a multi-line `format!` (the per-line regression mechanism 1 already suffered
 once), a `vector_edit` label, the all-caps leftover, an ordinary trace name, a
 PDF content stream, a doubled continuation, a correct single continuation, a
 literal carrying Debug-quoted fields, a literal under a 400-character comment
-block, and a `trace_on_change` slot name. It exits 0 only if every one behaves.
+block, a `trace_on_change` slot name, a documented name emitted nowhere, a
+documented name whose emitter is present, and a prose line in a doc comment.
+It exits 0 only if every one behaves.
 
-Both halves matter equally here: three of these mechanisms are regex-shaped,
+Both halves matter equally here: four of these mechanisms are regex-shaped,
 and a regex that stops matching is silent rather than loud.
+
+★ A self-test is not by itself evidence for mechanism 5, because a self-test
+only proves the mechanism fires on the input the same author planted. It was
+also falsified against the real tree: run over the sources at the commit
+BEFORE the dead name was fixed, it reported `form-abandon` at the right file
+and line and cleared the other 25; run over the tree after, it reported none.
 """
 
 from __future__ import annotations
@@ -265,6 +329,18 @@ TRACE_PREFIX = (
 # recorded failure mode *a gate keyed on a name is discharged by prose* in
 # reverse — a rule so broad it has to be exempted becomes a rule nobody trusts.
 SCRATCH_PREFIXES = ("tmp", "temp", "dbg", "debug", "xxx", "todo", "fixme", "hack")
+# ★ A trace sample inside a doc comment: `//! form-escape field=Name`.
+#
+# The trailing `key=` is load-bearing. Without it the pattern is "a hyphenated
+# word in a doc comment", which matches English prose and would make mechanism
+# 5 a rule about writing rather than about traces. At least one hyphen is
+# required for the same reason.
+DOC_SAMPLE = re.compile(r"^[ " + chr(9) + r"]*//[!/][ " + chr(9)
+                        + r"]*([a-z][a-z0-9]*(?:-[a-z0-9]+)+)[ " + chr(9)
+                        + r"]+[a-z_]+=")
+# A whole line that is nothing but a comment, of any kind. Mechanism 5 strips
+# these before searching for a name's emitter; see `emitting_text`.
+ANY_COMMENT = re.compile(r"^[ " + chr(9) + r"]*//")
 # ★★ The whole BODY of a trace call's format literal -- escapes, continuations
 # and Debug-quoted fields included.
 #
@@ -286,6 +362,45 @@ TRACE_LITERAL = re.compile(
     + "(?://[^" + NL + "]*" + NL + WS + ")*"
     + '"((?:[^"' + BS + BS + "]|" + BS + BS + "(?:.|" + NL + "))*)" + '"'
 )
+
+
+def doc_sample_name(line: str) -> str | None:
+    """The trace name a doc-comment line publishes as a sample, if it is one.
+
+    A module header's sample block is where a harness author reads a name from:
+
+        //! form-escape field=Name
+
+    The `key=` is what makes the shape unmistakable. Prose in a doc comment is
+    full of hyphenated words, and a rule keyed on "a hyphenated token in a doc
+    comment" would be a rule about English rather than about traces — this
+    project's recorded failure mode *a gate keyed on a name is discharged by
+    prose*, in reverse.
+
+    ★ A pure function of one line, so the self-test can falsify it without a
+    filesystem — the half of a checker that most often goes untested and
+    therefore most often cannot fail.
+    """
+    match = DOC_SAMPLE.match(line)
+    return match.group(1) if match else None
+
+
+def emitting_text(text: str) -> str:
+    """``text`` with every comment line removed: what may discharge a name.
+
+    Doc comments are excluded because a header discharging its own sample is
+    the whole defect. Ordinary `//` comments are excluded too — a name that
+    survives only in a note beside the code it used to describe is not emitted
+    either, and keeping them would let a duplicate mention elsewhere in the
+    same file stand in for an emitter.
+
+    Only WHOLE comment lines go. A trailing `// …` after code is rare here and
+    dropping the code with it would manufacture a false positive, which is the
+    one direction mechanism 5 must not err in.
+    """
+    return NL.join(
+        line for line in text.split(NL) if not ANY_COMMENT.match(line)
+    )
 
 
 def looks_like_scratch(token: str) -> bool:
@@ -455,7 +570,49 @@ def self_test() -> int:
         "mechanism 4 cannot reach past a `trace_on_change` slot name, so every "
         "line written through that helper would go unchecked in silence"
     )
-    print("check-trace-names: SELF-TEST PASS - 11 planted inputs, all as expected.")
+    # --- mechanism 5 -----------------------------------------------------
+    #
+    # The planted input is the real defect, reduced: a module header naming
+    # `form-abandon` beside an emitter that says `form-escape`.
+    stale_header = (
+        "//! form-abandon field=Name" + NL
+        + 'crate::diag::trace(|| format!("form-escape field={f}"));'
+    )
+    names = [n for n in map(doc_sample_name, stale_header.split(NL)) if n]
+    assert names == ["form-abandon"], (
+        "mechanism 5 did not read the sample name out of a module header, so "
+        "it would have nothing to check and would report clean on every tree"
+    )
+    assert names[0] not in emitting_text(stale_header), (
+        "mechanism 5 did not see a documented name that nothing emits -- the "
+        "exact defect it was written for, which makes a driven check report "
+        "the verb did nothing about a verb that worked"
+    )
+    live_header = (
+        "//! form-escape field=Name" + NL
+        + 'crate::diag::trace(|| format!("form-escape field={f}"));'
+    )
+    assert "form-escape" in emitting_text(live_header), (
+        "mechanism 5 calls a LIVE documented name dead -- it would fail the "
+        "build on correct code, which is how a gate gets switched off"
+    )
+    # ★ The half that makes the emitted side sound. The header line itself must
+    # NOT discharge the name, or the mechanism answers "emitted" unconditionally
+    # and is a checker that cannot fail.
+    assert "form-escape" not in emitting_text("//! form-escape field=Name"), (
+        "mechanism 5 lets a doc comment discharge its own sample, so every "
+        "documented name would look emitted and nothing could ever be found"
+    )
+    # ★ Lowercase, hyphenated, and in a doc comment, so it clears every part of
+    # the pattern EXCEPT the trailing `key=`. Prose beginning with a capital
+    # would be declined by a pattern that had no `key=` requirement at all, and
+    # would therefore have tested nothing.
+    assert doc_sample_name("//! read-only until fold-in day, never edited.") is None, (
+        "mechanism 5 reads ordinary prose as a trace sample -- a rule about "
+        "traces that is really a rule about English, which this project has "
+        "already been bitten by in the other direction"
+    )
+    print("check-trace-names: SELF-TEST PASS - 16 planted inputs, all as expected.")
     return 0
 
 
@@ -472,6 +629,38 @@ def main() -> int:
         print("check-trace-names: found no vector_edit labels — the pattern has moved.",
               file=sys.stderr)
         return 1
+
+    # Mechanism 5's two sides, both collected across the WHOLE tree before
+    # anything is judged. It is the one mechanism here that is not per-file: a
+    # header in one module routinely documents a line emitted from another, so
+    # a per-file comparison would accuse every such name.
+    documented: dict[str, list[str]] = {}
+    emitters: list[str] = []
+    # Counted BEFORE the exemption filter, and that is what the pattern-moved
+    # test below reads. An exempted sample still proves `DOC_SAMPLE` matches,
+    # so a tree that exempted every one of them must not be reported as a tree
+    # whose convention moved — a refusal sentence that names the wrong cause
+    # sends the next reader to the wrong place.
+    samples_seen = 0
+    for path, text in blobs.items():
+        rel = path.relative_to(ROOT).as_posix()
+        doc_lines = text.split("\n")
+        for n, line in enumerate(doc_lines, 1):
+            name = doc_sample_name(line)
+            if name is None:
+                continue
+            samples_seen += 1
+            # Same exemption window as every other mechanism: the line itself
+            # or the comment block above it.
+            if EXEMPT in "\n".join(doc_lines[max(0, n - 9):n]):
+                continue
+            documented.setdefault(name, []).append(f"{rel}:{n}")
+        emitters.append(emitting_text(text))
+    if not samples_seen:
+        print("check-trace-names: found no documented trace samples — the module "
+              "header convention has moved.", file=sys.stderr)
+        return 1
+    corpus = "\n".join(emitters)
 
     violations = 0
     scratch = 0
@@ -551,6 +740,16 @@ def main() -> int:
             print(f"      {lines[n - 1].strip()[:110]}")
             split += 1
 
+    # Mechanism 5: a documented name must appear somewhere outside a comment.
+    # Not per-file — see the collection pass.
+    dead = 0
+    for name in sorted(documented):
+        if name in corpus:
+            continue
+        for where in documented[name]:
+            print(f"  {where}: documents `{name}`, which nothing in either crate emits")
+        dead += 1
+
     if scratch:
         print(f"""
 {scratch} trace name(s) read as a debugging leftover rather than a diagnostic.
@@ -594,6 +793,26 @@ project's standing note on that is in its agent memory.
 If a backslash genuinely belongs in the line, say so with `{EXEMPT}`.
 """)
 
+    if dead:
+        print(f"""
+{dead} trace name(s) are documented in a module header and emitted by nothing.
+
+A module header's sample block is where a harness author reads a name from, and
+it is written to be authoritative. When the emitter is renamed and the sample
+is not, `Trace::last(<name>)` returns None and the driven check reports *"the
+verb did nothing"* about a verb that worked — the same confident false negative
+mechanisms 1, 3 and 4 exist for, by a fourth route.
+
+Measured on the tree this was added to: `form-abandon` outlived the line it
+named. The emitter had said `form-escape` since Escape was changed to COMMIT a
+form draft rather than discard it, and the header still taught the old name.
+
+Fix the HEADER to match what the code emits — the code is the thing that runs.
+If the name is genuinely emitted somewhere this gate cannot see (another crate;
+built from a runtime string), say so on the line or in the comment block above
+it with `{EXEMPT}` and where it is emitted from.
+""")
+
     if violations:
         print(f"""
 {violations} trace line(s) share a first token with a `vector_edit` label.
@@ -611,12 +830,13 @@ block above it with `{EXEMPT}` and the reason.
 """)
         return 1
 
-    if scratch or split:
+    if scratch or split or dead:
         return 1
 
     print(
-        f"check-trace-names: PASS - {len(labels)} funnel labels, no collisions, "
-        f"no scratch names, no split lines."
+        f"check-trace-names: PASS - {len(labels)} funnel labels, "
+        f"{len(documented)} documented names, no collisions, no scratch names, "
+        f"no split lines, none documented-but-unemitted."
     )
     return 0
 

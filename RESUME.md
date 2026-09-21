@@ -36,7 +36,7 @@ grepping it — a count only goes stale, a name can be born false.
 | Last release | `git fetch --tags origin && gh api repos/KenM76/pdfcer-gui/releases/latest` | **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in an unfetched tree answers with an older tag and reports a commits-unreleased count wrong by a factor. Read every field back out of the API rather than inferring it from the flags passed in, and check the local zip's byte count against the asset's — agreement to the unit is the cheapest proof the upload is the file and not a truncation. The binary's own stamp and `published_at` sit twelve to twenty minutes apart on every release; label which clock |
 | Which slot he runs | `grep -H '^Shell:' /c/Users/Ken/OneDrive/pdfcer-gui{1,2}/BUILD-INFO.txt` | **The slot name carries no version and the rotation alternates**, so the newer slot is 1 on one release and 2 on the next. Never carry "the slot he runs" forward in prose — a paragraph about what a past release contained must say *first published in* and stop, because a sentence naming the live slot is true for one release and silently wrong for every one after. The older slot is the fallback by construction: `package-portable.py` replaces the older, so the previous build always survives |
 | Driven checks | `ui-verify --list \| grep -cE '^  [a-z0-9_]+$'` | **Rebuild the harness first** — `--list` sits behind `refuse_if_self_is_stale`, and a stale harness prints nothing, which `grep -c` reports as zero and reads as a roster. The `$` is load-bearing: `--list` also prints a profiles table whose rows are two-space-indented lowercase words. It prints two lines per check, so a `wc -l` answers about double |
-| Gates | `bash tools/gates/run-all.sh` | Three states, not two: `0` pass, `1` fail, `3` a gate was SKIPPED for an absent precondition. A skip is not a pass. **Tally on the `RESULT:` line, never on a pipeline's exit code** — `run-all.sh \| tail` reports `tail`'s zero. A stable pass-count across an engine pin bump proves nothing about whether the documents survived it; the tally moves only when a gate is added. **Run `cargo fmt --all` before starting one** — `cargo fmt` is the LAST gate, so a formatting slip in hand-written Rust is found forty minutes in and costs the entire run. **And start it `CARGO_BUILD_JOBS=2`**: clippy runs after fmt, `--all-targets` spawns a `clippy-driver` per TARGET, and by then the sweep has spent the session's handles on one `sed` per source file — several drivers then die together with `exit code: 0xc0000142, STATUS_DLL_INIT_FAILED` and no diagnostic at all, which reads as four crates breaking at once. It is process count, not memory, whatever a supervisor's kill reason says; the same command alone finishes green in seconds. A sweep killed before its SUMMARY has no verdict, and hand-summing the PASS lines cannot see a gate that never ran |
+| Gates | `bash tools/gates/run-all.sh` | Three states, not two: `0` pass, `1` fail, `3` a gate was SKIPPED for an absent precondition. A skip is not a pass. **Tally on the `RESULT:` line, never on a pipeline's exit code** — `run-all.sh \| tail` reports `tail`'s zero. **A background task is the worst host for that**, because the completion notification restates the pipe's status in the harness's own voice, beside the word *completed*, and a bare control (`exit 1` in the background) reports `1` correctly — so there is no wrapper bug to find and the only remaining explanation looks like a defect in `run-all.sh`, which exits `1`/`3`/`0` correctly. The tell is the output FILE: a 95-minute run that left 47 lines had a filter eat the detail and the status with it. Launch it `> "$OUT" 2>&1` and the notification reports the runner's own status. A stable pass-count across an engine pin bump proves nothing about whether the documents survived it; the tally moves only when a gate is added. **Run `cargo fmt --all` before starting one** — `cargo fmt` is the LAST gate, so a formatting slip in hand-written Rust is found forty minutes in and costs the entire run. **And start it `CARGO_BUILD_JOBS=2`**: clippy runs after fmt, `--all-targets` spawns a `clippy-driver` per TARGET, and by then the sweep has spent the session's handles on one `sed` per source file — several drivers then die together with `exit code: 0xc0000142, STATUS_DLL_INIT_FAILED` and no diagnostic at all, which reads as four crates breaking at once. It is process count, not memory, whatever a supervisor's kill reason says; the same command alone finishes green in seconds. A sweep killed before its SUMMARY has no verdict, and hand-summing the PASS lines cannot see a gate that never ran |
 | Unit tests | `cargo test --workspace` | Summed over the `test result:` lines, then cross-counted by `cargo test --workspace -- --list \| grep -cE ': test$'`; passing plus ignored must equal the cross-count. Two methods, because a summed figure nobody cross-checks is how the last count drift got in. The cross-count is also how you know a new test RAN: three `#[test]` functions once compiled clean, reported nothing and executed zero times, because they were nested inside another function |
 | Source files | `find crates -name '*.rs' \| wc -l` | **The command's scope is a claim.** `find crates tools` answers larger, because `tools/ui-verify` is a Rust crate and is not under `crates/`. Neither figure is wrong; quoting one under the other's command is |
 | Backlog register | `python tools/walk-engine-backlog.py` | Rewrite the five headings from the walker's own printed figures, never by arithmetic on the old ones. A row is a verdict plus one paragraph, capped at 1,200 characters and checked by `--check`; file the row and set the headings in one edit with `--write YYYY-MM-DD`. **`--check` prints "the headings do not agree with the walk" on ANY non-zero exit, including a pure over-cap failure** — read the section above the banner before re-writing headings that are already right |
@@ -52,7 +52,58 @@ channel: a reply is an input to *how* a thing is built, never to *which*. Each
 row's argument is in `OPERATOR_REQUESTS.md`, which **only Ken closes**; the open
 set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
-1. **O215 / O216 / O217 — the text chunk as a thing the operator can aim at.
+1. **O218 – O225, his eight-row zoom and text report. Five are built and not
+   yet driven, two are observability only, one is unstarted and its first
+   question belongs to the engine.**
+   **Built, driven checks owed.** O218 — every ceiling the shell derived was
+   `RenderQuality::multiplier` too high, so it offered a zoom the engine then
+   refused; `viewer::raster_density` is now the single factor and
+   `zoom_for_raster_scale` its named inverse. O220 — the refusal placeholder
+   swallowed Ctrl+wheel, so the only way out was the bottom bar. O222/O223 — a
+   text draft settles when the armed tool is no longer its caret, stated once
+   in the frame order rather than at each of eight exits; Escape commits on the
+   canvas caret, on the note window, and on the Comments panel's note and reply
+   editors, and a dialog's **first** Escape leaves the field so that one press
+   cannot reach Cancel. ⚠ `Context::text_edit_focused()` cannot guard Escape at
+   all — egui clears focus in `Focus::begin_pass`, before any widget runs and
+   without touching the buffer — so a guard asking it about Escape is INERT,
+   not weak, and the dialog carries a previous-pass flag instead. O225 — page
+   previews default to no limit.
+   **O219 / O221 are OBSERVABILITY ONLY, and the distinction is the whole
+   status.** `crates/native-gl` drains the GL error flag behind a safe
+   signature; `render::pressure` decides what a reading can be pinned on, by
+   elimination, and traces `gl-pressure` when the flag is dirty and
+   `gl-max-texture-side` on change. **Nothing lowers a ceiling and nothing
+   drops a raster.** The drain is the first statement of the frame because
+   `load_texture` only queues — an upload ordered in a frame is performed after
+   `ui` returns, so its error is first readable at the top of the next one.
+   **What is owed before either row may be called repaired** is a zoom
+   **series** — not two endpoints — on a fixed page with one, then three, then
+   six documents open, driven through the real binary. A blank canvas has
+   exactly one oracle, a captured screenshot. `ui-verify` competes for his
+   machine: ask in one line with the cost.
+   ⚠ **Two things must never be reported as the fix for his symptom.** The
+   per-axis edge guard is **inert on his card** — measured, release build,
+   off-screen: `gl-max-texture-side side=16384` against a whole-page edge
+   budget of 16383. And anything measured in a **debug** build reads clean,
+   because `egui_glow`'s own check runs first and clears the flag; the
+   instrument is live only in release, which is the build he runs.
+   **A second window is a second PROCESS.** Nothing opens a document in another
+   OS window and nothing launches a second copy of the program, so the two
+   share one GPU and a reclaim inside one process cannot see the other's
+   textures. The clamp covers the case he described; the reclaim narrows it.
+   **O224 is the engine's, filed as `G033`, and nothing here is owed until it
+   lands.** The SVG and EMF writers consume `display_list::Op`, whose variants
+   are `Fill`, `Stroke` and `Layer` — `interpret`'s `paint_glyph` has outlined
+   the glyph before any writer sees the page, and the enum is `pub(crate)`, so
+   the gap is unreachable from here. DXF is the exception because it walks
+   `vector::PageObjects` instead, which is why his *"formats that support it"*
+   is a fair expectation rather than a wish. The option is not drawn at all
+   until the engine can honour it (R9), and both export reports already lead
+   with the outline fact.
+   All eight rows stay **FILED**. Only the operator closes one.
+
+2. **O215 / O216 / O217 — the text chunk as a thing the operator can aim at.
    Five of O215's six asks are built and driven; the sixth is the engine's and
    is filed as `G032`. O216's two are built and driven. All four of O217's
    asks are built and driven; its row stays FILED because its closing
@@ -158,8 +209,8 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    `paint_rect` equals the page rect at every zoom below the pixmap ceiling,
    so the ink-coverage question is **unfalsified**, not merely weak, and
    exercising it needs this gesture driven at the region tier.
-   **What is next, in order.** The size cap: seven files sit between 1,452
-   and 1,471 lines, so the seam-finding pass is a batch rather than a one-off.
+   **What is next, in order.** The size cap: eight files sit within fifty lines
+   of it, so the seam-finding pass is a batch rather than a one-off.
    The seam for each is already argued in `DESIGNS.md` under *Where the seam
    is in each file now crowding the size limit* — including the two that have
    none — so that pass is a patch, not a re-derivation. `canvas/keys/tests.rs`
@@ -274,7 +325,7 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    First published in `v0.5.0-dev.20260920.2`.
 
 
-2. **O213 / O214 — the shell addresses the visual line everywhere, driven and
+3. **O213 / O214 — the shell addresses the visual line everywhere, driven and
    green, and it has not yet been put to him.**
    **What shipped.** The Part rung, the object tree row (`Line #49`), the
    status sentence (*1 line of 144*), the context menu, the selection outline,
@@ -345,7 +396,7 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    refuses every text object while `transform_objects` accepts them, so every
    whole-text-object nudge pays a `q`/`cm`/`Q` wrapper. Filed as **G029**; it
    does not block him.
-3. **O209 — the form fields did not look or act like Acrobat's; six of seven
+4. **O209 — the form fields did not look or act like Acrobat's; six of seven
    are driven, the seventh is built and awaiting the screen, and a sweep is
    owed.** Seven complaints in one paragraph and they were seven different
    defects: a pick the popup forgot between press and release, a list frame
@@ -384,7 +435,7 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    `#[cfg(test)] mod x;` declaration causes `x.rs` / `x/mod.rs` to be dropped
    from the scan **whole**, which is why a fixture living in a sibling file
    needs no exemptions of its own.
-4. **O208 is built, driven and falsified — what is left is his word.** Both
+5. **O208 is built, driven and falsified — what is left is his word.** Both
    clauses are built: the page drags on the
    sheet, the four shortcuts and reset-all are there, the offset is typed or
    nudged, the frame and sign are stated, the per-edge overhang is disclosed
@@ -431,7 +482,7 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
    **What remains on O208 is Ken's word.** The row stays FILED until he closes
    it.
-5. **The form tools, a unit typed beside a number, and the rule behind both —
+6. **The form tools, a unit typed beside a number, and the rule behind both —
    O205, O206, O207.** The table he asked for is written: `FORMS_PARITY.md`,
    Acrobat against the engine at the pin against this shell, per kind x
    capability, every row cited. **Work from its section 8.1 in its own order.**
@@ -528,7 +579,7 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    `a_drop_down_can_be_answered_on_the_page`, both pinning
    `fixtures/all-field-kinds.pdf`. **Radio is the half left**, and it shares
    the focus-lock defect row 2 found, so it is a drive rather than a build.
-6. **Drive the four that just shipped — O201, O202, O203, O204.** All four are
+7. **Drive the four that just shipped — O201, O202, O203, O204.** All four are
    built, unit-falsified, gate-green and **not driven**, which is R1's exact
    failure shape: a green suite over a program nobody has used. Render-ahead is
    a band either side of the current page, ordered by distance ascending because
@@ -542,7 +593,7 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    One still-open sub-item: the forms panel's tab-order view numbers its rows
    from `/Annots` order while the ring uses the engine's derived sequence, so on
    a page carrying `/Tabs /R` or `/C` the two surfaces would disagree.
-7. **O212 — panel docking, tear-out and cross-compartment drops: built, driven,
+8. **O212 — panel docking, tear-out and cross-compartment drops: built, driven,
    and CLOSED BY HIM** — *"Their position is easy to manage and clear!"* Only
    the residue below is open.
    What is still a reading rather than a measurement is a non-unit ui scale:
@@ -658,7 +709,7 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    the conversion term opened a real window 788 pt left and 71 pt up of the
    outline and the tautological check still said PASS. Eighteen falsification
    plants, all caught.
-8. **O198's remainder, which is O188 — the MOVE half is the O213/O214
+9. **O198's remainder, which is O188 — the MOVE half is the O213/O214
    item above; what is left here is taking the lump APART.**
    `EditSession::split_text_object` and
    `text_object_split_plan` are in the pin and nothing in this shell calls
@@ -667,27 +718,27 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    refuses those (**G029**). The row in `ENGINE_BACKLOG.md` carries the five
    refusals that want operator sentences and the rule-4 disclosure `Line`
    granularity owes.
-9. **O181** — installed fonts in Add Text, and the dead Format ribbon controls.
-10. **O189** — bookmarks survive a cross-document page drag.
-11. **O183** — the nine-part ce-dimension paragraph, part 7 first.
-12. **O178** — multi-window tab dragging.
-13. **O182** — white seams between the image tiles of a colour rendering.
-14. **O194 steps 1, 4 and 5** — the ~30 surfaces in `UNIT_SURFACES.md` with no
+10. **O181** — installed fonts in Add Text, and the dead Format ribbon controls.
+11. **O189** — bookmarks survive a cross-document page drag.
+12. **O183** — the nine-part ce-dimension paragraph, part 7 first.
+13. **O178** — multi-window tab dragging.
+14. **O182** — white seams between the image tiles of a colour rendering.
+15. **O194 steps 1, 4 and 5** — the ~30 surfaces in `UNIT_SURFACES.md` with no
    unit control, and `ui_text` abbreviations. Step 2 shipped as an invariant:
    `src/units.rs` is the only place a document length is converted or rounded for
    display, `whole()` the only function permitted to round one, and
    `check-unit-conversion.sh` fails the build on a fresh `25.4` under the GUI.
    Font and type sizes are excluded, and the exclusion is written into source.
-15. **O195** — smart select in Review. `smart::enabled` defaults on and
+16. **O195** — smart select in Review. `smart::enabled` defaults on and
     `clicking.rs` reads the scope every frame, but `textsel::takes_the_press`
     answers `tool.is_text() || (Select && !edit_content)`, so in Review the plain
     Select press is consumed as a text sweep and the smart rung never sees it.
     Flipping the manifest condition alone would ship a visible, inert control,
     which is what R9 exists to prevent.
-16. **O176 — his verdict, not a repair.** At fit zoom a form field is about 28 px
+17. **O176 — his verdict, not a repair.** At fit zoom a form field is about 28 px
     wide and its corner grips eat every point on it; the fix is a grip that yields
     the body below some size, not a harness zoom that hides it.
-17. **Wire `EditSession::page_objects`, and decide cache invalidation first** —
+18. **Wire `EditSession::page_objects`, and decide cache invalidation first** —
     the one engine delivery of substance still unconsumed. Every edit pays two
     decompositions of the same page: the engine memoises its own against the
     session revision, and this shell runs a second parse in
@@ -699,14 +750,14 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
     instrument. The blocker is not the call: it is that dropping our cache means
     trusting the session's revision key for every invalidation our panels
     currently drive themselves.
-18. **Re-run a full driven sweep, and read the SKIP set before the tally.** The
+19. **Re-run a full driven sweep, and read the SKIP set before the tally.** The
     last one reported `passed=86 failed=3 skipped=141` and **128 of those skips
     were one stuck notification toast**, so it measured nothing for more than
     half its roster while printing a tally that reads like a result. Ninety-five
     minutes taking the real cursor and keyboard, so only while he is away, and
     start `target/scratch/toast-watchdog.ps1` alongside it. Diff the SKIP set by
     NAME against the previous baseline in `target/scratch/`, in both directions.
-19. **The Set-scale window never appears, and the ordering story for it is
+20. **The Set-scale window never appears, and the ordering story for it is
     disproved — D64.** `app::frame`'s `ui` is one function: ribbon at 724, the
     command drain at 954, `dialogs.show` at 995 — so a dispatch always precedes
     `dialogs.show` in the same frame, and `export_text` shows a dialog drawing
@@ -719,6 +770,32 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
     fix this row used to prescribe.
 
 ## Traps
+
+- **A census of what the program EMITS cannot be completed, so no check may be
+  built on one.** Trace names reach the diagnostic channel by at least four
+  routes: a `format!` first token, a bare `"...".to_owned()` literal, an
+  `eprintln!` inside `diag`, and helpers like `diag::ui_rect(name)` whose
+  argument is a **runtime string no static scan can enumerate at all**. The
+  first cut of `check-trace-names`'s mechanism 5 compared documented names
+  against a `format!`-only census and immediately accused `ui-rect`, which is
+  live. An incomplete census does not merely miss cases — **it blames correct
+  code**, and a gate that fails on correct code is a gate somebody switches
+  off. The sound shape is the negative one: a plain substring search asking
+  only whether a name appears anywhere outside a comment, so the errors are
+  missed defects rather than accusations. Loose in the safe direction beats
+  precise in the unsafe one.
+
+- **A rung that publishes nothing is a rung no driven check can see, and the
+  Escape ladder had one.** Every claimant on `canvas::keys`'s Escape ladder
+  emits `canvas-escape outcome=…` — except, until now, the text draft, which
+  is the one rung that WRITES what it retires. `text-edit-abandon` is not a
+  substitute: its own contract says it is not evidence that anything was lost,
+  and it fires whatever ended the draft. The structural cause was a shadowed
+  binding (`let vertex_abandoned = vertex_abandoned || …`) that left no named
+  result in scope where the outcome arms are written; the rung-scoped name
+  `rung_3a_spent` replaces it. ⚠ Renaming that binding is **not** a rename —
+  five downstream reads bound to the *un-shadowed* original and the compiler
+  says nothing. Grep every use first, and assert the count in the patch.
 
 - **A panel body owns its own scrolling; the dock only styles the bar.** The
   dock's helper sets `ScrollStyle::solid()` and nothing else — it creates no
@@ -883,16 +960,21 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
   tree is not a frozen-correct one, because its citations kept drifting right
   up to the freeze, so what froze was the error.
 
-- **Seven source files sit within fifty lines of the hard limit.**
-  `tools/ui-verify/src/checks/mod.rs` and
-  `crates/pdfcer-gui/src/canvas/measure/mod.rs` are 1471 against
-  `check-file-size.sh`'s 1,500, and five more run from 1470 down to 1452.
-  Adding one ordinary function to any of them turns a green gate red
-  mid-task, and the remedy R2 requires is *find the seam*, never *raise the
-  limit* — which is a refactor, not an edit, and it will arrive at the worst
-  moment unless it is done first. The seam for each is argued in `DESIGNS.md`;
-  two of the seven have none, and knowing which two is what stops a cut being
-  chosen to hit a line count.
+- **Eight source files sit within fifty lines of the hard limit**, led by
+  `crates/pdfcer-gui/src/render/settle.rs` and
+  `tools/ui-verify/src/checks/mod.rs` against `check-file-size.sh`'s 1,500, the
+  rest running down to the 1,450 mark. Adding one ordinary function
+  to any of them turns a green gate red mid-task, and the remedy R2 requires is
+  *find the seam*, never *raise the limit* — which is a refactor, not an edit,
+  and it will arrive at the worst moment unless it is done first. The seam for
+  each is argued in `DESIGNS.md`; two of the eight have none, and knowing which
+  two is what stops a cut being chosen to hit a line count.
+  ⚠ `checks/mod.rs` grows by about a dozen lines **per driven check registered**,
+  because R1 work adds a documented `pub mod` there every time. It is the one
+  file on this list whose pressure is a function of doing the project's own
+  standing work, so it reaches the cap on a schedule rather than by accident,
+  and it is one of the two with no seam. Take the subdirectory remedy before the
+  next two checks, not after.
   Re-measure before quoting these:
   `find crates tools -name '*.rs' -not -path '*/target/*' -print0 | xargs -0 wc -l | grep -v ' total$' | sort -rn | head`
   — the `grep -v` is load-bearing, because `xargs` batches and emits one
