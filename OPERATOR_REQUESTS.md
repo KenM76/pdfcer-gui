@@ -201,13 +201,29 @@ without closing his other drawings.
 > changes don't show. If I click elsewhere on the page it works and shows me
 > my changes."*
 
-**The changes are there; the canvas has not redrawn.** Clicking elsewhere on
-the page repaints and they appear, which is the signature of a commit that
-lands without invalidating whatever the canvas is showing.
+**Not a repaint fault — the text had never been committed.** The first reading
+of this row was that the changes were on the page and the canvas had not
+invalidated; that reading was wrong, and the way it was wrong is worth keeping,
+because the two hypotheses predict the same screen. A canvas draft lives in
+`egui::Memory` and is drawn by the caret layer, not by the page. Reaching for
+another tool left a draft whose caret tool was no longer armed and **nothing
+anywhere that would write it**, so the sheet was correctly drawing a document
+that did not contain the typing. Clicking the page again appeared to "repaint"
+because that click was the only thing that committed.
 
-Switching tools is the step that fails. That is a route the operator takes
-constantly — type, then reach for the hand or the select tool — and on that
-route the program reads as having lost the edit.
+The reading decides the fix. "Redraw after a tool change" would have been a
+second rendering path for provisional content, which R8b forbids; the draft has
+to land. It is one statement in the frame order — a draft whose caret tool is
+no longer the armed tool is settled — rather than a commit written at each exit,
+so the eight ways out of a draft cannot disagree about it.
+
+Switching tools is the route the operator takes constantly — type, then reach
+for the hand or the select tool — which is why this was the exit that showed it.
+
+**Driven.** `ui-verify`'s `arming_a_navigation_tool_commits_the_draft` types on
+the page, clicks the rail's hand row and asserts the engine's own commit line,
+then `Ctrl+Z`. Falsified against a build with that statement removed: it reports
+the typing never landed.
 
 ## O223 — **FILED** — Escape must commit text, not discard it, in every tool that has text
 

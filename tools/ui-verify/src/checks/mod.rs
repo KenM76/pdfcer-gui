@@ -397,6 +397,19 @@ pub mod measure_perimeter;
 /// express the defect and `menu.icon.*` had to be published for it.
 pub mod menu_icons;
 
+/// ★★★ **Arming another tool writes the text draft** — `OPERATOR_REQUESTS.md`
+/// O222.
+///
+/// The operator reported typed text not showing until he clicked the page
+/// again, which is not a rendering fault: the draft had never been committed,
+/// and the sheet was correctly drawing a document that did not contain it. Its
+/// oracle is the engine's own commit line, because the broken build produces
+/// the tool change and no commit at all.
+///
+/// ⚠ It types at the real keyboard, so it cannot share the desktop with
+/// anyone: a driven run needs the machine to itself.
+pub mod navigate_commits_text;
+
 /// ★ File ▸ New — the first command that makes a document out of **compiled-in
 /// bytes** rather than out of a file the operator named, and the only check in
 /// the suite whose subject is a page that is *supposed* to be blank. That is
@@ -763,8 +776,8 @@ pub mod dropped_file;
 /// ★★★ **Enter makes a second line, and Ctrl+Enter finishes it** —
 /// `OPERATOR_REQUESTS.md` O127, defect 2.
 ///
-/// ⬜ **NOT RUN** — it types at the real keyboard, so it cannot share the
-/// desktop with anyone. See its header.
+/// ⚠ It types at the real keyboard, so it cannot share the desktop with
+/// anyone: a driven run needs the machine to itself.
 pub mod enter_newline;
 
 /// ★★★ **Escape on a text draft WRITES it, and `Ctrl+Z` takes it back** —
@@ -775,8 +788,8 @@ pub mod enter_newline;
 /// could not undo would have swapped an unrecoverable loss for an
 /// unrecoverable gain.
 ///
-/// ⬜ **NOT RUN** — it types at the real keyboard, so it cannot share the
-/// desktop with anyone. See its header.
+/// ⚠ It types at the real keyboard, so it cannot share the desktop with
+/// anyone: a driven run needs the machine to itself.
 pub mod escape_commits_text;
 
 /// ★★★ **Zero clicks.** The only check in this suite that drives no gesture: it

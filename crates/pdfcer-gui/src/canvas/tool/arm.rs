@@ -16,6 +16,27 @@
 //! Those two subjects change for different reasons. A new variant is a `super`
 //! change; a new rule about what pressing something does is a change here, so
 //! every "why does pressing this twice do that?" argument is in one file.
+//!
+//! ## The lines this module writes
+//!
+//! An armed canvas and an un-armed one are the same screenshot — the same
+//! screenshot even with the pointer in it, because a captured window does not
+//! carry the cursor. These are the whole of what a driven check can ask.
+//!
+//! canvas-tool armed=Hand from=TextEdit(Add)
+//!
+//! [`select`] writes it on every change, whatever armed it. Ask for this one
+//! when the subject is *which tool is armed*.
+//!
+//! text-tool tool=Text
+//! text-edit-tool tool=TextEdit(Add)
+//! markup-tool tool=Markup(Cloud)
+//! measure-tool tool=Measure(Linear)
+//! form-tool-armed kind=Text now=Form(Text)
+//!
+//! One per arming gesture, naming the button pressed and whether the press
+//! armed or retired it. Ask for one of these when the subject is *that control
+//! works*.
 
 use super::{CanvasTool, MarkupKind, MeasureKind, TOOL_MEMORY_KEY, TextEditKind};
 use crate::app::modes::Capabilities;
@@ -170,10 +191,35 @@ pub fn selected(ctx: &egui::Context) -> CanvasTool {
 }
 
 /// Choose a tool. **The entry point a `view.tool_hand` / `view.tool_select`
-/// command calls.**
+/// command calls, and the only writer of the armed tool in the crate.**
+///
+/// # Why the trace is here and not only at each gesture
+///
+/// Writes the module header's `canvas-tool` line on a change. The
+/// same-screenshot argument the five gesture lines each carry is a property of
+/// **arming**, not of any one gesture, and the three arming paths that never
+/// grew a line of their own are the proof: `view.tool_select`,
+/// `view.tool_hand` and `view.tool_node` all reach the canvas through this
+/// function, and all three were invisible to a harness.
+///
+/// Keyed on an actual change because the retirement paths
+/// ([`disarm_any`], [`retire_forbidden`], [`disarm_markup`]) call this
+/// unconditionally once their own guard has passed, and because a re-arm that
+/// changed nothing is not an event a reader is looking for. The previous value
+/// is read through [`selected`] rather than from the raw slot, so an empty
+/// memory reads as [`CanvasTool::Select`] — which is what the canvas has been
+/// behaving as all along — and arming Select on the first frame is correctly
+/// silent rather than a change from nothing.
 pub fn select(ctx: &egui::Context, tool: CanvasTool) {
+    let previous = selected(ctx);
     let id = egui::Id::new(TOOL_MEMORY_KEY);
     ctx.data_mut(|d| d.insert_temp(id, tool));
+    if previous != tool {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI.
+            format!("canvas-tool armed={tool:?} from={previous:?}")
+        });
+    }
 }
 
 /// Flip between the hand and the select tool. **The entry point a single

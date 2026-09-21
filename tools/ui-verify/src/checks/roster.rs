@@ -926,6 +926,14 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // landed, and the behaviour this replaces produces the rung's teardown
         // and no commit at all.
         Box::new(escape_commits_text::EscapeCommitsATextDraft),
+        // O222, and immediately after its sibling because the two are one
+        // ruling read at two exits: a draft the operator has stopped aiming at
+        // is WRITTEN, whether they left it by pressing Escape or by reaching
+        // for another tool. Running them adjacently means a session debugging
+        // "my typing disappears" sees both exits in one place, and a failure in
+        // exactly one of them is the sharpest possible diagnosis — the commit
+        // works and a particular exit is not reaching it.
+        Box::new(navigate_commits_text::ArmingANavigationToolCommitsTheDraft),
         // O140, and it sits here rather than beside `text_edit_real`
         // deliberately: it is the same family and the OPPOSITE question. That
         // check asks whether the shell can place a caret and reach the engine
