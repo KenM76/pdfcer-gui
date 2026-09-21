@@ -379,7 +379,9 @@ pub enum Anchor {
 /// An in-progress, operator-composed edit. Never written anywhere until commit.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Draft {
-    /// Which page it belongs to. A page change abandons it — see [`load`].
+    /// Which page it belongs to, and the page the commit is addressed to. A
+    /// draft survives a page change: it commits against this index whenever it
+    /// is settled, so navigating away and back does not move the text.
     pub page: usize,
     /// Which verb will commit it.
     pub kind: TextEditKind,
@@ -625,23 +627,6 @@ pub fn abandon(ctx: &egui::Context) -> bool {
     had
 }
 
-/// The draft for `page`, or `None` — dropping any draft that belongs to another
-/// page or another kind.
-///
-/// The two synchronisations `measure::load` performs, for the same two reasons.
-/// A draft composed on page 3 must not commit against page 4's run indices, and
-/// a draft begun under `Edit` must not be committed by `Add` because the
-/// operator pressed the other ribbon button mid-word.
-#[must_use]
-pub fn load(ctx: &egui::Context, page: usize, kind: TextEditKind) -> Option<Draft> {
-    let draft = read(ctx)?;
-    if draft.page == page && draft.kind == kind {
-        return Some(draft);
-    }
-    abandon(ctx);
-    None
-}
-
 /// Turn a draft into the action that commits it, if it says anything.
 ///
 /// A draft byte-identical to what it replaces is **not a write**. Without this,
@@ -717,6 +702,43 @@ pub(super) fn commit_into(
         }
         _ => {}
     }
+}
+
+/// ★★★ **Finish a draft that is going out of scope: write what it says, then
+/// tear it down.** Reports whether there was one.
+///
+/// # The rule it enacts: typed text is not thrown away by a navigation gesture
+///
+/// `OPERATOR_REQUESTS.md` **O222** and **O223**, in the operator's words:
+///
+/// > *"I think for adding and editing text when using any tool that has text
+/// > escape should also save changes to the text. The user can always undo if
+/// > they want, but it is easy to accidentally press escape and lose a lot of
+/// > text that has been entered."*
+///
+/// That is a ruling about **asymmetric cost**. A draft written by mistake is
+/// one `Ctrl+Z`; a draft discarded by mistake is minutes of typing with no
+/// recovery anywhere, because a draft lives in `egui::Memory` and never
+/// reaches the undo stack. So every exit that is not the operator explicitly
+/// saying *throw this away* comes through here rather than through
+/// [`abandon`], and today there is no such explicit exit — [`abandon`] is
+/// reached only as this function's own teardown half.
+///
+/// ## ★ Why it is safe for the emptied-run case
+///
+/// [`commit_into`] treats an emptied `Run` as a deletion and an empty `Add`
+/// caret as nothing at all, so settling a draft the operator never typed into
+/// raises no action and puts nothing on the undo stack. Settling is therefore
+/// unconditional at the call sites: they do not have to ask whether the draft
+/// says anything, which is the question that would get asked differently in
+/// each of them.
+pub fn settle(ctx: &egui::Context, actions: &mut Vec<crate::app::actions::Action>) -> bool {
+    let Some(draft) = read(ctx) else {
+        return false;
+    };
+    commit_into(ctx, &draft, actions);
+    abandon(ctx);
+    true
 }
 
 /// **What the text edit currently being applied is trying to write** — the four

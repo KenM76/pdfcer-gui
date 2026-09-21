@@ -142,6 +142,7 @@ pub fn row_metrics(
     display: PageDisplay,
     current: usize,
     pixels_per_point: f32,
+    quality: crate::app::prefs::RenderQuality,
 ) -> RowMetrics {
     let current = super::clamp_page_index(current, pages.len());
     let range = display.pages_in_row(display.row_of(current), pages.len());
@@ -164,7 +165,7 @@ pub fn row_metrics(
         }
         width += extent.0;
         height = height.max(extent.1);
-        max_zoom = max_zoom.min(max_zoom_for_page(extent, pixels_per_point));
+        max_zoom = max_zoom.min(max_zoom_for_page(extent, pixels_per_point, quality));
     }
     RowMetrics {
         extent: (width, height),
@@ -222,13 +223,14 @@ pub fn fit_metrics(
     display: PageDisplay,
     current: usize,
     pixels_per_point: f32,
+    quality: crate::app::prefs::RenderQuality,
 ) -> RowMetrics {
     if !display.is_continuous() {
-        return row_metrics(pages, display, current, pixels_per_point);
+        return row_metrics(pages, display, current, pixels_per_point, quality);
     }
     let rows = display.row_count(pages.len());
     if rows == 0 {
-        return row_metrics(pages, display, current, pixels_per_point);
+        return row_metrics(pages, display, current, pixels_per_point, quality);
     }
     // "Tightest" is decided by AREA rather than by either axis alone: a fit
     // scale is `min(vw/pw, vh/ph)`, and which axis binds depends on the
@@ -243,7 +245,7 @@ pub fn fit_metrics(
     let mut max_zoom = super::MAX_ZOOM;
     for row in 0..rows {
         let first = display.pages_in_row(row, pages.len()).next().unwrap_or(0);
-        let m = row_metrics(pages, display, first, pixels_per_point);
+        let m = row_metrics(pages, display, first, pixels_per_point, quality);
         width = width.max(m.extent.0);
         height = height.max(m.extent.1);
         max_zoom = max_zoom.min(m.max_zoom);
@@ -593,18 +595,24 @@ impl Strip {
     /// undrawn with the reason given, rather than silently zooming the whole
     /// document out. See [`crate::render::strip`] for what the page says.
     ///
-    /// `pixels_per_point` is threaded through because the ceiling is about
-    /// **device pixels** — see `max_zoom_for_page`'s own docs on why omitting
-    /// it is how a guard passes its tests and fails on a HiDPI laptop.
+    /// `pixels_per_point` and `quality` are both threaded through because the
+    /// ceiling is about **device pixels**, and the raster is made at the whole
+    /// of [`crate::viewer::raster_density`] — see `max_zoom_for_page`'s own docs
+    /// on why omitting either is how a guard passes its tests and fails on the
+    /// machine that matters.
     #[must_use]
-    pub fn row_max_zoom(&self, pixels_per_point: f32) -> f32 {
+    pub fn row_max_zoom(
+        &self,
+        pixels_per_point: f32,
+        quality: crate::app::prefs::RenderQuality,
+    ) -> f32 {
         let Some(row) = self.rows.get(self.current_row) else {
             return super::MAX_ZOOM;
         };
         row.extents
             .iter()
             .take(row.len)
-            .map(|&extent| max_zoom_for_page(extent, pixels_per_point))
+            .map(|&extent| max_zoom_for_page(extent, pixels_per_point, quality))
             .fold(super::MAX_ZOOM, f32::min)
     }
 
@@ -635,6 +643,11 @@ impl Strip {
 
 #[cfg(test)]
 mod tests {
+    /// The quality whose multiplier is one, so every test that is not ABOUT the
+    /// render quality asserts the same number it did before the factor entered
+    /// the ceiling arithmetic.
+    const NORMAL: crate::app::prefs::RenderQuality = crate::app::prefs::RenderQuality::Normal;
+
     use super::*;
     use pdfcer_core::object::{Dict, ObjId};
     use pdfcer_core::page_tree::Rect as PageRect;
@@ -872,10 +885,10 @@ mod tests {
         ];
         let strip = Strip::new(&pages, PageDisplay::Facing, 1, 1.0);
         assert_eq!(strip.placements().count(), 2, "this row must be a spread");
-        let per_page = max_zoom_for_page((14_400.0, 14_400.0), 1.0);
-        assert!((strip.row_max_zoom(1.0) - per_page).abs() < 1e-6);
+        let per_page = max_zoom_for_page((14_400.0, 14_400.0), 1.0, NORMAL);
+        assert!((strip.row_max_zoom(1.0, NORMAL) - per_page).abs() < 1e-6);
         // The spread's own extent would have produced half of that.
-        let as_one_pixmap = max_zoom_for_page(strip.row_extent(), 1.0);
+        let as_one_pixmap = max_zoom_for_page(strip.row_extent(), 1.0, NORMAL);
         assert!(
             as_one_pixmap < per_page,
             "this fixture must actually distinguish the two rules"
@@ -889,11 +902,11 @@ mod tests {
         ];
         let strip = Strip::new(&mixed, PageDisplay::Facing, 1, 1.0);
         assert_eq!(strip.placements().count(), 2);
-        assert!((strip.row_max_zoom(1.0) - per_page).abs() < 1e-6);
+        assert!((strip.row_max_zoom(1.0, NORMAL) - per_page).abs() < 1e-6);
 
         // …and a continuous strip is NOT capped by a page it is scrolled past.
         let strip = Strip::new(&mixed, PageDisplay::Continuous, 0, 1.0);
-        assert_eq!(strip.row_max_zoom(1.0), super::super::MAX_ZOOM);
+        assert_eq!(strip.row_max_zoom(1.0, NORMAL), super::super::MAX_ZOOM);
     }
 
     /// A document with no pages lays out nothing and answers `None` to
@@ -933,19 +946,24 @@ mod tests {
         for &mode in PageDisplay::ALL {
             for current in 0..pages.len() {
                 for &ppp in &[1.0_f32, 2.0] {
-                    let strip = Strip::new(&pages, mode, current, 1.0);
-                    let cheap = row_metrics(&pages, mode, current, ppp);
-                    assert_eq!(
-                        cheap.extent,
-                        strip.row_extent(),
-                        "{mode:?} page {current}: extent"
-                    );
-                    assert!(
-                        (cheap.max_zoom - strip.row_max_zoom(ppp)).abs() < 1e-6,
-                        "{mode:?} page {current} ppp {ppp}: ceiling {} vs {}",
-                        cheap.max_zoom,
-                        strip.row_max_zoom(ppp)
-                    );
+                    for quality in [
+                        crate::app::prefs::RenderQuality::Normal,
+                        crate::app::prefs::RenderQuality::Sharper,
+                    ] {
+                        let strip = Strip::new(&pages, mode, current, 1.0);
+                        let cheap = row_metrics(&pages, mode, current, ppp, quality);
+                        assert_eq!(
+                            cheap.extent,
+                            strip.row_extent(),
+                            "{mode:?} page {current}: extent"
+                        );
+                        assert!(
+                            (cheap.max_zoom - strip.row_max_zoom(ppp, quality)).abs() < 1e-6,
+                            "{mode:?} page {current} ppp {ppp}: ceiling {} vs {}",
+                            cheap.max_zoom,
+                            strip.row_max_zoom(ppp, quality)
+                        );
+                    }
                 }
             }
         }
@@ -955,10 +973,10 @@ mod tests {
     /// gives, so the fit arithmetic has something to divide by either way.
     #[test]
     fn row_metrics_of_an_empty_document_matches_the_strips_fallback() {
-        let cheap = row_metrics(&[], PageDisplay::Continuous, 0, 1.0);
+        let cheap = row_metrics(&[], PageDisplay::Continuous, 0, 1.0, NORMAL);
         let strip = Strip::new(&[], PageDisplay::Continuous, 0, 1.0);
         assert_eq!(cheap.extent, strip.row_extent());
-        assert_eq!(cheap.max_zoom, strip.row_max_zoom(1.0));
+        assert_eq!(cheap.max_zoom, strip.row_max_zoom(1.0, NORMAL));
     }
 
     /// A degenerate zoom is treated as actual size rather than producing a
@@ -1003,8 +1021,8 @@ mod tests {
     fn a_continuous_fit_does_not_depend_on_the_current_page() {
         let pages = vec![page(1190.0, 841.0), page(612.0, 792.0), page(842.0, 595.0)];
         for display in [PageDisplay::Continuous, PageDisplay::FacingContinuous] {
-            let from_first = fit_metrics(&pages, display, 0, 1.0);
-            let from_last = fit_metrics(&pages, display, pages.len() - 1, 1.0);
+            let from_first = fit_metrics(&pages, display, 0, 1.0, NORMAL);
+            let from_last = fit_metrics(&pages, display, pages.len() - 1, 1.0, NORMAL);
             assert_eq!(
                 from_first.extent, from_last.extent,
                 "{display:?}: the fit extent moved when the scroll moved, which is the loop"
@@ -1025,7 +1043,7 @@ mod tests {
     fn a_continuous_fit_frames_the_largest_extent_in_each_axis() {
         // Widest is the landscape A3; tallest is the portrait Letter.
         let pages = vec![page(1190.0, 841.0), page(612.0, 792.0)];
-        let m = fit_metrics(&pages, PageDisplay::Continuous, 0, 1.0);
+        let m = fit_metrics(&pages, PageDisplay::Continuous, 0, 1.0, NORMAL);
         assert!(
             (m.extent.0 - 1190.0).abs() < 0.5,
             "width must come from the widest row: {:?}",
@@ -1049,8 +1067,8 @@ mod tests {
         let pages = vec![page(612.0, 792.0); 8];
         for current in [0, 3, 7] {
             assert_eq!(
-                fit_metrics(&pages, PageDisplay::Continuous, current, 1.0).extent,
-                row_metrics(&pages, PageDisplay::Continuous, current, 1.0).extent,
+                fit_metrics(&pages, PageDisplay::Continuous, current, 1.0, NORMAL).extent,
+                row_metrics(&pages, PageDisplay::Continuous, current, 1.0, NORMAL).extent,
                 "page {current}"
             );
         }
@@ -1074,8 +1092,8 @@ mod tests {
     #[test]
     fn facing_continuous_fits_the_spread_not_the_cover() {
         let pages = vec![page(612.0, 792.0); 8];
-        let fit = fit_metrics(&pages, PageDisplay::FacingContinuous, 0, 1.0);
-        let cover = row_metrics(&pages, PageDisplay::FacingContinuous, 0, 1.0);
+        let fit = fit_metrics(&pages, PageDisplay::FacingContinuous, 0, 1.0, NORMAL);
+        let cover = row_metrics(&pages, PageDisplay::FacingContinuous, 0, 1.0, NORMAL);
         assert!(
             (cover.extent.0 - 612.0).abs() < 0.5,
             "row 0 is the cover, one page wide: {:?}",
@@ -1100,8 +1118,8 @@ mod tests {
         for display in [PageDisplay::Single, PageDisplay::Facing] {
             for current in 0..pages.len() {
                 assert_eq!(
-                    fit_metrics(&pages, display, current, 1.0).extent,
-                    row_metrics(&pages, display, current, 1.0).extent,
+                    fit_metrics(&pages, display, current, 1.0, NORMAL).extent,
+                    row_metrics(&pages, display, current, 1.0, NORMAL).extent,
                     "{display:?} page {current} must be unchanged"
                 );
             }

@@ -77,22 +77,31 @@
 //! from the system under test needs an independent calibration, and the file is
 //! it.
 //!
-//! ★★ `budget_ms` is deliberately **not** compared against a hard-coded `2000`
-//! anywhere below. The default lives in `thumbnails::PAGE_BUDGET_DEFAULT` and a
-//! harness that duplicated it would go stale silently the day it moved. The
-//! starting state is asserted as *"not zero"* and the end state as *"zero"*,
-//! which is a real change in a known direction and satisfiable by no constant.
+//! ★★ `budget_ms` is deliberately **not** compared against whatever
+//! `thumbnails::PAGE_BUDGET_DEFAULT` currently holds. The starting state is
+//! asserted against the number this harness planted and the end state as
+//! *"zero"*, which is a real change in a known direction that no program
+//! constant can make true by accident.
 //!
-//! # What the starting state has to be, and why it is checked rather than assumed
+//! # ★★★ The starting limit is PLANTED, because the shipped default is the
+//! value this check types
 //!
-//! `previews=1` and `budget_ms != 0` before the first gesture. Both are the
-//! shipped defaults, and the check writes a bare sandbox `preferences.txt`
-//! first so they are what it meets — but it **says so out loud** rather than
-//! trusting it. A run that began with the tick already clear would clear
-//! nothing, find `previews=0` in launch 2, and report a pass for a build that
-//! persists nothing whatsoever. *A fixture that defeats a default does not
-//! defeat a starting state*: the starting state has to be planted and then
-//! confirmed.
+//! `previews=1` and `budget_ms != 0` before the first gesture — and the second
+//! of those is **not** a shipped default. The shipped default is *no limit*,
+//! which is `0`, which is the exact value launch 2 types in; a run that began
+//! there could not tell a zero that was kept from a zero that was never
+//! changed, and would report a pass for a build that persists nothing at all.
+//!
+//! So the seed carries `page_preview_budget_ms = 2000`. That `2000` is the
+//! harness's own number, not a copy of a program constant — it has no
+//! obligation to match anything in the shell, and nothing in the shell going
+//! stale can make it wrong. What it has to be is *a legal, non-zero limit*,
+//! and it is checked after the launch rather than assumed, because a seed the
+//! program declined to read is indistinguishable from one it read and ignored.
+//!
+//! ⇒ The same discipline applies to the tick, which **is** a shipped default:
+//! it is planted by the same reset and confirmed out loud anyway. *A fixture
+//! that defeats a default does not defeat a starting state.*
 //!
 //! # ⚠ What is normalised, and the one file that is RESET rather than deleted
 //!
@@ -116,8 +125,9 @@
 //! file not writable; the Pages panel's controls not declared; the mode segment
 //! not declared; the control chord producing no `chord-command` line, which
 //! means no keystroke reached the window and nothing typed below would mean
-//! anything; or the starting state not being the shipped default, which means
-//! something outside this check seeded the sandbox.
+//! anything; or the starting state not being the planted one, which means
+//! either the seed was not read or something outside this check reached the
+//! sandbox.
 
 use std::path::{Path, PathBuf};
 
@@ -236,8 +246,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let _restore = RestorePrefs(userdata.clone());
     write_prefs(&userdata)?;
     report.note(format!(
-        "the sandbox's preferences in {} were reset to the bare seed, so this run starts from \
-         the shipped defaults rather than from whatever a previous run left",
+        "the sandbox's preferences in {} were rewritten to this check's starting state — the \
+         previews tick absent and taking its shipped default, the limit planted at \
+         {SEED_BUDGET_MS} ms so it is not already the zero launch 2 types — rather than \
+         whatever a previous run left",
         userdata.display()
     ));
 
@@ -266,17 +278,19 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             start.raw
         )));
     }
-    if start.budget_ms == 0 {
+    if start.budget_ms != SEED_BUDGET_MS {
         return Err(Error::new(format!(
-            "the run began with the limit already at 0 (`{}`), which is the value this check \
-             types in later. It could not then tell a limit that was kept from one that was \
-             never changed. The reset above should have prevented it.",
-            start.raw
+            "the run began with the limit at {} ms rather than the {SEED_BUDGET_MS} ms planted \
+             above (`{}`). If it is 0 — which is the shipped default and the value this check \
+             types in later — the check could not tell a limit that was kept from one that was \
+             never changed. Any other value means the seed was not read, and the file this \
+             check later reads back would then be describing something else.",
+            start.budget_ms, start.raw
         )));
     }
     report.note(format!(
-        "launch 1 started from the shipped defaults: previews on, limit {} ms — a real starting \
-         state, planted and confirmed rather than assumed",
+        "launch 1 started from the planted state: previews on, limit {} ms — read back out of \
+         the running program rather than assumed from the file that was written",
         start.budget_ms
     ));
 
@@ -791,7 +805,14 @@ fn value_of<'a>(text: &'a str, key: &str) -> Option<&'a str> {
         .map(|(_, v)| v.trim())
 }
 
-/// Write the sandbox's preference file back to the bare seed.
+/// The non-zero starting limit this check plants, in milliseconds.
+///
+/// Two seconds. Any legal, non-zero value would do — see the module header's
+/// section on why it is planted at all. It is the harness's own number and is
+/// not required to match anything the shell compiles in.
+const SEED_BUDGET_MS: usize = 2000;
+
+/// Write the sandbox's preference file to this check's starting state.
 ///
 /// ★★★ Through `sandbox::write_prefs`, never `fs::write`, and never a delete.
 /// The header it prepends carries `ask_default_app = false`; three checks that
@@ -799,15 +820,23 @@ fn value_of<'a>(text: &'a str, key: &str) -> Option<&'a str> {
 /// own launches, and deleting it does the same thing by omission — every absent
 /// key takes its compiled-in default, and that one's is `true`.
 ///
+/// ★ The previews tick is left absent and takes its compiled-in default, which
+/// is on. The limit is written, because its compiled-in default is the value
+/// this check types — the module header carries that argument in full.
+///
 /// # Errors
 ///
 /// The directory could not be created or the file could not be written. A SKIP
 /// at the call site: a preference that could not be written means the check
 /// never began.
 fn write_prefs(userdata: &Path) -> Result<()> {
-    crate::sandbox::reset_prefs(userdata).map_err(|e| {
+    crate::sandbox::write_prefs(
+        userdata,
+        &format!("page_preview_budget_ms = {SEED_BUDGET_MS}\n"),
+    )
+    .map_err(|e| {
         Error::new(format!(
-            "could not reset the preferences in {}: {e}. Reported as SKIPPED — a starting state \
+            "could not plant the preferences in {}: {e}. Reported as SKIPPED — a starting state \
              that could not be planted means the check never began.",
             userdata.display()
         ))
@@ -817,10 +846,11 @@ fn write_prefs(userdata: &Path) -> Result<()> {
 /// Put the sandbox back to the bare seed when the check ends, however it ends.
 ///
 /// ★ A guard rather than a line at the end, because there are a dozen returns
-/// above and the one that gets forgotten is the one that leaves
-/// `page_preview_budget_ms = 0` behind for every check that runs afterwards —
-/// which would arm an unbounded thumbnail render in whatever check drew a Pages
-/// panel next. A suite that shares state measures the order it ran in.
+/// above and the one that gets forgotten is the one that leaves this check's
+/// gestures — the previews tick cleared, a planted time limit — standing in
+/// front of every check that runs afterwards. The next check to draw a Pages
+/// panel would then find a grid that draws nothing, and report it. A suite that
+/// shares state measures the order it ran in.
 ///
 /// Reset rather than deleted, for the reason `ui_scale` records: a *missing*
 /// file exercises the absent-file path, which is a different state and not the

@@ -235,12 +235,11 @@ pub fn collect(ctx: &Context, page_count: Option<usize>) -> Vec<Action> {
     // `text_edit_focused()` alone cannot see.
     //
     // These bindings are page keys, not characters, so the harm is not a
-    // mistyped bracket - it is `PageDown` under a half-typed word. A page
-    // change abandons the draft (see `canvas::textedit::load`), so without this
-    // the operator's words are discarded by a key they pressed for navigation
-    // and never told. The chord dispatcher in [`commands`] asks the same two
-    // questions for its own reason; the predicate is shared, the argument is
-    // not.
+    // mistyped bracket - it is `PageDown` under a half-typed word. The draft is
+    // painted against the page on screen, so a page turn the operator did not
+    // ask for takes their caret off it mid-sentence. The chord dispatcher in
+    // [`commands`] asks the same two questions for its own reason; the
+    // predicate is shared, the argument is not.
     //
     // The caret this shell paints on the page is deliberately **not** an
     // `egui::TextEdit` — `canvas::textedit`'s header gives the reason, and it is

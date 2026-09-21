@@ -1,24 +1,25 @@
 //! # `canvas::escape` — the two gestures that must work on a frame that drew nothing
 //!
-//! ## The dead end this exists to open
+//! ## The dead ends this exists to open
 //!
-//! `OPERATOR_REQUESTS.md` **O186**, stage one, in his own words: *"at some point
-//! it sometimes repositions to where the object area I was zooming into is no
-//! longer on screen."*
-//!
-//! When the view ends up somewhere no page overlaps the viewport,
-//! `canvas::present` finds nothing in `drawn`, publishes
-//! `canvas-unavailable reason=nothing-visible`, and **returns**. That early
-//! return sits *above* every input handler in the function, so on such a frame:
+//! `canvas::present::show_in` has **two** early returns that publish a
+//! `canvas-unavailable` trace and leave, and both sit *above* every input
+//! handler in the function. On a frame taking either of them:
 //!
 //! * the plain wheel does not turn the page,
 //! * Ctrl+wheel does not zoom back out,
 //! * and there is nothing to click, because there is no page widget to click on.
 //!
-//! ★★★ **It is terminal.** Measured 2026-09-12: the only ways out are a keyboard
-//! route that does not go through the canvas, or closing and reopening the file.
-//! A canvas that has stopped responding to the mouse is not a rendering defect
-//! the operator can describe — it is *"the program froze"*.
+//! ★★★ **Both are terminal without this module.** The only ways out are a
+//! keyboard route that does not go through the canvas, or closing and reopening
+//! the file. A canvas that has stopped responding to the mouse is not a
+//! rendering defect the operator can describe — it is *"the program froze"*.
+//!
+//! ### `reason=nothing-visible` — the view is somewhere no page overlaps
+//!
+//! `OPERATOR_REQUESTS.md` **O186**, stage one, in his own words: *"at some point
+//! it sometimes repositions to where the object area I was zooming into is no
+//! longer on screen."*
 //!
 //! `geometry::visible_origin_range` and `deep::confine` stop the
 //! view being carried off in the first place, and **this module is still
@@ -26,6 +27,17 @@
 //! report lists conditions that were never fully enumerated (*"and at other
 //! junctions too"* is the shape this project keeps meeting). A fix for the cause
 //! plus a way out if the cause recurs is one decision, not two.
+//!
+//! ### `reason=render-failed` — the page refused to rasterize
+//!
+//! **O220.** Under [`viewer::PageDisplay::Single`], which is the default, a
+//! refusal the shell could not absorb replaces the whole canvas with
+//! [`crate::text::canvas_render_failed`]. That sentence tells the operator to
+//! zoom out; the return it sits behind took away the gesture it names. ⚠ **A
+//! message that prescribes a way out must not be painted by a frame that
+//! disables it** — which generalises past this one site.
+//!
+//! [`viewer::PageDisplay::Single`]: crate::viewer::PageDisplay::Single
 //!
 //! ## Why a module, for nine lines
 //!
@@ -39,7 +51,7 @@
 //! justification and a place for the next handler to be added *deliberately*
 //! rather than by someone widening a condition.
 //!
-//! ### R2, and `present` is at 1,381 of 1,500
+//! ### R2, and `present` has no room to spare
 //!
 //! The second reason and not the first, but it is real.
 //!
@@ -52,11 +64,14 @@
 //! here are exactly the two that are about **the view** rather than about
 //! **content**, which is also why neither needs a `Response` of its own.
 //!
-//! ★ And the gate is `content_hovered` alone, not `… || image_response.hovered()`
+//! ★ And the gate is one response alone, not `… || image_response.hovered()`
 //! as the ordinary call sites spell it. There is no acting page on this frame, so
-//! there is no second response to consult; the scroll area's own content response
-//! still respects layer order, so a floating window over the canvas keeps
-//! swallowing the wheel exactly as it does one tier up.
+//! there is no second response to consult. Which response it is differs by call
+//! site — the scroll area's content response at `nothing-visible`, the message
+//! placeholder's own at `render-failed`, because the scroll area is built below
+//! that return — and either way it is a `Sense::hover()` widget in the canvas's
+//! layer, so a floating window over the canvas keeps swallowing the wheel
+//! exactly as it does one tier up.
 
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
@@ -64,11 +79,12 @@ use crate::canvas::{paging, zoom};
 
 /// **Run the view-level gestures on a frame that drew no page.**
 ///
-/// Called from `canvas::present` immediately before the
-/// `canvas-unavailable reason=nothing-visible` trace and the early return.
+/// Called from `canvas::present` immediately before each of the two
+/// `canvas-unavailable` traces and their early returns.
 ///
-/// `hovered` is the scroll area's content response — *"is the pointer over the
-/// canvas?"* — and is the only gate either handler gets. See the module header.
+/// `hovered` answers *"is the pointer over the canvas?"* and is the only gate
+/// either handler gets; which response the caller reads it from is a property
+/// of the call site. See the module header.
 ///
 /// # ★ Order matters, and it is the same order the ordinary path uses
 ///

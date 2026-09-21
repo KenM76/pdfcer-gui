@@ -473,12 +473,10 @@ pub fn disarm_any(ctx: &egui::Context) -> bool {
         return false;
     }
     select(ctx, CanvasTool::Select);
-    // The caret is not part of `CanvasTool`, and a draft that outlived its tool
-    // would take keystrokes with nothing to commit them to. `abandon` is a
-    // no-op when there is none — and by the time this rung is reached the
-    // ladder has already spent an Escape on any draft that WAS in flight, so
-    // this cannot swallow one.
-    crate::canvas::textedit::abandon(ctx);
+    // The caret is not part of `CanvasTool`, so a draft can outlive the tool it
+    // was typed under. It is not torn down here: `app::frame`'s step 2d settles
+    // one whose caret tool is no longer armed, which this call has just made
+    // true, and settling writes the operator's text instead of discarding it.
     true
 }
 
@@ -646,13 +644,15 @@ pub fn retire_forbidden(ctx: &egui::Context, caps: Capabilities) -> bool {
     // it here is all "bring the window back" means — there is no second flag to
     // remember. Cheap on every other retirement: one `egui::Memory` read.
     crate::canvas::placing::cancel(ctx);
-    // ★ …and the draft goes with the tool. A retirement that left one in
-    // `egui::Memory` would leave a keystroke buffer aimed at a document the mode
-    // being entered says is not the operator's to change — and it would still be
-    // there on the way back, holding text typed against a revision that may have
-    // moved. `app::gating`'s rule is *retire what was already there*, and a
-    // half-typed word is squarely that.
-    crate::canvas::textedit::abandon(ctx);
+    // ★ …and the draft goes with the tool, but it is **written** on the way
+    // out rather than dropped. A retirement that left one in `egui::Memory`
+    // would leave a keystroke buffer aimed at a document the mode being entered
+    // says is not the operator's to change, and it would still be there on the
+    // way back holding text typed against a revision that may have moved. One
+    // that discarded it would charge the operator their typing for moving the
+    // mode selector. `app::frame`'s step 2d takes the third reading — the
+    // select above makes the draft's caret tool un-armed, so the text lands on
+    // the page and `Ctrl+Z` is there if it was not wanted.
     true
 }
 
@@ -663,17 +663,21 @@ pub fn retire_forbidden(ctx: &egui::Context, caps: Capabilities) -> bool {
 /// identical reason — *the button is pressed, so pressing it is how you un-press
 /// it* — and to the discarded return value at the call sites.
 ///
-/// ★ **Changing the kind abandons the draft, and that is not the same as the
+/// ★ **Changing the kind settles the draft, and that is not the same as the
 /// mid-drag rule above it.** `arm_markup` can be careless about a drag in flight
 /// because a drag is owned by the gesture machine and carries the kind it
 /// started with, so a kind change cannot reach it. A draft is not owned that
 /// way: it sits in `egui::Memory` between frames, and an operator who types
 /// three characters into a run and then presses **Add text** has asked for a
-/// different verb against a different anchor. Committing it silently would write
-/// a half-word; carrying it across would commit `Edit`'s text through `Add`'s
-/// engine call. Abandoning is the only reading that is neither, and
-/// `textedit::load`'s kind check enforces the same thing from the other end so
-/// the two cannot disagree.
+/// different verb against a different anchor. Carrying it across would commit
+/// `Edit`'s text through `Add`'s engine call, which is the one reading that is
+/// wrong about the document; writing it out under the verb it was typed under
+/// is the one that is merely eager, and eager is undoable.
+///
+/// It is not done here. `app::frame`'s step 2d settles any draft whose caret
+/// tool is not the one armed, and the `select` below is what makes that true —
+/// so the kind change goes through the same statement every other tool change
+/// does, and the two cannot disagree about it.
 pub fn arm_text_edit(ctx: &egui::Context, kind: TextEditKind) -> CanvasTool {
     let next = if selected(ctx) == CanvasTool::TextEdit(kind) {
         CanvasTool::Select
@@ -681,7 +685,6 @@ pub fn arm_text_edit(ctx: &egui::Context, kind: TextEditKind) -> CanvasTool {
         CanvasTool::TextEdit(kind)
     };
     select(ctx, next);
-    crate::canvas::textedit::abandon(ctx);
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI.
         //

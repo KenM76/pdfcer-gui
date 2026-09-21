@@ -408,19 +408,44 @@ impl OpenDoc {
                         //   would word a real defect as a magnification limit);
                         // * the refusal is attributable, so there is a page and
                         //   a scale to write down;
-                        // * the ceiling is news — `learn` returns `None` for a
-                        //   repeat, and a repeat means the clamp below already
-                        //   ran and did not hold, which is a condition to
-                        //   report rather than to silently re-apply;
-                        // * the resulting zoom is strictly BELOW where he
-                        //   stands. This is the guard that keeps the silence
-                        //   honest: if the clamp cannot actually move the view
-                        //   down — the arithmetic bottomed out at
-                        //   `viewer::MIN_ZOOM`, or the scale that refused was
-                        //   somehow at or below the current one — then nothing
-                        //   has been fixed, and swallowing the error would
-                        //   leave a blank page with no explanation anywhere.
-                        //   Fall through and tell him.
+                        // * and the operator ends this frame at a zoom the page
+                        //   is believed able to draw. That is what
+                        //   [`Self::learn_raster_ceiling`] returns, and it is a
+                        //   question about the resulting VIEW rather than about
+                        //   the event.
+                        //
+                        // ★★★ **Where he stands, not what this refusal
+                        // taught** — O218: *"sometimes when I zoom in I still
+                        // get the error … instead of the rasterizer just
+                        // stopping at the last zoom level that it
+                        // accomplished."*
+                        //
+                        // A refusal is a fact about the scale that was
+                        // *ordered*, and a render at a deep scale takes long
+                        // enough that by the time it is refused the operator can
+                        // be nowhere near it — he wheeled in fast, the deep
+                        // raster was refused, and he has already wheeled back
+                        // out to a zoom that draws perfectly. Two conditions
+                        // that stood here painted the sentence across exactly
+                        // that frame, and both for the same reason:
+                        //
+                        // * *the ceiling is news.* A refusal from above a
+                        //   ceiling already learned teaches nothing, and `None`
+                        //   was read as *"the clamp already ran and did not
+                        //   hold"* — where it far more often means *"this
+                        //   refusal is stale"*.
+                        // * *the zoom moved.* A clamp that finds him already
+                        //   below the ceiling cannot move him. Being below the
+                        //   ceiling is the state the clamp exists to produce,
+                        //   so reaching it by another route was scored as a
+                        //   failure to reach it at all.
+                        //
+                        // ⇒ Both resolve correctly once the predicate is
+                        // *is he under the ceiling*. The genuinely stuck case
+                        // is unchanged and still falls through: a ceiling below
+                        // `viewer::MIN_ZOOM` means there is no zoom this page
+                        // can be drawn at, and a blank canvas with no sentence
+                        // anywhere is the one outcome worse than the sentence.
                         //
                         // ★★ When `handled`, `render_error` is deliberately NOT
                         // set and `page_texture` is deliberately NOT cleared.
@@ -432,11 +457,12 @@ impl OpenDoc {
                         //   `crate::app::status::rasterstop` on the bottom bar
                         //   — his fourth clause;
                         // * the texture on screen is a picture of this page at
-                        //   a LOWER zoom, and the zoom has just been pulled
-                        //   down toward it. Clearing it would blank the canvas
-                        //   at the exact moment the clamp made it more nearly
-                        //   right, and *"can still function"* is the clause
-                        //   that forbids it.
+                        //   a zoom under the ceiling — either because the clamp
+                        //   has just brought him there or because he was
+                        //   already there. Clearing it would blank the canvas
+                        //   at the exact moment the view became drawable, and
+                        //   *"can still function"* is the clause that forbids
+                        //   it.
                         let handled = refusal.kind == RefusalKind::BeyondRaster
                             && slot.is_some_and(|key| self.learn_raster_ceiling(ctx, key));
                         if handled {
@@ -472,10 +498,28 @@ impl OpenDoc {
     /// the zoom back under it** — O186.
     ///
     /// Returns whether the refusal was *fully absorbed*: a `true` means the
-    /// operator has been moved to a zoom this page can be drawn at, so the
-    /// caller must not also file an error. A `false` means nothing useful could
-    /// be concluded and the ordinary refusal path must run — the four
-    /// conditions are enumerated at the call site, which is the only caller.
+    /// operator is standing at a zoom this page is believed able to draw, so
+    /// the caller must not also file an error. A `false` means no such zoom is
+    /// left — nothing was learned, or the ceiling is under
+    /// [`crate::viewer::MIN_ZOOM`] — and the ordinary refusal path must run.
+    /// The conditions are enumerated at the call site, which is the only
+    /// caller.
+    ///
+    /// # ★★★ It answers *where he stands*, not *did the zoom move*
+    ///
+    /// O218. A refusal names the scale that was **ordered**, not the scale that
+    /// is wanted now, and the two separate whenever a deep render takes long
+    /// enough for the operator to wheel back out while it runs. Scoring such a
+    /// refusal on whether the clamp *moved* the view reports a failure on a view
+    /// that is already correct — and the caller answers a failure by blanking
+    /// the canvas and painting a sentence telling him to do the thing he has
+    /// just done.
+    ///
+    /// ★★ The ceiling is read back from [`crate::render::ceiling::RasterCeiling`]
+    /// rather than taken from `learn`'s return, for the same reason. `learn`
+    /// declines a repeat, and a repeat is the commonest shape of a stale
+    /// refusal; what the caller needs is the ceiling **in force**, which
+    /// `for_page` gives whether or not this particular refusal moved it.
     ///
     /// # Why the clamp is expressed in ZOOM and the ceiling in raster SCALE
     ///
@@ -494,47 +538,78 @@ impl OpenDoc {
     /// two monitors at different densities — and a cached density is a ceiling
     /// that is wrong exactly after the drag.
     ///
+    /// # ★★ Why the clamp is GUARDED, when `set_zoom` clamps already
+    ///
+    /// `set_zoom(target, target)` does not *lower* a zoom — it **assigns** one.
+    /// It clamps into `[MIN_ZOOM, max]` with the value equal to the bound, so it
+    /// lands on `target` from either side. Called unconditionally on a refusal
+    /// that arrived from a scale the operator has already left, it would carry
+    /// him back *up* toward a wall he had backed away from, and drop his fit
+    /// mode on the way. `before > target` is a correctness guard, not an
+    /// optimisation.
+    ///
     /// # Why it floors at [`crate::viewer::MIN_ZOOM`] and then checks again
     ///
-    /// `set_zoom` clamps into `[MIN_ZOOM, max]` itself, so handing it a smaller
-    /// number cannot produce an absurd view. What it *can* produce is a zoom
-    /// that did not move, and that is the case this function must not report as
-    /// handled: an unmoved zoom means the page still cannot be drawn, and
-    /// returning `true` would hide the one failure the operator would have no
-    /// way to diagnose — a permanently blank sheet with no sentence anywhere.
-    /// Hence the `<` comparison *after* the clamp rather than a prediction
-    /// before it.
+    /// `set_zoom` will not go below `MIN_ZOOM`, so a ceiling under it leaves the
+    /// view *above* the ceiling with nowhere further to go: the page cannot be
+    /// drawn at any zoom this viewer offers. That is the one case that must
+    /// report `false`, and it is read off the result rather than predicted
+    /// before the call, so the arithmetic that decides it is the arithmetic that
+    /// ran.
     fn learn_raster_ceiling(&mut self, ctx: &egui::Context, key: RenderKey) -> bool {
         let page = key.page();
-        let Some(ceiling) =
-            self.raster_ceiling
-                .learn(page, key.raster_scale(), self.page_epochs.get(page))
-        else {
+        let epoch = self.page_epochs.get(page);
+        let news = self
+            .raster_ceiling
+            .learn(page, key.raster_scale(), epoch)
+            .is_some();
+        // The ceiling IN FORCE, which is a different question from what this
+        // refusal taught. `learn` declines a repeat as well as a degenerate
+        // scale, and only the second of those means nothing is known.
+        let Some(ceiling) = self.raster_ceiling.for_page(page, epoch) else {
             return false;
         };
-        let pixels_per_point = crate::viewer::sane_pixels_per_point(ctx.pixels_per_point());
-        let target = ceiling / pixels_per_point;
+        // The whole of `raster_density`, not the display density alone — the
+        // ceiling is a raster scale and `raster_scale` multiplied the operator's
+        // render quality into it. O218.
+        let target = crate::viewer::zoom_for_raster_scale(
+            ceiling,
+            ctx.pixels_per_point(),
+            self.prefs.render_quality,
+        );
         let before = self.view.zoom;
         // `set_zoom(target, target)` rather than a ceiling computed from
-        // `zoom_ceiling`: this IS the ceiling, freshly measured, and asking
-        // `zoom_ceiling` for it one statement after teaching it would be the
-        // same number through a longer path — with the hazard that the two
-        // disagree for one frame if anything else in the expression moved.
-        self.view.set_zoom(target, target);
-        let moved = self.view.zoom < before;
+        // `zoom_ceiling`: this IS the ceiling, freshly read, and asking
+        // `zoom_ceiling` for it one statement later would be the same number
+        // through a longer path — with the hazard that the two disagree for one
+        // frame if anything else in the expression moved.
+        if before > target {
+            self.view.set_zoom(target, target);
+        }
+        let after = self.view.zoom;
+        // The verdict the caller acts on: `false` only when the clamp bottomed
+        // out at `MIN_ZOOM` still above the ceiling.
+        let under = after <= target;
         // Published because the whole effect of a success here is that nothing
         // happens: no error, no blank page, no further refusal. An absence is
         // the one thing a driven check cannot assert, so the act announces
-        // itself. Low cardinality by construction — at most one line per page
-        // per edit, because `learn` returns `None` for a repeat.
-        let after = self.view.zoom;
+        // itself.
+        //
+        // `moved` and `under` both appear and they answer differently.
+        // `moved=false under=true` is the stale refusal this function exists to
+        // stop misreading, and a check seeing only one of them would have to
+        // guess which state it was in. `news` separates a first measurement from
+        // a repeat, which is what bounds the line rate: the ratchet converges
+        // downward and a stale refusal arrives once.
+        let moved = after < before;
         crate::diag::trace(move || {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             format!(
-                "raster-ceiling-learned page={page} scale={ceiling:.1} zoom={before:.2} to={after:.2} moved={moved}"
+                "raster-ceiling-learned page={page} scale={ceiling:.1} zoom={before:.2} \
+                 to={after:.2} moved={moved} under={under} news={news}"
             )
         });
-        moved
+        under
     }
 
     /// Collect a background render, if one has finished.

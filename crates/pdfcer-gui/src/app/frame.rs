@@ -1255,6 +1255,46 @@ impl eframe::App for PdfcerApp {
             crate::canvas::zoom::arm_for_actions(&ctx, doc, &actions);
         }
 
+        // ★★★ Step 2d — **a text draft the operator has navigated away from is
+        // written, not dropped**, and the rule is derived rather than spelled
+        // at each exit. `OPERATOR_REQUESTS.md` O222 and O223.
+        //
+        // > *"when I add or edit text then click to another navigation tool my
+        // > changes don't show. If I click elsewhere on the page it works and
+        // > shows me my changes."*
+        //
+        // A draft lives in `egui::Memory` and is painted by `canvas::painting`
+        // only while the caret tool is armed, so arming any other tool makes it
+        // invisible while leaving it uncommitted — the operator's text is
+        // neither on the page nor on screen, and only a later click on the
+        // canvas resurrects it. Settling here is what makes the ribbon press
+        // mean what it looks like it means.
+        //
+        // ## ★★ Why it is one statement here and not one per exit
+        //
+        // Step 2c's argument exactly, and it has already been paid once: the
+        // tool changes from the Navigate row, from `tool::disarm_any`, from
+        // `tool::retire_forbidden` on a mode change, from `tool::arm_text_edit`
+        // re-pressing the ribbon button, and from every manifest chord bound to
+        // any of those. Three of those sites discarded the draft, three ignored
+        // it, and the eighth tool somebody adds would ignore it too. The
+        // condition — *a draft exists and the armed tool is not its caret* — is
+        // a property of the state, so it is read from the state.
+        //
+        // `selected` and not `resolve`: a SPACE-held hand is composed over the
+        // operator's tool for as long as the bar is down and is not something
+        // they chose, so reading the composed answer would settle the draft of
+        // anyone who typed a space.
+        //
+        // Guarded on an open document because the commit it raises is applied
+        // against one. With none, the draft stays in memory exactly as it did.
+        if matches!(self.status, Status::Open(_))
+            && let Some(kind) = crate::canvas::textedit::read(&ctx).map(|draft| draft.kind)
+            && crate::canvas::tool::selected(&ctx).text_edit_kind() != Some(kind)
+        {
+            crate::canvas::textedit::settle(&ctx, &mut actions);
+        }
+
         // Step 3 — apply, after the frame is drawn.
         let pixels_per_point = ctx.pixels_per_point();
         self.apply_actions(actions, pixels_per_point);

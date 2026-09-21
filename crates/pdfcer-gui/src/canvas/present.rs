@@ -246,6 +246,7 @@ fn show_in(
         doc.view.display,
         doc.view.page_index,
         pixels_per_point,
+        doc.prefs.render_quality,
     );
     doc.view.apply_fit(row.extent, viewport, row.max_zoom);
 
@@ -264,6 +265,18 @@ fn show_in(
         let text = crate::text::canvas_render_failed(message);
         let placeholder =
             ui.centered_and_justified(|ui| ui.colored_label(ui.visuals().error_fg_color, text));
+        // ★ **The sentence prescribes Ctrl+wheel, so Ctrl+wheel has to work on
+        // this frame.** Same exception, same two handlers and the same
+        // reasoning as the `nothing-visible` return below — see [`escape`],
+        // which carries the terms.
+        //
+        // The hover gate is the placeholder's own response, because the scroll
+        // area whose content response the other call site passes is built
+        // *below* this return and does not exist here. It is an ordinary
+        // `Sense::hover()` widget filling the canvas, so it respects layer
+        // order the same way and a floating window over the canvas keeps
+        // swallowing the wheel.
+        escape::offer(ui, doc, placeholder.response.hovered(), actions);
         // Same argument as the no-pages arm: there is genuinely no page rect
         // this frame, and saying that is more useful than silence. `reason=`
         // is a fixed token, not the operator-facing message — the message can

@@ -708,6 +708,12 @@ pub fn plan_framing(
     region: Rect,
     margin: f32,
     pixels_per_point: f32,
+    // ★★ O218: the operator's View ▸ Render ▸ Quality. It belongs beside
+    // `pixels_per_point` and not somewhere else, because the two are the two
+    // halves of `viewer::raster_density` — a ceiling derived from one without
+    // the other is wrong by the multiplier, which on Sharper is 1.5× and hands
+    // the engine a pixmap it refuses.
+    quality: crate::app::prefs::RenderQuality,
     // ★ O24: the operator's configured maximum, as a percentage. Threaded
     // rather than read from a global for the same reason `pixels_per_point`
     // is — this function stays pure with respect to egui and to app state,
@@ -740,6 +746,7 @@ pub fn plan_framing(
         viewer::zoom_ceiling(
             frame.extent,
             pixels_per_point,
+            quality,
             max_zoom_percent,
             learned_raster_scale,
         ),
@@ -806,6 +813,7 @@ fn frame_rect(
         region,
         margin,
         ctx.pixels_per_point(),
+        doc.prefs.render_quality,
         max_zoom_percent,
         learned,
     );
@@ -1319,6 +1327,7 @@ mod tests {
             Rect::from_min_max(Pos2::new(50.0, 50.0), Pos2::new(51.0, 51.0)),
             16.0,
             1.0,
+            crate::app::prefs::RenderQuality::Normal,
             viewer::MAX_ZOOM * 100.0,
             None,
         );
@@ -1344,6 +1353,7 @@ mod tests {
             Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(100.0, 150.0)),
             16.0,
             1.0,
+            crate::app::prefs::RenderQuality::Normal,
             crate::app::prefs::DEFAULT_MAX_ZOOM_PERCENT,
             None,
         );

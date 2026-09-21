@@ -300,6 +300,7 @@ fn navigating_the_view_never_alters_the_selection() {
         region,
         16.0,
         1.0,
+        crate::app::prefs::RenderQuality::Normal,
         crate::app::prefs::DEFAULT_MAX_ZOOM_PERCENT,
         None,
     )
@@ -317,6 +318,7 @@ fn navigating_the_view_never_alters_the_selection() {
         bounds,
         16.0,
         1.0,
+        crate::app::prefs::RenderQuality::Normal,
         crate::app::prefs::DEFAULT_MAX_ZOOM_PERCENT,
         None,
     )
@@ -363,7 +365,13 @@ fn navigating_the_view_never_alters_the_selection() {
         // The mode really does change the layout, or the loop asserts
         // nothing about the modes it iterates.
         assert!(!strip.is_empty());
-        let metrics = crate::viewer::strip::row_metrics(&pages, display, view.page_index, 1.0);
+        let metrics = crate::viewer::strip::row_metrics(
+            &pages,
+            display,
+            view.page_index,
+            1.0,
+            crate::app::prefs::RenderQuality::Normal,
+        );
         view.apply_fit(metrics.extent, (900.0, 700.0), metrics.max_zoom);
     }
     assert!(

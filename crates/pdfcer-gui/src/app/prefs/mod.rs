@@ -569,15 +569,24 @@ pub struct Prefs {
     /// [`crate::panels::pages::thumbnails::budget_from_millis`] — and never
     /// re-derived.
     ///
+    /// # ★★ `0` is also the shipped default — O225
+    ///
+    /// *"draw page previews should be set to 'no limit' by default."* A
+    /// budget that trips leaves a tile with no picture, and nothing on
+    /// screen distinguishes that from a page that could not be drawn at
+    /// all; the operator is looking for a sheet, and a blank where a sheet
+    /// should be is the one outcome the panel exists to prevent.
+    /// `crate::panels::pages::thumbnails::PAGE_BUDGET_DEFAULT` carries the
+    /// per-page measurements the decision was made against.
+    ///
     /// # ⚠ What `0` actually costs, stated because the operator is entitled
-    /// to know before typing it
+    /// to know
     ///
     /// The watchdog is not armed at all, so a page that would have taken a
     /// minute takes a minute, on the UI thread, with the application
-    /// unresponsive for the duration. That is a legitimate thing to want —
-    /// he has drawings where the picture is worth the wait — and it is not
-    /// a thing to arrange by accident, so the box says **never** in words
-    /// when it is set and the tooltip says what never means.
+    /// unresponsive for the duration. The box says **never** in words when
+    /// it is set and the tooltip says what never means, so the state is
+    /// legible rather than merely true.
     ///
     /// ★★ **Out-of-range values are clamped, `0` is not** — see
     /// `budget_from_millis`. 1 ms would be an off switch wearing a number,
@@ -913,12 +922,14 @@ impl Default for Prefs {
             // field's ★ on why a checkbox that exists to disable something
             // defaults to enabled.
             page_previews: true,
-            // ★ 2 000 ms, and it is NOT written as a literal: this is the
-            // same number as `PAGE_BUDGET_DEFAULT`, which carries the
-            // measured table that chose it. Two constants for one number
-            // is how a default drifts from its own justification.
-            page_preview_budget_ms: crate::panels::pages::thumbnails::PAGE_BUDGET_DEFAULT
-                .as_millis() as u64,
+            // ★ No limit, and it is NOT written as a literal: `0` is the
+            // sentinel, `PAGE_BUDGET_DEFAULT` is where the decision and its
+            // measurements live, and `millis_from_budget` is the one place
+            // that knows how the two spell each other. Three constants for
+            // one default is how a default drifts from its own justification.
+            page_preview_budget_ms: crate::panels::pages::thumbnails::millis_from_budget(
+                crate::panels::pages::thumbnails::PAGE_BUDGET_DEFAULT,
+            ),
             ribbon_auto_hide: false,
             rail_auto_hide: false,
             chrome: PageChrome::default(),

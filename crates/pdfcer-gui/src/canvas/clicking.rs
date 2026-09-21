@@ -887,8 +887,8 @@ pub fn click(
         // are typing.
         //
         // ★ `tool::select` rather than `arm_text_edit`, and the difference
-        // matters here: the latter TOGGLES and calls `textedit::abandon`, which
-        // would put away the caret this arm is about to place.
+        // matters here: the latter TOGGLES, so on a second double-click into
+        // text it would retire the caret tool this arm exists to arm.
         if double
             && caps.edit_content
             && let Some(t) = targets

@@ -305,6 +305,7 @@ impl PdfcerApp {
         let max_zoom = viewer::zoom_ceiling(
             doc.current_extent(),
             pixels_per_point,
+            doc.prefs.render_quality,
             self.prefs.max_zoom_percent,
             learned,
         );

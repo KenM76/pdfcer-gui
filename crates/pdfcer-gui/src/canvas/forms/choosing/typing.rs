@@ -160,9 +160,15 @@ pub(super) fn type_into(
 
     // ★ Escape's two rungs, innermost first — `super::choose`'s rule, and it
     // has to be read BEFORE the commit branch because egui's own `TextEdit`
-    // surrenders focus on Escape. Without that ordering the abandon and the
-    // commit are one event and Escape writes the draft it was pressed to
-    // discard.
+    // surrenders focus on Escape. Without that ordering the two are one event
+    // and which runs is an accident of ordering rather than a decision.
+    //
+    // ★★★ **The outer rung writes the typed string on its way out** —
+    // `OPERATOR_REQUESTS.md` **O223**. The inner one does not, and the
+    // difference is not an inconsistency: closing the popup leaves the operator
+    // in the box they were typing in with their text still in front of them,
+    // so there is nothing to lose yet. The rung that takes the text off the
+    // screen is the rung that has to write it.
     if ctx.input(|i| i.key_pressed(Key::Escape)) {
         note_escape(&ctx);
         if state.open {
@@ -177,6 +183,7 @@ pub(super) fn type_into(
                 }),
             );
         } else {
+            commit_typed(&widget_box.field, options, selected, &draft, actions);
             trace_leave(&widget_box.field, "escape");
             store_focus(&ctx, None);
             forget(&ctx, id);
@@ -249,19 +256,7 @@ pub(super) fn type_into(
         // picked "Large", and a typed "Extra large" is a free-text value the
         // engine stores as its own export. Nothing here has to tell the two
         // apart.
-        let stored = selected.first().map_or("", String::as_str);
-        let settled = draft.trim();
-        if settled != stored && !display_matches(options, selected, settled) {
-            crate::diag::trace(|| {
-                // ui-text-exempt: diagnostic trace, never displayed in the UI
-                format!(
-                    "form-choice-typed field={} chars={}",
-                    widget_box.field,
-                    settled.chars().count()
-                )
-            });
-            send(&widget_box.field, vec![settled.to_owned()], actions);
-        }
+        commit_typed(&widget_box.field, options, selected, &draft, actions);
         if response.lost_focus() {
             trace_leave(&widget_box.field, "lost-focus");
             store_focus(&ctx, None);
@@ -293,6 +288,41 @@ pub(super) fn type_into(
     button.clicked()
         || super::pressed_in_list(&ctx, id)
         || (response.contains_pointer() && ctx.input(|i| i.pointer.any_pressed()))
+}
+
+/// Raise a fill for the typed string, if it says anything the field does not
+/// already hold.
+///
+/// ★★ The whole of what bit 19 buys: `set_choice_value` matches the string
+/// against `/Opt` first, so a typed *"Large"* is the same command as a picked
+/// *"Large"*, and a typed *"Extra large"* is a free-text value the engine
+/// stores as its own export. Nothing here has to tell the two apart.
+///
+/// One function because it is reached from three exits — Enter, focus loss and
+/// Escape — and *"tabbing through a field writes nothing"* has to mean the same
+/// thing at all three. [`display_matches`] is the half that makes it true when
+/// the field's `/V` is an export whose display text is what the box shows.
+fn commit_typed(
+    field: &str,
+    options: &[(String, String)],
+    selected: &[String],
+    draft: &str,
+    actions: &mut Vec<Action>,
+) {
+    let stored = selected.first().map_or("", String::as_str);
+    let settled = draft.trim();
+    if settled == stored || display_matches(options, selected, settled) {
+        return;
+    }
+    crate::diag::trace(|| {
+        // The field and the COUNT, never the value — `canvas::forms`' §8 rule.
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!(
+            "form-choice-typed field={field} chars={}",
+            settled.chars().count()
+        )
+    });
+    send(field, vec![settled.to_owned()], actions);
 }
 
 /// Whether `text` is already the display or export of the selected option.

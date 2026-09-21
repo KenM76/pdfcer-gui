@@ -84,20 +84,7 @@ pub(super) fn controls(
             let save = ui.button(t::popup_save());
             crate::diag::ui_rect_visible(REGION_SAVE, save.rect, f.clip);
             if save.clicked() {
-                // ★★★ `keep_author` comes from the SAME function the Comments
-                // panel uses, and that is not tidiness. `pdfcer-core` named
-                // this mistake when it shipped the verb: *"an implementation
-                // writing all three keys unconditionally would silently strip
-                // the author and date on every correction, leaving a review
-                // comment from nobody, dated never."* Two editors for one
-                // note, two spellings of the rule, and one of them eventually
-                // gets it wrong — so there is one spelling.
-                actions.push(Action::Annot(AnnotAction::SetNote {
-                    id: note.id,
-                    text: draft.text().to_owned(),
-                    keep_author: crate::panels::comments::keeps_author_name(note.author.as_deref()),
-                }));
-                draft.close();
+                save_draft(f, note, draft, actions);
             }
             if ui.button(t::popup_cancel()).clicked() {
                 draft.close();
@@ -133,6 +120,68 @@ pub(super) fn controls(
         delete(ui, f, note, actions);
     });
     open_default(ui, f, note, actions);
+}
+
+/// **Write the open draft to the note and close the editor.**
+///
+/// # ★★★ Escape saves here, and the labelled buttons still mean what they say
+///
+/// The operator's rule: *"for adding and editing text when using any tool that
+/// has text escape should also save changes to the text. The user can always
+/// undo if they want, but it is easy to accidentally press escape and lose a
+/// lot of text that has been entered."* The cost is asymmetric — a commit the
+/// operator did not want costs one `Ctrl+Z`, and a discard they did not want
+/// costs everything they typed, with nothing to undo — so both this function
+/// and the Escape arm in [`super::body`] call it.
+///
+/// ⇒ *Cancel* and the window's ✕ are untouched and still discard. A keystroke
+/// is what gets pressed by accident; a labelled button under the pointer is
+/// not, and removing the only deliberate way to throw a draft away in order to
+/// protect against the accidental one would be a worse trade than the one it
+/// fixes.
+///
+/// # A draft identical to the note is not a write
+///
+/// `SetNote` with the stored text would be an undo entry whose entire content
+/// is *"changed nothing"*, which is the same objection [`open_default`] makes
+/// to writing `/Open` on every glance. Escape makes that case common — press it
+/// on an editor you opened and did not type in — so the guard is here rather
+/// than at either caller.
+///
+/// # ★★ Why the authority test is repeated rather than inherited
+///
+/// The three early returns in [`controls`] are a **disclosure** ladder: each
+/// names a different reason and draws a different sentence. This is the
+/// **authority** test, and it has one outcome. [`super::body`]'s Escape arm is
+/// outside that ladder, so a note whose editor was opened before the document
+/// was signed — or whose annotation was locked under the operator's hand —
+/// must not be written by a keypress the ladder never saw.
+///
+/// `keep_author` comes from the same function the Comments panel uses.
+/// `pdfcer-core` named this mistake when it shipped the verb: *"an
+/// implementation writing all three keys unconditionally would silently strip
+/// the author and date on every correction, leaving a review comment from
+/// nobody, dated never."* Two editors for one note, two spellings of the rule,
+/// and one of them eventually gets it wrong.
+pub(super) fn save_draft(
+    f: &Ctx<'_>,
+    note: &NoteView,
+    draft: &mut NoteDraft,
+    actions: &mut Vec<Action>,
+) {
+    if !f.caps.author_markup || note.locked || f.is_ce_dimension {
+        draft.close();
+        return;
+    }
+    let existing = note.contents.as_deref().unwrap_or_default();
+    if draft.text() != existing {
+        actions.push(Action::Annot(AnnotAction::SetNote {
+            id: note.id,
+            text: draft.text().to_owned(),
+            keep_author: crate::panels::comments::keeps_author_name(note.author.as_deref()),
+        }));
+    }
+    draft.close();
 }
 
 /// ★★★ **Record this comment's window state in the FILE** —

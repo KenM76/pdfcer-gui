@@ -191,7 +191,7 @@ than the number it produced last.
 - ✅ **Objects** — every object on the page, front-most first, on a benchmark CAD sheet of 129,758 of them
 - ✅ **Properties** — read-only facts for a selection, plus the editable sections listed under Canvas
 - ✅ **Pages** — thumbnail grid, click to navigate, multi-select by click, Ctrl+click and Shift+extend, a context menu of the six page verbs, and **drag a page to where it goes** with an insertion caret showing where that is before you let go
-- ✅ **The page-previews tick is the operator's alone**, and the limit that used to override it is a box he can type in
+- ✅ **The page-previews tick is the operator's alone**, and the limit that used to override it is a box he can type in. **It ships at *no limit*** (O225): a budget that trips leaves a tile with no picture and nothing distinguishes that from a page that could not be drawn, so the shipped answer is to finish every page and let the operator set a bound if he wants one. Both the tick and the limit persist to `preferences.txt` the moment they change, and `0` is the operator's own notation for *no limit* in the box and in the file
 - ✅ **The page cache holds what you turned away from** — the raster set is not narrowed to the visible pages every settle, so turning back one page does not re-render it
 - ✅ **Comments** — every annotation in the document, page order then `/Annots` order, reusing `pdfcer list-annotations`' ordering by name; `/Widget` excluded. It **writes**: add, edit and remove a note on every annotation kind
 - ✅ **Forms** — fill, in all three modes including Read, reading the session so unsaved edits show

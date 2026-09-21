@@ -673,26 +673,26 @@ pub fn clamp_zoom(zoom: f32, max: f32) -> f32 {
 ///
 /// See the module docs for why this exists. Two subtleties:
 ///
-/// - **`pixels_per_point` is part of the calculation.** The zoom the
-///   operator sees is a *logical* scale (points per PDF unit); the raster
-///   is made at `zoom × pixels_per_point` so it stays sharp on a HiDPI
-///   display (see [`raster_scale`]). On a 2× display, therefore, every
-///   page hits the pixmap ceiling at half the zoom it otherwise would —
-///   omitting this factor is how a guard like this passes its tests and
-///   still fails on the one machine that matters.
+/// - **The whole of [`raster_density`] is part of the calculation**, not just
+///   the display density. The zoom the operator sees is a *logical* scale
+///   (points per PDF unit); the raster is made at `zoom × raster_density` (see
+///   [`raster_scale`]). On a 2× display, or with View ▸ Render ▸ Quality on
+///   Sharper, every page therefore hits the pixmap ceiling at a lower zoom than
+///   it otherwise would — omitting either factor is how a guard like this
+///   passes its tests and still fails on the one machine that matters.
 /// - **A one-pixel guard band is subtracted** before dividing, because
 ///   the renderer computes its pixmap edge with `ceil()`: a scale that
 ///   divides out to exactly the limit rounds *up* past it and is refused.
 ///
 /// [`raster_scale`]: crate::viewer::raster_scale
 #[must_use]
-pub fn max_zoom_for_page(page_pts: (f32, f32), pixels_per_point: f32) -> f32 {
+pub fn max_zoom_for_page(
+    page_pts: (f32, f32),
+    pixels_per_point: f32,
+    quality: crate::app::prefs::RenderQuality,
+) -> f32 {
     let longest = page_pts.0.max(page_pts.1);
-    let ppp = if pixels_per_point.is_finite() && pixels_per_point > 0.0 {
-        pixels_per_point
-    } else {
-        1.0
-    };
+    let density = raster_density(pixels_per_point, quality);
     if !longest.is_finite() || longest <= 0.0 {
         return MAX_ZOOM;
     }
@@ -700,11 +700,11 @@ pub fn max_zoom_for_page(page_pts: (f32, f32), pixels_per_point: f32) -> f32 {
         clippy::cast_precision_loss,
         reason = "MAX_PIXMAP_EDGE is 16384; f32 is exact to 2^24" // ui-text-exempt: clippy lint justification, never displayed
     )]
-    let ceiling = (pdfcer_render::MAX_PIXMAP_EDGE - 1) as f32 / (longest * ppp);
+    let ceiling = (pdfcer_render::MAX_PIXMAP_EDGE - 1) as f32 / (longest * density);
     // `clamp` is safe here (MIN_ZOOM < MAX_ZOOM, neither is NaN, and
-    // `ceiling` is finite because `longest` and `ppp` were both checked
-    // above) — so clippy's `manual_clamp` suggestion is taken rather
-    // than suppressed.
+    // `ceiling` is finite because `longest` was checked above and
+    // `raster_density` is finite and positive by construction) — so clippy's
+    // `manual_clamp` suggestion is taken rather than suppressed.
     ceiling.clamp(MIN_ZOOM, MAX_ZOOM)
 }
 
@@ -758,16 +758,64 @@ pub fn raster_scale(
     pixels_per_point: f32,
     quality: crate::app::prefs::RenderQuality,
 ) -> f32 {
-    let ppp = sane_pixels_per_point(pixels_per_point);
-    // The operator's quality multiplier — `RIBBON_IA.md` §5.2's
-    // View ▸ Render ▸ Quality.
-    //
-    // `Normal` is `1.0`: one raster pixel per device pixel, which is exactly
-    // `zoom * ppp` and is therefore what a build whose operator never opens the
-    // Settings window gets, byte for byte. The knob multiplies that, so the
-    // setting can only ever be a deliberate departure from the default — there
-    // is no compiled-in quality constant anywhere else for it to disagree with.
-    zoom * ppp * quality.multiplier()
+    zoom * raster_density(pixels_per_point, quality)
+}
+
+/// The factor between a **zoom** and a **raster scale**, in device pixels per
+/// logical unit.
+///
+/// # ★★★ Why this is a function and not two multiplications
+///
+/// A raster scale is `zoom × pixels_per_point × quality.multiplier()`, and four
+/// places in the shell need to run that conversion **backwards**:
+/// [`max_zoom_for_page`], [`ceiling::zoom_ceiling`]'s learned clause,
+/// `render::settle`'s `learn_raster_ceiling`, and `app::status::rasterstop`.
+/// Every one of them divided by the density alone, and the quality factor was
+/// simply absent — so on View ▸ Render ▸ Quality ≥ Normal the derived ceiling
+/// asked the engine for a pixmap over [`pdfcer_render::MAX_PIXMAP_EDGE`], the
+/// engine refused, and the clamp that exists to rescue the operator landed by
+/// the same factor too high and refused again. O218.
+///
+/// Routing both directions through this one function is what makes
+/// [`zoom_for_raster_scale`] the *exact* inverse of [`raster_scale`] rather than
+/// a second reading of the same rule that has to be kept in step by hand.
+///
+/// # What is in it
+///
+/// * `pixels_per_point`, through [`sane_pixels_per_point`], so the raster stays
+///   sharp on a HiDPI display.
+/// * `quality.multiplier()`. `Normal` is `1.0`: one raster pixel per device
+///   pixel, which is exactly `zoom × ppp` and is therefore what a build whose
+///   operator never opens the Settings window gets, byte for byte. The knob
+///   multiplies that, so the setting can only ever be a deliberate departure
+///   from the default — there is no compiled-in quality constant anywhere else
+///   for it to disagree with.
+///
+/// The result is finite and strictly positive without a guard, because
+/// `sane_pixels_per_point` guarantees that of its half and
+/// [`crate::app::prefs::RenderQuality::multiplier`] is a `const fn` over a
+/// closed enum whose three values are 0.75, 1.0 and 1.5.
+#[must_use]
+pub fn raster_density(pixels_per_point: f32, quality: crate::app::prefs::RenderQuality) -> f32 {
+    sane_pixels_per_point(pixels_per_point) * quality.multiplier()
+}
+
+/// The logical zoom that rasterizes at `scale` — the inverse of
+/// [`raster_scale`].
+///
+/// [`crate::render::ceiling::RasterCeiling`] stores what the engine refused as a
+/// **raster scale**, deliberately: a ceiling kept as a zoom would be wrong by the
+/// density ratio on a window dragged between two monitors, silently, and only on
+/// the machine it was not measured on. Every reader therefore has to convert,
+/// and this is the conversion — the whole of [`raster_density`], not the display
+/// density alone.
+#[must_use]
+pub fn zoom_for_raster_scale(
+    scale: f32,
+    pixels_per_point: f32,
+    quality: crate::app::prefs::RenderQuality,
+) -> f32 {
+    scale / raster_density(pixels_per_point, quality)
 }
 
 /// A page's on-screen extent in PDF user-space units, with `/Rotate`
@@ -1064,13 +1112,13 @@ mod tests {
     #[test]
     fn a_normal_page_is_not_constrained_by_the_raster_ceiling() {
         // US Letter: 16383 / 792 ≈ 20.7, far above MAX_ZOOM.
-        assert_eq!(max_zoom_for_page((612.0, 792.0), 1.0), MAX_ZOOM);
+        assert_eq!(max_zoom_for_page((612.0, 792.0), 1.0, NORMAL), MAX_ZOOM);
     }
 
     #[test]
     fn an_annex_c_maximum_page_is_constrained() {
         // 14,400 user units is ISO 32000-1 Annex C's largest page edge.
-        let max = max_zoom_for_page((14_400.0, 14_400.0), 1.0);
+        let max = max_zoom_for_page((14_400.0, 14_400.0), 1.0, NORMAL);
         assert!(max < MAX_ZOOM);
         // And the ceiling must actually keep the raster legal: the
         // renderer ceil()s, so check the rounded-up edge too.
@@ -1081,7 +1129,7 @@ mod tests {
     #[test]
     fn the_ceiling_is_what_actually_clamps_zoom_in_on_a_huge_page() {
         let page = (14_400.0, 14_400.0);
-        let max = max_zoom_for_page(page, 1.0);
+        let max = max_zoom_for_page(page, 1.0, NORMAL);
         let mut v = ViewState::default();
         for _ in 0..20 {
             v.zoom_in(max);
@@ -1092,22 +1140,106 @@ mod tests {
 
     #[test]
     fn degenerate_page_extent_does_not_produce_a_nonsense_ceiling() {
-        assert_eq!(max_zoom_for_page((0.0, 0.0), 1.0), MAX_ZOOM);
-        assert_eq!(max_zoom_for_page((f32::NAN, 10.0), 1.0), MAX_ZOOM);
+        assert_eq!(max_zoom_for_page((0.0, 0.0), 1.0, NORMAL), MAX_ZOOM);
+        assert_eq!(max_zoom_for_page((f32::NAN, 10.0), 1.0, NORMAL), MAX_ZOOM);
     }
 
     // ---- HiDPI ----------------------------------------------------
 
+    /// Shorthand for the quality that multiplies by one, so every test below
+    /// that is not ABOUT the quality asserts the same number it did before the
+    /// factor entered the arithmetic.
+    use crate::app::prefs::RenderQuality;
+    const NORMAL: RenderQuality = RenderQuality::Normal;
+
     #[test]
     fn raster_scale_multiplies_zoom_by_the_display_density() {
-        assert_eq!(
-            raster_scale(1.5, 2.0, crate::app::prefs::RenderQuality::Normal),
-            3.0
+        assert_eq!(raster_scale(1.5, 2.0, NORMAL), 3.0);
+        assert_eq!(raster_scale(1.5, 1.0, NORMAL), 1.5);
+    }
+
+    /// ★★★ **[`zoom_for_raster_scale`] is the exact inverse of
+    /// [`raster_scale`], at every quality** — O218.
+    ///
+    /// The defect this pins is not that either function was wrong. Each was
+    /// right about what it claimed; they simply did not agree, because the
+    /// forward direction multiplied by the quality and all four backward
+    /// readings divided by the display density alone. On the operator's own
+    /// build — `render_quality = sharper` — every derived ceiling was therefore
+    /// half again too high, the engine refused the pixmap, and the clamp that
+    /// exists to rescue him landed by the same factor too high and refused
+    /// again.
+    ///
+    /// ★ The repair is structural rather than arithmetic: both directions now
+    /// run through [`raster_density`], so this test cannot be made to fail by
+    /// changing one of them. That is the point of it — it is here to fail if
+    /// somebody re-opens the two into separate expressions.
+    #[test]
+    fn a_zoom_survives_a_round_trip_through_a_raster_scale() {
+        for quality in [
+            RenderQuality::Faster,
+            RenderQuality::Normal,
+            RenderQuality::Sharper,
+        ] {
+            for ppp in [1.0_f32, 1.25, 1.5, 2.0] {
+                for zoom in [0.1_f32, 1.0, 8.0, 5_000.0] {
+                    let back =
+                        zoom_for_raster_scale(raster_scale(zoom, ppp, quality), ppp, quality);
+                    assert!(
+                        (back - zoom).abs() <= zoom * 1e-6,
+                        "{zoom}x at {ppp}x {quality:?} came back as {back}x"
+                    );
+                }
+            }
+        }
+    }
+
+    /// ★★ **A nonsense density is the identity in BOTH directions.**
+    ///
+    /// `sane_pixels_per_point` lives inside [`raster_density`], so the guard is
+    /// stated once and both directions inherit it. Were it applied in the
+    /// forward direction only, a `NaN` density would rasterize at `zoom` and
+    /// convert back through a division by `NaN` — a ceiling of `NaN`, which
+    /// compares false against everything and switches a clamp off silently.
+    #[test]
+    fn a_nonsense_density_is_the_identity_in_both_directions() {
+        for bad in [0.0_f32, -1.0, f32::NAN, f32::INFINITY] {
+            assert_eq!(raster_scale(2.0, bad, NORMAL), 2.0);
+            assert_eq!(zoom_for_raster_scale(2.0, bad, NORMAL), 2.0);
+        }
+    }
+
+    /// ★★★ **The page ceiling moves with the render quality** — O218's other
+    /// half, and the assertion that fails on the old arithmetic.
+    ///
+    /// Sharper rasterizes at 1.5×, so the zoom at which a page fills
+    /// [`pdfcer_render::MAX_PIXMAP_EDGE`] is two-thirds of what it is at Normal.
+    /// The old [`max_zoom_for_page`] returned the same number for all three
+    /// qualities, so on Sharper it offered a zoom whose raster the engine
+    /// refuses — which is the sentence the operator reported reading across his
+    /// drawing.
+    #[test]
+    fn the_page_ceiling_moves_with_the_render_quality() {
+        let page = (1584.0_f32, 1224.0);
+        let sharper = max_zoom_for_page(page, 1.0, RenderQuality::Sharper);
+        let normal = max_zoom_for_page(page, 1.0, NORMAL);
+        assert!(
+            sharper < normal,
+            "Sharper rasterizes 1.5x larger, so its ceiling must be lower: \
+             {sharper} vs {normal}"
         );
-        assert_eq!(
-            raster_scale(1.5, 1.0, crate::app::prefs::RenderQuality::Normal),
-            1.5
-        );
+        for quality in [
+            RenderQuality::Faster,
+            RenderQuality::Normal,
+            RenderQuality::Sharper,
+        ] {
+            let ceiling = max_zoom_for_page(page, 1.0, quality);
+            let edge = (page.0 * raster_scale(ceiling, 1.0, quality)).ceil() as u32;
+            assert!(
+                edge <= pdfcer_render::MAX_PIXMAP_EDGE,
+                "{quality:?}: the ceiling {ceiling}x orders a {edge}px edge"
+            );
+        }
     }
 
     #[test]
@@ -1115,17 +1247,11 @@ mod tests {
         // egui should never hand us these, but a zero here would render
         // a zero-size pixmap and a NaN would render nothing at all —
         // both far worse than ignoring a bad density.
+        assert_eq!(raster_scale(2.0, 0.0, NORMAL), 2.0);
+        assert_eq!(raster_scale(2.0, f32::NAN, NORMAL), 2.0);
         assert_eq!(
-            raster_scale(2.0, 0.0, crate::app::prefs::RenderQuality::Normal),
-            2.0
-        );
-        assert_eq!(
-            raster_scale(2.0, f32::NAN, crate::app::prefs::RenderQuality::Normal),
-            2.0
-        );
-        assert_eq!(
-            max_zoom_for_page((14_400.0, 1.0), 0.0),
-            max_zoom_for_page((14_400.0, 1.0), 1.0)
+            max_zoom_for_page((14_400.0, 1.0), 0.0, NORMAL),
+            max_zoom_for_page((14_400.0, 1.0), 1.0, NORMAL)
         );
     }
 
@@ -1135,11 +1261,10 @@ mod tests {
         // on a 1x developer monitor and blows the pixmap limit on a 2x
         // laptop, because the raster is twice as many pixels.
         let page = (14_400.0, 14_400.0);
-        let max_1x = max_zoom_for_page(page, 1.0);
-        let max_2x = max_zoom_for_page(page, 2.0);
+        let max_1x = max_zoom_for_page(page, 1.0, NORMAL);
+        let max_2x = max_zoom_for_page(page, 2.0, NORMAL);
         assert!(max_2x < max_1x);
-        let edge = (page.0 * raster_scale(max_2x, 2.0, crate::app::prefs::RenderQuality::Normal))
-            .ceil() as u32;
+        let edge = (page.0 * raster_scale(max_2x, 2.0, NORMAL)).ceil() as u32;
         assert!(edge <= pdfcer_render::MAX_PIXMAP_EDGE);
     }
 

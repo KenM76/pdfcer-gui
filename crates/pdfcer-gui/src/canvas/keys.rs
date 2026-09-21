@@ -652,23 +652,38 @@ pub(super) fn canvas_keys(
         && !measure_abandoned
         && crate::canvas::markup::vertex::abandon(ctx);
 
-    // …and a **text draft** in progress, third on the same rung and for the
-    // third time the same reason. A caret with characters typed into it is a
-    // gesture in flight that no drag represents, and it is the one where Escape
-    // matters most: it is the only way to say *"throw this away"*, because
-    // clicking elsewhere COMMITS (`textedit::click`'s own note on why). One
-    // Escape must therefore discard the draft and leave the tool armed, or an
-    // operator correcting a typo would also be putting the pen down.
+    // …and a **text draft** in progress, third on the same rung. It takes the
+    // rung for its neighbours' reason — a caret with characters typed into it
+    // is a gesture in flight that no drag represents, and one Escape must end
+    // it without also putting the pen down — and it is the one rung that
+    // **writes** what it retires rather than discarding it.
+    //
+    // ★★★ `OPERATOR_REQUESTS.md` **O223**, and it overturns what this rung used
+    // to do:
+    //
+    // > *"for adding and editing text when using any tool that has text escape
+    // > should also save changes to the text. The user can always undo if they
+    // > want, but it is easy to accidentally press escape and lose a lot of
+    // > text that has been entered."*
+    //
+    // The argument this replaces was that Escape is the only way to say *throw
+    // this away*, because clicking elsewhere commits. That is true and it is
+    // not worth what it costs: the two mistakes are not the same size. A draft
+    // written by mistake is one `Ctrl+Z`; a draft discarded by mistake is gone,
+    // because a draft is `egui::Memory` and never reaches the undo stack. The
+    // shell had already reached that conclusion once for the other half of the
+    // same surface — see `canvas::forms::settle` on why a half-typed field
+    // value is committed where a half-drawn markup shape is not.
     //
     // Three calls on one rung rather than three rungs, on 3a's existing
     // argument: one tool is armed at a time, so a measure pick, a vertex run and
     // a text draft cannot two of them be in progress.
-    let draft_abandoned = escape_available
+    let draft_settled = escape_available
         && !guide_cancelled
         && !measure_abandoned
         && !vertex_abandoned
-        && crate::canvas::textedit::abandon(ctx);
-    let vertex_abandoned = vertex_abandoned || draft_abandoned;
+        && crate::canvas::textedit::settle(ctx, actions);
+    let vertex_abandoned = vertex_abandoned || draft_settled;
 
     // ★★★ **…and a PENDING PLACEMENT, fourth on the same rung** —
     // `OPERATOR_REQUESTS.md` O66.

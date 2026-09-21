@@ -51,7 +51,7 @@
 //! | **What is cached?** | the uploaded texture, keyed by the page's [`RenderKey`], up to [`MAX_CACHED_THUMBNAILS`] of them |
 //! | **What is evicted?** | the cached page **furthest from the middle of what is on screen** |
 //! | **What does an undrawn tile show?** | *words* — see [`TileState`] and [`crate::text::pages`] |
-//! | **When does a page get skipped?** | when it exceeds the operator's own per-page time limit — [`ThumbnailCache::budget`], default [`PAGE_BUDGET_DEFAULT`]. That page alone is abandoned; the grid carries on with the next one |
+//! | **When does a page get skipped?** | when it exceeds the operator's own per-page time limit — [`ThumbnailCache::budget`]. **There is no limit by default** ([`PAGE_BUDGET_DEFAULT`]); when one is set, that page alone is abandoned and the grid carries on with the next one |
 //! | **When does the feature switch itself off?** | **never** — see "the skipping rule" below |
 //!
 //! ## What that policy does on real documents — measured, by driving the
@@ -200,13 +200,28 @@ use crate::render::worker::{RenderKey, RenderedPixels};
 /// smaller stops being recognisable, which is the one job a thumbnail has.
 pub const THUMBNAIL_WIDTH_PTS: f32 = 140.0;
 
-/// **The default per-page time limit** — what [`ThumbnailCache::budget`]
-/// holds until the operator types a different number.
+/// **The default per-page time limit: none** — what [`ThumbnailCache::budget`]
+/// holds until the operator types a number.
 ///
+/// # ★★★ No limit, because a missing preview is a worse answer than a slow one
 ///
-/// The measurements it was chosen against are this panel's own —
-/// [`tests::thumbnail_cost_on_the_benchmark_documents`] re-runs them.
-/// **Release build, 280 px-wide thumbnails, one core:**
+/// The operator's rule: *"draw page previews should be set to 'no limit' by
+/// default."* A budget that trips produces a tile with no picture, and the
+/// operator has no way to tell that from a page that failed — the mode they
+/// are in is *looking for a sheet*, and a blank where a sheet should be is the
+/// one outcome the panel exists to prevent. Waiting is visible and
+/// self-explaining; an abandoned render is neither.
+///
+/// The budget itself is unchanged and is still the right control to *have*.
+/// `BENCHMARK.md` records ~10 s at 1× and ~58 s at 2× for a full-size CAD
+/// raster, nothing in the format bounds a thumbnail's cost, and an operator
+/// working through a set of pages that each cost that much wants the dial.
+/// What changed is who reaches for it.
+///
+/// ## What a page actually costs, so the size of the risk is on the record
+///
+/// This panel's own measurements — [`tests::thumbnail_cost_on_the_benchmark_documents`]
+/// re-runs them. **Release build, 280 px-wide thumbnails, one core:**
 ///
 /// | Document | Page | Thumbnail |
 /// |---|---|---:|
@@ -216,27 +231,23 @@ pub const THUMBNAIL_WIDTH_PTS: f32 = 140.0;
 /// | `fixtures/a1-titleblock.pdf` | 1 | 9 ms |
 /// | `pageops/four-pages.pdf` | 1–4 | < 1 ms |
 ///
-/// ⇒ **Two seconds is deliberately well clear of the worst real page.** A
-/// default that abandoned a render which would have finished converts a slow
-/// picture into no picture, and that is a worse answer than the wait — so on
-/// every document measured here, the default budget draws **everything**.
-/// What it bounds is the page worse than anything measured: `BENCHMARK.md`
-/// records ~10 s at 1× and ~58 s at 2× for a full-size CAD raster, nothing in
-/// the format bounds a thumbnail's cost, and a page with ten times the
-/// operator count would otherwise freeze the application for the better part
-/// of a minute.
+/// ⇒ The worst real page measured is under a second, so on every document in
+/// the table an unbounded budget and a two-second one draw exactly the same
+/// thing. The difference only appears on a page worse than anything here, and
+/// there the operator now waits rather than being shown nothing.
 ///
+/// # The mechanism, for when a budget IS set
 ///
-/// The mechanism, which is real rather than nominal: every render is armed
-/// with a [`RenderCancel`] and a one-shot watchdog thread that trips at the
-/// budget. `pdfcer-render` polls the token **between content-stream
-/// operators**, and its own docs put the worst-case latency at one operation
-/// — ~360 µs for the most expensive kind measured.
+/// Real rather than nominal: every render is armed with a [`RenderCancel`] and
+/// a one-shot watchdog thread that trips at the budget. `pdfcer-render` polls
+/// the token **between content-stream operators**, and its own docs put the
+/// worst-case latency at one operation — ~360 µs for the most expensive kind
+/// measured.
 ///
 /// A render that trips it is [`Unavailable::Abandoned`], which is *not* a
 /// failure: nothing is wrong with the page, and the tile says so in those
 /// terms.
-pub const PAGE_BUDGET_DEFAULT: Duration = Duration::from_secs(2);
+pub const PAGE_BUDGET_DEFAULT: Option<Duration> = None;
 
 /// The smallest budget the operator may set.
 ///
@@ -488,12 +499,12 @@ pub struct ThumbnailCache {
 }
 
 impl Default for ThumbnailCache {
-    /// **Previews on, at the default budget** — hand-written because the
-    /// derive cannot express either.
+    /// **Previews on, with no time limit** — hand-written because the derive
+    /// cannot express the first.
     ///
-    /// `#[derive(Default)]` would give `on: false` and `budget: 0 s`, which
-    /// is a build that draws nothing and blames a time limit for it. Both are
-    /// the kind of default that is only ever discovered by an operator.
+    /// `#[derive(Default)]` would give `on: false`, a build that draws nothing
+    /// and says nothing about why. That is the kind of default only ever
+    /// discovered by an operator.
     fn default() -> Self {
         Self {
             ready: HashMap::new(),
@@ -503,7 +514,7 @@ impl Default for ThumbnailCache {
             synced: crate::app::state::pageepoch::PageEpochs::default(),
             skipped: None,
             on: true,
-            budget: Some(PAGE_BUDGET_DEFAULT),
+            budget: PAGE_BUDGET_DEFAULT,
             order: Vec::new(),
         }
     }

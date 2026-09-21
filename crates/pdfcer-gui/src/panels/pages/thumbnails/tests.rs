@@ -205,10 +205,15 @@ fn zero_milliseconds_means_no_limit_and_survives_the_clamp() {
         "a hand-edited absurdity is held at the ceiling, not honoured"
     );
 
-    let ms = millis_from_budget(Some(PAGE_BUDGET_DEFAULT));
+    // An ordinary mid-range value, written here rather than taken from
+    // `PAGE_BUDGET_DEFAULT`: the default is *no limit*, and a round-trip
+    // test fed the sentinel would assert the `0` case twice and the ordinary
+    // case never.
+    let ordinary = Duration::from_secs(2);
+    let ms = millis_from_budget(Some(ordinary));
     assert_eq!(
         budget_from_millis(ms),
-        Some(PAGE_BUDGET_DEFAULT),
+        Some(ordinary),
         "an ordinary value must survive a trip through the file unchanged"
     );
 
@@ -234,13 +239,19 @@ fn zero_milliseconds_means_no_limit_and_survives_the_clamp() {
 /// times, on the UI thread, while the operator was still choosing a number.
 #[test]
 fn setting_the_same_limit_again_changes_nothing() {
+    // The limit is armed FIRST and the abandoned page planted after it. The
+    // shipped default is *no limit*, so planting first and then arming would
+    // make the first call a real change — which correctly clears what was
+    // planted, and would leave this test asserting the opposite of its name.
     let mut cache = ThumbnailCache::default();
+    let limit = Some(Duration::from_secs(2));
+    cache.set_budget(limit);
     cache.unavailable.insert(2, Unavailable::Abandoned);
     cache.skipped = Some(SkippedPage {
         page_index: 2,
         millis: 2000,
     });
-    cache.set_budget(Some(PAGE_BUDGET_DEFAULT));
+    cache.set_budget(limit);
     assert_eq!(cache.state(2), TileState::Abandoned);
     assert_eq!(cache.skipped().map(|s| s.page_index), Some(2));
 }
@@ -567,17 +578,26 @@ fn the_operators_settings_survive_an_edit() {
     assert_eq!(cache.next_to_render(&[0, 1], 0), Some(0));
 }
 
-/// **★ The shipped defaults are previews ON at the default limit.**
+/// **★ The shipped defaults are previews ON with no time limit.**
 ///
 /// Asserted because `#[derive(Default)]` was removed to get them, and a
 /// hand-written `Default` that drifts from its own doc comment is the kind
 /// of defect only an operator finds — a build that draws nothing and
-/// blames a time limit of zero for it.
+/// blames a time limit for it.
+///
+/// The budget is asserted as `None` **spelled out**, not as
+/// `PAGE_BUDGET_DEFAULT`: written the second way the assertion is
+/// `x == x` and holds whatever the constant becomes, which is exactly the
+/// drift it exists to catch.
 #[test]
 fn the_shipped_defaults_draw_something() {
     let cache = ThumbnailCache::default();
     assert!(cache.previews_on());
-    assert_eq!(cache.budget(), Some(PAGE_BUDGET_DEFAULT));
+    assert_eq!(
+        cache.budget(),
+        None,
+        "a fresh build must draw every page, however long one takes"
+    );
     assert_eq!(cache.skipped(), None);
     assert_eq!(cache.state(0), TileState::NotDrawnYet);
 }

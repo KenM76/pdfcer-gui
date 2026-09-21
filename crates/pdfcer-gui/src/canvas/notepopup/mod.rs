@@ -232,7 +232,7 @@ use crate::app::state::OpenDoc;
 use crate::canvas::mapping::PageMapping;
 use crate::panels::comments::note::NoteDraft;
 
-use self::controls::controls;
+use self::controls::{controls, save_draft};
 use crate::text::annotpopup as t;
 use crate::text::panels::comments as tp;
 
@@ -729,8 +729,12 @@ fn body(
                 // key would be a second claimant on a key the caret and the
                 // tool arming both want, which is the class of bug
                 // `tools/gates/check-typing-guard.sh` exists for.
+                //
+                // It SAVES rather than discards, for the reason
+                // [`controls::save_draft`] carries in full; *Cancel* below is
+                // the deliberate discard and is unchanged.
                 if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Escape)) {
-                    draft.close();
+                    save_draft(f, note, draft, actions);
                 }
                 ui.label(egui::RichText::new(t::popup_note_hint()).small().weak());
             } else if existing.trim().is_empty() {

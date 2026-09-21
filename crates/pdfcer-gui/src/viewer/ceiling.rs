@@ -29,7 +29,7 @@
 // a question about a PIXMAP, where everything in this file answers one about
 // how far the operator may go. Moving it would have dragged its tests across a
 // seam they do not belong on.
-use super::{MAX_ZOOM, MIN_ZOOM, max_zoom_for_page, sane_pixels_per_point};
+use super::{MAX_ZOOM, MIN_ZOOM, max_zoom_for_page, zoom_for_raster_scale};
 /// The content extent at which the position model hands over from `egui`'s
 /// `f32` scroll offset to [`crate::canvas::deep::DeepAnchor`] — `2^20`.
 ///
@@ -138,9 +138,13 @@ pub fn max_zoom_with_regions(limit: f32) -> f32 {
 /// `None` on every page of every document until a render has actually been
 /// refused for a raster limit, and on that page it is
 /// [`crate::render::ceiling::RasterCeiling::for_page`]'s answer: **a raster
-/// scale, in device pixels per PDF point**, not a zoom. Divided by
-/// `pixels_per_point` here, which is the one place the conversion belongs
-/// because it is the one place both quantities are in scope.
+/// scale, in device pixels per PDF point**, not a zoom. Converted here by
+/// [`zoom_for_raster_scale`], which is the exact inverse of
+/// [`crate::viewer::raster_scale`] because both run through one
+/// [`crate::viewer::raster_density`] — the display density **and** the
+/// operator's render quality. Dividing by the density alone is O218: on
+/// Sharper it returns a ceiling half again too high, so the clamp that exists
+/// to rescue him hands the engine another pixmap it refuses.
 ///
 /// It is applied as a hard `min` *after* everything above, and that ordering is
 /// the whole point. The two derived ceilings are predictions about what the
@@ -168,11 +172,12 @@ pub fn max_zoom_with_regions(limit: f32) -> f32 {
 pub fn zoom_ceiling(
     page_pts: (f32, f32),
     pixels_per_point: f32,
+    quality: crate::app::prefs::RenderQuality,
     limit_percent: f32,
     learned_raster_scale: Option<f32>,
 ) -> f32 {
     let limit = max_zoom_with_regions(limit_percent / 100.0);
-    let whole_page = max_zoom_for_page(page_pts, pixels_per_point);
+    let whole_page = max_zoom_for_page(page_pts, pixels_per_point, quality);
 
     // ★★★ THE DEFAULT MUST CHANGE NOTHING, and a plain `max` breaks that.
     //
@@ -240,7 +245,7 @@ pub fn zoom_ceiling(
         if !scale.is_finite() || scale <= 0.0 {
             return derived;
         }
-        let learned = scale / sane_pixels_per_point(pixels_per_point);
+        let learned = zoom_for_raster_scale(scale, pixels_per_point, quality);
         derived.min(learned).max(MIN_ZOOM)
     })
 }
@@ -288,7 +293,12 @@ mod tests {
     // into [`super`] for, and both are reached for the same reason: a ceiling is
     // only worth anything if the control the operator actually presses can climb
     // to it. See `the_zoom_ladder_can_climb_to_a_configured_maximum` below.
-    use crate::viewer::{ViewState, ZOOM_LADDER};
+    use crate::viewer::{ViewState, ZOOM_LADDER, raster_scale};
+    // Every test below that is not ABOUT the render quality passes `Normal`,
+    // whose multiplier is 1.0 — so each of their assertions is the same number
+    // it was before the quality factor entered the arithmetic, and a failure
+    // here is a failure of the thing the test names.
+    use crate::app::prefs::RenderQuality;
 
     /// ★★★ **The ladder can actually REACH a configured maximum**, stepping.
     ///
@@ -303,7 +313,13 @@ mod tests {
     /// mattering"* — asserted rather than left to be discovered.
     #[test]
     fn the_zoom_ladder_can_climb_to_a_configured_maximum() {
-        let ceiling = zoom_ceiling((1584.0, 1224.0), 1.0, 500_000.0, None);
+        let ceiling = zoom_ceiling(
+            (1584.0, 1224.0),
+            1.0,
+            RenderQuality::Normal,
+            500_000.0,
+            None,
+        );
         let mut zoom = 1.0_f32;
         for _ in 0..200 {
             let mut view = ViewState {
@@ -338,7 +354,7 @@ mod tests {
     #[test]
     fn a_configured_maximum_is_honoured_past_the_whole_page_raster_limit() {
         let a1 = (1584.0_f32, 1224.0);
-        let whole_page = max_zoom_for_page(a1, 1.0);
+        let whole_page = max_zoom_for_page(a1, 1.0, RenderQuality::Normal);
         assert!(
             whole_page < 20.0,
             "the premise: an A1 sheet's whole-page ceiling is around 1,000% ({whole_page})"
@@ -348,7 +364,7 @@ mod tests {
         // exactly. `10_000%` and `100_000%` are both well inside it on an A1
         // sheet, whose cap is around 1,050,000%.
         for percent in [10_000.0_f32, 100_000.0] {
-            let ceiling = zoom_ceiling(a1, 1.0, percent, None);
+            let ceiling = zoom_ceiling(a1, 1.0, RenderQuality::Normal, percent, None);
             assert!(
                 (ceiling - percent / 100.0).abs() / (percent / 100.0) < 1e-6,
                 "{percent}% was overruled: ceiling {ceiling}, wanted {}",
@@ -363,7 +379,7 @@ mod tests {
         // ★★ …and above it the STRIP EXTENT is what binds now, not the raster
         // and not the scroll offset. Asking for a trillion percent yields the
         // deepest zoom the page is confirmed to actually draw at.
-        let deep = zoom_ceiling(a1, 1.0, 1e12, None);
+        let deep = zoom_ceiling(a1, 1.0, RenderQuality::Normal, 1e12, None);
         assert!(
             (deep - 1e10).abs() / 1e10 < 1e-6,
             "a trillion percent must be honoured in full now that nothing caps it: {deep}x"
@@ -391,23 +407,39 @@ mod tests {
     fn the_default_reaches_the_maximum_on_every_page_and_display_scale() {
         for page in [(1584.0_f32, 1224.0), (612.0, 792.0), (306.0, 396.0)] {
             for ppp in [1.0_f32, 1.5, 2.0] {
-                let ceiling =
-                    zoom_ceiling(page, ppp, crate::app::prefs::DEFAULT_MAX_ZOOM_PERCENT, None);
-                // ★ The default asks for the maximum and now GETS it, on every
-                // page and display scale — which is only honest because tier 3
-                // positions the view past the point an `f32` offset could.
-                // ★ The default asks for the maximum and gets the deepest the
-                // strip can still place a page at — which is what the shell can
-                // actually deliver, on every page size.
-                let wanted = crate::app::prefs::DEFAULT_MAX_ZOOM_PERCENT / 100.0;
-                assert!(
-                    (ceiling - wanted).abs() / wanted < 1e-6,
-                    "page {page:?} at {ppp}x: ceiling {ceiling} should be {wanted}"
-                );
-                assert!(
-                    ceiling > 1_000_000.0,
-                    "every page must reach past 100,000,000%: {page:?} got {ceiling}x"
-                );
+                // The render quality is an axis here because the default takes the
+                // region tier, where the pixmap the quality scales is the WINDOW
+                // and not the page — so the shipped default must reach the same
+                // maximum at all three settings, and a quality factor leaking into
+                // the region tier would show up as one of these rows failing.
+                for quality in [
+                    RenderQuality::Faster,
+                    RenderQuality::Normal,
+                    RenderQuality::Sharper,
+                ] {
+                    let ceiling = zoom_ceiling(
+                        page,
+                        ppp,
+                        quality,
+                        crate::app::prefs::DEFAULT_MAX_ZOOM_PERCENT,
+                        None,
+                    );
+                    // ★ The default asks for the maximum and now GETS it, on every
+                    // page and display scale — which is only honest because tier 3
+                    // positions the view past the point an `f32` offset could.
+                    // ★ The default asks for the maximum and gets the deepest the
+                    // strip can still place a page at — which is what the shell can
+                    // actually deliver, on every page size.
+                    let wanted = crate::app::prefs::DEFAULT_MAX_ZOOM_PERCENT / 100.0;
+                    assert!(
+                        (ceiling - wanted).abs() / wanted < 1e-6,
+                        "page {page:?} at {ppp}x: ceiling {ceiling} should be {wanted}"
+                    );
+                    assert!(
+                        ceiling > 1_000_000.0,
+                        "every page must reach past 100,000,000%: {page:?} got {ceiling}x"
+                    );
+                }
             }
         }
     }
@@ -422,14 +454,14 @@ mod tests {
     #[test]
     fn a_low_setting_does_not_lift_the_whole_page_raster_limit() {
         let a1 = (1584.0_f32, 1224.0);
-        let whole_page = max_zoom_for_page(a1, 1.5);
+        let whole_page = max_zoom_for_page(a1, 1.5, RenderQuality::Normal);
         assert!(
             whole_page < MAX_ZOOM,
             "the premise: {whole_page} < {MAX_ZOOM}"
         );
 
         // A setting BELOW the pixmap ceiling must not raise it…
-        let ceiling = zoom_ceiling(a1, 1.5, 300.0, None);
+        let ceiling = zoom_ceiling(a1, 1.5, RenderQuality::Normal, 300.0, None);
         assert!(
             (ceiling - whole_page).abs() < 1e-4,
             "a 300% setting should leave the {whole_page}x pixmap ceiling alone, got {ceiling}"
@@ -490,7 +522,8 @@ mod tests {
 
         // Whole-page tier: the two pages have very different ceilings.
         assert!(
-            max_zoom_for_page(tiny, 1.0) > max_zoom_for_page(huge, 1.0),
+            max_zoom_for_page(tiny, 1.0, RenderQuality::Normal)
+                > max_zoom_for_page(huge, 1.0, RenderQuality::Normal),
             "the whole-page ceiling must depend on the page's size"
         );
 
@@ -546,14 +579,21 @@ mod tests {
     fn a_page_that_has_refused_nothing_keeps_its_derived_ceiling() {
         for page in [(1584.0_f32, 1224.0), (612.0, 792.0), (306.0, 396.0)] {
             for ppp in [1.0_f32, 1.5, 2.0] {
-                for percent in [300.0_f32, crate::app::prefs::DEFAULT_MAX_ZOOM_PERCENT, 1e12] {
-                    let derived = max_zoom_with_regions(percent / 100.0)
-                        .max(max_zoom_for_page(page, ppp).min(MAX_ZOOM));
-                    let actual = zoom_ceiling(page, ppp, percent, None);
-                    assert!(
-                        (actual - derived).abs() <= derived.abs() * 1e-6,
-                        "None must change nothing: {page:?} at {ppp}x, {percent}% gave {actual}, wanted {derived}"
-                    );
+                for quality in [
+                    RenderQuality::Faster,
+                    RenderQuality::Normal,
+                    RenderQuality::Sharper,
+                ] {
+                    for percent in [300.0_f32, crate::app::prefs::DEFAULT_MAX_ZOOM_PERCENT, 1e12] {
+                        let derived = max_zoom_with_regions(percent / 100.0)
+                            .max(max_zoom_for_page(page, ppp, quality).min(MAX_ZOOM));
+                        let actual = zoom_ceiling(page, ppp, quality, percent, None);
+                        assert!(
+                            (actual - derived).abs() <= derived.abs() * 1e-6,
+                            "None must change nothing: {page:?} at {ppp}x {quality:?}, \
+                             {percent}% gave {actual}, wanted {derived}"
+                        );
+                    }
                 }
             }
         }
@@ -583,8 +623,8 @@ mod tests {
         // honours what it is handed, and reaching across to the other module for
         // its constant would couple the two without testing either better.
         let learned = 284_964.0_f32 * 0.75;
-        let uncapped = zoom_ceiling(e_size, 1.0, 1e12, None);
-        let capped = zoom_ceiling(e_size, 1.0, 1e12, Some(learned));
+        let uncapped = zoom_ceiling(e_size, 1.0, RenderQuality::Normal, 1e12, None);
+        let capped = zoom_ceiling(e_size, 1.0, RenderQuality::Normal, 1e12, Some(learned));
         assert!(
             uncapped > learned,
             "the premise: uncapped the shell offers {uncapped}x, well past {learned}x"
@@ -595,8 +635,9 @@ mod tests {
         );
     }
 
-    /// ★★ **The learned value is a raster SCALE, so the zoom it permits halves
-    /// when the display density doubles.**
+    /// ★★ **The learned value is a raster SCALE, so the zoom it permits moves
+    /// with BOTH halves of [`crate::viewer::raster_density`]** — the display
+    /// density and the operator's render quality.
     ///
     /// Pinned as its own test because this is the one part of O186 that fails
     /// *silently* rather than visibly if it is got backwards. A ceiling stored
@@ -605,12 +646,19 @@ mod tests {
     /// one of his two screens while the shell looked correct on the other — and
     /// a window dragged between them would change the answer with no event
     /// anywhere to explain it.
+    ///
+    /// ★★★ **The quality rows are O218 and they are the ones that were false.**
+    /// The density row alone passed for a year while the conversion divided by
+    /// the density and dropped the quality multiplier, because the test that
+    /// measured the conversion only ever varied the half that was right. A
+    /// test's coverage of a product is the product of the axes it varies, and
+    /// this one varied one of two.
     #[test]
     fn the_learned_ceiling_is_a_raster_scale_and_not_a_zoom() {
         let page = (612.0_f32, 792.0);
         let learned = 50_000.0_f32;
-        let at_100 = zoom_ceiling(page, 1.0, 1e12, Some(learned));
-        let at_200 = zoom_ceiling(page, 2.0, 1e12, Some(learned));
+        let at_100 = zoom_ceiling(page, 1.0, RenderQuality::Normal, 1e12, Some(learned));
+        let at_200 = zoom_ceiling(page, 2.0, RenderQuality::Normal, 1e12, Some(learned));
         assert!(
             (at_100 - learned).abs() <= learned * 1e-6,
             "at 100% density the scale IS the zoom, got {at_100}"
@@ -619,6 +667,83 @@ mod tests {
             (at_200 - learned / 2.0).abs() <= learned * 1e-6,
             "at 200% density the same scale is half the zoom, got {at_200}"
         );
+
+        for quality in [
+            RenderQuality::Faster,
+            RenderQuality::Normal,
+            RenderQuality::Sharper,
+        ] {
+            let got = zoom_ceiling(page, 1.0, quality, 1e12, Some(learned));
+            let want = learned / quality.multiplier();
+            assert!(
+                (got - want).abs() <= want * 1e-6,
+                "{quality:?} rasterizes at {}x, so the same scale permits {want}x, got {got}",
+                quality.multiplier()
+            );
+        }
+    }
+
+    /// ★★★ **A ceiling this function reports must be one the ENGINE would
+    /// accept** — O218, and the assertion that fails on the old arithmetic.
+    ///
+    /// Every other test here compares one derivation against another, which
+    /// cannot catch a factor missing from both. This one closes the loop the
+    /// only way it can be closed without a renderer: take the zoom this
+    /// function offers under a learned ceiling, put it back through
+    /// [`crate::viewer::raster_scale`] — the function the canvas actually uses
+    /// to order a raster — and check that it does not re-order the scale that
+    /// was refused.
+    ///
+    /// # ★★ Why the LEARNED clause, and why the derived ones cannot be asserted
+    /// this way
+    ///
+    /// A ceiling from the derived clauses is not a claim about a whole-page
+    /// raster at all. Above [`max_zoom_for_page`] the canvas switches to
+    /// [`crate::render::strategy::Strategy::Region`], whose pixmap is the
+    /// *window* — so a derived ceiling well past the page's own limit is
+    /// correct, and an assertion that a derived ceiling fits `MAX_PIXMAP_EDGE`
+    /// would be testing a rule the shell does not have. The learned clause is
+    /// different in kind: it is a **measurement of what the engine refused**,
+    /// so re-ordering at or above it is by definition another refusal.
+    ///
+    /// The operator's own build runs `render_quality = sharper`, so the Sharper
+    /// rows are not hypothetical. The old conversion divided the refused scale
+    /// by the display density alone, which returns a zoom that rasterizes at
+    /// exactly `scale × 1.5` — the clamp that exists to rescue him handed the
+    /// engine a *larger* raster than the one it had just refused, and he was
+    /// shown *"this zoom is further in than pdfcer can rasterize"* again.
+    #[test]
+    fn a_learned_ceiling_is_not_re_ordered_at_the_zoom_it_permits() {
+        let page = (2448.0_f32, 1584.0);
+        // A real refusal, with `RasterCeiling::BACKOFF` already applied — the
+        // E-size measurement `a_learned_ceiling_overrules_even_a_trillion_percent`
+        // uses, so both tests speak about the same wall.
+        let refused = 284_964.0_f32;
+        let learned = refused * 0.75;
+        for ppp in [1.0_f32, 1.5, 2.0] {
+            for quality in [
+                RenderQuality::Faster,
+                RenderQuality::Normal,
+                RenderQuality::Sharper,
+            ] {
+                let ceiling = zoom_ceiling(page, ppp, quality, 1e12, Some(learned));
+                let ordered = raster_scale(ceiling, ppp, quality);
+                assert!(
+                    ordered <= learned * (1.0 + 1e-6),
+                    "{ppp}x {quality:?}: the ceiling {ceiling}x orders raster scale \
+                     {ordered}, past the {learned} the engine accepted"
+                );
+                // …and not uselessly far below it either, or the clamp would
+                // answer a refusal by throwing away magnification the page can
+                // still draw at. The two halves together say the conversion is
+                // the inverse, not merely conservative.
+                assert!(
+                    ordered >= learned * (1.0 - 1e-6),
+                    "{ppp}x {quality:?}: the ceiling {ceiling}x orders only {ordered}, \
+                     short of the {learned} the page reached"
+                );
+            }
+        }
     }
 
     /// ★★ **A learned ceiling can never make a document unzoomable, and can
@@ -640,21 +765,33 @@ mod tests {
     fn a_learned_ceiling_is_bounded_below_and_never_raises_anything() {
         let page = (612.0_f32, 792.0);
 
-        let floored = zoom_ceiling(page, 1.0, 800.0, Some(f32::MIN_POSITIVE));
+        let floored = zoom_ceiling(
+            page,
+            1.0,
+            RenderQuality::Normal,
+            800.0,
+            Some(f32::MIN_POSITIVE),
+        );
         assert!(
             (floored - MIN_ZOOM).abs() < 1e-6,
             "an absurd learned scale must floor at MIN_ZOOM, got {floored}"
         );
 
-        let derived = zoom_ceiling(page, 1.0, 800.0, None);
-        let above = zoom_ceiling(page, 1.0, 800.0, Some(derived * 100.0));
+        let derived = zoom_ceiling(page, 1.0, RenderQuality::Normal, 800.0, None);
+        let above = zoom_ceiling(
+            page,
+            1.0,
+            RenderQuality::Normal,
+            800.0,
+            Some(derived * 100.0),
+        );
         assert!(
             (above - derived).abs() <= derived * 1e-6,
             "a learned ceiling above the derived one changes nothing: {above} vs {derived}"
         );
 
         for bad in [0.0_f32, -1.0, f32::NAN, f32::INFINITY] {
-            let got = zoom_ceiling(page, 1.0, 800.0, Some(bad));
+            let got = zoom_ceiling(page, 1.0, RenderQuality::Normal, 800.0, Some(bad));
             assert!(
                 (got - derived).abs() <= derived * 1e-6,
                 "a learned scale of {bad} must change nothing, got {got}"

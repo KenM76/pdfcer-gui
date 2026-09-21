@@ -106,15 +106,20 @@ const NEAR: f32 = 1e-3;
 ///
 /// [`crate::render::ceiling::RasterCeiling`] holds a **raster scale** — device
 /// pixels per PDF point — where `doc.view.zoom` is a zoom, so every reader has to
-/// divide by `pixels_per_point`. That is the right arrangement: a ceiling kept as
-/// a *zoom* would be wrong by the density ratio on a window dragged between two
-/// monitors, silently, and only on the machine it was not measured on.
+/// convert. That is the right arrangement: a ceiling kept as a *zoom* would be
+/// wrong by the density ratio on a window dragged between two monitors,
+/// silently, and only on the machine it was not measured on.
 ///
-/// ⚠ `pixels_per_point` goes through [`crate::viewer::sane_pixels_per_point`]
-/// rather than being trusted. A nonsense density makes `permitted` **infinite**,
-/// so this predicate would answer `false` forever — the disclosure switching
-/// itself off in precisely the condition it exists for, leaving the operator back
-/// at a control that stops responding in silence.
+/// ⚠ The conversion is [`crate::viewer::zoom_for_raster_scale`] and not a
+/// division by the display density, because the operator's render quality is in
+/// the scale too. Getting that wrong moves this sentence away from the zoom the
+/// clamp actually stops at, which is the one place it must agree — O218.
+///
+/// ⚠ The density goes through [`crate::viewer::sane_pixels_per_point`] rather
+/// than being trusted, inside that helper. A nonsense density would otherwise
+/// make `permitted` **infinite**, so this predicate would answer `false` forever
+/// — the disclosure switching itself off in precisely the condition it exists
+/// for, leaving the operator back at a control that stops responding in silence.
 ///
 /// ★ `pixels_per_point.max(f32::MIN_POSITIVE)` reads like that guard and is not
 /// one: `f32::max` returns the *other* operand when one is `NaN`, so a `NaN`
@@ -129,7 +134,8 @@ pub(super) fn at_the_ceiling(doc: &OpenDoc, pixels_per_point: f32) -> bool {
     if !scale.is_finite() || scale <= 0.0 {
         return false;
     }
-    let permitted = scale / crate::viewer::sane_pixels_per_point(pixels_per_point);
+    let permitted =
+        crate::viewer::zoom_for_raster_scale(scale, pixels_per_point, doc.prefs.render_quality);
     doc.view.zoom.is_finite() && doc.view.zoom >= permitted * (1.0 - NEAR)
 }
 

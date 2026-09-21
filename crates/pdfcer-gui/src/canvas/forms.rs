@@ -1135,17 +1135,31 @@ fn editor(
         textbox::seat(&ctx, id, &draft, false);
     }
 
-    // ★ Escape abandons, and says so. Read BEFORE the commit branch for the
-    // same reason `gesture` reads it before its release branch: `egui`'s own
-    // `TextEdit` surrenders focus on Escape, so without this the abandon and
-    // the commit are the same event.
+    // ★ Escape closes the editor and **writes what is in it**, and says so.
+    // Read BEFORE the `lost_focus` branch for the same reason `gesture` reads
+    // it before its release branch: `egui`'s own `TextEdit` surrenders focus on
+    // Escape, so without this arm the two are the same event and which one runs
+    // is an accident of ordering.
+    //
+    // ★★★ `OPERATOR_REQUESTS.md` **O223** — *"escape should also save changes
+    // to the text … it is easy to accidentally press escape and lose a lot of
+    // text that has been entered."* It is [`settle`]'s rule one surface over,
+    // and [`settle`] already carried the argument: *a half-typed field value is
+    // something they typed on purpose.* Escape was the one exit on this surface
+    // that did not obey it.
+    //
+    // [`commit`] raises nothing when the draft matches what the document holds,
+    // so Escape out of a field the operator only looked at still writes nothing
+    // and puts nothing on the undo stack.
     if ctx.input(|i| i.key_pressed(Key::Escape)) {
+        let leaving = Focus { draft, ..focus };
         store_focus(&ctx, None);
         note_escape(&ctx);
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            format!("form-abandon field={}", focus.field)
+            format!("form-escape field={}", leaving.field)
         });
+        commit(&leaving, doc, actions);
         return true;
     }
 

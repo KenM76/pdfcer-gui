@@ -112,6 +112,154 @@ exactly that. **The canvas needs the same treatment and does not have it.**
 
 # OPEN
 
+## O218 — **FILED** — the zoom ceiling must be a ceiling, not an error
+
+> *"Sometimes when I zoom in I still get the error "This page could not be
+> drawn. This zoom is further in than pdfcer can rasterize. Zoom out and it
+> will draw again. Nothing about the page has changed." instead of the
+> rasterizer just stopping at the last zoom level that it accomplished."*
+
+**The ask is not a better message. It is that the message should never be
+reachable.** A zoom the rasterizer cannot serve is a zoom the zoom control
+should not hand it: the last scale that drew is the ceiling, the wheel stops
+there, and the page stays on screen. What he is describing is the program
+accepting a zoom it cannot honour, throwing away the page it *could* draw, and
+then explaining itself.
+
+**"Still"** is his word, and it matters: this is not the first report. A
+previous pass made the failure legible. Legibility was never the request —
+clamping was.
+
+Three checks are owed, and none of them is the message's wording:
+
+- the wheel at the ceiling changes nothing and the page is still drawn;
+- the ceiling is reported off-canvas, per R8b, with no page-view marking;
+- the ceiling is a **number the shell knows before it asks**, not a failure it
+  discovers after.
+
+**Related and filed separately because they may not share a cause:** O219 (the
+blank view before the error), O220 (the error traps the wheel) and O221 (the
+ceiling moves with how many documents are open).
+
+## O219 — **FILED** — the view goes blank one zoom step before the error
+
+> *"Also sometimes before this happens the view goes blank and when I zoom in
+> a little more I get the error."*
+
+**A blank canvas is a worse defect than the error, because nothing announces
+it.** The error at least says the page is unchanged. The blank step says
+nothing at all, and an operator who stops there has a program that has
+apparently lost his drawing.
+
+It is also a **witness**: a step that draws nothing and raises nothing is a
+step where the rasterizer returned something the canvas accepted and painted —
+an empty tile, a zero-size surface, a texture that failed to upload — rather
+than a step that refused. That is a different path from O218's refusal, which
+is why this is its own row: fixing the ceiling could leave this intact one step
+below it.
+
+## O220 — **FILED** — the error traps the wheel, so the only way out is the bottom bar
+
+> *"Also when the error occures it prevents me from pressing ctrl and using
+> the zoom wheel to zoom back out - I have to click the zoom out control on
+> the bottom bar."*
+
+**The recovery the message prescribes is the one it disables.** The text says
+*"Zoom out and it will draw again"*, and the gesture the operator has in his
+hand at that moment — Ctrl and the wheel, which is what got him there — stops
+working. He has to leave the canvas and find a control on the status bar.
+
+That is a dead end reached by following the instructions, and it holds
+regardless of what happens to O218: **no state of the canvas may swallow
+Ctrl+wheel**, because it is the gesture that leaves the state.
+
+## O221 — **FILED** — how far you can zoom depends on how many documents are open
+
+> *"Zooming capability seems to be affected by the number for pdfs I have
+> open, even if they are open in a new window. The more I have open, the less
+> zoom I get, I think, but I could be wrong and it could be a bit random."*
+
+**He hedges; the hedge is not a reason to discount it.** "I could be wrong and
+it could be a bit random" is what a shared, exhausting resource looks like from
+the outside — the ceiling is not random, it moves with whatever else has
+claimed the budget, and from the operator's chair that is indistinguishable
+from randomness.
+
+*"even if they are open in a new window"* is the load-bearing clause. It rules
+out a per-document setting and points at something process-wide or
+machine-wide: a texture budget, a page cache, an allocator ceiling, a GPU
+limit.
+
+**This row is not closed by an explanation.** If the ceiling is genuinely a
+shared budget, the requirement is that it is *disclosed* — the operator is told
+what the ceiling is and why it moved — and that reclaiming it is possible
+without closing his other drawings.
+
+## O222 — **FILED** — text you just typed does not appear until you click the page again
+
+> *"Also when I add or edit text then click to another navigation tool my
+> changes don't show. If I click elsewhere on the page it works and shows me
+> my changes."*
+
+**The changes are there; the canvas has not redrawn.** Clicking elsewhere on
+the page repaints and they appear, which is the signature of a commit that
+lands without invalidating whatever the canvas is showing.
+
+Switching tools is the step that fails. That is a route the operator takes
+constantly — type, then reach for the hand or the select tool — and on that
+route the program reads as having lost the edit.
+
+## O223 — **FILED** — Escape must commit text, not discard it, in every tool that has text
+
+> *"Also I think for adding and editing text when using any tool that has text
+> escape should also save changes to the text. The user can always undo if
+> they want, but it is easy to accidentally press escape and lose a lot of
+> text that has been entered."*
+
+**He has given the reasoning as well as the ask, and the reasoning is the
+stronger half:** a discard is unrecoverable and a commit is one undo away, so
+the asymmetry decides it. Escape commits.
+
+*"any tool that has text"* is the scope, and by the standing expectation on
+sibling kinds that means **every** one of them — the text tool, free text,
+callouts, form field values, text-bearing markup, ce dimension labels, the
+comment editor. An option added to one is owed to every kind the format lets
+carry it, and the parity table is how that is counted rather than discovered.
+
+⚠ **This changes an Escape rung**, and the Escape precedence ladder is
+enumerated in `canvas::keys`'s tests. The rung that currently abandons a text
+edit becomes a rung that commits it; what Escape does when there is *no* text
+in flight is untouched.
+
+## O224 — **FILED** — export should keep text as text, and fonts embedded, where the format allows
+
+> *"Also I would like the option to keep text and embedded fonts if possible
+> when exporting to formats that support it - svg for example should have the
+> option to keep text as fonts."*
+
+**An export that outlines text produces a file nobody can search, select,
+restyle or re-flow.** For a drawing office that is the difference between a
+deliverable and a picture of one.
+
+*"formats that support it"* is the scope, so this is a **per-format option set**
+and not an SVG feature: every export target is owed the column, and a target
+that genuinely cannot carry text says so with a citation rather than silently
+outlining. SVG is his named case — `<text>` with the face embedded or
+referenced — and it is the one to drive first.
+
+**Whether the engine can emit it is an open question, not an assumption.** If
+`pdfcer-render`'s SVG path has no text mode, that is an engine gap, it gets
+written up in the request channel, and this row names that file rather than
+going quiet.
+
+## O225 — **FILED** — draw page previews should default to no limit
+
+> *"Also draw page previews should be set to "no limit" by default."*
+
+A setting whose default makes the program do less than it can, on a machine
+that can afford it, is a default chosen for a machine he is not using. The
+default becomes **no limit**.
+
 ## O217 — **FILED** — redaction must address the same chunk unit, by the same gestures
 
 > *"Redaction would be nice to have work the same way on them as well."*
