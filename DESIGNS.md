@@ -1677,17 +1677,6 @@ Line numbers below are an aid to the eye only. The anchor in every case is the
 named item or the quoted banner, because a citation into a moving file goes
 wrong silently.
 
-**`canvas/measure/mod.rs` → `canvas/measure/preview.rs`.** Drawing what the next
-click would commit is a different subject from advancing the pick. `Preview`,
-`preview`, `PICKED_RING_SCALE`, `page_to_screen` and the projection test move;
-the `Pick` state machine, `click` and `trace_pick` stay. ⚠ `Preview` and
-`preview` are spelled `pub(super)`, which **silently narrows** one level deeper
-from `crate::canvas` to `crate::canvas::measure` and breaks `canvas::painting`;
-they must be respelled `pub(in crate::canvas)` and re-exported.
-`doc.settings.parallel_epsilon_degrees` is read inside `click`, which stays, so
-`check-settings-funnel.py` is unaffected. A smaller fallback seam exists:
-`MeasureKind` and its tests to `measure/kind.rs`.
-
 **`panels/mod.rs` → `panels/state.rs`.** The catalog and the dispatch say which
 panels exist and how the dock calls one; `PanelsState` is the per-frame scratch
 the bodies keep between calls, and its header is entirely an argument about

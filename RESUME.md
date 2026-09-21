@@ -214,7 +214,8 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    anything within fifty lines of 1,500 as due. The seam for each is argued in
    `DESIGNS.md` under *Where the seam is in each file now crowding the size
    limit* — including the ones that have none — so that pass is a patch, not a
-   re-derivation. `canvas/measure/mod.rs` leads the list and is next.
+   re-derivation. `app/dispatch.rs` and `app/actions/action.rs` are tied at the head of the
+   list and are next.
    **O215's ask 2 is the engine's and is filed as `G032`**: `runs_share_a_line` never
    reads the horizontal translation, so a table row welds into one line — 565
    welded lines on his own drawing, the widest spanning 709.4 pt of blank paper.
@@ -959,9 +960,10 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
   tree is not a frozen-correct one, because its citations kept drifting right
   up to the freeze, so what froze was the error.
 
-- **Four source files sit within fifty lines of the hard limit**, led by
-  `crates/pdfcer-gui/src/canvas/measure/mod.rs` at 1,471 against
-  `check-file-size.sh`'s 1,500, the rest running down to the 1,450 mark. Adding
+- **Three source files sit within fifty lines of the hard limit**, led by
+  `crates/pdfcer-gui/src/app/dispatch.rs` and
+  `crates/pdfcer-gui/src/app/actions/action.rs`, tied at 1,470 against
+  `check-file-size.sh`'s 1,500, the third at 1,452. Adding
   one ordinary function to any of them turns a green gate red mid-task, and the remedy R2 requires is
   *find the seam*, never *raise the limit* — which is a refactor, not an edit,
   and it will arrive at the worst moment unless it is done first. The seam for
