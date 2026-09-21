@@ -1,54 +1,35 @@
-//! The named checks — the suite this harness exists to run.
+//! The named checks — **the index of which checks exist.**
 //!
-//! ## The three, and what each is for
+//! One `pub mod` per check, each carrying the argument for why that check is
+//! here: what it drives, what its oracle is, and what a build with the wiring
+//! absent would look like. The three files beside it hold the other subjects —
+//! `roster.rs` the run order ([`all`]), `harness.rs` the contract ([`Check`],
+//! [`CheckContext`]), and [`conventions`] the rules a new check is held to.
+//!
+//! The principle every check here satisfies, and the one to hold a proposed
+//! check to: **it must fail against a build where the wiring is absent, and
+//! the wiring must be something no unit test in the workspace can observe.**
+//! Every check here has been run against such a build and seen to fail; that
+//! is what stage S1's acceptance criterion asks for, and it is not optional.
+//!
+//! The four the suite started as are the defects that shipped past a green
+//! test suite, turned into the tests that would have caught them:
 //!
 //! | Check | Defect | Oracle |
 //! |---|---|---|
 //! | [`delete_key`] | **D1** — Delete stops working after the first canvas click | the trace |
+//! | [`settings_headings`] | **D2** — section headings near-white on light grey | the pixels |
 //! | [`ribbon_captions`] | group captions rendering illegibly, or not at all | the pixels |
 //! | [`ribbon_mockup`] | the band drawn to different proportions from the mockup, and a resting control drawn in a box | the pixels |
-//! | [`settings_headings`] | **D2** — section headings near-white on light grey | the pixels |
 //!
-//! These are the three `GUI_ROADMAP.md` names as "the smallest useful set",
-//! and the three `PROJECT_PLAN.md` stage S1 makes the gate on the harness
-//! itself. They are not a sample of what could be checked; they are the
-//! specific defects that shipped past a green suite, turned into the tests
-//! that would have caught them.
+//! ★ A check may also assert that a control is correctly **DISABLED**, reading
+//! the *absence* of `ribbon-command-invoked` as its evidence — admissible only
+//! where the same control is then shown to invoke, in the same run, once its
+//! operand exists. [`text_markup`] is the worked example.
 //!
-//! ## What has been added since, and on what principle
-//!
-//! The suite is no longer three. [`all`] is the list; the additions are not a
-//! drift away from the founding three but the same rule applied to each new
-//! surface as it landed — [`qat_icons`] for the icon painter that was never
-//! passed to the ribbon, [`find_bar`] for the chord that was in the keymap and
-//! bound to nothing, [`markup_rectangle`] for a ribbon click whose whole
-//! four-link chain had unit tests and had never been performed,
-//! [`measure_linear`] for the standing rule that a feature is asserted in
-//! `ui-verify` before it is called done, a green unit test being the floor and
-//! not the bar — and
-//! [`read_mode`] for a mode gate whose one untested link is the one a refactor
-//! breaks silently.
-//!
-//! ★ [`text_markup`] is the newest and adds a direction the suite did not have:
-//! **it asserts that a control is correctly DISABLED** before asserting that it
-//! works. Every check above it drives a control that should act; this one first
-//! clicks a control that should not, and reads the *absence* of
-//! `ribbon-command-invoked` as the evidence — which is admissible under rule 4
-//! below precisely because the same control is then shown to invoke, in the same
-//! run, once its operand exists.
-//!
-//! [`driving`] is not a check. It holds the moves the three ribbon-driving
-//! checks share; its header carries the argument for why it exists and why
-//! `markup_rectangle` deliberately keeps its own copies.
-//!
-//! The principle each satisfies, and the one to hold a proposed check to:
-//! **it must fail against a build where the wiring is absent, and the wiring
-//! must be something no unit test in the workspace can observe.** Every check
-//! here has been run against such a build and seen to fail; that is what
-//! stage S1's acceptance criterion asks for, and it is not optional.
-//!
-//! That criterion, and the four rules a new check is held to, are in
-//! [`conventions`].
+//! Not every module here is a check: [`driving`] and [`comments_census`] hold
+//! moves their callers share, and each header says why — including why
+//! [`markup_rectangle`] deliberately keeps its own copies.
 
 /// ★ **Typing an angle into the Properties panel and pressing Apply** — the
 /// write half of `OPERATOR_REQUESTS.md` O146, whose read half
@@ -1351,133 +1332,28 @@ pub mod ui_scale;
 
 pub mod undo_redo;
 
-use std::path::{Path, PathBuf};
-
-use crate::coords::DocPoint;
-use crate::profile::Profile;
+// ★ `crate::checks::CheckReport` — most check modules spell the report
+// type as a sibling of the trait they implement, which reads correctly and
+// resolves because a private `use` is in scope for the whole module subtree
+// beneath it. It stays HERE rather than travelling with the trait: a name
+// imported into `harness` is in scope for `harness`, not for `checks::*`.
 use crate::report::CheckReport;
 
-/// Everything a check needs to know about this run.
-#[derive(Clone, Debug)]
-pub struct CheckContext {
-    /// The target binary's vocabulary and regions.
-    pub profile: &'static Profile,
-    /// The binary to drive. `None` means the checks that drive one SKIP.
-    pub exe: Option<PathBuf>,
-    /// The document to open.
-    pub pdf: Option<PathBuf>,
-    /// **A second, DIFFERENT document**, for the checks that need two open at
-    /// once.
-    ///
-    /// It must not be the same file as [`Self::pdf`]. `crate::app::documents`
-    /// §3 makes pdfcer activate the tab a path is already open in rather than
-    /// open a duplicate — deliberately, because two `EditSession`s over one
-    /// file would be two undo stacks and a save from either would discard the
-    /// other's work. So passing the same path twice would make a multi-document
-    /// check assert the opposite of what it is for, and the checks that need
-    /// this SKIP rather than fall back to [`Self::pdf`].
-    pub second_pdf: Option<PathBuf>,
-    /// An already-captured image to assert against instead of driving the
-    /// application — the offline mode for pixel checks. Its purpose is
-    /// falsification against a dated artefact; see
-    /// [`crate::profile::Calibration`].
-    pub image: Option<PathBuf>,
-    /// Where screenshots and trace copies are written.
-    pub out_dir: PathBuf,
-    /// WCAG contrast floor. Defaults to [`crate::pixels::AA_LARGE`].
-    pub contrast_threshold: f64,
-    /// Whether the harness may take the operator's pointer and keyboard.
-    /// `false` makes every driving check SKIP — never pass.
-    pub allow_input: bool,
-    /// Drive a binary older than its sources.
-    pub allow_stale: bool,
-    /// Source tree the staleness gate compares against.
-    pub source_root: Option<PathBuf>,
-    /// Explicit page size, when the fixture's `/MediaBox` cannot be read.
-    pub page_size: Option<(f64, f64)>,
-    /// The document point a driving check aims at.
-    ///
-    /// **There is deliberately no default.** A default would be a guess about
-    /// where the fixture keeps an object, and a click on empty page is
-    /// symptom-identical to a broken hit test — the confusion that produced a
-    /// filed-then-retracted defect in this codebase. Absent, the driving
-    /// checks SKIP and say what to pass.
-    pub target: Option<DocPoint>,
-}
+/// **The contract** — the [`Check`] trait and the [`CheckContext`] every check
+/// is handed.
+///
+/// Its own file under **R2**, and the seam is argued in its header: this module
+/// is the *index* of which checks exist, which grows with every landing, and
+/// that one is the contract, which does not.
+mod harness;
 
-impl CheckContext {
-    /// A path under the run's output directory — **and the directory is made
-    /// to exist before the path is handed back.**
-    ///
-    /// # ★★★ Why the `create_dir_all` is here and not at every call site
-    ///
-    /// [`crate::launch`] creates the parent of the trace file it is about to
-    /// open and [`crate::image`] creates the parent of a PNG it is about to
-    /// save, so a check whose first use of this directory is a launch or a
-    /// screenshot would work without this. But several checks write a
-    /// **fixture** into it *before* they launch anything —
-    /// `save_writes_over_the_file_you_opened` copies the document it is going
-    /// to overwrite, `redaction_removes_and_proves_it` writes the PDF it will
-    /// redact, and `insert_image_places_a_picture`,
-    /// `the_insert_window_steps_aside_so_you_can_point` and
-    /// `a_dropped_image_reaches_the_placement_window` each write a PNG to drop
-    /// — and for those, nothing has created the directory yet when `--out`
-    /// points at a fresh per-check path.
-    ///
-    /// ★★ **A path that cannot resolve produces a SKIP, and a SKIP is not a
-    /// failure, so a check can be dead for ever while the suite looks
-    /// healthy.** That is why the guarantee is a FUNNEL and not a
-    /// `create_dir_all` at each of the writing call sites: a sixth such check
-    /// added later inherits it, whereas a sixth call site has to remember.
-    ///
-    /// # Why the error is swallowed
-    ///
-    /// The return type is a path, not a result, and forty call sites read it in
-    /// expression position. A directory that genuinely cannot be created — a
-    /// read-only volume, a name that is not a directory — still produces an
-    /// error at the moment of the write, from the code that knows what it was
-    /// writing and can say so. Making this fallible would trade a precise
-    /// message at the write for a vague one here.
-    #[must_use]
-    pub fn out(&self, name: &str) -> PathBuf {
-        // Best effort, deliberately: see the doc comment.
-        let _ = std::fs::create_dir_all(&self.out_dir);
-        self.out_dir.join(name)
-    }
-
-    /// The exe to use: the explicit one, or the profile's default if it is
-    /// actually there.
-    ///
-    /// A default that does not exist is `None` rather than a path, so the SKIP
-    /// reason says "no binary" once rather than describing a path the caller
-    /// never chose.
-    #[must_use]
-    pub fn resolve_exe(&self) -> Option<PathBuf> {
-        if let Some(e) = &self.exe {
-            return Some(e.clone());
-        }
-        let default = Path::new(self.profile.default_exe);
-        default.is_file().then(|| default.to_path_buf())
-    }
-}
-
-/// One check.
-pub trait Check {
-    /// The name `--check` accepts.
-    fn name(&self) -> &'static str;
-    /// Which defect it detects, in one line, for the report.
-    fn defect(&self) -> &'static str;
-    /// Run it. A check never panics and never returns an error: every outcome,
-    /// including "I could not start", is a [`CheckReport`].
-    fn run(&self, ctx: &CheckContext) -> CheckReport;
-}
+pub use harness::{Check, CheckContext};
 
 /// **The roster** — every check, in the order the suite runs them.
 ///
 /// Its own file under **R2**, and the seam is argued in its header: this
-/// module is the harness's *vocabulary* (the [`Check`] trait, the
-/// [`CheckContext`]) and that one is the *list*, which is the only thing here
-/// that grows with every landing.
+/// module is the *index* of which checks exist, and that one is the *list*,
+/// which grows again every time one is re-ordered.
 mod roster;
 
 pub use roster::all;

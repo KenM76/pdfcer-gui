@@ -1739,19 +1739,29 @@ restyle and the reflow"* while `TextAction` holds only three of those, so
 stops being a false statement. It costs about forty call-site rewrites.
 `BeginTextAnnot` and `CommitTextAnnot` are an equally defensible second family.
 
-**`tools/ui-verify/src/checks/mod.rs` — there is no seam left, and that is the
-honest answer.** The file is one `pub mod` declaration per check carrying its
-prose, then the harness vocabulary. `roster.rs`'s header already took the
-tempting seam and forecloses it: moving a `pub mod` there renames the check and
-breaks every reference to it. Extracting `CheckContext`, its impl and `trait
-Check` to `checks/context.rs` buys about 155 lines and is a **deferral, not a
-fix**. The durable remedy is folding check families into subdirectories, for
-which `checks/signing/` and `checks/raster_wall/` are precedent, at the cost of
+**`tools/ui-verify/src/checks/mod.rs` — the deferral is spent; the durable
+remedy is the subdirectory fold.** The file is one `pub mod` declaration per
+check carrying its prose. `roster.rs`'s header already took the tempting seam
+and forecloses it: moving a `pub mod` there renames the check and breaks every
+reference to it. `CheckContext`, its impl and `trait Check` are now
+`checks/harness.rs`, re-exported so nothing was renamed — that bought about 120
+lines and was a **deferral, not a fix**; it cannot be taken twice.
+
+⚠ `use crate::report::CheckReport;` stayed behind in `mod.rs` when the trait
+moved, and must stay there. Most check modules spell the report type
+`crate::checks::CheckReport`, which resolves because a private `use` is in scope
+for the whole subtree beneath it; a name imported into `harness` is in scope for
+`harness` alone.
+
+The durable remedy is folding check families into subdirectories, for which
+`checks/signing/` and `checks/raster_wall/` are precedent, at the cost of
 rewriting the references to `crate::checks::driving::…`. ⚠ The other tempting
 move — pushing per-check prose down into each check's own header — is
-prose-shaving, which is the thing `check-file-size.sh` exists to refuse.
+prose-shaving, which is the thing `check-file-size.sh` exists to refuse. That
+refusal is about *moving* prose to buy lines; deleting a sentence that has
+become false, or that restates `checks/conventions.rs`, is R5 and is owed anyway.
 
-⇒ **The last two are the same non-seam twice.** A flat vocabulary — a module
+⇒ **The last two are the same shape twice.** A flat vocabulary — a module
 declaration per check, sixty-five enum variants — has no prose seam, every
 candidate cut renames the moved items' paths, and the only honest remedies are
 the sub-enum and the subdirectory. The worst outcome for either is a cut chosen

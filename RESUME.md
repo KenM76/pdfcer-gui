@@ -960,21 +960,23 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
   tree is not a frozen-correct one, because its citations kept drifting right
   up to the freeze, so what froze was the error.
 
-- **Eight source files sit within fifty lines of the hard limit**, led by
-  `crates/pdfcer-gui/src/render/settle.rs` and
-  `tools/ui-verify/src/checks/mod.rs` against `check-file-size.sh`'s 1,500, the
-  rest running down to the 1,450 mark. Adding one ordinary function
-  to any of them turns a green gate red mid-task, and the remedy R2 requires is
+- **Seven source files sit within fifty lines of the hard limit**, led by
+  `crates/pdfcer-gui/src/render/settle.rs` at 1,486 against
+  `check-file-size.sh`'s 1,500, the rest running down to the 1,450 mark. Adding
+  one ordinary function to any of them turns a green gate red mid-task, and the remedy R2 requires is
   *find the seam*, never *raise the limit* — which is a refactor, not an edit,
   and it will arrive at the worst moment unless it is done first. The seam for
-  each is argued in `DESIGNS.md`; two of the eight have none, and knowing which
-  two is what stops a cut being chosen to hit a line count.
-  ⚠ `checks/mod.rs` grows by about a dozen lines **per driven check registered**,
-  because R1 work adds a documented `pub mod` there every time. It is the one
-  file on this list whose pressure is a function of doing the project's own
-  standing work, so it reaches the cap on a schedule rather than by accident,
-  and it is one of the two with no seam. Take the subdirectory remedy before the
-  next two checks, not after.
+  each is argued in `DESIGNS.md`; one of the seven has none, and knowing which
+  one is what stops a cut being chosen to hit a line count.
+  ⚠ `tools/ui-verify/src/checks/mod.rs` is off this list and will return: it
+  grows by about a dozen lines **per driven check registered**, because R1 work
+  adds a documented `pub mod` there every time. It is the one file whose
+  pressure is a function of doing the project's own standing work, so it reaches
+  the cap on a schedule rather than by accident. Its one deferral — the
+  `Check` trait and `CheckContext` to `checks/harness.rs` — is spent, and the
+  remedy left is the subdirectory fold, which costs a rename of every
+  `crate::checks::<name>` reference. Take it before the next two checks, not
+  after.
   Re-measure before quoting these:
   `find crates tools -name '*.rs' -not -path '*/target/*' -print0 | xargs -0 wc -l | grep -v ' total$' | sort -rn | head`
   — the `grep -v` is load-bearing, because `xargs` batches and emits one

@@ -5,19 +5,20 @@
 //!
 //! ## The seam, and the argument for it
 //!
-//! `checks/mod.rs` now holds **the harness's vocabulary**: the [`Check`] trait
-//! every check implements, the [`CheckContext`] every check is handed, and the
-//! module declarations that make the tree. This file holds **the roster**: one
-//! `Box::new(..)` per check, in run order, each with the note explaining why it
-//! sits where it does.
+//! `checks/mod.rs` holds **the index**: the module declarations that make the
+//! tree, each carrying the argument for why that check exists.
+//! `harness.rs` holds **the contract** — the [`Check`] trait and the
+//! [`CheckContext`]. This file holds **the roster**: one `Box::new(..)` per
+//! check, in run order, each with the note explaining why it sits where it
+//! does.
 //!
-//! Those are genuinely two subjects, and the tell is who edits them:
+//! Those are genuinely three subjects, and the tell is who edits them:
 //!
-//! | | `mod.rs` | `roster.rs` |
-//! |---|---|---|
-//! | changes when | the harness gains a capability every check can use | **any** check is added, removed or re-ordered |
-//! | how often | rarely | every single landing that ships a driven check |
-//! | reviewed for | is the contract still right? | is this check in the right place, and does its note say why? |
+//! | | `harness.rs` | `mod.rs` | `roster.rs` |
+//! |---|---|---|---|
+//! | changes when | the harness gains a capability every check can use | a check is added or removed | **any** check is added, removed or re-ordered |
+//! | how often | rarely | every landing that ships a driven check | the same, plus re-orderings |
+//! | reviewed for | is the contract still right? | does this check exist, and why? | is it in the right place, and does its note say why? |
 //!
 //! The second row is the whole argument. This list grows with every feature
 //! the project ships; the trait beside it barely moves. Keeping an unboundedly
