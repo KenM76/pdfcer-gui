@@ -145,6 +145,11 @@ mod testfont;
 mod tests;
 #[cfg(test)]
 mod width_tests;
+// The same horizontal claim one row up, about the tab strip rather than the
+// band. Independent ladder, different fixture, same synthetic-face harness --
+// which it imports from `width_tests` rather than standing up a second one.
+#[cfg(test)]
+mod strip_width_tests;
 
 #[cfg(test)]
 mod scroll_tests;

@@ -13,10 +13,14 @@
 //!
 //! Tests are a different subject by construction: they change when a *claim*
 //! about the algebra changes, where the code changes when the algebra does.
-//! `egui-shell`'s ribbon has taken this route three times already
-//! (`ribbon/tests.rs`, `ribbon/height_tests.rs`, `ribbon/width_tests.rs`), so
-//! it is a pattern this codebase already uses rather than one invented to get
-//! under a limit.
+//! `egui-shell`'s ribbon is laid out that way throughout: every `*_tests.rs`
+//! beside `ribbon/mod.rs` is one claim-subject split off from the module that
+//! makes the claim, and `ls crates/egui-shell/src/ribbon/*tests*.rs` counts
+//! them. **A precedent cited by count decays** — the number grows every time
+//! the pattern is used again, which is precisely when the citation is being
+//! read — so this names the shape and the command that measures it instead.
+//! The point stands either way: this is a pattern the codebase already uses
+//! rather than one invented to get under a limit.
 //!
 //! **The gate counts total lines, tests included, on purpose** — its own
 //! header says so — so this is not a way of hiding lines from it. It is the

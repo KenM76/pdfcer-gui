@@ -209,13 +209,12 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    `paint_rect` equals the page rect at every zoom below the pixmap ceiling,
    so the ink-coverage question is **unfalsified**, not merely weak, and
    exercising it needs this gesture driven at the region tier.
-   **What is next, in order.** The size cap: eight files sit within fifty lines
-   of it, so the seam-finding pass is a batch rather than a one-off.
-   The seam for each is already argued in `DESIGNS.md` under *Where the seam
-   is in each file now crowding the size limit* — including the two that have
-   none — so that pass is a patch, not a re-derivation. `canvas/keys/tests.rs`
-   and `ribbon/width_tests.rs` are the same split twice and belong in one
-   commit.
+   **What is next, in order.** The size cap: measure it with
+   `find crates tools -name '*.rs' | xargs wc -l | sort -rn | head`, and treat
+   anything within fifty lines of 1,500 as due. The seam for each is argued in
+   `DESIGNS.md` under *Where the seam is in each file now crowding the size
+   limit* — including the ones that have none — so that pass is a patch, not a
+   re-derivation. `render/settle.rs` leads the list and is next.
    **O215's ask 2 is the engine's and is filed as `G032`**: `runs_share_a_line` never
    reads the horizontal translation, so a table row welds into one line — 565
    welded lines on his own drawing, the widest spanning 709.4 pt of blank paper.
@@ -960,14 +959,15 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
   tree is not a frozen-correct one, because its citations kept drifting right
   up to the freeze, so what froze was the error.
 
-- **Seven source files sit within fifty lines of the hard limit**, led by
+- **Five source files sit within fifty lines of the hard limit**, led by
   `crates/pdfcer-gui/src/render/settle.rs` at 1,486 against
   `check-file-size.sh`'s 1,500, the rest running down to the 1,450 mark. Adding
   one ordinary function to any of them turns a green gate red mid-task, and the remedy R2 requires is
   *find the seam*, never *raise the limit* — which is a refactor, not an edit,
   and it will arrive at the worst moment unless it is done first. The seam for
-  each is argued in `DESIGNS.md`; one of the seven has none, and knowing which
-  one is what stops a cut being chosen to hit a line count.
+  each is argued in `DESIGNS.md`, including the ones that have none — and
+  knowing which file has no derived seam is what stops a cut being chosen to hit
+  a line count.
   ⚠ `tools/ui-verify/src/checks/mod.rs` is off this list and will return: it
   grows by about a dozen lines **per driven check registered**, because R1 work
   adds a documented `pub mod` there every time. It is the one file whose

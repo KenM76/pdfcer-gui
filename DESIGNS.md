@@ -1642,48 +1642,67 @@ in `D:/dev/rag/egui/`.
 ## Where the seam is in each file now crowding the size limit
 
 R2's remedy is *find the seam*, never *raise the limit*, and the seam is a
-property of the file rather than of the number. Seven files sit between 1,452
-and 1,471 lines against the 1,500 cap, so the next ordinary edit to any of them
-turns a green gate red mid-task. This section is the seam for each, so that
-work is a patch rather than a re-derivation. **Every one of the seven is LF**;
-the mixed-ending hazard recorded against a patch script does not apply to this
+property of the file rather than of the number. The files at risk are the ones
+`find crates tools -name '*.rs' | xargs wc -l | sort -rn | head` puts within
+about fifty lines of the 1,500 cap — the next ordinary edit to any of them turns
+a green gate red mid-task. This section is the seam for each, so that work is a
+patch rather than a re-derivation. **Every file named below is LF**; the
+mixed-ending hazard recorded against a patch script does not apply to this
 batch.
 
 Line numbers below are an aid to the eye only. The anchor in every case is the
 named item or the quoted banner, because a citation into a moving file goes
 wrong silently.
 
-**`ribbon/width_tests.rs` → `ribbon/strip_width_tests.rs`.** The banner in the
-middle already writes the sentence: *"Everything below is failure mode #8 one
-row up."* Above it, nine tests assert group reservation **inside the band**;
-below it, ten assert four-claimant contention **on the tab-strip row** — QAT,
-tabs, the tab affordance and the mode selector — and need their own seven-tab
-manifest to overflow at all. The halves share no fixture below the harness:
-`strip_shell` is called only by the lower half, `render_view_tab` only by the
-upper. `render_shell` is the one private helper both call and must widen to
-`pub(super)`; everything else shared is `pub(super)` already and `super` is
-`ribbon` for both files, so no visibility changes meaning. **Do not extract the
-harness into a third file** — `ribbon/mod.rs` documents on purpose that
-`height_tests` borrows this one rather than standing up a second.
+**`render/settle.rs` → `render/settle/absorb.rs`.** Deciding what the picture
+should be is a different subject from what to do with the picture that came
+back. What stays changes when the operator gains a gesture or the strip gains a
+scheduling rule; what moves changes when the **renderer** gains a failure mode.
+Both existing headers write that sentence by omission — the module's own
+describes *"what is stale, what to re-rasterize now, what to debounce"*, and
+`render/mod.rs`'s table calls `settle` *"scheduling"* — and neither names the
+absorption, the backdrop promotion, the ink census or the learned ceiling.
 
-**`canvas/keys/tests.rs` → `canvas/keys/tests/escape.rs`.** Two precedence
-ladders are interleaved here rather than blocked. Escape's claimants are the
-transient things in flight and the property under test is *which rung got it*;
-Delete's claimants are the selected objects and the property is *did a deletion
-gate refuse, audibly*. `keys.rs` carries a rung table for Escape and nothing of
-the sort for Delete. The child must say `use super::*`, which resolves to
-`keys::tests::*` and transitively re-exposes the parent's own imports and its
-four helpers; `use super::super::*` compiles and loses them. `pub(super)` on
-`Keys` and `canvas_keys` already means `pub(in crate::canvas)`, so going one
-level deeper is free. This file's header is stale in three checkable ways — it
-claims no case presses Tab, no assertion presses an arrow, and every case passes
-`page: None`, and all three are now false — so the split carries a header
-rewrite with it.
+`rasterize`, `absorb_render`, `learn_raster_ceiling` and `poll_render` move as
+one run out of the second `impl OpenDoc` block, about 478 lines. `ZOOM_SETTLE`,
+`CURRENT_UNFILLABLE_SLOT`, `BEYOND_RASTER_SLOT`, the first `impl OpenDoc`
+block, `rehome_current_page`, `strip_page_orderable`, `raster_order_fillable`,
+`strip_page_state`, `strip_page_texture`, the whole `impl PdfcerApp` and
+`mod tests` stay. ⚠ **`rasterize` moves because it absorbs**, and leaving it
+behind is the one silent break on offer: it writes `render_in_flight`, which
+`absorb_render` reads, and the ★ paragraph arguing why the stamp is taken
+before the inline wait sits inside `rasterize` while its only reader is in
+`absorb_render`. Splitting them puts the stamp's two writers on opposite sides
+of the cut with the invariant documented on the far side from the code that
+needs it.
 
-⇒ **Those last two are the same split twice** and belong in one commit: a single
-test file enumerating two independent claimant-contention ladders, cut between
-them, harness staying with the half that keeps the filename, exactly one private
-helper widening because the other half calls it.
+`rasterize` and `poll_render` widen to `pub(super)`; `absorb_render` and
+`learn_raster_ceiling` stay private because their callers move with them.
+Nothing in the file is spelled `pub(super)` today, so nothing narrows on the way
+in — ⚠ but the two new spellings mean `pub(in crate::render::settle)` and would
+have to become `pub(in crate::render)` if the file were ever re-homed as a
+sibling. ⚠ The private `use` block does **not** reach the child as bare names:
+`absorb.rs` needs `crate::app::state::OpenDoc`, `crate::render::pressure::Surface`,
+`crate::render::raster`, `crate::render::strip::PageRaster` and
+`crate::render::worker::{RefusalKind, RenderKey, RenderOutcome}` of its own,
+while `settle.rs` must drop `Surface`, `RefusalKind` and `RenderOutcome` and
+narrow `raster::{self, PageTexture}` to `PageTexture` — `run-all.sh` runs clippy
+with `-D warnings`, so an unpruned import is a red gate rather than a warning.
+⚠ `mod tests`'s `///` block runs 34 lines above its `#[cfg(test)]`, which is
+`check-orphan-docs.py`'s exact shape; make the cut at the `impl` boundary and
+nowhere else. No gate cites the file, and `check-trace-names.py`'s mechanism 5
+still discharges `raster-ceiling-learned` because it searches both crates.
+
+Module-path prose citing the moved symbols has to be repointed at
+`render::settle::absorb`: `render/ceiling.rs`, `app/status/rasterstop.rs`,
+`viewer/mod.rs`, `app/state.rs`, `dialogs/diagnostics.rs`, `ENGINE_BACKLOG.md`
+and `tools/ui-verify/src/checks/raster_wall.rs`. The fallback seam is
+`render/settle/orderable.rs` — `strip_page_orderable`, `raster_order_fillable`
+and the test module that covers only the latter — and it is second because it
+separates those two predicates from `fill_strip`'s `filter` that consults them.
+Precedent for the shape is `render/worker.rs` + `render/worker/key.rs` one
+directory over, so `mod absorb;` is declared inside `settle.rs` and never
+reaches `render/mod.rs`.
 
 **`canvas/measure/mod.rs` → `canvas/measure/preview.rs`.** Drawing what the next
 click would commit is a different subject from advancing the pick. `Preview`,
@@ -1766,12 +1785,6 @@ declaration per check, sixty-five enum variants — has no prose seam, every
 candidate cut renames the moved items' paths, and the only honest remedies are
 the sub-enum and the subdirectory. The worst outcome for either is a cut chosen
 to hit a line count.
-
-One standing hazard for the whole batch: `canvas/selection/tests.rs` justifies
-its own existence by citing the ribbon's test-file splits, and its count is
-already wrong — it says three where `ribbon/` holds five. Whoever takes the
-`width_tests.rs` seam corrects that sentence in the same commit, because a
-precedent cited by count is a claim that decays.
 
 ---
 

@@ -946,7 +946,7 @@ Three requirements, not one:
 
 ### Measured, 2026-09-15 — the request side is visibility-bound; the cache side already is not
 
-`render::settle::fill_strip` (`crates/pdfcer-gui/src/render/settle.rs:1064`)
+`render::settle`'s `PdfcerApp::fill_strip`
 builds its candidate set from `doc.strip_visible` and nothing else. Every
 `filter`/`find` in the function scans that set, so **a page that is not on
 screen is never ordered**, at any zoom, in any document. That is the whole of

@@ -127,7 +127,8 @@ fn the_fixture_is_themed_like_the_running_application() {
 /// A registry of eight controls with labels long enough to make a group
 /// wider than [`super::plan::GROUP_WRAP_WIDTH`] under the synthetic face.
 ///
-/// Deliberately **unequal** label lengths, for the reason [`super::width_tests`]'s `strip_shell`'s
+/// Deliberately **unequal** label lengths, for the reason
+/// [`super::strip_width_tests`]'s `strip_shell`'s
 /// labels are unequal: an even split of eight identical widths is
 /// arithmetic anyone could get right by accident, and it would not exercise
 /// [`super::plan::wrap_group`]'s search over contiguous runs at all.
