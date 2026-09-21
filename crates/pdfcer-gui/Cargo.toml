@@ -186,6 +186,26 @@ native-window = { path = "../native-window" }
 # *cannot* change.
 native-clipboard = { path = "../native-clipboard" }
 
+# native-gl = read the OpenGL error flag, which the render stack does not.
+#
+# The third `native-*` crate and the same single reason as the other two: this
+# crate carries `#![forbid(unsafe_code)]`, `forbid` cannot be relaxed from the
+# inside, and every `glow` entry point is an `unsafe fn`.
+#
+# What it buys is not a nicety. `egui_glow`'s `check_for_gl_error!` wraps its
+# whole body in `if cfg!(debug_assertions)`, so in the build the operator runs
+# NOTHING reads that flag — a texture upload that fails for want of graphics
+# memory leaves the texture bound with no storage and the canvas draws a blank
+# rectangle at full frame rate, logging nothing. `crate::render::pressure` is
+# the caller and carries the attribution rule.
+#
+# ⚠ `glow` is NOT a dependency here. The `glow::Context` this crate hands over
+# comes from `eframe::Frame::gl()` and is named through `eframe::glow`, which
+# eframe re-exports — so the type is eframe's own by construction and cannot
+# skew from it. `native-gl` names `glow` directly because its subject IS the
+# context; `cargo tree -d -p glow` must stay empty for the two to agree.
+native-gl = { path = "../native-gl" }
+
 # pdfcer-gui-base = the floor of this crate's own stack: `diag`, `units`,
 # `secret` and `acrobat`. Not a third-party library and not a reusable
 # framework — it is THIS crate, minus the four modules that reference nothing

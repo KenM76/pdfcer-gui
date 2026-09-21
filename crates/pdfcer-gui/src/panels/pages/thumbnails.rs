@@ -178,6 +178,7 @@ use pdfcer_core::page_tree::Page;
 use pdfcer_render::cancel::RenderCancel;
 
 use crate::app::state::OpenDoc;
+use crate::render::pressure::Surface;
 use crate::render::raster::{PageTexture, texture_from_pixels};
 use crate::render::worker::{RenderKey, RenderedPixels};
 
@@ -878,7 +879,7 @@ impl ThumbnailCache {
                 };
                 self.insert(
                     page_index,
-                    texture_from_pixels(ctx, &pixels),
+                    texture_from_pixels(ctx, Surface::Thumbnail, &pixels),
                     viewport_centre,
                 );
             }

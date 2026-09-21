@@ -106,6 +106,18 @@ pub mod ink;
 /// engine path is one whose first failure looks like a shell defect.
 pub mod offpage;
 
+/// **The blank page nothing reports** — O219's *"the view goes blank"*, given
+/// a diagnostic for the first time.
+///
+/// A texture upload that fails for want of graphics memory raises
+/// `GL_OUT_OF_MEMORY` on a flag that `egui_glow` reads only under
+/// `debug_assertions`, so in a release build it is completely silent and
+/// presents as an empty rectangle drawn at full frame rate. Its header carries
+/// the frame boundary the whole module is built around — an upload ordered in
+/// one frame is performed at the end of it and its error is first readable at
+/// the top of the next — and why attribution refuses to guess.
+pub mod pressure;
+
 /// ★★ **Screen ⟷ PDF for a RASTER** — the two conversions the region tier
 /// needs, kept together because they are inverses and the round trip is the
 /// property that matters.

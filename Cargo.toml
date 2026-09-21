@@ -34,6 +34,14 @@ members = [
     # `unsafe`. See `crates/native-clipboard/Cargo.toml` for the full argument
     # and for what must never go into it.
     "crates/native-clipboard",
+    # native-gl — the OpenGL error flag, read. Third instance of the same
+    # quarantine and the only one with a dependency: its subject is a
+    # `glow::Context` the caller already holds, so hand-declaring the call
+    # would mean reimplementing `glow`'s loader to reach the same context.
+    # `egui_glow` reads that flag only under `debug_assertions`, so in the
+    # build the operator runs, a texture upload that fails for want of memory
+    # is completely silent and presents as a blank canvas.
+    "crates/native-gl",
     "crates/native-window",
     "crates/pdfcer-gui",
     # pdfcer-gui-base — the floor of the pdfcer-gui crate stack, and the first

@@ -1,0 +1,81 @@
+# `native-gl` — READ the OpenGL error flag, which the render stack does not.
+#
+# WHY THIS IS ITS OWN CRATE
+#
+# The third instance of a pattern this workspace has already argued twice.
+# `crates/native-window` is a whole crate for four `user32` calls and
+# `crates/native-clipboard` is a whole crate for one ordered clipboard
+# transaction; both manifests state the same single reason, and it is the
+# reason here too. `pdfcer-gui` carries `#![forbid(unsafe_code)]`, that is a
+# claim rather than a lint preference, and `forbid` cannot be relaxed by an
+# inner `allow` — deliberately. Every `glow` entry point is `unsafe fn`.
+#
+# So `gl.get_error()` is not a call the application may make, and the choice is
+# between giving up the top-level claim for one function and quarantining that
+# function here. This crate is nine lines of logic behind a safe signature.
+#
+# WHAT IT BUYS, WHICH IS NOT OBVIOUS
+#
+# `egui_glow`'s own `check_for_gl_error!` wraps its entire body in
+# `if cfg!(debug_assertions)`. In a release build the OpenGL error flag is
+# therefore NEVER READ by anything in the render stack — so a texture upload
+# that fails for want of memory raises `GL_OUT_OF_MEMORY`, GL does not trap,
+# the texture object stays bound with no storage, and the program draws a
+# blank rectangle at full frame rate while logging nothing at all.
+#
+# That is an operator-visible defect with no diagnostic whatsoever, and this
+# crate is the instrument that gives it one. `check_for_gl_error_even_in_release!`
+# is public and ungated in `egui_glow` but is not called from the paint path,
+# so it cannot be reached by configuration.
+#
+# THE ONE DEPENDENCY, AND WHY IT IS NOT AVOIDABLE HERE
+#
+# `native-window` and `native-clipboard` both have an EMPTY `[dependencies]`
+# block on the stated principle that "eleven symbols is not worth a
+# dependency", and both hand-declare their `extern` signatures. That route is
+# not open here: the subject of this crate is a `glow::Context` the caller
+# already holds — handed over by `eframe::Frame::gl()` — and a hand-declared
+# `glGetError` would need the platform's function-pointer loader to reach the
+# same context, which is the entire body of work `glow` already did.
+#
+# ⚠ The version must resolve to the SAME `glow` the linked `eframe` uses, or
+# `glow::Context` here is a DIFFERENT TYPE from the one the caller has. That
+# failure is a compile error at the call site rather than anything subtle, but
+# it is the thing to check first if this crate ever stops accepting the
+# context. `cargo tree -d -p glow` must report no duplicates.
+#
+# It adds no row to `THIRD_PARTY_LICENSES.md`: `glow` is already in the
+# shipping graph through `eframe`, so naming it directly introduces no new
+# crate and no new licence family.
+#
+# WHAT MUST NEVER GO IN HERE
+#
+# A PDF concept, for the reason `native-window`'s manifest calls being
+# R7-clean: nothing under `src/` may name a document, a page or a raster, so a
+# crate that must never learn what a document is could take this dependency
+# unchanged. This crate reads a `u32` flag off a graphics context. What the
+# failure MEANS — which upload it belongs to, whose zoom should come down —
+# is policy and lives with the caller.
+#
+# Also never: a second GL call added because it was convenient to have the
+# context in scope. Every addition here is one more `unsafe` outside the
+# application's `forbid`, and the crate's whole value is that its surface is
+# small enough to read in one sitting.
+#
+# DELETED, NOT PORTED. If `egui_glow` ever reads its own error flag in release
+# builds, or exposes the upload failure as a return value, this crate is
+# removed rather than extended.
+
+[package]
+name = "native-gl"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "Drain the OpenGL error flag behind a safe signature, because the render stack only reads it in debug builds."
+license = "MIT"
+
+[dependencies]
+glow = "0.17"
+
+[lints.rust]
+missing_docs = "deny"

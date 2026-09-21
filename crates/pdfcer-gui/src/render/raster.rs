@@ -186,9 +186,25 @@ pub fn within_base_budget(pixels: &crate::render::worker::RenderedPixels) -> boo
 #[must_use]
 pub fn texture_from_pixels(
     ctx: &Context,
+    surface: crate::render::pressure::Surface,
     pixels: &crate::render::worker::RenderedPixels,
 ) -> PageTexture {
     let image = pixmap_to_color_image(&pixels.pixmap);
+    // ★ Recorded BEFORE the upload is ordered, and from the key rather than
+    // from the image: this is the provenance a `GL_OUT_OF_MEMORY` drained at
+    // the top of the next frame is matched against, and GL's error flag
+    // carries none of its own. See `crate::render::pressure`.
+    //
+    // Here rather than at the call site because this is the one function every
+    // page-raster upload passes through — the same reason the key is carried
+    // across rather than recomputed below.
+    crate::render::pressure::record_raster(
+        ctx,
+        surface,
+        &pixels.key,
+        pixels.pixmap.width(),
+        pixels.pixmap.height(),
+    );
     // LINEAR is what makes a stale texture drawn at a new zoom read as
     // *soft* rather than blocky, which is the free staleness signal the
     // canvas relies on while a background render is in flight.

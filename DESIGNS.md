@@ -1762,3 +1762,213 @@ its own existence by citing the ribbon's test-file splits, and its count is
 already wrong — it says three where `ribbon/` holds five. Whoever takes the
 `width_tests.rs` seam corrects that sentence in the same commit, because a
 precedent cited by count is a claim that decays.
+
+---
+
+## O219 / O221 — the view goes blank, and the ceiling moves with how many documents are open
+
+### The two rows, in his words
+
+> *"Also sometimes before this happens the view goes blank and when I zoom in a
+> little more I get the error."*
+
+> *"Zooming capability seems to be affected by the number for pdfs I have open,
+> even if they are open in a new window. The more I have open, the less zoom I
+> get, I think, but I could be wrong and it could be a bit random."*
+
+★★★ **The last clause is the most informative sentence in the report and it
+must not be discounted as hedging.** A fixed budget is never random. Live
+graphics-memory pressure — which moves with what else is resident, what other
+processes hold, and how the driver has fragmented its heap — is *exactly* what
+"a bit random" feels like from the chair. The randomness is the evidence, and a
+design that produces a deterministic ceiling is a design that has explained his
+first sentence and contradicted his second.
+
+### What is true — measured, not assumed
+
+| fact | where it was measured |
+|---|---|
+| The whole-page tier has an **edge** budget and **no pixel** budget | `render::strategy::whole_page_raster_fits` checks `longest * raster_scale <= MAX_PIXMAP_EDGE - 1` and nothing else |
+| So it admits `16383² = 268 Mpx` ≈ **1.07 GB** of RGBA | arithmetic on the line above |
+| A texture too large on one axis **panics in release** | `egui_glow`'s `Painter::upload_texture_srgb` carries a bare `assert!`; `egui::Context::load_texture` guards size with `debug_assert!` only, so a release build hands it straight through |
+| A texture of legal size that cannot be allocated is **silent** | `check_for_gl_error!` wraps its body in `if cfg!(debug_assertions)`, so `GL_OUT_OF_MEMORY` is never read in release. GL does not trap; the texture object stays bound with no storage and draws a blank rectangle at full frame rate, logging nothing |
+| Every texture swap **transiently double-allocates** | `paint_and_update_textures` runs `textures_delta.set` → `paint_primitives` → `textures_delta.free` within one frame; only a frame boundary separates the peak from the release |
+| The GL edge ceiling **is** reachable safely | `ctx.input(\|i\| i.max_texture_side)` — eframe's glow integration calls `Painter::max_texture_side()` and feeds it into `RawInput`, so no `unsafe` and no `glow` call is needed to read it. Nothing in this repo reads it today |
+| A parked document **keeps its rasters**, by an argued decision | `app::documents::activate_slot` |
+| The region tier is **scale-invariant** | `strategy::OVERSCAN` is a multiple of the viewport, not of the page — so capping the whole-page tier costs free panning and **loses no zoom** |
+| The operator's own adapter reports **13.9 GiB** of dedicated memory | `HardwareInformation.qwMemorySize`, Intel Arc Pro B50. ⚠ WMI's `Win32_VideoController.AdapterRAM` is a `uint32` and saturates — it reports 2 GiB − 4 KiB on this machine, which is an artifact and not a measurement |
+
+### ★★★ Why the obvious fix is the wrong one
+
+The obvious fix is a byte budget: give `whole_page_raster_fits` a `max_bytes`
+alongside its edge check and refuse a raster above it. It is half right — the
+missing pixel budget **is** a real defect, and an edge limit genuinely is not a
+memory budget — but as *the* answer to these two rows it fails three ways:
+
+1. **No constant is right on two machines.** 256 MiB is punitive on a 13.9 GiB
+   card and still optimistic on a 2 GiB laptop. Whatever number is chosen is
+   wrong somewhere, and being wrong downward silently steals the zoom he
+   already has.
+2. **It cannot model accumulation, which is the whole of O221.** A per-raster
+   cap does not notice that four documents are open. To model that it would
+   have to become a pool, and a pool has to know what every resident texture
+   costs — at which point it is tracking an allocator it does not own, against
+   a total it cannot read.
+3. **It contradicts his report.** A constant produces a ceiling that is the
+   same every time. He says it is not.
+
+### The design — learn the ceiling from the failure
+
+This shell **already has** the machinery, and it was built for the same shape
+of problem. `render::ceiling::RasterCeiling` exists because the `tiny-skia`
+wall is content-dependent and unpredictable, so the only honest source of the
+number is the refusal itself: one render fails, the shell writes down the
+scale, and that page never goes that far again. Its header states the property
+that makes one observation enough — the failures are **monotonic in the
+scale**.
+
+Graphics-memory exhaustion has that same property within a moment, and
+`RasterCeiling` already backs off by `BACKOFF` and already discloses on the
+bottom bar through `app::status::rasterstop`. So the repair is not a new
+ceiling; it is **making this failure visible to the ceiling that already
+exists.**
+
+★ That also explains, rather than contradicts, the randomness: a learned
+ceiling moves when the pressure moves, which is what he is describing.
+
+#### 1. Make the failure observable — a fourth `native-*` crate
+
+`pdfcer-gui` carries `#![forbid(unsafe_code)]`, `forbid` cannot be relaxed from
+the inside, and every `glow` entry point is `unsafe`. That is the exact
+argument `crates/native-clipboard` and `crates/native-window` were created
+under, and it is written into the workspace manifest. This is the third
+instance of the same pattern, not a new one.
+
+The crate owns one call behind a safe function: drain `glGetError` in a loop
+until it returns `GL_NO_ERROR` and report whether `GL_OUT_OF_MEMORY` was among
+what it drained. `eframe::App::ui` already receives `frame: &mut eframe::Frame`
+and currently discards it as `_frame`; `Frame::gl()` hands over the context.
+
+⚠ **`glGetError` returns ONE error and clears it.** A single call is a bug:
+the flag set may hold several, and reading one hides the rest. Loop.
+
+⚠ **The flag is global to the context.** Reading it clears it for everyone.
+In release that is safe — `check_for_gl_error!` is compiled out, so nothing
+else is looking — but this is precisely the kind of "successful workaround"
+that is a finding about the boundary and gets reported as one.
+
+#### 2. ★★ Attribute the failure before acting on it
+
+This is the part that will be got wrong. An `OUT_OF_MEMORY` drained at the top
+of frame *N* was raised somewhere in frame *N−1*, and **any** upload could have
+raised it — the font atlas, an icon sheet, a thumbnail. Clamping the page's
+zoom for a failed glyph upload would take his zoom away for an unrelated
+reason, and it would look exactly like the defect being fixed.
+
+⇒ The ceiling may only be lowered when the previous frame **actually uploaded
+a whole-page raster**, and it is lowered for *that* page at *that* scale — both
+recorded when the upload was ordered, not reconstructed afterwards. If the
+previous frame uploaded no page texture, the error is drained, traced, and
+**not** attributed.
+
+#### 3. The edge guard, which needs no policy number at all
+
+Independently of the budget question, read `ctx.input(|i| i.max_texture_side)`
+and never order a whole-page raster whose longer edge exceeds it. This is
+device-sourced, so it invents nothing, and it closes a genuine unconditional
+crash path: on any GPU reporting less than `MAX_PIXMAP_EDGE`, today's code
+reaches `upload_texture_srgb`'s bare `assert!` and the process dies.
+
+⚠ **Read it every frame; never cache it.** egui's value is `2048` until the
+backend reports the real one, so a value latched too early would clamp the
+program to a ceiling no hardware imposed. Read per frame and a spurious early
+`2048` corrects itself on the next one.
+
+⚠ On the operator's own machine this guard is expected to be **inert** — an
+Arc Pro B50 reports a texture ceiling at or above `MAX_PIXMAP_EDGE`, so the
+edge check can never bind there. It is correctness for other machines, and it
+must not be reported as the fix for his symptom.
+
+#### 4. What O221 needs beyond disclosure
+
+**A reclaim, and disclosure is not a substitute for it.** `activate_slot`
+deliberately keeps a parked document's rasters, which is right for switching
+back quickly and wrong when the pressure it creates costs the active document
+its zoom. The learned ceiling above will *respond* to that pressure, which
+makes the symptom explicable; it does not give the memory back.
+
+⇒ Under pressure — meaning after an attributed `OUT_OF_MEMORY` — parked
+documents' whole-page rasters are dropped, and the drop is disclosed
+off-canvas. Both halves are required. A row that is explained but not repaired
+is not closed.
+
+### What is built, and what building it corrected in this design
+
+Parts 1 and 2 exist as **observability only**: `crates/native-gl` drains the
+error flag behind a safe signature, and `render::pressure` decides what a
+reading can be pinned on. The drain is the first statement of
+`impl eframe::App for PdfcerApp`'s `ui`, because `eframe` runs the whole of
+`ui` and only *then* paints — so an upload ordered in a frame is performed at
+the end of it and its error is first readable at the top of the next. It emits
+`gl-pressure` when the flag is dirty and `gl-max-texture-side` on change.
+**Nothing lowers a ceiling and nothing drops a raster.** Parts 3 and 4 are not
+built.
+
+Three things the design above had wrong, all found by building it:
+
+- **"Any upload could have raised it" understated the problem.** The canvas
+  raster and the Pages panel's thumbnails share `render::raster::texture_from_pixels`
+  and the same `RenderKey` type, so a thumbnail is a whole-page raster by every
+  property the pixels expose — a real page index, a real scale, no region.
+  Attribution keyed on the pixels alone would blame a 40 kB thumbnail, at
+  whatever page scrolled into the panel, for a failure raised elsewhere. The
+  surface is therefore passed in at the call site, which makes a third caller a
+  compile error rather than a silent miscount.
+- **★★ Elimination needs a COMPLETE census, and an incomplete one is worse
+  than no instrument.** An uncounted upload does not cost one observation — it
+  makes a two-upload frame look like a one-upload frame, so the rule stops
+  refusing to guess and blames the upload it can still see. There are three
+  `ctx.load_texture` sites, not one: the page raster, the print preview and the
+  icon sheet. All record. `tools/gates/check-texture-census.py` is what keeps
+  that true, because no unit test can see a call site and a hand-written list
+  of upload sites is exactly the thing that rots.
+- **★★ Part 4's reclaim cannot reach the case the row actually describes.**
+  The row says *"even if they are open in a new window."* There is no command
+  that opens a document in a second OS window: documents are slots in one
+  process, `show_viewport_immediate` is used only by dialogs, and nothing
+  launches a second copy of the program — the two `current_exe` readings are
+  the path written into the file association, and the directory OCR searches
+  for its models. So a second window is a second **process**,
+  and the two share one GPU's memory. A reclaim inside one process cannot see
+  the other's textures, let alone free them.
+
+  ⇒ The reclaim keeps its place, but its claim shrinks to the single-process
+  case. What covers the multi-process case is the clamp — degrade to the last
+  scale that drew rather than refuse, whoever consumed the memory — which
+  makes the O218 work the primary repair for this symptom and the reclaim a
+  narrowing of it. It also means the disclosure must not say *"close some
+  documents"* when the memory went to a second instance the program cannot
+  see; it can only report what it asked for and what the device refused.
+
+### What must be measured before any of this is defended
+
+Neither row may be reported fixed on reasoning. The measurement is a zoom
+**series**, not two endpoints, driven through the real binary:
+
+- walk the zoom ladder on a fixed page and record the scale at which the canvas
+  first goes blank — with **one** document open, then three, then six;
+- the ceiling moving with the document count is O221's mechanism confirmed;
+  the ceiling *not* moving refutes it, and the design above is then answering a
+  question he did not ask.
+
+⚠ A blank canvas has exactly one oracle — a captured screenshot. A green trace
+line saying a raster was ordered is not evidence that anything was drawn.
+
+### Needs the operator's ruling
+
+- **Is a single blank frame acceptable as the price of learning?** The design
+  clamps *after* one failure, exactly as `RasterCeiling` does today. The
+  alternative is a conservative pre-emptive budget that costs zoom he currently
+  has on every document, whether or not it would ever have failed.
+- **Should a parked document's rasters be dropped under pressure**, given the
+  cost is a re-render when he switches back to it.

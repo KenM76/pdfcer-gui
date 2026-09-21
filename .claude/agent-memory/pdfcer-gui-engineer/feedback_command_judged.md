@@ -84,3 +84,25 @@ same bytes.** Every source-scanning gate in this repo has that shape.
   says nothing about the case where the scanner never ran.
 
 Recipe: `C:/personal_rag/claude_code/lesson_20260920_command_substitution_hides_awk_crash_gate_reports_clean.md`.
+
+**Fourth recurrence, 2026-09-21 — and a BACKGROUND task is the worst host for
+it.** The gate sweep was launched with a filter on the end; the task
+notification came back `<status>completed</status>` / *"completed (exit code
+0)"* while the output's own last line read `RESULT: FAIL — 2 gate(s) found a
+violation.`
+
+Two things make the background form more dangerous than the foreground one:
+
+- **The harness states the exit code as a fact, in its own voice**, in a
+  notification that also carries the word *completed*. That reads as the
+  runtime's measurement of the process, not as the tail of my own pipeline.
+- **The wrapper is honest, which is what sells it.** A one-line control
+  (`echo …; exit 1` in the background) reports `exit code 1` and
+  `<status>failed</status>` correctly. So there is no wrapper bug to find, and
+  the only remaining explanation *looks* like a defect in the script you ran.
+
+⇒ **Before believing any background task's exit code, ask whether a pipe was on
+the end of the command you launched.** The tell is in the output file itself:
+if it holds only the tail/summary of a long run, a filter ate both the detail
+and the status. Redirect instead — `cmd > "$OUT" 2>&1; echo "RC=$?"` — and the
+background notification then reports the thing you actually ran.

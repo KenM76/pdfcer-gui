@@ -90,6 +90,7 @@ use std::time::{Duration, Instant};
 use crate::app::PdfcerApp;
 use crate::app::state::{OpenDoc, Status};
 use crate::render::prefetch;
+use crate::render::pressure::Surface;
 use crate::render::raster::{self, PageTexture};
 use crate::render::strip::{PageRaster, PageState};
 use crate::render::worker::{RefusalKind, RenderKey, RenderOutcome};
@@ -271,7 +272,7 @@ impl OpenDoc {
                         });
                     }
                 }
-                let texture = raster::texture_from_pixels(ctx, &pixels);
+                let texture = raster::texture_from_pixels(ctx, Surface::Canvas, &pixels);
                 if page == self.view.page_index {
                     // ★★★ **PROMOTE IT TO THE BACKDROP** if it is a small
                     // whole-page picture. See `OpenDoc::base_texture`.

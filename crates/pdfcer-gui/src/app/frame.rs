@@ -208,8 +208,26 @@ impl eframe::App for PdfcerApp {
     ///
     /// The context is cloned out at the top because the raster bookkeeping
     /// needs it after the panel closure has ended, and `Ui::ctx()` borrows.
-    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+    fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         let ctx = ui.ctx().clone();
+        // ★★★ FIRST — read the OpenGL error flag, before this frame does any
+        // GL work of its own.
+        //
+        // The ordering is the whole of why this is the first statement.
+        // `eframe` runs all of `ui` and only then paints, so the uploads this
+        // frame orders are performed after it returns and the errors they
+        // raise are readable at the top of the NEXT frame. What is on the flag
+        // right now therefore belongs to the previous frame, and
+        // `pressure::poll` is handed the previous frame's record to match it
+        // against. Move this later and every failure is attributed to a frame
+        // that had not uploaded anything yet.
+        //
+        // In a release build nothing else reads that flag at all — `egui_glow`
+        // gates its own check on `debug_assertions` — so a page raster that
+        // failed for want of graphics memory is silent, and the canvas draws
+        // an empty rectangle at full frame rate. That is O219.
+        crate::render::pressure::poll(&ctx, frame.gl().map(std::sync::Arc::as_ref));
+        crate::render::pressure::trace_texture_limit(&ctx);
         // ★ The window every dialog is owned BY, published once a frame.
         // See `dialogs::host::set_owner` for why it travels this way, and the
         // host's G3 section for what ownership buys.

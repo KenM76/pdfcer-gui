@@ -164,6 +164,17 @@ impl IconCache {
         // it will be drawn at, so filtering is a no-op in the normal case —
         // but if egui ever draws it at a fractional offset, linear is the
         // difference between a soft edge and a shimmering one.
+        // Recorded before the upload is ordered — see
+        // `crate::render::pressure`. The icon sheet can never be the cause of
+        // a zoom-dependent failure, and that is precisely why it is counted:
+        // an unrecorded upload makes a two-upload frame look like a one-upload
+        // frame, and the page raster left standing gets blamed for this.
+        crate::render::pressure::record_other(
+            ctx,
+            crate::render::pressure::Surface::Icon,
+            u32::try_from(image.width()).unwrap_or(u32::MAX),
+            u32::try_from(image.height()).unwrap_or(u32::MAX),
+        );
         let handle = ctx.load_texture(name, image, egui::TextureOptions::LINEAR);
         self.textures.insert(key, handle.clone());
         handle

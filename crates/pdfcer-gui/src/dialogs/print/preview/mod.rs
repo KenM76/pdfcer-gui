@@ -1252,6 +1252,16 @@ fn upload(ctx: &egui::Context, pixmap: &pdfcer_render::tiny_skia::Pixmap) -> Tex
     // and the operator's zoom produce, which is almost never 1:1 with the
     // bitmap, and nearest-neighbour sampling of a downsampled page is a mess
     // of aliased hairlines exactly where the operator is looking for hairlines.
+    // Recorded so that a frame in which the preview AND the canvas both
+    // uploaded is not mistaken for a frame in which only the canvas did — see
+    // `crate::render::pressure`, whose refusal to guess is only worth
+    // something if the census of uploads is complete.
+    crate::render::pressure::record_other(
+        ctx,
+        crate::render::pressure::Surface::Preview,
+        pixmap.width(),
+        pixmap.height(),
+    );
     ctx.load_texture(PREVIEW_TEXTURE_ID, image, egui::TextureOptions::LINEAR)
 }
 

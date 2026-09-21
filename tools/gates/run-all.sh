@@ -138,6 +138,7 @@ run "check-test-temp-paths --self-test" python "$HERE/check-test-temp-paths.py" 
 run "check-patch-residue --self-test" python "$HERE/check-patch-residue.py" --self-test
 run "check-settings-funnel --self-test" python "$HERE/check-settings-funnel.py" --self-test
 run "check-scroll-row-wrapping --self-test" bash "$HERE/check-scroll-row-wrapping.sh" --self-test
+run "check-texture-census --self-test" python "$HERE/check-texture-census.py" --self-test
 # ★★ A gate can report OK over an evidence set of size ZERO and look exactly
 # like a gate that passed. Its `archived` case is the guard: it returns 1 only
 # if the consumption notes in `archive/` are read, so narrowing the evidence
@@ -288,6 +289,23 @@ run "check-suite-name-absent" python "$ROOT/tools/check-suite-name-absent.py"
 # stream, `BT /F1 12 Tf` -- that pins the anchor: the first cut of mechanism 3
 # scanned whole files and reported 31 hits of which one was real.
 run "check-trace-names" python "$HERE/check-trace-names.py"
+
+# `check-texture-census` protects an argument from ELIMINATION, which is the
+# kind that rots quietly.
+#
+# `render::pressure` reads the OpenGL error flag once a frame and tries to say
+# which upload raised it. GL's flag carries no provenance, so the module works
+# by elimination: it blames the canvas's page raster only when that raster was
+# the frame's ONLY upload. Every uncounted upload therefore does not merely go
+# unseen -- it makes a two-upload frame look like a one-upload frame, so the
+# module stops refusing to guess and blames the one it can still see.
+#
+# The completeness that argument rests on is exactly what a hand-written list
+# of upload sites cannot hold, and there is no test that can see a call site.
+# Hence a gate, reading the source. It deliberately does NOT check that the
+# `Surface` named is the right one -- that is a judgement about what an upload
+# is FOR, and `render::pressure`'s own tests pin the consequence instead.
+run "check-texture-census" python "$HERE/check-texture-census.py"
 # ★★★ `check-orphan-docs` — and it is the only gate here
 # aimed at documentation being attached to the WRONG ITEM rather than at its
 # being absent or false.

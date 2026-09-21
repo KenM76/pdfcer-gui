@@ -2145,6 +2145,13 @@ name = "native-clipboard"
 version = "0.1.0"
 
 [[package]]
+name = "native-gl"
+version = "0.1.0"
+dependencies = [
+ "glow",
+]
+
+[[package]]
 name = "native-window"
 version = "0.1.0"
 
@@ -2660,6 +2667,7 @@ dependencies = [
  "embed-resource",
  "flate2",
  "native-clipboard",
+ "native-gl",
  "native-window",
  "pdfcer-core",
  "pdfcer-gui-base",
