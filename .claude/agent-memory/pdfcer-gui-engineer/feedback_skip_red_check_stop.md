@@ -138,3 +138,23 @@ naming the verb is no evidence about the door.** When a request names a gesture
 Related: [[a-request-for-something-shipped-is-a-discoverability-report]] and
 [[adding-a-second-route-is-an-audit-of-the-capability]]. Full finding in
 `D:/dev/rag/rust/a_skip_and_a_fail_for_the_same_unreached_state_depend_on_who_was_supposed_to_arrange_it.md`.
+
+## ★★★ 2026-09-21 — the word SKIP in the output is not the signal; the exit code is
+
+`run-all.sh` classifies by exit code: 0 PASS, 2 SKIP, anything else FAIL.
+`check-third-party-licences.sh` had **five** branches that printed `SKIP:` and
+then `exit 0` — no licence file, no template, `cargo-about` not installed, the
+tool failing, the tool producing nothing. On any machine without `cargo-about`
+on PATH it was **counted among the passes while measuring nothing**, and its
+explanation went into a log nobody diffs.
+
+⇒ This is worse than the drift the entries above describe, because the SKIP set
+diff — the standing remedy — **cannot see it.** The check never appears in the
+skip list to be diffed. It is a misfiled SKIP hiding inside the pass count.
+
+**How to apply:** when auditing a gate roster, grep the gates for the string
+`SKIP` and check the exit code on each such branch against the runner's own
+table. A gate whose skip branches `exit 0` is asserting nothing and claiming
+success, and it reads identically to a gate that measured. Related:
+[[a-detectors-scope-is-a-claim]] and
+[[a-gate-comparing-generated-bytes-to-a-committed-file-measures-who-wrote-it-last]].

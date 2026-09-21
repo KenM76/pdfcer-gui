@@ -180,17 +180,17 @@
 #   0  every `[x] core / [ ] gui` row is accounted for in `ENGINE_BACKLOG.md`
 #   1  at least one row is accounted for nowhere, or two rows share one key, or
 #      the self-test did not detect its plant
+#   2  SKIPPED — an input was unreadable and NOTHING WAS MEASURED: no register,
+#      a manifest naming no engine, an unreadable feature table, no awk, or a
+#      feature table from which `report` parsed nothing at all.
 #
-# THERE IS NO EXIT 2, AND THERE SHOULD BE. Every unreadable-input path below
-# prints the word SKIP and then exits 0 — missing register, a manifest naming
-# no engine, an unreadable feature table, no awk — and `report`'s own "nothing
-# parsed" return of 2 is converted to `exit 0` as well. `run-all.sh` classifies
-# purely by exit code (0 pass, 2 skip, anything else fail), so every one of
-# those lands in the PASSED column with the word SKIP surviving only in the
-# scrollback. That contradicts the rule this gate's own prose states: a check
-# which cannot fail is not evidence, and an unmeasured run counted as a pass is
-# exactly that. Correcting it means changing those `exit 0`s to `exit 2`, which
-# is a code change and not something a comment can do.
+# ★★ `run-all.sh` classifies purely by exit code — 0 pass, 2 skip, anything
+# else fail — so the exit code is the only thing that carries the distinction.
+# The word SKIP printed above an `exit 0` lands in the PASSED column and
+# survives only in scrollback nobody diffs, which is this gate's own rule
+# turned on itself: an unmeasured run counted as a pass is a check that cannot
+# fail. Falsify by pointing `PDFCER_ENGINE_BACKLOG` at a path that does not
+# exist; the exit must be 2.
 #
 # To falsify: copy `ENGINE_BACKLOG.md`, delete one entry row from the copy, and
 # point `PDFCER_ENGINE_BACKLOG` at it — the matching capability must be named
@@ -600,7 +600,7 @@ if [ ! -f "$REGISTER" ]; then
     echo "SKIP: $REGISTER is missing, so there is nothing to check verdicts against."
     echo "      That file is the register this gate enforces; without it the gate"
     echo "      has no opinion to compare the engine's table to."
-    exit 0
+    exit 2
 fi
 
 ENGINE="$(locate_engine)"
@@ -609,26 +609,29 @@ if [ -z "${ENGINE:-}" ]; then
     echo "      cannot say where the engine is. It refuses to guess: a hard-coded"
     echo "      path is what made check-verb-coverage report PASS having examined"
     echo "      nothing, on the day this project renamed before the engine did."
-    exit 0
+    exit 2
 fi
 
 FEATURES="$ENGINE/docs/FEATURES.md"
 if [ ! -f "$FEATURES" ]; then
     echo "SKIP: $FEATURES is unreadable, so nothing was measured."
     echo "      The engine checkout was located at $ENGINE."
-    exit 0
+    exit 2
 fi
 
 if ! command -v awk >/dev/null 2>&1; then
     echo "SKIP: awk is absent. This gate is a table parser and has no other way to"
     echo "      read the engine's feature table."
-    exit 0
+    exit 2
 fi
 
 report "$FEATURES" "$REGISTER"
 rc=$?
 case "$rc" in
     0) echo; echo "PASS: every \`[x] core / [ ] gui\` row is accounted for in $REGISTER." ;;
-    2) exit 0 ;;
+    # `report` returns 2 when it parsed NOTHING — an empty or unrecognised
+    # feature table. That is a measurement that did not happen, so it leaves
+    # here as a SKIP and not as a pass.
+    2) exit 2 ;;
 esac
 exit "$rc"

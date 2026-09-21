@@ -76,16 +76,17 @@
 #
 #   0  every uncalled verb is named in a register row
 #   1  at least one uncalled verb is named nowhere
+#   2  SKIPPED — NOTHING WAS MEASURED: no register, no instrument, an
+#      instrument that died, or an instrument that printed no summary and so
+#      never reached the engine checkout.
 #
-# There is no exit 2. Every "nothing was measured" branch below prints the
-# word SKIP and then exits 0 — missing register, missing instrument, dead
-# instrument, no summary. `run-all.sh` classifies purely by exit code (0 pass,
-# 2 skip, anything else fail), so each of those lands in the PASSED column and
-# the word SKIP survives only in the scrollback. That is a defect in this
-# gate, not a decision: the standing rule is that a check which cannot fail is
-# not evidence, and an unmeasured run counted as a pass is exactly that.
-# Correcting it means changing those `exit 0`s to `exit 2`, which is a code
-# change and not something a comment can do.
+# ★★ `run-all.sh` classifies purely by exit code — 0 pass, 2 skip, anything
+# else fail — so the exit code is the only thing that carries the distinction.
+# The word SKIP printed above an `exit 0` lands in the PASSED column and
+# survives only in scrollback nobody diffs, which is the standing rule turned
+# on this gate: a check which cannot fail is not evidence, and an unmeasured
+# run counted as a pass is exactly that. Falsify by pointing
+# `PDFCER_EDITABLE_SURFACES` at a path that does not exist; the exit must be 2.
 #
 # To falsify: copy `EDITABLE_SURFACES.md`, delete one verb's table row, point
 # `PDFCER_EDITABLE_SURFACES` at the copy — it must name that verb and exit 1.
@@ -108,12 +109,12 @@ INSTRUMENT="tools/verb-coverage.py"
 
 if [ ! -f "$REGISTER" ]; then
   echo "SKIP: $REGISTER is missing, so there is nothing to check reasons against."
-  exit 0
+  exit 2
 fi
 if [ ! -f "$INSTRUMENT" ]; then
   echo "SKIP: $INSTRUMENT is missing. This gate is a wrapper around it and has"
   echo "      no independent way to enumerate the engine's verbs."
-  exit 0
+  exit 2
 fi
 
 # The instrument prints one uncalled verb per line on stdout and its summary on
@@ -138,12 +139,12 @@ rm -f "$SUMMARY_FILE"
 if [ "$STATUS" -ne 0 ]; then
   echo "SKIP: $INSTRUMENT exited $STATUS, so nothing was measured."
   echo "$SUMMARY"
-  exit 0
+  exit 2
 fi
 if [ -z "$SUMMARY" ]; then
   echo "SKIP: $INSTRUMENT printed no summary, which means it did not reach the"
   echo "      engine checkout. A gate that passes without measuring is not a gate."
-  exit 0
+  exit 2
 fi
 
 echo "$SUMMARY" | tail -1
