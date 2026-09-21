@@ -173,6 +173,25 @@ That is a dead end reached by following the instructions, and it holds
 regardless of what happens to O218: **no state of the canvas may swallow
 Ctrl+wheel**, because it is the gesture that leaves the state.
 
+**Built, and driven on one of its two arms.** `canvas::escape::offer` runs from
+both of the canvas's early returns, so a canvas that draws nothing still reads
+the wheel; `the_raster_wall_stops_the_zoom_instead_of_painting_an_error` now
+carries a third part that, from whatever state the climb left standing, wheels
+Ctrl+minus at the **canvas centre** and asserts the zoom falls — never touching
+the status bar's zoom-out control, because that control is the workaround he
+was left with and a check that used it would report the defect fixed. It is
+falsified: disabling the outward branch of `wheel_step` turns it red on the
+intended sentence.
+
+**★ The arm it did not reach, which is the literal one.** O220's precondition
+is *"when the error occurs"* — the canvas standing on a `render-failed`
+refusal. O218's ceiling now absorbs that refusal into a learned limit, so the
+dense drawing's climb ends **drawing at the ceiling** rather than blank, and
+the driven run measures the wheel out of a held ceiling instead. The blank arm
+is coded and will fire if a run lands there; nothing yet makes a run land
+there on demand. O221's document-count dependence is the standing candidate
+for that lever. **This row is not closed and must not be reported as closed.**
+
 ## O221 — **FILED** — how far you can zoom depends on how many documents are open
 
 > *"Zooming capability seems to be affected by the number for pdfs I have
@@ -194,6 +213,42 @@ limit.
 shared budget, the requirement is that it is *disclosed* — the operator is told
 what the ceiling is and why it moved — and that reclaiming it is possible
 without closing his other drawings.
+
+**The standing hypothesis, with its evidence — and it is not yet measured.**
+`viewer::ceiling::zoom_ceiling` takes five inputs and **none of them is a count
+of documents**: the page's own size, the display scale, the render-quality
+multiplier, the max-zoom preference, and the ceiling this page has already
+learned. The engine's per-axis budget is a compile-time constant. So the
+ceiling the shell *computes* cannot move with how many drawings are open, and
+the operator's *"the more I have open, the less zoom I get"* cannot be an
+arithmetic effect.
+
+The ceiling he *reaches* is a different quantity, and there the route is
+explicit in the source: the strip cache is a field on `OpenDoc`, and
+`render::settle` prunes it with `doc.prefs.page_cache.texels()` — **a
+per-document budget**. Every open drawing is therefore independently permitted
+the whole cache, the process holds up to *N ×* it, and graphics memory is
+per-machine and shared across processes. That is the one classification
+consistent with his load-bearing clause *"even if they are open in a new
+window"*, because a second window here is a second process and two processes
+share a GPU. A failed texture upload then gives an empty texture object, which
+is O219's blank view, one step before the refusal that teaches a lower ceiling.
+
+`app::documents`' own notes already anticipated the shape of the remedy — *"if
+this ever needs bounding it should be bounded by a count of parked documents
+that keep rasters, not by dropping them all"* — and `render::pressure::poll`
+states in as many words that the one/three/six-document measurement is owed
+before anything acts on it. **It is still owed. Nothing above is a measurement,
+and none of it may be reported to the operator as a cause.**
+
+⚠ **Two things the harness must gain before that measurement is possible.**
+`ui-verify` carries exactly two fixture slots and reaches a second document
+through a one-path environment seam, so three or six documents in one driven
+process is not currently reachable at all — and *N separate processes* is in
+any case the closer analogue of what he described. And `gl-pressure`, which
+already carries the out-of-memory count and the surface it was attributed to,
+is **emitted by the shell and read by no check anywhere**: the instrument this
+row needs exists and has never been consulted.
 
 ## O222 — **FILED** — text you just typed does not appear until you click the page again
 

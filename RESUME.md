@@ -55,13 +55,19 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
 1. **O218 – O225, his eight-row zoom and text report. Four are built and
    driven, one is built with one clause undriven, two are observability only,
    one is unstarted and its first question belongs to the engine.**
-   **★ The one gap left in this group is O220's literal clause.** Nothing
-   wheels *out* after the wall: `raster_wall.rs`'s three `scroll_at_held` call
-   sites are all direction `1`, so *"it prevents me from pressing ctrl and
-   using the zoom wheel to zoom back out"* has no driven assertion. It belongs
-   in a new `raster_wall/backout.rs` reusing part B's climbed state — that file
-   is at ~1,390 of 1,500 lines, and re-climbing sixty-eight notches in a
-   separate check is minutes of wall clock.
+   **★ The one gap left in this group is the arm of O220 that his sentence
+   actually names.** `raster_wall/backout.rs` now wheels *out* from whatever
+   the climb left standing and asserts the zoom falls, at the **canvas**
+   centre rather than the page rect's — at the wall the page midpoint is off
+   the window, and a Ctrl+wheel there lands on his desktop. It is falsified:
+   disabling the outward branch of `wheel_step` turns it red. But it landed on
+   the **drawing** arm, because O218's ceiling absorbs the refusal and the
+   dense drawing no longer ends its climb blank. **`reason=render-failed` —
+   the state his report is about — still has no driven coverage anywhere**
+   (`off_sheet.rs` covers the hatch's other arm, `nothing-visible`). He still
+   reaches it, so it is reachable and the harness cannot yet reach it on
+   demand; **O221's document-count dependence is the standing candidate for
+   the lever**, which is one more reason to do the zoom series next.
    **Built.** O218 — every ceiling the shell derived was
    `RenderQuality::multiplier` too high, so it offered a zoom the engine then
    refused; `viewer::raster_density` is now the single factor and
@@ -97,6 +103,21 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    six documents open, driven through the real binary. A blank canvas has
    exactly one oracle, a captured screenshot. `ui-verify` competes for his
    machine: ask in one line with the cost.
+   ★ **Two blockers stand in front of that series, both located in source.**
+   `ui-verify` has exactly two fixture slots (`--pdf`, `--second-pdf`) and
+   reaches the second document through a **one-path** environment seam, so
+   three or six documents in one driven process is not reachable at all —
+   *N separate processes* is in any case the closer analogue of what he
+   described. And `gl-pressure`, the instrument this whole group is for, is
+   **emitted by the shell and consumed by no check anywhere**; it carries the
+   OOM count and the surface the reading was pinned on, and has never been
+   read. ★ **The mechanism the series is meant to test is also located:**
+   `zoom_ceiling` takes five inputs and none counts documents, but the strip
+   cache is a field on `OpenDoc` and `render::settle` prunes it against
+   `doc.prefs.page_cache.texels()` — a **per-document** budget, so *N* drawings
+   are each permitted the whole cache against one machine's graphics memory.
+   That is a hypothesis with a citation, not a measurement, and it may not be
+   given to the operator as a cause.
    ⚠ **Two things must never be reported as the fix for his symptom.** The
    per-axis edge guard is **inert on his card** — measured, release build,
    off-screen: `gl-max-texture-side side=16384` against a whole-page edge

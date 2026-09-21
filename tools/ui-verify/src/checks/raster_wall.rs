@@ -562,9 +562,12 @@ impl Check for TheRasterWallStopsTheZoomInsteadOfPaintingAnError {
     }
 
     fn defect(&self) -> &'static str {
-        "when the rasterizer refuses a scale, the zoom must STOP there and the bottom bar must \
-         say why, rather than leaving `This page could not be drawn` across the drawing — the \
-         operator's *\"zoom should stop at the limit and not end up showing an error\"*"
+        "when the rasterizer refuses a scale, the zoom must STOP there, the bottom bar must say \
+         why rather than leaving `This page could not be drawn` across the drawing, and Ctrl+wheel \
+         must still carry the operator back OUT of whatever state it stopped in — his *\"zoom \
+         should stop at the limit and not end up showing an error\"* and his *\"it prevents me \
+         from pressing ctrl and using the zoom wheel to zoom back out\"*, which are one wall read \
+         at both ends"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
@@ -587,6 +590,7 @@ impl Check for TheRasterWallStopsTheZoomInsteadOfPaintingAnError {
 // here because they are this check's parameters and the arithmetic that chose
 // them belongs next to the `Check` impls that are judged by it.
 
+mod backout;
 mod park;
 mod trace;
 
@@ -1335,7 +1339,15 @@ fn drive_b(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String
             canvas.height()
         )));
     }
-    part_b(&session, &driver, ui_rect, canvas, report)
+    if let Some(failure) = part_b(&session, &driver, ui_rect, canvas, report)? {
+        return Ok(Some(failure));
+    }
+    // ★ Part C runs on whatever part B left standing — a held ceiling or a
+    // blank canvas — because O220's clause is about the gesture OUT of either
+    // one. It is here rather than in a `Check` of its own because reaching the
+    // wall costs sixty-eight or more notches on a 5.7 MB drawing, and this
+    // session is already standing in the state it needs. See `backout`.
+    backout::part_c(&session, &driver, ui_rect, canvas, report)
 }
 
 #[cfg(test)]

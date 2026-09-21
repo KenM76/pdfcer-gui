@@ -136,3 +136,38 @@ the answer for before believing it against one you don't** — here, any trace a
 all would have shown a non-zero total. Related:
 [[a-check-that-cannot-fail-is-not-evidence]],
 [[a-disproof-is-a-measurement-too-and-the-dead-hypothesis-was-the-truth]].
+
+## ★ SEVENTH, 2026-09-21 — the output has NO total, so the eye supplies one
+
+A commit here reported *"Tests: 31 ok, 0 failed"*. The workspace runs **4,628**
+tests. **31 is the number of test BINARIES.** `cargo test --workspace` prints
+one `test result:` line per target and **never prints a grand total**, so a
+`| tail` shows the last few targets' tallies -- each a small, plausible,
+correctly-formatted number -- and a reader assembles a total that was never
+offered.
+
+* This is the family's sixth distinct mechanism and the nastiest, because
+  **nothing is wrong with the command**. There is no header to skip, no second
+  table, no batching, no missing newline. The output is complete and correct;
+  what is missing is the aggregate, and the mind fills it in.
+* The tell is that the number is *too small to be interesting*. 31 tests for a
+  600k-line workspace should have read as a filtered run, and did not, because
+  it sat in a summary line nobody re-derives.
+* **The instrument:** sum the lines rather than reading one.
+  `cargo test --workspace 2>&1 | grep -E '^test result' | sed 's/.*ok\. \([0-9]*\) passed; \([0-9]*\) failed; \([0-9]*\) ignored.*/  /' | awk '{p+=$1;f+=$2;i+=$3} END{print p,f,i}'`
+
+⇒ **Before quoting a tally from a multi-target tool, ask whether the tool prints
+a total at all.** `cargo test`, `cargo clippy` per-crate, a chunked gate runner
+and a per-file linter all answer no. A `tail` on any of them reports the last
+chunk, and a `head` reports the first; neither reports the subject.
+
+**And the sharpest part: the correct instrument was already written down.**
+`RESUME.md`'s measured-state table prescribes exactly this -- sum the
+`test result:` lines, then cross-check with
+`cargo test --workspace -- --list | grep -cE ': test$'`, and *"passing plus
+ignored must equal the cross-count"*. Done properly it gives 4,628 + 62 =
+**4,690**, matching. The slip was not ignorance of the method; it was quoting a
+figure in a commit message without going to the table that owns it. ⇒ **A
+number in a commit message is subject to the same table as a number in a
+document** -- a commit is read far more often than a roadmap row.
+
