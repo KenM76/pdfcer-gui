@@ -13,7 +13,7 @@
 //! | clause | where |
 //! |---|---|
 //! | a refusal becomes a **remembered** limit | [`crate::render::ceiling::RasterCeiling`] |
-//! | the zoom is **pulled back** to it, once | `crate::render::settle`'s `learn_raster_ceiling` |
+//! | the zoom is **pulled back** to it, once | `crate::render::settle::absorb`'s `learn_raster_ceiling` |
 //! | the limit **binds every later gesture** | [`crate::viewer::zoom_ceiling`]'s fourth parameter |
 //! | *"the error can still be shown on the bottom bar"* | **here** |
 //!

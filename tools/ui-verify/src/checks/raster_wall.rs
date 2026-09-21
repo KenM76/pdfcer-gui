@@ -33,7 +33,7 @@
 //! wrong would have produced a check that passes on a build with the defect
 //! still in it.
 //!
-//! `render::settle`'s `absorb_render` now has a `BeyondRaster` arm that learns
+//! `render::settle::absorb`'s `absorb_render` now has a `BeyondRaster` arm that learns
 //! a raster ceiling from the refusal and **returns early** — without setting
 //! `render_error` and without clearing the page texture. That arm is part of
 //! O186's own fix (clause two), and it is upstream of the sentence. So on a
@@ -159,7 +159,7 @@
 //! Part B leaves the strip, enters Single, and climbs until the rasterizer's
 //! own content-dependent wall is met — `RasterizerLimit`, which is a different
 //! refusal from the pixmap-edge one and arrives at a scale that depends on how
-//! much ink the page holds. `render::settle::learn_raster_ceiling` turns it
+//! much ink the page holds. `render::settle::absorb`'s `learn_raster_ceiling` turns it
 //! into a learned ceiling and pulls the zoom back, tracing
 //! `raster-ceiling-learned … moved=true`. From that point the operator's fourth
 //! clause is the specification, and it is checked literally: the zoom does not
@@ -1039,7 +1039,7 @@ fn part_b(
              {:.0},{:.0}..{:.0},{:.0}. The operator's fourth clause is explicit: *\"zoom should \
              stop at the limit and not end up showing an error … the error can still be shown on \
              the bottom bar\"*. A refusal of kind `BeyondRaster` must be absorbed into a ceiling \
-             by `render::settle::absorb_render`, which leaves `render_error` unset and the page \
+             by `render::settle::absorb`'s `absorb_render`, which leaves `render_error` unset and the page \
              texture in place; a published `{MESSAGE_REGION}` means some refusal reached \
              `RefusalKind::Other` and was painted.",
             rect.min.x, rect.min.y, rect.max.x, rect.max.y

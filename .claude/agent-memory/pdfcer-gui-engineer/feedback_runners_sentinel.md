@@ -1,6 +1,6 @@
 ---
 name: a-runners-sentinel-is-a-claim-about-the-runner
-description: A batch runner that finishes and prints its done-marker has said nothing about whether any subject ran — make it tally what actually happened and abort on a command-line rejection
+description: A batch runner that finishes and prints its done-marker has said nothing about whether any subject ran — tally what happened, abort on a command-line rejection, read the script's own verdict line not the exit code, and if the runner re-derives its list from another script, inherit that script's variables too
 metadata:
   type: feedback
 ---
@@ -72,3 +72,51 @@ fix: make it print a tally that can be zero, and a `RESULT:` line that can say
 FAIL, before trusting it at any length. And prefer `run_in_background: true`
 from the start for anything that might overrun, so the exit code was never going
 to be the oracle in the first place.
+
+## ★★★ A RUNNER THAT RE-DERIVES ITS LIST INHERITS THE VARIABLES TOO — 2026-09-21
+
+A foreground slice runner for `tools/gates/run-all.sh`, written so it could not
+read a stale list — it re-greps the `run "…"` lines on every invocation — still
+carried two silent defects, and both were about the *transformation* it applied
+to those lines rather than the list itself.
+
+**Defect one, caught by falsification.** It did `cmd="${cmd//\"/}"` to strip
+quotes before `eval`. Planting three fake gates as `run "x" bash -c "exit 1"`,
+all three reported **PASS** and the runner exited 0. The strip turned
+`bash -c "exit 1"` into `bash -c exit 1` — `exit` with `$0=1`, which exits 0.
+
+The tempting reading is *"my fixture was the wrong shape, the real gates are
+fine"*, and it is even true: all 65 registered entries are
+`<interp> "$HERE/<script>" [--flag]` with no argument carrying a space, and a
+re-falsification with real gate-shaped scripts gave a correct
+`FAIL/SKIP/PASS`, `runner exit=1`. **That reading is still the wrong response.**
+A transformation that is sound only for the shape you happen to have is a claim
+nobody will recheck when the shape changes. The fix is to make the runner
+*refuse* a shape it cannot handle — a regex on the post-substitution command,
+`exit 2` on a miss — so the next quoted argument with a space aborts loudly
+instead of being reported green.
+
+**Defect two, found only because the refusal was written.** Running the shape
+regex across all 65 registered commands as a dry check, five did not match:
+they are written against **`$ROOT`**, not `$HERE`, and the runner substituted
+only `$HERE`. Those five would have run against an empty path — `python
+/tools/check-suite-name-absent.py` — and failed for a reason having nothing to
+do with the repository. They all sit in entries 23–65, which is the only reason
+the earlier 1–22 green survived the discovery.
+
+⇒ **A runner that re-derives its work list from another script has taken a
+dependency on that script's whole environment, not just its lines.** Grep the
+source for every `$VAR` the list can contain and define all of them, or assert
+that the post-substitution command contains no `$`.
+
+**How to apply:** whenever you write a partial/slice/subset runner over an
+existing batch script — because the full one is too slow, keeps being killed, or
+must run in the foreground. Two questions before quoting it: *what does it do to
+each line before running it, and for which shapes is that sound?* and *which
+variables does the source script define that mine does not?* Then falsify it
+with a fixture of the **real** shape — a fixture of the wrong shape can fail for
+a reason the real subjects never hit, which reads as a runner defect and wastes
+the falsification.
+
+Related: [[a-falsification-can-lie-in-both-directions]],
+[[a-detectors-scope-is-a-claim]], [[a-check-that-cannot-fail-is-not-evidence]].

@@ -1646,63 +1646,36 @@ property of the file rather than of the number. The files at risk are the ones
 `find crates tools -name '*.rs' | xargs wc -l | sort -rn | head` puts within
 about fifty lines of the 1,500 cap — the next ordinary edit to any of them turns
 a green gate red mid-task. This section is the seam for each, so that work is a
-patch rather than a re-derivation. **Every file named below is LF**; the
-mixed-ending hazard recorded against a patch script does not apply to this
-batch.
+patch rather than a re-derivation.
+
+⚠ **Check a file's line endings before anchoring a patch script into it.** A
+Python patch script that calls `write_text(s, encoding="utf-8")` on Windows
+writes CRLF, because text mode defaults to `newline=None` and translates to
+`os.linesep`; `read_text` hides it by reading universal newlines, so a round
+trip that looks lossless converts the file. Git normalises at `add`, so the
+commit is clean and the damage is invisible — until the *next* script whose
+anchor ends in a newline matches zero times against a perfectly correct anchor.
+Pass `newline="\n"` or use `write_bytes`.
+
+⚠ **`i/lf w/crlf` is not by itself a defect here — ask the attribute first.**
+`core.autocrlf` is `true` on this machine and `.gitattributes` opens with
+`* text=auto`, so a file that carries no `eol` override is *supposed* to be CRLF
+in the working copy. Only the pinned families — `.rs`, `.md`, `.sh`, `.py`,
+`.toml`, `.html`, `.svg` and the rest of that list — are wrong when the working
+copy is CRLF. `git check-attr eol -- <path>` answers which case a file is in,
+and `git ls-files --eol <path>` then says whether it is in the right state.
+
+⚠ **`git status` is not a content oracle; `git diff` is.** Rewriting a file with
+byte-identical content still leaves it listed as modified, because the index
+caches size and mtime and a rewrite invalidates both — and
+`git update-index --refresh` does not settle it. The authoritative comparisons
+are `git diff --name-only`, or `git hash-object --path <f> <f>` against
+`git ls-files -s <f>`; identical hashes mean identical content whatever status
+prints. Staging the file clears the noise, and stages nothing.
 
 Line numbers below are an aid to the eye only. The anchor in every case is the
 named item or the quoted banner, because a citation into a moving file goes
 wrong silently.
-
-**`render/settle.rs` → `render/settle/absorb.rs`.** Deciding what the picture
-should be is a different subject from what to do with the picture that came
-back. What stays changes when the operator gains a gesture or the strip gains a
-scheduling rule; what moves changes when the **renderer** gains a failure mode.
-Both existing headers write that sentence by omission — the module's own
-describes *"what is stale, what to re-rasterize now, what to debounce"*, and
-`render/mod.rs`'s table calls `settle` *"scheduling"* — and neither names the
-absorption, the backdrop promotion, the ink census or the learned ceiling.
-
-`rasterize`, `absorb_render`, `learn_raster_ceiling` and `poll_render` move as
-one run out of the second `impl OpenDoc` block, about 478 lines. `ZOOM_SETTLE`,
-`CURRENT_UNFILLABLE_SLOT`, `BEYOND_RASTER_SLOT`, the first `impl OpenDoc`
-block, `rehome_current_page`, `strip_page_orderable`, `raster_order_fillable`,
-`strip_page_state`, `strip_page_texture`, the whole `impl PdfcerApp` and
-`mod tests` stay. ⚠ **`rasterize` moves because it absorbs**, and leaving it
-behind is the one silent break on offer: it writes `render_in_flight`, which
-`absorb_render` reads, and the ★ paragraph arguing why the stamp is taken
-before the inline wait sits inside `rasterize` while its only reader is in
-`absorb_render`. Splitting them puts the stamp's two writers on opposite sides
-of the cut with the invariant documented on the far side from the code that
-needs it.
-
-`rasterize` and `poll_render` widen to `pub(super)`; `absorb_render` and
-`learn_raster_ceiling` stay private because their callers move with them.
-Nothing in the file is spelled `pub(super)` today, so nothing narrows on the way
-in — ⚠ but the two new spellings mean `pub(in crate::render::settle)` and would
-have to become `pub(in crate::render)` if the file were ever re-homed as a
-sibling. ⚠ The private `use` block does **not** reach the child as bare names:
-`absorb.rs` needs `crate::app::state::OpenDoc`, `crate::render::pressure::Surface`,
-`crate::render::raster`, `crate::render::strip::PageRaster` and
-`crate::render::worker::{RefusalKind, RenderKey, RenderOutcome}` of its own,
-while `settle.rs` must drop `Surface`, `RefusalKind` and `RenderOutcome` and
-narrow `raster::{self, PageTexture}` to `PageTexture` — `run-all.sh` runs clippy
-with `-D warnings`, so an unpruned import is a red gate rather than a warning.
-⚠ `mod tests`'s `///` block runs 34 lines above its `#[cfg(test)]`, which is
-`check-orphan-docs.py`'s exact shape; make the cut at the `impl` boundary and
-nowhere else. No gate cites the file, and `check-trace-names.py`'s mechanism 5
-still discharges `raster-ceiling-learned` because it searches both crates.
-
-Module-path prose citing the moved symbols has to be repointed at
-`render::settle::absorb`: `render/ceiling.rs`, `app/status/rasterstop.rs`,
-`viewer/mod.rs`, `app/state.rs`, `dialogs/diagnostics.rs`, `ENGINE_BACKLOG.md`
-and `tools/ui-verify/src/checks/raster_wall.rs`. The fallback seam is
-`render/settle/orderable.rs` — `strip_page_orderable`, `raster_order_fillable`
-and the test module that covers only the latter — and it is second because it
-separates those two predicates from `fill_strip`'s `filter` that consults them.
-Precedent for the shape is `render/worker.rs` + `render/worker/key.rs` one
-directory over, so `mod absorb;` is declared inside `settle.rs` and never
-reaches `render/mod.rs`.
 
 **`canvas/measure/mod.rs` → `canvas/measure/preview.rs`.** Drawing what the next
 click would commit is a different subject from advancing the pick. `Preview`,

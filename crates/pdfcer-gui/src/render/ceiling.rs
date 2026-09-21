@@ -91,7 +91,8 @@
 //!
 //! It does not touch the zoom. Learning is a record; *applying* the record is
 //! [`crate::viewer::zoom_ceiling`]'s job, and pulling the current zoom back to
-//! it is `crate::render::settle`'s, at the one point a refusal is absorbed.
+//! it is `crate::render::settle::absorb`'s, at the one point a refusal is
+//! absorbed.
 //! Keeping the three apart is what lets the arithmetic be unit-tested with no
 //! document, no renderer and no frame.
 

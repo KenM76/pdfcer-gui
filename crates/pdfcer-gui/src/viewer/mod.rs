@@ -769,7 +769,7 @@ pub fn raster_scale(
 /// A raster scale is `zoom × pixels_per_point × quality.multiplier()`, and four
 /// places in the shell need to run that conversion **backwards**:
 /// [`max_zoom_for_page`], [`ceiling::zoom_ceiling`]'s learned clause,
-/// `render::settle`'s `learn_raster_ceiling`, and `app::status::rasterstop`.
+/// `render::settle::absorb`'s `learn_raster_ceiling`, and `app::status::rasterstop`.
 /// Every one of them divided by the density alone, and the quality factor was
 /// simply absent — so on View ▸ Render ▸ Quality ≥ Normal the derived ceiling
 /// asked the engine for a pixmap over [`pdfcer_render::MAX_PIXMAP_EDGE`], the

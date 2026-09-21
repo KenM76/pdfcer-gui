@@ -499,7 +499,7 @@ pub struct OpenDoc {
     /// [`crate::render::ceiling::RasterCeiling`] for the whole of the reasoning:
     /// why the number cannot be derived, why one observation is enough, and why
     /// it is keyed on the page and its epoch. Written in
-    /// `crate::render::settle`'s `absorb_render`, read by
+    /// `crate::render::settle::absorb`'s `absorb_render`, read by
     /// [`crate::viewer::zoom_ceiling`] and by `crate::app::status::rasterstop`.
     pub raster_ceiling: crate::render::ceiling::RasterCeiling,
     /// **How many fonts the last mark-by-search in this document could not
