@@ -154,6 +154,14 @@ run "check-stale-blockers --self-test" bash "$HERE/check-stale-blockers.sh" --se
 # machine had last run the generator.
 run "check-third-party-licences --self-test" bash "$HERE/check-third-party-licences.sh" --self-test
 
+# Both of these had written a `--self-test`, and neither was reached: a
+# self-test absent from this list is a file nobody runs, and writing one is
+# half the work. `check-engine-api-drift` plants a new item in an EXISTING
+# module, which is the case its module rule could swallow;
+# `check-unreachable-refusals` plants both directions.
+run "check-engine-api-drift --self-test" bash "$HERE/check-engine-api-drift.sh" --self-test
+run "check-unreachable-refusals --self-test" bash "$HERE/check-unreachable-refusals.sh" --self-test
+
 # --- 1. the gates themselves ------------------------------------------------
 run "check-ui-strings"   bash "$HERE/check-ui-strings.sh"
 run "check-theme-colors" bash "$HERE/check-theme-colors.sh"
