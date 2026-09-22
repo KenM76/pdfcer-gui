@@ -115,12 +115,9 @@ mod fixture;
 #[cfg(test)]
 mod layer_fixture;
 
-/// **What the recogniser is doing, and the two ways to end it early** —
-/// the operator asked for both on 2026-09-01. Its header carries why Cancel
-/// and Stop must never collapse into one act.
 /// **A recognition running on a thread**, and the two ways to end it early.
-/// Split from this module on 2026-09-01: running a recognition is a different
-/// subject from performing one.
+/// Running a recognition is a different subject from performing one. The
+/// module header carries why Cancel and Stop must never collapse into one act.
 pub mod job;
 pub mod progress;
 
@@ -335,10 +332,9 @@ pub struct Recognised {
     /// `pdfcer_core::ocr::layer::add_ocr_layer` takes an immutable `&Document`
     /// and hands back a complete file, which made recognition the one
     /// capability in pdfcer that was not an *edit*. A shell holding an open
-    /// session could only offer *"here is a different file, somewhere else"*,
-    /// and the operator said what he thought of that on 2026-08-26: *"Why do I
-    /// have to save a copy instead of just go back into my pdf and save over
-    /// it?"*
+    /// session could only offer *"here is a different file, somewhere else"*.
+    /// The operator's requirement is that it not: recognition lands in the
+    /// open document and saves over it, like every other edit.
     ///
     ///
     /// # ★★ And it deletes the unsaved-edits refusal, which no guard could fix
@@ -555,10 +551,10 @@ pub struct Request {
     ///
     /// # Why this is a list
     ///
-    /// The operator, 2026-08-26: *"how do I OCR more than one page? Why does
-    /// the tool stop at one? […] Where is the option to select more than one
-    /// page? How did we end up with the most useless and un-userfriendly of
-    /// options for the OCR?"*
+    /// One recognition covers a set of pages the operator chooses, not the
+    /// current page. A one-page-at-a-time recogniser is refused: the documents
+    /// this is used on are multi-page sheets, and driving it page by page is
+    /// the whole cost of the capability.
     ///
     /// It was a `usize`. Nothing in `pdfcer-core` required that — the engine's
     /// own `add_ocr_layer` takes one page at a time, but its output is a
@@ -736,12 +732,12 @@ pub(in crate::ocr) fn recognise(
     }
 
     if pages.is_empty() {
-        // ★★★ **WHICH nothing, and the distinction was found by driving.**
+        // ★★★ **WHICH nothing — the two empty results are not the same.**
         //
-        // A full driven run on 2026-08-27 pointed this at the operator's own
-        // CAD sheet — every page of which already has text — and got
-        // `NothingRecognised`, which reads as *"the recogniser could not read
-        // your document"*. It had not looked at it. The remedy for the two is
+        // A CAD sheet whose every page already has text selects nothing, and
+        // reporting that as `NothingRecognised` reads as *"the recogniser
+        // could not read your document"* when it never looked. The two are
+        // different states and the remedy for each is
         // different: one is "there is nothing readable here", the other is
         // "turn off the skip if you meant it", and only the second is
         // actionable.
