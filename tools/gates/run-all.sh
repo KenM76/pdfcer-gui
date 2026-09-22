@@ -162,6 +162,16 @@ run "check-third-party-licences --self-test" bash "$HERE/check-third-party-licen
 run "check-engine-api-drift --self-test" bash "$HERE/check-engine-api-drift.sh" --self-test
 run "check-unreachable-refusals --self-test" bash "$HERE/check-unreachable-refusals.sh" --self-test
 
+# R7's only mechanical guard, and it had never been falsified. Seven arms,
+# because the gate has seven outcomes and a plant fires exactly one: three
+# planted domain dependencies (a manifest key, a `[dependencies.pdfcer-*]`
+# table header, a source import past a clean manifest), the comment exemption
+# asserted to PASS, both absent-precondition states asserted to exit 2 rather
+# than 0, and the real crate as the unplanted control. The exemption arm and
+# the two skip arms are the ones nobody writes by hand, and blinding the gate
+# four different ways fires a different single arm each time.
+run "check-shell-purity --self-test" bash "$HERE/check-shell-purity.sh" --self-test
+
 # --- 1. the gates themselves ------------------------------------------------
 run "check-ui-strings"   bash "$HERE/check-ui-strings.sh"
 run "check-theme-colors" bash "$HERE/check-theme-colors.sh"

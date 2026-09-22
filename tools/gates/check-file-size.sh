@@ -71,17 +71,50 @@
 #
 #   0  every .rs file scanned is within the limit
 #   1  at least one file is over
-#   2  PRECONDITION ABSENT — no `crates/` or `tools/` directory here, or no
-#      `.rs` file under them. NOT a pass: "nothing over the limit" and
-#      "nothing at all" must not produce the same green tick, and `run-all.sh`
-#      prints skips in their own block and exits 3.
+#   2  PRECONDITION ABSENT — no `crates/` or `tools/` directory here, no
+#      `.rs` file under them, or LIMIT is not a positive integer. NOT a pass:
+#      "nothing over the limit" and "nothing at all" must not produce the same
+#      green tick, and `run-all.sh` prints skips in their own block and
+#      exits 3.
 #
-# To falsify: run `tools/gates/check-file-size.sh 50` — it must go red and
-# name files. Run it from a directory with no `crates/` and it must exit 2.
+# There is no `--self-test`, and passing one is now a skip rather than a pass.
+# Falsification here is against the real tree, because the property is a line
+# count and the tree is the only corpus whose counts matter: run
+# `tools/gates/check-file-size.sh 50` and it must go red and name files; run it
+# from a directory with no `crates/` and it must exit 2; hand it `abc`, `0` or
+# a mistyped flag and it must exit 2 rather than printing a clean line over
+# comparisons that all failed.
 
 set -euo pipefail
 
 LIMIT="${1:-1500}"
+
+# ★ The argument is a LINE COUNT, and anything else must stop the run here.
+#
+# Not a style check. `[ "$n" -gt "$LIMIT" ]` sits inside an `if`, where a
+# non-integer makes `test` write "integer expression expected" to stderr and
+# return 2 — and `set -e` does not fire on a condition. Every comparison then
+# fails, `offenders` stays empty, and the gate prints its CLEAN line having
+# measured nothing. A mistyped flag (`--self-test`, `--limit 900`) is the
+# ordinary way in, and it reads as a pass.
+#
+# Exit 2 rather than 1 for the same reason an empty tree does: nothing was
+# compared, so no file has been cleared.
+case "$LIMIT" in
+    '' | *[!0-9]*)
+        echo "file-size: SKIPPED — '$LIMIT' is not a line count." >&2
+        echo "  The only argument is the limit, as a positive integer:" >&2
+        echo "      tools/gates/check-file-size.sh [LIMIT]   (default 1500)" >&2
+        echo "  There is no --self-test here; falsify it with a small LIMIT." >&2
+        echo "  Exiting 2, not 0: nothing was compared, so nothing is clean." >&2
+        exit 2
+        ;;
+esac
+if [ "$LIMIT" -eq 0 ]; then
+    echo "file-size: SKIPPED — a limit of 0 clears no file and fails every one." >&2
+    echo "  Exiting 2, not 1: that is a mistyped argument, not a tree defect." >&2
+    exit 2
+fi
 
 # Roots to scan. `target/` is excluded below: build artefacts include generated
 # .rs files that nobody wrote and nobody can split.

@@ -79,6 +79,7 @@
 # USAGE, THE EXIT CONTRACT, AND HOW TO FALSIFY IT
 # ===========================================================================
 #   tools/gates/check-shell-purity.sh [SHELL_CRATE_DIR]
+#   tools/gates/check-shell-purity.sh --self-test
 #
 #   0  pure — the manifest is clean AND at least one source file was scanned
 #   1  a domain dependency was found
@@ -88,11 +89,122 @@
 #      not print the same line. `run-all.sh` prints skips in their own block
 #      and exits 3.
 #
-# To falsify: add `pdfcer-core = { workspace = true }` to the shell's manifest,
-# or a non-comment line naming `pdfcer_core` in any shell source file — both
-# must exit 1. Point it at an empty directory and it must exit 2.
+# `--self-test` falsifies the gate against synthetic crates rather than against
+# prose: it plants each violation and asserts the gate catches it, plants the
+# comment exemption and asserts it does NOT, and asserts both absent-precondition
+# states exit 2 rather than 0. It exits 1 if any arm disagrees.
 
 set -euo pipefail
+
+# ===========================================================================
+# --self-test
+# ===========================================================================
+#
+# This gate already takes the crate directory as its argument, so falsifying it
+# needs no scratch copy of the repository and no edit to a tracked file: the
+# self-test builds synthetic crates in a temp directory and points the gate at
+# each in turn.
+#
+# ★ SEVEN ARMS, because this gate has seven outcomes and a plant fires exactly
+# ONE of them. A single red run proves the gate can fail; it proves nothing
+# about the six arms it did not exercise, and each of those prints a different
+# sentence and a different exit code. The arms that are never written by hand
+# are the two that exit 2 and the one that must exit 0 — an exemption nobody
+# has measured is an opinion, and a precondition-absent state nobody has
+# measured is indistinguishable from a pass at the point it matters.
+# ===========================================================================
+if [ "${1:-}" = "--self-test" ]; then
+    SELF="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+    REPO="$(cd "$(dirname "$SELF")/../.." && pwd)"
+    TD="$(mktemp -d)"
+    trap 'rm -rf "$TD"' EXIT
+    fails=0
+
+    CLEAN_MANIFEST='[package]
+name = "egui-shell"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+egui = "0.28"'
+
+    arm() {   # arm <label> <expected-rc> <crate-dir>
+        local got=0
+        bash "$SELF" "$3" >/dev/null 2>&1 || got=$?
+        if [ "$got" -eq "$2" ]; then
+            printf '  ok    %-26s rc=%d\n' "$1" "$got"
+        else
+            printf '  FAIL  %-26s rc=%d, expected %d\n' "$1" "$got" "$2"
+            fails=$((fails + 1))
+        fi
+    }
+
+    # --- arm 1: a dependency key in the manifest -----------------------------
+    mkdir -p "$TD/manifest-key/src"
+    printf '%s\npdfcer-core = { workspace = true }\n' "$CLEAN_MANIFEST" \
+        >"$TD/manifest-key/Cargo.toml"
+    printf 'pub fn shell() {}\n' >"$TD/manifest-key/src/lib.rs"
+    arm "manifest dependency key" 1 "$TD/manifest-key"
+
+    # --- arm 2: the [dependencies.pdfcer-*] table-header spelling ------------
+    # A separate arm because check 1 matches on two different patterns, and a
+    # plant of the first says nothing about the second.
+    mkdir -p "$TD/manifest-table/src"
+    printf '%s\n\n[dependencies.pdfcer-render]\npath = "../pdfcer-render"\n' \
+        "$CLEAN_MANIFEST" >"$TD/manifest-table/Cargo.toml"
+    printf 'pub fn shell() {}\n' >"$TD/manifest-table/src/lib.rs"
+    arm "manifest table header" 1 "$TD/manifest-table"
+
+    # --- arm 3: an import in source, manifest clean --------------------------
+    # The backstop arm: this is the shape a re-export or a dev-dependency takes,
+    # and the manifest stays clean throughout.
+    mkdir -p "$TD/source-import/src"
+    printf '%s\n' "$CLEAN_MANIFEST" >"$TD/source-import/Cargo.toml"
+    printf 'use pdfcer_core::PageSize;\npub fn shell(_: PageSize) {}\n' \
+        >"$TD/source-import/src/lib.rs"
+    arm "source import" 1 "$TD/source-import"
+
+    # --- arm 4: THE EXEMPTION, asserted rather than assumed ------------------
+    # The header promises that a doc comment may name the forbidden crates,
+    # because a rule you cannot describe is a rule that will not be described.
+    # That promise is a claim about behaviour, so it is measured: this crate
+    # names all three domain crates in comments only and must pass.
+    mkdir -p "$TD/comment-only/src"
+    printf '%s\n' "$CLEAN_MANIFEST" >"$TD/comment-only/Cargo.toml"
+    printf '%s\n' \
+        '//! The shell never depends on pdfcer_core, pdfcer_render or pdfcer_print.' \
+        '/* pdfcer_core is the application half; this crate is the substrate. */' \
+        ' * pdfcer_print lives on the other side of the seam.' \
+        'pub fn shell() {}' >"$TD/comment-only/src/lib.rs"
+    arm "comments name it: passes" 0 "$TD/comment-only"
+
+    # --- arm 5: clean manifest, no source at all -----------------------------
+    # Check 1 passes and check 2 never runs. The whole argument of this gate's
+    # closing block is that those two states must not print the same line.
+    mkdir -p "$TD/no-source"
+    printf '%s\n' "$CLEAN_MANIFEST" >"$TD/no-source/Cargo.toml"
+    arm "no .rs: SKIPPED not pass" 2 "$TD/no-source"
+
+    # --- arm 6: the directory does not exist ---------------------------------
+    arm "no crate dir" 2 "$TD/absent"
+
+    # --- arm 7: the real crate, unplanted ------------------------------------
+    # The control. Without it a self-test that had somehow been wired to fail
+    # on everything would read as six passes.
+    arm "real egui-shell passes" 0 "$REPO/crates/egui-shell"
+
+    if [ "$fails" -ne 0 ]; then
+        echo "shell-purity --self-test: FAIL — $fails arm(s) disagreed."
+        echo "  The gate does not behave as its header claims. Fix the gate, not"
+        echo "  the self-test: a check that cannot fail is not evidence, and one"
+        echo "  that fails on the exemption will be switched off within a week."
+        exit 1
+    fi
+    echo "shell-purity --self-test: ok — 7 arm(s): 3 planted violations caught,"
+    echo "              the comment exemption honoured, both absent-precondition"
+    echo "              states exited 2, and the real crate passed unplanted"
+    exit 0
+fi
 
 SHELL_DIR="${1:-crates/egui-shell}"
 MANIFEST="$SHELL_DIR/Cargo.toml"
