@@ -259,34 +259,54 @@ pub fn collect(ctx: &Context, page_count: Option<usize>) -> Vec<Action> {
     // the page keys must keep working right up until the caret is placed.
     let typing = crate::canvas::textedit::composing(ctx);
 
-    let (modifiers, pressed) = ctx.input(|i| {
-        (
-            i.modifiers,
-            [
-                Key::Plus,
-                Key::Equals,
-                Key::Minus,
-                Key::PageDown,
-                Key::PageUp,
-                Key::Home,
-                Key::End,
-            ]
-            .map(|k| i.key_pressed(k)),
-        )
-    });
-    let [plus, equals, minus, page_down, page_up, home, end] = pressed;
-
+    // ★★ **The zoom chords match the modifiers CARRIED BY THE KEY EVENT, not
+    // the frame's.** [`commands`] carries the whole argument and it applies
+    // here identically: `InputState::modifiers` is the state as of the END of
+    // the frame, `Event::Key` carries the state as of the KEYSTROKE, and the
+    // two disagree whenever one frame swallows the press and the modifier's
+    // release together. A frame is long exactly when a dense sheet is
+    // rasterizing — which is the moment the operator is reaching for zoom, so
+    // the failure concentrates on the keystroke that would have relieved it.
+    //
+    // ⚠ A test that builds a `RawInput` with the same `Modifiers` in the event
+    // and in the frame cannot see the difference, because in that input the
+    // two clocks agree by construction. The regression test for this sets them
+    // apart deliberately.
+    //
     // `command` rather than `ctrl`: it is Ctrl everywhere and Cmd on macOS,
     // which is what a Mac operator's fingers expect. pdfcer ships on Windows
     // first, but a hard-coded `ctrl` is a portability bug that costs nothing
     // to avoid now and is tedious to find later.
-    if modifiers.command {
-        if plus || equals {
-            actions.push(Action::ZoomIn);
-        }
-        if minus {
-            actions.push(Action::ZoomOut);
-        }
+    //
+    // The page keys below stay on `key_pressed`: they take no modifier, so
+    // they have no second clock to disagree with.
+    let (zoom_in, zoom_out, pressed) = ctx.input(|i| {
+        let chord = |wanted: &[Key]| {
+            i.events.iter().any(|e| {
+                matches!(
+                    e,
+                    egui::Event::Key {
+                        key,
+                        pressed: true,
+                        modifiers,
+                        ..
+                    } if modifiers.command && wanted.contains(key)
+                )
+            })
+        };
+        (
+            chord(&[Key::Plus, Key::Equals]),
+            chord(&[Key::Minus]),
+            [Key::PageDown, Key::PageUp, Key::Home, Key::End].map(|k| i.key_pressed(k)),
+        )
+    });
+    let [page_down, page_up, home, end] = pressed;
+
+    if zoom_in {
+        actions.push(Action::ZoomIn);
+    }
+    if zoom_out {
+        actions.push(Action::ZoomOut);
     }
 
     // The unmodified keys — the ones D1 suppressed. Installed only when a
@@ -700,6 +720,64 @@ mod tests {
         assert_eq!(
             actions_for(&ctx, key_press(Key::Equals, ctrl), Some(3)),
             vec![Action::ZoomIn]
+        );
+    }
+
+    /// ★★ The modifier is read from the KEYSTROKE, not from the frame.
+    ///
+    /// One long frame — a dense sheet rasterizing — can deliver the press and
+    /// the modifier's release together. `InputState::modifiers` then reports
+    /// `Ctrl` up while the event that arrived still carries it down, and a
+    /// chord read from the frame's snapshot is dropped silently. It is dropped
+    /// precisely when the operator wants zoom most, because a long frame is
+    /// what makes him reach for it.
+    ///
+    /// ⚠ [`key_press`] sets both places to the same `Modifiers`, so every
+    /// other test in this module is blind to the distinction by construction.
+    /// This one sets them apart, in both directions:
+    ///
+    /// 1. event carries `Ctrl`, frame does not → the chord must fire;
+    /// 2. frame carries `Ctrl`, event does not → the chord must not fire.
+    ///
+    /// Assertion 1 alone would pass on code that read neither clock and fired
+    /// on the bare key.
+    #[test]
+    fn a_zoom_chord_is_matched_on_the_events_own_modifiers() {
+        let ctx = Context::default();
+
+        let on_the_event = RawInput {
+            events: vec![Event::Key {
+                key: Key::Minus,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: Modifiers::COMMAND,
+            }],
+            modifiers: Modifiers::NONE,
+            ..Default::default()
+        };
+        assert_eq!(
+            actions_for(&ctx, on_the_event, Some(3)),
+            vec![Action::ZoomOut],
+            "the keystroke carried the modifier; only the end-of-frame \
+             snapshot had lost it"
+        );
+
+        let on_the_frame = RawInput {
+            events: vec![Event::Key {
+                key: Key::Minus,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: Modifiers::NONE,
+            }],
+            modifiers: Modifiers::COMMAND,
+            ..Default::default()
+        };
+        assert!(
+            actions_for(&ctx, on_the_frame, Some(3)).is_empty(),
+            "a bare `-` must not zoom because the frame happened to end with \
+             the modifier held"
         );
     }
 

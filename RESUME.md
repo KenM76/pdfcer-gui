@@ -120,6 +120,16 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    call site. ⚠ Its `gl-pressure` reading is **reported, never asserted** —
    silence there is a fact about free graphics memory on whatever machine ran
    the sweep, and a debug build produces it unconditionally.
+   ★ **Rungs 3 and 6 are designed and not built, and what blocks them is
+   named:** an off-screen window takes no OS input, and `PDFCER_DIAG_INVOKE`
+   cannot climb zoom because **no zoom-step command is registered** — every
+   registered zoom verb is absolute, and registering `view.zoom_in` is a
+   **ribbon** decision this role proposes rather than takes. `DESIGNS.md`
+   §"How the ladder is driven" carries the seam that is in scope, where the
+   synthetic keystroke must enter, the modifier trap that would make it pass
+   silently, and ⚠ why a keystroke ladder says **nothing** about O220 — his
+   `Ctrl`+wheel is a continuous `zoom_delta`, a different route from the
+   discrete action, and it is the one he reports as trapped.
    ★ **The mechanism the series is meant to test is also located:**
    `zoom_ceiling` takes five inputs and none counts documents, but the strip
    cache is a field on `OpenDoc` and `render::settle` prunes it against
@@ -815,6 +825,22 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
     fix this row used to prescribe.
 
 ## Traps
+
+- **A modifier read from the frame instead of the keystroke drops the chord
+  exactly when the frame is long — and a test helper hides it.** `egui` keeps
+  the modifier state twice: `InputState::modifiers` is the state at the END of
+  the frame, and each `Event::Key` carries the state at the KEYSTROKE. One long
+  frame — a dense sheet rasterizing — delivers press and release together, so
+  the snapshot says `Ctrl` is up while the event says it was down. `app::
+  keyboard::commands` has carried a written argument for matching per event for
+  some time; **its sibling `collect` in the same file was still on the snapshot,
+  for `Ctrl` `+` and `Ctrl` `-`** — so the dropped keystroke was the one that
+  relieves a long frame, during the long frame. Now fixed and falsified on both
+  arms. ⚠ **18 tests in that module were green over it**, because `key_press`
+  writes one `Modifiers` value into the event *and* into `RawInput`, which
+  makes the two clocks agree by construction. Any new test about a chord must
+  set them apart, in both directions. Grep tell: one expression reading both
+  `i.modifiers` and `i.key_pressed`.
 
 - **A census of what the program EMITS cannot be completed, so no check may be
   built on one.** Trace names reach the diagnostic channel by at least four

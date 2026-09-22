@@ -1949,6 +1949,138 @@ Neither row may be reported fixed on reasoning. The measurement is a zoom
 ⚠ A blank canvas has exactly one oracle — a captured screenshot. A green trace
 line saying a raster was ordered is not evidence that anything was drawn.
 
+### How the ladder is driven — the design, and the seam it needs
+
+**Rung 1 exists.** `the_graphics_pressure_instrument_reports_a_real_device_limit`
+launches a release build off the desktop, sends nothing, and reads the two
+`render::pressure` lines. It asserts the standing `gl-max-texture-side` against
+a plausibility floor and **reports** `gl-pressure` without asserting it. That
+is the control: one document, fit zoom, no gestures. It costs the operator
+nothing to run because it never touches his cursor.
+
+Rungs 3 and 6 need something rung 1 does not: a way to **climb zoom** in a
+process that cannot be driven by OS input, because its window is off the
+desktop.
+
+#### ★★★ `PDFCER_DIAG_INVOKE` is the right shape of seam and it cannot do this
+
+`app::frame`'s `scripted_invoke` takes a comma-separated list of command ids,
+rings one per frame through `dispatch_command` — the same choke point a chord
+reaches — and exists precisely because an off-screen window cannot be driven
+by OS input at all. It looks like the answer. It is not, and the reason is
+structural rather than incidental:
+
+**No zoom-step command is registered.** The registered zoom verbs are
+`view.zoom_actual`, `view.zoom_fit_height`, `view.zoom_fit_page`,
+`view.zoom_fit_width`, `view.zoom_region` and `view.zoom_selection` — every one
+of them absolute. `app::dispatch::zoom`'s header states the position and the
+reason: `view.zoom_in`, `view.zoom_out`, `view.next_page` and `view.prev_page`
+have no arm because no such command is registered — no catalog entry, no
+manifest item, no `crate::text::commands` copy, no `RIBBON_IA.md` row — so no
+token can reach one and an arm for it would be dead code wearing a design
+pattern. `shell::commands::reach::register` records the live route for each:
+`Action::ZoomIn` ← `app::keyboard`'s `Ctrl` `+` and the `+` in
+`app::status::zoom`; `Action::ZoomOut` ← `Ctrl` `-` and the same control's `−`;
+`NextPage` / `PrevPage` ← `PageDown` / `PageUp` and `app::status::page_box`.
+`RIBBON_IA.md` §6 assigns all four to the status bar.
+
+⚠ A grep for `"view.zoom_in"` **returns hits**, and every one of them is prose
+or a negative test case. Reading only the hit count says the command exists.
+
+#### The three options, and which one is this role's to take
+
+1. **Register `view.zoom_in` / `view.zoom_out`.** This is a **ribbon decision,
+   not a dispatch one** — it changes what the operator can reach and where the
+   verb lives, which `RIBBON_IA.md` settles and this role proposes rather than
+   improvises. `shell::commands::reach::UNREACHED_ARMS` carries what it would
+   take. ⇒ Not taken.
+2. **Drive the subject visibly with real input** while N−1 quiet processes sit
+   off-screen. Honest, and it is the operator's own gesture exactly. But it
+   competes for his machine, so it runs only on a night nobody is using it —
+   which makes it a rung that is skipped rather than a rung that is run.
+3. **★ A `PDFCER_DIAG_*` seam that substitutes for the KEYSTROKE.** In scope:
+   it is a harness affordance, it adds no operator-reachable verb, and it
+   changes nothing a keyless run can observe. This is the one to build.
+
+★ The distinction that makes (3) legitimate where (1) is not: a seam
+substitutes for the *gesture the harness cannot make*; registering a command
+changes *what the product offers*. Only one of those is a claim about the
+program.
+
+#### Where the synthetic keystroke must enter, and the trap in doing it
+
+`app::keyboard::collect` reads `ctx.input(...)`, and `egui`'s
+`InputState::key_pressed` is a scan of `self.events`. ⇒ pushing an
+`egui::Event::Key { pressed: true, .. }` into the input before `collect` runs
+is indistinguishable from a real keystroke to **every line downstream** — the
+`crate::canvas::textedit::composing` typing guard, the `Action` push, the
+dispatcher. That is the entry point, and it is the only one that tests the
+route the operator actually takes.
+
+⚠ **`Event::Key` carries its own `modifiers`, and `collect` does not read
+them.** It reads `i.modifiers` — the standing modifier state — in the same
+`ctx.input` call, separately from the key scan. A synthetic `Ctrl` `+` whose
+`command` flag lives only on the event therefore takes the `if
+modifiers.command` branch **false** and silently does nothing. The seam must
+set the standing state as well, and a check that does not assert the zoom
+actually moved would go green over that silence.
+
+⚠ A seam that instead calls `Action::ZoomIn` directly would bypass the typing
+guard and the modifier read both, and would pass on a build where `Ctrl` `+`
+was broken. The precedent to follow is `scripted_invoke`'s — enter at the same
+choke point, one rung per frame — not `PDFCER_DIAG_PASTE_CHORDS`'s, which
+overrides a *preference* at start-up and is a different kind of seam entirely.
+
+#### ★★ What this seam does NOT reach, and it is the row next door
+
+**`Ctrl` + wheel is a different route with a different type.** `canvas::zoom`
+reads `ctx.input(|i| i.zoom_delta())` — a **continuous** factor — where
+`app::keyboard` raises a **discrete** `Action::ZoomIn`. They converge only at
+the action funnel, and the funnel's own doc names five surfaces that can raise
+a zoom. ⇒ a synthetic-keystroke seam climbs the discrete ladder and exercises
+**one** of them.
+
+That matters here rather than pedantically, because O220 is *"when the error
+occurs it prevents me from pressing ctrl and using the zoom wheel to zoom back
+out — I have to click the zoom out control on the bottom bar."* His sentence
+names both routes and says one is trapped while the other still works. A rung
+built on the keystroke seam is therefore driving the route he reports as
+**working**, and it can produce a full green ladder while the reported defect
+is untouched.
+
+⇒ The ladder must not be read as progress on O220. That row is already driven
+on the wheel, with real input, by
+`the_raster_wall_stops_the_zoom_instead_of_painting_an_error`'s third part;
+what it still lacks is its **precondition** — a canvas standing on a
+`render-failed` refusal, on demand. The ladder's contribution to O220 is
+exactly that and nothing else: if the document count moves the ceiling, it is
+the lever that produces the state, and the wheel check that already exists
+then runs from it.
+
+#### What each background document has to have done before the rung means anything
+
+- `place: false` and an off-desktop viewport for every background process.
+  `Driver::confirm_uncovered` refuses a click a window owns, and every placed
+  window lands at the same `(780, 40)` — so N visible sessions would stack.
+- ⚠ **A document that has not rasterized holds no textures.** A rung that opens
+  six documents and never lets them draw is measuring one document with five
+  idle processes attached, and it will show no ceiling movement for a reason
+  that has nothing to do with O221. Each background process must be settled at
+  a zoom that demonstrably produced a whole-page raster — asserted from its own
+  trace, not assumed from a frame count — before the subject starts climbing.
+- The rungs must run **in one sweep on one machine**. What turns `gl-pressure`
+  from a reading into evidence is the *difference between rungs*, and free
+  graphics memory is not a constant across two runs an hour apart.
+
+⚠ **Walk the zoom, never sample two ends of it.** The count axis is the series
+1 / 3 / 6; within each rung the zoom is itself a series, because the scale at
+which the canvas first goes blank is a transition and a transition hides
+between two samples.
+
+⇒ Until the series exists, **O219 and O221 stay FILED**, nothing measured here
+is a cause, and the per-document cache reading remains a hypothesis with a
+citation rather than an explanation to give the operator.
+
 ### Needs the operator's ruling
 
 - **Is a single blank frame acceptable as the price of learning?** The design
