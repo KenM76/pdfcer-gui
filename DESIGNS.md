@@ -14,6 +14,293 @@ load-bearing: do not build past it. Rulings are recorded in
 
 ---
 
+## O226–O229 — the OCR text-layer mode: two synced views, a PDF↔text slider, merge and split
+
+### What the four rows are, as one build
+
+O226 is the mode and its two views. O227 is merge-and-split, which is **not**
+an OCR feature and must not be built as one. O228 is the selection echo between
+the views. O229 is the overlay colour and its persistence. They ship together
+because three of them are meaningless alone, and the fourth (O227) is the one
+that will be wanted everywhere else afterwards.
+
+### The measurement that decides the cost, taken before any of this was designed
+
+The obvious fear is that a second view of one document is a rewrite, because
+zoom and scroll are per-document everywhere in this shell. **It is not**, and
+the reason is that the state was already gathered into one place:
+
+- `viewer::ViewState` — the struct `OpenDoc::view` holds — already carries
+  `zoom`, `fit`, `page_index`, `display`, `rulers`, `grid`, `guides`,
+  `show_points`, `line_weights` and `off_page`. That is a per-**view** state
+  object that happens to be stored one-per-document. Nearly everything a second
+  pane needs to differ in is already inside it.
+- `canvas::present::show` already takes a `&mut egui::Ui` and draws the whole
+  canvas into it, with `show_in` beneath it drawing into the region the rulers
+  left. It does not assume it owns the window.
+
+So the shape of the work is **not** "make the canvas re-entrant". It is:
+
+> `OpenDoc::view: ViewState` becomes a small owner of one or two `ViewState`s,
+> and the four view fields that escaped onto `OpenDoc` move inside `ViewState`
+> where they belonged in the first place.
+
+**The four stragglers, and each is a per-view quantity mis-homed on the
+document:** `last_scroll_offset`, `zoom_anchor`, `observed_zoom` and
+`deep_zoom` (plus `zoom_commit_at` / `zoom_commanded`, which are the settle
+clock for one view's zoom). Every one of them is frame bookkeeping about *a*
+canvas, and with two canvases on screen a single copy is not a limitation —
+it is a bug that makes pane B's scroll steal pane A's anchor. The move is
+mechanical and the compiler finds every site.
+
+⚠ **Do not make `views` a `Vec`.** Two is the number he asked for, two is the
+number the sync rule is written for, and a vector invites a third pane nobody
+has a design for. A `primary` plus an `Option<secondary>` says the same thing
+and makes "is the split open?" a `.is_some()` rather than a length test that
+reads as arbitrary.
+
+### Why the selection echo (O228) is nearly free, and must stay that way
+
+**Selection lives on the document, not on the view**, and that is correct and
+should not change. Both panes therefore read one selection with no
+synchronisation of any kind: pane B draws an outline around whatever the
+document says is selected because that is the only selection there is.
+
+This is worth stating because the tempting refactor — "each view gets its own
+selection, and they sync" — would be a second selection model, would need a
+conflict rule nobody wants to write, and would break the thing he actually
+asked for, which is that the two panes are two looks at **one** editing
+session. The echo is not a feature to build; it is what falls out of not
+breaking the existing model.
+
+What *does* need building is the outline itself in the non-focused pane: the
+focused pane draws handles and the caret, the other draws **box outlines only**.
+Handles in both panes would give two drag targets for one object.
+
+### The scroll-and-zoom sync rule, and the three ways it goes wrong
+
+The rule is in `OPERATOR_REQUESTS.md` O226 and is repeated here because this is
+where it gets built: **the two views agree on the document point at their
+centres and on the zoom — never on the scrollbar offsets.**
+
+```
+follower.zoom   = author.zoom
+follower.centre = author.centre          // in PAGE coordinates, not pixels
+```
+
+A wider pane sees more page around the same centre. That is the whole rule.
+
+**Failure 1 — the feedback loop, already recorded in `D:\dev\rag\egui\`.** A
+view whose fit-zoom is computed from its own rect, driving a second view whose
+rect influences the first, oscillates and never settles. The guard is that
+**exactly one pane is the author per frame** — the one that received the
+gesture — and the follower writes nothing back that frame. Model it as: the
+author publishes `(zoom, centre)` into a one-frame outbox; the follower
+consumes it before it lays out; a pane never publishes in a frame in which it
+consumed.
+
+**Failure 2 — fit modes are not shareable.** `FitMode::Width` in a 400 px pane
+and a 900 px pane are different scales. Fit is resolved **in the pane that
+issued it**, producing a concrete zoom, and that concrete zoom is what
+propagates. The follower's `fit` becomes `FitMode::Actual`-equivalent (an
+explicit zoom), never a copy of the author's fit mode — copying the mode is how
+you get two panes that each "fit" and therefore never agree.
+
+**Failure 3 — the harness goes stale on a divider drag.** The RAG already
+records that harness coordinates go stale when a dock width changes. A
+draggable divider between two canvases is that same hazard with a new name.
+Every `ui-verify` check that clicks a canvas point must take its rect **this
+frame**, and the split's own checks must drive the divider and re-measure.
+
+**The lock.** A padlock on the divider, on by default, which breaks the sync so
+each pane scrolls and zooms alone. This is not a nicety: the moment he wants
+the scan at 400 % beside the whole page, a mandatory sync is a wall.
+
+### The overlay: how the text layer is actually drawn
+
+The slider is a single `f32` in `0.0..=1.0` per view, living in `ViewState`.
+It drives **two** things, and conflating them is the error to avoid:
+
+| slider | the page raster | the text overlay |
+|---|---|---|
+| 0.0 | full opacity | not drawn |
+| 0.5 | half | half |
+| 1.0 | not drawn | full opacity |
+
+- **The raster is not re-rendered.** Its opacity is a tint on the already-cached
+  texture. Re-rasterizing per slider position would put a render request behind
+  a drag, and this shell has learned that lesson once already.
+- **The overlay is vector, drawn every frame** from the run geometry, in the
+  colour O229 sets. It is never baked into a texture, because it must stay crisp
+  at every zoom and because a cached overlay is a second rendering path for
+  content that has exactly one.
+- **At slider 1.0 the field behind the text is blank**, not the scan at 1 %.
+  He said *"only the text layer is visible"* and meant it — the point is to read
+  the OCR output without the paper arguing with it.
+
+### R8b, settled here so it is not re-litigated
+
+The one-line test asks whether the canvas differs from the saved-and-reopened
+document **because pdfcer is marking its own uncertainty**. It is not. This is
+an operator-thrown X-ray switch over content that is already in the file,
+the same class as Acrobat's *Show OCR text*. The binding guards:
+
+1. The slider is at 0.0 in every other mode and leaving the mode restores the
+   true render with no residue.
+2. The mode is named off-canvas while it is on.
+3. Nothing about the overlay reaches the file. O229's colour is a `Prefs`
+   field, beside `shade_form_fields` and `chrome`, and the driven check owes
+   exactly this: change the colour, save, reopen, **the bytes are unchanged.**
+
+### The trap that will ship silently if it is not asserted
+
+OCR text is invisible on purpose — text render mode 3, drawn beneath the scan.
+**An edit that loses that mode prints the correction over the picture of the
+paper**, in black, at full size, and the operator finds out at the printer.
+
+This cannot be verified by reasoning and cannot be verified by a unit test on
+the shell's side, because the shell is not what writes the run. It needs a
+driven check on a real scanned fixture that edits a run, saves, reopens, and
+asserts the run is still invisible. **The fixture does not exist yet and is
+part of this work**, not a prerequisite someone else supplies.
+
+### O227, and why it is bigger than the mode
+
+He asked for merge-and-split across *"all of our text editing"*. Taken
+literally — and the standing sibling-kinds expectation makes it literal — that
+is free text, callouts, form field values, text-bearing markup, ce dimension
+labels, page content text, and this mode's OCR runs.
+
+**Merge** joins selected runs in reading order; the separator comes from the
+geometry (same baseline → space; consecutive lines → space, and no hyphen
+unless one was already there; paragraph end → break). The merged run's box is
+the union of what it consumed.
+
+**Split** is the inverse at the caret or at a selection boundary, each half
+keeping the geometry its text occupied.
+
+**The invariant that makes it safe:** undo restores the exact prior runs, not
+an approximation. A merge that cannot be undone into the same six boxes is a
+destructive edit wearing a formatting label, and OCR output is exactly where
+someone will merge forty runs and then want three of them back.
+
+**Build it as a text verb pair, not as an OCR gesture.** If it lands inside the
+OCR mode it will be re-implemented the first time he wants it on a callout, and
+the two copies will disagree about hyphens within a month.
+
+### ★★★ There are two OCR engines, and confidence is the reason this mode exists
+
+`pdfcer-core::ocr` already carries an engine-independent seam — the
+`OcrEngine` trait, `RecognizedWord`, `OcrPage`, `layer::add_ocr_layer` and
+`models`. `engine_ocrs` binds the `ocrs` engine today and **its
+`reports_confidence` returns `false`**. A second engine, **OCRcer**
+(`D:\dev\OCRcer\`, designed and being built from scratch, MIT code *and* MIT
+model), is built to the same trait and **its `reports_confidence` returns
+`true`** — per-word confidence as a calibrated margin, plus per-character
+boxes.
+
+That single difference reshapes this mode.
+
+**The mode is the disclosure surface R8b already demands.** OCR output is the
+textbook case of *"an inference the operator cannot see"* — invisible text,
+placed under a picture, asserting what the paper says. R8b's ruling on that is
+not "mark it up", it is **render normally and report off-canvas, both**. This
+mode is that report, made interactive.
+
+**The engine already has the primitive; do not invent a second one.**
+`OcrPage::words_needing_review(threshold)` returns exactly the words below a
+confidence bar, and `OcrPage::mean_confidence` summarises a page. The panel
+beside the two views is a view of that list: click a row, both panes centre on
+the word, the text pane has the caret in it. **That, not the slider, is the
+fastest route through a bad page** — the slider is for reading, the list is for
+working.
+
+**`reports_confidence()` is a capability, and R8 decides how it is expressed.**
+On a layer produced by an engine that reports no confidence, the review list
+and every confidence column **are not drawn at all** — not greyed, not zeroed,
+not shown as "n/a". R9 is explicit and the trait method exists precisely so
+this is answerable rather than guessed. The rest of the mode — the split, the
+slider, the overlay, selection, merge and split — is unaffected and must not
+be made conditional on it.
+
+⚠ **Do not bind any of this to OCRcer.** It is the second implementation of a
+trait that already has two, which is the moment a shell hard-codes one by
+accident. Everything the shell touches is `OcrEngine` / `RecognizedWord` /
+`OcrPage`; nothing names an engine.
+
+**Word granularity is why O227 is the right verb pair.** Both engines return
+**words**, each with a rect. A sentence is therefore *n* runs by construction,
+and merge-and-split is not a convenience on top of OCR — it is the only way the
+operator gets from what the engine produced to what the document says. Build
+merge and split before the slider if something has to be cut.
+
+### What the engine survey settled, and what it blocks
+
+**Read-back works.** `extract_page_view` against `session.view()` — the `_view`
+twin, or the model describes the page as it was before the last accepted edit —
+with `ExtractOptions::with_provenance(true)` returns positioned runs, and
+`ExtractedGlyph::invisible` is populated unconditionally. `EditableTextModel::recognize`
+then groups them into lines and blocks with a hit test. That is the whole read
+side of this mode and it needs nothing new.
+
+**Replace-in-place works and stays invisible.** `edit_text` rewrites only the
+show operator's operand, so the ambient `3 Tr` survives by construction;
+`format_text` goes further and restores it through the R88 ambient ladder,
+refusing by name rather than dropping it. The common correction is safe.
+
+**Three things are blocked, and they are filed:**
+
+| gap | filed |
+|---|---|
+| no write path can set text render mode — so insert-a-missed-word and any rebuild produce **visible ink over the scan** | **G034** |
+| no merge verb anywhere in the crate; `split_text_object` has no inverse | **G035** |
+| nothing finds or removes a previously written OCR layer, so re-OCR **stacks** a second invisible copy of every word | **G036** |
+
+⚠ **The consequence for O227, and it must not be quietly dropped.** Merge and
+split were asked for across *all* text editing, and on an **invisible** layer
+neither can be offered until G034 and G035 land — delete + `add_text` is the
+only route and it writes visible text. Under R8/R9 the command is therefore not
+registered for mode-3 runs and nothing is drawn. The rest of O227, on visible
+text, is blocked only by the missing merge verb.
+
+### Two more blockers, filed; two lesser gaps, not
+
+**Filed.**
+
+| gap | filed |
+|---|---|
+| the extraction and surgery models index the same page in two spaces with **no engine-supplied mapping** — the shell joins them by byte span and nothing guarantees the join | **G037** |
+| **no box-resize verb** — `move_text_run` translates, nothing sets a target width, and `set_h_scale` takes a percentage the shell must derive by re-implementing the engine's metrics | **G038** |
+
+G037 is the single largest hidden cost in this mode and the most likely source
+of a wrong-object edit: a mismatch does not panic and does not refuse, it edits
+a different run than the one the operator clicked.
+
+**Not filed — recorded so they are on disk and attributable.**
+
+1. **No run-level split.** `split_text_object` cuts between show operators
+   only. Splitting one word's `Tj` into two positioned words — which is exactly
+   what correcting an OCR run-together needs — is not expressible. It is a
+   sub-case of **G035**'s territory and should ride with it rather than open a
+   fourth file on the same subject.
+2. **No greyscale helper.** The OCR trait takes 8-bit luma; the RGBA→Rec.601
+   step exists only in `pdfcer-cli`'s `main.rs`, so every consumer rewrites it
+   and any two can disagree about the coefficients. A nuisance, not a blocker.
+
+### The coordinate trap, recorded before it is hit
+
+`ocr::words_to_page_space` is **`/Rotate 0` only**, while `pdfcer-render` does
+honour `/Rotate`. Use **`words_to_page_space_on(words, img_w, img_h, PagePlacement)`**,
+always. The rotation-blind form yields a transposed invisible layer that looks
+perfect on screen — because it is invisible — and is wrong everywhere it
+matters.
+
+Likewise `models::resolve_model_dir_with(..., required)` rather than
+`resolve_model_dir`: an empty `models/ocrs` otherwise resolves and shadows a
+good directory.
+
+---
+
 ## O181 — installed fonts in Add Text
 
 ### What is true

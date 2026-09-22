@@ -377,7 +377,35 @@ impl OpenDoc {
         // region belongs to THIS page. A region computed for page 4 does not
         // make page 5's order fillable, and both rectangles are valid, so the
         // mistake would be silent. The same argument is on `region_for` itself.
-        self.region_for(page).is_some() || self.strip_page_orderable(page, raster_scale)
+        self.region_for(page).map_or_else(
+            || self.strip_page_orderable(page, raster_scale),
+            // ★★★ A REGION IS NOT AUTOMATICALLY SMALL. See
+            // `strategy::region_raster_fits` for the two rectangles that arrive
+            // here wearing one type: the visible-rect tier's box is a multiple
+            // of the window and so the same size at every zoom, while the
+            // off-page halo box is fixed in the PAGE's space and therefore
+            // grows with the zoom exactly as the whole sheet does — and being
+            // the bigger rectangle, it reaches the wall first.
+            //
+            // The scale this asks at is the one the order will be RENDERED at.
+            // The canvas chose the region a frame earlier, at the scale that
+            // frame was drawn at, so on any frame the zoom steps up the region
+            // in hand was validated against a smaller number than the one about
+            // to be used. That one-frame skew is the whole defect: on the
+            // operator's site plan the halo box was picked at scale 6 and
+            // ordered at scale 8, came back `BadRasterSize` at 19073 × 13471,
+            // and `absorb_render` turned the refusal into the document's zoom
+            // ceiling — pinning a drawing that reaches 39,321,600 % at 600 %.
+            //
+            // ⚠ Declining withholds nothing and does not persist. The canvas
+            // re-decides every frame, so the next frame asks `halo::region` at
+            // the new scale, is told `None`, falls back to the whole sheet, and
+            // places an order that fills. The cost is one frame of the previous
+            // texture drawn soft — which is the staleness signal the canvas is
+            // built on — against a permanent ceiling learned from an order this
+            // shell should never have placed.
+            |region| crate::render::strategy::region_raster_fits(region, raster_scale),
+        )
     }
 
     /// What state a **strip** page is in, for
@@ -941,29 +969,69 @@ mod tests {
         );
     }
 
-    /// ★★★ **A region makes the sheet's size stop mattering, which is the whole
-    /// reason this predicate is not simply [`Self::strip_page_orderable`].**
+    /// ★★★ **A region makes the SHEET's size stop mattering — and puts the
+    /// REGION's size in its place.**
     ///
-    /// A region request is viewport-sized whatever the page is, so there is no
-    /// scale at which it cannot be allocated. The second assertion uses a scale
-    /// four orders of magnitude past the first because the deep tier really does
-    /// reach numbers like that — a driven run measured 36 million per cent — and
-    /// a predicate that held only for *moderately* large scales would be a
-    /// second undeclared ceiling, which is the exact defect O186 reported.
+    /// The first half is why this predicate is not simply
+    /// [`Self::strip_page_orderable`]: page 0's whole-sheet raster is hopeless
+    /// at [`BIG_SHEET_DOES_NOT_FIT`] while a 100 pt box on it is 10,000 px a
+    /// side and perfectly ordinary. The second half is the one that had to be
+    /// learned, and the assertion below is its whole point:
+    ///
+    /// > a region is not automatically small.
+    ///
+    /// The visible-rect tier's box is a multiple of the WINDOW, so its device
+    /// size is the same at 800 % and at 36,000,000 % — that is the tier this
+    /// predicate was written for and it really is scale-free. The **off-page
+    /// halo** box is not: it is fixed in the page's own space and grows with
+    /// the zoom exactly as the sheet does, and being the larger rectangle it
+    /// reaches `MAX_PIXMAP_EDGE` first. Answering `true` for it sent an order
+    /// that came back `BadRasterSize`, and `absorb_render` turned that refusal
+    /// into the document's zoom ceiling.
+    ///
+    /// ⚠ The third assertion is the one a rewrite must not drop. Without it the
+    /// test is satisfied by `region_for(page).is_some()`, which is the wrong
+    /// implementation it replaced.
     #[test]
-    fn a_region_for_this_page_makes_any_scale_fillable() {
+    fn a_region_is_fillable_only_while_the_region_itself_fits() {
         let mut doc = doc();
         doc.raster_region = Some(region_on(0));
 
         assert!(
             doc.raster_order_fillable(0, BIG_SHEET_DOES_NOT_FIT),
-            "with a region the request is viewport-sized, so the sheet's size \
-             stops being the question"
+            "a 100 pt box is 10,000 px a side at {BIG_SHEET_DOES_NOT_FIT}, so \
+             the SHEET's size has stopped being the question"
         );
         assert!(
-            doc.raster_order_fillable(0, 1.0e6),
-            "and it stays irrelevant a million-fold in, which is the range the \
-             region tier exists to serve"
+            !doc.raster_order_fillable(0, 1.0e6),
+            "but a million-fold in, that same box is 100,000,000 px a side and \
+             no such pixmap exists — the region's own size is now the question"
+        );
+
+        // The halo box on the operator's site plan, to the point: the union of
+        // an A3 sheet with content spilling off it, which is A1-sized. Its
+        // whole-page twin fits at scale 8 and it does not, which is exactly the
+        // gap the old predicate fell through.
+        doc.raster_region = Some((
+            0,
+            pdfcer_core::page_tree::Rect {
+                llx: -113.932,
+                lly: -4.179,
+                urx: 2270.013,
+                ury: 1679.604,
+            },
+        ));
+        assert!(
+            !doc.raster_order_fillable(0, 8.0),
+            "the off-page halo box is 2,384 pt wide, so at scale 8 it is 19,073 \
+             px and cannot be allocated — a region that is BIGGER than the \
+             sheet must not be waved through because it is a region"
+        );
+        assert!(
+            doc.raster_order_fillable(0, 6.0),
+            "while at scale 6 it is 14,304 px and orders perfectly well, which \
+             is what makes the line above a boundary rather than a blanket \
+             refusal"
         );
     }
 

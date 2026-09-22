@@ -164,12 +164,27 @@ pub fn region(crop: Rect, content: Option<Rect>, raster_scale: f32) -> Option<Re
     // asked of the bigger box. Rotation is irrelevant to it — a quarter turn
     // swaps the two edges and does not change which is longest — which is why
     // this function needs no `PageFrame` and the one below does.
-    let longest = (union.urx - union.llx).max(union.ury - union.lly);
-    if !longest.is_finite() || longest <= 0.0 || !raster_scale.is_finite() || raster_scale <= 0.0 {
+    //
+    // ★★★ Through `strategy::region_raster_fits` and not spelled here. The
+    // order that reaches the worker is guarded by that same predicate, one
+    // frame later and at a scale this call could not see — and a halo box
+    // validated here at one scale was rasterized at the next one up, refused,
+    // and turned into the document's zoom ceiling. Two spellings of one wall
+    // is how that happened; one spelling is why it cannot happen again.
+    //
+    // ⚠ The scale guard stays HERE and is not delegated, because the two
+    // functions answer bad input in opposite directions on purpose:
+    // `region_raster_fits` answers `true` so that a caller never withholds an
+    // order over a number it could not reason about, while this function
+    // answers `None` so that a nonsense rectangle is never sent to the
+    // renderer. Both are right for their own caller; only spelling the second
+    // one keeps it that way. The union's own edges need no such guard — it
+    // contains the crop box, which was checked finite and non-degenerate
+    // above.
+    if !raster_scale.is_finite() || raster_scale <= 0.0 {
         return None;
     }
-    let ceiling = f64::from(pdfcer_render::MAX_PIXMAP_EDGE - 1);
-    if longest * f64::from(raster_scale) > ceiling {
+    if !super::strategy::region_raster_fits(union, raster_scale) {
         return None;
     }
     Some(union)

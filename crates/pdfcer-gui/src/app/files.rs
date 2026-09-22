@@ -33,8 +33,9 @@
 //! | `PDFCER_DIAG_OPEN_PATH` | [`pick_document`] returns | For |
 //! |---|---|---|
 //! | unset | whatever the native picker says | the operator |
-//! | a path | [`Picked::Path`] — no dialog opens | a harness opening a second document |
+//! | a path | [`Picked::Path`] — no dialog opens, and **every** call answers the same path | a harness opening a second document |
 //! | set but **empty** | [`Picked::Cancelled`] — no dialog opens | a harness exercising the *cancel* path, which is the one that must change nothing |
+//! | paths joined by `;` | one entry per call, in order, then [`Picked::Cancelled`] for ever | a harness provisioning **one process with several documents** — see [`queued`] |
 //!
 //! ## The picker is `rfd`, and the version is not a choice
 //!
@@ -292,7 +293,15 @@ pub enum Picked {
 /// dialog pdfcer draws itself, not for one the OS owns.
 #[must_use]
 pub fn pick_document() -> Picked {
-    if let Some(answer) = from_env(std::env::var_os(DIAG_OPEN_PATH)) {
+    if let Some(raw) = std::env::var_os(DIAG_OPEN_PATH) {
+        let answer = match queued(&raw) {
+            Some(answer) => answer,
+            // Not a queue, so the single-valued seam answers exactly as it
+            // always has. `from_env` cannot return `None` for a value that is
+            // `Some`; the fallback is spelled rather than unwrapped because a
+            // seam is not worth a panic.
+            None => from_env(Some(raw)).unwrap_or(Picked::Cancelled),
+        };
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed.
@@ -309,6 +318,69 @@ pub fn pick_document() -> Picked {
         )
     });
     answer
+}
+
+thread_local! {
+    /// How many answers this process has already taken from the open queue.
+    ///
+    /// A property of the process, not of a document: the queue exists to
+    /// provision a process with several documents, so its position must
+    /// survive every one of them being opened and closed.
+    static OPEN_QUEUE_POS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
+/// Take this call's answer from a `;`-separated queue, one entry per call.
+///
+/// # ★★★ Why a queue, when every other seam here is single-valued
+///
+/// A shell that holds several documents at once has a ceiling question that
+/// only a several-document process can answer — `OPERATOR_REQUESTS.md` **O221**
+/// — and until this existed there was **no headless route to one at all**.
+/// `main` reads a single `argv[1]`, the synthetic file drop fires once per
+/// process, and a single-valued seam answers every picker with the same path,
+/// which opens one document however many times it is rung.
+///
+/// ⇒ *N* separate processes could be provisioned and *N* tabs could not, so the
+/// configuration the per-document strip cache would actually multiply in was
+/// the one that could not be measured.
+///
+/// # ★★ The single-valued seam must behave identically, and that is what the
+/// separator test buys
+///
+/// `None` here means *"this is not a queue"*, and the caller then runs the
+/// original path untouched. A value with no `;` in it therefore answers every
+/// call with the same path exactly as before — so every check written against
+/// the old seam keeps its meaning, and this cannot be a silent change to a
+/// seam six checks already depend on.
+///
+/// ★ A `;` cannot occur in a Windows filename, which is what makes the
+/// separator test safe rather than a heuristic. It is also the separator
+/// [`pick_merge_sources`] already uses, so the two list-valued seams in this
+/// module are spelled one way.
+///
+/// # An exhausted queue says the operator declined
+///
+/// Past the last entry — and for an empty entry between two semicolons — the
+/// answer is [`Picked::Cancelled`], which is the same answer the empty
+/// single value gives and for the same reason: a complete, correct outcome
+/// that opens no dialog. The alternative, falling through to the native
+/// picker, would put a real modal dialog in front of a harness that has no
+/// hand to dismiss it.
+fn queued(raw: &OsString) -> Option<Picked> {
+    let text = raw.to_string_lossy();
+    if !text.contains(';') {
+        return None;
+    }
+    let entries: Vec<&str> = text.split(';').collect();
+    let taken = OPEN_QUEUE_POS.with(|pos| {
+        let index = pos.get();
+        pos.set(index + 1);
+        entries.get(index).copied()
+    });
+    Some(match taken {
+        Some(entry) if !entry.is_empty() => Picked::Path(PathBuf::from(entry)),
+        _ => Picked::Cancelled,
+    })
 }
 
 /// Read the diagnostic seam, if it is set. Pure, so it can be tested.
@@ -970,6 +1042,41 @@ mod tests {
     /// A four-page fixture that really opens.
     fn fixture() -> PathBuf {
         engine_fixture("pageops/four-pages.pdf")
+    }
+
+    /// A value with no separator is not a queue, so the old seam is untouched.
+    ///
+    /// The arm that matters most: six checks answer their pickers through the
+    /// single-valued form, and every one of them calls `pick_document` more
+    /// than once. `None` here is what keeps them meaning what they meant.
+    #[test]
+    fn a_single_path_is_not_a_queue_and_never_runs_out() {
+        let raw = OsString::from("C:/drawings/one.pdf");
+        assert_eq!(queued(&raw), None);
+        assert_eq!(queued(&raw), None);
+    }
+
+    /// Entries come back in order, one per call.
+    #[test]
+    fn a_joined_list_answers_one_document_per_call_in_order() {
+        let raw = OsString::from("a.pdf;b.pdf;c.pdf");
+        assert_eq!(queued(&raw), Some(Picked::Path(PathBuf::from("a.pdf"))));
+        assert_eq!(queued(&raw), Some(Picked::Path(PathBuf::from("b.pdf"))));
+        assert_eq!(queued(&raw), Some(Picked::Path(PathBuf::from("c.pdf"))));
+    }
+
+    /// Past the end the answer is a declined dialog, not a native picker.
+    ///
+    /// ★ This is the arm that decides whether the seam is safe to leave set
+    /// for the whole of a run. Returning `None` at the end would fall through
+    /// to `rfd` and put a real modal dialog in front of a harness with no hand
+    /// to dismiss it — the exact failure the seam exists to prevent.
+    #[test]
+    fn an_exhausted_queue_declines_rather_than_opening_a_dialog() {
+        let raw = OsString::from("only.pdf;");
+        assert_eq!(queued(&raw), Some(Picked::Path(PathBuf::from("only.pdf"))));
+        assert_eq!(queued(&raw), Some(Picked::Cancelled));
+        assert_eq!(queued(&raw), Some(Picked::Cancelled));
     }
 
     /// The handler token the ribbon would raise for `id`.

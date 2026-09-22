@@ -454,6 +454,17 @@ pub mod ocr_progress;
 /// branch shares the success line's first token.
 pub mod off_page_census;
 
+/// ★★★ **Off-page content cost the operator his zoom** — O218/O221's
+/// mechanism, driven headless. The halo box is by construction BIGGER than the
+/// sheet, so it crosses the rasterizer's pixmap limit first; an order placed
+/// for it past that limit was refused, and the shell absorbed the refusal as
+/// the document's permanent ceiling. Its header carries why both controls are
+/// relational — the harness has one dependency and cannot import
+/// `pdfcer_render::MAX_PIXMAP_EDGE`, so the run proves it crossed the wall by
+/// reading the application ABANDONING the halo tier rather than by naming a
+/// number. Edit mode is load-bearing: off-page display is off in Read.
+pub mod off_page_ceiling;
+
 pub mod off_page_marquee;
 
 /// ★★★ **A press that BEGINS in the grey margin** — O23's second half, and

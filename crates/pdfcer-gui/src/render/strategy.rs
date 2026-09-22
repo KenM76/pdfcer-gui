@@ -280,6 +280,45 @@ pub fn whole_page_raster_fits(page_pts: (f32, f32), raster_scale: f32) -> bool {
     longest * raster_scale <= ceiling
 }
 
+/// **Can a raster of this REGION be allocated at this scale?**
+///
+/// [`whole_page_raster_fits`]' twin, asked of an explicit rectangle in the
+/// page's own user space rather than of the sheet's extent. Same ceiling, same
+/// arithmetic, same degenerate-input rule — one definition of where the wall
+/// is, because two would eventually disagree about it.
+///
+/// # ★★★ Why a region needs asking at all
+///
+/// Two different rectangles arrive here wearing one type, and they behave
+/// oppositely as the operator zooms:
+///
+/// | region | device size as zoom rises |
+/// |---|---|
+/// | [`crate::canvas::tier`]'s visible-rect tier | **constant** — the box is a multiple of the WINDOW, so the raster is the same size at 800 % and at 8,000,000 % |
+/// | [`crate::render::halo`]'s off-page box | **grows with the zoom**, exactly as the whole sheet's does — and it is the bigger rectangle, so it hits this ceiling FIRST |
+///
+/// A caller that assumes "a region was chosen, therefore the order is small"
+/// is right about the first row and wrong about the second. On the operator's
+/// own site plan the halo box is 2,384 × 1,684 pt against a 1,191 × 842 pt
+/// sheet, so it crosses `MAX_PIXMAP_EDGE` at about **half** the zoom the sheet
+/// does. `OpenDoc::raster_order_fillable` is where that assumption was made
+/// and is the caller this exists for.
+///
+/// # Degenerate input answers `true`
+///
+/// [`whole_page_raster_fits`]' rule, for its reason: a non-finite or inverted
+/// box cannot be reasoned about, the render path refuses it safely with its
+/// own sentence, and answering "it does not fit" here would make a caller
+/// silently withhold an order whose real problem is something else.
+#[must_use]
+pub fn region_raster_fits(region: pdfcer_core::page_tree::Rect, raster_scale: f32) -> bool {
+    let longest = (region.urx - region.llx).max(region.ury - region.lly);
+    if !longest.is_finite() || longest <= 0.0 || !raster_scale.is_finite() || raster_scale <= 0.0 {
+        return true;
+    }
+    longest * f64::from(raster_scale) <= f64::from(pdfcer_render::MAX_PIXMAP_EDGE - 1)
+}
+
 #[must_use]
 pub fn for_page(page_pts: (f32, f32), raster_scale: f32, ink: Ink) -> Strategy {
     let longest = page_pts.0.max(page_pts.1);

@@ -1213,6 +1213,15 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // reported as a defect. Its siblings running first is what makes its
         // `objects >= 1` assertion mean something.
         Box::new(off_page_census::TheOffPageCensusFindsTheObjectAndMarksIt),
+        // Sixth of the off-page group and the only headless one: no window is
+        // ever placed on the desktop and no OS input is sent, so it can run
+        // while the operator is working. Placed after the five that establish
+        // the object is reachable, painted, zoomable and counted, because all
+        // it asserts is what happens to the ZOOM when that object's halo box
+        // outgrows the rasterizer — and on a build where the object is not
+        // there at all its controls would turn the run into a SKIP that a
+        // reader could mistake for coverage.
+        Box::new(off_page_ceiling::TheOffPageHaloNeverCostsTheOperatorHisZoom),
         // Sixth and by far the most expensive of the off-page group:
         // FIVE launches, five maximizes and five screenshots, against one
         // shared profile. Last of the group deliberately — every rung of it

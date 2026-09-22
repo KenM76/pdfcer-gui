@@ -52,6 +52,24 @@ channel: a reply is an input to *how* a thing is built, never to *which*. Each
 row's argument is in `OPERATOR_REQUESTS.md`, which **only Ken closes**; the open
 set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
+**★ Newest, and ahead of everything numbered below: O226 – O229, the OCR
+text-layer editor.** Two views side by side, a slider that fades between the
+scan and the text layer, selection echoed as a box outline in the other view,
+merge and split across *all* text editing, and a remembered editing colour. The
+design is argued in `DESIGNS.md`; the mode-placement question (fourth mode, or
+a state inside Edit — recommended) is in `GUI_ROADMAP.md`. **The engine survey
+is done and the verdict is: reading the layer, correcting a word in place, the
+views, the slider, the overlay and selection are all unblocked shell work.**
+Blocked: **G034** (no write path sets text render mode, so insert and rebuild
+print visible ink over the scan), **G035** (no merge verb), **G038** (no
+box-resize verb). Carried as a risk rather than blocked: **G037** — the two
+text models share no index space, so the shell joins them by byte position and
+a mismatch edits the wrong word silently. Unasked-for and filed: **G036** —
+re-running OCR stacks a second invisible copy of every word. Also standing:
+`D:\dev\OCRcer\` is a second, MIT-model OCR engine being built for this project
+— **design to `pdfcer_core::ocr::OcrEngine`, never to OCRcer**, and treat
+`reports_confidence()` as an R8 capability (`ocrs` answers `false`).
+
 1. **O218 – O225, his eight-row zoom and text report. Four are built and
    driven, one is built with one clause undriven, two are observability only,
    one is unstarted and its first question belongs to the engine.**
@@ -66,8 +84,23 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    the state his report is about — still has no driven coverage anywhere**
    (`off_sheet.rs` covers the hatch's other arm, `nothing-visible`). He still
    reaches it, so it is reachable and the harness cannot yet reach it on
-   demand; **O221's document-count dependence is the standing candidate for
-   the lever**, which is one more reason to do the zoom series next.
+   demand.
+   **★★★ The lever is found, and it is not the document count.** With Edit
+   mode's off-page display on, the rasterized box is the **off-page halo
+   union** — fixed in *page* coordinates, larger than the sheet, growing with
+   zoom — so it strikes the engine's per-axis pixmap limit long before the page
+   would, and `render::settle` was asking whether the *whole page* fit before
+   sending the *halo*. Fixed via `render::strategy::region_raster_fits`; driven
+   by `ui-verify::the_off_page_halo_never_costs_the_operator_his_zoom`, every
+   arm falsified against the preserved pre-fix binary. Measured on
+   `fixtures/off-page-object.pdf`: before, a refusal at `scale=64.0` and a
+   ceiling learned at `48.0`, ending at 4,800 %; after, no refusal, no ceiling,
+   1,677,721,600 %. ⚠ **The eight-rung separate-process ladder recorded under
+   O221 measured a real zero of the wrong variable** — every rung ran in Read
+   mode with off-page display off, which is the branch the defect never
+   touched. ⚠ **And a new R8b gap is now owed:** above the halo's own wall the
+   off-page content silently stops being drawn, with no off-canvas report
+   (`GUI_ROADMAP.md`, rendering section).
    **Built.** O218 — every ceiling the shell derived was
    `RenderQuality::multiplier` too high, so it offered a zoom the engine then
    refused; `viewer::raster_density` is now the single factor and
@@ -847,6 +880,31 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
     fix this row used to prescribe.
 
 ## Traps
+
+- **Two rectangles arrive at the raster path under the name "region" and
+  behave OPPOSITELY as zoom rises.** The visible-rect tier's region is a
+  multiple of the **window**, so its device size is constant and it never nears
+  `MAX_PIXMAP_EDGE`. The off-page halo union is fixed in the **page's** own
+  coordinates, grows with zoom exactly as the sheet does, and being *larger
+  than the sheet* strikes the limit **first** — on `fixtures/off-page-object.pdf`
+  the union is 1.80× the sheet, so the halo wall lands at raster scale ≈ 45.5
+  against the page's ≈ 81.9; on a dense site plan ≈ 6.87. Any fit question must
+  be asked about **the rectangle actually being sent**
+  (`render::strategy::region_raster_fits`), never about the page. ⚠ The
+  assertion that stays green over this defect is *"the page still draws"* — it
+  does. ⚠ And the harness cannot import `MAX_PIXMAP_EDGE` (`ui-verify` has one
+  dependency), so every control here is **relational**, never numeric — which
+  is also correct, because the number is per-fixture.
+
+- **A seed trace is a one-shot start-up statement, not current state.**
+  `off-page-seed mode=… on=…` is emitted while the document opens, *before*
+  `PDFCER_DIAG_INVOKE` fires. Grepping it to answer *"is off-page display on
+  now?"* reports the start-up default forever and makes a working run look
+  inert. The authoritative reading is the per-frame `canvas-halo … offpage=`
+  field. ⚠ Beside it: `ui-verify` gives every check its **own** profile
+  (`.ui-verify-profiles/<check>/`), so a warm hand-run and a cold harness run
+  are different experiments — compare persisted preferences before comparing
+  source.
 
 - **A modifier read from the frame instead of the keystroke drops the chord
   exactly when the frame is long — and a test helper hides it.** `egui` keeps

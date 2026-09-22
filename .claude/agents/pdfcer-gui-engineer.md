@@ -284,7 +284,7 @@ misunderstanding.
 | `D:\Dev\pdfcer\` | **Read-only.** The engine, the old GUI, the docs, `tools/render-profile` |
 | `D:\Dev\pdfce\crates\pdfce-gui\src\` | The salvage source |
 | `D:\Dev\FeatureRequests\pdfce_FeatureRequests\` | The request channel to the engine |
-| `D:\Dev\temp\pdfcer\` | Test drawings, including the dense vector site plan used as the benchmark |
+| `D:\Dev\pdfTests\` | Test drawings, including the dense vector site plan used as the benchmark |
 | `D:/dev/rag/rust/`, `D:/dev/rag/egui/` | Ecosystem RAGs — read before non-obvious work, write findings back |
 | `C:\personal_rag\pdf\` | Empirical PDF-producer quirks |
 

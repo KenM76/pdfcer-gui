@@ -112,6 +112,208 @@ exactly that. **The canvas needs the same treatment and does not have it.**
 
 # OPEN
 
+## O226 — **FILED** — an OCR text-layer editing mode, two synced views with a PDF↔text slider
+
+> *"We need a way to edit the ocr text layer. I'd like a mode to do this where
+> the document is shown in two windows that can be placed side by side. The two
+> sides have a slider for transparency when slid all the way to the left only
+> the pdf shows in the affected window. As the slider is slid to the right the
+> text layer becomes more visible and dominant. When slid all the way to the
+> right only the text layer is visible. Each block of text can be selected
+> individually or with others in all of the usual ways and edited in all the
+> ways we have now. […] The two windows scroll and zoom in sync with each
+> other. They might be different sizes so make the scroll and zoom work in the
+> best way possible for a user - I honestly don't know what way that is.
+> Sometimes a user might just want to do all of the editing in only one window
+> instead of having two side by side."*
+
+**What he is asking for.** A scanned page carries two things at the same
+coordinates: the picture of the paper, and an invisible text layer the OCR
+engine wrote under it. Today the second is unreachable — you can select it and
+you can search it, but you cannot see where it actually sits or correct what it
+says. He wants a mode whose whole job is that layer.
+
+**The pieces, each of which is owed:**
+
+1. **A mode**, reached the way the other modes are reached, not a hidden
+   toggle. Entering it is what makes the text layer visible at all.
+2. **Two views of the same document, side by side**, each independently
+   sliderable. The ordinary case he described is: left slider hard left (the
+   scan as it really looks), right slider hard right (the text layer alone, on
+   a blank field) — so the eye can compare what the paper says against what the
+   OCR claims it says, which is the entire task.
+3. **A transparency slider per view**, continuous, not a three-way switch.
+   Hard left = the PDF alone. Hard right = the text layer alone. Everything
+   between is a blend, and the blend must be monotonic — no snapping, no dead
+   zone at the ends.
+4. **One-view operation is a first-class case, not a degenerate one.** Closing
+   the second view leaves a single canvas with its own slider and every editing
+   gesture still working. He said this explicitly; it is not an optimisation.
+5. **Selection and editing are the ones that already exist.** Click one block,
+   shift/ctrl for several, marquee, the context menu, the properties panel, the
+   caret, the keyboard. A second selection model for this mode would be the
+   defect, not the feature.
+
+**The scroll-and-zoom question he handed to us, answered here so it is not
+re-derived.** He said he does not know the right answer, which makes it ours to
+settle and to write down rather than to ask back. The two views can be
+different sizes, so "same scroll offset, same zoom" is wrong — the smaller view
+would show a different part of the page and the eye would have to hunt.
+
+> **The rule: the two views agree on the DOCUMENT POINT at their centres and on
+> the zoom, never on the scrollbar positions.** Scrolling either view moves the
+> other so that the same page coordinate sits at the centre of both. Zooming
+> either view sets the same scale in both, about that shared centre point. A
+> view that is physically wider simply sees more of the page around the same
+> centre — which is what a person comparing two renderings actually wants.
+
+Three consequences that must be built with it, because leaving any one out
+turns the mode into a fight:
+
+- **Sync is a lock the operator can break.** A padlock control, on by default.
+  Off, each view scrolls and zooms alone — needed the moment he wants the scan
+  at 400 % beside the whole page.
+- **Fit-zoom is per view.** "Fit page" in a narrow view and a wide view are
+  different scales; syncing them would mean neither view fits. Fit sets the
+  scale from the view that issued it, and the other follows — same rule as
+  above, no exception.
+- **The feedback loop is real and is already recorded.** `D:\dev\rag\egui\`
+  holds the fit-zoom feedback loop finding from this codebase: a view whose
+  zoom depends on its own rect, driving a second view whose rect depends on the
+  first, oscillates. The sync must be one-directional per frame — the view that
+  received the gesture is the author, the other is a follower and publishes
+  nothing back that frame.
+
+**R8b, and why this is not canvas marking.** The one-line test is whether a
+screenshot of the editing canvas differs from the same document saved and
+reopened, **and the difference is pdfcer marking its own uncertainty**. Here
+the difference is an operator-thrown X-ray switch, the same class as Acrobat's
+*Show OCR text* — it marks nothing, it reveals what is already in the file. The
+guards that keep it that way, and they are binding:
+
+- The slider sits at **hard left in every other mode**, and leaving this mode
+  restores the true render with no residue.
+- The mode's name is visible off-canvas while it is on, so a coloured overlay
+  is never mistaken for the document.
+- Nothing about the overlay is written to the file. The colour is a view
+  setting (**O229**), not content.
+
+**The trap that will otherwise be shipped and not noticed.** OCR text is
+invisible on purpose — text render mode 3, drawn under the scan so the scan
+still shows. An edit that loses that on write turns a correction into visible
+garbage printed over the picture of the paper. **Every write path out of this
+mode must preserve the invisible render mode**, and that must be asserted by a
+driven check on a real scanned fixture, not reasoned about.
+
+**Status: FILED. The engine has now been surveyed, and most of this is
+buildable today.**
+
+| what he asked for | engine answer |
+|---|---|
+| read the OCR layer as positioned blocks | **yes** — text extraction against the live session returns runs with boxes, and each glyph carries an `invisible` flag |
+| tell OCR text from ordinary text | **only by that flag** — there is no OCR marker, no layer tag, no producer heuristic. Invisible text *is* the signal, and it is the same signal clipped text gives |
+| correct a word in place | **yes, and it stays invisible** — the edit rewrites only the show operator's operand, so the OCR layer's invisibility survives by construction |
+| draw the text layer visibly | **the shell must do it** — the renderer has no option to reveal invisible text, so the overlay is drawn by this shell from the extraction geometry, which is what the design assumes anyway |
+| merge two words the OCR split | **no** — filed as **G035** |
+| insert a word the OCR missed | **no path that stays invisible** — filed as **G034** |
+| adjust a word's box width | **no** — nothing sets a run's target width; filed as **G038** |
+| click a word and know which run to edit | **the shell has to guess** — the two text models share no index space; filed as **G037** |
+
+**What this means for what you get, stated rather than quietly rescoped.** The
+mode, the two views, the slider, the overlay, selection and correcting a word
+in place are all shell work and are not blocked. **Merging and splitting OCR
+words is blocked on the engine**, and until G034 and G035 land the shell will
+not offer them on an invisible layer at all — because the only route available
+today turns your correction into visible black type printed over the scan.
+**Resizing a word's box is blocked too** (G038), so the handles will not be
+drawn on the OCR layer until that lands.
+
+⚠ **And one risk carried rather than blocked.** Nothing in the engine says
+which editable run a clicked word belongs to — the model that draws text and
+the model that changes it are indexed separately — so the shell joins them
+itself by byte position. It works on every drawing driven so far. If it ever
+stops working it will not crash and will not refuse: it will edit **a different
+word than the one clicked**. Filed as **G037**, and the mode should not ship
+without either the engine's answer or a driven check that re-verifies the join
+on every fixture.
+
+⚠ **A second thing the survey found and nobody had asked for.** The engine has
+no way to find or remove an OCR layer it previously wrote. Running OCR on a
+page twice **stacks a second invisible layer on the first**, and every word is
+then in the document twice — which a search finds twice and a text extraction
+returns twice. Filed as **G036**.
+
+## O227 — **FILED** — merge several text blocks into sentences and paragraphs, and split them back
+
+> *"Ideally we should have an additional feature added to all of our text
+> editing where we can select several blocks and merge them into sentences and
+> paragraphs, or split them up."*
+
+**This is not an OCR feature.** He said *"all of our text editing"*, and the
+standing expectation about sibling kinds makes that literal: wherever this
+shell lets a person edit text, merge and split are owed. OCR is only where he
+happened to need it first — OCR output is notorious for cutting one sentence
+into six boxes, and no amount of retyping fixes that if the boxes stay six.
+
+**Merge.** Several selected blocks become one, in reading order, with the
+separator chosen by what the geometry says: blocks on the same baseline join
+with a space, blocks on consecutive lines join with a space and no hyphen
+unless one was there, and a block that ends a paragraph joins with a break.
+The merged block's box is the union of what it consumed.
+
+**Split.** The inverse, at the caret and at a selection boundary: one block
+becomes two, each keeping the part of the geometry its text occupied. Splitting
+at a paragraph break is the common case and deserves to be one gesture.
+
+**What must be true of both:**
+
+- **Undo restores the exact prior blocks**, not an approximation of them. A
+  merge that cannot be undone into the same six boxes is a destructive edit
+  wearing a formatting label.
+- **Every text-bearing kind gets them or states why not** — free text, callouts,
+  form field values, text-bearing markup, ce dimension labels, page content
+  text, and this mode's OCR blocks. The parity table is the mechanism, the same
+  one `FORMS_PARITY.md` established; a kind the format genuinely cannot merge
+  says so with a citation.
+
+## O228 — **FILED** — a selection in one view is outlined in the other
+
+> *"When selected in one view the other view shows a box outline of the
+> selections as well."*
+
+Select a block in the scan view and its box appears in the text view, and the
+reverse. Without it the two views are two documents and the comparison the mode
+exists for cannot be made — he would be matching positions by eye at every
+edit.
+
+**This is a pre-commit affordance, which R8b explicitly welcomes.** It is the
+cursor, not content styling: a selection outline is the same class as a handle
+or a rubber-band, and it disappears with the selection. It is also the only
+thing either view draws that is not the document.
+
+**Scope it as a selection echo, not as an OCR feature** — if a later mode shows
+two views of anything, the echo is the same mechanism.
+
+## O229 — **FILED** — the OCR text layer's editing colour is settable and remembered
+
+> *"Also, we should be able to change the editing colour of the ocr text layer
+> just for editing, and remember the user's setting."*
+
+A colour control for the overlay, in settings and reachable from the mode, and
+persisted across runs like every other view preference.
+
+**"Just for editing" is the load-bearing phrase, and it is a correctness
+requirement.** The colour is a property of the view, never of the content. It
+is not written to the file, it does not survive into a render, an export, a
+print or a saved copy, and the document is byte-identical whether the overlay
+is magenta or black. A driven check owes exactly that: change the colour, save,
+reopen, and the file is unchanged.
+
+**Why a default of black is wrong.** The whole point is to read the OCR text
+against a scan of black type on white paper; a colour the eye separates at a
+glance is the default, and the operator moving it is the escape hatch for a
+document where that colour collides.
+
 ## O218 — **FILED** — the zoom ceiling must be a ceiling, not an error
 
 > *"Sometimes when I zoom in I still get the error "This page could not be
@@ -140,6 +342,56 @@ Three checks are owed, and none of them is the message's wording:
 **Related and filed separately because they may not share a cause:** O219 (the
 blank view before the error), O220 (the error traps the wheel) and O221 (the
 ceiling moves with how many documents are open).
+
+### ★★★ One cause found, measured and fixed — the off-page halo
+
+**The row stays FILED**, because he closes rows and because the general
+requirement above — *the ceiling is a number the shell knows before it asks* —
+is broader than the one path now repaired. But the specific refusal he was
+hitting has a name.
+
+**What it was.** `render::settle`'s orderability test asked whether the *whole
+page* would fit at a given scale. When Edit mode has off-page display on, the
+canvas does not rasterize the page — it rasterizes the **off-page halo union**,
+a box fixed in the page's own coordinates that encloses content reaching
+outside the crop box. That box is **larger than the sheet** and it grows with
+zoom exactly as the sheet does, so it strikes the engine's per-axis pixmap
+limit **first**. The shell asked about the sheet, got "yes, it fits", handed
+the rasterizer the halo box, and the rasterizer refused. The refusal message he
+quotes is the engine telling the truth about a request the shell should never
+have made.
+
+⚠ **This is the opposite of the intuition the word "region" invites.** The
+visible-rect tier's region is a multiple of the *window*, so its device size is
+constant as zoom rises and it never approaches the limit. The halo's region is
+fixed in *page* space and grows without bound. Two rectangles arrive at the
+same code path and behave oppositely.
+
+**The fix.** `render::settle` now measures whichever rectangle it is actually
+going to send, via a new `render::strategy::region_raster_fits`, falling back
+to the whole-page test only when there is no region.
+
+**Measured on `fixtures/off-page-object.pdf`** — a 200 pt sheet whose halo
+union is 360 pt across, 1.80× the sheet — driven off the desktop in Edit mode
+with a 24-chord `Ctrl++` ladder:
+
+| | before | after |
+|---|---|---|
+| refusal traced | `px=23040x12800 scale=64.0 region=1` | **none** |
+| ceiling learned | `scale=48.0`, zoom clamped 64.00 → 48.00 | **none** |
+| zoom reached | abandoned at 4,800 %, ended at 4,800 % | **1,677,721,600 %** |
+| distinct zoom figures after the halo wall | 0 | 18 |
+
+The driven check is
+`ui-verify::the_off_page_halo_never_costs_the_operator_his_zoom`, and it was
+falsified against the preserved pre-fix binary — every arm made to fire and
+name the right cause.
+
+⚠ **What is still owed on this path, and it is an R8b gap.** Above the halo's
+own wall the off-page content simply **stops being drawn**, silently. The page
+keeps zooming, which is what he asked for, but content he could see a moment
+ago is gone with no off-canvas report. Marking the canvas is forbidden;
+reporting it is required; neither is done. **Not yet filed.**
 
 ## O219 — **FILED** — the view goes blank one zoom step before the error
 
@@ -261,7 +513,83 @@ instrument wired to that default, and its call site removed.
 that way. On the control rung the expected result is silence, and a silence
 there is a fact about how much graphics memory was free on the machine that
 ran the sweep — not about this program. The rungs that carry three and six
-documents are what turn a reading into evidence, and they do not exist yet.
+documents are what turn a reading into evidence.
+
+### ★★★ The separate-window half is MEASURED, and the ceiling does not move
+
+Eight rungs, each *N* + 1 release processes launched off the desktop with a
+scripted `Ctrl++` ladder and no OS input, so the measurement costs the
+operator's cursor nothing:
+
+| fixture | *N* background documents | what each background document did | learned ceiling |
+|---|---|---|---|
+| A1 title block | 0, 0, 3, 6 | opened, idle at fit | **never refused at all** |
+| dense CAD drawing, 5.7 MB | 0, 0 | opened, idle at fit | `scale=393216.0` |
+| dense CAD drawing, 5.7 MB | 3, 6 | idle at fit | `scale=393216.0` |
+| dense CAD drawing, 5.7 MB | 3, 6 | **climbed the same ladder**, each holding its own deep-zoom raster | `scale=393216.0` |
+
+**The two identical *N* = 0 rungs are the noise floor, and it is zero** — they
+agree to the digit, on both fixtures, so a movement of any size would have been
+visible. Every dense rung learned the same ceiling and finished at the same
+zoom, including the one where seven processes were simultaneously holding
+deep-zoom rasters of a dense drawing.
+
+★ **The light fixture had to be replaced, and why is the reusable part.** On the
+A1 sheet no rung refused anything: above the whole-page tier the raster is
+window-sized, so the page's own size leaves the arithmetic and the climb runs
+to the operator's `max_zoom_percent`, which defaults to no limit. **A fixture
+that cannot reach its own ceiling cannot measure whether the ceiling moved** —
+the first four rungs agreed perfectly and said nothing.
+
+★★ **The mechanism agrees with the measurement, which is why this is a finding
+and not a run of luck.** `RefusalKind::BeyondRaster`'s own contract says the
+limit is an overflow of *a product of the page's extent and the scale*. That is
+arithmetic on a compile-time constant, not an allocation that can fail under
+pressure, and a quantity of that shape cannot move with what else is open.
+
+★ `render::pressure` traces only when the GL error flag is dirty, so its
+silence is a reading rather than an absence — and it stayed silent in **every**
+rung, including six climbing neighbours. The graphics-memory exhaustion O219
+names did not reproduce at that pressure on this machine.
+
+⚠ **What this does not settle, and it is the configuration the hypothesis above
+actually names.** Every rung put its documents in *separate processes*. The
+per-document strip cache multiplies within **one** process, where documents are
+tabs — and that configuration has no headless route at all today: the open seam
+carries one path, and the synthetic drop fires once per process. Until it is
+reachable, the per-document-budget reading stays a hypothesis with a citation.
+
+⚠ Scope: the discrete keyboard route, one machine, one GPU, those two fixtures.
+It says nothing about `Ctrl`+wheel, which is O220's separate route.
+
+### ⚠⚠ That ladder measured a real zero of the wrong variable
+
+**Every one of the eight rungs ran in Read mode with off-page display off.** In
+that configuration `render::settle` has no region to send and asks the
+whole-page question, which is the one path the O218 defect never touched. The
+ladder was a correct, careful, falsified measurement of a quantity that was
+never moving.
+
+**The thing that did move the ceiling is a per-view mode, not a per-process
+count.** With off-page display on — which is Edit mode's default — the
+rasterized box is the halo union, which is larger than the sheet, so the
+ceiling drops. Turn it off and the ceiling rises again. That is a ceiling that
+changes for reasons the operator did not consciously set and cannot see, and it
+is exactly the shape of *"I think, but I could be wrong and it could be a bit
+random."*
+
+**Whether it is the whole of what he reported is not settled.** A mode is not a
+document count, and *"the more I have open"* still points somewhere. The
+per-document strip cache multiplying **within one process** remains unmeasured
+and unreachable — the same harness gap named above. What has changed is that
+one real, reproducible, now-fixed mechanism for a moving ceiling exists, and it
+is not the one this section's table was built to test.
+
+★ **The reusable lesson, and it is why this correction is written out rather
+than deleted.** A control rung that agrees to the digit proves the instrument's
+noise floor and proves nothing about the hypothesis, if every rung sat on the
+same side of a switch nobody was varying. **Before trusting a zero, name the
+setting every rung shared.**
 
 ## O222 — **FILED** — text you just typed does not appear until you click the page again
 
