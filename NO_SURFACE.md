@@ -146,7 +146,7 @@ is published, delete the copy and call it.
 | Ruler major and minor tick | 6.0 and 2.5 pt | `canvas/rulers.rs:265,273` | none |
 | Ruler page-span alpha | 40 of 255 | `canvas/rulers.rs:282` | none |
 | Ruler fallback number format | millimetres at precision 2 | `canvas/rulers.rs:505` | none — the scale dialog can set a format, the fallback's precision cannot be reached |
-| Zoom minimum and maximum | 0.10 and 8.0 | `viewer/mod.rs:168,173` | none |
+| Zoom minimum and maximum | 0.10 and 8.0 | `viewer/mod.rs:164,169` | none |
 | Zoom-region minimum extent | 8.0 px | `canvas/zoom.rs:121` | none |
 | Canvas fit margin | 16.0 | `canvas/present.rs:82` | none |
 | Grip size and grab slack | 8.0 and 2.0 px | `canvas/handles.rs:100,109` | none |

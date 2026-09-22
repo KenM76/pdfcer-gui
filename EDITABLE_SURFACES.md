@@ -213,7 +213,7 @@ different names on the same screen and neither surface is wrong.
 let an operator place a guide: a guide is dragged out of a ruler gutter, and
 `canvas::guides::ruler_drag` registers nothing when the rulers are hidden
 (`app/prefs/opening.rs:192-205`). Rulers, grid and guides all ship off
-(`viewer/mod.rs:488-490`), so an operator who uses guides needs **two** switches
+(`viewer/mod.rs:565-567`), so an operator who uses guides needs **two** switches
 on, and the preference copy is the only place that says so. The one override is
 a document that has remembered guides: `OpenDoc::assemble` reads
 `canvas::guides::opening`, whose rule is that the presence of the work is the
