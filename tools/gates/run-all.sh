@@ -182,6 +182,17 @@ run "check-shell-purity --self-test" bash "$HERE/check-shell-purity.sh" --self-t
 # read belonged to the `tr` at the end of the pipe.
 run "check-verb-coverage --self-test" bash "$HERE/check-verb-coverage.sh" --self-test
 
+# Nine arms, and the three that matter are the exemption window. This gate
+# lets a site through when `clipboard-chord-exempt:` appears on the line or
+# within fourteen lines above it, and a window is the one thing a hand test
+# never probes at its edge: the fourteenth line must pass and the fifteenth
+# must not, or the window is whatever the loop happens to do. The other
+# non-obvious arms are a comment quoting the broken form, which must pass,
+# and a root holding no Rust at all, which must exit 2 — a directory nobody
+# reads is not a clean directory, and this gate defaults to two roots, so a
+# rename of either would otherwise have made it silently green over nothing.
+run "check-clipboard-chords --self-test" bash "$HERE/check-clipboard-chords.sh" --self-test
+
 # --- 1. the gates themselves ------------------------------------------------
 run "check-ui-strings"   bash "$HERE/check-ui-strings.sh"
 run "check-theme-colors" bash "$HERE/check-theme-colors.sh"
