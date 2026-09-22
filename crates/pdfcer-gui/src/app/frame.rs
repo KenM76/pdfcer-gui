@@ -85,15 +85,15 @@ fn scripted_invoke() -> Option<String> {
     use std::sync::atomic::{AtomicUsize, Ordering};
     /// ★ How many of the listed commands have been rung.
     ///
-    /// Was an `AtomicBool` while the variable held one id. It became a counter
-    /// on 2026-08-26 for the reason in the header's *"one command and not a
-    /// script"* section, which is still the governing argument and is not
-    /// weakened by this: **a list of doorbells is not a grammar.** There is no
-    /// syntax to learn, no arguments, no conditionals and no state — the ids
-    /// are the same ids the registry already publishes, and each is dispatched
-    /// through the same `dispatch_command` a keystroke reaches.
+    /// A counter rather than a flag, and the header's *"one command and not a
+    /// script"* argument survives that intact: **a list of doorbells is not a
+    /// grammar.** There is no syntax to learn, no arguments, no conditionals
+    /// and no state — the ids are the same ids the registry already publishes,
+    /// and each is dispatched through the same `dispatch_command` a keystroke
+    /// reaches.
     ///
-    /// What forced it: **a capability can take two commands to reach.** Arming
+    /// Why a list and not a single id: **a capability can take two commands to
+    /// reach.** Arming
     /// a form-field tool needs Edit mode first, because the arm declines
     /// without `edit_content`. With a single-shot variable, every feature gated
     /// behind a mode was unreachable headlessly — implemented, unit-tested and
