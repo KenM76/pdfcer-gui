@@ -126,7 +126,28 @@ re-running OCR stacks a second invisible copy of every word. Also standing:
    Escape commits on the
    canvas caret, on the note window, and on the Comments panel's note and reply
    editors, and a dialog's **first** Escape leaves the field so that one press
-   cannot reach Cancel. ⚠ `Context::text_edit_focused()` cannot guard Escape at
+   cannot reach Cancel. ★ **O223's scope was "any tool that has text", which
+   names a family rather than a place, so it is held by a gate at the
+   constructor rather than by a table of surfaces.**
+   `tools/gates/check-escape-disposition.sh` finds every
+   `TextEdit::singleline(`/`multiline(` under `crates/` — dropping lines whose
+   trimmed form opens a comment, so prose naming the constructor cannot satisfy
+   it — and fails unless each carries `escape-disposition:` plus one of five
+   validated words on its own line or within the fourteen above. The vocabulary
+   is CLOSED and an invented sixth word is a failure, because a free-form
+   marker degenerates into a marker the next author copies without reading.
+   Currently 63 fields: 10 commit · 11 keep the draft · 27 cancel a dialog ·
+   5 hold nothing of his · 10 are fields a test builds. Three shapes a hand
+   table would have collapsed wrongly are *not* gaps: a commit keyed on
+   `lost_focus()` **is** an Escape commit, because egui surrenders focus on
+   that key and the two are one event; a draft written back to panel state
+   every frame loses nothing, which is a different shape from committing, not
+   a weaker one; and a ce dimension's label is derived from its group's scale,
+   unit and format, never typed. ⚠ **The gate cannot tell whether an answer is
+   TRUE** — a site labelled `commits` with a broken commit path passes — so its
+   green is not a behaviour claim. The one thing still owed on O223 is the
+   driven assertion, registered as `escape_commits_text` in `ui-verify` and
+   never run; unit tests call the helper, not the key. ⚠ `Context::text_edit_focused()` cannot guard Escape at
    all — egui clears focus in `Focus::begin_pass`, before any widget runs and
    without touching the buffer — so a guard asking it about Escape is INERT,
    not weak, and the dialog carries a previous-pass flag instead. O225 — page
