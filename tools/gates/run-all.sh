@@ -668,6 +668,12 @@ run "check-forwarded-features" bash "$HERE/check-forwarded-features.sh"
 # its gate's whole job was to fail the build the moment the shim outlived its
 # cause, and to be deleted along with the shim when it did. That is what a
 # tripwire is for, and why none of this survives as a running gate.
+# Its `--self-test` plants in the REAL TREE, because `git grep` is where this
+# gate looks and a fixture elsewhere would exercise none of it. Both arms are
+# asserted: a stale name is caught, and a stale name sharing a line with an
+# exempt substring is NOT -- the cost of a line-oriented filter, asserted so
+# that it is a cost somebody can see rather than a surprise somebody finds.
+run "check-old-name-absent --self-test" bash "$HERE/check-old-name-absent.sh" --self-test
 run "check-old-name-absent" bash "$HERE/check-old-name-absent.sh"
 
 # ★★★ `check-engine-backlog` — `check-verb-coverage`'s twin

@@ -114,6 +114,64 @@
 
 set -uo pipefail
 
+# ═══════════════════════════════════════════════════════════════════════════
+# `--self-test` — PLANTED IN THE REAL TREE, BECAUSE THAT IS WHERE IT SCANS
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# This gate reads the repository through `git grep`, so a fixture directory
+# somewhere else would exercise nothing it actually does. The plant is a file
+# in the working tree, removed by a trap whether the run succeeds, fails or is
+# interrupted — a self-test that can leave a stale-name file behind would make
+# every later run red for a reason nobody planted.
+#
+# Two arms, because this gate's allow-list drops the WHOLE line:
+#
+#   1. a plain stale reference must be CAUGHT;
+#   2. the same reference sharing a line with an exempt substring must RIDE
+#      OUT. That is not a bug being asserted as correct — it is the cost of a
+#      line-oriented filter, and an asserted cost is a cost somebody can see.
+#      Without this arm the ⚠ in the allow-list is speculation.
+if [[ "${1:-}" == "--self-test" ]]; then
+    HERE_REPO="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+        echo "old-name-absent --self-test: SKIPPED — not inside a git repository."
+        exit 2
+    }
+    PLANT="$HERE_REPO/zz-old-name-self-test-plant.md"
+    trap 'rm -f "$PLANT"' EXIT
+    fails=0
+
+    printf 'a stale reference to pdfce_core, planted by --self-test\n' >"$PLANT"
+    if "$0" >/dev/null 2>&1; then
+        echo "  MISS: a plain stale reference did not fail the gate."
+        fails=$((fails + 1))
+    fi
+
+    printf 'the engine binds /pdfceF1 and this also says pdfce_core\n' >"$PLANT"
+    if ! "$0" >/dev/null 2>&1; then
+        echo "  MISS: a stale reference sharing a line with an exempt substring"
+        echo "        was caught — which is better than the documented behaviour,"
+        echo "        so the warning in the allow-list is now wrong and must be"
+        echo "        rewritten rather than deleted."
+        fails=$((fails + 1))
+    fi
+
+    rm -f "$PLANT"
+    if ! "$0" >/dev/null 2>&1; then
+        echo "  MISS: the unplanted tree does not pass, so neither arm above"
+        echo "        measured anything."
+        fails=$((fails + 1))
+    fi
+
+    if [[ "$fails" -gt 0 ]]; then
+        echo "old-name-absent --self-test: FAIL — $fails arm(s) did not behave."
+        exit 1
+    fi
+    echo "old-name-absent --self-test: PASS — a stale name is caught, a stale name"
+    echo "                             sharing a line with an exemption is not, and"
+    echo "                             the tree without a plant is clean."
+    exit 0
+fi
+
 # `LC_ALL=C`, and its absence makes this gate REPORT CLEAN WHILE BROKEN.
 #
 # On this machine GNU grep refuses `-P` outside a unibyte or UTF-8 locale:
@@ -136,12 +194,44 @@ PATTERN='pdfce(?!r)|PDFCE(?!R)|Pdfce(?!r)'
 # Lines that are allowed to carry a surviving occurrence. Anchored on the
 # substrings above rather than on filenames, so moving a file cannot silently
 # widen the exemption.
+# `pdfceF` is the ENGINE's `/Font` resource prefix, not this project's name:
+# `text_edit::addtext::pick_font_name` binds `/pdfceF1`, `/pdfceF2`, … into the
+# bytes it writes, and `edit.rs` binds `/pdfceFm{n}` for an XObject. Anything
+# here that spells it is quoting a document pdfcer produces — a fixture built
+# to match that emission byte for byte, or prose explaining one — so renaming
+# it would not correct a miss, it would make the file describe a document the
+# engine never writes. Exempt for `Cargo.lock`'s reason: it records what
+# another crate calls things, and that crate is read-only until fold-in.
+# The anchor is the capital `F`, which no stale `pdfce-gui` / `pdfce_core` /
+# `PDFCE_*` reference can produce. ⚠ Like every entry here it drops the WHOLE
+# line, so a real miss sharing a line with a font name would ride out on it.
 # `engine-api-snapshot.txt` is the API-drift gate's GENERATED record of the
 # ENGINE's public names (`--update` rewrites it), exempt for `Cargo.lock`'s
 # reason: it records what another crate calls things. The engine ships a field
 # literally named `appearance_was_pdfces`, and a per-line marker on it would be
 # destroyed by the next `--update`. (old-name-exempt: names the field)
-ALLOWED='Dev\\pdfce\\crates\\pdfce-gui|pdfce_FeatureRequests|^Cargo\.lock:|^tools/gates/engine-api-snapshot\.txt:|old-name-exempt:'
+# One list, read twice: it builds the filter AND it is what the clean line
+# enumerates. An exemption cannot be added without the passing run naming it.
+ALLOWED_PAT=(
+    'Dev\\pdfce\\crates\\pdfce-gui'
+    'pdfce_FeatureRequests'
+    'pdfceF'
+    '^Cargo\.lock:'
+    '^tools/gates/engine-api-snapshot\.txt:'
+    'old-name-exempt:'
+)
+ALLOWED_WHY=(
+    "the salvaged GUI's path, which breaks if it is renamed"
+    'the request-channel folder shared with the engine'
+    "the engine's /Font resource prefix, written into documents it produces"
+    "Cargo.lock, Cargo's own record of what resolved"
+    "the API-drift gate's generated record of the engine's public names"
+    'a line carrying old-name-exempt: and its reason'
+)
+ALLOWED=$(
+    IFS='|'
+    printf '%s' "${ALLOWED_PAT[*]}"
+)
 
 # THE SCAN'S OWN EXIT STATUS IS CHECKED.
 #
@@ -209,10 +299,32 @@ MSG
     exit 1
 fi
 
-ALLOWED_COUNT=$(printf '%s
-' "$RAW" | grep -cE "$ALLOWED" || true)
+# The clean line reports the exemptions CLASS BY CLASS, from the same list the
+# filter above was built from. A hand-written sentence naming four of six
+# classes is how a widening goes unannounced: the total still moves, so the
+# number looks alive while the prose beside it has stopped being true.
+ALLOWED_COUNT=$(printf '%s\n' "$RAW" | grep -cE "$ALLOWED" || true)
 echo "old-name-absent: clean - nothing names the old project except the"
-echo "                 $ALLOWED_COUNT documented reference(s): the salvaged GUI's path, the"
-echo "                 shared request-channel folder, Cargo.lock, and lines that carry"
-echo "                 an old-name-exempt: reason."
+echo "                 $ALLOWED_COUNT documented reference(s), by class:"
+for i in "${!ALLOWED_PAT[@]}"; do
+    n=$(printf '%s\n' "$RAW" | grep -cE "${ALLOWED_PAT[$i]}" || true)
+    printf '                   %4d  %s\n' "$n" "${ALLOWED_WHY[$i]}"
+done
+echo "                 (a line matching two classes is counted under both)"
+
+# A FILE-level exemption removes a whole file from the question, and the way it
+# is REACHED is by carrying the marker's own name — so a document that merely
+# EXPLAINS the mechanism leaves scope without anyone deciding that it should.
+# The clean line therefore names every exempt file and how many lines each one
+# is hiding. A zero is an exemption that has stopped doing anything and can be
+# deleted; a number that grows is a file quietly becoming a place to put stale
+# names. Neither is visible if the roster is not printed.
+if [[ -n "$EXEMPT_FILES" ]]; then
+    echo "                 whole-file exemptions, and the line count each hides:"
+    while IFS= read -r f; do
+        [[ -z "$f" ]] && continue
+        n=$(git grep --untracked -cIP "$PATTERN" -- "$f" 2>/dev/null | sed 's/.*://')
+        printf '                   %4d  %s\n' "${n:-0}" "$f"
+    done <<<"$EXEMPT_FILES"
+fi
 exit 0
