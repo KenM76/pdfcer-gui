@@ -2008,6 +2008,15 @@ what became of the press. A rung that counts rungs is asserting something both
 outcomes satisfy. Read the effect from the application's own
 `status … zoom=` / `render-spawn … scale=`, keyed on the rung's `index=`.
 
+`the_scripted_keystroke_seam_climbs_the_zoom_ladder` is that reading, and it
+is the seam's standing assertion: eight chords, each rung's effect taken from
+the `status` lines bounded by its own `diag-keys index=k` and the next one's.
+Its first arm is the pacing one — **no `status` line at all before rung 0**
+means the application had not solved its layout when the first chord landed,
+which is the defect's real signature and not a lost step in the middle. A rung
+must also leave `fit=Page`, because a discrete zoom verb sets an explicit zoom.
+A rung built here inherits that reader rather than writing a second one.
+
 #### ★★ What this seam does NOT reach, and it is the row next door
 
 **`Ctrl` + wheel is a different route with a different type.** `canvas::zoom`

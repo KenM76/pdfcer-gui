@@ -490,6 +490,18 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // machine ran the sweep, and a debug build produces it unconditionally
         // because `egui_glow` clears the flag first.
         Box::new(graphics_pressure::TheGraphicsPressureInstrumentReportsARealDeviceLimit),
+        // Third of the same kind, and the one that makes the other two
+        // extensible: trace-only verdict, window off the desktop, NO OS input
+        // — because its whole subject is the seam that lets such a window be
+        // driven at all. The ladder O221 needs is built out of background
+        // processes that cannot be clicked, and until this passes, nothing in
+        // one of them can be made to zoom.
+        //
+        // It stays below the two above deliberately. If the application is not
+        // reaching a document or not publishing a view state, those two say so
+        // in one line, and this one's rung-by-rung reading would be a long
+        // report about the same silence.
+        Box::new(scripted_keys::TheScriptedKeystrokeSeamClimbsTheZoomLadder),
         // The long form of the same disclosure, beside the other check that
         // opens the Document properties panel — they share its opener.
         Box::new(load_anomalies::LoadAnomaliesAreListedInDocumentProperties),

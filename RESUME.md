@@ -141,10 +141,17 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    ⚠ **A keystroke ladder still says nothing about O220** — his `Ctrl`+wheel
    is a continuous `zoom_delta`, a different route from the discrete action,
    and it is the one he reports as trapped.
-   **What is still owed:** a `ui-verify` check that asserts the seam, and the
-   *N separate processes* rungs themselves — all background ones
-   `place: false`, off the desktop and **demonstrably rasterized**, all rungs
-   in one sweep on one machine.
+   ★ **The seam is now asserted, not merely driven once.**
+   `the_scripted_keystroke_seam_climbs_the_zoom_ladder` sends six `Ctrl`+`+`,
+   then an unspellable chord, then one `Ctrl`+`-`, and reads the zoom the
+   *application* published inside each rung's own line window — never the
+   seam's `spelled=` count. Its first arm is the pacing arm: if no `status`
+   line at all precedes rung 0, the app had not solved its layout when the
+   first chord landed. A rung must also leave `fit=Page`, because a discrete
+   zoom verb sets an explicit zoom.
+   **What is still owed:** the *N separate processes* rungs themselves — all
+   background ones `place: false`, off the desktop and **demonstrably
+   rasterized**, all rungs in one sweep on one machine.
    ★ **The mechanism the series is meant to test is also located:**
    `zoom_ceiling` takes five inputs and none counts documents, but the strip
    cache is a field on `OpenDoc` and `render::settle` prunes it against

@@ -1001,6 +1001,20 @@ pub mod scale_aim;
 
 pub mod scale_sweep;
 
+/// ★★★ **The only headless route to the viewer verbs, asserted** — the
+/// scripted-keystroke seam, driven up a six-rung zoom ladder and back down one
+/// by a window that takes no OS input at all. Zoom in, zoom out and paging
+/// have no registered command id, so `PDFCER_DIAG_INVOKE` cannot ring them and
+/// an off-desktop window has no other way to be driven.
+///
+/// ★★ Its header carries why it never counts `spelled=yes` lines: the seam runs
+/// before the collector and emitted one for a rung whose effect was overwritten
+/// later in the same frame — and the broken run and the sound one finish at the
+/// same zoom, so an end-state assertion passes on both. One entry in its chord
+/// list is deliberately unspellable, which is what shows `spelled=` to vary and
+/// doubles as the negative control for the zoom reading.
+pub mod scripted_keys;
+
 /// ★★★ **The preview is the cursor, and a cursor does not grow with the
 /// document** — `OPERATOR_REQUESTS.md` O184. Drags one object at two zooms nine
 /// times apart and asserts the outline was painted at the same width both

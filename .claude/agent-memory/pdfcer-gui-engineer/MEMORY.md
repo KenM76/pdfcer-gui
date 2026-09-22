@@ -150,3 +150,4 @@
 - [Type the wrap's backslash as you type it](feedback_wrapped_message_backslash.md) — same defect twice in 90 min; a commit message is not an instrument.
 - [`git status` is not a content oracle](feedback_status_not_content.md) — 11 entries to 184, nothing changed; the reflex discards the commit.
 - [A sweep keyed on the symptom collects the healthy](feedback_sweep_keyed_symptom.md) — six correct files "repaired"; the rule was one command away.
+- [A grep returning nothing has made a claim](feedback_grep_manufactures_absence.md) — binary suppression prints an absence; re-run with -a.
