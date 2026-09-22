@@ -615,6 +615,17 @@ impl eframe::App for PdfcerApp {
             self.last_window_title = title;
         }
 
+        // ★★ Step 0½ — THE SCRIPTED KEYSTROKE, for a window OS input cannot
+        // reach.
+        //
+        // Before `collect` and before `commands`, because it is delivering a
+        // key press and a key press arrives before anything reads one. See
+        // [`keyboard::scripted_press`] for why a seam that called the action
+        // directly would be worthless, and why `PDFCER_DIAG_INVOKE` cannot do
+        // this job: the zoom and page verbs have no registered command id, and
+        // giving them one to suit a harness would be a ribbon decision.
+        keyboard::scripted_press(&ctx);
+
         // Step 1 — keyboard, before any widget can consume a key.
         let page_count = match &self.status {
             Status::Open(doc) => Some(doc.pages.len()),

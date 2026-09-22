@@ -1960,76 +1960,53 @@ nothing to run because it never touches his cursor.
 
 Rungs 3 and 6 need something rung 1 does not: a way to **climb zoom** in a
 process that cannot be driven by OS input, because its window is off the
-desktop.
+desktop. `app::keyboard::scripted` is that seam and it carries its own
+argument; what belongs here is why the ladder may use it and what it leaves
+undone.
 
-#### ★★★ `PDFCER_DIAG_INVOKE` is the right shape of seam and it cannot do this
+#### Why a keystroke seam rather than a registered command
 
-`app::frame`'s `scripted_invoke` takes a comma-separated list of command ids,
-rings one per frame through `dispatch_command` — the same choke point a chord
-reaches — and exists precisely because an off-screen window cannot be driven
-by OS input at all. It looks like the answer. It is not, and the reason is
-structural rather than incidental:
-
-**No zoom-step command is registered.** The registered zoom verbs are
+**No zoom-step command is registered**, so `PDFCER_DIAG_INVOKE` — which rings
+a command id — cannot climb zoom at all. The registered zoom verbs are
 `view.zoom_actual`, `view.zoom_fit_height`, `view.zoom_fit_page`,
-`view.zoom_fit_width`, `view.zoom_region` and `view.zoom_selection` — every one
-of them absolute. `app::dispatch::zoom`'s header states the position and the
-reason: `view.zoom_in`, `view.zoom_out`, `view.next_page` and `view.prev_page`
-have no arm because no such command is registered — no catalog entry, no
-manifest item, no `crate::text::commands` copy, no `RIBBON_IA.md` row — so no
-token can reach one and an arm for it would be dead code wearing a design
-pattern. `shell::commands::reach::register` records the live route for each:
-`Action::ZoomIn` ← `app::keyboard`'s `Ctrl` `+` and the `+` in
-`app::status::zoom`; `Action::ZoomOut` ← `Ctrl` `-` and the same control's `−`;
-`NextPage` / `PrevPage` ← `PageDown` / `PageUp` and `app::status::page_box`.
-`RIBBON_IA.md` §6 assigns all four to the status bar.
+`view.zoom_fit_width`, `view.zoom_region` and `view.zoom_selection`, every one
+of them **absolute**. `RIBBON_IA.md` §6 assigns zoom-in, zoom-out, next-page
+and previous-page to the status bar and the keyboard instead, and
+`shell::commands::reach::register` records those as their live routes.
 
 ⚠ A grep for `"view.zoom_in"` **returns hits**, and every one of them is prose
 or a negative test case. Reading only the hit count says the command exists.
 
-#### The three options, and which one is this role's to take
+Registering one to suit a harness is a **ribbon decision, not a dispatch one**
+— it changes what the operator can reach and where the verb lives, which
+`RIBBON_IA.md` settles and this role proposes rather than improvises;
+`shell::commands::reach::UNREACHED_ARMS` carries what it would take. ★ The
+distinction that makes the seam legitimate where registering is not: a seam
+substitutes for the *gesture the harness cannot make*, and registering a
+command changes *what the product offers*. Only one of those is a claim about
+the program.
 
-1. **Register `view.zoom_in` / `view.zoom_out`.** This is a **ribbon decision,
-   not a dispatch one** — it changes what the operator can reach and where the
-   verb lives, which `RIBBON_IA.md` settles and this role proposes rather than
-   improvises. `shell::commands::reach::UNREACHED_ARMS` carries what it would
-   take. ⇒ Not taken.
-2. **Drive the subject visibly with real input** while N−1 quiet processes sit
-   off-screen. Honest, and it is the operator's own gesture exactly. But it
-   competes for his machine, so it runs only on a night nobody is using it —
-   which makes it a rung that is skipped rather than a rung that is run.
-3. **★ A `PDFCER_DIAG_*` seam that substitutes for the KEYSTROKE.** In scope:
-   it is a harness affordance, it adds no operator-reachable verb, and it
-   changes nothing a keyless run can observe. This is the one to build.
+#### ⚠ The shell gap the seam had to work around, and it is ours not the engine's
 
-★ The distinction that makes (3) legitimate where (1) is not: a seam
-substitutes for the *gesture the harness cannot make*; registering a command
-changes *what the product offers*. Only one of those is a claim about the
-program.
+The seam paces its chords on `ctx.cumulative_pass_nr()`, twenty frames apart,
+because **nothing in the shell reports that the canvas has settled**.
+`ViewState` carries `zoom` and `fit` but no "the fit has been solved" flag, and
+`crate::diag` counts UI rects per frame without exposing a reader for the
+census. A chord delivered before the first layout is overwritten by that
+frame's fit solve and is lost in silence.
 
-#### Where the synthetic keystroke must enter, and the trap in doing it
+⇒ The frame count is a **proxy for a readiness signal that does not exist**.
+Either a `fit=solved` transition on `ViewState` or a `diag` predicate over the
+per-frame rect census would let the seam wait for the thing it means, and both
+are shell work rather than an engine request.
 
-`app::keyboard::collect` reads `ctx.input(...)`, and `egui`'s
-`InputState::key_pressed` is a scan of `self.events`. ⇒ pushing an
-`egui::Event::Key { pressed: true, .. }` into the input before `collect` runs
-is indistinguishable from a real keystroke to **every line downstream** — the
-`crate::canvas::textedit::composing` typing guard, the `Action` push, the
-dispatcher. That is the entry point, and it is the only one that tests the
-route the operator actually takes.
+#### ⚠ What a rung may not conclude from the seam's own trace
 
-⚠ **`Event::Key` carries its own `modifiers`, and `collect` does not read
-them.** It reads `i.modifiers` — the standing modifier state — in the same
-`ctx.input` call, separately from the key scan. A synthetic `Ctrl` `+` whose
-`command` flag lives only on the event therefore takes the `if
-modifiers.command` branch **false** and silently does nothing. The seam must
-set the standing state as well, and a check that does not assert the zoom
-actually moved would go green over that silence.
-
-⚠ A seam that instead calls `Action::ZoomIn` directly would bypass the typing
-guard and the modifier read both, and would pass on a build where `Ctrl` `+`
-was broken. The precedent to follow is `scripted_invoke`'s — enter at the same
-choke point, one rung per frame — not `PDFCER_DIAG_PASTE_CHORDS`'s, which
-overrides a *preference* at start-up and is a different kind of seam entirely.
+`diag-keys index=k chord=… spelled=yes` means the key was **pushed**, and
+nothing more — the seam runs before `app::keyboard::collect` and cannot know
+what became of the press. A rung that counts rungs is asserting something both
+outcomes satisfy. Read the effect from the application's own
+`status … zoom=` / `render-spawn … scale=`, keyed on the rung's `index=`.
 
 #### ★★ What this seam does NOT reach, and it is the row next door
 

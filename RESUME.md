@@ -120,16 +120,31 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    call site. ⚠ Its `gl-pressure` reading is **reported, never asserted** —
    silence there is a fact about free graphics memory on whatever machine ran
    the sweep, and a debug build produces it unconditionally.
-   ★ **Rungs 3 and 6 are designed and not built, and what blocks them is
-   named:** an off-screen window takes no OS input, and `PDFCER_DIAG_INVOKE`
-   cannot climb zoom because **no zoom-step command is registered** — every
-   registered zoom verb is absolute, and registering `view.zoom_in` is a
-   **ribbon** decision this role proposes rather than takes. `DESIGNS.md`
-   §"How the ladder is driven" carries the seam that is in scope, where the
-   synthetic keystroke must enter, the modifier trap that would make it pass
-   silently, and ⚠ why a keystroke ladder says **nothing** about O220 — his
-   `Ctrl`+wheel is a continuous `zoom_delta`, a different route from the
-   discrete action, and it is the one he reports as trapped.
+   ★ **The seam that blocked rungs 3 and 6 is built and driven.**
+   `app::keyboard::scripted` reads `PDFCER_DIAG_KEYS`, a comma-separated list
+   of chords in `parse_chord`'s grammar, and pushes a real `egui::Event::Key`
+   into the frame ahead of `collect` — so an off-screen window that takes no
+   OS input at all can still climb the *viewer* verbs, which have no
+   registered command id `PDFCER_DIAG_INVOKE` could ring. Measured against
+   `fixtures/a1-titleblock.pdf`, release build, window at `-4200,-4200`: six
+   `Ctrl`+`+` chords produce six rungs, `29.95 (fit) → 33 → 50 → 67 → 75 →
+   100 → 125`, each `diag-keys index=k` followed by exactly one
+   `render-spawn` and one `status … zoom=`.
+   ⚠ **It is paced at twenty frames per chord and that number is measured.**
+   Delivered on consecutive frames the same list climbed **five** rungs: the
+   first chord landed before the canvas had laid out, `FitMode::Page` was
+   still standing, and the next frame's fit solve overwrote the zoom it had
+   just set. The trace said `spelled=yes` for the lost rung, because that is
+   all the seam can honestly say — it runs before `collect` and cannot know
+   what became of the press, so **a check must read the effect from
+   `status … zoom=` keyed on the rung's `index=`**, never count rungs.
+   ⚠ **A keystroke ladder still says nothing about O220** — his `Ctrl`+wheel
+   is a continuous `zoom_delta`, a different route from the discrete action,
+   and it is the one he reports as trapped.
+   **What is still owed:** a `ui-verify` check that asserts the seam, and the
+   *N separate processes* rungs themselves — all background ones
+   `place: false`, off the desktop and **demonstrably rasterized**, all rungs
+   in one sweep on one machine.
    ★ **The mechanism the series is meant to test is also located:**
    `zoom_ceiling` takes five inputs and none counts documents, but the strip
    cache is a field on `OpenDoc` and `render::settle` prunes it against

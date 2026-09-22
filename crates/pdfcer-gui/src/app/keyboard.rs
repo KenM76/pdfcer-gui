@@ -142,6 +142,18 @@
 //! switched **off**, or it consumes them to rescale the entire user
 //! interface — see [`crate::app::configure_context`]. Without that, the
 //! chords would silently do the wrong thing.
+//!
+//! ## The scripted keystroke
+//!
+//! The viewer chords above are the *only* route to their verbs, so a window
+//! placed off the desktop — which takes no OS input at all — could not be
+//! made to zoom or page at all. [`scripted`] is the seam that closes that,
+//! and it carries why a seam is legitimate there where registering a command
+//! would not be.
+
+mod scripted;
+
+pub use scripted::scripted_press;
 
 use egui::{Context, Key};
 use egui_shell::manifest::Keymap;
@@ -779,6 +791,38 @@ mod tests {
             "a bare `-` must not zoom because the frame happened to end with \
              the modifier held"
         );
+    }
+
+    /// **Every viewer chord is reachable through the scripted seam.**
+    ///
+    /// This is the property the document-count ladder rests on: the verbs in
+    /// [`OWNED`] have no registered command id, so the seam is their *only*
+    /// headless route, and a viewer chord the seam cannot spell is a verb no
+    /// driven check can exercise at all.
+    ///
+    /// ⚠ **At least one spelling per chord, not every spelling.** [`OWNED`]
+    /// lists the alternatives a *manifest author* might write so that
+    /// [`tests::no_chord_has_two_owners`] catches a conflict however it was
+    /// spelled — `"Page Down"` with a space is in there for that reason alone,
+    /// and [`Key::from_name`] does not accept it. Asserting that every entry
+    /// parses would be asserting something that table never promised; a
+    /// manifest that actually bound the spaced spelling is caught by
+    /// [`tests::every_chord_the_manifest_binds_actually_fires`] instead.
+    ///
+    /// The seam consumes a rung whether or not a spelling resolves, reporting
+    /// `spelled=no`, so an unspellable entry costs one step of a ladder rather
+    /// than wedging it — the right failure, and still a failure.
+    #[test]
+    fn every_viewer_chord_has_a_spelling_the_scripted_seam_accepts() {
+        for (key, spellings) in OWNED {
+            assert!(
+                spellings
+                    .iter()
+                    .any(|s| parse_chord(s).is_some_and(|(_, parsed)| parsed == *key)),
+                "no spelling of {key:?} can be delivered by the seam, so that \
+                 verb has no headless route at all"
+            );
+        }
     }
 
     /// The zoom chords require their modifier.
