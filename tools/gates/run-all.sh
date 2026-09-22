@@ -172,6 +172,16 @@ run "check-unreachable-refusals --self-test" bash "$HERE/check-unreachable-refus
 # four different ways fires a different single arm each time.
 run "check-shell-purity --self-test" bash "$HERE/check-shell-purity.sh" --self-test
 
+# Nine arms against a stub instrument, so this costs a second rather than the
+# gate's own two minutes. Five pin the ACCOUNTING rule that had existed only as
+# a comment — a verb named in prose cannot discharge it, nor can a row without
+# backticks, while a row's reason cell still can, because the register's
+# alternate-spellings table discharges verbs that way. The other four are the
+# nothing-was-measured states, including an instrument that prints its summary
+# and then dies mid-list: that one used to pass, because the exit status being
+# read belonged to the `tr` at the end of the pipe.
+run "check-verb-coverage --self-test" bash "$HERE/check-verb-coverage.sh" --self-test
+
 # --- 1. the gates themselves ------------------------------------------------
 run "check-ui-strings"   bash "$HERE/check-ui-strings.sh"
 run "check-theme-colors" bash "$HERE/check-theme-colors.sh"

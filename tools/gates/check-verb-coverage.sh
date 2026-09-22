@@ -88,16 +88,135 @@
 # run counted as a pass is exactly that. Falsify by pointing
 # `PDFCER_EDITABLE_SURFACES` at a path that does not exist; the exit must be 2.
 #
-# To falsify: copy `EDITABLE_SURFACES.md`, delete one verb's table row, point
-# `PDFCER_EDITABLE_SURFACES` at the copy — it must name that verb and exit 1.
-# Point the variable at an empty file and it must name every uncalled verb.
-# The override exists so that falsifying the gate never needs a `git checkout`
-# in a tree where other work is uncommitted.
+# `--self-test` does all of that mechanically and in about a second, against a
+# stub instrument supplied through `PDFCER_VERB_INSTRUMENT`: nine arms covering
+# the row rule, its three near-misses, and all four ways nothing is measured.
+# It exits 1 if any arm disagrees.
+#
+# To falsify by hand: copy `EDITABLE_SURFACES.md`, delete one verb's table row,
+# point `PDFCER_EDITABLE_SURFACES` at the copy — it must name that verb and
+# exit 1. Point the variable at an empty file and it must name every uncalled
+# verb. Both overrides exist so that falsifying the gate never needs a
+# `git checkout` in a tree where other work is uncommitted.
 # ===========================================================================
 set -u
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT" || exit 1
+
+# ===========================================================================
+# --self-test
+# ===========================================================================
+#
+# Both of this gate's halves are falsified here, against synthetic inputs, in
+# under a second.
+#
+# ★ The half that most needed it is the ACCOUNTING rule, whose whole statement
+# lives in a comment: *an explanation must be entered in the table to count,
+# and a sentence in an introduction — however emphatic — cannot silence
+# anything.* A doc comment arguing for a guard is a claim that the guard
+# exists. Three arms below plant the near-misses that comment describes: the
+# verb named in prose, the verb named in a row without backticks, and the verb
+# named in a row's REASON cell rather than its first — which must pass,
+# because the register's alternate-spellings table discharges verbs that way.
+#
+# The other half is the three ways NOTHING IS MEASURED. This gate's header
+# argues at length that a skip counted as a pass is the failure mode, and not
+# one of the three skips had ever been made to happen.
+# ===========================================================================
+if [ "${1:-}" = "--self-test" ]; then
+    TD="$(mktemp -d)"
+    trap 'rm -rf "$TD"' EXIT
+    fails=0
+
+    # A stub instrument: same contract as the real one — verbs on stdout, a
+    # summary line on stderr — and nothing else.
+    {
+        echo 'import sys'
+        echo 'print("set_button_action")'
+        echo 'print("redact_region")'
+        echo 'sys.stderr.write("3 EditSession verbs (stub), 1 named, 2 nowhere.\n")'
+    } >"$TD/stub.py"
+
+    # An instrument that dies BEFORE saying anything.
+    printf 'import sys\nsys.exit(4)\n' >"$TD/dead.py"
+
+    # An instrument that prints its summary and THEN dies part-way through the
+    # list. This is the shape the old pipe-captured status could not see: the
+    # summary arrived, so the empty-summary branch does not fire, and the
+    # truncated list would be read as the whole answer.
+    {
+        echo 'import sys'
+        echo 'sys.stderr.write("3 EditSession verbs (stub), 1 named, 2 nowhere.\n")'
+        echo 'sys.stderr.flush()'
+        echo 'print("set_button_action")'
+        echo 'sys.exit(9)'
+    } >"$TD/truncated.py"
+
+    # An instrument that measures nothing and says nothing.
+    printf 'pass\n' >"$TD/silent.py"
+
+    arm() {   # arm <label> <expected-rc> <register> [instrument]
+        local got=0
+        PDFCER_EDITABLE_SURFACES="$3" \
+        PDFCER_VERB_INSTRUMENT="${4:-$TD/stub.py}" \
+            bash "$ROOT/tools/gates/check-verb-coverage.sh" >/dev/null 2>&1 || got=$?
+        if [ "$got" -eq "$2" ]; then
+            printf '  ok    %-30s rc=%d\n' "$1" "$got"
+        else
+            printf '  FAIL  %-30s rc=%d, expected %d\n' "$1" "$got" "$2"
+            fails=$((fails + 1))
+        fi
+    }
+
+    : >"$TD/empty.md"
+    arm "empty register" 1 "$TD/empty.md"
+
+    printf '%s\n' \
+        '| verb | reached at | status |' \
+        '| `set_button_action` | Button tool | wired |' \
+        '| `redact_region` | — | not built |' >"$TD/rows.md"
+    arm "both discharged by rows" 0 "$TD/rows.md"
+
+    # The comment's own example: a paragraph declaring verbs out of scope,
+    # in backticks, which a whole-file grep would accept.
+    printf '%s\n' \
+        'This shell deliberately does not call `set_button_action` or' \
+        '`redact_region`; both are out of scope for this cycle.' \
+        '' \
+        '| verb | reached at | status |' >"$TD/prose.md"
+    arm "prose cannot discharge" 1 "$TD/prose.md"
+
+    printf '%s\n' \
+        '| verb | reached at | status |' \
+        '| set_button_action | Button tool | wired |' \
+        '| redact_region | — | not built |' >"$TD/nobackticks.md"
+    arm "a row without backticks" 1 "$TD/nobackticks.md"
+
+    # Alternate spellings: the verb is named in the REASON cell of a row whose
+    # first cell is a different verb. Row-level, not first-cell, on purpose.
+    printf '%s\n' \
+        '| verb | reached at | status |' \
+        '| `add_button` | Button tool | the shell calls this instead of `set_button_action` |' \
+        '| `redact_area` | Redact tool | alternate spelling of `redact_region` |' >"$TD/alt.md"
+    arm "reason cell discharges" 0 "$TD/alt.md"
+
+    arm "no register" 2 "$TD/absent.md"
+    arm "instrument dies silently" 2 "$TD/rows.md" "$TD/dead.py"
+    arm "instrument dies mid-list" 2 "$TD/rows.md" "$TD/truncated.py"
+    arm "instrument says nothing" 2 "$TD/rows.md" "$TD/silent.py"
+
+    if [ "$fails" -ne 0 ]; then
+        echo "verb-coverage --self-test: FAIL — $fails arm(s) disagreed."
+        echo "  Fix the gate, not the self-test. An arm that stops holding here"
+        echo "  is a way for a capability to land and nobody be told."
+        exit 1
+    fi
+    echo "verb-coverage --self-test: ok — 9 arm(s): the row rule holds against"
+    echo "  prose and against a row with no backticks, a reason cell still"
+    echo "  discharges, and all four nothing-was-measured states exit 2"
+    exit 0
+fi
 
 # Overridable so this gate can be PROVEN FALLIBLE without editing the committed
 # register — the same affordance `check-engine-backlog.sh` gives via
@@ -105,7 +224,14 @@ cd "$ROOT" || exit 1
 # `git checkout` to undo is one that will discard another track's uncommitted
 # work the first time it is run during parallel sessions.
 REGISTER="${PDFCER_EDITABLE_SURFACES:-EDITABLE_SURFACES.md}"
-INSTRUMENT="tools/verb-coverage.py"
+
+# Overridable for the same reason, and only for it. The real instrument reads
+# the engine checkout and takes two minutes; eight arms of that is twenty, so
+# the self-test substitutes a stub that prints a known verb list. The seam is a
+# PATH TO AN EXECUTABLE, exactly like the register override above — a CI run
+# that set it would be as visible in the environment as one that redirected the
+# register, and the verdict line names what was run.
+INSTRUMENT="${PDFCER_VERB_INSTRUMENT:-tools/verb-coverage.py}"
 
 if [ ! -f "$REGISTER" ]; then
   echo "SKIP: $REGISTER is missing, so there is nothing to check reasons against."
@@ -121,20 +247,25 @@ fi
 # stderr. Both are wanted: the summary is what a reader needs in order to judge
 # whether the measurement was against the LOCKED revision or a working tree.
 #
-# Piped through `tr -d` because the instrument is python on Windows and prints
-# CRLF. Without it every pattern below becomes `verb<CR>`, which matches
-# nothing, and the gate reports EVERY verb as unexplained — a total failure
-# that is indistinguishable, on screen, from a total finding.
+# ★ Captured through a FILE rather than a pipe, so `STATUS` is the instrument's
+# own. Written as `MISSING="$(python … | tr -d '\r')"` it was `tr`'s status
+# instead — and `tr` succeeds on anything it is handed, so the branch testing
+# `STATUS` could never fire. That left one shape uncaught: an instrument that
+# prints its summary and THEN dies part-way through the verb list. The empty-
+# summary branch does not see it, because the summary arrived; the gate reads
+# the truncated list as the whole answer and can pass on it.
 #
-# `STATUS` is read after that pipeline with no `pipefail` in force, so it holds
-# `tr`'s status and not python's. `tr` succeeds on anything it is handed, so
-# the branch below that tests `STATUS` cannot fire; a dead instrument is caught
-# one branch later, by the empty summary.
+# `tr -d '\r'` because the instrument is python on Windows and prints CRLF.
+# Without it every pattern below becomes `verb<CR>`, which matches nothing, and
+# the gate reports EVERY verb as unexplained — a total failure that is
+# indistinguishable, on screen, from a total finding.
 SUMMARY_FILE="$(mktemp)"
-MISSING="$(python "$INSTRUMENT" 2>"$SUMMARY_FILE" | tr -d '\r')"
+RAW_FILE="$(mktemp)"
+python "$INSTRUMENT" >"$RAW_FILE" 2>"$SUMMARY_FILE"
 STATUS=$?
+MISSING="$(tr -d '\r' <"$RAW_FILE")"
 SUMMARY="$(cat "$SUMMARY_FILE" 2>/dev/null)"
-rm -f "$SUMMARY_FILE"
+rm -f "$SUMMARY_FILE" "$RAW_FILE"
 
 if [ "$STATUS" -ne 0 ]; then
   echo "SKIP: $INSTRUMENT exited $STATUS, so nothing was measured."
