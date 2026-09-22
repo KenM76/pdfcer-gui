@@ -142,6 +142,12 @@ pub mod layers;
 // on the application*.
 pub mod lifecycle;
 pub mod modes;
+/// The View ▸ Display blend slider — the one control on that tab the ribbon
+/// cannot draw itself. [`fontband`]'s and [`markupband`]'s sibling in shape
+/// and their opposite in consequence: this one edits what is on screen and
+/// nothing else, so it reports a number instead of a handler token. See its
+/// header.
+mod ocrband;
 pub mod panels;
 pub mod persistence;
 /// ★ The **selection filter**, on disk — where it lives, and why it is written

@@ -499,6 +499,39 @@ pub fn offer_tooltip() -> &'static str {
     "Opens Recognise text, which reads the words in the page image and adds them as invisible text so Find can see them."
 }
 
+/// The View ▸ Display blend control, which fades between the scan and the
+/// recognised text drawn over it.
+///
+/// Worded as a **position between two things**, not as an opacity: the one
+/// number moves the picture down and the text up at once, and "opacity" would
+/// name only half of what the operator sees move.
+#[must_use]
+pub fn layer_blend_label() -> &'static str {
+    "Text layer"
+}
+
+/// Its tooltip.
+///
+/// Says what each end of the travel *is*, because the middle of the range is
+/// self-explanatory and the ends are the two states worth reaching
+/// deliberately — read the paper, or read what the recogniser thinks the paper
+/// says, with nothing behind it to argue.
+#[must_use]
+pub fn layer_blend_tooltip() -> &'static str {
+    "Fades between the scanned page and the recognised text drawn over it. All the way left is the page alone; all the way right is the recognised text alone, on blank paper."
+}
+
+/// The unit on the blend control's number.
+///
+/// Its own function rather than a literal in the band, for the reason every
+/// suffix in this catalog is: the control shows it and the status bar shows
+/// it, and a unit spelled twice is a unit that will one day be spelled two
+/// ways.
+#[must_use]
+pub fn layer_blend_suffix() -> &'static str {
+    "%"
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

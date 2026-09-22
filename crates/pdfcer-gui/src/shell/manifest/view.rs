@@ -348,6 +348,29 @@ pub(super) fn tab() -> Tab {
                     // cheapest-first with one more rung on the end: furniture,
                     // texture, layout, then the content nobody can see.
                     icon_only("view.ocr_layer"),
+                    // ★★★ **The blend, drawn only while the switch beside it
+                    // is pressed** — O226's slider, in the words he used.
+                    //
+                    // Its condition is the TOGGLE'S OWN selected-condition,
+                    // not a second condition meaning the same thing. Two
+                    // names for one state is how a control comes to be drawn
+                    // in a state nobody can reach, and it is also what makes
+                    // R8 hold here without a registration: a build with no
+                    // `view.ocr_layer` cannot set that condition, so the
+                    // slider goes with the switch rather than being left
+                    // behind as a control over a mode that no longer exists.
+                    //
+                    // Visible rather than greyed, under R9: with the layer
+                    // off there is no blend, and a greyed slider would be
+                    // furniture explaining a mode the operator has not
+                    // entered.
+                    egui_shell::manifest::Item::custom(super::OCR_BLEND).shown_when(
+                        egui_shell::ribbon::selected_condition(
+                            crate::shell::commands::chrome_command(
+                                crate::app::actions::ViewChrome::OcrLayer,
+                            ),
+                        ),
+                    ),
                 ],
             ),
             // ---------------------------------------------------------------

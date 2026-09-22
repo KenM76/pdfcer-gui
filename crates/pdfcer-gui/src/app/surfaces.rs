@@ -101,6 +101,12 @@ impl PdfcerApp {
             .map(|c| c.handler);
         let recent = &mut self.recent;
         let mut chosen: Option<std::path::PathBuf> = None;
+        // Where the OCR blend slider reports to. A local and not a field on
+        // the application, unlike `font_change` and `markup_change`: those two
+        // are read by a dispatch arm after the frame's tokens are handled, and
+        // this one is consumed a dozen lines below by the only code that will
+        // ever want it.
+        let mut blend: Option<f32> = None;
         // The pen, borrowed for the closure. `Pen` is `Copy`, so the
         // closure takes a `&mut` to the field rather than a copy — a copy would
         // let the operator move a slider and have the change discarded when the
@@ -151,6 +157,18 @@ impl PdfcerApp {
             // invoked, which is true.
             if item.kind == crate::shell::manifest::COLOUR_SWATCH {
                 crate::canvas::markup::swatch::show(ui, pen);
+                return None;
+            }
+            // The View ▸ Display blend slider. Returns `None` for the same
+            // reason the pen's swatch above does — it edits what is drawn on
+            // screen, with no document behind it and no undo log to order
+            // against — and reports its number out through `blend` rather
+            // than writing it, because `doc` is a SHARED borrow here and
+            // every other control in this closure needs it that way.
+            if let Some(moved) =
+                crate::app::ocrband::draw(ui, item.kind, doc.and_then(|d| d.view.ocr_overlay))
+            {
+                blend = Some(moved);
                 return None;
             }
             // The Font group's face chooser, size field and colour swatch.
@@ -267,6 +285,17 @@ impl PdfcerApp {
         // operator's third choice opened their first.
         if chosen.is_some() {
             self.recent_choice = chosen;
+        }
+
+        // The blend the slider reported, written to the view it is about.
+        //
+        // ★ `Some(..)` and never `None`: the control is drawn only while the
+        // layer is on, so a report from it can only ever be a NEW POSITION for
+        // a mode that is already on. Writing `None` here would turn the mode
+        // off from a control whose whole travel is inside it, and the operator
+        // would have no way back except the switch he did not touch.
+        if let (Some(moved), Status::Open(doc)) = (blend, &mut self.status) {
+            doc.view.ocr_overlay = Some(moved);
         }
 
         for token in tokens {

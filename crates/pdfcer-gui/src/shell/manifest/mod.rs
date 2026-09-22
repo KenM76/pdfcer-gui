@@ -698,6 +698,28 @@ pub const RECENT_FILES: &str = "recent_files"; // ui-text-exempt: a custom-item 
 /// that does not exist.
 pub const COLOUR_SWATCH: &str = "colour_swatch"; // ui-text-exempt: a custom-item kind, never displayed
 
+/// **The `Item::Custom` kind of the View ▸ Display OCR blend control.**
+///
+/// `OPERATOR_REQUESTS.md` O226 asks for a slider, in those words, and a slider
+/// is the one control on this tab that a button provably cannot be: its
+/// operand is a position on a continuum, and the whole point of it is that the
+/// operator watches the page change while dragging.
+///
+/// ★ It is deliberately **not** in [`CUSTOM_BACKED`], for [`COLOUR_SWATCH`]'s
+/// reason exactly: it edits `ViewState::ocr_overlay` — what is drawn on
+/// screen, no document, no undo entry — and raises no `Action`. Listing it
+/// there would claim a command id that does not exist.
+///
+/// ★★ R8 is satisfied by the item's `shown_when`, not by a registration. The
+/// condition is the *toggle's* own selected-condition, so the slider is drawn
+/// exactly while `view.ocr_layer` is pressed. A build whose registry has no
+/// `view.ocr_layer` cannot press it, cannot turn the mode on, and therefore
+/// never draws this — the capability's absence removes both controls, which is
+/// what R8 is protecting. Spelling the condition as the toggle's own id rather
+/// than as a second, hand-written condition name is what makes that true
+/// rather than merely intended.
+pub const OCR_BLEND: &str = "ocr_blend"; // ui-text-exempt: a custom-item kind, never displayed
+
 /// **The `Item::Custom` kinds of the Format ▸ Markup controls** — the six
 /// that restyle a mark already on the page.
 ///
