@@ -204,6 +204,17 @@ run "check-clipboard-chords --self-test" bash "$HERE/check-clipboard-chords.sh" 
 # the gate points at without reading it.
 run "check-ui-toolkit-drift --self-test" bash "$HERE/check-ui-toolkit-drift.sh" --self-test
 
+# Thirteen arms against a synthetic corpus and registry, so it needs neither.
+# One of them is the claim the gate exists to make and had never been made to
+# happen: a row ADDED to the corpus must redden a surface that was green, with
+# no edit to the surface. Two others read the MESSAGE rather than the exit
+# code, because two pairs of states shared one — a corpus file that is absent
+# and one that is present but whose headings stopped parsing gave the same
+# sentence, and it was false for the second; and a missing registry was
+# indistinguishable from an empty one, which reported that a file not on disk
+# "exists and lists no surface".
+run "check-conventions --self-test" bash "$HERE/check-conventions.sh" --self-test
+
 # --- 1. the gates themselves ------------------------------------------------
 run "check-ui-strings"   bash "$HERE/check-ui-strings.sh"
 run "check-theme-colors" bash "$HERE/check-theme-colors.sh"
