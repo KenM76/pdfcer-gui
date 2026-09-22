@@ -1,6 +1,6 @@
 ---
 name: a-stopped-background-task-is-a-claim-about-the-wrapper
-description: "'The background command was stopped' kills the task handle, not the detached bash it launched; a quiet log lags the run and is not a stall; and killing the runner makes the wrapper report exit 0, so only the RESULT: line separates a killed sweep from a passed one"
+description: "'The background command was stopped' kills the task handle, not the detached bash it launched; a quiet log lags the run and is not a stall; and killing the runner makes the wrapper report exit 0, so only the RESULT: line separates a killed sweep from a passed one - and a RESULT: grep aimed at the wrong log file makes exactly the same silence"
 metadata:
   type: feedback
 ---
@@ -98,6 +98,28 @@ which is a live cargo saying so.
 not the run's state.** Grep for `RESULT:` — and if it is absent, grep again
 later before re-running anything. Re-running a 95-minute sweep that had already
 passed is the cost of reading the tail once.
+
+## Fifth instance — I grepped the WRONG log and called it "no verdict"
+
+A gate sweep was reported stopped for memory. I looked for its verdict, found
+no `RESULT:` line, and concluded the run had died two gates from home with 70
+banners and nothing decided. The sweep had in fact finished and written
+`RESULT: FAIL - 68 passed, 2 failed, 0 skipped` — into a **different log**. I
+had located the file by the newest-looking name in the scratchpad instead of by
+the redirect the command itself was given, so the absence I measured was an
+absence in a file the run never wrote to.
+
+⇒ The four rules above all assume you are reading the right file. Add one
+before them: **identify the log by the command's own redirect target**, from the
+task's recorded command line or the tool result that launched it — never by
+`ls -t`, never by remembering what it was called. A `RESULT:` grep against the
+wrong path and a killed run are the same silence, which makes this failure
+invisible from the inside. Same shape as
+[[grep-manufactures-absence]].
+
+And the verdict it hid was cheap: one of the two failures was a one-line
+crossref typo in a memory file, and the other was the known clippy
+`0xc0000142`, which cleared on a single `-j 2` re-run.
 
 Related: [[a-runners-sentinel-is-a-claim-about-the-runner]],
 [[a-launch-failure-blamed-on-a-resource-count-needs-a-control-binary]],

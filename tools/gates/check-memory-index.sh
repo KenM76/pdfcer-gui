@@ -131,7 +131,11 @@
 #                   mark a memory worth writing later and is left alone — the
 #                   self-test plants both directions, because a rule that
 #                   reddened on every unresolved link would forbid the
-#                   convention the folder is written in.
+#                   convention the folder is written in. A green run REPORTS
+#                   how many were tolerated, because a gate that says "every
+#                   link resolving" while deliberately passing unresolved ones
+#                   claims more than it measured, and the budget it is quietly
+#                   spending is invisible until someone counts by hand.
 #
 # Exit: 0 clean, 1 a violation, 2 precondition absent (no agent-memory tree).
 #
@@ -158,6 +162,12 @@ MAX_INDEX=24000  # bytes. The harness truncates at 24,400 — exactly, see the
                  # the gate goes red BEFORE any entry is lost, and small enough
                  # that it does not silently ration the index either.
 NEAR_INDEX=2400  # bytes of headroom below which a GREEN run says so loudly.
+
+# Links tolerated as forward markers, summed across folders. Declared here
+# rather than beside SIZES because --self-test calls check_folder without
+# running the driver block, and `set -u` makes that an error rather than a
+# zero.
+MARKERS=0
 
 # ★★★ A PASS THAT DOES NOT SAY HOW CLOSE IT CAME IS A PASS THAT EXPIRES
 # WITHOUT WARNING. Red at 24,177 bytes, fifteen hooks shortened, green again at
@@ -255,6 +265,25 @@ check_folder() {
                 if (m >= 20) { printf "%s\t%s\n", $0, nk[t]; next }
             }
         }')
+    # ⚠ The green line must not claim more than was measured. An unresolved
+    # link with no near match is TOLERATED, not resolved, so count them and say
+    # so - otherwise "every link resolving" is false of every run that has a
+    # forward marker in it, which is most of them. No classification and no
+    # exemption list: a reader who sees the count can read the links.
+    #
+    # Here-strings rather than printf, and grep rather than awk, so this line
+    # carries no backslash escape for a later edit to mangle.
+    #
+    # Only links containing a hyphen are counted. That is a SHAPE rule, not an
+    # exemption list: a memory slug is kebab-case by construction, so the
+    # things it drops are the `[[ ]]` of a shell condition and the `[[wikilink]]`
+    # of a sentence explaining the convention - four of them here, against three
+    # real markers, and a count that is mostly noise is a count nobody reads.
+    # CROSSREF itself is unfiltered, so this narrowing hides no broken link.
+    local tolerated
+    tolerated=$(grep -Fxv -f <(cat <<< "$targets") <<< "$links" | grep -c -- - || true)
+    MARKERS=$((MARKERS + tolerated))
+
     if [[ -n "$crossref" ]]; then
         echo "  CROSSREF: $rel — [[link]](s) resolving to nothing but nearly naming a real memory:"
         printf '%s\n' "$crossref" | awk -F'\t' '{ printf "    [[%s]]\n      did you mean  [[%s]]\n", $1, $2 }'
@@ -390,6 +419,7 @@ fi
 RC=0
 TOTAL=0
 SIZES=()
+MARKERS=0
 for d in "${FOLDERS[@]}"; do
     n=$(ls "$d" | grep -cE '\.md$' || true)
     TOTAL=$((TOTAL + n - 1))
@@ -422,7 +452,10 @@ MSG
 fi
 
 echo "memory-index: clean — ${#FOLDERS[@]} folder(s), $TOTAL memories, every one"
-echo "              indexed, every link resolving, every hook inside $MAX_HOOK bytes."
+echo "              indexed, no link broken by a rename, every hook inside $MAX_HOOK bytes."
+if [[ "$MARKERS" -gt 0 ]]; then
+    echo "              $MARKERS link(s) resolve to nothing and are left as forward markers."
+fi
 
 # ⚠ The headroom line prints on GREEN runs. See the NEAR_INDEX note above: a
 # budget nobody is told about is spent in silence, and the session that finds
