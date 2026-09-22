@@ -191,6 +191,21 @@ impl Prefs {
                         line,
                     }),
                 },
+                // ui-text-exempt: a file KEY, parsed out of preferences.txt.
+                //
+                // Refused rather than defaulted, which is `use_os_fonts`'
+                // posture above and for its reason: somebody who hand-edited a
+                // colour and mistyped it was trying to change it, and answering
+                // with magenta would be the one outcome they did not ask for.
+                // They keep what they had and get a note naming the line.
+                "ocr_layer_colour" => match ocrlayer::parse(value) {
+                    Some(rgb) => prefs.ocr_layer_colour = rgb,
+                    None => notes.push(PrefNote::BadValue {
+                        key: key.to_owned(),
+                        value: value.to_owned(),
+                        line,
+                    }),
+                },
                 "zoom_settle_ms" => match value.parse::<u64>() {
                     Ok(ms) => {
                         let clamped = ms.clamp(MIN_SETTLE_MS, MAX_SETTLE_MS);
@@ -681,6 +696,18 @@ impl Prefs {
         } else {
             "false"
         });
+        out.push('\n');
+        // ui-text-exempt: settings-file COMMENT text, as above.
+        out.push_str(
+            "\n\
+             # ocr_layer_colour: what colour the recognised text is drawn in\n\
+             # when you turn the text layer on over a scan. Hex, as #RRGGBB.\n\
+             # On screen only - the recognised text is invisible in the file\n\
+             # itself and this never reaches a print, an export or a save.\n",
+        );
+        // ui-text-exempt: a file KEY, as above.
+        out.push_str("ocr_layer_colour = ");
+        out.push_str(&ocrlayer::format(self.ocr_layer_colour));
         out.push('\n');
         // ui-text-exempt: a file KEY, as above.
         out.push_str("wheel_paging = ");

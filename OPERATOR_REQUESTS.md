@@ -243,6 +243,14 @@ page twice **stacks a second invisible layer on the first**, and every word is
 then in the document twice — which a search finds twice and a text extraction
 returns twice. Filed as **G036**.
 
+**Built so far, in the one view there is.** A View-tab toggle reveals the
+layer: the raster fades towards paper white and the recognised runs paint over
+it. The fade is a View-tab slider, present only while the layer is on, so hard
+left is the untouched scan and hard right is the text alone — the control the
+mode is named after. The status bar carries the blend and the page's block
+count. Still to come: the second view, the sync between them, and every
+editing verb. Neither the toggle nor the slider has a driven check yet.
+
 ## O227 — **FILED** — merge several text blocks into sentences and paragraphs, and split them back
 
 > *"Ideally we should have an additional feature added to all of our text
@@ -313,6 +321,16 @@ reopen, and the file is unchanged.
 against a scan of black type on white paper; a colour the eye separates at a
 glance is the default, and the operator moving it is the escape hatch for a
 document where that colour collides.
+
+**Built.** A colour swatch in Settings → Display, beside the form-field wash,
+with a *Back to magenta* control that appears only once the colour has been
+moved. The value is written to the preferences file as `ocr_layer_colour` in
+`#RRGGBB`, read back on the next run, and a line that cannot be read keeps the
+previous colour and reports the line rather than silently substituting the
+default. The colour reaches the painter through context memory, one direction,
+once a frame — it is never near a content stream, so it cannot reach a save, an
+export or a print. **The driven check proving that last sentence is still
+owed**: change the colour, save, reopen, bytes unchanged.
 
 ## O218 — **FILED** — the zoom ceiling must be a ceiling, not an error
 

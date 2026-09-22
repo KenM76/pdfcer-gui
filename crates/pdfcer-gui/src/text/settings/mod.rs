@@ -77,6 +77,10 @@
 pub mod bytes;
 pub mod extract;
 pub mod look;
+/// ★ The colour the recognised text is drawn in over a scan — O229. Its own
+/// file because it is the copy for a *feature*, where this module's neighbours
+/// are copy for answers to a silent standard.
+pub mod ocrlayer;
 pub mod overprint;
 /// ★ The two print-ready colour controls and the field wash. Its header says
 /// which of the three is there for a weak reason and should move out first if
@@ -88,6 +92,7 @@ pub mod shell;
 pub use bytes::*;
 pub use extract::*;
 pub use look::*;
+pub use ocrlayer::*;
 pub use overprint::*;
 pub use print_colour::*;
 pub use redaction::*;
@@ -549,7 +554,13 @@ mod tests {
     // and answered the other way: those two have different blast radii, these
     // two have the same one.
     //
-    const SETTINGS_COUNT: usize = 38;
+    // ★ 38 → 39: the colour the recognised text is drawn in over a scan —
+    // O229, and the third SHELL preference in this count that no engine-store
+    // coverage test could have demanded. It is one header rather than a colour
+    // row folded under the field wash, because the two settings share only the
+    // word *colour*: one is an affordance over form controls and this one is
+    // the appearance of a mode the operator switches on deliberately.
+    const SETTINGS_COUNT: usize = 39;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
     ///
@@ -607,6 +618,14 @@ mod tests {
                 field_shade_title(),
                 field_shade_silence(),
                 field_shade_radius(),
+            ),
+            // ★ A shell preference, not an engine setting — see
+            // SETTINGS_COUNT. Beside the field wash because both are colours
+            // pdfcer draws over a page and neither reaches the file.
+            (
+                ocr_colour_title(),
+                ocr_colour_silence(),
+                ocr_colour_radius(),
             ),
             (
                 cmyk_ceiling_title(),

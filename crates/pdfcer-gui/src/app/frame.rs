@@ -448,6 +448,12 @@ impl eframe::App for PdfcerApp {
         // that switch has two homes at all.
         crate::canvas::chunks::sync(&ctx, self.prefs.text_chunks);
 
+        // ★★ Step 0b⁴ — **the same mirror for the recognised-text colour** —
+        // `OPERATOR_REQUESTS.md` O229. One direction, every frame, for the
+        // reason stated above; `crate::canvas::ocrlayer::COLOUR_KEY` carries
+        // why the painter needs a copy it can reach with a context alone.
+        crate::canvas::ocrlayer::sync(&ctx, self.prefs.ocr_layer_colour);
+
         // ★★ Step 0b² bis — **measure the page's content digest**, on the one
         // frame-level `&mut` this shell has.
         //

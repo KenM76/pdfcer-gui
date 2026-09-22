@@ -281,6 +281,46 @@ pub fn field_shade(ui: &mut Ui, prefs: &mut Prefs) {
     );
 }
 
+/// **What colour the recognised text is drawn in over a scan** —
+/// `OPERATOR_REQUESTS.md` O229.
+///
+/// ★ In *Display* beside the field wash, because it is the same kind of
+/// answer: a colour pdfcer paints over the page that never reaches the file.
+/// Not in *Appearance*, which is about how the program itself looks — a
+/// preset and a theme, neither of which knows anything about a particular
+/// scan. `crate::app::prefs::Prefs::ocr_layer_colour` carries why choosing a
+/// colour for invisible text is not the content marking R8b forbids.
+///
+/// # ★★ The reset is ABSENT rather than greyed when there is nothing to reset
+///
+/// R9's rule, and here it also carries information: a swatch with no button
+/// beside it *is* the default, so the control answers "have I changed this?"
+/// without a second sentence. A permanently greyed button would answer it
+/// only on hover, and would suggest the colour could not be put back.
+pub fn ocr_colour(ui: &mut Ui, prefs: &mut Prefs) {
+    widgets::header(
+        ui,
+        t::ocr_colour_title(),
+        t::ocr_colour_silence(),
+        t::ocr_colour_radius(),
+    );
+    ui.horizontal(|ui| {
+        // The swatch edits the draft's bytes in place. `egui`'s own picker,
+        // and not `canvas::markup::swatch`'s preset grid: that one exists
+        // because a markup colour is chosen against a convention other people
+        // will read, and this one is chosen against whatever is on THIS scan,
+        // where a named palette would be an obstacle.
+        ui.color_edit_button_srgb(&mut prefs.ocr_layer_colour);
+        ui.label(t::ocr_colour_label());
+        if prefs.ocr_layer_colour != crate::canvas::ocrlayer::DEFAULT_COLOUR
+            && ui.button(t::ocr_colour_reset()).clicked()
+        {
+            prefs.ocr_layer_colour = crate::canvas::ocrlayer::DEFAULT_COLOUR;
+        }
+    });
+    ui.label(egui::RichText::new(t::ocr_colour_note()).small().weak());
+}
+
 /// **The two auto-hide settings** — 2026-09-05.
 ///
 /// ★★ One header over both, because they are one decision the operator makes

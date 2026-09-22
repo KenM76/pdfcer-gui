@@ -131,6 +131,11 @@ pub mod redaction;
 /// What a plain wheel does when the document is not one long scroll — O30.
 pub mod wheel;
 
+/// What colour the recognised text is drawn in over a scan — O229. Its own
+/// file because the preferences file's notation for a colour, and the refusal
+/// rule behind it, are worth keeping together with their tests.
+pub mod ocrlayer;
+
 use std::path::PathBuf;
 
 pub use cache::PageCache;
@@ -396,6 +401,31 @@ pub struct Prefs {
     /// for, and they will not go looking for a setting to reveal it. Somebody
     /// who wants the page clean turns it off once.
     pub shade_form_fields: bool,
+    /// **What colour the recognised text is drawn in over a scan** — O229, in
+    /// his words: *"we should be able to change the editing colour of the ocr
+    /// text layer just for editing, and remember the user's setting."*
+    ///
+    /// ★★ *"Just for editing"* is the whole of the rule, and it is why this is
+    /// a preference at all rather than anything the document carries. The
+    /// layer is **invisible text**: mode-3 glyphs that render as nothing, in
+    /// this file and in every other reader. Choosing a colour for it changes
+    /// what pdfcer paints over the page while the operator is comparing the
+    /// two, and cannot reach a save, an export or a print — there is nothing
+    /// for it to reach, because the colour is never written anywhere near the
+    /// content stream.
+    ///
+    /// ★ It is therefore not the thing R8b forbids either, for
+    /// [`Self::shade_form_fields`]'s reason stated once more: the overlay is a
+    /// deliberate X-ray the operator switched on, drawn by the canvas overlay,
+    /// showing content the page genuinely holds. It marks no inference and
+    /// says nothing about pdfcer's confidence.
+    ///
+    /// The live copy the painter reads is in [`egui::Context`] memory —
+    /// `crate::canvas::ocrlayer::colour` — and `crate::app::frame` mirrors
+    /// this into it once a frame, in that direction only. Two homes for the
+    /// reason `crate::canvas::chunks` has two: the painter is handed a context
+    /// and nothing else.
+    pub ocr_layer_colour: [u8; 3],
     /// ★★★ **How a document the program has never seen is laid out** —
     /// `OPERATOR_REQUESTS.md` O80.
     ///
@@ -911,6 +941,10 @@ impl Default for Prefs {
             // ★ True, which is Acrobat's answer — see the field's ★ on why the
             // default is the useful one rather than the unobtrusive one.
             shade_form_fields: true,
+            // ★ Named, not a literal: the value and the argument for it live
+            // on the painter's constant, and a second copy here is a number
+            // that drifts away from the sentence justifying it.
+            ocr_layer_colour: crate::canvas::ocrlayer::DEFAULT_COLOUR,
             // ★ `None` — "he has not said" — so a fresh profile keeps
             // `MODES_AND_PANELS.md`'s per-mode rule. See the field.
             default_page_display: None,

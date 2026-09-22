@@ -152,6 +152,22 @@ the same class as Acrobat's *Show OCR text*. The binding guards:
    field, beside `shade_form_fields` and `chrome`, and the driven check owes
    exactly this: change the colour, save, reopen, **the bytes are unchanged.**
 
+### The two driven checks the built half already owes
+
+The toggle, the blend slider and the colour are in the binary; nothing drives
+them. Two checks, neither of which a unit test can stand in for:
+
+- **The slider is reachable and moves the blend.** Turn the layer on, find the
+  ribbon control by its `band_item("ocr_blend")` rect, drag it, and assert the
+  `ocr-blend set=` trace carries the new value. Laid-out width is the oracle
+  for the control's presence; the trace is the oracle for the effect. Also
+  assert it is **absent** with the layer off — that is the whole of the R8
+  `shown_when` claim, and a renderer that ignored the condition would still
+  pass every unit test in the crate.
+- **The colour survives a restart and reaches nothing else.** Set it in
+  settings, quit, relaunch, and read it back off the swatch; then save the
+  document and compare bytes, which is guard 3 above driven rather than argued.
+
 ### The trap that will ship silently if it is not asserted
 
 OCR text is invisible on purpose — text render mode 3, drawn beneath the scan.

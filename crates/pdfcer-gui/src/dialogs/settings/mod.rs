@@ -674,6 +674,8 @@ pub fn show(
                     display::paste_chords(ui, &mut draft.working_prefs);
                     ui.add_space(10.0);
                     display::field_shade(ui, &mut draft.working_prefs);
+                    ui.add_space(10.0);
+                    display::ocr_colour(ui, &mut draft.working_prefs);
                     display::auto_hide(ui, &mut draft.working_prefs);
                     display::page_chrome(ui, &mut draft.working_prefs);
                 });

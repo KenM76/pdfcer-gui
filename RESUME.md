@@ -59,13 +59,15 @@ merge and split across *all* text editing, and a remembered editing colour. The
 design is argued in `DESIGNS.md`; the mode-placement question (fourth mode, or
 a state inside Edit — recommended) is in `GUI_ROADMAP.md`. **The engine survey
 is done and the verdict is: reading the layer, correcting a word in place, the
-views, the slider, the overlay and selection are all unblocked shell work.** **Built so far:** a
-View-tab toggle draws the layer in the one view there is — the raster fades
-towards paper white underneath and the recognised runs paint over it in the
-operator's colour, with the blend and the page's block count on the status bar.
-Not built: the slider itself (the mode is on/off at a fixed 65 %), the
-persisted colour (O229 — it is a session value today), the second view, and
-every editing verb.
+views, the slider, the overlay and selection are all unblocked shell work.**
+**Built so far:** a View-tab toggle draws the layer in the one view there is —
+the raster fades towards paper white underneath and the recognised runs paint
+over it in the operator's colour, with the blend and the page's block count on
+the status bar. The blend is a View-tab slider, present only while the layer is
+on, and the colour is a settings swatch written to the preferences file as
+`ocr_layer_colour` and read back on the next run. Both carry unit coverage and
+**neither has a driven check yet** — the owed ones are in `DESIGNS.md`.
+Not built: the second view, and every editing verb.
 Blocked: **G034** (no write path sets text render mode, so insert and rebuild
 print visible ink over the scan), **G035** (no merge verb), **G038** (no
 box-resize verb). Carried as a risk rather than blocked: **G037** — the two
