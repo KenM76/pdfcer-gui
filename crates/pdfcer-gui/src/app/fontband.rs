@@ -159,9 +159,16 @@ pub(super) fn draw(
                 k if k == crate::shell::manifest::FONT_SIZE => {
                     invoked = size(ui, draft, live, parked);
                 }
-                _ => {
+                k if k == crate::shell::manifest::FONT_COLOUR => {
                     invoked = colour(ui, draft, live, parked);
                 }
+                // Unreachable while `command_for` names exactly these three,
+                // and named rather than left as the colour swatch's catch-all
+                // for that reason: a fourth Font kind added to `command_for`
+                // and forgotten here would otherwise draw a **colour swatch**
+                // under its own tooltip, which is a control that works, reports
+                // a rect, and edits the wrong property.
+                _ => {}
             };
         })
         .response;

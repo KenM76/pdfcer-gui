@@ -462,7 +462,16 @@ pub(super) fn draw(
                     opacity(ui, *current, target, parked)
                 }
                 k if k == crate::shell::manifest::MARKUP_DASH => dash(ui, *current, target, parked),
-                _ => endings(ui, *current, target, parked),
+                k if k == crate::shell::manifest::MARKUP_ENDINGS => {
+                    endings(ui, *current, target, parked)
+                }
+                // Unreachable while `command_for` names exactly these six, and
+                // named rather than left as the arrowhead chooser's catch-all:
+                // a seventh Markup kind added to `command_for` and forgotten
+                // here would draw an **arrowhead chooser** under its own
+                // tooltip — a control that works, reports a rect, and edits the
+                // wrong property.
+                _ => false,
             };
         })
         .response;
