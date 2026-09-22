@@ -63,19 +63,224 @@
 # THE THREE OUTCOMES
 # ===========================================================================
 #
-#   PASS  the lock, the manifest and the docs agree, and any drift is
-#         recorded in UI_TOOLKIT_PINS.md with a reason
-#   SKIP  no network — part B could not run; A0 and A still ran and passed.
-#         ★ Printed as SKIP rather than PASS deliberately: a check that
-#         quietly downgrades to "the part I could do" is how a gate stops
-#         running and nobody notices. This project has the receipts.
-#   FAIL  the lock disagrees with the manifest or the docs, a pin resolves to
-#         nothing without being declared unused, or crates.io has a newer
-#         release UI_TOOLKIT_PINS.md does not mention
+#   0  PASS  the lock, the manifest and the docs agree, and any drift is
+#            recorded in UI_TOOLKIT_PINS.md with a reason
+#   1  FAIL  the lock disagrees with the manifest or the docs, a pin resolves
+#            to nothing without being declared unused, or crates.io has a
+#            newer release UI_TOOLKIT_PINS.md does not mention
+#   2  SKIP  no network — part B could not run; A0 and A still ran and passed
+#
+# ★ The SKIP is exit **2**, and it used to be exit 0. The header above it has
+# always said that printing SKIP rather than PASS was deliberate, "because a
+# check that quietly downgrades to the part I could do is how a gate stops
+# running and nobody notices" — and then it exited 0, which is the only thing
+# `run-all.sh` reads. The word landed in the passed column. So on any offline
+# run the entire crates.io half — the half the operator's question was about —
+# did not run and the roster said PASS. A three-state model stated in prose
+# and not in the exit code is a two-state model with a comment.
+#
+# ===========================================================================
+# HOW TO FALSIFY
+# ===========================================================================
+#
+#   bash tools/gates/check-ui-toolkit-drift.sh --self-test
+#
+# Twelve arms against synthetic roots and a stub crates.io, so it costs no
+# network and does not read this repository. Two seams make that possible,
+# both the same shape as `PDFCER_VERB_INSTRUMENT` next door:
+#
+#   PDFCER_TOOLKIT_ROOT     directory to read the four files from
+#   PDFCER_TOOLKIT_SEARCH   a program run as `<prog> <crate>`, standing in
+#                           for `cargo search` and printing its output shape
 #
 set -uo pipefail
 
-cd "$(dirname "$0")/../.." || exit 2
+if [ "${1:-}" = "--self-test" ]; then
+    SELF="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+    TD="$(mktemp -d)"
+    trap 'rm -rf "$TD"' EXIT
+    fails=0
+
+    # --- a fixture root -----------------------------------------------------
+    #
+    # Four files, because the gate reads four and they answer four different
+    # questions: the manifest states a REQUIREMENT, the lock states the FACT,
+    # MODES_AND_PANELS.md makes the claim part A checks, and
+    # UI_TOOLKIT_PINS.md is the register that part B demands a row in.
+    # The register arrives on stdin so every arm can state its own row.
+    mkroot() {   # mkroot <name> <locked-egui|none> <doc-claim|none>  <<'EOT' register EOT
+        local d="$TD/$1"
+        mkdir -p "$d"
+        printf '[workspace.dependencies]\negui = { version = "0.36" }\n' > "$d/Cargo.toml"
+        if [ "$2" = none ]; then
+            printf '[[package]]\nname = "serde"\nversion = "1.0.0"\n' > "$d/Cargo.lock"
+        else
+            printf '[[package]]\nname = "egui"\nversion = "%s"\n' "$2" > "$d/Cargo.lock"
+        fi
+        if [ "$3" = none ]; then
+            echo 'This document names no toolkit version at all.' > "$d/MODES_AND_PANELS.md"
+        else
+            echo "Feasibility verdicts measured against egui $3." > "$d/MODES_AND_PANELS.md"
+        fi
+        cat > "$d/UI_TOOLKIT_PINS.md"
+    }
+
+    # --- a stub crates.io ---------------------------------------------------
+    #
+    # `cargo search` prints `egui = "0.36.2"    # An immediate mode GUI`, and
+    # the gate parses the version off the front of that line. The stubs print
+    # exactly that shape; the offline one prints nothing, which is also what
+    # `cargo search` does with no network.
+    stub() {   # stub <name> <version|offline>
+        if [ "$2" = offline ]; then
+            printf '#!/usr/bin/env bash\nexit 0\n' > "$TD/$1"
+        else
+            printf '#!/usr/bin/env bash\nprintf "%%s = \\"%s\\"    # stub\\n" "$1"\n' "$2" > "$TD/$1"
+        fi
+        chmod +x "$TD/$1"
+    }
+    stub pub0361 0.36.1
+    stub pub0362 0.36.2
+    stub pub0370 0.37.0
+    stub offline offline
+
+    arm() {   # arm <label> <expected-rc> <root> [search-stub]
+        local got=0 search=""
+        [ -n "${4:-}" ] && search="$TD/$4"
+        PDFCER_TOOLKIT_ROOT="$TD/$3" PDFCER_TOOLKIT_SEARCH="$search" \
+            bash "$SELF" >/dev/null 2>&1 || got=$?
+        if [ "$got" -eq "$2" ]; then
+            printf '  ok    %-42s rc=%d\n' "$1" "$got"
+        else
+            printf '  FAIL  %-42s rc=%d, expected %d\n' "$1" "$got" "$2"
+            fails=$((fails + 1))
+        fi
+    }
+
+    # 1. the unplanted control.
+    mkroot agree 0.36.1 0.36 <<'EOT'
+| crate | pinned | published | status |
+|---|---|---|---|
+| `egui` | 0.36.1 | 0.36 | current |
+EOT
+    arm "the lock, the doc and the register agree" 0 agree pub0361
+
+    # 2. part A. A bump that leaves the sentence behind turns a measured
+    #    verdict into an unsourced one.
+    mkroot stale 0.36.1 0.35 <<'EOT'
+| crate | pinned | published | status |
+|---|---|---|---|
+| `egui` | 0.36.1 | 0.36 | current |
+EOT
+    arm "a doc sourcing verdicts to a stale minor" 1 stale pub0361
+
+    # 3. and the limit of part A, stated: this gate does not decide which
+    #    documents must cite a version, only that one which does is right.
+    mkroot silent 0.36.1 none <<'EOT'
+| crate | pinned | published | status |
+|---|---|---|---|
+| `egui` | 0.36.1 | 0.36 | current |
+EOT
+    arm "a doc naming no version is not its business" 0 silent pub0361
+
+    # 4/5. A0 — a pin with no consumer is either a dependency dropped without
+    #    its manifest line or one about to be adopted, and the two want
+    #    opposite actions, so the register must say which.
+    mkroot orphan none none <<'EOT'
+| crate | pinned | published | status |
+|---|---|---|---|
+| `egui` | 0.36.0 | 0.36 | current |
+EOT
+    arm "a pin resolving to nothing, undeclared" 1 orphan
+
+    mkroot orphan-ok none none <<'EOT'
+| crate | pinned | published | status |
+|---|---|---|---|
+| `egui` | 0.36.0 | 0.36 | pinned but unused — no consumer, absent from `Cargo.lock` |
+EOT
+    arm "a pin resolving to nothing, declared unused" 0 orphan-ok
+
+    # 6/7. part B. Being behind is not a defect; being behind unrecorded is.
+    mkroot newminor 0.36.1 0.36 <<'EOT'
+| crate | pinned | published | status |
+|---|---|---|---|
+| `egui` | 0.36.1 | 0.36 | current |
+EOT
+    arm "a new MINOR with no register row" 1 newminor pub0370
+
+    mkroot newminor-ok 0.36.1 0.36 <<'EOT'
+| crate | pinned | published | status |
+|---|---|---|---|
+| `egui` | 0.36.1 | 0.37 | deliberately behind — not yet driven |
+EOT
+    arm "a new MINOR with a register row" 0 newminor-ok pub0370
+
+    # 8. ★ the window edge, and the reason the gate matches on MAJOR.MINOR:
+    #    egui publishes patches often — 0.36.1 became 0.36.2 during the hour
+    #    the gate was written. A gate that goes red for no reason trains
+    #    everybody to edit the file it points at without reading it. Tightening
+    #    the match to the exact version reddens this arm and only this arm.
+    mkroot newpatch 0.36.1 0.36 <<'EOT'
+| crate | pinned | published | status |
+|---|---|---|---|
+| `egui` | 0.36.1 | 0.36 | current |
+EOT
+    arm "a new PATCH must not go red" 0 newpatch pub0362
+
+    # 9. ★★ the register TABLE discharges, not the document. The first draft
+    #    of part B grepped the whole file and passed on a sentence in the prose
+    #    that happened to contain the words. A gate discharged by narrative is
+    #    a gate that can be argued with.
+    mkroot prose 0.36.1 0.36 <<'EOT'
+egui 0.37 is published and we have decided to stay where we are for now.
+
+| crate | pinned | published | status |
+|---|---|---|---|
+| `egui` | 0.36.1 | 0.36 | current |
+EOT
+    arm "prose cannot discharge the register row" 1 prose pub0370
+
+    # 10. the defect this self-test was written for.
+    mkroot nonet 0.36.1 0.36 <<'EOT'
+| crate | pinned | published | status |
+|---|---|---|---|
+| `egui` | 0.36.1 | 0.36 | current |
+EOT
+    arm "crates.io unreachable is not a pass" 2 nonet offline
+
+    # 11. a scan that reads nothing reports success unless it is made not to.
+    mkroot nopin 0.36.1 0.36 <<'EOT'
+| crate | pinned | published | status |
+|---|---|---|---|
+| `egui` | 0.36.1 | 0.36 | current |
+EOT
+    printf '[workspace.dependencies]\nserde = "1"\n' > "$TD/nopin/Cargo.toml"
+    arm "no egui-family pin in the manifest" 1 nopin pub0361
+
+    # 12. without the register, "we are one release behind" and "nobody
+    #     looked" are the same state.
+    mkroot noreg 0.36.1 0.36 <<'EOT'
+placeholder
+EOT
+    rm -f "$TD/noreg/UI_TOOLKIT_PINS.md"
+    arm "the register absent" 1 noreg pub0361
+
+    if [ "$fails" -ne 0 ]; then
+        echo "check-ui-toolkit-drift --self-test: FAIL — $fails arm(s) disagreed."
+        exit 1
+    fi
+    echo "check-ui-toolkit-drift --self-test: PASS — 12 arms: part A's claim and"
+    echo "  its limit, A0 both ways, a new minor both ways, a patch that must"
+    echo "  stay green, prose that cannot discharge a row, and an unreachable"
+    echo "  crates.io that exits 2 rather than passing."
+    exit 0
+fi
+
+cd "${PDFCER_TOOLKIT_ROOT:-$(dirname "$0")/../..}" || exit 2
+
+# The stand-in for `cargo search`, empty in every real run. Part B is the only
+# half that needs a network, so it is the only half that needs a seam.
+SEARCH="${PDFCER_TOOLKIT_SEARCH:-}"
 
 MANIFEST="Cargo.toml"
 LOCK="Cargo.lock"
@@ -175,7 +380,11 @@ for c in $PINNED; do
     # `cargo search` needs the network. A failure here is "offline", not
     # "clean" — and it must SAY so, because a check that reports green while
     # measuring nothing is how a gate stops running unnoticed.
-    line="$(cargo search "$c" --limit 1 2>/dev/null | head -1)"
+    if [ -n "$SEARCH" ]; then
+        line="$("$SEARCH" "$c" 2>/dev/null | head -1)"
+    else
+        line="$(cargo search "$c" --limit 1 2>/dev/null | head -1)"
+    fi
     v="$(printf '%s' "$line" | sed -n "s/^$c = \"\([0-9.]*\)\".*/\1/p")"
     if [ -z "$v" ]; then
         echo "  SKIP: could not reach crates.io for $c"
@@ -225,7 +434,12 @@ fi
 
 if [ "$skipped" -ne 0 ]; then
     echo "ui-toolkit: SKIP — the lock and the docs agree, but crates.io was unreachable"
-    exit 0
+    echo "  Parts A0 and A ran and passed. Part B — how far behind the published"
+    echo "  release this shell is — did not run, so nothing here says the pin is"
+    echo "  current. Exiting 2 rather than 0, because the runner classifies on"
+    echo "  the exit code and the word SKIP above an exit 0 lands in the passed"
+    echo "  column."
+    exit 2
 fi
 
 echo "ui-toolkit: clean"

@@ -193,6 +193,17 @@ run "check-verb-coverage --self-test" bash "$HERE/check-verb-coverage.sh" --self
 # rename of either would otherwise have made it silently green over nothing.
 run "check-clipboard-chords --self-test" bash "$HERE/check-clipboard-chords.sh" --self-test
 
+# Twelve arms against synthetic roots and a stub crates.io, so it needs no
+# network and does not read this repository. It was written to pin a defect
+# the gate's own header had argued against and then committed: the offline
+# branch printed SKIP and exited 0, and this runner classifies on the exit
+# code alone, so every offline run filed the entire crates.io half under
+# PASSED without having run it. The other arms nobody writes by hand are the
+# two that must stay GREEN — a doc that names no version at all, and a new
+# PATCH release, which must not go red or everybody learns to edit the file
+# the gate points at without reading it.
+run "check-ui-toolkit-drift --self-test" bash "$HERE/check-ui-toolkit-drift.sh" --self-test
+
 # --- 1. the gates themselves ------------------------------------------------
 run "check-ui-strings"   bash "$HERE/check-ui-strings.sh"
 run "check-theme-colors" bash "$HERE/check-theme-colors.sh"

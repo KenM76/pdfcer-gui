@@ -77,8 +77,18 @@ Three behaviours worth knowing before the gate surprises you:
 - **It matches on `MAJOR.MINOR`.** egui publishes patches often, and a gate that
   went red on every patch would train everybody to edit this file without
   reading it. A new minor is the event that deserves a decision.
-- **crates.io unreachable prints SKIP, not PASS.** A check that quietly
-  downgrades to the half it could do is how a gate stops running unnoticed.
+- **crates.io unreachable prints SKIP and exits 2, not 0.** A check that
+  quietly downgrades to the half it could do is how a gate stops running
+  unnoticed — and `run-all.sh` classifies on the exit code alone, so the word
+  alone bought nothing. An offline run therefore makes the whole roster exit 3,
+  which is what "an incomplete run" is supposed to look like.
+
+Falsify it with `bash tools/gates/check-ui-toolkit-drift.sh --self-test`:
+twelve arms against synthetic roots and a stub crates.io, needing no network
+and reading none of this repository. Two of them assert the behaviours above
+by demanding a **green** — a document naming no version at all, and a new
+patch release — because a rule that only ever produces red is a rule nobody
+has measured the cost of.
 
 Part A binds one document today: `MODES_AND_PANELS.md` names the toolkit its
 capability verdicts were measured against, and a bump that leaves that heading
