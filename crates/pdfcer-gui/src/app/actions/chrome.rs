@@ -103,6 +103,31 @@ pub enum ViewChrome {
     /// request from that one value, so a changed region is already a
     /// changed key.
     OffPage,
+    /// `view.ocr_layer` — **the X-ray over a scanned page's invisible text.**
+    ///
+    /// `OPERATOR_REQUESTS.md` **O226**. A scan carries its recognised words as
+    /// text drawn at rendering mode 3, which by construction reaches no pixel:
+    /// the operator can search it, copy it and edit it, and cannot **see** it.
+    /// This switch draws it.
+    ///
+    /// **The only variant that is not a `bool` underneath.** It reads and
+    /// writes [`crate::viewer::ViewState::ocr_overlay`], an
+    /// `Option<f32>` — the slider O226 asks for — through `.is_some()` and
+    /// [`crate::viewer::OCR_OVERLAY_DEFAULT`]. It is in this enum anyway, and
+    /// the reason is the one [`Self::LineWeights`] gives at greater length:
+    /// what the enum models is **View ▸ Display's independent toggles**, each
+    /// dispatched by one action and each rendering pressed from one
+    /// `selected:` publisher. A separate mechanism for this switch would be a
+    /// second action, a second publisher and a second id mapping, to express
+    /// the same gesture — and the slider would still need this toggle to say
+    /// whether the mode is on at all.
+    ///
+    /// It needs **no** stale raster, which is the way it differs from
+    /// [`Self::LineWeights`] and the thing a reader will expect it to share.
+    /// Nothing here reaches [`pdfcer_render::RenderOptions`]: the raster is
+    /// veiled by the canvas and the text is drawn over it, both every frame.
+    /// [`crate::canvas::ocrlayer`] carries why veiling beats re-rasterizing.
+    OcrLayer,
 }
 
 impl ViewChrome {
@@ -120,6 +145,7 @@ impl ViewChrome {
         ViewChrome::ShowPoints,
         ViewChrome::LineWeights,
         ViewChrome::OffPage,
+        ViewChrome::OcrLayer,
     ];
 
     /// Read this toggle out of a view state.
@@ -132,6 +158,11 @@ impl ViewChrome {
             ViewChrome::ShowPoints => view.show_points,
             ViewChrome::LineWeights => view.line_weights,
             ViewChrome::OffPage => view.off_page,
+            // ★ The one variant whose field is not a `bool`. *Is the mode on?*
+            // is `.is_some()`, and where the slider sits inside the mode is a
+            // question this enum does not ask — `None` and `Some(0.0)` are
+            // genuinely different states and the field's own note says why.
+            ViewChrome::OcrLayer => view.ocr_overlay.is_some(),
         }
     }
 
@@ -148,6 +179,14 @@ impl ViewChrome {
             ViewChrome::ShowPoints => view.show_points = on,
             ViewChrome::LineWeights => view.line_weights = on,
             ViewChrome::OffPage => view.off_page = on,
+            // ★★ Turning it on lands the slider at the default rather than at
+            // the position it last held, and that is deliberate: the previous
+            // position may have been either stop, and arriving at a stop makes
+            // the first gesture *find the slider* instead of *read the page*.
+            // See `viewer::OCR_OVERLAY_DEFAULT`.
+            ViewChrome::OcrLayer => {
+                view.ocr_overlay = on.then_some(crate::viewer::OCR_OVERLAY_DEFAULT);
+            }
         }
     }
 }

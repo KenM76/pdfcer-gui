@@ -191,6 +191,7 @@
                         Command(id: "view.guides", size: Small),
                         Command(id: "view.line_weights", size: Small),
                         Command(id: "view.off_page", size: Small),
+                        Command(id: "view.ocr_layer", size: Small),
                     ],
                     collapse: 2,
                 ),

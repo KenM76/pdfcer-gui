@@ -297,6 +297,13 @@ pub mod moving;
 /// header carries why the ring is scoped to whatever the selection is
 /// standing in rather than to the page’s own paint order.
 pub mod objring;
+/// ★★ **The invisible text a scan carries, drawn** — `OPERATOR_REQUESTS.md`
+/// O226 and O229. Two layers at two places in `painting`'s order: a paper veil
+/// that fades the raster without re-rendering it, and the recognised runs laid
+/// out as vector text in a colour the operator chooses. Its header carries why
+/// nothing here is capped and why a run too small to read becomes a bar rather
+/// than a smudge.
+pub mod ocrlayer;
 pub mod overlay;
 /// ★ The application's own colour ROLES — `preview` and `dimension_selected` —
 /// built from the resolved theme's palette and published per frame.

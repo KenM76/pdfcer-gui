@@ -502,6 +502,28 @@ pub const fn view_text_chunks() -> CommandText {
     )
 }
 
+/// `view.ocr_layer`
+///
+/// ★ The label says **OCR text**, not *Show invisible text* and not *X-ray*.
+/// An operator who has scanned a drawing knows the letters OCR; the word
+/// *invisible* describes the mechanism, and the mechanism is the one thing
+/// about this feature they do not have to know.
+///
+/// The tooltip has to carry an unusual amount, because the control's whole
+/// subject is something that is on the page and cannot be seen: it says the
+/// text is already there, that this only draws it, and that nothing about the
+/// document changes. Without the last clause the honest reading of a button
+/// that makes writing appear on a scan is *"it wrote on my drawing"*.
+#[must_use]
+pub const fn view_ocr_layer() -> CommandText {
+    CommandText::new(
+        "OCR text",
+        "Draw the recognised text a scan is carrying. It is already in the file — searchable and \
+         copyable, just never drawn — and this shows you where it landed and what it says. Slide \
+         between the scan and the text to compare them. It changes nothing about the page.",
+    )
+}
+
 /// `view.rulers`
 ///
 /// The tooltip states the unit, because the unit is the thing an operator

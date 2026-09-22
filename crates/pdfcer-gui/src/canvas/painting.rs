@@ -29,7 +29,9 @@
 //!
 //! | layer | why it is where it is |
 //! |---|---|
-//! | **grid** | under everything: the only thing here about the *paper* rather than about something the operator has selected, searched for or is dragging |
+//! | **OCR veil** | under everything, the grid included: the only thing here whose subject is the *raster*, and it fades the picture of the page without fading the page |
+//! | **grid** | under everything else: the only other thing here about the *paper* rather than about something the operator has selected, searched for or is dragging |
+//! | **OCR text** | above the grid because it is page content the file carries and does not draw; below the find wash because a search answer outranks anything merely on the page |
 //! | **find highlights** | a wash answering *where is the text I asked about*, under the outline, which is a statement about what a verb would act on |
 //! | **selection outlines**, **grips** | |
 //! | **marquee** | |
@@ -41,7 +43,7 @@
 
 use egui::{Rect, Ui};
 
-use super::{grid, guides, handles, markup, measure, overlay};
+use super::{grid, guides, handles, markup, measure, ocrlayer, overlay};
 use crate::app::state::OpenDoc;
 use crate::canvas::mapping::PageMapping;
 use crate::canvas::markup::pen::Pen;
@@ -214,6 +216,18 @@ pub(super) fn draw(
 
     // ---- 8. draw --------------------------------------------------------
     let painter = ui.painter().with_clip_rect(clip);
+    // ★★ The OCR veil goes UNDER even the grid — `OPERATOR_REQUESTS.md` O226.
+    //
+    // It is the only thing painted here whose subject is the *raster*: it
+    // fades the picture of the page towards the backdrop that picture was
+    // composited onto. Everything else in this function, the grid included, is
+    // drawn ON the sheet and has to survive the fade — a grid dimmed by the
+    // slider would tell the operator the paper had moved when only the scan
+    // had. Draws nothing at all with the mode off, and nothing over a page
+    // that has no raster this frame.
+    if let Some(strength) = doc.view.ocr_overlay {
+        ocrlayer::draw_veil(&painter, pages, strength);
+    }
     // ★ The grid goes UNDER everything, including the find wash. It is the
     // only thing painted here that is about the *paper* rather than about
     // something the operator has selected, searched for or is dragging, so
@@ -222,6 +236,22 @@ pub(super) fn draw(
     // why it is per page rather than across the viewport.
     if doc.view.grid {
         grid::draw(ui, doc, pages, clip);
+    }
+    // ★★ The OCR text goes ABOVE the grid and BELOW the find wash.
+    //
+    // Above the grid because it is **page content** — text the file carries
+    // and does not draw — and the grid is furniture under the page. Below the
+    // find wash for the reason the wash's own comment gives: a search answer
+    // is a statement about what the operator just asked for, and it has to win
+    // over anything that is merely on the page. It follows that a hit inside
+    // the OCR layer is washed like any other hit, which is right: Find already
+    // searches this text, so a hit here is not a special kind of hit.
+    //
+    // Its veil is far above, under the grid — the two halves of one slider sit
+    // at two places in this order because they have two subjects. See
+    // `ocrlayer`'s header.
+    if let Some(strength) = doc.view.ocr_overlay {
+        ocrlayer::draw_text(&painter, doc, pages, clip, strength);
     }
     // ★ The find highlights go on FIRST, under everything else.
     //

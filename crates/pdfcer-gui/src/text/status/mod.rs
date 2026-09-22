@@ -1021,9 +1021,61 @@ pub fn too_many_text_chunks(count: usize, cap: usize) -> String {
     )
 }
 
+/// **The OCR text layer is switched on** — `OPERATOR_REQUESTS.md` O226.
+///
+/// Said only while the mode is on, and it carries two facts a look at the
+/// canvas cannot supply:
+///
+/// * **Where the slider is.** The blend is a continuum and the canvas shows a
+///   position in it, not the position — an operator who has half-faded a pale
+///   scan cannot tell 30 % from 45 % by looking.
+/// * **Whether there is anything to draw.** A page with no recognised text
+///   draws nothing, and *nothing* is indistinguishable from a broken mode.
+///   That is R8b's second guard exactly: an inference the operator cannot see
+///   — here, *this page was never OCR'd* — owes an off-canvas report.
+///
+/// The count is in the operator's own word from O226, *"block of text"*,
+/// rather than the engine's *run*.
+#[must_use]
+pub fn ocr_layer_line(percent: u32, blocks: usize) -> String {
+    if blocks == 0 {
+        "OCR text layer is on, and this page carries no recognised text — there is nothing to \
+         draw over it."
+            .to_owned()
+    } else {
+        format!("OCR text layer at {percent}% — {blocks} blocks of recognised text on this page.")
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// **The absent case is a different sentence, not the same one with a
+    /// zero in it.**
+    ///
+    /// A build that formatted `0 blocks` would satisfy every check that only
+    /// looked for a non-empty string, and would tell an operator staring at an
+    /// un-OCR'd scan that the mode is working.
+    #[test]
+    fn a_page_with_no_recognised_text_says_so_instead_of_counting_to_zero() {
+        let none = ocr_layer_line(65, 0);
+        assert!(
+            !none.contains('0'),
+            "the empty case must not read as a count: {none}"
+        );
+        assert!(none.contains("no recognised text"), "{none}");
+        assert_ne!(none, ocr_layer_line(65, 412));
+    }
+
+    /// The slider position reaches the sentence, because it reaches nowhere
+    /// else the operator can read it.
+    #[test]
+    fn the_blend_is_named_when_there_is_something_to_blend() {
+        let line = ocr_layer_line(30, 7);
+        assert!(line.contains("30%"), "{line}");
+        assert!(line.contains('7'), "{line}");
+    }
 
     /// The disclosure must say which state it is in.
     ///

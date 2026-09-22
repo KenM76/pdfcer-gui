@@ -810,7 +810,12 @@ pub fn draw(
     }
 }
 
-/// **The colour an erased footprint is painted in.**
+/// **The colour the renderer's own page backdrop is.**
+///
+/// Two callers, one value: an erased footprint is painted in it, and
+/// [`crate::canvas::ocrlayer::draw_veil`] fades a raster towards it. Both are
+/// covering ink with the ground it was composited onto, so a second constant
+/// would be two answers to one question.
 ///
 /// # ★★ Why this is a constant and not read from the document
 ///
@@ -820,7 +825,7 @@ pub fn draw(
 /// `render_page`'s own backdrop is (§11.4.7's page group is composited onto an
 /// opaque white backdrop when a document does not say otherwise).
 ///
-const fn paper() -> egui::Color32 {
+pub(super) const fn paper() -> egui::Color32 {
     // DOCUMENT COLOUR: this is the renderer's own page backdrop, not chrome.
     // §11.4.7 composites a page group onto an opaque white backdrop when the
     // document does not say otherwise, and `render_page` produced the raster

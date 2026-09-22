@@ -334,6 +334,20 @@ pub(super) fn tab() -> Tab {
                     // the end.
                     //
                     icon_only("view.off_page"),
+                    // ★★★ **O226's X-ray, and it is the only member of this
+                    // group whose subject is CONTENT the page already carries
+                    // and does not draw.**
+                    //
+                    // Every switch above is about furniture, about the texture
+                    // or about how much canvas there is. This one answers *what
+                    // does the scan actually say?* — text at rendering mode 3
+                    // that reaches no pixel by construction, which is why a
+                    // scanned drawing can be searched and cannot be read.
+                    //
+                    // AFTER `view.off_page`, so the group still reads
+                    // cheapest-first with one more rung on the end: furniture,
+                    // texture, layout, then the content nobody can see.
+                    icon_only("view.ocr_layer"),
                 ],
             ),
             // ---------------------------------------------------------------

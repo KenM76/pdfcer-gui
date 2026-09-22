@@ -304,6 +304,12 @@ mod fit;
 /// **What the bar can afford when the window is narrow** — the shed rule, and
 /// the reachability clause that makes shedding legitimate.
 pub(super) mod fitting;
+/// **Where the OCR blend sits, and whether the page has anything to blend.**
+///
+/// The canvas may not be marked to say *this page carries no recognised
+/// text* — R8b — so the one state where the mode is on and draws nothing is
+/// stated here or nowhere. See its header.
+mod ocrlayer;
 /// Page navigation and the editable page-number box. See this module's
 /// header for the seam, and that one's for the control.
 mod page_box;
@@ -878,6 +884,15 @@ pub fn show(
         // header, and beside `decline`'s own ruling, because those are the two
         // places the next reader will look.
         rasterstop::show(ui, doc);
+
+        // …and the same species of fact about one MODE.
+        //
+        // Below `rasterstop` because that one explains why a gesture the
+        // operator just made did nothing, and this one explains why a mode he
+        // turned on some time ago is showing nothing — the first is the
+        // answer to a question he is asking right now, the second to one he
+        // may not have thought to ask yet.
+        ocrlayer::show(ui, doc);
 
         decline::show(ui, doc);
 

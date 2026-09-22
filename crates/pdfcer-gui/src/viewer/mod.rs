@@ -443,6 +443,81 @@ pub struct ViewState {
     /// remembered per mode. All of that lives in
     /// [`crate::app::prefs::offpage`], with the argument for the split.
     pub off_page: bool,
+    /// **`view.ocr_layer` — the X-ray over a scanned page's invisible text,
+    /// and how far it is slid.**
+    ///
+    /// `OPERATOR_REQUESTS.md` **O226**, in his words: *"a slider for
+    /// transparency — when slid all the way to the left only the pdf shows […]
+    /// when slid all the way to the right only the text layer is visible."*
+    ///
+    /// # Why `Option<f32>` and not `f32`
+    ///
+    /// Because **off and fully-left are different states and look identical**.
+    /// At the left stop the operator is *in* the mode, reading the scan, one
+    /// drag away from the text; with the mode off there is no slider at all and
+    /// nothing is being withheld. One `f32` would have to pick a sentinel for
+    /// the second, and `0.0` is already spoken for by the first.
+    ///
+    /// So `None` is *the mode is off* — the ribbon button unpressed, the veil
+    /// not painted, no text drawn, nothing extracted — and `Some(s)` is *the
+    /// mode is on with the slider at `s`*. `ViewChrome::OcrLayer` reads
+    /// `.is_some()` and writes [`OCR_OVERLAY_DEFAULT`], so the ribbon toggle
+    /// and the slider are two handles on one field rather than two fields that
+    /// can disagree.
+    ///
+    /// # What `s` means, in both directions at once
+    ///
+    /// | `s` | the page raster | the text |
+    /// |---|---|---|
+    /// | `0.0` | as saved | not drawn |
+    /// | `0.5` | half veiled | half opaque |
+    /// | `1.0` | **blank** | full |
+    ///
+    /// At `1.0` the field behind the text is blank paper, not the scan at one
+    /// percent: he asked to read the OCR output *without the paper arguing with
+    /// it*. [`crate::canvas::ocrlayer`] owns both halves and the reason the
+    /// raster is veiled rather than re-rasterized.
+    ///
+    /// # R8b
+    ///
+    /// This is an operator-thrown X-ray switch over content already in the
+    /// file — the class Acrobat's *Show OCR text* belongs to — not pdfcer
+    /// marking its own uncertainty. Nothing it draws reaches a saved byte, and
+    /// the mode is named off-canvas the whole time it is on. `DESIGNS.md`
+    /// carries the settlement so it is not re-argued.
+    ///
+    /// # Per view
+    ///
+    /// Here, beside `zoom` and `grid`, because two open drawings must be able
+    /// to disagree — and because the second pane of O226's split is a second
+    /// `ViewState`, which is what lets one pane show the scan while the other
+    /// shows the text.
+    pub ocr_overlay: Option<f32>,
+}
+
+/// Where the OCR slider lands when the ribbon toggle turns the mode **on**.
+///
+/// Not `1.0` and not `0.0`. Either stop shows exactly one of the two things
+/// the mode exists to let an operator compare, so arriving at one would make
+/// the first gesture *find the slider* rather than *read the page*. Two thirds
+/// puts the text clearly on top with the scan still legible beneath it, which
+/// is the position an operator checking a recognition against the paper
+/// actually wants.
+pub const OCR_OVERLAY_DEFAULT: f32 = 0.65;
+
+/// A slider position brought into `0.0..=1.0`, with a non-finite one refused.
+///
+/// ★ The guard is `is_finite` **before** the clamp, not after: `f32::clamp`
+/// propagates a NaN rather than rejecting it, so a NaN that reached the veil's
+/// alpha would paint an undefined rectangle over the page. The same ordering
+/// `crate::app::prefs::normalise_ui_scale` uses, for the same reason.
+#[must_use]
+pub fn normalise_ocr_overlay(raw: f32) -> f32 {
+    if raw.is_finite() {
+        raw.clamp(0.0, 1.0)
+    } else {
+        OCR_OVERLAY_DEFAULT
+    }
 }
 
 impl Default for ViewState {
@@ -504,6 +579,11 @@ impl Default for ViewState {
             // the same reason `display` is `Single` here — the path that
             // knows the mode is the path that may know better.
             off_page: false,
+            // `None` — the mode is OFF, which is not the same state as the
+            // slider at its left stop. See the field's own note. A document
+            // opens showing what it says it shows; an X-ray is something the
+            // operator asks for.
+            ocr_overlay: None,
         }
     }
 }

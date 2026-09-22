@@ -354,6 +354,39 @@ pub(super) fn band() -> Vec<Command> {
         command("view.guides", t::view_guides(), 234)
             .with_icon("guides")
             .enabled_when("doc.pages"),
+        // ★★★ **The OCR text layer** — `OPERATOR_REQUESTS.md` O226. Token 266,
+        // the next free one in the View band. Not contiguous with 232-234
+        // because it is not part of that row of the specification; it arrived
+        // after it.
+        //
+        // ★★ **No `#[cfg(feature = "ocrs")]`, and that is not an oversight.**
+        // `file.ocr` is gated on the recogniser because it RUNS one. This draws
+        // a layer that is already in the file — put there by pdfcer, by
+        // Acrobat, by a scanner's own software, by anything — and reads it
+        // through `pdfcer_core::text_extract`, which is in every build. Gating
+        // it on the recogniser would refuse to show an operator the OCR text in
+        // a document they were handed, in a build that can search and copy that
+        // same text. R8 asks that a capability's presence be expressed by
+        // registering its command; the capability present here is *reading*,
+        // not *recognising*.
+        //
+        // ★ `enabled_when("doc.pages")`, with the rest of the Display group,
+        // rather than on the page having invisible text. The second would grey
+        // and ungrey as the operator pages through a mixed document — a control
+        // flickering under a gesture that has nothing to do with it — and R9
+        // reserves greying for the temporarily unavailable *with an
+        // explanation*. A page with no OCR text is instead answered where an
+        // inference belongs: off-canvas, by `crate::canvas::ocrlayer`, which
+        // says so in the status line rather than leaving the operator looking
+        // at an unchanged page wondering whether the button worked.
+        //
+        // ★ The icon is `recognise-text`, shared with `file.ocr` — literally
+        // the same subject — and the two are on different tabs, which is the
+        // condition this file's reuse notes turn on: they are never drawn
+        // beside each other.
+        command("view.ocr_layer", t::view_ocr_layer(), 266)
+            .with_icon("recognise-text")
+            .enabled_when("doc.pages"),
         // ★★★ **`view.line_weights` — O137, and it is the one entry in this
         // file that was DELETED and is now back.**
         //

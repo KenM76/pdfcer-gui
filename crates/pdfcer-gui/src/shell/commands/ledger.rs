@@ -412,9 +412,21 @@ fn registration_succeeds_and_registers_every_command() {
     // tools."* It draws one box per chunk of a selected text block, which is
     // what makes the chunk a thing an operator can aim at rather than a thing
     // the selection code knows about privately.
+    // ★ 162 → 163: `view.ocr_layer` REGISTERED —
+    // `OPERATOR_REQUESTS.md` O226. Ken: *"when slid all the way to the right
+    // only the text layer is visible."* A seventh `ViewChrome` variant, and
+    // the first whose underlying field is not a `bool` — the slider and this
+    // toggle are two handles on one `Option<f32>`.
+    //
+    // ★ It carries NO `#[cfg]`, where its neighbour `file.ocr` does. That is
+    // the R8 line drawn in the right place: `file.ocr` runs a recogniser and
+    // is absent from a build without one; this READS a layer already in the
+    // file, through `text_extract`, which every build has. Gating it on the
+    // recogniser would refuse to show an operator the OCR text in a document
+    // they were handed — in a build that can already search and copy it.
     assert_eq!(
         registry().len(),
-        162 + usize::from(cfg!(feature = "signing"))
+        163 + usize::from(cfg!(feature = "signing"))
     );
 }
 
@@ -802,9 +814,16 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // never drawn together either: one is a ribbon toggle, the other a context
     // menu row. Nothing was drawn, so `icons/assets/PROVENANCE.md` is
     // untouched.
+    // ★★ 145 → 146: `view.ocr_layer` names `recognise-text` (O226), the eighth
+    // reuse. The glyph was drawn for `file.ocr`, which *produces* the layer
+    // this command *shows*, so it is the same subject at two ends of one act —
+    // the closest relationship any reuse under this header has claimed. The
+    // pair sits on different tabs (File, View), one tab's band shows at a
+    // time, and the labels are what tell them apart. Nothing was drawn, so
+    // `icons/assets/PROVENANCE.md` is untouched.
     assert_eq!(
         named,
-        145 + usize::from(cfg!(feature = "signing")),
+        146 + usize::from(cfg!(feature = "signing")),
         "commands naming an icon"
     );
     // ★ 12 → 17: the Format ▸ Font group's five commands
