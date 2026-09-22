@@ -110,10 +110,22 @@ states, not two: `0` pass, `1` fail, `3` a gate was **skipped** because its
 precondition was absent. A skip is not a pass — CI must not go green on a gate
 set that did not fully run.
 
-Every gate that is a grep over source carries a `--self-test` that plants a
-violation and asserts the gate catches it. The self-tests run before any gate
-is trusted: a gate that cannot detect its own planted violation has no verdict
-worth reading.
+Every gate in `tools/gates/` carries a `--self-test` that plants a violation
+and asserts the gate catches it — without exception, and the exception is what
+the phrasing is guarding against. "Every gate that is a grep over source" was
+the qualifier once, and the gates that fell outside it — the ones reading a
+manifest, a lockfile or a network — were the last ones still unproven, which is
+backwards: those are the gates whose inputs are least often present, so they
+are the gates whose skip and failure branches are least often executed on a
+real run.
+
+A self-test's arms must include the ones that demand a GREEN, not only the ones
+that demand a red. A rule that only ever produces red is a rule whose cost
+nobody has measured, and it trains everybody to edit the file the gate points
+at without reading it.
+
+The self-tests run before any gate is trusted: a gate that cannot detect its
+own planted violation has no verdict worth reading.
 
 **A gate chooses the files it will examine, and choosing them with `git grep` or
 `git ls-files` chooses the index instead of the working tree.** Those two sets

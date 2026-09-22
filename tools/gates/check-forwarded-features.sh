@@ -74,9 +74,11 @@
 #     than derived from `Cargo.lock` the way `tools/engine_path.py` derives it,
 #     so an engine that has moved reads as an engine that is absent, and the
 #     gate skips instead of failing.
-#   * Anything a line-wise grep cannot reach. `default = [` split across lines,
-#     a feature forwarded under a different name, a capability guarded by a
-#     `cfg` rather than a feature.
+#   * Anything a line-wise grep cannot reach: a feature forwarded under a
+#     different name, a capability guarded by a `cfg` rather than a feature. A
+#     `default = [` that opens on one line and closes on a later one is the
+#     exception — it is the only one of these that would read HALF a list and
+#     report clean, so it is detected and failed rather than tolerated.
 #   * Whether a DELIBERATELY_NOT_FORWARDED reason is a good one. It checks only
 #     that the name is followed by an em dash and something.
 #
@@ -85,10 +87,14 @@
 # ═══════════════════════════════════════════════════════════════════════════
 #
 #   0  every engine default capability is forwarded and on by default here
-#   1  one is not forwarded, or is forwarded and not on by default here, or the
-#      engine manifest exists and no `default = [...]` line could be read out
-#      of it — that last one is the gate failing to parse its own input, which
-#      must be loud rather than green, and is deliberately not a skip
+#   1  one is not forwarded; or is forwarded and not on by default here; or is
+#      refused with no reason; or is refused by an entry that refuses nothing
+#      because the engine no longer defaults that name; or the engine manifest
+#      exists and its `default = [...]` could not be read whole — no such line,
+#      or one that opens its list and does not close it. Those last two are the
+#      gate failing to read its own input, which must be loud rather than
+#      green, and are deliberately not skips: a half-read list rendered as a
+#      green tick is indistinguishable from a list with nothing wrong in it
 #   2  SKIPPED — an input is missing: no engine manifest on this machine, or no
 #      `crates/pdfcer-gui/Cargo.toml`. NOT a pass. A gate that cannot read one
 #      of its two sides has learned nothing, and `run-all.sh` prints skips in
@@ -106,8 +112,11 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 
-ENGINE_MANIFEST="D:/Dev/pdfcer/crates/pdfcer-core/Cargo.toml"
-OUR_MANIFEST="$ROOT/crates/pdfcer-gui/Cargo.toml"
+# Both sides are overridable so `--self-test` can point the gate at synthetic
+# manifests and exercise every branch without a pdfcer checkout, a network, or
+# any dependence on what this repository's own manifest happens to say today.
+ENGINE_MANIFEST="${FORWARDED_ENGINE_MANIFEST:-D:/Dev/pdfcer/crates/pdfcer-core/Cargo.toml}"
+OUR_MANIFEST="${FORWARDED_OUR_MANIFEST:-$ROOT/crates/pdfcer-gui/Cargo.toml}"
 
 # ---------------------------------------------------------------------------
 # DELIBERATELY NOT FORWARDED
@@ -120,6 +129,146 @@ OUR_MANIFEST="$ROOT/crates/pdfcer-gui/Cargo.toml"
 # Empty today. Every default capability the engine has is forwarded.
 # ---------------------------------------------------------------------------
 DELIBERATELY_NOT_FORWARDED=""
+
+# The self-test's third seam. `-` rather than `:-`, so an override that is
+# deliberately empty stays empty instead of falling back to the list above and
+# quietly testing something other than what the arm asked for.
+DELIBERATELY_NOT_FORWARDED="${FORWARDED_EXEMPTIONS-$DELIBERATELY_NOT_FORWARDED}"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SELF-TEST
+#
+# Every arm runs this script against a synthetic engine manifest and a
+# synthetic manifest of our own, so it needs no pdfcer checkout and reads
+# nothing from this repository. That matters twice over: the arms keep working
+# on a machine where the engine is not cloned — exactly the machine where the
+# real gate SKIPS and its correctness is least visible — and the arms do not
+# change meaning the next time somebody edits our own feature list.
+#
+# Two arms demand a GREEN and they are the ones a hand test does not produce:
+# an engine feature that is declared and NOT defaulted must not be demanded
+# (this gate takes off-by-default as a decision the engine has already made),
+# and a `default` inside a comment must not be picked up (the engine's manifest
+# carries paragraphs about these features and uses the word throughout).
+# ═══════════════════════════════════════════════════════════════════════════
+if [ "${1:-}" = "--self-test" ]; then
+    SELF="$HERE/$(basename "${BASH_SOURCE[0]}")"
+    TD="$(mktemp -d)"
+    trap 'rm -rf "$TD"' EXIT
+    st=0
+    arms=0
+
+    # A manifest is a `[features]` table and the lines given, verbatim.
+    mkman() {
+        local p="$1"; shift
+        {
+            echo '[package]'
+            echo 'name = "synthetic"'
+            echo
+            echo '[features]'
+            printf '%s\n' "$@"
+        } > "$p"
+    }
+
+    arm() {
+        local label="$1" want="$2" e="$3" o="$4" ex="$5"
+        local must="${6:-}" mustnot="${7:-}"
+        arms=$((arms + 1))
+        local out got
+        out="$(FORWARDED_ENGINE_MANIFEST="$e" FORWARDED_OUR_MANIFEST="$o" \
+               FORWARDED_EXEMPTIONS="$ex" bash "$SELF" 2>&1)"
+        got=$?
+        if [ "$got" -ne "$want" ]; then
+            echo "  FAIL [$label] expected rc=$want, got rc=$got"
+            printf '%s\n' "$out" | sed 's/^/        /'
+            st=1
+            return
+        fi
+        if [ -n "$must" ] && ! printf '%s\n' "$out" | grep -qE "$must"; then
+            echo "  FAIL [$label] rc=$want as expected, but the message never said /$must/"
+            printf '%s\n' "$out" | sed 's/^/        /'
+            st=1
+            return
+        fi
+        if [ -n "$mustnot" ] && printf '%s\n' "$out" | grep -qE "$mustnot"; then
+            echo "  FAIL [$label] rc=$want as expected, but the message said /$mustnot/, which is the wrong diagnosis"
+            printf '%s\n' "$out" | sed 's/^/        /'
+            st=1
+        fi
+    }
+
+    # Engine sides.
+    mkman "$TD/e-two.toml"     'default = ["jpx", "ocrs"]' 'jpx = []' 'ocrs = []'
+    mkman "$TD/e-decoy.toml"   '# default = ["bogus"]' 'default = ["jpx"]' 'jpx = []'
+    mkman "$TD/e-optin.toml"   'default = ["jpx"]' 'jpx = []' 'ocrs = []'
+    mkman "$TD/e-open.toml"    'default = ["jpx",' '    "ocrs"]' 'jpx = []'
+    mkman "$TD/e-nodefault.toml" 'jpx = []' 'ocrs = []'
+
+    # Our side.
+    mkman "$TD/o-two.toml"     'default = ["jpx", "ocrs"]' \
+                               'jpx = ["pdfcer-core/jpx"]' 'ocrs = ["pdfcer-core/ocrs"]'
+    mkman "$TD/o-one.toml"     'default = ["jpx"]' 'jpx = ["pdfcer-core/jpx"]'
+    mkman "$TD/o-notdef.toml"  'default = ["jpx"]' \
+                               'jpx = ["pdfcer-core/jpx"]' 'ocrs = ["pdfcer-core/ocrs"]'
+    mkman "$TD/o-wrongcrate.toml" 'default = ["jpx", "ocrs"]' \
+                               'jpx = ["pdfcer-core/jpx"]' 'ocrs = ["pdfcer-render/ocrs"]'
+
+    # ── the agreement control ──────────────────────────────────────────────
+    arm "both sides agree" 0 "$TD/e-two.toml" "$TD/o-two.toml" "" 'clean'
+
+    # ── the regression the gate exists for ─────────────────────────────────
+    arm "a default capability not forwarded at all" 1 \
+        "$TD/e-two.toml" "$TD/o-one.toml" "" 'are not forwarded'
+    arm "forwarded but left out of our own default list" 1 \
+        "$TD/e-two.toml" "$TD/o-notdef.toml" "" 'NOT ON BY DEFAULT' 'are not forwarded'
+    arm "forwarded from some other crate is not forwarded" 1 \
+        "$TD/e-two.toml" "$TD/o-wrongcrate.toml" "" 'are not forwarded'
+
+    # ── greens a hand test does not produce ────────────────────────────────
+    arm "an engine feature that is not on by default is not demanded" 0 \
+        "$TD/e-optin.toml" "$TD/o-one.toml" "" 'clean'
+    arm "a default inside a comment is not the default list" 0 \
+        "$TD/e-decoy.toml" "$TD/o-one.toml" "" 'clean'
+
+    # ── the refusal list ───────────────────────────────────────────────────
+    arm "a refusal with a reason discharges the row" 0 \
+        "$TD/e-two.toml" "$TD/o-one.toml" \
+        'ocrs — the OCR backend is chosen at runtime here, so linking it twice is waste' \
+        'deliberately not forwarded'
+    arm "a refusal with no reason is not a discharge" 1 \
+        "$TD/e-two.toml" "$TD/o-one.toml" 'ocrs' \
+        'with no reason' 'are not forwarded'
+    arm "an em dash with nothing after it is not a reason" 1 \
+        "$TD/e-two.toml" "$TD/o-one.toml" 'ocrs — ' \
+        'with no reason' 'are not forwarded'
+    arm "a refusal that refuses nothing" 1 \
+        "$TD/e-two.toml" "$TD/o-two.toml" \
+        'signing — the engine stopped defaulting this one and nobody came back' \
+        'refuse nothing'
+
+    # ── failing to read its own input is loud, not green and not a skip ────
+    arm "a default list that opens and does not close" 1 \
+        "$TD/e-open.toml" "$TD/o-two.toml" "" 'does not close on it' 'all forwarded and on by default'
+    arm "an engine manifest with no default list" 1 \
+        "$TD/e-nodefault.toml" "$TD/o-two.toml" "" 'no .default = ' 'all forwarded and on by default'
+
+    # ── a missing side is a skip, and a skip is not a pass ─────────────────
+    arm "no engine manifest on this machine" 2 \
+        "$TD/nosuch.toml" "$TD/o-two.toml" "" 'SKIPPED'
+    arm "no manifest of our own" 2 \
+        "$TD/e-two.toml" "$TD/nosuch.toml" "" 'SKIPPED'
+
+    if [ "$st" -eq 0 ]; then
+        echo "check-forwarded-features --self-test: PASS — $arms arms."
+        echo "  A capability that is on by default in the engine and absent here is named;"
+        echo "  one that is forwarded and not defaulted is reported separately; a refusal"
+        echo "  without a reason is not a discharge; and a list this gate can only read"
+        echo "  half of fails rather than reporting clean."
+    else
+        echo "check-forwarded-features --self-test: FAIL"
+    fi
+    exit "$st"
+fi
 
 if [ ! -f "$ENGINE_MANIFEST" ]; then
     echo "forwarded-features: SKIPPED — the engine manifest is not at $ENGINE_MANIFEST." >&2
@@ -138,7 +287,27 @@ fi
 # Anchored to the start of the line so a `default` mentioned inside a comment or
 # inside another feature's list cannot be picked up. The engine's manifest
 # carries long commentary about these features, and much of it uses the word.
-engine_default="$(grep -m1 -E '^default[[:space:]]*=' "$ENGINE_MANIFEST" \
+engine_default_line="$(grep -m1 -E '^default[[:space:]]*=' "$ENGINE_MANIFEST")"
+
+# A `default` list that opens on this line and closes on a later one is the one
+# shape a line-wise read gets WRONG QUIETLY rather than not at all. The names
+# before the newline parse, the names after it are never demanded, and the gate
+# prints `clean` over a list it read half of. An empty list is already loud
+# below; this half-read is not, so it is made loud here.
+if printf '%s' "$engine_default_line" | grep -q '\[' \
+   && ! printf '%s' "$engine_default_line" | grep -q '\]'; then
+    echo "forwarded-features: FAIL — the \`default = [\` in $ENGINE_MANIFEST opens" >&2
+    echo "  on its line and does not close on it." >&2
+    echo >&2
+    echo "  This gate reads that list one line at a time, so it would demand the" >&2
+    echo "  names before the newline and silently ignore every name after it —" >&2
+    echo "  reporting clean over a list it read half of. Either put the list on" >&2
+    echo "  one line, or teach this parse to span lines. Not a skip: a half-read" >&2
+    echo "  input rendered as a green tick is what this gate exists to prevent." >&2
+    exit 1
+fi
+
+engine_default="$(printf '%s' "$engine_default_line" \
     | sed -E 's/^default[[:space:]]*=[[:space:]]*\[//; s/\].*$//' \
     | tr -d '" ' | tr ',' '\n' | grep -v '^$')"
 
@@ -158,11 +327,39 @@ our_default="$(grep -m1 -E '^default[[:space:]]*=' "$OUR_MANIFEST" \
 missing=""
 not_default=""
 exempted=""
+unreasoned=""
+
+# Every name the refusal list MENTIONS, in whatever shape the entry is in.
+#
+# Read separately from the reason because a name mentioned without one must not
+# fall through to "not forwarded": that message tells the reader to add a list
+# entry that is already sitting there, and a gate whose remedy is already in
+# place is a gate the reader concludes is broken. The two states want opposite
+# actions — write the reason, or write the forwarding line — so they are
+# separate outcomes with separate sentences.
+exempt_names="$(printf '%s\n' "$DELIBERATELY_NOT_FORWARDED" \
+    | sed -E 's/^[[:space:]]+//' | grep -v '^$' \
+    | sed -E 's/^([^[:space:]]+).*$/\1/' | sort -u)"
+
+# A reason is an em dash followed by something that is not more whitespace.
+# "Checks only that there IS one", per the header — whether it is a good reason
+# is a review question and this cannot be the thing that answers it.
+exempt_reason_for() {
+    printf '%s\n' "$DELIBERATELY_NOT_FORWARDED" \
+        | sed -E 's/^[[:space:]]+//' \
+        | grep -E "^$1[[:space:]]*—[[:space:]]*[^[:space:]]" \
+        | head -1
+}
 
 for name in $engine_default; do
-    if printf '%s\n' "$DELIBERATELY_NOT_FORWARDED" | grep -q "^$name —"; then
-        exempted="${exempted}${name}
+    if printf '%s\n' "$exempt_names" | grep -qx "$name"; then
+        if [ -z "$(exempt_reason_for "$name")" ]; then
+            unreasoned="${unreasoned}${name}
 "
+        else
+            exempted="${exempted}${name}
+"
+        fi
         continue
     fi
     # (b) a feature of the same name that forwards the engine's.
@@ -178,7 +375,51 @@ for name in $engine_default; do
     fi
 done
 
+# A refusal naming a capability the engine does not have on by default refuses
+# nothing. It is read as a live decision by everybody who finds it, and it is
+# the shape a stale list takes: the engine stops defaulting a feature, or
+# renames it, and the paragraph explaining why we decline it stays behind
+# forever with nothing to decline.
+stale=""
+for name in $exempt_names; do
+    printf '%s\n' "$engine_default" | grep -qx "$name" || stale="${stale}${name}
+"
+done
+
 status=0
+
+if [ -n "$unreasoned" ]; then
+    status=1
+    echo "forwarded-features: FAIL — $(printf '%s' "$unreasoned" | grep -c '^') capability(ies) are named in DELIBERATELY_NOT_FORWARDED with no reason:"
+    printf '%s' "$unreasoned" | sed 's/^/    /'
+    cat <<'EOF'
+
+The format is `<feature> — <reason>`, with an em dash and a sentence. An entry
+that names a capability and stops is a refusal nobody can review: the next
+reader cannot tell a decision from an oversight, and the only remedy left is to
+find whoever wrote it.
+
+The reason must be about the CAPABILITY, not the schedule. "Not needed yet" is
+a work item, and a work item belongs in ENGINE_BACKLOG.md where something reads
+it.
+EOF
+fi
+
+if [ -n "$stale" ]; then
+    status=1
+    echo "forwarded-features: FAIL — $(printf '%s' "$stale" | grep -c '^') DELIBERATELY_NOT_FORWARDED entry(ies) refuse nothing:"
+    printf '%s' "$stale" | sed 's/^/    /'
+    cat <<'EOF'
+
+Each names a capability that is not in the engine's `default` list — because it
+was renamed, was made opt-in, or was removed. The entry still reads as a live
+decision to anybody who finds it, and the reason attached to it is now about a
+capability that is not there.
+
+Delete the entry. If the capability came back under a new name, that new name
+is a fresh decision and wants its own entry with its own reason.
+EOF
+fi
 
 if [ -n "$missing" ]; then
     status=1

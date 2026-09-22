@@ -215,6 +215,22 @@ run "check-ui-toolkit-drift --self-test" bash "$HERE/check-ui-toolkit-drift.sh" 
 # "exists and lists no surface".
 run "check-conventions --self-test" bash "$HERE/check-conventions.sh" --self-test
 
+# check-forwarded-features asks whether every capability the ENGINE has on by
+# default survives into this build. Fourteen arms, against a synthetic engine
+# manifest and a synthetic manifest of our own, so they still run on a machine
+# with no pdfcer checkout — which is exactly the machine where the real gate
+# SKIPS and its correctness is least visible.
+#
+# Two demand a GREEN and are the ones a hand test does not produce: an engine
+# feature that is declared and not defaulted must not be demanded, and the word
+# `default` inside a comment must not be read as the default list. Three pin
+# states that had one sentence between them — a refusal with no reason used to
+# report as "not forwarded", which sends the reader to add a list entry already
+# sitting there. And one pins that a `default = [` opening on one line and
+# closing on a later one FAILS rather than demanding the names before the
+# newline and reporting clean over the half it read.
+run "check-forwarded-features --self-test" bash "$HERE/check-forwarded-features.sh" --self-test
+
 # --- 1. the gates themselves ------------------------------------------------
 run "check-ui-strings"   bash "$HERE/check-ui-strings.sh"
 run "check-theme-colors" bash "$HERE/check-theme-colors.sh"
