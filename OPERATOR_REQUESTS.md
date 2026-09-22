@@ -693,13 +693,35 @@ a run cannot be written as text, and a count of what fell back.
 Until it lands the option is not drawn at all (R9), and every SVG and EMF
 export already leads its report with the outline fact.
 
-## O225 — **FILED** — draw page previews should default to no limit
+## O225 — ◑ **BUILT AND UNIT-ASSERTED — THE DEFAULT ITSELF IS NOT DRIVEN; NOT CLOSED, that is yours** — draw page previews should default to no limit
 
 > *"Also draw page previews should be set to "no limit" by default."*
 
 A setting whose default makes the program do less than it can, on a machine
 that can afford it, is a default chosen for a machine he is not using. The
 default becomes **no limit**.
+
+`panels::pages::thumbnails::PAGE_BUDGET_DEFAULT` is `None`, and
+`Prefs::default` reaches it through `millis_from_budget` rather than writing
+`0`, so the sentinel and the decision cannot drift apart. `0` is the
+operator's own notation for *never* in the box and in `preferences.txt`, and
+it is the one out-of-range value `budget_from_millis` does **not** clamp — 1 ms
+would be an off switch wearing a number and becomes the 100 ms floor, while `0`
+is a deliberate instruction and survives.
+
+### ⚠ What is not driven, and why it is a real gap rather than a choice
+
+`ui-verify::the_page_preview_limit_is_remembered_and_zero_means_never` asserts
+the round trip — the gesture, the file and the next launch — but it **plants**
+a starting limit of 2,000 ms precisely because, inside its own gesture flow, a
+zero that was kept cannot be told from a zero that was never set. Its header
+says so.
+
+⇒ Nothing driven asserts that a **fresh profile** comes up at *no limit*. That
+is the half of this row the operator actually asked for, and a unit test on
+`PAGE_BUDGET_DEFAULT` is not the oracle R1 trusts. A launch into an empty
+profile reading `pages-panel … budget_ms=0` has none of the ambiguity the
+existing check reasons about, so the gap is buildable rather than argued.
 
 ## O217 — **FILED** — redaction must address the same chunk unit, by the same gestures
 
