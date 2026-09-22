@@ -228,6 +228,30 @@ run "check-selection-channel" bash "$HERE/check-selection-channel.sh"
 # instance sat a hundred lines under a comment block explaining the
 # mechanism. A finding written next to the code does not apply itself.
 run "check-scroll-row-wrapping" bash "$HERE/check-scroll-row-wrapping.sh"
+# ★★★ `check-custom-kind-drawn` — the one ribbon defect that shipped for a
+# whole release with every gate green.
+#
+# `Item::Custom` is the seam where the manifest stops describing a control and
+# starts trusting the application to draw one: the shell reserves a slot and
+# emits a `kind` string, and if nothing matches that string the slot draws
+# empty under its caption. Markup ▸ Style emitted the literal `"colour_swatch"`
+# and no renderer ever matched it, for the whole of v0.1.0.
+#
+# ★★ Nothing else in the tree asks the question. Every reachability check is
+# built on `Shell::command_references`, which walks tabs, the QAT and the
+# keymap — the places a command *id* appears — and a `Custom` item carries no
+# id by design. The manifest was well-formed, the group reachable, the item
+# declared and the caption drawn; the only missing thing was the widget.
+#
+# ★ Keyed on the `Item::custom(` call, which is the moving side: a thirteenth
+# control is added by writing one of those. A register, a marker comment or a
+# naming convention would each be something the thirteenth control could be
+# added without touching. And a mention in a doc COMMENT does not count —
+# by the time the defect was found, `COLOUR_SWATCH` was discussed by name in
+# half a dozen of them, so a laxer gate would have been green on the strength
+# of prose explaining that the widget did not exist.
+run "check-custom-kind-drawn --self-test" bash "$HERE/check-custom-kind-drawn.sh" --self-test
+run "check-custom-kind-drawn" bash "$HERE/check-custom-kind-drawn.sh"
 run "check-file-size"    bash "$HERE/check-file-size.sh"
 run "check-shell-purity" bash "$HERE/check-shell-purity.sh"
 run "check-shipped-assets" bash "$HERE/check-shipped-assets.sh"
