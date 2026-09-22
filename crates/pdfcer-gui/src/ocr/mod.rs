@@ -108,6 +108,13 @@
 #[cfg(test)]
 mod fixture;
 
+/// Pins what the engine makes of `fixtures/ocr-layer.pdf` — a page that already
+/// carries an OCR layer, readable without the recogniser and without the model
+/// weights. **Test-only.** Its header carries the three controls and the wrong
+/// build each one catches; the generator carries the document's shape.
+#[cfg(test)]
+mod layer_fixture;
+
 /// **What the recogniser is doing, and the two ways to end it early** —
 /// the operator asked for both on 2026-09-01. Its header carries why Cancel
 /// and Stop must never collapse into one act.
