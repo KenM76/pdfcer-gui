@@ -364,4 +364,16 @@ if [ "${1:-}" = "--self-test" ]; then
 fi
 
 run_checks "$ROOT"
-exit $?
+rc=$?
+# ★ The clean line names the pin and both documents it read.
+#
+# `run_checks` speaks only on failure, which is ordinary tool manners and the
+# wrong manners for a check: exit 0 with no output is satisfied equally by "it
+# compared both citations and they agreed" and by "the scan root moved, it read
+# nothing, and nothing disagreed with nothing". The value and the two document
+# names are what make the second case visible without running `--self-test`.
+if [ "$rc" -eq 0 ]; then
+    echo "check-pin-citation: clean — FEATURES.md and RESUME.md both quote" \
+         "$(read_locked_pin_in "$ROOT" | cut -c1-7), the engine pin in Cargo.lock."
+fi
+exit $rc
