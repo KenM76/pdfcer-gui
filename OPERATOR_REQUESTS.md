@@ -654,29 +654,45 @@ the asymmetry decides it. Escape commits.
 sibling kinds that means **every** one of them — the text tool, free text,
 callouts, form field values, text-bearing markup, ce dimension labels, the
 comment editor. An option added to one is owed to every kind the format lets
-carry it, and the parity table is how that is counted rather than discovered.
+carry it, and `tools/gates/check-escape-disposition.sh` is how that is counted
+rather than discovered.
 
 ⚠ **This changes an Escape rung**, and the Escape precedence ladder is
 enumerated in `canvas::keys`'s tests. The rung that currently abandons a text
 edit becomes a rung that commits it; what Escape does when there is *no* text
 in flight is untouched.
 
-**Where it holds now.** The canvas caret and the note window commit on Escape.
-The Comments panel's note editor and reply box commit on Escape, through
-`panels::comments::editor::escape_commits`, which decides the destination —
-`SetNote` for a note, `add_reply` for a reply — and writes nothing when the
-draft is unchanged or a reply is blank. The text-annotation dialog is the one
-surface where Escape still *reaches* a discard, because Cancel is what a dialog
-is for; the protection there is a rung rather than a commit, and the first press
-only leaves the field. Bookmark, ce dimension group and form field rename
-drafts have no Escape branch at all, so nothing was ever lost to the key.
+**Where it holds now, counted rather than recalled.**
+`tools/gates/check-escape-disposition.sh` enumerates every text field this
+shell constructs and requires each to state, in one of five words, what Escape
+does to what has been typed. It reports **63**, and they fall out as:
 
-**What is owed before this row can be closed.** The parity sweep across the
-remaining text-bearing kinds — free text, callouts, form field values,
-text-bearing markup, ce dimension labels — counted against the parity table
-rather than found by hand; and the driven assertion, which is registered as
-`escape_commits_text` in `ui-verify` and has not yet been run. Unit tests
-cannot see the chain: they call the helper, not the key.
+| what Escape does | fields | the surfaces |
+|---|---|---|
+| **commits** | 10 | the canvas caret's form fields, the note window, the Comments panel's note editor and reply box, document properties, the Forms panel's field values, a field's tooltip and default value, a widget's caption |
+| **keeps the draft** | 11 | bookmark add and rename, ce dimension group rename and creation, form field rename, tab-order registration, an attachment's description, a choice field's options, a redaction's overlay text |
+| **cancels a dialog** | 27 | every field in every dialog, including the text annotation's |
+| **holds nothing of his** | 5 | the Find query, the layer filter, the page-number box, and two disabled boxes mirroring values that cannot be typed into |
+| **is not a surface** | 10 | fields a test builds to put egui into a known focus state |
+
+Three things that read as gaps are not. A commit keyed on `lost_focus()` **is**
+an Escape commit — egui surrenders a field's focus on the key, so the two are
+one event. A rename box that writes its draft back every frame loses nothing:
+the key takes the caret out and leaves the words in. And a **ce dimension's
+label cannot carry this at all** — it is derived from its group's scale, unit
+and format and is never typed, so there is no draft for the key to reach.
+
+The text-annotation dialog is the one surface where Escape still *reaches* a
+discard, because Cancel is what a dialog is for. The protection is a rung
+rather than a commit: `dialogs::host` gives every field in every dialog a first
+press that only leaves the box and a second that closes the window, which is
+what Acrobat, Word and every options window in Windows do.
+
+**What is owed before this row can be closed.** The driven assertion, which is
+registered as `escape_commits_text` in `ui-verify` and has not yet been run.
+Unit tests cannot see the chain: they call the helper, not the key. And the
+gate above cannot see it either — it asks whether a human being answered the
+question at each call site, not whether the answer is true.
 
 ## O224 — **FILED** — export should keep text as text, and fonts embedded, where the format allows
 

@@ -612,6 +612,8 @@ fn row(
 ) {
     ui.horizontal(|ui| {
         ui.label(t::info_label(field));
+        // escape-disposition: commits — committed on `lost_focus`, and egui
+        // surrenders a field's focus on Escape, so the key rides that path.
         let response = ui.add(egui::TextEdit::singleline(draft).desired_width(200.0));
         crate::diag::ui_rect(
             // ui-text-exempt: trace region name, never displayed

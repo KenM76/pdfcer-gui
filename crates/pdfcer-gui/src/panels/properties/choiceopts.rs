@@ -507,11 +507,15 @@ fn option_rows(ui: &mut Ui, rows: &mut [OptionRow], sorted: bool) -> Op {
         let regions = ROW_REGIONS.get(n);
         ui.horizontal_wrapped(|ui| {
             let shown = ui.add(
+                // escape-disposition: keeps-draft — typed straight into the row list
+                // this panel holds; the list is committed as a whole.
                 egui::TextEdit::singleline(&mut row.display)
                     .desired_width(width)
                     .id_salt(("choice-opt-shown", n)),
             );
             let sent = ui.add(
+                // escape-disposition: keeps-draft — the export half of the same row in
+                // the same panel-held list.
                 egui::TextEdit::singleline(&mut row.export)
                     .desired_width(width)
                     .id_salt(("choice-opt-sent", n)),
@@ -603,6 +607,8 @@ fn add_row(ui: &mut Ui, adding: &mut String) -> bool {
     let mut pressed = false;
     ui.horizontal_wrapped(|ui| {
         let response = ui.add(
+            // escape-disposition: keeps-draft — Enter adds the option; Escape
+            // leaves what was typed sitting in the box for the next press.
             egui::TextEdit::singleline(adding)
                 .desired_width(width)
                 .hint_text(t::add_hint())

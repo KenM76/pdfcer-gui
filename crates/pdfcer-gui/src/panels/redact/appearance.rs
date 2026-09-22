@@ -295,6 +295,8 @@ fn controls(ui: &mut egui::Ui, appearance: &mut Appearance) {
     // ---- the caption -----------------------------------------------------
     ui.label(t::overlay_label());
     let field = ui.add(
+        // escape-disposition: keeps-draft — typed into the redaction appearance
+        // this panel holds, which outlives the field and the panel both.
         egui::TextEdit::singleline(&mut appearance.overlay_text)
             .hint_text(t::overlay_hint())
             .char_limit(MAX_OVERLAY_CHARS),

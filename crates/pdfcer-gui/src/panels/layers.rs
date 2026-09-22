@@ -305,6 +305,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     let query = if total >= search::MIN_LAYERS_FOR_SEARCH {
         ui.horizontal(|ui| {
             let field = ui.add(
+                // escape-disposition: not-content — a filter over the layer list.
                 egui::TextEdit::singleline(state.layers_search_mut())
                     .hint_text(ts::field_hint())
                     .desired_width(f32::INFINITY),

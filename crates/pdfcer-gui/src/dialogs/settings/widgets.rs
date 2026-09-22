@@ -285,6 +285,9 @@ pub fn text_value<T: Clone + PartialEq>(
         .ctx()
         .data_mut(|d| d.get_temp::<String>(id))
         .unwrap_or_else(|| format(value));
+    // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+    // every field in this window: the first press leaves the box, the second
+    // cancels.
     let response = ui.add(egui::TextEdit::singleline(&mut buffer).desired_width(140.0));
     if response.changed()
         && let Some(parsed) = parse(&buffer)

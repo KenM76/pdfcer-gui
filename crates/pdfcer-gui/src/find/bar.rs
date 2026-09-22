@@ -515,6 +515,8 @@ fn field(ui: &mut egui::Ui, state: &mut FindState, epoch: u64, actions: &mut Vec
             let focus_wanted = state.take_focus_request();
             let response = ui.add_sized(
                 Vec2::new(FIELD_WIDTH_PTS, ROW_HEIGHT_PTS),
+                // escape-disposition: not-content — a search query. Escape closes the
+                // bar, which is what every find bar in the product class does.
                 egui::TextEdit::singleline(state.query_mut())
                     .id(egui::Id::new(FIELD_ID))
                     .hint_text(t::field_label()),

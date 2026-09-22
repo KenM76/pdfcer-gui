@@ -390,6 +390,8 @@ fn a_real_focused_text_field_keeps_its_arrow_keys() {
     // `request_focus` on an id would leave the predicate false and the test
     // vacuous.
     let _ = ctx.run_ui(RawInput::default(), |ui| {
+        // escape-disposition: not-a-surface — a field this test builds to put egui
+        // into a known focus state. It is never drawn for an operator.
         let response = ui.add(egui::TextEdit::singleline(&mut buffer).id(field));
         response.request_focus();
     });
@@ -399,6 +401,8 @@ fn a_real_focused_text_field_keeps_its_arrow_keys() {
     let mut composing_now = false;
     let mut actions = Vec::new();
     let _ = ctx.run_ui(arrows(Key::ArrowUp, Modifiers::NONE, 1), |ui| {
+        // escape-disposition: not-a-surface — a field this test builds to put egui
+        // into a known focus state. It is never drawn for an operator.
         ui.add(egui::TextEdit::singleline(&mut buffer).id(field));
         // typing-guard-exempt: a TEST asserting the harness actually reached the
         // focused state. Reading egui's own answer is the point — a test that

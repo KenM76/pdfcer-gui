@@ -252,6 +252,24 @@ run "check-scroll-row-wrapping" bash "$HERE/check-scroll-row-wrapping.sh"
 # of prose explaining that the widget did not exist.
 run "check-custom-kind-drawn --self-test" bash "$HERE/check-custom-kind-drawn.sh" --self-test
 run "check-custom-kind-drawn" bash "$HERE/check-custom-kind-drawn.sh"
+# ★★ `check-escape-disposition` — O223, standing.
+#
+#   "it is easy to accidentally press escape and lose a lot of text that has
+#    been entered."
+#
+# The scope he gave is *"any tool that has text"*, and contract clause 7 says a
+# scope like that is COUNTED rather than discovered one complaint at a time.
+# Counted once by hand is a paragraph that is true on the day it is written and
+# silently false the next time somebody adds a field; this is the counting, kept
+# running. Every text field states what Escape does to what has been typed, in
+# one of five words the gate checks against a closed list.
+#
+# ★ It cannot tell whether the answer is TRUE — a site labelled `commits` whose
+# commit path is broken passes here. That is `ui-verify`'s question. This one
+# asks only whether a human being asked the operator's question at this call
+# site, which is answerable by grep and was, for all sixty-three, unasked.
+run "check-escape-disposition --self-test" bash "$HERE/check-escape-disposition.sh" --self-test
+run "check-escape-disposition" bash "$HERE/check-escape-disposition.sh"
 run "check-file-size"    bash "$HERE/check-file-size.sh"
 run "check-shell-purity" bash "$HERE/check-shell-purity.sh"
 run "check-shipped-assets" bash "$HERE/check-shipped-assets.sh"

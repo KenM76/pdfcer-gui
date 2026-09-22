@@ -401,6 +401,8 @@ fn editor(
     //
     *sink.writing_controls_drawn += 1;
     let response = ui.add(
+        // escape-disposition: commits — `escape_commits` decides the
+        // destination and writes it; nothing is raised for an unchanged draft.
         egui::TextEdit::multiline(draft.text_mut())
             .desired_rows(3)
             .desired_width(f32::INFINITY),

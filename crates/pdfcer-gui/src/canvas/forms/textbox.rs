@@ -111,8 +111,12 @@ pub(super) fn lay(ui: &mut Ui, draft: &mut String, spec: &Spec<'_>) -> egui::Res
         .and_then(|srgb| egui_shell::theme::Theme::foreign_fill_pair(&ctx, srgb));
 
     let mut edit = if spec.multiline {
+        // escape-disposition: commits — `canvas::forms`' own `Key::Escape` arm
+        // runs ahead of the `lost_focus` branch and writes the draft.
         egui::TextEdit::multiline(draft)
     } else {
+        // escape-disposition: commits — same arm in `canvas::forms`; a password
+        // field is no less the operator's typing for being drawn as dots.
         egui::TextEdit::singleline(draft).password(spec.password)
     }
     .id(spec.id)

@@ -204,6 +204,9 @@ impl PasswordDialog {
             // window is opened in an office and read over a shoulder, and the
             // one thing a password field must do is not display the password.
             let field = ui.add(
+                // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+                // every field in this window: the first press leaves the box, the second
+                // cancels.
                 egui::TextEdit::singleline(&mut self.password)
                     .password(true)
                     .desired_width(ui.available_width() - 8.0),

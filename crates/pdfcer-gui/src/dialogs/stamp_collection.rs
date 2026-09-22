@@ -276,6 +276,9 @@ impl StampCollectionDialog {
     fn category_group(&mut self, ui: &mut Ui) {
         ui.label(t::category_label());
         let response = ui
+            // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+            // every field in this window: the first press leaves the box, the second
+            // cancels.
             .add(egui::TextEdit::singleline(&mut self.plan.category).desired_width(f32::INFINITY));
         crate::diag::ui_rect(REGION_CATEGORY, response.rect);
         ui.weak(t::category_hint());
@@ -310,6 +313,9 @@ impl StampCollectionDialog {
                 tick.on_hover_text(t::include_hint());
                 ui.label(t::page_label(page_number));
                 ui.add(
+                    // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+                    // every field in this window: the first press leaves the box, the second
+                    // cancels.
                     egui::TextEdit::singleline(&mut self.plan.stamps[index].display)
                         .desired_width(f32::INFINITY),
                 )

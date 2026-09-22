@@ -686,6 +686,8 @@ impl DimensionGroupsUi {
         ui.horizontal_wrapped(|ui| {
             ui.label(t::new_name_label());
             let response =
+                // escape-disposition: keeps-draft — the new group's name lives on this
+                // panel and is committed by the button beside it.
                 ui.add(egui::TextEdit::singleline(&mut self.new_name).desired_width(160.0));
             crate::diag::ui_rect(REGION_NEW_NAME, response.rect);
 

@@ -283,6 +283,8 @@ pub(super) fn rows(ui: &mut egui::Ui, doc: &OpenDoc, listing: &Listing, actions:
             });
             ui.horizontal(|ui| {
                 ui.add(
+                    // escape-disposition: keeps-draft — the draft lives in panel state and
+                    // is committed by Register. There is no focus-loss branch to clear it.
                     egui::TextEdit::singleline(draft)
                         .desired_width(120.0)
                         .hint_text(t::tab_order_register_name_hint()),

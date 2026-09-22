@@ -520,12 +520,16 @@ fn a_focused_text_field_keeps_delete_for_itself() {
 
     // Frame 1: build the field and take focus.
     let _ = ctx.run_ui(RawInput::default(), |ui| {
+        // escape-disposition: not-a-surface — a field this test builds to put egui
+        // into a known focus state. It is never drawn for an operator.
         ui.add(egui::TextEdit::singleline(&mut buffer))
             .request_focus();
     });
     // Frame 2: the field holds focus; Delete belongs to it.
     let mut typing = false;
     let _ = ctx.run_ui(key(Key::Delete), |ui| {
+        // escape-disposition: not-a-surface — a field this test builds to put egui
+        // into a known focus state. It is never drawn for an operator.
         ui.add(egui::TextEdit::singleline(&mut buffer));
         // typing-guard-exempt: a TEST asserting the harness actually reached
         // the focused state. Reading the raw egui answer is the point - a

@@ -115,6 +115,8 @@ pub fn show(ui: &mut Ui, doc: &OpenDoc, ui_state: &mut BookmarksUi, actions: &mu
     // --- the title and the button -----------------------------------------
     ui.horizontal(|ui| {
         let response = ui.add(
+            // escape-disposition: keeps-draft — the title lives in panel state and
+            // is committed by the Add button. Nothing clears it on focus loss.
             egui::TextEdit::singleline(&mut ui_state.title)
                 .desired_width(160.0)
                 .hint_text(t::bookmark_add_title_hint()),

@@ -147,6 +147,9 @@ fn page_rows(ui: &mut Ui, does: &mut ButtonDoes) {
     ui.horizontal(|ui| {
         ui.label(t::page_number_label());
         let response = ui.add(
+            // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+            // every field in this window: the first press leaves the box, the second
+            // cancels.
             egui::TextEdit::singleline(&mut does.page_number)
                 .desired_width(60.0)
                 .char_limit(6),
@@ -197,6 +200,9 @@ fn show_hide_rows(ui: &mut Ui, does: &mut ButtonDoes) {
     ui.add_space(4.0);
     ui.label(t::targets_label());
     ui.add(
+        // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+        // every field in this window: the first press leaves the box, the second
+        // cancels.
         egui::TextEdit::multiline(&mut does.targets)
             .desired_width(f32::INFINITY)
             .desired_rows(3),
@@ -208,6 +214,9 @@ fn show_hide_rows(ui: &mut Ui, does: &mut ButtonDoes) {
 /// The address box, shared by *Open a web address* and *Send the form's data*.
 fn url_row(ui: &mut Ui, does: &mut ButtonDoes) {
     ui.label(t::url_label());
+    // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+    // every field in this window: the first press leaves the box, the second
+    // cancels.
     ui.add(egui::TextEdit::singleline(&mut does.url).desired_width(f32::INFINITY));
 }
 

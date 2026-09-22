@@ -502,6 +502,8 @@ fn rename_row(
     // stored beside the draft rather than inferred.
     let draft = state.field_rename_mut(&selected.field);
     let response = ui.add(
+        // escape-disposition: keeps-draft — typed straight into the panel's own
+        // rename draft, which is re-seeded only when the selection changes.
         egui::TextEdit::singleline(draft)
             .desired_width(f32::INFINITY)
             .char_limit(crate::canvas::formfield::draft::NAME_MAX),

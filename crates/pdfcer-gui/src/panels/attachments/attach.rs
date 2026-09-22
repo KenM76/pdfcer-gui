@@ -83,6 +83,8 @@ pub fn show(ui: &mut Ui, ui_state: &mut AttachmentsUi, actions: &mut Vec<Action>
     ui.label(t::attach_heading());
 
     let response = ui.add(
+        // escape-disposition: keeps-draft — the description lives in panel
+        // state and is committed by the Attach button. Nothing clears it.
         egui::TextEdit::singleline(&mut ui_state.description)
             .desired_width(f32::INFINITY)
             .hint_text(t::attach_description_hint()),

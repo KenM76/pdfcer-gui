@@ -505,6 +505,9 @@ impl FormFieldDialog {
     fn name_row(&mut self, ui: &mut Ui) {
         ui.label(t::name_label(self.draft.kind));
         let response = ui.add(
+            // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+            // every field in this window: the first press leaves the box, the second
+            // cancels.
             egui::TextEdit::singleline(&mut self.draft.name)
                 .desired_width(f32::INFINITY)
                 .char_limit(NAME_MAX),
@@ -549,6 +552,9 @@ impl FormFieldDialog {
         ui.add_space(6.0);
         ui.label(t::tooltip_label());
         ui.add(
+            // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+            // every field in this window: the first press leaves the box, the second
+            // cancels.
             egui::TextEdit::singleline(&mut self.draft.tooltip)
                 .desired_width(f32::INFINITY)
                 .hint_text(t::tooltip_hint())
@@ -576,6 +582,9 @@ impl FormFieldDialog {
     fn text_rows(&mut self, ui: &mut Ui) {
         ui.label(t::value_label());
         ui.add(
+            // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+            // every field in this window: the first press leaves the box, the second
+            // cancels.
             egui::TextEdit::singleline(&mut self.draft.value)
                 .desired_width(f32::INFINITY)
                 .hint_text(t::value_hint()),
@@ -621,6 +630,9 @@ impl FormFieldDialog {
         ui.add_space(6.0);
         ui.label(t::export_label());
         ui.add(
+            // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+            // every field in this window: the first press leaves the box, the second
+            // cancels.
             egui::TextEdit::singleline(&mut self.draft.export_value).desired_width(f32::INFINITY),
         );
         ui.small(t::export_note());
@@ -638,6 +650,9 @@ impl FormFieldDialog {
         ui.add_space(6.0);
         ui.label(t::radio_export_label());
         ui.add(
+            // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+            // every field in this window: the first press leaves the box, the second
+            // cancels.
             egui::TextEdit::singleline(&mut self.draft.export_value).desired_width(f32::INFINITY),
         );
         ui.add_space(6.0);
@@ -648,6 +663,9 @@ impl FormFieldDialog {
     fn choice_rows(&mut self, ui: &mut Ui) {
         ui.label(t::options_label());
         ui.add(
+            // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+            // every field in this window: the first press leaves the box, the second
+            // cancels.
             egui::TextEdit::multiline(&mut self.draft.options)
                 .desired_rows(4)
                 .desired_width(f32::INFINITY)
@@ -678,6 +696,9 @@ impl FormFieldDialog {
     /// A push button's caption, and what pressing it does.
     fn button_rows(&mut self, ui: &mut Ui) {
         ui.label(t::caption_label());
+        // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+        // every field in this window: the first press leaves the box, the second
+        // cancels.
         ui.add(egui::TextEdit::singleline(&mut self.draft.caption).desired_width(f32::INFINITY));
         crate::dialogs::buttonaction::rows(ui, &mut self.draft.action);
         // ★★★ THE INERT NOTE IS GONE, and its deletion is the feature.

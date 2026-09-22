@@ -299,6 +299,8 @@ fn blocked_row(ui: &mut egui::Ui, field: &Field, note: &'static str) {
     ui.add_enabled_ui(false, |ui| {
         let mut shown = field.value.display_text();
         if matches!(field.field_type, Some(FieldType::Text)) {
+            // escape-disposition: not-content — DISABLED, a mirror of a value this
+            // row may not author. There is no draft for the key to reach.
             ui.add(egui::TextEdit::singleline(&mut shown).desired_width(f32::INFINITY));
         } else if !shown.is_empty() {
             ui.label(&shown);
@@ -335,6 +337,8 @@ fn rich_text_row(ui: &mut egui::Ui, field: &Field, out: &mut Vec<FormEdit>) {
     let mut display = shown.clone();
     ui.add_enabled(
         false,
+        // escape-disposition: not-content — DISABLED, a mirror of a rich-text
+        // value pdfcer will not author in place.
         egui::TextEdit::singleline(&mut display).desired_width(f32::INFINITY),
     );
     ui.label(
@@ -473,6 +477,8 @@ fn text_row(
 
     let response = if multiline {
         ui.add(
+            // escape-disposition: commits — `commit(response.lost_focus(), ..)`
+            // below, and Escape is one of the ways focus is lost.
             egui::TextEdit::multiline(draft)
                 .id_salt(("pdfcer-forms-text", index))
                 .desired_width(f32::INFINITY)
@@ -480,6 +486,8 @@ fn text_row(
         )
     } else {
         ui.add(
+            // escape-disposition: commits — the single-line half of the same
+            // `commit(response.lost_focus(), ..)` call below.
             egui::TextEdit::singleline(draft)
                 .id_salt(("pdfcer-forms-text", index))
                 .password(password)

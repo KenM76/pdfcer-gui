@@ -610,6 +610,8 @@ fn caption_row(
 ) {
     ui.label(t::label_caption());
     let response = ui.add(
+        // escape-disposition: commits — `lost_focus` and a changed caption.
+        // Empty commits `Some("")`, which removes it.
         egui::TextEdit::singleline(&mut draft.caption)
             .desired_width(f32::INFINITY)
             .hint_text(t::label_caption_hint()),

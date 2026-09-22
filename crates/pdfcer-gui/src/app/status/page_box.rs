@@ -286,6 +286,8 @@ fn field(
     // it. See the module docs.
     let response = ui
         .add(
+            // escape-disposition: not-content — a page number is navigation, not
+            // the operator's work, so the branch below drops the draft.
             TextEdit::singleline(&mut text)
                 .id(id)
                 .desired_width(PAGE_BOX_WIDTH_PTS)

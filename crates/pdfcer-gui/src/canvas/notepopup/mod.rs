@@ -716,6 +716,8 @@ fn body(
         .show(ui, |ui| {
             if editing {
                 let response = ui.add(
+                    // escape-disposition: commits — `save_draft` on the `lost_focus` plus
+                    // Escape pair a dozen lines down. *Cancel* is the deliberate discard.
                     egui::TextEdit::multiline(draft.text_mut())
                         .desired_rows(3)
                         .desired_width(f32::INFINITY),

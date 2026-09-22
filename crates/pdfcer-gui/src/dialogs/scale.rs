@@ -567,6 +567,9 @@ impl ScaleDialog {
                 ui.horizontal(|ui| {
                     ui.label(t::real_length_label());
                     let response = ui.add(
+                        // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+                        // every field in this window: the first press leaves the box, the second
+                        // cancels.
                         egui::TextEdit::singleline(&mut self.fields.real_length_text)
                             .hint_text(t::real_length_hint())
                             .desired_width(140.0),

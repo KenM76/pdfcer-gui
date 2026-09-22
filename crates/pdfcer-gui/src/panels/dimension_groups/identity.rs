@@ -81,6 +81,8 @@ impl super::DimensionGroupsUi {
         let mut commit = false;
         ui.horizontal_wrapped(|ui| {
             ui.label(t::rename_label());
+            // escape-disposition: keeps-draft — written back below whatever
+            // happened, so the key leaves the box and leaves the words in it.
             let response = ui.add(egui::TextEdit::singleline(&mut typed).desired_width(160.0));
             crate::diag::ui_rect(REGION_RENAME, response.rect);
 

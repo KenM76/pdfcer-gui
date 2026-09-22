@@ -492,6 +492,8 @@ fn tooltip_row(ui: &mut Ui, fqn: &str, state: &mut PanelsState, actions: &mut Ve
     ui.label(t::label_tooltip());
     let draft = state.field_props_mut();
     let response = ui.add(
+        // escape-disposition: commits — committed on `lost_focus`, which Escape
+        // triggers. An empty draft commits `Declined` and removes `/TU`.
         egui::TextEdit::singleline(&mut draft.tooltip)
             .desired_width(f32::INFINITY)
             .hint_text(t::label_tooltip_hint()),
@@ -549,6 +551,8 @@ fn default_value_row(ui: &mut Ui, fqn: &str, state: &mut PanelsState, actions: &
     ui.label(t::label_default_value());
     let draft = state.field_props_mut();
     let response = ui.add(
+        // escape-disposition: commits — `lost_focus` and a changed value, and
+        // Escape is one of the ways focus is lost.
         egui::TextEdit::singleline(&mut draft.default_value)
             .desired_width(f32::INFINITY)
             .hint_text(t::label_default_value_hint()),

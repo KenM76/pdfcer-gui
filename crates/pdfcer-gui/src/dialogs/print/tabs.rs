@@ -267,6 +267,9 @@ pub(super) fn pages_layout(
     ui.horizontal_wrapped(|ui| {
         ui.radio_value(&mut dialog.range, PrintRange::Custom, t::range_custom());
         if ui
+            // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+            // every field in this window: the first press leaves the box, the second
+            // cancels.
             .add(egui::TextEdit::singleline(&mut dialog.range_text).desired_width(120.0))
             .on_hover_text(t::range_hint())
             .changed()

@@ -828,6 +828,9 @@ impl OcrDialog {
                 ui.horizontal(|ui| {
                     ui.radio_value(&mut self.scope, Scope::Range, t::scope_range());
                     let field = ui.add(
+                        // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+                        // every field in this window: the first press leaves the box, the second
+                        // cancels.
                         egui::TextEdit::singleline(&mut self.range)
                             .desired_width(140.0)
                             .hint_text(t::scope_range_hint()),

@@ -234,6 +234,9 @@ impl InsertPagesDialog {
             // also press the radio beside it is a second statement of one
             // intent.
             if ui
+                // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+                // every field in this window: the first press leaves the box, the second
+                // cancels.
                 .add(egui::TextEdit::singleline(&mut self.range_text).desired_width(140.0))
                 .changed()
             {

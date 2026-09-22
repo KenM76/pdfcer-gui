@@ -1034,6 +1034,8 @@ mod tests {
         // `text_edit_focused()` is genuinely true rather than assumed.
         let _ = ctx.run_ui(RawInput::default(), |ui| {
             let mut text = String::new();
+            // escape-disposition: not-a-surface — a field this test builds to put egui
+            // into a known focus state. It is never drawn for an operator.
             let r = ui.add(egui::TextEdit::singleline(&mut text).id(id));
             r.request_focus();
         });
@@ -1042,6 +1044,8 @@ mod tests {
         let mut ids = Vec::new();
         let _ = ctx.run_ui(key_press(Key::Z, Modifiers::COMMAND), |ui| {
             let mut text = String::new();
+            // escape-disposition: not-a-surface — a field this test builds to put egui
+            // into a known focus state. It is never drawn for an operator.
             ui.add(egui::TextEdit::singleline(&mut text).id(id));
             // typing-guard-exempt: a TEST asserting the harness actually reached
             // the focused state. Reading the raw egui answer is the point - a

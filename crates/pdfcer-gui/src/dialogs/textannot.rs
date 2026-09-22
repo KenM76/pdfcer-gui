@@ -765,6 +765,10 @@ impl TextAnnotDialog {
     /// The free-text field, for the two kinds whose words the operator writes.
     fn field(&mut self, ui: &mut Ui) {
         let response = ui.add(
+            // escape-disposition: dialog-cancels — the one surface where the key
+            // still reaches a discard, and it is a dialog, so Cancel is the point.
+            // `dialogs::host`'s two-press rung is the protection: the first press
+            // leaves the field, the second closes the window.
             egui::TextEdit::multiline(&mut self.text)
                 .desired_rows(4)
                 .desired_width(f32::INFINITY)

@@ -719,6 +719,9 @@ impl ProtectDialog {
             ui.add_space(4.0);
             ui.label(t::current_owner_password_label());
             ui.add(
+                // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+                // every field in this window: the first press leaves the box, the second
+                // cancels.
                 egui::TextEdit::singleline(&mut self.current_owner)
                     .password(true)
                     .desired_width(280.0),
@@ -734,12 +737,18 @@ impl ProtectDialog {
             ui.add_space(4.0);
             ui.label(t::user_password_label());
             ui.add(
+                // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+                // every field in this window: the first press leaves the box, the second
+                // cancels.
                 egui::TextEdit::singleline(&mut self.user)
                     .password(true)
                     .desired_width(280.0),
             );
             ui.label(t::user_password_again_label());
             ui.add(
+                // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+                // every field in this window: the first press leaves the box, the second
+                // cancels.
                 egui::TextEdit::singleline(&mut self.user_again)
                     .password(true)
                     .desired_width(280.0),
@@ -747,12 +756,18 @@ impl ProtectDialog {
             ui.add_space(4.0);
             ui.label(t::owner_password_label());
             ui.add(
+                // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+                // every field in this window: the first press leaves the box, the second
+                // cancels.
                 egui::TextEdit::singleline(&mut self.owner)
                     .password(true)
                     .desired_width(280.0),
             );
             ui.label(t::owner_password_again_label());
             ui.add(
+                // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+                // every field in this window: the first press leaves the box, the second
+                // cancels.
                 egui::TextEdit::singleline(&mut self.owner_again)
                     .password(true)
                     .desired_width(280.0),

@@ -60,6 +60,9 @@ impl SignDialog {
         ui.add_space(6.0);
         ui.label(t::passphrase_label());
         let field = ui.add(
+            // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+            // every field in this window: the first press leaves the box, the second
+            // cancels.
             egui::TextEdit::singleline(&mut self.passphrase)
                 .password(true)
                 .desired_width(FIELD_WIDTH),
@@ -128,6 +131,9 @@ impl SignDialog {
         ui.add_space(6.0);
         ui.label(t::reason_label());
         ui.add(
+            // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+            // every field in this window: the first press leaves the box, the second
+            // cancels.
             egui::TextEdit::singleline(&mut self.reason)
                 .hint_text(t::reason_hint())
                 .desired_width(FIELD_WIDTH),
@@ -135,6 +141,9 @@ impl SignDialog {
         ui.add_space(4.0);
         ui.label(t::location_label());
         ui.add(
+            // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+            // every field in this window: the first press leaves the box, the second
+            // cancels.
             egui::TextEdit::singleline(&mut self.location)
                 .hint_text(t::location_hint())
                 .desired_width(FIELD_WIDTH),
