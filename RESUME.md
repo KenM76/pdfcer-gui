@@ -108,10 +108,19 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
    reaches the second document through a **one-path** environment seam, so
    three or six documents in one driven process is not reachable at all —
    *N separate processes* is in any case the closer analogue of what he
-   described. And `gl-pressure`, the instrument this whole group is for, is
-   **emitted by the shell and consumed by no check anywhere**; it carries the
-   OOM count and the surface the reading was pinned on, and has never been
-   read. ★ **The mechanism the series is meant to test is also located:**
+   described. The second blocker is now half down:
+   `the_graphics_pressure_instrument_reports_a_real_device_limit` is the
+   **first consumer** either of `render::pressure`'s two lines has ever had,
+   and it is the series' **rung 1** — one document, fit zoom, no gestures. It
+   sends no input and sits off the desktop, so it runs while he is working.
+   It asserts that the standing `gl-max-texture-side` clears a plausibility
+   floor, because `egui`'s `InputState` default of **2048** is a number that
+   looks exactly like a card's answer and belongs to no card; falsified on
+   both arms, by wiring the instrument to that default and by removing its
+   call site. ⚠ Its `gl-pressure` reading is **reported, never asserted** —
+   silence there is a fact about free graphics memory on whatever machine ran
+   the sweep, and a debug build produces it unconditionally.
+   ★ **The mechanism the series is meant to test is also located:**
    `zoom_ceiling` takes five inputs and none counts documents, but the strip
    cache is a field on `OpenDoc` and `render::settle` prunes it against
    `doc.prefs.page_cache.texels()` — a **per-document** budget, so *N* drawings

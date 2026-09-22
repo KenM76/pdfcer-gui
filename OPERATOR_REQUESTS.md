@@ -245,10 +245,23 @@ and none of it may be reported to the operator as a cause.**
 `ui-verify` carries exactly two fixture slots and reaches a second document
 through a one-path environment seam, so three or six documents in one driven
 process is not currently reachable at all — and *N separate processes* is in
-any case the closer analogue of what he described. And `gl-pressure`, which
-already carries the out-of-memory count and the surface it was attributed to,
-is **emitted by the shell and read by no check anywhere**: the instrument this
-row needs exists and has never been consulted.
+any case the closer analogue of what he described.
+
+★ **The second of those two is now half down, and the rung-1 control exists.**
+`the_graphics_pressure_instrument_reports_a_real_device_limit` is the first
+consumer either of `render::pressure`'s lines has ever had. It opens one
+ordinary document at fit zoom, sends nothing, keeps its window off the desktop
+— so it costs the operator nothing to run — and asserts that the standing
+`gl-max-texture-side` clears a plausibility floor rather than merely existing,
+because `egui`'s `InputState` default of 2048 is a number shaped exactly like
+a device's answer that belongs to no device. Both arms falsified: the
+instrument wired to that default, and its call site removed.
+
+⚠ Its `gl-pressure` reading is **reported and not asserted**, and must stay
+that way. On the control rung the expected result is silence, and a silence
+there is a fact about how much graphics memory was free on the machine that
+ran the sweep — not about this program. The rungs that carry three and six
+documents are what turn a reading into evidence, and they do not exist yet.
 
 ## O222 — **FILED** — text you just typed does not appear until you click the page again
 

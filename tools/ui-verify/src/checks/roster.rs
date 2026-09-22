@@ -480,6 +480,16 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // grounds that they share a subject: the panel one SKIPs under
         // `--no-input`, and a SKIP is not red.
         Box::new(load_anomalies::LoadAnomaliesReachTheStatusBar),
+        // Beside it for the same reason: trace-only verdict, no input, window
+        // off the desktop, so both can run on a machine somebody is using.
+        //
+        // This one is the first rung of the document-count ladder O221 needs,
+        // and its `gl-pressure` reading is a CONTROL — one document at fit
+        // zoom, expected silent. Do not later "strengthen" it by asserting
+        // that silence: it is a fact about free graphics memory on whatever
+        // machine ran the sweep, and a debug build produces it unconditionally
+        // because `egui_glow` clears the flag first.
+        Box::new(graphics_pressure::TheGraphicsPressureInstrumentReportsARealDeviceLimit),
         // The long form of the same disclosure, beside the other check that
         // opens the Document properties panel — they share its opener.
         Box::new(load_anomalies::LoadAnomaliesAreListedInDocumentProperties),

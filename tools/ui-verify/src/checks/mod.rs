@@ -251,6 +251,15 @@ pub mod form_leaf_move;
 /// `select_click`'s own table rather than one.
 pub mod formaim;
 
+/// ★★★ **The dial in front of the blank page** — the only consumer of
+/// `render::pressure`'s two trace lines, which were written for O219 and O221
+/// and, until this check existed, were emitted every frame and read by nothing.
+/// Its assertion is on the device's texture limit clearing a plausibility
+/// floor, because `egui`'s pre-backend default of 2048 is a number that looks
+/// exactly like a reading and belongs to no card. Sends no input and sits off
+/// the desktop, so it runs while the operator is working.
+pub mod graphics_pressure;
+
 /// Insert an image: the picture reaches the page, and the resolution the
 /// window promised is the one the document reports.
 pub mod insert_image;
