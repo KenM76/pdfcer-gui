@@ -328,6 +328,10 @@ pub struct Host {
     /// collide with anything else keyed on the dialog's name. See the module
     /// header for why the position is not a field.
     key: egui::Id,
+    /// Whether the title bar offers maximise. Off for a dialog — see
+    /// [`Self::show`] — and on for a window that is a view rather than a
+    /// transaction, such as the popped-out print preview.
+    maximizable: bool,
     /// The window's title bar text. Owned rather than `&'static str` because it
     /// may carry a document name.
     title: String,
@@ -458,7 +462,16 @@ impl Host {
             default_size,
             min_size,
             preferred: None,
+            maximizable: false,
         }
+    }
+
+    /// Offer maximise in the title bar. For a window that is a view onto
+    /// something rather than a transaction; minimise stays off regardless.
+    #[must_use]
+    pub fn maximizable(mut self) -> Self {
+        self.maximizable = true;
+        self
     }
 
     /// **Open near `at`** — a position in the application window's own egui
@@ -573,12 +586,13 @@ impl Host {
             .with_title(self.title.clone())
             .with_inner_size(self.default_size)
             .with_min_inner_size(self.min_size)
-            // ★ No maximize and no minimize. A dialog is one transaction; the
+            // ★ No minimize, and no maximize unless `maximizable` asked for it.
+            // A dialog is one transaction; the
             // operator finishes it or abandons it, and a minimised dialog is a
             // transaction that has been left open with no surface saying so.
             // Every platform's dialog chrome makes the same choice.
             .with_minimize_button(false)
-            .with_maximize_button(false)
+            .with_maximize_button(self.maximizable)
             // It IS in the window list, deliberately, and that is the half of
             // the operator's report that a borderless window would not fix:
             // *"find it when it has gone behind something"*. With G3

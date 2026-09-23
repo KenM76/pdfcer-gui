@@ -101,3 +101,7 @@ pub(super) const REGION_POSITION_RESET_ALL: &str = "print.position.reset-all";
 /// [`REGION_SCALE_PREFIX`] gives: an index is a contract with the order of a
 /// `for` loop, and this list has just gained a fourth entry.
 pub(super) const REGION_TAB_PREFIX: &str = "print.tab.";
+
+/// The highest-resolution field on the Pages tab. Drawn on every open, capped
+/// or not.
+pub(super) const REGION_RESOLUTION: &str = "print.resolution";

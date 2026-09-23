@@ -650,6 +650,8 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // his machine; its own header says so first and says what a first run
         // will probably teach it. It never presses commit, like the four above.
         Box::new(preview_popout::ThePrintPreviewPopsIntoItsOwnWindow),
+        // After the print checks above it, for the reason they give.
+        Box::new(print_preview_detail::TheZoomedPrintPreviewIsAsSharpAsThePrint),
         // After the print checks above it, for the reason they give: every
         // skip it can produce — "the dialog never opened", "the ribbon control
         // is missing" — is `print_dialog`'s subject, not this one's, and a

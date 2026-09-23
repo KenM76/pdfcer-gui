@@ -688,6 +688,7 @@ pub mod preset_group_reachable;
 /// already examined — operator request O113. See the module header for why
 /// no unit test can observe the recording half of it.
 pub mod preview_popout;
+pub mod print_preview_detail;
 
 /// Operator request O167: the Paper control's "Match the pages in this
 /// document" entry chooses a sheet FROM the document rather than from the

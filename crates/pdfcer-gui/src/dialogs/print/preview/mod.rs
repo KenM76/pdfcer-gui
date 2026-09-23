@@ -904,6 +904,20 @@ fn paint(
     } else {
         painter.rect_filled(placed, 0.0, visuals.panel_fill);
     }
+    if texture.is_some() {
+        let frame = detail::Frame {
+            doc: inputs.doc,
+            key: inputs.context.preview_key(plan.index),
+            page: plan.index,
+            size,
+            placed,
+            canvas: rect,
+            base_scale: raster_scale(size),
+            print_scale: (f64::from(job.resolution.dpi) / 72.0 * plan.placement.scale) as f32,
+            scope: dialog.scope,
+        };
+        dialog.preview_detail.frame(&painter, &frame);
+    }
     painter.rect_stroke(
         placed,
         0.0,
@@ -1277,6 +1291,9 @@ fn premultiplied_image(width: u32, height: u32, data: &[u8]) -> egui::ColorImage
 /// verdict, split out at R2's ceiling when O208 widened the hatch to four
 /// edges. Its header carries the seam and what it must not learn.
 mod geometry;
+
+/// The zoomed-in preview, rendered sharp up to the print resolution.
+pub(super) mod detail;
 
 // Glob re-exported rather than named one by one. A hand-written list here is a
 // list inside the mechanism whose whole purpose is to make the split invisible,

@@ -116,31 +116,51 @@ exactly that. **The canvas needs the same treatment and does not have it.**
 
 > **Ken:** *"I want an option in the print dialogue to turn off line weights and print at a fixed width - I want an auto setting checkbox that when unchecked lets me enter a line width value. I want the auto setting to make the lines as thin as practically possible that the printer can still render and are visible to a user. Also the print pop out box should have the controls to maximize on screen, and its preview resolution should match the resolution set for the print if it doesn't already - when I zoomed in it looked really blurry and I'm not sure if that is because it is actually matching the resolution set. also when I clicked to change the print resolution which is for some reason under the comments section instead of on the pages section, the next time I opened the print dialogue the box to enter the resolution was missing. Also we should have a poster printing option with the same options as acrobat."*
 
-## O233 — **FILED** — print every line at one fixed width, with an Auto that picks the thinnest the printer can render visibly
+## O233 — **BLOCKED on engine G039** — print every line at one fixed width, with an Auto that picks the thinnest the printer can render visibly
 
 A print-time option that ignores the document's line weights. Checkbox **Auto**
 (checked): the thinnest width the target printer can still put on paper and a
 person can still see — derived from the printer's resolution, not a constant.
+Blocked: the renderer can only cap strokes at one device pixel, which is too
+thin to see at print resolution. Filed as
+`request_G039_stroke_display_has_no_fixed_width_so_print_cannot_render_every_line_at_one_chosen_width.md`;
+Auto will be `max(1 device px, 0.13 mm)`, the thinnest ISO 128 width.
 Unchecked: a width field, in the operator's units. Remembered like the other
 print settings; the preview shows it.
 
-## O234 — **FILED** — the print pop-out window can be maximised
+## O234 — **BUILT, NOT VERIFIED — awaiting your verdict** — the print pop-out window can be maximised
 
 The pop-out print window needs the ordinary title-bar controls, maximise
-included.
+included. The pop-out window now asks the OS for a maximise button (minimise
+stays off: it would hide the preview behind the dialog it belongs to).
+`the_print_preview_pops_into_its_own_window` passes on this build, but it
+reads no pixels of the title bar, so the button itself is NOT VERIFIED.
 
-## O235 — **FILED** — the print preview is blurry when zoomed; it should render at the print resolution
+## O235 — **BUILT AND DRIVEN — awaiting your verdict** — the print preview is blurry when zoomed; it should render at the print resolution
 
 He zoomed the preview and it was blurry, and cannot tell whether it matches
 the resolution set for the print. Owed: the preview is rendered at the chosen
-print resolution (or the screen's need, if higher), and says which.
+print resolution. Zoomed in, the preview now re-renders the visible part of
+the page at what the screen needs, up to the print's own density and never
+past it, so it shows the pixels the paper will get. It renders off the UI
+thread once the view settles. It does not yet say which resolution it is
+showing. Driven: `the_zoomed_print_preview_is_as_sharp_as_the_print` passes
+on the benchmark CAD drawing, with a base of 1.85 px/pt re-rendered at
+2.71 px/pt, which equals the job's 300 DPI at fit-to-Letter.
 
-## O236 — **FILED** — the print resolution control sits under Comments; it belongs with Pages
+## O236 — **BUILT AND DRIVEN — awaiting your verdict** — the print resolution control sits under Comments; it belongs with Pages
 
-## O237 — **FILED** — after changing the print resolution, the next Print dialog has no resolution box
+It is now the last row of the Pages tab, labelled *Highest resolution*, and
+the tab is renamed Comments. Orientation went onto one row so the tab still
+fits without a scrollbar, as confirmed by screenshot in the driven check above.
+
+## O237 — **BUILT — awaiting your verdict** — after changing the print resolution, the next Print dialog has no resolution box
 
 A defect: change the resolution, close, reopen Print — the field to enter it is
-gone.
+gone. The cause was that the field was drawn only while the job was capped, so
+a value the printer could meet hid it. It is now drawn on every open. **BUILT,
+partly driven:** the check above asserts the field is present, but that run
+was in the capped state; the uncapped state is not driven.
 
 ## O238 — **FILED** — poster printing, with Acrobat's options
 

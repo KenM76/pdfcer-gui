@@ -460,6 +460,9 @@ pub struct PrintDialog {
     /// misses, all three are replaced together; when the render fails, all
     /// three go away together.
     preview_texture: Option<(preview::PreviewKey, egui::TextureHandle, ink::InkMask)>,
+    /// The visible part of the preview, re-rendered up to the print's own
+    /// resolution when zoomed in — see [`preview::detail`].
+    preview_detail: preview::detail::Detail,
     /// **What the preview found in the overhang of each sheet it has been
     /// shown** — operator request O113, 2026-09-04.
     ///
@@ -659,6 +662,7 @@ impl PrintDialog {
             page_positions: position::Positions::default(),
             preview_grab: position::Grab::default(),
             preview_texture: None,
+            preview_detail: preview::detail::Detail::default(),
             // Empty, and emptied again by every change of context — see
             // `verdicts::Verdicts::remember`. A dialog opens knowing nothing
             // about any sheet, which is why a job printed without ever
@@ -1416,9 +1420,7 @@ impl PrintDialog {
         match self.active_tab {
             PrintTab::PagesLayout => tabs::pages_layout(ui, self, page_count, job),
             PrintTab::CopiesFinishing => tabs::copies_finishing(ui, self),
-            PrintTab::CommentsResolution => {
-                tabs::comments_resolution(ui, self, job.map(|j| j.resolution));
-            }
+            PrintTab::Comments => tabs::comments(ui, self),
             PrintTab::Position => position::group(ui, self, job, page_sizes),
         }
     }

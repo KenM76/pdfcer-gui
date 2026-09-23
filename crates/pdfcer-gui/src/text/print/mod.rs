@@ -268,14 +268,14 @@ pub const fn tab_copies_finishing_tooltip() -> &'static str {
 
 /// Tab 3's label.
 #[must_use]
-pub const fn tab_comments_resolution() -> &'static str {
+pub const fn tab_comments() -> &'static str {
     "Comments"
 }
 
 /// Tab 3's hover text.
 #[must_use]
-pub const fn tab_comments_resolution_tooltip() -> &'static str {
-    "What is painted onto each page, and how finely."
+pub const fn tab_comments_tooltip() -> &'static str {
+    "Which comments, markup and form fields are painted onto each page."
 }
 
 /// Tab 4's label.
@@ -842,7 +842,7 @@ pub fn sheet_from_driver(sheet: Option<(f64, f64)>) -> String {
 }
 
 // ---------------------------------------------------------------------------
-// Tab 3 — Comments & Resolution
+// Tab 3 — Comments, and the resolution block on Tab 1
 // ---------------------------------------------------------------------------
 
 /// Heading over the annotation-scope radios.
@@ -879,12 +879,6 @@ pub const fn scope_fields_only() -> &'static str {
     "Form fields only"
 }
 
-/// Heading over the resolution disclosure.
-#[must_use]
-pub const fn resolution_heading() -> &'static str {
-    "Resolution"
-}
-
 /// The standing note that pdfcer prints rasters, not vectors.
 ///
 /// **Always true, so a caption rather than a warning.** A banner that fires
@@ -912,6 +906,22 @@ pub fn dpi_capped(dpi: u32, device_dpi: u32, uncapped_page_mb: u64) -> String {
          at that resolution costs pdfcer about {uncapped_page_mb} MB of memory, so \
          pdfcer capped it. Raise the cap if you need the detail."
     )
+}
+
+/// Label before the resolution limit field.
+#[must_use]
+pub const fn dpi_limit_label() -> &'static str {
+    "Highest resolution"
+}
+
+/// The resolution in use when pdfcer did not cap it.
+#[must_use]
+pub fn dpi_in_use(dpi: u32, device_dpi: u32) -> String {
+    if dpi == device_dpi {
+        format!("Printing at {dpi} DPI, the printer's own resolution.")
+    } else {
+        format!("Printing at {dpi} DPI; this printer can do {device_dpi} DPI.")
+    }
 }
 
 /// Suffix on the DPI spinner.

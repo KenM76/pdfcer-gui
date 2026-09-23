@@ -45,9 +45,8 @@ pub(super) enum PrintTab {
     /// Copies, collation, reverse order, duplex, tray — how many sheets come
     /// out and in what state.
     CopiesFinishing,
-    /// Annotation scope and rendering resolution — what is painted onto each
-    /// page, and how finely.
-    CommentsResolution,
+    /// Annotation scope — what is painted onto each page.
+    Comments,
     /// Where each page sits on the sheet, and therefore what gets cropped off
     /// a drawing too big for the paper.
     ///
@@ -78,7 +77,7 @@ impl PrintTab {
     pub(super) const ALL: [Self; 4] = [
         Self::PagesLayout,
         Self::CopiesFinishing,
-        Self::CommentsResolution,
+        Self::Comments,
         Self::Position,
     ];
 
@@ -87,7 +86,7 @@ impl PrintTab {
         match self {
             Self::PagesLayout => t::tab_pages_layout(),
             Self::CopiesFinishing => t::tab_copies_finishing(),
-            Self::CommentsResolution => t::tab_comments_resolution(),
+            Self::Comments => t::tab_comments(),
             Self::Position => t::tab_position(),
         }
     }
@@ -104,7 +103,7 @@ impl PrintTab {
             // ui-text-exempt: diagnostic region name, never displayed in the UI
             Self::CopiesFinishing => "copies",
             // ui-text-exempt: diagnostic region name, never displayed in the UI
-            Self::CommentsResolution => "comments",
+            Self::Comments => "comments",
             // ui-text-exempt: diagnostic region name, never displayed in the UI
             Self::Position => "position",
         }
@@ -115,7 +114,7 @@ impl PrintTab {
         match self {
             Self::PagesLayout => t::tab_pages_layout_tooltip(),
             Self::CopiesFinishing => t::tab_copies_finishing_tooltip(),
-            Self::CommentsResolution => t::tab_comments_resolution_tooltip(),
+            Self::Comments => t::tab_comments_tooltip(),
             Self::Position => t::tab_position_tooltip(),
         }
     }
@@ -355,18 +354,22 @@ pub(super) fn pages_layout(
     ui.add_space(8.0);
 
     ui.label(t::orientation_heading());
-    for (orientation, label) in [
-        (Orientation::Auto, t::orientation_auto()),
-        (Orientation::Portrait, t::orientation_portrait()),
-        (Orientation::Landscape, t::orientation_landscape()),
-    ] {
-        if ui
-            .radio(dialog.device.orientation == orientation, label)
-            .clicked()
-        {
-            dialog.device.orientation = orientation;
+    // One row, like Subset above: three short choices stacked cost the tab
+    // two lines it needs for Resolution below.
+    ui.horizontal_wrapped(|ui| {
+        for (orientation, label) in [
+            (Orientation::Auto, t::orientation_auto()),
+            (Orientation::Portrait, t::orientation_portrait()),
+            (Orientation::Landscape, t::orientation_landscape()),
+        ] {
+            if ui
+                .radio(dialog.device.orientation == orientation, label)
+                .clicked()
+            {
+                dialog.device.orientation = orientation;
+            }
         }
-    }
+    });
 
     //
     // The sentence it replaces said, correctly at the time, that paper came
@@ -505,6 +508,7 @@ pub(super) fn pages_layout(
         ui.add_space(2.0);
         ui.label(egui::RichText::new(t::paper_auto_mixed()).small().weak());
     }
+    resolution(ui, dialog, job.map(|j| j.resolution));
 }
 
 // ---------------------------------------------------------------------------
@@ -582,32 +586,15 @@ pub(super) fn copies_finishing(ui: &mut Ui, dialog: &mut PrintDialog) {
 }
 
 // ---------------------------------------------------------------------------
-// Tab 3 — Comments & Resolution
+// Tab 3 — Comments
 // ---------------------------------------------------------------------------
 
-/// What is painted onto each page, and how finely.
-///
-/// Both halves are about the **pixels** rather than about the paper, which is
-/// what makes them one tab: the annotation scope decides what is in the
-/// bitmap and the resolution decides how much of it survives.
-pub(super) fn comments_resolution(
-    ui: &mut Ui,
-    dialog: &mut PrintDialog,
-    resolution: Option<JobResolution>,
-) {
+/// What is painted onto each page.
+pub(super) fn comments(ui: &mut Ui, dialog: &mut PrintDialog) {
     ui.label(t::comments_heading());
-    //
-    // Carried across with its history: `RenderOptions` once carried a single
-    // `bool`, so the dialog offered a single honestly-labelled toggle rather
-    // than the four-way selector — a control implying a capability that does
-    // not exist is R83's failure even when the control itself works. The
-    // renderer gained `AnnotationScope`, so the selector is backed and
-    // offered.
-    //
-    // `AnnotationScope::ContentOnly` is deliberately not among them: it is
+    // `AnnotationScope::ContentOnly` is deliberately not offered: it is
     // pdfcer's own fifth value, load-bearing for the round-trip raster oracle
-    // rather than for an operator, and a print with neither form fields nor
-    // links is not a thing this dialog has been asked for.
+    // rather than for an operator.
     for (scope, label) in [
         (
             pdfcer_render::AnnotationScope::Document,
@@ -630,27 +617,48 @@ pub(super) fn comments_resolution(
             dialog.scope = scope;
         }
     }
-    ui.add_space(8.0);
+}
 
-    ui.label(t::resolution_heading());
-    // Always true, so a static caption rather than a warning. A banner that
-    // fires on every job trains an operator to stop reading banners — which
-    // is how the *conditional* disclosure below it would come to be ignored
-    // too.
-    ui.label(egui::RichText::new(t::raster_note()).small().weak());
+/// The resolution each page is rendered at, on the Pages tab.
+///
+/// The limit field is drawn in EVERY state. Drawn only while the cap bound, it
+/// vanished the moment the operator raised the cap to the printer's own
+/// resolution — the next job had nothing to cap, so the control that would
+/// lower it again was gone.
+fn resolution(ui: &mut Ui, dialog: &mut PrintDialog, resolution: Option<JobResolution>) {
+    ui.add_space(8.0);
+    ui.horizontal_wrapped(|ui| {
+        ui.label(t::dpi_limit_label());
+        let field = ui
+            .add(
+                egui::DragValue::new(&mut dialog.max_dpi)
+                    .range(36..=2400)
+                    .suffix(t::dpi_suffix()),
+            )
+            .on_hover_text(t::raster_note());
+        crate::diag::ui_rect_visible(
+            super::regions::REGION_RESOLUTION,
+            field.rect,
+            ui.clip_rect(),
+        );
+        if let Some(res) = resolution
+            && !res.capped
+        {
+            ui.label(
+                egui::RichText::new(t::dpi_in_use(res.dpi, res.device_dpi))
+                    .small()
+                    .weak(),
+            );
+        }
+    });
     // Conditional, because it is a per-job substitution: pdfcer picked a
-    // resolution the operator did not. The spinner appears **with** the
-    // sentence rather than always, so the control and the reason it exists
-    // arrive together.
+    // resolution below what the printer can do.
     if let Some(res) = resolution
         && res.capped
     {
-        ui.add_space(4.0);
-        ui.label(t::dpi_capped(res.dpi, res.device_dpi, res.uncapped_page_mb));
-        ui.add(
-            egui::DragValue::new(&mut dialog.max_dpi)
-                .range(36..=2400)
-                .suffix(t::dpi_suffix()),
+        ui.label(
+            egui::RichText::new(t::dpi_capped(res.dpi, res.device_dpi, res.uncapped_page_mb))
+                .small(),
         );
     }
 }

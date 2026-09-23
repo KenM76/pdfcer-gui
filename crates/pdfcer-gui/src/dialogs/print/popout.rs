@@ -171,6 +171,8 @@ impl PrintDialog {
             DEFAULT_SIZE_PTS,
             MIN_SIZE_PTS,
         )
+        // A view, not a transaction: he maximises it to read fine print.
+        .maximizable()
         .show(ctx, |ui| {
             crate::diag::ui_rect(REGION_POPPED_BODY, ui.max_rect());
             match job.zip(context) {
