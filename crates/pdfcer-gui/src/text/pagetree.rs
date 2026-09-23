@@ -82,7 +82,7 @@
 //! unexplained refusal. [`tests::only_the_sentences_pdfcer_can_undo_offer_undo`]
 //! is what stops the three being consolidated back into one on the grounds that
 //! they say nearly the same thing. Which one applies is decided by
-//! [`crate::pagetree::refusal_sentence`], from structured data — a second audit
+//! `crate::pagetree::refusal_origin`, from structured data — a second audit
 //! of the file on disk — and never by inspecting a message.
 //!
 //!
@@ -108,6 +108,24 @@
 //! job is to say *pdfcer did not do this and undo will not help*, which is a
 //! statement about the file rather than about pdfcer's record, and getting it
 //! wrong costs him his undo stack as well as his time.
+
+/// The refusal sentence for a page-tree disagreement of the given `origin`;
+/// `crate::pagetree::refusal_origin` decides which one is owed.
+#[must_use]
+pub fn refusal_sentence(name: &str, origin: crate::pagetree::RefusalOrigin) -> String {
+    use crate::pagetree::RefusalOrigin as O;
+    match origin {
+        O::PreExisting {
+            declared,
+            reachable,
+        } => save_refused_pre_existing(name, declared, reachable),
+        O::Root {
+            declared,
+            reachable,
+        } => save_refused_root(name, declared, reachable),
+        O::Interior { nodes } => save_refused_interior(name, nodes),
+    }
+}
 
 /// **The save was refused because the document's page count is wrong.**
 ///
@@ -296,5 +314,34 @@ mod tests {
         }
         // The third sentence names a DIFFERENT remedy on purpose — see
         // `only_the_sentences_pdfcer_can_undo_offer_undo`.
+    }
+    /// Each origin reaches its own sentence: only the pre-existing one withholds
+    /// Ctrl+Z, so a swapped arm here would promise undo for a file pdfcer
+    /// did not damage.
+    #[test]
+    fn each_refusal_origin_reaches_its_own_sentence() {
+        use crate::pagetree::RefusalOrigin as O;
+        let pre = refusal_sentence(
+            "a.pdf",
+            O::PreExisting {
+                declared: 13,
+                reachable: 12,
+            },
+        );
+        assert_eq!(pre, save_refused_pre_existing("a.pdf", 13, 12));
+        assert!(!pre.contains("Ctrl+Z"), "{pre}");
+        let root = refusal_sentence(
+            "a.pdf",
+            O::Root {
+                declared: 13,
+                reachable: 12,
+            },
+        );
+        assert_eq!(root, save_refused_root("a.pdf", 13, 12));
+        assert!(root.contains("Ctrl+Z"), "{root}");
+        assert_eq!(
+            refusal_sentence("a.pdf", O::Interior { nodes: 2 }),
+            save_refused_interior("a.pdf", 2)
+        );
     }
 }

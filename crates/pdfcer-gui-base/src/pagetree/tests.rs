@@ -437,28 +437,24 @@ fn the_real_corrupt_file_is_caught() {
 }
 
 // ==========================================================================
-// Which sentence a refusal owes — `refusal_sentence`
+// Which refusal is owed — `refusal_origin`
 // ==========================================================================
 
-/// ★★★ **A file that arrived broken is NOT told to press Ctrl+Z.**
-///
-/// The assertion `refusal_sentence` exists for. Both ordinary sentences name
-/// undo as the way out, which is right when pdfcer caused the damage and a
-/// circle when the file came in that way — and an operator who empties his undo
-/// stack against a refusal his own tool promised undo would fix has lost his
+/// **A file that arrived broken is classed as pre-existing**, which is the
+/// refusal whose sentence withholds Ctrl+Z: undo cannot fix what pdfcer did
+/// not do, and an operator who empties his undo stack against it loses his
 /// work as well as his time.
 ///
-/// The base file here is the fixture with one digit changed, which is the same
-/// plant `app::save::tests` uses and for the same reason: it is a real,
-/// openable PDF whose root declares one page more than it has.
+/// The base file is the fixture with one digit changed: a real, openable PDF
+/// whose root declares one page more than it has.
 #[test]
-fn a_document_that_arrived_broken_gets_the_sentence_that_does_not_offer_undo() {
+fn a_document_that_arrived_broken_is_refused_as_pre_existing() {
     let bytes = std::fs::read(fixture("nested-page-tree.pdf")).expect("the fixture is readable");
     const OLD: &[u8] = b"/Count 12";
     let at = bytes
         .windows(OLD.len())
         .position(|w| w == OLD)
-        .expect("★ THE PLANT MUST LAND: the root is the only node declaring 12 pages");
+        .expect("the plant must land: the root is the only node declaring 12 pages");
     let mut damaged = bytes.clone();
     damaged[at..at + OLD.len()].copy_from_slice(b"/Count 13");
     assert_eq!(damaged.len(), bytes.len(), "the plant must not move a byte");
@@ -472,41 +468,29 @@ fn a_document_that_arrived_broken_gets_the_sentence_that_does_not_offer_undo() {
     let audit = audit_saved_bytes(&damaged);
     assert!(!audit.is_consistent(), "{audit:?}");
 
-    let said = refusal_sentence("arrived-broken.pdf", &audit, Some(path.as_path()));
-    assert!(
-        said.contains("already disagreed with itself when you opened it"),
-        "{said}"
+    assert_eq!(
+        refusal_origin(&audit, Some(path.as_path())),
+        RefusalOrigin::PreExisting {
+            declared: 13,
+            reachable: 12
+        }
     );
-    assert!(!said.contains("Ctrl+Z"), "★★★ undo cannot fix this: {said}");
-
-    // ★ And the control that makes it mean something: the SAME audit with no
-    // base file to blame produces the ordinary sentence, which does offer undo.
-    // Without this, a `refusal_sentence` that returned the pre-existing wording
-    // unconditionally would pass the assertion above.
-    let blamed = refusal_sentence("x.pdf", &audit, None);
-    assert!(blamed.contains("Ctrl+Z"), "{blamed}");
-    // ★★ The distinction is asserted by what each sentence OFFERS, not by whose
-    // fault it says the damage is. Both attributions were deleted on 2026-09-05
-    // when `Pass 251.1` made *"this is a fault in pdfcer"* false — see
-    // `text::pagetree`'s header. **Undo is the discriminator and always was**:
-    // the pre-existing sentence must never offer it, because an operator who
-    // empties his undo stack against a refusal his own tool promised undo would
-    // fix has lost his work as well as his time. Asserting the blame words
-    // instead would have pinned the most perishable clause in the sentence.
-    assert!(
-        !blamed.contains("already disagreed with itself when you opened it"),
-        "an audit with no base file to consult must NOT claim the file arrived broken — that is a statement it has no evidence for: {blamed}"
+    // The control: the same audit with no base file to consult has no
+    // evidence the file arrived broken, so it is the session's.
+    assert_eq!(
+        refusal_origin(&audit, None),
+        RefusalOrigin::Root {
+            declared: 13,
+            reachable: 12
+        }
     );
 
     let _ = std::fs::remove_file(&path);
 }
 
-/// **A base file that is fine gets the ordinary sentence.**
-///
-/// The other control. `refusal_sentence` reads the file on disk, and a build
-/// that mis-read a healthy base as broken would tell the operator every pdfcer
-/// defect was somebody else's fault — the failure that is comfortable rather
-/// than loud, and therefore the one to assert against.
+/// **A healthy base file leaves the refusal with the session.** A build that
+/// mis-read a healthy base as broken would withhold Ctrl+Z when one press
+/// would have fixed it — comfortable rather than loud, so asserted.
 #[test]
 fn a_healthy_base_file_leaves_the_blame_where_it_belongs() {
     let path = fixture("nested-page-tree.pdf");
@@ -514,17 +498,12 @@ fn a_healthy_base_file_leaves_the_blame_where_it_belongs() {
     let g = three_level(4, 4, 1, &[10]);
     let audit = audit(&g);
     assert!(!audit.is_consistent());
-    let said = refusal_sentence("nested-page-tree.pdf", &audit, Some(path.as_path()));
-    assert!(said.contains("Ctrl+Z"), "{said}");
-    // Same change, same reason as the control above: the property is that a
-    // healthy base file yields the ORDINARY sentence — the one that offers undo
-    // — rather than the pre-existing one that withholds it. A `refusal_sentence`
-    // that read every base as already-broken would tell him to reopen the file
-    // in another program when one `Ctrl+Z` would have fixed it, and would take
-    // his undo stack with it.
     assert!(
-        !said.contains("already disagreed with itself when you opened it"),
-        "the base file is HEALTHY, so this refusal must not claim it arrived broken: {said}"
+        !matches!(
+            refusal_origin(&audit, Some(path.as_path())),
+            RefusalOrigin::PreExisting { .. }
+        ),
+        "the base file is HEALTHY, so this refusal must not be classed as pre-existing"
     );
 }
 

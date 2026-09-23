@@ -164,7 +164,7 @@
 //!
 //! ## 8. Where it is called from
 //!
-//! [`crate::app::save::write_copy`] — the funnel every save verb goes through
+//! `app::save::write_copy` — the funnel every save verb goes through
 //! (`file.save_copy`, `file.save_as`, `file.save_in_place`), between the bytes
 //! being built and `std::fs::write`. **Not** on the delete-pages arm.
 //!
@@ -182,15 +182,15 @@
 //!
 //! ⇒ A guard on the delete-pages arm would have passed `page-copy --cut`
 //! straight through, and would have to be remembered again for every verb added
-//! later. `crate::redact::prove_saved_bytes` sits at the same boundary for the
+//! later. `redact::prove_saved_bytes` sits at the same boundary for the
 //! same reason and its argument is the precedent: *"the proof has to be made
 //! here or not at all."*
 //!
-//! ★ And the **sentence** a refusal owes is chosen here too, by
-//! [`refusal_sentence`], rather than at the save. That is not tidiness: the
+//! ★ And **which** sentence a refusal owes is decided here too, by
+//! [`refusal_origin`], rather than at the save. That is not tidiness: the
 //! choice depends on a **second audit** — of the file the document was opened
 //! from, to answer *"was it already like this when he opened it?"* — and this
-//! module is the only place equipped to take one. `crate::text::pagetree` still
+//! module is the only place equipped to take one. `pdfcer-gui`'s `text::pagetree`
 //! owns every word.
 //!
 //! ## 9. ★★ What it costs, measured rather than asserted
@@ -231,7 +231,7 @@
 //! second source of truth about a fact the bytes already carry, and the
 //! direction it would drift in is a save that quietly wrote a damaged file
 //! because a shell-side flag disagreed with the writer. The same argument
-//! `crate::app::save::write_copy` makes for asking the **session** whether a
+//! `app::save::write_copy` makes for asking the **session** whether a
 //! redaction is staged rather than keeping a flag.
 
 use pdfcer_core::document::Document;
@@ -345,7 +345,7 @@ impl Audit {
 /// The save path's whole call — see §8. It is here rather than inlined at the
 /// call site so that the argument for *what a failure to parse means* lives
 /// beside the code that decides it, which is the same placement
-/// `crate::redact::prove_saved_bytes` takes for the identical reason.
+/// `redact::prove_saved_bytes` takes for the identical reason.
 ///
 /// # ★ Bytes rather than the live session, and it is not a free choice
 ///
@@ -356,7 +356,7 @@ impl Audit {
 /// operator receives**, and a guard that checked the state a writer was asked
 /// to serialize rather than the bytes it produced would be blind to any defect
 /// introduced by the writer itself. That is the same posture, and the same
-/// sentence, `crate::app::save::write_copy` uses for the absence proof: the
+/// sentence, `app::save::write_copy` uses for the absence proof: the
 /// guarantee must not depend on how the value was constructed.
 ///
 /// # ★ An unparsable buffer returns a DEFAULT audit, not an error
@@ -523,7 +523,7 @@ fn count_of<G: ObjectGraph + ?Sized>(graph: &G, id: ObjId) -> Option<i64> {
 /// # ★★★ The question this exists to ask: was it already like this when he
 /// opened it?
 ///
-/// [`crate::text::pagetree::save_refused_root`] and `save_refused_interior`
+/// `pdfcer-gui`'s `text::pagetree::save_refused_root` and `save_refused_interior`
 /// both end *"undo the page removal (Ctrl+Z)"*. That is the correct remedy
 /// exactly when pdfcer caused the damage — and useless when the file arrived
 /// broken. An operator who empties his undo stack against a refusal his own
@@ -531,9 +531,9 @@ fn count_of<G: ObjectGraph + ?Sized>(graph: &G, id: ObjId) -> Option<i64> {
 /// than an unexplained refusal because it costs him his work as well as his
 /// time.
 ///
-/// So the base file is walked again and
-/// [`crate::text::pagetree::save_refused_pre_existing`] takes over when it was
-/// already inconsistent. That sentence names a different remedy and does not
+/// So the base file is walked again and [`RefusalOrigin::PreExisting`] is
+/// returned when it was already inconsistent; its sentence,
+/// `text::pagetree::save_refused_pre_existing`, names a different remedy and does not
 /// claim the fault is pdfcer's.
 ///
 /// # ★ It is paid only on the refusal path
@@ -560,7 +560,7 @@ fn count_of<G: ObjectGraph + ?Sized>(graph: &G, id: ObjId) -> Option<i64> {
 /// written for a state no measurement has ever produced; if one appears, this
 /// is the paragraph that predicted it.
 #[must_use]
-pub fn refusal_sentence(name: &str, audit: &Audit, base: Option<&std::path::Path>) -> String {
+pub fn refusal_origin(audit: &Audit, base: Option<&std::path::Path>) -> RefusalOrigin {
     let pre_existing = base
         .and_then(|path| std::fs::read(path).ok())
         .map(|bytes| audit_saved_bytes(&bytes))
@@ -570,15 +570,44 @@ pub fn refusal_sentence(name: &str, audit: &Audit, base: Option<&std::path::Path
         format!("save-refused-pagetree-origin pre_existing={pre_existing}")
     });
     match (pre_existing, audit.root_disagreement()) {
-        (true, Some(root)) => {
-            crate::text::pagetree::save_refused_pre_existing(name, root.declared, root.reachable)
-        }
-        (false, Some(root)) => {
-            crate::text::pagetree::save_refused_root(name, root.declared, root.reachable)
-        }
+        (true, Some(root)) => RefusalOrigin::PreExisting {
+            declared: root.declared,
+            reachable: root.reachable,
+        },
+        (false, Some(root)) => RefusalOrigin::Root {
+            declared: root.declared,
+            reachable: root.reachable,
+        },
         // See ⚠ above for the `(true, None)` half of this arm.
-        (_, None) => crate::text::pagetree::save_refused_interior(name, audit.disagreements.len()),
+        (_, None) => RefusalOrigin::Interior {
+            nodes: audit.disagreements.len(),
+        },
     }
+}
+
+/// Which refusal a page-tree disagreement owes; `pdfcer-gui`'s
+/// `text::pagetree::refusal_sentence` words each one.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RefusalOrigin {
+    /// The file on disk already disagreed at the root: undo cannot fix it.
+    PreExisting {
+        /// The root's `/Count`.
+        declared: i64,
+        /// The pages actually reachable beneath the root.
+        reachable: usize,
+    },
+    /// The root disagrees and the file on disk did not: this session did it.
+    Root {
+        /// The root's `/Count`.
+        declared: i64,
+        /// The pages actually reachable beneath the root.
+        reachable: usize,
+    },
+    /// Only interior nodes disagree.
+    Interior {
+        /// How many `/Pages` nodes disagree.
+        nodes: usize,
+    },
 }
 
 #[cfg(test)]

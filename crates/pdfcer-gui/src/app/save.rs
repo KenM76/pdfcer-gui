@@ -953,11 +953,11 @@ fn page_tree_refusal_note(doc: &OpenDoc, error: &SaveError) {
         || doc.path.display().to_string(),
         |n| n.to_string_lossy().into_owned(),
     );
-    // ★ The choice of sentence — including the re-audit of the file on disk
-    // that answers *"was it already like this when he opened it?"* — belongs to
-    // `crate::pagetree`, beside the audit it reasons about. This function is
-    // the delivery: one name, one audit, one note.
-    let sentence = crate::pagetree::refusal_sentence(&name, audit, doc.stored_under());
+    // Which refusal is owed — including the re-audit of the file on disk that
+    // answers *"was it already like this when he opened it?"* — is decided by
+    // `crate::pagetree`, beside the audit it reasons about; `text` words it.
+    let origin = crate::pagetree::refusal_origin(audit, doc.stored_under());
+    let sentence = crate::text::pagetree::refusal_sentence(&name, origin);
     crate::app::actions::record_note(doc.edit_epoch, sentence);
 }
 

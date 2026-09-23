@@ -112,6 +112,41 @@ exactly that. **The canvas needs the same treatment and does not have it.**
 
 # OPEN
 
+## O233–O238 — six print reports in one message, FILED BEFORE ANY WORK
+
+> **Ken:** *"I want an option in the print dialogue to turn off line weights and print at a fixed width - I want an auto setting checkbox that when unchecked lets me enter a line width value. I want the auto setting to make the lines as thin as practically possible that the printer can still render and are visible to a user. Also the print pop out box should have the controls to maximize on screen, and its preview resolution should match the resolution set for the print if it doesn't already - when I zoomed in it looked really blurry and I'm not sure if that is because it is actually matching the resolution set. also when I clicked to change the print resolution which is for some reason under the comments section instead of on the pages section, the next time I opened the print dialogue the box to enter the resolution was missing. Also we should have a poster printing option with the same options as acrobat."*
+
+## O233 — **FILED** — print every line at one fixed width, with an Auto that picks the thinnest the printer can render visibly
+
+A print-time option that ignores the document's line weights. Checkbox **Auto**
+(checked): the thinnest width the target printer can still put on paper and a
+person can still see — derived from the printer's resolution, not a constant.
+Unchecked: a width field, in the operator's units. Remembered like the other
+print settings; the preview shows it.
+
+## O234 — **FILED** — the print pop-out window can be maximised
+
+The pop-out print window needs the ordinary title-bar controls, maximise
+included.
+
+## O235 — **FILED** — the print preview is blurry when zoomed; it should render at the print resolution
+
+He zoomed the preview and it was blurry, and cannot tell whether it matches
+the resolution set for the print. Owed: the preview is rendered at the chosen
+print resolution (or the screen's need, if higher), and says which.
+
+## O236 — **FILED** — the print resolution control sits under Comments; it belongs with Pages
+
+## O237 — **FILED** — after changing the print resolution, the next Print dialog has no resolution box
+
+A defect: change the resolution, close, reopen Print — the field to enter it is
+gone.
+
+## O238 — **FILED** — poster printing, with Acrobat's options
+
+Acrobat's Poster mode: tile scale, overlap, cut marks, labels, and "tile large
+pages" only — every option it offers, per the standing rule on option sets.
+
 ## O232 — **BUILT AND DRIVEN — awaiting your verdict** — an optional colour mode for the icons, subtle, in the manner of Word and SolidWorks
 
 > *"let's add a colour option to the icons and glyphs. Somewhat subtle and in

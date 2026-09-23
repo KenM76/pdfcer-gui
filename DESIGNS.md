@@ -1662,8 +1662,10 @@ engine dependency beyond core (`pdfcer-render`, to rasterise the page the
 recogniser is shown) and the `ocrs` feature, which `pdfcer-gui` forwards; base
 takes it as a default only so it builds and tests alone. `trust` is in base
 too, with the wall `clock` it read (standard library only), which `app`
-re-exports so `app::clock` still names it. `pagedrag` and `pagetree` are
-one edge each from the same position: both call operator copy in `text`.
+re-exports so `app::clock` still names it. `pagetree` is in base: its one
+upward edge was the refusal sentence, so it now returns a `RefusalOrigin` and
+`text::pagetree::refusal_sentence` words it. `pagedrag` has the same shape of
+edge and takes the same split: decision in the module, wording in `text`.
 
 Engine-reach instruments must scan base as well as `pdfcer-gui`, since base
 now calls the engine: `check-backlog-verdict-drift.py` and
