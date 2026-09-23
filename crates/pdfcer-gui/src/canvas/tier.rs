@@ -172,6 +172,7 @@ pub(super) fn decide(
             // that subtraction in `f64`.
             let visible_canvas = if deep {
                 let anchor = doc
+                    .frame
                     .deep_anchor
                     .unwrap_or_else(viewer::deep::DeepAnchor::origin);
                 Some(anchor.visible_rect((avail.x, avail.y), f64::from(doc.view.zoom)))

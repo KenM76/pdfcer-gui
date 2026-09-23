@@ -828,6 +828,10 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // does not exist.
         Box::new(wheel_flips_pages::TheWheelTurnsPagesWhenTheOperatorAsksItTo),
         Box::new(zoom_gallery::ThePageStillRendersAtEveryDecadeOfZoom),
+        Box::new(zoom_notch_walk::ZoomingClickByClickKeepsTheDetailUnderTheCursor),
+        Box::new(zoom_burst::ZoomingAtWheelSpeedNeverBlanksTheDetailUnderTheCursor),
+        // O232: two launches, the coloured-icons option off then on.
+        Box::new(colour_icons::IconsAreColouredOnlyWhenAsked),
         Box::new(pan_refresh::PanningPastTheOverscanRendersTheNewArea),
         Box::new(resize::ResizeScalesAShape),
         // Directly after `resize`, because it is that check plus one switch:

@@ -78,6 +78,26 @@ re-running OCR stacks a second invisible copy of every word. Also standing:
 — **design to `pdfcer_core::ocr::OcrEngine`, never to OCRcer**, and treat
 `reports_confidence()` as an R8 capability (`ocrs` answers `false`).
 
+0. **O231, the white-out at deep zoom, is fixed and awaiting his verdict.**
+   A zoom frame ordered its region from last frame's scroll offset, so the
+   raster landed whole screens away. `canvas::present` now uses the forced
+   offset. Guarded by `zooming_at_wheel_speed_never_blanks_the_detail_under_the_cursor`,
+   which fails on the unfixed build **from the trace only**: its photographs
+   never catch the white, so do not weaken `region_misses_view` on the
+   grounds that the pixels look fine. The remaining 0–5 px zoom-to-cursor
+   drift is the scroll area's pixel rounding. A carried anchor measured as
+   noise against a control and was removed (see the egui RAG), so do not
+   re-derive it.
+
+0b. **O232, coloured icons, is built and awaiting his verdict.** The table of
+   which shapes of which icon take which hue is `icons::accent::accent`. Its
+   indices are paint order in the SVG asset, so **an edited asset must have
+   its row re-checked**. `a_coloured_glyph_covers_what_the_plain_mask_covers`
+   catches an index out of range or an accent that no longer draws, but not
+   a shape that moved to a different index. A coloured glyph bakes both
+   colours into the texture, so its cache key carries them. Off takes the
+   untouched plain path. Driven by `icons_are_coloured_only_when_asked`.
+
 1. **O218 – O225, his eight-row zoom and text report. Four are built and
    driven, one is built with one clause undriven, two are observability only,
    one is unstarted and its first question belongs to the engine.**

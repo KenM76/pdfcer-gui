@@ -404,6 +404,29 @@ impl IconArt {
     /// cosmetic defect, a crashed editor holding unsaved edits is not.
     #[must_use]
     pub fn rasterize(&self, px: u32, weight: IconWeight) -> egui::ColorImage {
+        // NOT A THEME COLOUR: opaque WHITE, always, and it is not a look —
+        // only the ALPHA channel of the result carries information (module
+        // header, "Theming"). The hue arrives later, from the theme-derived
+        // tint the ribbon hands the painter. Theming this would break the
+        // mask.
+        self.rasterize_with(px, weight, |_| Some(egui::Color32::WHITE))
+    }
+
+    /// [`Self::rasterize`], with each shape's colour chosen by `colour_of`
+    /// from its index in paint order: `None` leaves the shape out.
+    ///
+    /// `|_| Some(WHITE)` is [`Self::rasterize`] exactly. The two-colour icon
+    /// option draws the same art twice through this — once without the accent
+    /// shapes, once with only them — so each layer is still a white mask the
+    /// caller tints, or bakes a pair of colours into one image where the
+    /// drawing surface takes a single texture. Colours are drawn opaque.
+    #[must_use]
+    pub fn rasterize_with(
+        &self,
+        px: u32,
+        weight: IconWeight,
+        colour_of: impl Fn(usize) -> Option<egui::Color32>,
+    ) -> egui::ColorImage {
         let px = px.max(1);
         let Some(mut pixmap) = Pixmap::new(px, px) else {
             return blank_image();
@@ -420,14 +443,11 @@ impl IconArt {
             anti_alias: true,
             ..Paint::default()
         };
-        // NOT A THEME COLOUR: opaque WHITE, always, and it is not a look —
-        // only the ALPHA channel of the result carries information (module
-        // header, "Theming"). The hue arrives later, from the theme-derived
-        // tint the ribbon hands the painter. Theming this would break the
-        // mask.
-        paint.set_color(Color::WHITE);
-
-        for shape in &self.shapes {
+        for (index, shape) in self.shapes.iter().enumerate() {
+            let Some(c) = colour_of(index) else {
+                continue;
+            };
+            paint.set_color(Color::from_rgba8(c.r(), c.g(), c.b(), 255));
             // Fill first, then stroke, matching SVG's own painting order for
             // an element that has both (redact.svg's bar is fill-only, but
             // the ordering must be right if that ever changes).

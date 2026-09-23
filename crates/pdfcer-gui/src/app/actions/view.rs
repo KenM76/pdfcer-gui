@@ -78,7 +78,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: Action, page_count: usize, max_zo
             // the horizontal position the operator was at, and by the time the
             // destination can be resolved the strip has already scrolled to the
             // named page and centred it. See `OpenDoc::dest_origin_x`.
-            doc.dest_origin_x = Some(doc.last_scroll_offset.x);
+            doc.dest_origin_x = Some(doc.frame.last_scroll_offset.x);
             doc.pending_destination = Some(to);
         }
         // ui-text-exempt: a panic message, read from a stack trace by whoever

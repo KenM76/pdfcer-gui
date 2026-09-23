@@ -153,6 +153,18 @@ pub fn ui_scale(ui: &mut Ui, prefs: &mut crate::app::prefs::Prefs) {
     ui.label(egui::RichText::new(t::ui_scale_note()).small().weak());
 }
 
+/// The coloured-icons switch, `OPERATOR_REQUESTS.md` O232. Edits the draft,
+/// which the frame previews live, as [`ui_scale`] does.
+pub fn colour_icons(ui: &mut Ui, prefs: &mut crate::app::prefs::Prefs) {
+    widgets::header(
+        ui,
+        t::colour_icons_title(),
+        t::colour_icons_silence(),
+        t::colour_icons_radius(),
+    );
+    ui.checkbox(&mut prefs.colour_icons, t::colour_icons_label());
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

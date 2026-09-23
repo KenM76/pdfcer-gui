@@ -175,7 +175,7 @@
 //!
 //! The one piece that does live on the document is [`Reveal`], and it has
 //! to: it is *view* bookkeeping that spans two frames, exactly like
-//! `OpenDoc::zoom_anchor`, and for the same reason — the page it targets has
+//! `ViewFrame::zoom_anchor`, and for the same reason — the page it targets has
 //! not been navigated to yet on the frame the request is made.
 
 /// The Find bar's widgets. Split from this file because the two answer

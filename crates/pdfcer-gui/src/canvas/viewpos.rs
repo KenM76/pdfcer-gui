@@ -170,7 +170,7 @@ pub(super) fn position(
     // The page the pending zoom anchor was armed against, and that page's
     // drawn size — which is what `zoom::consume_anchor` must compare its
     // recorded size against, for the same reason.
-    let anchor_page = doc.zoom_anchor.map_or(current, |a| a.page);
+    let anchor_page = doc.frame.zoom_anchor.map_or(current, |a| a.page);
     let anchor_display = layout
         .rect_of(anchor_page)
         .map_or(current_display, |r| (r.width(), r.height()));

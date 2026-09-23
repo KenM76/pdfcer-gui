@@ -560,7 +560,10 @@ mod tests {
     // row folded under the field wash, because the two settings share only the
     // word *colour*: one is an affordance over form controls and this one is
     // the appearance of a mode the operator switches on deliberately.
-    const SETTINGS_COUNT: usize = 39;
+    //
+    // The coloured-icons switch (O232) is a shell preference beside the UI
+    // scale in the Appearance group.
+    const SETTINGS_COUNT: usize = 40;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
     ///
@@ -752,6 +755,11 @@ mod tests {
             // The theme's twin in the Appearance group — the second setting
             // that changes the program rather than the document.
             (ui_scale_title(), ui_scale_silence(), ui_scale_radius()),
+            (
+                colour_icons_title(),
+                colour_icons_silence(),
+                colour_icons_radius(),
+            ),
             // The Redacting group's one setting — a shell preference, here for
             // the reason every other shell preference in this list is here.
             (reach_title(), reach_silence(), reach_radius()),
@@ -1030,6 +1038,7 @@ mod tests {
             opening_fit_radius(),
             chrome_radius(),
             ui_scale_radius(),
+            colour_icons_radius(),
             tab_tail_radius(),
             tab_tolerance_radius(),
         ] {

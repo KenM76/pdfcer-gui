@@ -519,7 +519,7 @@ impl PdfcerApp {
             // `observed_zoom` disagreed with its `zoom` before the first frame
             // reads as one whose zoom was changed by something, and the settle
             // machinery would commit a rasterisation nobody asked for.
-            doc.observed_zoom = doc.view.zoom;
+            doc.frame.observed_zoom = doc.view.zoom;
             crate::diag::trace(|| {
                 format!(
                     // ui-text-exempt: diagnostic trace, never displayed in the UI

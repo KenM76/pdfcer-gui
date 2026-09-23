@@ -371,7 +371,7 @@ pub fn anchor_step(anchor: &ZoomAnchor, display_now: (f32, f32), waited: bool) -
 /// solve and the one-frame grace counter cannot be re-derived differently at
 /// the call site.
 pub fn consume_anchor(ctx: &Context, doc: &mut OpenDoc, display_now: (f32, f32)) -> Option<Vec2> {
-    let anchor = doc.zoom_anchor?;
+    let anchor = doc.frame.zoom_anchor?;
     let waited_id = egui::Id::new(WAITED_MEMORY_KEY);
     let waited = ctx.data(|d| d.get_temp::<bool>(waited_id).unwrap_or(false));
     match anchor_step(&anchor, display_now, waited) {
@@ -380,12 +380,12 @@ pub fn consume_anchor(ctx: &Context, doc: &mut OpenDoc, display_now: (f32, f32))
             None
         }
         AnchorStep::Drop => {
-            doc.zoom_anchor = None;
+            doc.frame.zoom_anchor = None;
             ctx.data_mut(|d| d.insert_temp(waited_id, false));
             None
         }
         AnchorStep::Solve => {
-            doc.zoom_anchor = None;
+            doc.frame.zoom_anchor = None;
             ctx.data_mut(|d| d.insert_temp(waited_id, false));
             let (x, y) = geometry::zoom_anchor_offset(
                 anchor.offset_before,
@@ -452,7 +452,7 @@ pub fn arm_anchor(ctx: &Context, doc: &mut OpenDoc) {
         return;
     };
     let point = anchor_point(ctx.pointer_latest_pos(), &frame);
-    doc.zoom_anchor = Some(hold(frac_of(point, frame.extent), &frame));
+    doc.frame.zoom_anchor = Some(hold(frac_of(point, frame.extent), &frame));
 }
 
 /// Whether an action is a **discrete** zoom — one that arrives in one piece
@@ -490,7 +490,7 @@ pub fn is_discrete_zoom(action: &Action) -> bool {
 ///   overwhelming majority of frames — one `matches!` per action, over a list
 ///   that is almost always empty.
 pub fn arm_for_actions(ctx: &Context, doc: &mut OpenDoc, actions: &[Action]) {
-    if doc.zoom_anchor.is_none() && actions.iter().any(is_discrete_zoom) {
+    if doc.frame.zoom_anchor.is_none() && actions.iter().any(is_discrete_zoom) {
         arm_anchor(ctx, doc);
     }
 }
@@ -817,7 +817,7 @@ fn frame_rect(
         max_zoom_percent,
         learned,
     );
-    doc.zoom_anchor = Some(plan.anchor);
+    doc.frame.zoom_anchor = Some(plan.anchor);
     if let ZoomOutcome::Zoomed { applied, .. } = plan.outcome {
         actions.push(Action::ZoomTo(applied));
     }

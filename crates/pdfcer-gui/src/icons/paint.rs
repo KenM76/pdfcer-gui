@@ -103,7 +103,7 @@
 
 use egui_shell::ribbon::IconRequest;
 
-use super::cache::with_cache;
+use super::cache::{Baked, with_cache};
 use super::svg::VIEWBOX;
 use super::{Icon, IconWeight};
 
@@ -167,7 +167,10 @@ pub fn paint_ribbon_icon(painter: &egui::Painter, request: &IconRequest<'_>) {
         IconWeight::Regular
     };
     match Icon::from_key(request.key) {
-        Some(icon) => paint_icon(painter, icon, request.rect, request.tint, weight),
+        Some(icon) => {
+            let baked = super::accent::baked(painter.ctx(), icon, request.tint, request.enabled);
+            paint_glyph(painter, icon, request.rect, request.tint, weight, baked);
+        }
         None => {
             // A diagnostic trace, never displayed in the UI. `trace_changed`
             // rather than `trace` so a key that is missing on every frame is
@@ -227,13 +230,31 @@ pub fn paint_icon(
     tint: egui::Color32,
     weight: IconWeight,
 ) {
+    paint_glyph(painter, icon, rect, tint, weight, None);
+}
+
+/// [`paint_icon`], or with `baked` the coloured glyph, drawn at `tint`'s alpha.
+fn paint_glyph(
+    painter: &egui::Painter,
+    icon: Icon,
+    rect: egui::Rect,
+    tint: egui::Color32,
+    weight: IconWeight,
+    baked: Option<Baked>,
+) {
     let square = centred_square(rect);
     if square.width() <= 0.0 {
         return;
     }
     let ctx = painter.ctx();
     let px = (square.width() * ctx.pixels_per_point()).round().max(1.0) as u32;
-    let handle = with_cache(|cache| cache.texture(ctx, icon, px, weight));
+    let handle = with_cache(|cache| cache.texture_baked(ctx, icon, px, weight, baked));
+    // NOT A THEME COLOUR: a baked glyph carries its colours; this is its alpha.
+    let tint = if baked.is_some() {
+        egui::Color32::from_white_alpha(tint.a())
+    } else {
+        tint
+    };
     painter.image(handle.id(), square, FULL_UV, tint);
 }
 

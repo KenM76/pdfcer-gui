@@ -273,7 +273,7 @@ pub(crate) fn arrive(
                 // recorded an origin — a destination raised by something other
                 // than `app::actions::view`, which does not happen today and
                 // would otherwise silently become "wherever we ended up".
-                let origin_x = doc.dest_origin_x.unwrap_or(doc.last_scroll_offset.x);
+                let origin_x = doc.dest_origin_x.unwrap_or(doc.frame.last_scroll_offset.x);
                 doc.dest_scroll = doc
                     .pages
                     .get(page)

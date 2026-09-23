@@ -41,17 +41,27 @@ the reason is that the state was already gathered into one place:
 
 So the shape of the work is **not** "make the canvas re-entrant". It is:
 
-> `OpenDoc::view: ViewState` becomes a small owner of one or two `ViewState`s,
-> and the four view fields that escaped onto `OpenDoc` move inside `ViewState`
-> where they belonged in the first place.
+> `OpenDoc::view: ViewState` becomes a small owner of one or two views, and the
+> frame bookkeeping that escaped onto `OpenDoc` moves beside the view it
+> describes.
 
-**The four stragglers, and each is a per-view quantity mis-homed on the
-document:** `last_scroll_offset`, `zoom_anchor`, `observed_zoom` and
-`deep_zoom` (plus `zoom_commit_at` / `zoom_commanded`, which are the settle
-clock for one view's zoom). Every one of them is frame bookkeeping about *a*
-canvas, and with two canvases on screen a single copy is not a limitation —
-it is a bug that makes pane B's scroll steal pane A's anchor. The move is
-mechanical and the compiler finds every site.
+**The seven stragglers, and each is a per-view quantity mis-homed on the
+document:** `observed_zoom`, `zoom_commit_at`, `zoom_commanded`, `zoom_anchor`,
+`last_scroll_offset`, `deep_anchor` and `deep_zoom`. Every one of them is frame
+bookkeeping about *a* canvas, and with two canvases on screen a single copy is
+not a limitation — it is a bug that makes pane B's scroll steal pane A's
+anchor. The move is mechanical and the compiler finds every site.
+
+**They go into a sibling `viewer::frame::ViewFrame`, not into `ViewState`.**
+`ViewState` is a record of **choices** — a zoom that was *set* — and its header
+spends the argument that this is what licenses deriving `PartialEq` over an
+`f32`: two states that reached 1.0 by different routes really are the same
+state. None of the seven is a choice. `observed_zoom` is a measurement and
+`zoom_commit_at` is a clock reading, so folding them in would quietly redefine
+that equality as "and was arrived at during the same millisecond". A view is
+therefore a *pair* — the stance it was put into, and what presenting that
+stance measured — and a second pane gets a second `ViewFrame` for the same
+reason it gets a second `ViewState`.
 
 ⚠ **Do not make `views` a `Vec`.** Two is the number he asked for, two is the
 number the sync rule is written for, and a vector invites a third pane nobody

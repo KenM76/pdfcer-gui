@@ -454,6 +454,14 @@ impl eframe::App for PdfcerApp {
         // why the painter needs a copy it can reach with a context alone.
         crate::canvas::ocrlayer::sync(&ctx, self.prefs.ocr_layer_colour);
 
+        // Coloured icons (O232): from the draft while Settings is open, so
+        // ticking the box previews at once, as `ui_scale` above does.
+        let colour_icons = self
+            .settings_draft
+            .as_ref()
+            .map_or(self.prefs.colour_icons, |d| d.working_prefs.colour_icons);
+        crate::icons::accent::sync(&ctx, colour_icons);
+
         // ★★ Step 0b² bis — **measure the page's content digest**, on the one
         // frame-level `&mut` this shell has.
         //

@@ -1126,9 +1126,14 @@ pub mod shift_constrains;
 
 pub mod tool_row;
 
+/// O232: the coloured-icons option is off by default and reaches the icons when on.
+pub mod colour_icons;
+
 pub mod wheel_flips_pages;
 
+pub mod zoom_burst;
 pub mod zoom_gallery;
+pub mod zoom_notch_walk;
 
 pub mod zoom_keeps_place;
 

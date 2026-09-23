@@ -316,7 +316,10 @@ pub(super) fn placement(
         // before this frame's scroll area is built — and the correct one,
         // because nothing has moved the view since.
         let now = geometry::page_local_offset(
-            (doc.last_scroll_offset.x, doc.last_scroll_offset.y),
+            (
+                doc.frame.last_scroll_offset.x,
+                doc.frame.last_scroll_offset.y,
+            ),
             (row_rect.min.x, row_rect.min.y),
             (display_size.x, display_size.y),
             row_display,

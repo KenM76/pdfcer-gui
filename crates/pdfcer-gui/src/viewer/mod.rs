@@ -128,6 +128,11 @@ pub mod deep;
 /// two steps must be exact inverses, **above** the ladder as well as on it —
 /// and above it is the half that is easy to get wrong (O24g).
 pub mod ladder;
+// What one canvas observed about itself on the previous frame, as distinct
+// from the stance it was put into. `ViewState` holds the choices; `ViewFrame`
+// holds the measurements — and with two canvases on one document, a single
+// copy of the measurements is a defect rather than a simplification.
+pub mod frame;
 // How the zoom is decided from the viewport: the three fitting modes, the
 // ratio each takes, and which axes each one PLACES the view on. Split out
 // under R2, this project's 1,500-line-per-file ceiling.

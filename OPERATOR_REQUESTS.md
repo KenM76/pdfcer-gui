@@ -112,6 +112,114 @@ exactly that. **The canvas needs the same treatment and does not have it.**
 
 # OPEN
 
+## O232 — **BUILT AND DRIVEN — awaiting your verdict** — an optional colour mode for the icons, subtle, in the manner of Word and SolidWorks
+
+> *"let's add a colour option to the icons and glyphs. Somewhat subtle and in
+> line with what word and SolidWorks has. This should be optional and
+> otherwise the icons and glyphs look as they do now."*
+
+**Built.** Settings › Appearance › *Coloured icons*, off by default, saved as
+`colour_icons` in the settings file, previewed live while Settings is open.
+On, 91 of the 143 icons draw one meaningful part in a muted hue: green for
+adding or confirming, red for removing or closing, blue for arrows and the
+working part of a tool, and amber for marking or keeping. The outline stays
+the theme foreground. The dark theme has its own lighter set.
+
+**What does not change.**
+- Off is the same code path and the same pixels as before.
+- A disabled button stays grey either way.
+- The layers panel's lock stays plain.
+- 52 icons have no natural accent and stay one colour.
+
+**Driven.** `icons_are_coloured_only_when_asked` launches twice on SW41177
+and counts green, red and amber pixels in the ribbon band: 0 with the option
+off, 116 with it on. PASS.
+
+**Not covered.** Text symbols set in a font, such as ⚠ inside a label, are
+characters and not icons, so they are not coloured.
+
+## O231 — **FIXED AND DRIVEN — awaiting your verdict** — at some zoom step the zoomed area goes white and the page seems to jump; zooming back out lands on the detail
+
+> *"when you check the zoom in you'll need to take note of where the cursor is
+> compared to the page and each zoom in. I swear at some level of zoom the page
+> jumps to a different position because the zoomed area suddenly goes white,
+> and if I zoom back out it sits over the detail I was zooming in on."*
+
+Zoom-to-cursor, step by step, over one detail. At one step the area under the
+cursor turns white and reads as a jump; zooming back out is over the right
+detail again. That last clause says the *position* survived, so the suspect is
+what is painted at that step, not where the view is.
+
+**Cause.** On the frame a zoom-to-cursor forces a new scroll offset, the
+canvas chose which region of the page to render from the *previous* frame's
+offset. That offset belongs to the old zoom, and read against the new zoom it
+names a place whole screens away. The raster that came back was painted at
+that other place, so the patch under the cursor stayed white until the next
+order won the race. The view had not moved, which is why zooming back out
+landed on the detail. Fixed in `canvas::present` (the visible set and the
+region order both use the forced offset). Traced: 230 of 694 region frames
+ordered the wrong place before the fix, 0 of 652 after.
+
+**Driven.**
+- `zooming_at_wheel_speed_never_blanks_the_detail_under_the_cursor` spins the
+  wheel in bursts of five notches from 29% to 232,000% and back over one
+  stroke on SW41177. It photographs the cursor patch about 18 times per burst
+  and checks the trace for a region ordered off the view. PASS on the fixed
+  build. FAIL on a build with the fix undone, at 1,049%, from the trace. On
+  that build the photographs never caught the white, so the race is real but
+  rarely visible to a camera. The trace catches it every time.
+- `zooming_click_by_click_keeps_the_detail_under_the_cursor` does the same one
+  notch at a time: 45 notches in and 44 out, to about 190,000%. PASS. No
+  notch was blank early and inked once settled, and the page point under the
+  cursor held to about 0.01 pt. Past about 6,000% the cursor sat about 15 pt
+  off the stroke, so that half measured drift only, not a white-out.
+
+**Drift, measured and left alone.** With the cursor still, the point under it
+moves 0 to about 5 screen pixels per burst. That is the scroll area rounding
+the page to whole pixels, and it does not add up. A fix that carried the
+anchor between frames made no measurable difference against a control build
+(1.7 vs 2.2 pt average), so it was taken out. Both checks fail above
+12 screen pixels.
+
+## O230 — **FILED** — add OCRcer as an OCR option once it is good enough; tables, drawing lines and accounting documents included
+
+> *"we have a new project in a folder called d:\dev\ocrcer . It is supposed to
+> be built for your use. I'd like to be able to add it as an OCR option when you
+> think the project has reached a point that it can be added. It is supposed to
+> be working on detection of tables, lines of drawings in drafting and
+> architectural drawings, and also detection of things that are used by
+> accountanting firms."*
+
+The timing is this project's call, and so is the bar. **The bar, in order:**
+
+1. **It implements `pdfcer_core::ocr::OcrEngine`.** OCRcer's chunk 7; not
+   started. Until then there is nothing to link.
+2. **It does not read worse than the engine it would sit beside.** Measured by
+   OCRcer's own head-to-head against `ocrs` on its coverage corpus, on the
+   proportional faces a scan actually carries. At the survey it trailed on
+   every proportional face (Lato 64% vs 83% word F1, Liberation Serif 69% vs
+   88%) and led only on monospace; on 29 real scans it read 43% where
+   Tesseract.js read 85%. Its own README says *do not use this yet*.
+3. **It can decline.** No reject stage exists, which its own docs name as the
+   dominant error on real documents. An engine that cannot say "not sure" is
+   the wrong engine for a review surface, even with a confidence score.
+
+**Offering it is R8, and cheap once 1–3 hold.** A second registered engine
+command; the choice appears only in a build that links it, and the confidence
+column follows `reports_confidence()`, which OCRcer answers `true`.
+
+**Tables and drawing lines are a larger ask than "an OCR option", and the
+boundary does not carry them yet.** `OcrEngine::recognize` returns
+`Vec<RecognizedWord>` — words and boxes, nothing else. A detected table, a
+ruled line or a boxed form field has nowhere to go. Accounting structure is
+OCRcer's chunk 9 (ledgers, statements, T-slip-style boxed forms), not started;
+drafting and architectural line work is not yet in its plan. Both need a
+richer result type in `pdfcer-core`, which is an engine request from here, to
+be filed when OCRcer has a structure result to hand over — not before, or the
+type will be designed without a producer.
+
+**Survey is read-only.** OCRcer is its own project; nothing here edits it.
+
 ## O226 — **FILED** — an OCR text-layer editing mode, two synced views with a PDF↔text slider
 
 > *"We need a way to edit the ocr text layer. I'd like a mode to do this where

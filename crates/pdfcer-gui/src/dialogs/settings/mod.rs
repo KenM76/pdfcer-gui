@@ -510,6 +510,8 @@ pub fn show(
                     // one place instead of scattered across the window.
                     ui.add_space(10.0);
                     appearance::ui_scale(ui, &mut draft.working_prefs);
+                    ui.add_space(10.0);
+                    appearance::colour_icons(ui, &mut draft.working_prefs);
                 });
                 // Colour is the expanded one. See the module header for
                 // the contradiction in the source this resolves.

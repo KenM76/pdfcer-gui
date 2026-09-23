@@ -123,7 +123,7 @@ pub(super) fn track(
         // `OPERATOR_REQUESTS.md` **O24f**.
         //
         //
-        // 1. **On the way in**, the seed below read `doc.last_scroll_offset` —
+        // 1. **On the way in**, the seed below read `doc.frame.last_scroll_offset` —
         //    the PREVIOUS frame's settled offset, recorded before this frame's
         //    zoom landed. Dividing it by the NEW zoom asks where a point is
         //    using one frame's distance and the next frame's scale, so the
@@ -148,25 +148,25 @@ pub(super) fn track(
         // minutes earlier.
         let landed = zoom::consume_anchor(ui.ctx(), doc, current_display)
             .map(|local| to_strip((local.x, local.y)));
-        if doc.deep_anchor.is_none() {
+        if doc.frame.deep_anchor.is_none() {
             // Prefer the offset the zoom just solved for; fall back to the
             // last settled one only when no zoom is landing, which is the case
             // where they agree anyway.
-            let from = landed.unwrap_or(doc.last_scroll_offset);
+            let from = landed.unwrap_or(doc.frame.last_scroll_offset);
             let seen = geometry::scroll_to_strip(from.x, display_size.x, vp.x, overhang.0);
             let seen_y = geometry::scroll_to_strip(from.y, display_size.y, vp.y, overhang.1);
             let origin = layout
                 .rect_of(current)
                 .map_or((0.0, 0.0), |r| (r.min.x, r.min.y));
             let zoom = f64::from(doc.view.zoom);
-            doc.deep_anchor = Some(viewer::deep::DeepAnchor {
+            doc.frame.deep_anchor = Some(viewer::deep::DeepAnchor {
                 page: (
                     f64::from(seen - origin.0) / zoom,
                     f64::from(seen_y - origin.1) / zoom,
                 ),
                 screen: (0.0, 0.0),
             });
-        } else if let Some(prev) = doc.deep_zoom
+        } else if let Some(prev) = doc.frame.deep_zoom
             && (prev - f64::from(doc.view.zoom)).abs() > f64::EPSILON
         {
             // ★★ ZOOM ABOUT THE CURSOR, by re-statement rather than by solving
@@ -195,13 +195,13 @@ pub(super) fn track(
                 .map_or((vp.x / 2.0, vp.y / 2.0), |p| {
                     (p.x - region.min.x, p.y - region.min.y)
                 });
-            doc.deep_anchor = doc.deep_anchor.map(|a| a.zoomed_about(at, prev));
+            doc.frame.deep_anchor = doc.frame.deep_anchor.map(|a| a.zoomed_about(at, prev));
         }
-        doc.deep_zoom = Some(f64::from(doc.view.zoom));
+        doc.frame.deep_zoom = Some(f64::from(doc.view.zoom));
         // ★ Pan and wheel move the ANCHOR now. The scroll area has nothing to
         // scroll, so routing them to it would be a gesture that silently does
         // nothing — which is how a deep zoom would come to feel frozen.
-        if let Some(anchor) = doc.deep_anchor {
+        if let Some(anchor) = doc.frame.deep_anchor {
             let zoom = f64::from(doc.view.zoom);
             let mut moved = anchor;
             if let Some(pan) = pan_delta(ui, active_tool) {
@@ -212,7 +212,7 @@ pub(super) fn track(
             if wheel != egui::Vec2::ZERO {
                 moved = moved.panned((wheel.x, wheel.y), zoom);
             }
-            doc.deep_anchor = Some(moved);
+            doc.frame.deep_anchor = Some(moved);
         }
         // ★★★ CONFINE THE PLACEMENT -- O186 stage one, and the position
         // in this block is the whole of why it works. Every mover above has
@@ -221,7 +221,7 @@ pub(super) fn track(
         // thing that can be out of range. See `confine`.
         let (cx, cy) = confine(doc, layout, current, display_size, vp, overhang);
         trace::confined(cx, cy);
-    } else if let Some(anchor) = doc.deep_anchor {
+    } else if let Some(anchor) = doc.frame.deep_anchor {
         // ★★★ LEAVING THE DEEP TIER — the hand-over BACK, which for two days
         // did not exist. `OPERATOR_REQUESTS.md` O26e.
         //
@@ -250,8 +250,8 @@ pub(super) fn track(
         // Forget the anchor so re-entering seeds afresh from wherever the
         // scroll area has since settled, and forget the zoom it was valid for
         // so the first frame back inside seeds rather than re-anchors.
-        doc.deep_anchor = None;
-        doc.deep_zoom = None;
+        doc.frame.deep_anchor = None;
+        doc.frame.deep_zoom = None;
         if handed.is_some() {
             // ★ Spend the pending zoom anchor rather than clearing the field,
             // so the `waited` bookkeeping in `zoom::consume_anchor` stays
@@ -325,7 +325,7 @@ fn confine(
     vp: Vec2,
     overhang: (f32, f32),
 ) -> (bool, bool) {
-    let Some(anchor) = doc.deep_anchor else {
+    let Some(anchor) = doc.frame.deep_anchor else {
         return (false, false);
     };
     let zoom = f64::from(doc.view.zoom);
@@ -369,7 +369,7 @@ fn confine(
         overhang.1,
     );
     if moved_x || moved_y {
-        doc.deep_anchor = Some(viewer::deep::DeepAnchor {
+        doc.frame.deep_anchor = Some(viewer::deep::DeepAnchor {
             page: (page_x, page_y),
             screen: anchor.screen,
         });
@@ -388,7 +388,7 @@ fn confine(
 /// # What this function contributes beyond that arithmetic
 ///
 /// **The last zoom step.** `DeepAnchor` describes the position at the zoom it
-/// was last updated for — `doc.deep_zoom` — and this frame is running at a
+/// was last updated for — `doc.frame.deep_zoom` — and this frame is running at a
 /// *new*, lower zoom whose step nothing has applied to the anchor: the deep
 /// branch's `zoomed_about` call is inside the `if deep` arm, and this frame is
 /// not in it. Handing the stale anchor straight over would keep the position
@@ -420,7 +420,7 @@ fn handover_offset(
         .map_or((viewport.0 / 2.0, viewport.1 / 2.0), |p| {
             (p.x - region.min.x, p.y - region.min.y)
         });
-    let stated = match doc.deep_zoom {
+    let stated = match doc.frame.deep_zoom {
         Some(prev) if prev.is_finite() && prev > 0.0 && (prev - zoom).abs() > f64::EPSILON => {
             anchor.zoomed_about(at, prev)
         }
@@ -458,6 +458,7 @@ pub(super) fn strip_placement(
     display_size: Vec2,
 ) -> egui::Rect {
     let anchor = doc
+        .frame
         .deep_anchor
         .unwrap_or_else(viewer::deep::DeepAnchor::origin);
     let zoom = f64::from(doc.view.zoom);

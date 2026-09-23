@@ -340,7 +340,7 @@ impl PdfcerApp {
         // waited out the 150 ms wheel-settle debounce before re-rastering,
         // as though it were a continuous gesture. A discrete command should
         // commit at once.
-        doc.zoom_commanded |= matches!(
+        doc.frame.zoom_commanded |= matches!(
             &action,
             Action::ZoomIn | Action::ZoomOut | Action::Fit(_) | Action::ZoomTo(_)
         );

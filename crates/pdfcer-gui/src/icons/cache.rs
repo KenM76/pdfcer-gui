@@ -15,6 +15,10 @@
 //! keyed on the three things that genuinely change the pixels: which icon,
 //! how many physical pixels a side, and how heavy the stroke is.
 //!
+//! The one exception is a coloured glyph ([`super::accent`]): two colours do
+//! not fit in one mask, so both are baked in and keyed, and a hover on a
+//! coloured icon does upload a texture — once per tint, then cached.
+//!
 //! `super::tests::cache_serves_repeat_requests_without_re_rasterizing`
 //! asserts the hit path, and
 //! `super::tests::cache_re_rasterizes_for_a_different_size_or_weight`
@@ -58,13 +62,16 @@ use super::{Icon, IconWeight};
 /// (dragging a window between a 100% and a 150% monitor) cannot accumulate
 /// stale textures without bound.
 ///
-/// # The arithmetic this number has to satisfy, and does not
+/// # The arithmetic this number has to satisfy
 ///
-/// One entry per icon per weight per distinct physical size. `Icon::ALL` holds
-/// **143** icons and [`IconWeight`] has two variants, so **one** display scale
-/// is already 286 entries and two is 572 — past this cap. **Re-derive this
-/// number whenever the icon set grows**; it is `Icon::ALL.len() * 2 * (the
-/// number of display scales a session should hold without churning)`.
+/// One entry per icon per weight per distinct physical size, plus, with
+/// coloured icons on, one per accented icon per distinct control tint (a
+/// ribbon has about four: rest, hover, pressed, selected ink). `Icon::ALL`
+/// holds **143** icons and [`IconWeight`] has two variants, so one display
+/// scale is 286 plain entries; the 91 accented icons at four tints add up to
+/// 364 more, 650 in all. **Re-derive this number whenever the icon set
+/// grows**; it is that sum times the number of display scales a session
+/// should hold without churning.
 ///
 /// Exceeding it is not a crash and not a wrong pixel, which is why it is worth
 /// writing down: the cache clears wholesale and re-rasterizes the entire
@@ -75,11 +82,13 @@ use super::{Icon, IconWeight};
 /// Clearing wholesale rather than evicting least-recently-used is
 /// deliberate: it is one line, it happens approximately never, and the
 /// recovery cost is one frame of re-rasterization.
-const CACHE_CAPACITY: usize = 512;
+const CACHE_CAPACITY: usize = 1024;
 
 /// What uniquely identifies a raster.
 ///
-/// The tint is deliberately absent — see this module's header.
+/// The tint is absent for a plain glyph — see this module's header. A
+/// coloured glyph has two colours and a mask can carry only one, so its
+/// colours are baked into the pixels and are part of the key.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct CacheKey {
     /// Which glyph.
@@ -88,6 +97,19 @@ pub struct CacheKey {
     pub px: u32,
     /// How heavily the outline is stroked.
     pub weight: IconWeight,
+    /// `None` for the white mask; the baked colours of a coloured glyph.
+    pub baked: Option<Baked>,
+}
+
+/// The two colours a coloured glyph is rasterized in — see
+/// [`super::accent`]. Both opaque; the control's alpha is applied when it is
+/// drawn, as the tint `Color32::from_white_alpha(alpha)`.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub struct Baked {
+    /// Every shape outside the accent: the control's own foreground.
+    pub body: egui::Color32,
+    /// The accent shapes.
+    pub accent: egui::Color32,
 }
 
 /// Memoized icon textures.
@@ -131,7 +153,27 @@ impl IconCache {
         px: u32,
         weight: IconWeight,
     ) -> egui::TextureHandle {
-        let key = CacheKey { icon, px, weight };
+        self.texture_baked(ctx, icon, px, weight, None)
+    }
+
+    /// [`Self::texture`], or with `baked` the glyph rasterized in those two
+    /// colours. An icon with no accent ignores `baked` and is the plain mask.
+    pub fn texture_baked(
+        &mut self,
+        ctx: &egui::Context,
+        icon: Icon,
+        px: u32,
+        weight: IconWeight,
+        baked: Option<Baked>,
+    ) -> egui::TextureHandle {
+        let accent = super::accent::accent(icon);
+        let baked = baked.filter(|_| accent.is_some());
+        let key = CacheKey {
+            icon,
+            px,
+            weight,
+            baked,
+        };
         if let Some(handle) = self.textures.get(&key) {
             return handle.clone();
         }
@@ -140,7 +182,16 @@ impl IconCache {
         }
 
         let image = match IconArt::parse(icon.source()) {
-            Ok(art) => art.rasterize(px, weight),
+            Ok(art) => match (baked, accent) {
+                (Some(b), Some((_, shapes))) => art.rasterize_with(px, weight, |i| {
+                    Some(if shapes.contains(&i) {
+                        b.accent
+                    } else {
+                        b.body
+                    })
+                }),
+                _ => art.rasterize(px, weight),
+            },
             Err(err) => {
                 eprintln!(
                     // ui-text-exempt: stderr diagnostic, never rendered in the GUI. An icon is a
@@ -159,7 +210,7 @@ impl IconCache {
 
         // ui-text-exempt: an egui texture debug name, visible only in a
         // texture inspector. See `Icon::name`, job 2.
-        let name = format!("icon:{}@{px}:{weight:?}", icon.name());
+        let name = format!("icon:{}@{px}:{weight:?}:{baked:?}", icon.name());
         // LINEAR filtering: the raster is produced at the exact physical size
         // it will be drawn at, so filtering is a no-op in the normal case —
         // but if egui ever draws it at a fractional offset, linear is the

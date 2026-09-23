@@ -22,7 +22,13 @@ registering (or not registering) the command, and let `reports_confidence()`
 decide whether a confidence column exists at all. Under **R9** an engine that
 does not report confidence draws *nothing* there, not a greyed column.
 
-It was designed-but-not-built when surveyed (crates `ocrcer-core`,
-`ocrcer-bench`, `ocrcer-build`). Re-check before assuming any of it runs.
+Ken, 2026-09-22 (O230): add it as an OCR option **when this project judges it
+ready** — the timing is ours. The bar is in O230: implements `OcrEngine`
+(OCRcer chunk 7), not worse than `ocrs` on proportional faces, and a reject
+stage. Surveyed 2026-09-22: runs end-to-end, none of the three met; 43% vs
+Tesseract.js 85% on real scans; zero commits. He also wants tables, drafting
+line work and accounting documents — the `OcrEngine` result is words only, so
+that needs a richer `pdfcer-core` type, requested only once OCRcer produces
+structure. Re-survey `D:\dev\OCRcer\RESUME.md` before quoting any of this.
 
 Related: [[the-project-is-pdfcer-gui-since-2026-09-03]]

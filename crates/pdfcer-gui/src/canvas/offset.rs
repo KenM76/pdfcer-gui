@@ -179,7 +179,7 @@ pub(super) fn decide(
     // Where the view is sitting right now, in content space. Read here with
     // the overhang, before `doc` is borrowed mutably below, and used by the
     // dest-scroll arm as the offset an axis that must not move is held at.
-    let doc_offset = doc.last_scroll_offset;
+    let doc_offset = doc.frame.last_scroll_offset;
     // ★ Takes the RECT rather than a page index, as of O177. Every offset
     // solved above arrives measured against *something* — a page for the zoom
     // anchor and the reveal, a whole facing row for a fit and for the
@@ -356,7 +356,10 @@ pub(super) fn decide(
         // Panning subtracts the pointer delta: the content follows the hand,
         // so the page moves WITH the pointer rather than under it.
         let (x, y) = geometry::pan_offset(
-            (doc.last_scroll_offset.x, doc.last_scroll_offset.y),
+            (
+                doc.frame.last_scroll_offset.x,
+                doc.frame.last_scroll_offset.y,
+            ),
             (pan.x, pan.y),
             (display_size.x, display_size.y),
             (vp.x, vp.y),

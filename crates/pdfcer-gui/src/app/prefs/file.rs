@@ -256,6 +256,14 @@ impl Prefs {
                         line,
                     }),
                 },
+                "colour_icons" => match opening::bool_from_key(value) {
+                    Some(on) => prefs.colour_icons = on,
+                    None => notes.push(PrefNote::BadValue {
+                        key: key.to_owned(),
+                        value: value.to_owned(),
+                        line,
+                    }),
+                },
                 // ★ An unreadable token leaves the DEFAULT in place and is
                 // REPORTED, exactly as every sibling arm does. Swallowing it
                 // silently was the first version and was wrong: a token this
@@ -598,6 +606,16 @@ impl Prefs {
         // that arrived through a slider, and the second of those is a number no
         // operator should have to read in a file they are invited to edit.
         out.push_str(&format!("{:.2}", self.ui_scale));
+        out.push('\n');
+        out.push_str(
+            // ui-text-exempt: file comments, never displayed in the UI.
+            "\n\
+             # colour_icons: true | false. Whether toolbar icons draw one part\n\
+             # in a quiet colour (a green plus, a red cross, a blue arrow).\n\
+             # false draws every icon in one colour.\n",
+        );
+        out.push_str("colour_icons = "); // ui-text-exempt: a file KEY, as above.
+        out.push_str(opening::bool_key(self.colour_icons));
         out.push('\n');
         out.push_str(
             // ui-text-exempt: file comments, never displayed in the UI.

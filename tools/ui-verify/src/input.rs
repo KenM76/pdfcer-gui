@@ -755,6 +755,38 @@ impl Driver {
         Ok(())
     }
 
+    /// Wheel `times` notches with `modifiers` held and `gap` between notches,
+    /// returning as soon as the last notch is sent.
+    ///
+    /// Unlike [`Self::scroll_at_held`] nothing waits after the last notch: the
+    /// caller photographs what the program shows while it is still catching
+    /// up, which is the point.
+    ///
+    /// # Errors
+    /// As [`Self::scroll_at_held`].
+    pub fn scroll_burst(
+        &self,
+        p: ScreenPoint,
+        modifiers: &[u16],
+        notches: i32,
+        times: usize,
+        gap: Duration,
+    ) -> Result<()> {
+        self.raise_and_confirm()?;
+        self.confirm_uncovered(p)?;
+        self.move_to(p)?;
+        sys::with_modifiers(modifiers, || {
+            std::thread::sleep(MOVE_SETTLE);
+            for i in 0..times {
+                if i > 0 {
+                    std::thread::sleep(gap);
+                }
+                sys::wheel(notches);
+            }
+        });
+        Ok(())
+    }
+
     /// Press and release a virtual key, in the target window.
     ///
     /// # Errors

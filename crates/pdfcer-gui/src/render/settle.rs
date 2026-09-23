@@ -43,7 +43,7 @@
 //!   scaled texture is soft, not blank or blocky — which is exactly what every
 //!   other document viewer does, so it reads as normal rather than as a
 //!   glitch. A **discrete** command (Ctrl+0, Ctrl+Plus) bypasses the debounce
-//!   through `OpenDoc::zoom_commanded`: there is no gesture in flight, so
+//!   through `ViewFrame::zoom_commanded`: there is no gesture in flight, so
 //!   waiting would just feel unresponsive.
 //!
 //! ## ★ The strip, and the priority that keeps it affordable
@@ -517,15 +517,15 @@ impl PdfcerApp {
 
         // Did the zoom change since last frame, and by what route?
         let now = Instant::now();
-        if (doc.observed_zoom - doc.view.zoom).abs() > f32::EPSILON {
-            doc.observed_zoom = doc.view.zoom;
-            doc.zoom_commit_at = if doc.zoom_commanded {
+        if (doc.frame.observed_zoom - doc.view.zoom).abs() > f32::EPSILON {
+            doc.frame.observed_zoom = doc.view.zoom;
+            doc.frame.zoom_commit_at = if doc.frame.zoom_commanded {
                 now // discrete command: no gesture in flight, do not wait
             } else {
                 now + doc.zoom_settle()
             };
         }
-        doc.zoom_commanded = false;
+        doc.frame.zoom_commanded = false;
 
         let wanted_scale =
             viewer::raster_scale(doc.view.zoom, pixels_per_point, doc.prefs.render_quality);
@@ -632,13 +632,13 @@ impl PdfcerApp {
                 let page = doc.view.page_index;
                 doc.rasterize(ctx, page, wanted_scale);
             } else if stale_scale || stale_region {
-                if now >= doc.zoom_commit_at {
+                if now >= doc.frame.zoom_commit_at {
                     let page = doc.view.page_index;
                     doc.rasterize(ctx, page, wanted_scale);
                 } else {
                     // Nothing else will wake egui up when the debounce
                     // expires, so schedule it.
-                    ctx.request_repaint_after(doc.zoom_commit_at - now);
+                    ctx.request_repaint_after(doc.frame.zoom_commit_at - now);
                 }
             }
         }
@@ -719,7 +719,7 @@ impl PdfcerApp {
         // page, for the same reason the current page waits. Requesting pages
         // at a scale the operator is still changing would rasterize a document
         // per wheel notch.
-        let settling = now < doc.zoom_commit_at;
+        let settling = now < doc.frame.zoom_commit_at;
 
         //
         // Without this line the fix below is invisible: the whole point of it is
@@ -827,7 +827,7 @@ impl PdfcerApp {
                 // deadline passes on an idle window with no frame to notice
                 // it, and the strip stops filling until the operator moves the
                 // mouse.
-                ctx.request_repaint_after(doc.zoom_commit_at - now);
+                ctx.request_repaint_after(doc.frame.zoom_commit_at - now);
             } else if !doc.render_worker.is_rendering() || preempting {
                 let seen = visible.len();
                 crate::diag::trace(|| {

@@ -494,13 +494,19 @@ fn show_in(
         let strip_origin = strip_rect.min.to_vec2();
 
         // The viewport, expressed in strip space — what decides which pages
-        // are drawn at all. `last_scroll_offset` is the previous frame's
-        // settled offset, which is the best estimate available *before* this
-        // frame's is known; a page that appears one frame late during a fast
-        // fling is the cost, and it is bounded by one frame.
-        // ★★★ CONVERTED OUT OF CONTENT SPACE FIRST. O23.
+        // are drawn and which region of the page is ordered.
         //
-        // `last_scroll_offset` is where the SCROLL AREA is, measured from the
+        // The offset `viewpos` forced THIS frame when there is one, else the
+        // previous frame's settled offset. On a zoom frame the forced offset
+        // is the zoom anchor's, and the previous one belongs to the old zoom:
+        // read against the new layout it names a place `offset / new_zoom`
+        // points away — tens of page points at a few thousand percent — and
+        // the region tier ordered that place. The worst the fallback costs is
+        // a page appearing one frame late during a fling.
+        let view_offset = offset.unwrap_or(doc.frame.last_scroll_offset);
+        // CONVERTED OUT OF CONTENT SPACE FIRST. O23.
+        //
+        // The offset is where the SCROLL AREA is, measured from the
         // content's origin; this rect is intersected with the STRIP's layout.
         // Before the pasteboard those were the same space. With one they
         // differ by exactly the margin, and feeding the raw offset in puts
@@ -516,18 +522,8 @@ fn show_in(
         } else {
             Rect::from_min_size(
                 Pos2::new(
-                    geometry::scroll_to_strip(
-                        doc.last_scroll_offset.x,
-                        display_size.x,
-                        vp.x,
-                        overhang.x,
-                    ),
-                    geometry::scroll_to_strip(
-                        doc.last_scroll_offset.y,
-                        display_size.y,
-                        vp.y,
-                        overhang.y,
-                    ),
+                    geometry::scroll_to_strip(view_offset.x, display_size.x, vp.x, overhang.x),
+                    geometry::scroll_to_strip(view_offset.y, display_size.y, vp.y, overhang.y),
                 ),
                 avail,
             )
@@ -683,6 +679,7 @@ fn show_in(
                 // precisely, costs nothing, and leaves one code path.
                 Some(region) if deep => {
                     let anchor = doc
+                        .frame
                         .deep_anchor
                         .unwrap_or_else(viewer::deep::DeepAnchor::origin);
                     crate::render::region::region_on_screen_deep(
@@ -821,7 +818,7 @@ fn show_in(
     // The offset the area settled on THIS frame: the `offset_before` of any
     // zoom step the operator starts now, and the base the next frame's
     // middle-drag pan moves from.
-    doc.last_scroll_offset = scroll_output.state.offset;
+    doc.frame.last_scroll_offset = scroll_output.state.offset;
     let scroll_offset = scroll_output.state.offset;
 
     // ★ **Which page this frame's input is about.** Decided by the strip
@@ -1118,6 +1115,7 @@ fn show_in(
     // says the same thing in double precision. See `trace::position`.
     let pan_at = if deep {
         let anchor = doc
+            .frame
             .deep_anchor
             .unwrap_or_else(viewer::deep::DeepAnchor::origin);
         let z = f64::from(doc.view.zoom);

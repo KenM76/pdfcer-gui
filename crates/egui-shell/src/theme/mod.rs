@@ -110,9 +110,11 @@
 //! (a `.rs` file is capped at 1500 lines).
 
 pub mod contrast;
+pub mod icon_accents;
 pub mod overlays;
 
 pub use contrast::ContrastFailure;
+pub use icon_accents::IconAccents;
 pub use overlays::{Overlays, RoleCollision};
 
 use egui::Color32;

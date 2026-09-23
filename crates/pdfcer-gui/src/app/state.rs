@@ -93,7 +93,6 @@
 
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::Instant;
 
 use pdfcer_core::document::LoadOptions;
 use pdfcer_core::edit::EditSession;
@@ -103,7 +102,7 @@ use crate::app::cache::{FontCache, PageObjectCache, PageTextCache};
 use crate::canvas::selection::SelectionState;
 use crate::render::raster::PageTexture;
 use crate::render::worker::{RenderKey, RenderWorker};
-use crate::viewer::{self, ViewState};
+use crate::viewer::{self, ViewState, frame::ViewFrame};
 
 /// What, if anything, is open.
 ///
@@ -380,7 +379,7 @@ pub struct OpenDoc {
     /// Published by [`crate::canvas::show`] during layout and read by
     /// [`crate::render::settle`] after the frame, because "which pages are on
     /// screen" is only knowable once the scroll area has settled — the same
-    /// reason [`Self::last_scroll_offset`] is stored rather than derived. It is
+    /// reason [`ViewFrame::last_scroll_offset`] is stored rather than derived. It is
     /// the **complete** input to the strip's scheduling: what to keep, what to
     /// evict and what to render next all come from this list and the current
     /// page index. Empty means single page, and the strip pass returns at once.
@@ -550,20 +549,16 @@ pub struct OpenDoc {
     pub redaction_absence_claims: Vec<String>,
     /// The single-slot background rasterizer.
     pub render_worker: RenderWorker,
-    /// The zoom seen at the end of the previous frame, used to detect that
-    /// the zoom changed at all.
-    pub observed_zoom: f32,
-    /// The earliest instant at which the current zoom may be committed to a
-    /// real rasterization — the [`ZOOM_SETTLE`] debounce deadline.
-    pub zoom_commit_at: Instant,
-    /// Set by any *discrete* zoom command during this frame's action
-    /// dispatch, and consumed at the end of the frame. It is what
-    /// distinguishes "the operator pressed Ctrl+0" (commit at once) from
-    /// "the operator is mid-wheel-gesture" (wait for the gesture to settle).
-    pub zoom_commanded: bool,
-    /// See [`ZoomAnchor`]. Written by the canvas, consumed by the canvas on
-    /// the following frame.
-    pub zoom_anchor: Option<ZoomAnchor>,
+    /// **What this document's canvas observed about itself on the previous
+    /// frame** — see [`ViewFrame`].
+    ///
+    /// Beside [`Self::view`] rather than inside it: that one is the stance
+    /// the operator chose, this one is what presenting the stance measured.
+    /// One field per canvas, so that when a second pane arrives
+    /// (`OPERATOR_REQUESTS.md` O226) its scroll does not overwrite this
+    /// one's settled offset and leave the first pane panning from a
+    /// position it was never at.
+    pub frame: ViewFrame,
     /// **A fit command is waiting to have its view placed** —
     /// `OPERATOR_REQUESTS.md` O28.
     ///
@@ -661,7 +656,7 @@ pub struct OpenDoc {
     /// **A search hit that has been navigated to and is waiting to be
     /// scrolled into view.** See [`crate::find::Reveal`].
     ///
-    /// Sits here beside [`Self::zoom_anchor`] because it is the same *kind* of
+    /// Sits here beside [`ViewFrame::zoom_anchor`] because it is the same *kind* of
     /// thing for the same reason: per-document **view** bookkeeping that has
     /// to span two frames, because the page it targets has not been navigated
     /// to yet on the frame the request is made. Written by
@@ -737,15 +732,6 @@ pub struct OpenDoc {
     /// *this revision*, so paging away and back must re-trace (the count is
     /// different) and an edit must re-trace (the count may be different).
     pub objects_traced_for: Option<(usize, u64)>,
-    /// The scroll offset the canvas settled on at the end of the last frame.
-    ///
-    /// Kept because middle-drag panning has to compute "where the view
-    /// should be now" BEFORE the scroll area is built, and the area's own
-    /// state is only readable after. Storing last frame's settled value
-    /// lets the pan be applied in the same frame as the movement rather
-    /// than a frame late — which is the difference between panning that
-    /// tracks the hand and panning that lags it.
-    pub last_scroll_offset: egui::Vec2,
     /// ★★★ **How far the drawn content reaches past the sheet, in LOGICAL
     /// SCREEN POINTS** — the pasteboard's overhang term, published once per
     /// canvas frame.
@@ -791,7 +777,7 @@ pub struct OpenDoc {
     /// > MAX_PIXMAP_EDGE"*
     ///
     /// ★ Written by the canvas rather than derived here, for the same reason
-    /// [`Self::last_scroll_offset`] is: only the canvas knows where the
+    /// [`ViewFrame::last_scroll_offset`] is: only the canvas knows where the
     /// operator is looking, and that is what decides the rectangle.
     ///
     /// ★★ It carries its **page index**, and that is not decoration. A
@@ -801,37 +787,6 @@ pub struct OpenDoc {
     /// makes the mismatch impossible rather than merely unlikely.
     pub raster_region: Option<(usize, pdfcer_core::page_tree::Rect)>,
 
-    /// ★★ **Where the view is, once the scroll offset can no longer say** —
-    /// O24 tier 3.
-    ///
-    /// `None` below the sub-pixel content extent, where `egui::ScrollArea`'s
-    /// own `f32` offset is authoritative and nothing about the canvas differs
-    /// from before this feature. `Some` above it, where the position is a page
-    /// point in `f64` and the screen pixel it sits under.
-    ///
-    /// ★ Seeded on the way in from wherever the scroll area had settled, and
-    /// cleared on the way out — so crossing the threshold in either direction
-    /// does not move the page under the operator, and re-entering starts from
-    /// the truth rather than from a stale anchor.
-    pub deep_anchor: Option<crate::viewer::deep::DeepAnchor>,
-    /// The zoom [`Self::deep_anchor`] was last valid at, or `None` outside the
-    /// deep tier.
-    ///
-    /// ★★ **What makes zoom-to-cursor possible above the threshold.**
-    /// `DeepAnchor::zoomed_about` needs the zoom the anchor was written at, so
-    /// it can read which page point sits under the cursor *before* re-stating
-    /// the anchor at the new scale. The anchor itself deliberately does not
-    /// carry a zoom — it is a statement about page space and screen space, and
-    /// baking a scale into it would make it stale rather than merely
-    /// unfashionable. So the canvas remembers the scale beside it.
-    ///
-    /// `OPERATOR_REQUESTS.md` O24f: without this the anchor never moved on a
-    /// zoom, the anchored page point stayed nailed to the viewport's top-left,
-    /// and everything the operator was looking at expanded off the screen.
-    /// Cleared on leaving the tier so the first frame back inside seeds from
-    /// the scroll area rather than re-anchoring against a scale from minutes
-    /// ago.
-    pub deep_zoom: Option<f64>,
     /// ★ **What the operator has selected on the canvas.**
     ///
     /// # Why it is a field of the document rather than a value in `egui::Memory`
@@ -865,7 +820,7 @@ pub struct OpenDoc {
     /// `crate::app::actions`' invariant is that **no code path runs from a
     /// widget to a *document***. A selection is not the document: it names
     /// parts of it and changes nothing that a save would write. It sits with
-    /// [`Self::last_scroll_offset`] and [`Self::zoom_anchor`] as per-document
+    /// [`ViewFrame::last_scroll_offset`] and [`ViewFrame::zoom_anchor`] as per-document
     /// *view* state the canvas is permitted to write directly, and for the same
     /// reason they are — it is settled during the frame, from input that only
     /// exists during the frame, and deferring it would make a click land one
@@ -1232,7 +1187,7 @@ impl OpenDoc {
             origin,
             session: Arc::new(session),
             pages,
-            observed_zoom: view.zoom,
+            frame: ViewFrame::new(view.zoom),
             view,
             page_texture: None,
             page_texture_epoch: 0,
@@ -1260,11 +1215,6 @@ impl OpenDoc {
             // for a save to prove the absence of.
             redaction_absence_claims: Vec::new(),
             render_worker: RenderWorker::default(),
-            // In the past, so the first zoom change commits at once rather
-            // than waiting out a debounce nobody started.
-            zoom_commit_at: Instant::now(),
-            zoom_commanded: false,
-            zoom_anchor: None,
             fit_placement: None,
             // No arrangement has been switched to; the seed arm in
             // `canvas::offset` places a freshly opened document.
@@ -1281,12 +1231,9 @@ impl OpenDoc {
             edit_epoch: 0,
             content_generation: std::cell::Cell::new(None),
             objects_traced_for: None,
-            last_scroll_offset: egui::Vec2::ZERO,
             pasteboard_overhang: egui::Vec2::ZERO,
             // Whole page until the canvas says otherwise.
             raster_region: None,
-            deep_anchor: None,
-            deep_zoom: None,
             // Empty, like everything else here — and that is the entire
             // mechanism by which a selection can never refer to a previous
             // file. See the field's own docs.

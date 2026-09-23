@@ -1009,3 +1009,31 @@ pub const fn point_suffix() -> &'static str {
 pub const fn tab_tolerance_note() -> &'static str {
     "Too small and two boxes a hair apart become two separate rows, so Tab zig-zags down the page. Too large and a whole column folds into one row, so Tab runs across the page when you wanted it to run down. pdfcer ships 1."
 }
+
+/// Coloured icons: the title. `OPERATOR_REQUESTS.md` O232.
+#[must_use]
+pub const fn colour_icons_title() -> &'static str {
+    "Coloured icons"
+}
+
+/// Coloured icons: what it does, and that off is how pdfcer ships.
+#[must_use]
+pub const fn colour_icons_silence() -> &'static str {
+    "Draws one part of each toolbar icon in a quiet colour, the way Office and \
+     SOLIDWORKS do: a green plus, a red cross, a blue arrow. Off draws every \
+     icon in one colour, as pdfcer ships."
+}
+
+/// Coloured icons: what changing it costs.
+#[must_use]
+pub const fn colour_icons_radius() -> &'static str {
+    "Applies as soon as you tick it. Cancel puts it back. Disabled buttons \
+     stay grey either way. It never changes the page or the file — only the \
+     icons around them."
+}
+
+/// The checkbox's own label.
+#[must_use]
+pub const fn colour_icons_label() -> &'static str {
+    "Colour the icons"
+}

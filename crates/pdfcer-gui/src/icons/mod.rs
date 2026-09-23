@@ -118,6 +118,9 @@
 //! painter is what turns the ribbon from a row of text buttons into a
 //! ribbon.
 
+/// The optional two-colour icon set: which part of which glyph takes which
+/// accent, and the switch.
+pub mod accent;
 pub mod assets;
 pub mod cache;
 pub mod catalog;
@@ -199,7 +202,15 @@ pub fn image_tinted(
 ) -> egui::Image<'static> {
     let ctx = ui.ctx();
     let px = (ICON_PTS * ctx.pixels_per_point()).round().max(1.0) as u32;
-    let handle = with_cache(|cache| cache.texture(ctx, icon, px, weight));
+    let baked = accent::baked(ctx, icon, tint, ui.is_enabled());
+    let handle = with_cache(|cache| cache.texture_baked(ctx, icon, px, weight, baked));
+    // A baked glyph carries its colours; the tint only applies the alpha.
+    // NOT A THEME COLOUR: an alpha multiplier, not a colour.
+    let tint = if baked.is_some() {
+        egui::Color32::from_white_alpha(tint.a())
+    } else {
+        tint
+    };
     let sized = egui::load::SizedTexture::new(handle.id(), egui::vec2(ICON_PTS, ICON_PTS));
     egui::Image::from_texture(sized)
         .fit_to_exact_size(egui::vec2(ICON_PTS, ICON_PTS))
