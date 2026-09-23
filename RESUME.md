@@ -52,6 +52,37 @@ channel: a reply is an input to *how* a thing is built, never to *which*. Each
 row's argument is in `OPERATOR_REQUESTS.md`, which **only Ken closes**; the open
 set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
+**Start here on `continue`.** The release tree `d82686f` is published to
+OneDrive and GitHub as `v0.5.0-dev.20260923.1`. Its lib tests, both clippy
+configurations, every gate and an off-screen smoke launch are green. Nothing
+listed below has been driven. In order:
+
+0. **Close the channel.** `open/` still holds the answered G028–G041 exchanges
+   and two audit notes. Archive each pair and write its `INDEX.md` row in the
+   same sitting (see the Request channel row above).
+1. **Drive the print work.** Pause the ET-16600 queue first, and ask Ken in one
+   line before running `ui-verify`. Three drives are owed:
+   - O233, fixed line width: the preview stroke changes with *Auto* and with a
+     typed width, and the setting survives reopening the dialog.
+   - Poster marks and labels, now from the engine's mark band
+     (`Tile::marks`, `Tile::label_rect`).
+   - The print-resolution field reappearing after a change.
+2. **Drive the G028–G038 wiring:**
+   - Properties › *Drawn as* and *Fit to width*.
+   - Format › Merge text runs.
+   - Moving a line that carries inherited pieces.
+   - A glyph click resolving through `locate_text_run`.
+   - An OCR re-run replacing the layer, and File › Recognise › Remove OCR text.
+   - SVG/EMF *Keep text as text*.
+
+   Each has a ⬜ row in `FEATURES.md`; tick it only when its drive passes.
+3. **Run the integration tests.** `cargo test --workspace` beyond `--lib` was
+   skipped for RAM. Run it in the foreground with `CARGO_BUILD_JOBS=1`.
+4. **Wire the add-text half of G034:** a render mode for newly inserted text.
+5. **Print, still to build:** N-up and booklet, plus an Acrobat print-dialog
+   parity table (poster is done).
+6. **Crate split Stage 3.** Standing work between tasks, approved.
+
 **★ Newest, and ahead of everything numbered below: O226 – O229, the OCR
 text-layer editor.** Two views side by side, a slider that fades between the
 scan and the text layer, selection echoed as a box outline in the other view,
