@@ -629,24 +629,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ★ Note the distinction the old note blurred: it said *"this point is on a
     // single-run line"*, and a **run** is not an **operator**. One run, two
     // operators, is exactly this case.
-    // ★★★ **AND ONLY WHEN THE REQUEST WAS NOT NARROWED**, which is the half a
-    // build without `narrowed=` in the trace cannot express.
-    //
-    // `canvas::textedit::narrow` sends the whole-operator form against ONE
-    // fragment of a split run — a shape that has no reconstructed `find` in it
-    // at all, so none of the reasoning above applies to it. A refusal there is
-    // not the designed clean failure; it is the shell having pinned an operator
-    // the engine could not act on, which is a defect and must be reported as
-    // one. Skipping it would have made the narrowing untestable through this
-    // check for exactly the runs it was written for.
     if let Some(pin) = trace.last("edit-text-pin")
         && pin.get("one_operator") == Some("false")
-        && pin.get("narrowed") != Some("1")
         && trace.last("edit-text-refused").is_some()
     {
         return Err(Error::new(format!(
-            "the caret landed on a run that spans MORE THAN ONE show operator and the change \
-             straddled more than one of them (`{}`), so the shell deliberately sent the \
+            "the caret landed on a run that spans MORE THAN ONE show operator (`{}`), so the \
+             shell deliberately sent the \
              reconstructed `find` rather than the whole-operator form — the split case, where \
              whole-operator would corrupt the page and find-based fails cleanly instead. The \
              refusal that followed is the DESIGNED outcome, not a defect. ★ To exercise the \
@@ -715,9 +704,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             "the caret took keystrokes, the commit REACHED the engine, and the engine refused \
              it: `{}`. The shell half of this works — a caret was placed on run {}, characters \
              were typed and the plan was built. ★ The straddling split-run case is handled \
-             above and is NOT this, so the request named a pin and an EMPTY find — either \
-             because the run is one show operator (`one_operator=true`) or because the change \
-             was narrowed to one of several (`narrowed=1`). The engine refused a \
+             above and is NOT this, so the request named a pin and an EMPTY find, because \
+             the run is one show operator (`one_operator=true`). The engine refused a \
              whole-operator request, which is a `pdfcer-core` verdict and belongs in a \
              request. Trace: {}.",
             refused.raw,

@@ -100,7 +100,9 @@ impl PrintDialog {
         // choices it encodes and why a second copy of them here would defeat
         // the preview's purpose.
         let options = render_options(self.scope, &doc.settings);
+        let lines_pt = super::lines::paper_pt(self.lines, job.resolution.dpi);
         let view = doc.session.view();
+        let name = super::poster::document_name(doc);
 
         let mut bitmaps = Vec::with_capacity(job.plans.len());
         for plan in &job.plans {
@@ -113,6 +115,17 @@ impl PrintDialog {
                 // count."*
                 continue;
             };
+            let mut options = options.clone();
+            super::lines::apply(
+                &mut options,
+                lines_pt,
+                plan.render_scale,
+                plan.placement.scale,
+            );
+            if let Some(tile) = plan.tile {
+                bitmaps.push(render_tile(&view, page, plan, &tile, &options, &name)?);
+                continue;
+            }
             let rendered = pdfcer_render::render_page_with_view(
                 &view,
                 page,
@@ -132,14 +145,15 @@ impl PrintDialog {
             });
         }
 
-        // ★ The orientation page is the FIRST PLANNED page, taken from the
-        // bitmaps rather than from the document. The sequence may be reversed
-        // or range-filtered, which is exactly when `pages[0]` would be the
-        // wrong page — and the driver picks its paper from whichever one it is
-        // handed.
-        let first_page_pt = bitmaps
+        // ★ The orientation page is the FIRST PLANNED page — the one `plan`
+        // resolved orientation from. Not `pages[0]`: the sequence may be
+        // reversed or range-filtered. Not the first bitmap either: a poster
+        // sheet's bitmap is a tile, not the page.
+        let first_page_pt = job
+            .plans
             .first()
-            .map_or(US_LETTER_PORTRAIT_PT, |bitmap| bitmap.page_pt);
+            .and_then(|plan| page_sizes.get(plan.index).copied())
+            .unwrap_or(US_LETTER_PORTRAIT_PT);
         spooler::spool(
             printer,
             &bitmaps,
@@ -180,7 +194,7 @@ impl PrintDialog {
                  claim={}:{} \
                  dpi={:?} capped={:?} uncapped_mb={:?} orientation={:?} duplex={:?} \
                  paper={:?} pick={} auto={} sheet={} largest={} mixed={} config={} \
-                 scale={:?} tab={:?}",
+                 scale={:?} tab={:?} {}",
                 self.printers.get(self.selected).map(|p| &p.driver),
                 self.printers.get(self.selected).map(|p| &p.port),
                 job.map(|j| j.plans.len()),
@@ -236,6 +250,7 @@ impl PrintDialog {
                 self.config.is_some(),
                 job.and_then(|j| j.plans.first()).map(|p| p.placement.scale),
                 self.active_tab,
+                super::poster::trace_fields(job),
             )
         });
     }
@@ -279,6 +294,61 @@ impl PrintDialog {
 ///
 ///
 /// [`preview::PreviewKey`] gained the same five, for the reason that note gave.
+/// One poster sheet: the tile's part of the page, rendered at the plan's
+/// density, then — when the sheet has a band — placed on a sheet-sized
+/// bitmap with its cut marks and label.
+fn render_tile(
+    view: &pdfcer_render::DocumentView<'_>,
+    page: &pdfcer_core::page_tree::Page,
+    plan: &spooler::PagePlan,
+    tile: &pdfcer_gui_base::poster::Tile,
+    options: &pdfcer_render::RenderOptions,
+    name: &str,
+) -> Result<PageBitmap, String> {
+    let s = tile.source_pt;
+    let region = crate::render::region::exact_region(
+        (s.x, s.y, s.right(), s.bottom()),
+        crate::render::region::PageFrame::of(page),
+    );
+    let rendered =
+        pdfcer_render::render_page_region(view, page, plan.render_scale as f32, region, options)
+            .map_err(|e| e.to_string())?;
+    if !tile.has_band() {
+        return Ok(PageBitmap {
+            width: rendered.pixmap.width(),
+            height: rendered.pixmap.height(),
+            rgba: rendered.pixmap.data().to_vec(),
+            placement: spooler::Placement {
+                scale: tile.tile_scale,
+                offset_x_pt: tile.content_pt.x,
+                offset_y_pt: tile.content_pt.y,
+                clipped: false,
+            },
+            page_pt: (s.width, s.height),
+        });
+    }
+    let label = tile.labels.then(|| tile.label(name));
+    let sheet = pdfcer_gui_base::poster::compose(
+        &rendered.pixmap,
+        tile,
+        plan.render_scale / tile.tile_scale,
+        label.as_deref(),
+    )
+    .ok_or_else(|| t::poster_sheet_too_large().to_owned())?;
+    Ok(PageBitmap {
+        width: sheet.width(),
+        height: sheet.height(),
+        rgba: sheet.data().to_vec(),
+        placement: spooler::Placement {
+            scale: 1.0,
+            offset_x_pt: 0.0,
+            offset_y_pt: 0.0,
+            clipped: false,
+        },
+        page_pt: tile.extent_pt(),
+    })
+}
+
 pub(super) fn render_options(
     scope: pdfcer_render::AnnotationScope,
     settings: &pdfcer_core::settings::Settings,

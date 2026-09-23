@@ -160,8 +160,9 @@
 use pdfcer_core::settings::StylePolicy;
 use pdfcer_core::text_edit::{
     FormatError, FormatOptions, FormatReport, FormatRequest, NewFill, StyleLadder, StyleRung,
-    StyleSynthesis,
+    StyleSynthesis, TextRenderMode,
 };
+use pdfcer_core::vector::VectorEditError;
 
 use crate::app::state::OpenDoc;
 use crate::app::status::decline;
@@ -200,6 +201,22 @@ pub enum StyleChange {
         /// Italic wanted.
         italic: bool,
     },
+    /// A text render mode (`Tr`, 0..=7), as the engine's `TextRenderMode`
+    /// byte. `3` is invisible (the OCR layer's mode).
+    RenderMode(u8),
+    /// Fit one run to a page-point width (`EditSession::set_text_run_width`).
+    ///
+    /// Addressed by paint-order object and run, not by the extraction runs the
+    /// other variants use, so [`apply`] routes it before `restyle` and ignores
+    /// `runs`.
+    RunWidth {
+        /// Paint-order index of the text object on the page.
+        object: usize,
+        /// Index into that object's `runs`.
+        run: usize,
+        /// The width wanted, in PDF points.
+        width: f64,
+    },
 }
 
 impl StyleChange {
@@ -226,6 +243,9 @@ impl StyleChange {
             // this table sets either, and `Face` is its own variant, so one
             // press is one verb.
             Self::Weight { bold, italic } => req.style(StyleSynthesis::new(*bold, *italic)),
+            Self::RenderMode(mode) => req.render_mode(*mode),
+            // Never stamped: `apply` routes it to `runwidth` first.
+            Self::RunWidth { .. } => req,
         }
     }
 
@@ -236,6 +256,8 @@ impl StyleChange {
             Self::Fill(_) => "fill",
             Self::Face(_) => "face",
             Self::Weight { .. } => "weight",
+            Self::RenderMode(_) => "render-mode",
+            Self::RunWidth { .. } => "run-width",
         }
     }
 }
@@ -284,6 +306,11 @@ fn request(page: usize, pinned: crate::canvas::textedit::pin::Pinned) -> FormatR
 /// half-applies and says so: the operator sees some of their text change, has no
 /// way to tell how much, and the undo stack holds an unknown number of entries.
 pub(super) fn apply(doc: &mut OpenDoc, page: usize, runs: &[usize], change: &StyleChange) {
+    if let StyleChange::RunWidth { object, run, width } = *change {
+        runwidth::apply(doc, page, object, run, width);
+        resweep(doc, page);
+        return;
+    }
     restyle(doc, page, runs, change);
     resweep(doc, page);
 }
@@ -477,6 +504,9 @@ fn restyle(doc: &mut OpenDoc, page: usize, runs: &[usize], change: &StyleChange)
                         // order: what happened to their text, then the details
                         // pdfcer owes them about how.
                         if let Some(note) = ladder_note(&report, policy) {
+                            notes.push(note);
+                        }
+                        if let Some(note) = render_mode_note(&report) {
                             notes.push(note);
                         }
                         notes.extend(report.disclosures);
@@ -770,6 +800,14 @@ fn refusal_of(error: &FormatError) -> t::TextStyleRefusal {
         // to go looking for a face that does not exist. The full detail is in
         // the `text-style-declined detail=` trace, where debugging wants it.
         FormatError::SynthesisRefusedByPosture { .. } => t::TextStyleRefusal::FakingDeclined,
+        FormatError::InvalidRenderMode { .. } => t::TextStyleRefusal::RenderModeInvalid,
+        FormatError::ConflictingRenderMode => t::TextStyleRefusal::RenderModeWithFakeBold,
+        FormatError::BadTargetWidth(_) => t::TextStyleRefusal::WidthNotPositive,
+        FormatError::NoAdvanceWidth { .. } => t::TextStyleRefusal::WidthNoMetrics,
+        FormatError::WidthFitKerned => t::TextStyleRefusal::WidthKerned,
+        FormatError::TextRun(VectorEditError::TextRunHasNoWidth { .. }) => {
+            t::TextStyleRefusal::WidthNoBaseline
+        }
         _ => t::TextStyleRefusal::Other,
     }
 }
@@ -889,6 +927,18 @@ fn reflow_refusal(error: &pdfcer_core::text_edit::ReflowApplyError) -> ReflowRef
         },
     }
 }
+
+/// The shell's sentence when a restyle left the text invisible (`Tr` 3 or 7).
+///
+/// Off-canvas only: an invisible run has nothing to mark.
+fn render_mode_note(report: &FormatReport) -> Option<String> {
+    let (_, emitted) = report.render_mode_change?;
+    TextRenderMode::try_from(emitted)
+        .is_ok_and(TextRenderMode::is_invisible)
+        .then(|| t::text_render_mode_invisible().to_owned())
+}
+
+mod runwidth;
 
 #[cfg(test)]
 mod tests;

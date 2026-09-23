@@ -327,6 +327,8 @@ fn every_predicate_names_a_documented_condition() {
         // to HIDE its only control is a separate fact, and the one a reader
         // comes to this list to discover.
         "canvas.run_select_offered",
+        // Published by `PdfcerApp::conditions` and re-asked per right-click.
+        "selection.text_merge_allowed",
     ];
     for command in registry().iter() {
         if let egui_shell::commands::Enable::When(name) = &command.enable {

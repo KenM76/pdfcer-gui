@@ -38,7 +38,7 @@ use pdfcer_core::text_edit::{
 use crate::app::state::OpenDoc;
 
 use super::disposition::{self, Reason};
-use super::{Committing, LAST_COMMIT, narrow, pin};
+use super::{Committing, LAST_COMMIT, pin};
 
 /// A planned in-place edit: the request, the options, and the disclosure the
 /// engine will not write for us.
@@ -75,22 +75,6 @@ pub struct Plan {
     /// operator — the one outcome `crate::text::textedit::EditRefusal`'s header
     /// argues is worse than the silence it replaces.
     pub one_operator: bool,
-
-    /// ★★★ **Whether the request was narrowed to the one show operator the
-    /// keystroke touched** — [`super::narrow`], and the shell's answer to
-    /// engine request `G028`.
-    ///
-    /// `true` means the request went out in the whole-operator form
-    /// (`pinned_span` set, `find` empty, `span_from_pin` off) against **one
-    /// fragment** of a run that is written across several. It is therefore
-    /// neither of the two shapes the trace used to be able to describe, and the
-    /// invariant *"`span_from_pin` is the complement of `one_operator`"* — which
-    /// the driven `typo_refusal` check asserted by construction — no longer
-    /// holds. This field is what tells the third shape from a drift between the
-    /// emitter and the decision.
-    ///
-    /// ⚠ Goes when `G028` lands, together with the module that computes it.
-    pub narrowed: bool,
 
     /// ★★★ **How many times the text being edited appears on the page** — the
     /// count that would license dropping the provenance pin so that the
@@ -182,10 +166,6 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
     // the operator his line is written one letter at a time on the strength of
     // an extraction that never ran.
     let mut one_operator = true;
-    // ★ Defaults to `false` for the same reason `one_operator` defaults to
-    // `true`: with no extraction nothing was narrowed, because nothing was
-    // measured.
-    let mut narrowed_to_one_operator = false;
     // ★ Always `None` — see [`Plan::occurrences`], which carries the whole
     // argument. Nothing in this function counts.
     let occurrences = None;
@@ -323,95 +303,14 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
                 // the changed span alone (`"n"` → `"nt"`) occurs **33 times**
                 // on that page, where the whole run occurs once.
                 //
-                // ## ★★★ The one worry about the whole-run form, MEASURED
-                //
-                // Spanning thirty-six operators means the engine puts the
-                // replacement into the operator holding the match's **end** and
-                // empties the thirty-five before it (each kept as `() Tj` so the
-                // producer's positioning chain survives). Its disclosure reports
-                // the tail re-spaced by a net advance of **-437.080 pt**, which
-                // reads alarmingly like the line being flung across the page.
-                //
-                // ⇒ **It is not.** That number is bookkeeping over the collapsed
-                // operators, not a visual displacement, and the rendered result
-                // was measured rather than reasoned about — extracted run boxes
-                // on his own file, before and after:
-                //
-                // | | llx | urx |
-                // |---|---|---|
-                // | before | 33.4709 | 367.2634 |
-                // | after, whole-run `find` | 33.4289 | 373.2873 |
-                // | after, narrow `find` | 33.4709 | 373.2874 |
-                //
-                // The line's left edge moves by **0.042 pt** — about fifteen
-                // microns, and under a thousandth of the line's own width — while
-                // the right edge grows by 6.02 pt, which is the `t` he asked for.
-                //
-                // ★★ The narrow form is exact to the last decimal and the
-                // whole-run form is not, and that difference is **deliberately
-                // not** the deciding one: 0.042 pt is invisible, whereas a narrow
-                // **`find`** is a wrong edit on a signed document.
-                //
-                // ⚠ **THAT 0.042 pt BELONGS TO THAT LINE, NOT TO THE SPANNING
-                // FORM.** The same request shape on a page-1 title-block line of
-                // the same file moves the left edge by **+240.16 pt**, and the
-                // difference between the two is whether the engine's
-                // compensation for the collapse runs at all —
-                // `followers_repositioned` is 4 on the line above and **0** on
-                // that one. Engine request `G028` carries both measurements and
-                // a control fixture. The block below is the shell's answer, and
-                // it does not narrow the `find`.
-                //
-                // ★★★ **SPAN FROM THE PIN**, which is what makes all of the
-                // above reachable. Every existing guard is untouched — same
-                // `spannable` test, same `same_line` tolerance, same
-                // trim-to-what-the-match-touches rule — so the only thing it
-                // changes is where the search starts.
+                // ★ Spanning puts the replacement into the operator holding the
+                // match's end and empties the ones before it (each kept as `() Tj`);
+                // the engine keeps the line where the match began, and narrows the
+                // rewrite to the part that differs by itself.
                 //
                 // ⚠ **Do NOT reintroduce "drop the pin when the text is
                 // unique" as a fallback**; see [`Plan::occurrences`].
-                // ★★★ **NARROW TO THE OPERATOR THE KEYSTROKE TOUCHED**, and
-                // the reason a title-block line stops moving — [`super::narrow`].
-                //
-                // The spanning form is right about *which text* and, on a run
-                // written one glyph per operator, wrong about *where*. The
-                // engine puts the replacement into the operator holding the
-                // match's end and empties the ones before it; where its
-                // compensation for that collapse declines to run, the line is
-                // redrawn from its final fragment's origin. Engine request
-                // `G028` carries the measurement — **+240.16 pt** on his own
-                // sheet for an advance delta of 0.499 pt — and the control
-                // fixture on which the identical request shape holds its left
-                // edge to the last decimal.
-                //
-                // Narrowing removes the condition rather than the symptom: pin
-                // the one operator the change lies inside, and nothing spans,
-                // nothing is emptied, and there is nothing to compensate.
-                //
-                // ⚠ It does **not** narrow the `find`, which is the ambiguity
-                // argued against above. A pin is a byte span in a named buffer,
-                // not a string, so the whole-operator form has no occurrence to
-                // choose between. `narrow` answers `None` — keep the spanning
-                // form — whenever the change touches two operators or falls in
-                // a synthesised gap between them.
-                //
-                // ⚠ Comes out with `G028`.
-                let narrowed = if one_operator {
-                    None
-                } else {
-                    narrow::narrow(&model, &text, run, original, replacement)
-                };
-                if let Some(n) = &narrowed {
-                    request.pinned_span = Some(n.pin.span);
-                    request.target = n.pin.target;
-                    // ★ The matrices follow the pin. [`disposition::is_upright`]
-                    // reads them, and reading the run's FIRST operator while
-                    // editing its ninth answers about a fragment the edit does
-                    // not touch.
-                    matrices = (n.pin.text_matrix, n.pin.ctm);
-                    request.replace.clone_from(&n.replacement);
-                    request.find.clear();
-                } else if !one_operator {
+                if !one_operator {
                     request.span_from_pin = true;
                 }
                 crate::diag::trace(|| {
@@ -425,17 +324,15 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
                     // is reading the language rather than the program.
                     format!(
                         "edit-text-pin page={page} run={run} one_operator={one_operator} \
-                         find_len={} span_from_pin={} pinned={} narrowed={}",
+                         find_len={} span_from_pin={} pinned={}",
                         request.find.chars().count(),
                         u8::from(request.span_from_pin),
-                        request.pinned_span.is_some(),
-                        u8::from(narrowed.is_some())
+                        request.pinned_span.is_some()
                     )
                 });
                 if one_operator {
                     request.find.clear();
                 }
-                narrowed_to_one_operator = narrowed.is_some();
             }
             // ★ The SAME model the caret's hit test used, with the same
             // options — `BlockRecognitionOptions::default()` — because the
@@ -471,7 +368,6 @@ pub fn plan(doc: &OpenDoc, page: usize, run: usize, original: &str, replacement:
         options: disposition::options(reason),
         reason,
         one_operator,
-        narrowed: narrowed_to_one_operator,
         occurrences,
     }
 }

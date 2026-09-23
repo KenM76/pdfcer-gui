@@ -83,6 +83,8 @@ impl PrintDialog {
             uncollated: self.uncollated,
             subset: self.subset,
             reverse: self.reverse,
+            poster: self.poster,
+            lines: self.lines,
         }
     }
 

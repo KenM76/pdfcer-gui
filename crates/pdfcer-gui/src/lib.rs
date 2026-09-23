@@ -164,7 +164,7 @@ pub mod viewer;
 // The alternative was to rewrite ~1,200 call sites to say `pdfcer_gui_base::`.
 // That would document the crossing at every use site and buy nothing else: the
 // boundary is in the crate graph, not in the spelling.
-pub use pdfcer_gui_base::{acrobat, diag, ocr, pagetree, secret, trust, units};
+pub use pdfcer_gui_base::{acrobat, diag, ocr, pagetree, poster, secret, trust, units};
 
 use std::path::PathBuf;
 

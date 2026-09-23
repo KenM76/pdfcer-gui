@@ -170,6 +170,21 @@ fn every_preference_round_trips_through_the_file() {
                         uncollated: true,
                         subset: PageSubset::Even,
                         reverse: true,
+                        // Every poster field off its default.
+                        poster: crate::app::prefs::printing::PosterPrefs {
+                            on: true,
+                            tile_percent: 275,
+                            overlap_mm: 12.5,
+                            cut_marks: true,
+                            labels: true,
+                            large_only: true,
+                        },
+                        // Every line-width field off its default.
+                        lines: crate::app::prefs::printing::LineWidthPrefs {
+                            fixed: true,
+                            auto: false,
+                            width_mm: 0.35,
+                        },
                     },
                     // ★★★ Off-page display, and every one of these three is
                     // the OPPOSITE of what that mode ships — Read ships off,
@@ -215,6 +230,7 @@ fn every_preference_round_trips_through_the_file() {
                             dpi: 601.5,
                             transparent: false,
                             quality: 55,
+                            keep_text: true,
                         },
                         text: ExportTextPrefs {
                             scope: PageScope::CurrentPage,
@@ -736,6 +752,20 @@ fn the_writer_emits_no_key_the_parser_rejects() {
             uncollated: true,
             subset: PageSubset::Odd,
             reverse: true,
+            // The ends of the ranges, where a writer's formatting breaks.
+            poster: crate::app::prefs::printing::PosterPrefs {
+                on: true,
+                tile_percent: 5_000,
+                overlap_mm: 0.1,
+                cut_marks: false,
+                labels: true,
+                large_only: false,
+            },
+            lines: crate::app::prefs::printing::LineWidthPrefs {
+                fixed: true,
+                auto: true,
+                width_mm: 5.0,
+            },
         },
         // ★ Off-page display. A DIFFERENT set from the round-trip test
         // above, per this test's own rule, and one of the mode ids carries
@@ -772,6 +802,7 @@ fn the_writer_emits_no_key_the_parser_rejects() {
                 // The bottom of the range, so both ends are exercised across
                 // the two numeric keys.
                 quality: MIN_JPEG_QUALITY,
+                keep_text: true,
             },
             text: ExportTextPrefs {
                 scope: PageScope::AllPages,

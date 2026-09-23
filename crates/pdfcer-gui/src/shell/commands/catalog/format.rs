@@ -165,6 +165,12 @@ pub(super) fn band() -> Vec<Command> {
         command("format.select_text_line", t::format_select_text_line(), 815)
             .with_icon("pick-part")
             .enabled_when(crate::shell::menus::RUN_SELECT_OFFERED),
+        // Joins the selected runs of one text object into one (G035). Greyed
+        // on the engine's preflight, `text_merge_refusal`; the glyph is
+        // `combine`, shared with `tools.merge_files` on a different surface.
+        command("format.merge_text_runs", t::format_merge_text_runs(), 816)
+            .with_icon("combine")
+            .enabled_when(crate::shell::menus::TEXT_MERGE_ALLOWED),
         //
         // `RIBBON_IA.md` §5.8 is what puts it here. That section's table gives
         // the **Vector object** row as `Stroke · Fill · Winding rule · Node

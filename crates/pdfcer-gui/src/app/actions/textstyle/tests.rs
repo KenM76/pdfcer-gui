@@ -691,6 +691,20 @@ fn every_actionable_format_refusal_keeps_its_own_sentence() {
             },
             R::FakingDeclined,
         ),
+        (E::InvalidRenderMode { mode: 9 }, R::RenderModeInvalid),
+        (E::ConflictingRenderMode, R::RenderModeWithFakeBold),
+        (E::BadTargetWidth(-1.0), R::WidthNotPositive),
+        (
+            E::NoAdvanceWidth {
+                base_font: "Helvetica".to_owned(),
+            },
+            R::WidthNoMetrics,
+        ),
+        (E::WidthFitKerned, R::WidthKerned),
+        (
+            E::TextRun(pdfcer_core::vector::VectorEditError::TextRunHasNoWidth { index: 0 }),
+            R::WidthNoBaseline,
+        ),
     ];
 
     let mut seen = Vec::new();

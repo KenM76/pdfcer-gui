@@ -521,6 +521,7 @@ impl PdfcerApp {
                 let picked: Vec<usize> = self.panels.selected_pages().iter().copied().collect();
                 self.dialogs.open_ocr(&self.status, picked);
             }
+            "file.remove_ocr" => actions.push(Action::RemoveOcrLayers),
             // ★ **Apply redactions.** A dialog, in `file.ocr`'s shape one arm
             // up, and for two of its three reasons plus one of its own.
             //

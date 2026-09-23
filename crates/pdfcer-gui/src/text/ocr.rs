@@ -282,7 +282,7 @@ pub fn skip_pages_with_text() -> &'static str {
 ///
 #[must_use]
 pub fn skip_pages_with_text_tooltip() -> &'static str {
-    "Recognising a page that already has text adds a second invisible copy of it, so Find matches and copied text come out doubled. Turn this off only if you know a page's existing text is wrong."
+    "Recognising a page whose text came from another program adds a second invisible copy of it, so Find matches and copied text come out doubled. Text pdfcer recognised earlier is replaced instead. Turn this off only if you know a page's existing text is wrong, or to redo pdfcer's own recognition."
 }
 
 /// Its tooltip.
@@ -532,6 +532,67 @@ pub fn layer_blend_suffix() -> &'static str {
     "%"
 }
 
+// ---------------------------------------------------------------------------
+// Earlier OCR text: replaced by a re-run, or removed on request
+// ---------------------------------------------------------------------------
+
+/// Added to the edit's disclosures when a recognition replaced text an earlier
+/// run wrote. `layers` is the total across the run; `pages` how many pages had one.
+#[must_use]
+pub fn layers_replaced(layers: usize, pages: usize) -> String {
+    format!(
+        "The earlier recognised text was replaced, not added to: {layers} old OCR text layer(s) on {pages} page(s) came off, so each word is in the document once."
+    )
+}
+
+/// The disclosure after File ▸ Remove OCR text succeeded.
+#[must_use]
+pub fn layers_removed(layers: usize, pages: usize) -> String {
+    format!(
+        "Removed {layers} OCR text layer(s) from {pages} page(s). The pages look the same; Find and copy no longer see that text. Press Ctrl+Z to put it back."
+    )
+}
+
+/// The disclosure when some layers came off and a later one was refused.
+#[must_use]
+pub fn layers_removed_partly(removed: usize, of: usize) -> String {
+    format!(
+        "Removed {removed} of {of} OCR text layers; pdfcer could not remove the rest and left them as they were. Press Ctrl+Z to put back what was removed."
+    )
+}
+
+/// Why an OCR-layer write or removal did nothing — the status-bar decline.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OcrLayerRefusal {
+    /// `OcrLayerError::LayerPresent`: the page already has pdfcer OCR text and
+    /// the run was told not to replace it.
+    AlreadyPresent,
+    /// `OcrLayerError::LayerNotFound`: the layer changed under the command.
+    LayerGone,
+    /// Remove OCR text found no layer pdfcer wrote.
+    NoneFound,
+}
+
+impl OcrLayerRefusal {
+    /// The sentence.
+    #[must_use]
+    pub const fn line(self) -> &'static str {
+        match self {
+            Self::AlreadyPresent => {
+                "These pages already carry text pdfcer recognised earlier, so nothing was added. Remove the OCR text first, or run recognition again to replace it."
+            }
+            Self::LayerGone => {
+                "That OCR text was no longer where pdfcer found it, so nothing was removed. Run Remove OCR text again."
+            }
+            // States the limit: text another program recognised is not marked
+            // and is left alone.
+            Self::NoneFound => {
+                "This document has no OCR text written by pdfcer, so nothing was removed. Text recognised by other programs is left alone."
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -578,6 +639,12 @@ mod tests {
             offer().to_owned(),
             offer_action().to_owned(),
             offer_tooltip().to_owned(),
+            layers_replaced(2, 1),
+            layers_removed(2, 1),
+            layers_removed_partly(1, 2),
+            OcrLayerRefusal::AlreadyPresent.line().to_owned(),
+            OcrLayerRefusal::LayerGone.line().to_owned(),
+            OcrLayerRefusal::NoneFound.line().to_owned(),
         ];
         for line in &prose {
             let lower = line.to_lowercase();

@@ -555,20 +555,19 @@ impl PdfcerApp {
                             recognised,
                         })
                         .collect();
+                    // Replace policy: a re-run takes pdfcer's earlier layer
+                    // off in the same undo step.
                     session
-                        .add_ocr_layer(&layers, &pdfcer_core::ocr::layer::OcrLayerOptions::new())
+                        .add_ocr_layer(&layers, &super::ocrlayers::options())
                         // ★ Every page's disclosures, flattened onto the one
                         // channel every other edit reports on. The dialog does
                         // NOT re-render them: two accounts of one run, worded
                         // differently, is a pair that drifts.
-                        .map(|reports| {
-                            reports
-                                .iter()
-                                .flat_map(pdfcer_core::ocr::layer::OcrLayerReport::disclosures)
-                                .collect()
-                        })
+                        .map(|reports| super::ocrlayers::recognised_disclosures(&reports))
+                        .inspect_err(super::ocrlayers::word_refusal)
                 });
             }
+            Action::RemoveOcrLayers => super::ocrlayers::remove_all(doc),
             // ★ Nothing is invalidated beyond the epoch, deliberately. Document
             // metadata is not drawn on any page, so clearing rasters would
             // throw away every cached page to no purpose — the one arm in this

@@ -125,10 +125,8 @@ const FIXED: &str = "ABCD";
 /// A correction to the **same** run that changes its first and last characters
 /// and leaves the middle one alone.
 ///
-/// ★★★ The common-prefix/common-suffix walk in [`super::narrow`] therefore
-/// reports the whole run as changed, three operators are touched, and
-/// [`super::narrow::narrow`] answers `None` — which is the only way to reach the
-/// spanning form deliberately now that the single-operator change narrows. See
+/// ★ The changed region therefore covers all three show operators, so the
+/// engine cannot narrow the rewrite to one of them. See
 /// [`a_change_that_straddles_operators_keeps_the_spanning_form`].
 const STRADDLED: &str = "XBY";
 
@@ -245,44 +243,23 @@ fn a_typo_in_a_run_written_one_glyph_at_a_time_can_be_corrected() {
          pass every other assertion here on this fixture — which holds one occurrence — \
          and reach the wrong text on a page with two"
     );
-    // ★★★ **AND IT IS NARROWED**, which is the shape that keeps the line where
-    // the producer put it — [`super::narrow`], engine request `G028`.
-    //
-    // The `D` is appended inside the run's last show operator, so that operator
-    // alone is rewritten and the request goes out in the whole-operator form:
-    // pin set, `find` empty, `span_from_pin` off. Nothing spans, so nothing is
-    // emptied and there is nothing for the engine to compensate.
-    //
-    // ⚠ This asserts the exact shape rather than *"narrowed or spanning"*,
-    // because a disjunction over two mechanisms asserts neither of them. The
-    // spanning form is still reachable and is still held down — by
-    // [`a_change_that_straddles_operators_keeps_the_spanning_form`], which names
-    // its own shape just as exactly.
+    // ★★★ **AND IT SPANS FROM THE PIN.** The whole-run `find` says what, the
+    // pin says which one, and `span_from_pin` lets the match run on past the
+    // one-glyph operator the pin names. The engine narrows the rewrite to the
+    // part that differs by itself.
     assert!(
-        planned.narrowed,
-        "★★★ THE REQUEST MUST BE NARROWED TO ONE OPERATOR. `{RUN}`→`{FIXED}` appends inside \
-         the run's last show operator, and a request that spans instead is redrawn from that \
-         operator's own origin — measured at +240.16 pt on his own sheet. Engine request \
-         `G028`"
-    );
-    assert!(
-        !planned.request.span_from_pin,
-        "★★ …and a narrowed request must NOT also ask to span. The two are alternatives: \
-         `span_from_pin` lets the match run on past the pinned operator, which is the very \
-         collapse the narrowing exists to avoid"
-    );
-    assert!(
-        planned.request.find.is_empty(),
-        "★★ …and its `find` must be empty, which is what makes the pin mean *this whole show \
-         operator*. A `find` sent beside a pin is confined to that one operator and, on a \
-         per-glyph run, cannot match. Got `{}`",
-        planned.request.find
+        planned.request.span_from_pin,
+        "★★★ THE REQUEST MUST SPAN FROM THE PIN. A `find` beside a plain pin is confined to \
+         the one operator the pin names, which on a per-glyph run holds a single character, \
+         and the engine refuses it. That is the defect O142 reported"
     );
     assert_eq!(
-        planned.request.replace, "CD",
-        "★★★ …and the replacement must be that operator's WHOLE new text, not the changed \
-         character. The whole-operator form replaces everything the pinned operator shows, \
-         so sending only `D` deletes the `C`"
+        planned.request.find, RUN,
+        "★★ …and the `find` must be the whole run: it says WHAT, while the pin says WHICH ONE"
+    );
+    assert_eq!(
+        planned.request.replace, FIXED,
+        "★★ …and the replacement must be the whole corrected run, matching the whole-run `find`"
     );
 
     let mut session = session(UNIQUE);
@@ -290,15 +267,9 @@ fn a_typo_in_a_run_written_one_glyph_at_a_time_can_be_corrected() {
     // comparison below is against this document rather than against a number
     // written down when the fixture was authored.
     let before_left = left_edge(&session, 0);
-    let report = session
+    session
         .edit_text(&planned.request, &planned.options)
         .expect("the correction must reach the document — this is O142");
-    assert_eq!(
-        report.operators_spanned, 1,
-        "★★★ and the engine must agree it touched ONE operator. `operators_spanned` above 1 \
-         means the narrowing was computed and then not obeyed — the request that went out is \
-         not the request that was planned — and the placement defect `G028` describes is back"
-    );
     assert!(
         page_text(&session).contains(FIXED),
         "and the corrected text must be IN the page, not merely un-refused: a verb that \
@@ -311,21 +282,8 @@ fn a_typo_in_a_run_written_one_glyph_at_a_time_can_be_corrected() {
     // > place."*
     //
     // A spanning edit puts the replacement into the operator holding the match's
-    // END and empties the ones before it, each kept as `() Tj` so the producer's
-    // positioning chain survives. Where the engine's compensation for that
-    // collapse runs, the line holds; where it does not, the line is redrawn from
-    // its final fragment's origin. Both were measured, with the same request
-    // shape:
-    //
-    // | | left edge, after | `followers_repositioned` |
-    // |---|---|---|
-    // | this fixture | held to the last decimal | 2 |
-    // | his page-1 title-block line | moved **+240.16 pt** | 0 |
-    //
-    // ⇒ **The fixture is the case where it works**, which is exactly why a bound
-    // held only here would have gone on passing through the defect he reported.
-    // Engine request `G028` carries the reproduction; [`super::narrow`] is the
-    // shell's answer, and the narrowing asserted above is what this measures.
+    // END and empties the ones before it; the engine keeps the line where the
+    // match began.
     //
     // ★ The tolerance is 0.5 pt: loose enough that a legitimate re-spacing of
     // sub-point size never trips it, tight enough that no displacement a reader
@@ -339,31 +297,17 @@ fn a_typo_in_a_run_written_one_glyph_at_a_time_can_be_corrected() {
     );
 }
 
-/// ★★★ **THE SPANNING FORM, KEPT UNDER TEST** — a change that touches the run's
-/// first and last operators and cannot be narrowed to either.
+/// ★★★ **A change that touches the run's first and last operators** and leaves
+/// the middle one alone — the engine cannot narrow it to one operator, so the
+/// span genuinely crosses all three.
 ///
-/// [`super::narrow`] answers `None` whenever the changed region touches two show
-/// operators, and the request then goes out as it always did: pin on, whole-run
-/// `find`, `span_from_pin` set. That path still ships, still reaches runs no
-/// other shape can, and would otherwise have stopped being exercised the day the
-/// single-operator case started narrowing — a mechanism with no test, in a file
-/// whose other tests are green.
-///
-/// ⚠ The placement caveat is real and is not asserted away here: this is the
-/// shape `G028` describes, and on his own sheet it moves the line. What is
-/// asserted is that the shell still *reaches* the run and still addresses
-/// **this** occurrence. Placement on a straddling change is the engine's to fix.
+/// Asserts that the shell still *reaches* the run and still addresses **this**
+/// occurrence.
 #[test]
 fn a_change_that_straddles_operators_keeps_the_spanning_form() {
     let doc = crate::app::state::open_local_fixture(UNIQUE);
     let planned = super::plan(&doc, 0, 0, RUN, STRADDLED);
 
-    assert!(
-        !planned.narrowed,
-        "★★★ `{RUN}`→`{STRADDLED}` changes the first and last characters, so the changed \
-         region covers all three show operators and no single one of them can carry it. A \
-         build that narrowed here would be picking an operator to put the text in"
-    );
     assert!(
         planned.request.pinned_span.is_some(),
         "★★★ and the pin must still be on — it is the only thing `EditRequest` carries that \
@@ -473,22 +417,13 @@ fn a_typo_that_appears_twice_on_the_page_edits_the_one_that_was_clicked() {
          build without it hands the choice to the engine's left-to-right scan"
     );
     assert!(
-        planned.narrowed,
-        "★★★ …and the request must be narrowed to the one show operator the change touched. \
-         `{RUN}`→`{FIXED}` appends inside the run's last operator; a request that spans \
-         instead is redrawn from that operator's own origin. Engine request `G028`, and \
-         `a_change_that_straddles_operators_keeps_the_spanning_form` is where the spanning \
-         shape is held instead"
+        planned.request.span_from_pin,
+        "★★★ …and the span search must start AT the pin. Without it a whole-run `find` beside \
+         a plain pin cannot match a per-glyph run"
     );
-    assert!(
-        planned.request.find.is_empty(),
-        "★★ …with an empty `find`, which is what makes the pin mean *this whole show \
-         operator* rather than *this string inside it*"
-    );
-    assert!(
-        !planned.request.span_from_pin,
-        "★★ …and without the spanning flag, which would let the match run on past the pinned \
-         operator and reinstate the collapse the narrowing exists to avoid"
+    assert_eq!(
+        planned.request.find, RUN,
+        "★★ …with the whole run as `find`: it says WHAT, while the pin says WHICH ONE"
     );
 
     let mut session = session(TWICE);
@@ -502,9 +437,9 @@ fn a_typo_that_appears_twice_on_the_page_edits_the_one_that_was_clicked() {
 
     // ★★★ The control that the fixture is really per-glyph is
     // [`the_fixtures_runs_are_written_one_glyph_per_operator`], which reads
-    // `Plan::one_operator` over both fixtures. It cannot be `operators_spanned`
-    // any more: a narrowed request touches exactly one operator **by design**,
-    // so that number no longer distinguishes a split run from a whole one.
+    // `Plan::one_operator` over both fixtures. It cannot be `operators_spanned`:
+    // the engine narrows the rewrite to the operators that differ, so that
+    // number does not distinguish a split run from a whole one.
     assert!(
         !planned.one_operator,
         "★ the control: the clicked run must really be written across several show \
@@ -561,7 +496,7 @@ fn a_typo_that_appears_twice_on_the_page_edits_the_one_that_was_clicked() {
 #[test]
 fn the_engine_would_have_edited_the_wrong_one() {
     let mut session = session(TWICE);
-    let report = session
+    let _report = session
         .edit_text(
             &EditRequest::find_replace(0, RUN, FIXED),
             &EditOptions::default(),
@@ -571,7 +506,6 @@ fn the_engine_would_have_edited_the_wrong_one() {
              gained an ambiguity check of its own and this shell's count may be able to \
              retire — read its refusal before deleting anything",
         );
-    assert!(report.operators_spanned > 1, "and it spans, as on his file");
 
     let after = page_text(&session);
     assert_eq!(

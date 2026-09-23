@@ -193,6 +193,73 @@ pub(crate) struct PrintPrefs {
     pub(crate) subset: PageSubset,
     /// Print back to front.
     pub(crate) reverse: bool,
+    /// Poster mode and its settings.
+    pub(crate) poster: PosterPrefs,
+    /// One fixed line width instead of the document's weights (O233).
+    pub(crate) lines: LineWidthPrefs,
+}
+
+/// Print every line at one width.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct LineWidthPrefs {
+    /// Replace the document's line weights with one width.
+    pub(crate) fixed: bool,
+    /// Let pdfcer choose the width; see `dialogs::print::lines::AUTO_MM`.
+    pub(crate) auto: bool,
+    /// The typed width on paper, millimetres, used when `auto` is off.
+    pub(crate) width_mm: f64,
+}
+
+/// The typed width's range, millimetres — the dialog's and the file's.
+pub(crate) const LINE_WIDTH_MM_RANGE: std::ops::RangeInclusive<f64> = 0.01..=5.0;
+
+impl Default for LineWidthPrefs {
+    /// Off, so a print carries the document's real weights (O137); Auto
+    /// ticked, and 0.25 mm waiting in the box for when it is cleared.
+    fn default() -> Self {
+        Self {
+            fixed: false,
+            auto: true,
+            width_mm: 0.25,
+        }
+    }
+}
+
+/// Poster printing: one page across many sheets.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct PosterPrefs {
+    /// Poster mode instead of the Size mode's scale radios.
+    pub(crate) on: bool,
+    /// Magnification before tiling, percent.
+    pub(crate) tile_percent: u32,
+    /// Shared border duplicated onto neighbouring sheets, millimetres.
+    pub(crate) overlap_mm: f64,
+    /// Cut marks in the sheet's band.
+    pub(crate) cut_marks: bool,
+    /// The assembly label in the sheet's band.
+    pub(crate) labels: bool,
+    /// Tile only pages too large for one sheet.
+    pub(crate) large_only: bool,
+}
+
+/// The tile scale's range, percent — the dialog's and the file's.
+pub(crate) const POSTER_PERCENT_RANGE: std::ops::RangeInclusive<u32> = 10..=5_000;
+/// The overlap's range, millimetres — the dialog's and the file's.
+pub(crate) const POSTER_OVERLAP_MM_RANGE: std::ops::RangeInclusive<f64> = 0.0..=100.0;
+
+impl Default for PosterPrefs {
+    /// Off; 100 %, no overlap, no marks, no labels, every page tiled — the
+    /// engine's own `PosterSpec` default.
+    fn default() -> Self {
+        Self {
+            on: false,
+            tile_percent: 100,
+            overlap_mm: 0.0,
+            cut_marks: false,
+            labels: false,
+            large_only: false,
+        }
+    }
 }
 
 impl Default for PrintPrefs {
@@ -224,6 +291,8 @@ impl Default for PrintPrefs {
             uncollated: false,
             subset: PageSubset::All,
             reverse: false,
+            poster: PosterPrefs::default(),
+            lines: LineWidthPrefs::default(),
         }
     }
 }
@@ -579,6 +648,54 @@ pub(super) fn parse_key(prefs: &mut PrintPrefs, key: &str, value: &str) -> KeyOu
             value.parse::<u32>().ok().map(|n| n.clamp(1, 1_000)),
             prefs.custom_percent
         ),
+        // ui-text-exempt: file KEYS, as above.
+        "print_poster" => store!(super::opening::bool_from_key(value), prefs.poster.on),
+        // ui-text-exempt: file KEYS, as above.
+        "print_poster_percent" => store!(
+            value
+                .parse::<u32>()
+                .ok()
+                .map(|n| n.clamp(*POSTER_PERCENT_RANGE.start(), *POSTER_PERCENT_RANGE.end())),
+            prefs.poster.tile_percent
+        ),
+        // ui-text-exempt: file KEYS, as above.
+        "print_poster_overlap_mm" => store!(
+            value
+                .parse::<f64>()
+                .ok()
+                .filter(|n| n.is_finite())
+                .map(|n| n.clamp(
+                    *POSTER_OVERLAP_MM_RANGE.start(),
+                    *POSTER_OVERLAP_MM_RANGE.end()
+                )),
+            prefs.poster.overlap_mm
+        ),
+        // ui-text-exempt: file KEYS, as above.
+        "print_poster_cut_marks" => {
+            store!(super::opening::bool_from_key(value), prefs.poster.cut_marks)
+        }
+        // ui-text-exempt: file KEYS, as above.
+        "print_poster_labels" => {
+            store!(super::opening::bool_from_key(value), prefs.poster.labels)
+        }
+        // ui-text-exempt: file KEYS, as above.
+        "print_poster_large_only" => store!(
+            super::opening::bool_from_key(value),
+            prefs.poster.large_only
+        ),
+        // ui-text-exempt: file KEYS, as above.
+        "print_line_fixed" => store!(super::opening::bool_from_key(value), prefs.lines.fixed),
+        // ui-text-exempt: file KEYS, as above.
+        "print_line_auto" => store!(super::opening::bool_from_key(value), prefs.lines.auto),
+        // ui-text-exempt: file KEYS, as above.
+        "print_line_width_mm" => store!(
+            value
+                .parse::<f64>()
+                .ok()
+                .filter(|n| n.is_finite())
+                .map(|n| n.clamp(*LINE_WIDTH_MM_RANGE.start(), *LINE_WIDTH_MM_RANGE.end())),
+            prefs.lines.width_mm
+        ),
         _ => KeyOutcome::NotMine,
     }
 }
@@ -739,6 +856,45 @@ pub(super) fn write_block(prefs: &PrintPrefs, out: &mut String) {
     out.push_str("print_reverse = "); // ui-text-exempt: a file KEY, as above.
     out.push_str(super::opening::bool_key(prefs.reverse));
     out.push('\n');
+
+    out.push_str(
+        "\n\
+         # print_poster: true | false. Prints one page across many sheets\n\
+         # instead of sizing it onto one.\n\
+         # print_poster_percent: 10 to 5000. How big the assembled poster is,\n\
+         # where 100 is the page's own size.\n\
+         # print_poster_overlap_mm: 0 to 100. How much of each sheet repeats on\n\
+         # its neighbour, so the sheets can be lined up and taped.\n\
+         # print_poster_cut_marks, print_poster_labels: true | false. Ticks\n\
+         # showing where to trim, and each sheet's row and column, printed in\n\
+         # a strip along the sheet's top and left edges.\n\
+         # print_poster_large_only: true | false. Tile only the pages too big\n\
+         # for one sheet; the rest print normally.\n\
+         # print_line_fixed: true | false. Print every line at one width\n\
+         # instead of the document's line weights.\n\
+         # print_line_auto: true | false. Let pdfcer pick that width: the\n\
+         # thinnest line that still prints and reads.\n\
+         # print_line_width_mm: 0.01 to 5. The width used when auto is off.\n",
+    );
+    let p = &prefs.poster;
+    let bool_key = super::opening::bool_key;
+    // ui-text-exempt: file KEYS, as above.
+    for (key, value) in [
+        ("print_poster", bool_key(p.on).to_owned()),
+        ("print_poster_percent", p.tile_percent.to_string()),
+        ("print_poster_overlap_mm", p.overlap_mm.to_string()),
+        ("print_poster_cut_marks", bool_key(p.cut_marks).to_owned()),
+        ("print_poster_labels", bool_key(p.labels).to_owned()),
+        ("print_poster_large_only", bool_key(p.large_only).to_owned()),
+        ("print_line_fixed", bool_key(prefs.lines.fixed).to_owned()),
+        ("print_line_auto", bool_key(prefs.lines.auto).to_owned()),
+        ("print_line_width_mm", prefs.lines.width_mm.to_string()),
+    ] {
+        out.push_str(key);
+        out.push_str(" = "); // ui-text-exempt: the file's key-value separator.
+        out.push_str(&value);
+        out.push('\n');
+    }
 }
 
 #[cfg(test)]
@@ -1014,5 +1170,7 @@ mod tests {
         assert!(!prefs.uncollated);
         assert_eq!(prefs.subset, PageSubset::All);
         assert!(!prefs.reverse);
+        assert_eq!(prefs.poster, PosterPrefs::default());
+        assert!(!prefs.poster.on);
     }
 }

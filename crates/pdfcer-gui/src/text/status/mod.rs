@@ -145,6 +145,8 @@ pub use selection::{
     selection_part_of_text,
     selection_part_of_text_hint,
     selection_with_depth,
+    text_render_mode_invisible,
+    text_run_width_held,
     // The six ladder sentences, one per outcome the engine can report
     // (`StyleLadder::rung`, split at rung 1 by `StyleLadder::same_family`),
     // plus the `Warn`-posture one.

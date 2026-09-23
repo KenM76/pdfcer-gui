@@ -396,6 +396,8 @@ pub mod rotating;
 /// `DESIGNS.md`'s *do not add a context-menu item*: that rules out a row
 /// that EDITS, not one that re-aims the selection.
 pub mod runmenu;
+/// The operand and preflight of `format.merge_text_runs`.
+pub mod runmerge;
 /// ★★ The eight resize grips, finally committing — built out of `move_nodes`
 /// because `pdfcer-core` has no scale verb, which was re-derived against its
 /// source rather than taken from a note.

@@ -704,6 +704,10 @@ pub fn object_text(doc: &OpenDoc, page: usize, object: usize) -> Option<ObjectTe
 
     // ★ The shared extraction — see `crate::app::cache::provenance`.
     let text = doc.provenance_page_text(page)?;
+    // Borrowed after the extraction, never across it (see the span above).
+    use crate::canvas::target::CanvasTargetProvider as _;
+    let provider = doc.page_objects()?;
+    let objects = provider.page_objects_model(page)?;
     let model = EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
 
     let mut first: Option<usize> = None;
@@ -716,7 +720,7 @@ pub fn object_text(doc: &OpenDoc, page: usize, object: usize) -> Option<ObjectTe
             // object's own last character.
             continue;
         };
-        if !operator_is_inside(p, span) {
+        if !operator_is_inside(p, span) || !engine_places_in(objects, p, object) {
             continue;
         }
         if first.is_none() {
@@ -748,10 +752,25 @@ pub fn object_text(doc: &OpenDoc, page: usize, object: usize) -> Option<ObjectTe
     })
 }
 
+/// **Does the engine place this glyph in a run of object `object`?** The
+/// span containment above is a cheap filter; this is the join's authority,
+/// `vector::locate_text_run`, which answers `None` rather than guessing.
+fn engine_places_in(
+    objects: &pdfcer_core::vector::PageObjects,
+    p: &pdfcer_core::text_extract::GlyphProvenance,
+    object: usize,
+) -> bool {
+    matches!(
+        pdfcer_core::vector::text_locate::locate_text_run(objects, p),
+        Some(pdfcer_core::vector::text_locate::TextRunRef::Page { object_index, .. })
+            if object_index == object
+    )
+}
+
 /// **Does this glyph's show operator lie inside `object`'s `BT`…`ET` span?**
 ///
-/// Its own function because it is the whole join, and a join written inline is
-/// a join nobody tests. Two conditions, and dropping either one is a defect
+/// The cheap half of the join ([`engine_places_in`] is the authority), kept
+/// because it bounds the engine call to candidates. Two conditions, and dropping either one is a defect
 /// with no symptom on the page it was written against:
 ///
 /// 1. **The buffer must be the page's own.** A byte offset is meaningless

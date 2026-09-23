@@ -131,23 +131,47 @@ impl ObjectModelProvider {
         let Some(VectorObject::Text(text)) = self.object_for(target) else {
             return None;
         };
-        match pdfcer_core::vector::edit::text_run_move_refusal(text, run)? {
-            pdfcer_core::vector::VectorEditError::TextRunHasNoPositionOfItsOwn { .. } => {
-                Some(RunMoveBlock::NoPositionOfItsOwn)
-            }
-            pdfcer_core::vector::VectorEditError::MoveWouldMoveNextRun { .. } => {
-                Some(RunMoveBlock::WouldMoveNextRun)
-            }
-            // ★ `TextRunOutOfRange` today, and `VectorEditError` is
-            // `#[non_exhaustive]`, so a refusal this crate has never seen lands
-            // here too. Both readings are the same instruction to the shell:
-            // decline the drag, say nothing, do not guess. A new variant that
-            // DESERVES a sentence will show up as a silent decline in a driven
-            // run, which is a defect with a symptom rather than one without.
-            _ => Some(RunMoveBlock::NotThere),
-        }
+        pdfcer_core::vector::edit::text_run_move_refusal(text, run).map(run_move_block)
     }
 
+    /// [`Self::text_run_move_refusal_of`] for a SET of runs moved by one
+    /// command: the engine's `text_run_move_refusal_of_set`, the guard
+    /// `EditSession::move_text_runs` runs. A run positioned from its
+    /// predecessor's advance is no obstacle when that predecessor is in the
+    /// set; an empty set answers [`RunMoveBlock::NotThere`].
+    #[must_use]
+    pub fn text_runs_move_refusal_of(
+        &self,
+        target: TargetId,
+        runs: &[usize],
+    ) -> Option<RunMoveBlock> {
+        let Some(VectorObject::Text(text)) = self.object_for(target) else {
+            return None;
+        };
+        pdfcer_core::vector::edit::text_run_move_refusal_of_set(text, runs).map(run_move_block)
+    }
+}
+
+/// The shell's reading of an engine run-move refusal.
+fn run_move_block(refusal: pdfcer_core::vector::VectorEditError) -> RunMoveBlock {
+    match refusal {
+        pdfcer_core::vector::VectorEditError::TextRunHasNoPositionOfItsOwn { .. } => {
+            RunMoveBlock::NoPositionOfItsOwn
+        }
+        pdfcer_core::vector::VectorEditError::MoveWouldMoveNextRun { .. } => {
+            RunMoveBlock::WouldMoveNextRun
+        }
+        // ★ `TextRunOutOfRange` today, and `VectorEditError` is
+        // `#[non_exhaustive]`, so a refusal this crate has never seen lands
+        // here too. Both readings are the same instruction to the shell:
+        // decline the drag, say nothing, do not guess. A new variant that
+        // DESERVES a sentence will show up as a silent decline in a driven
+        // run, which is a defect with a symptom rather than one without.
+        _ => RunMoveBlock::NotThere,
+    }
+}
+
+impl ObjectModelProvider {
     /// [`Self::subpath_hits`], for either index space.
     ///
     /// ★ Through `hit_test_subpaths_of` rather than `hit_test_subpaths`: the

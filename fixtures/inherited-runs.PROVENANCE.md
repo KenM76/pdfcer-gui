@@ -49,7 +49,7 @@ string's width instead of leaving it alone.
 
 | line | runs | `text_line_move_refusal` | why |
 |---|---|---|---|
-| 0 | 0, 1 | `InteriorPieceHasNoPosition` | the line has a position; the join inside it does not |
+| 0 | 0, 1 | `None` -- it MOVES | the join has no position, but its predecessor moves with it as one set |
 | 1 | 2 | `None` -- it MOVES | the CONTROL |
 | 2 | 3 | `WouldMoveNextRun` | the next LINE rides on this one's advance |
 | 3 | 4 | `NoPositionOfItsOwn` | this line's first and only piece is inherited |
@@ -147,7 +147,9 @@ aim order: `line-piece-has-no-position`, a committed `move-text-line`,
 `run-would-move-next`, `run-has-no-position`. Four distinct answers from four
 aims is what proves each aim landed on its own line -- `canvas-selection`
 carries no part index, so the document's discriminating power is the only
-oracle there is, and it held. Re-date this only when a number above moves.
+oracle there is, and it held. Re-date this only when a number above moves. Line 0's
+answer is now a committed move (`move_text_runs`, engine `G030`); that row
+has not been re-driven.
 
 ## Why base-14 Helvetica rather than an embedded font
 

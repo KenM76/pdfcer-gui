@@ -945,5 +945,10 @@ pub(super) fn band() -> Vec<Command> {
         command("file.ocr", t::file_ocr(), 160)
             .with_icon("recognise-text")
             .enabled_when("doc.pages"),
+        // `EditSession::find_ocr_layers` + `remove_ocr_layer`, one undo entry.
+        // No icon: `recognise-text` would say "add", and no removal glyph
+        // exists. `doc.open`, not `doc.pages`: a document without a layer is
+        // told so on the status bar rather than shown a greyed control.
+        command("file.remove_ocr", t::file_remove_ocr(), 162).enabled_when("doc.open"),
     ]
 }

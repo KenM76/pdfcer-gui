@@ -290,7 +290,7 @@ struct Seed {
 /// not exist. That is the one row where the two vocabularies could drift
 /// without either side being wrong, so it is spelled the way the trace spells
 /// it.
-const SEED: [Seed; 12] = [
+const SEED: [Seed; 13] = [
     Seed {
         key: "export_image_format",
         file: "emf",
@@ -325,6 +325,13 @@ const SEED: [Seed; 12] = [
         event: IMAGE_EVENT,
         field: "quality",
         traced: "72",
+    },
+    Seed {
+        key: "export_image_keep_text",
+        file: "true",
+        event: IMAGE_EVENT,
+        field: "keep_text",
+        traced: "1",
     },
     Seed {
         key: "export_text_pages",
@@ -586,8 +593,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         report.note(format!(
             "★ this page carries a calibrated ce dimension group (`suggestion={suggestion}`), \
              which overrules the remembered DXF units by design — `seeded_options` step ②. \
-             `{UNITS_KEY}` is dropped from this run and 11 of the 12 are asserted. Point --pdf \
-             at a drawing with no calibrated group to assert the twelfth."
+             `{UNITS_KEY}` is dropped from this run and 12 of the 13 are asserted. Point --pdf \
+             at a drawing with no calibrated group to assert the thirteenth."
         ));
     }
 
@@ -644,7 +651,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note(format!(
-        "seeded {} with 12 export settings, none of which is this build's default",
+        "seeded {} with 13 export settings, none of which is this build's default",
         prefs_path.display()
     ));
 
@@ -736,7 +743,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     report.note(format!(
-        "★★★ all three Export windows opened on the remembered settings — {asserted} of the 12 \
+        "★★★ all three Export windows opened on the remembered settings — {asserted} of the 13 \
          asserted, each one a value this build does not ship"
     ));
     Ok(None)
@@ -818,7 +825,7 @@ mod tests {
             );
             seen.push(pair);
         }
-        assert_eq!(seen.len(), 12, "the seed covers all 12 remembered settings");
+        assert_eq!(seen.len(), 13, "the seed covers all 13 remembered settings");
 
         let scopes = SEED.iter().filter(|s| s.field == "scope").count();
         assert_eq!(

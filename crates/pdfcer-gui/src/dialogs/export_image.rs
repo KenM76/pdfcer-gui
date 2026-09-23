@@ -231,6 +231,8 @@ pub const REGION_TRANSPARENT: &str = "export-image.transparent"; // ui-text-exem
 /// only then — see [`ExportImageDialog::quality_group`]. A driven check that
 /// cannot find it has not found a defect; it has found a PNG.
 pub const REGION_QUALITY: &str = "export-image.quality"; // ui-text-exempt: trace region name, never displayed
+/// The keep-text checkbox, published only while SVG or EMF is selected.
+pub const REGION_KEEP_TEXT: &str = "export-image.keep-text"; // ui-text-exempt: trace region name, never displayed
 /// The region the Export button publishes.
 pub const REGION_EXPORT: &str = "export-image.export"; // ui-text-exempt: trace region name, never displayed
 
@@ -272,6 +274,9 @@ pub struct ExportImageDialog {
     transparent: bool,
     /// JPEG quality, carried whatever the format, for the same reason.
     quality: u8,
+    /// SVG/EMF: keep text as text rather than outlines. Carried whatever the
+    /// format, like `quality`.
+    keep_text: bool,
     /// Set by Export, consumed after the window's closure returns.
     export_requested: bool,
     /// Set by Cancel, consumed by [`Self::show`].
@@ -322,6 +327,7 @@ impl ExportImageDialog {
             dpi: remembered.dpi,
             transparent: remembered.transparent,
             quality: remembered.quality,
+            keep_text: remembered.keep_text,
             export_requested: false,
             close_requested: false,
         };
@@ -337,7 +343,7 @@ impl ExportImageDialog {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
                 "export-image-open page={} pages={} format={} scope={} \
-                 dpi={} transparent={} quality={}",
+                 dpi={} transparent={} quality={} keep_text={}",
                 dialog.page_index,
                 dialog.page_count,
                 // ★ Stable lowercase tokens, never `{:?}`. This project's
@@ -352,6 +358,7 @@ impl ExportImageDialog {
                 dialog.dpi,
                 u8::from(dialog.transparent),
                 dialog.quality,
+                u8::from(dialog.keep_text),
             )
         });
         dialog
@@ -379,6 +386,7 @@ impl ExportImageDialog {
             // press.
             transparent: self.transparent,
             quality: self.quality,
+            keep_text: self.keep_text,
         }
     }
 
@@ -420,7 +428,7 @@ impl ExportImageDialog {
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
                     "export-image-requested format={} pages={} dpi={} \
-                     transparent={} quality={}",
+                     transparent={} quality={} keep_text={}",
                     // A token, never `{:?}`: the same reduction the
                     // preferences file performs, so a check reading this line
                     // and a check reading the file cannot disagree.
@@ -428,7 +436,8 @@ impl ExportImageDialog {
                     plan.pages.len(),
                     plan.dpi,
                     u8::from(plan.transparent),
-                    plan.quality
+                    plan.quality,
+                    u8::from(plan.keep_text)
                 )
             });
             actions.push(Action::Write(
@@ -468,6 +477,7 @@ impl ExportImageDialog {
             dpi: self.dpi,
             transparent: self.transparent,
             quality: self.quality,
+            keep_text: self.keep_text,
         })
     }
 
@@ -483,7 +493,10 @@ impl ExportImageDialog {
         self.resolution_group(ui);
         ui.add_space(8.0);
         self.background_group(ui);
-        if !self.format.is_vector() {
+        if self.format.is_vector() {
+            ui.add_space(8.0);
+            self.text_group(ui);
+        } else {
             ui.add_space(8.0);
             self.quality_group(ui);
         }
@@ -683,6 +696,20 @@ impl ExportImageDialog {
             // instead, which is what they actually need to know.
             ui.label(t::jpeg_has_no_alpha());
         }
+    }
+
+    /// The SVG/EMF text choice: outlines (default) or text kept as text.
+    fn text_group(&mut self, ui: &mut Ui) {
+        ui.label(crate::text::export_keeptext::heading());
+        let response = ui.checkbox(
+            &mut self.keep_text,
+            crate::text::export_keeptext::checkbox(),
+        );
+        crate::diag::ui_rect(REGION_KEEP_TEXT, response.rect);
+        ui.weak(crate::text::export_keeptext::hint(
+            self.format,
+            self.keep_text,
+        ));
     }
 
     /// How hard the JPEG encoder is allowed to squeeze.

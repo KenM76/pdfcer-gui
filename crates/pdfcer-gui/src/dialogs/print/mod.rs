@@ -186,6 +186,12 @@ mod commit;
 /// rule and the argument for every inclusion and every omission.
 mod remembered;
 
+/// **Poster printing** — O238: one page across many sheets, as Acrobat does.
+mod poster;
+
+/// **Fixed line width** — O233: every line printed at one width.
+mod lines;
+
 /// The names this dialog publishes for `tools/ui-verify`. See the module's own
 /// header for why they are together and not beside the controls they name.
 mod regions;
@@ -358,6 +364,12 @@ pub struct PrintDialog {
     subset: PageSubset,
     /// Print back to front.
     reverse: bool,
+    /// Poster mode and its settings; see [`poster`].
+    poster: crate::app::prefs::printing::PosterPrefs,
+    /// What poster mode made of the sheet on the preview, this frame.
+    poster_caption: Option<String>,
+    /// One fixed line width; see [`lines`].
+    lines: crate::app::prefs::printing::LineWidthPrefs,
     /// Copy count.
     copies: u16,
     /// Copy ordering, as the checkbox holds it.
@@ -644,6 +656,9 @@ impl PrintDialog {
             auto_paper: autopaper::AutoPaper::NotChosen,
             subset: remembered.subset,
             reverse: remembered.reverse,
+            poster: remembered.poster,
+            poster_caption: None,
+            lines: remembered.lines,
             copies: remembered.copies,
             uncollated: remembered.uncollated,
             preview_page: 0,
@@ -887,7 +902,14 @@ impl PrintDialog {
             // one point rather than at each reader is what makes the preview,
             // the per-edge readout, the clip count, the ink-verdict cache key
             // and the spooled job agree by construction.
-            .map(|job| self.page_positions.displace(job, &page_sizes));
+            .map(|job| {
+                if self.poster.on {
+                    job
+                } else {
+                    self.page_positions.displace(job, &page_sizes)
+                }
+            });
+        let job = poster::apply(self, job, &page_sizes);
 
         // Keep the stepper inside the job. A range narrowed while the dialog
         // is open can leave `preview_page` past the end, and a preview that
@@ -906,9 +928,14 @@ impl PrintDialog {
         // than at each of the three sites that need it. `None` exactly when
         // there is no job — the printable rectangle comes from the planned
         // geometry, and with no device there is no clip to report.
-        let context = job
-            .as_ref()
-            .map(|job| verdicts::Context::new(self.scope, &doc.settings, job.device.printable_pt));
+        let context = job.as_ref().map(|job| {
+            verdicts::Context::new(
+                self.scope,
+                &doc.settings,
+                job.device.printable_pt,
+                lines::paper_pt(self.lines, job.resolution.dpi),
+            )
+        });
 
         //
         self.popped_preview(ctx, doc, job.as_ref(), &page_sizes, context.as_ref());
@@ -1286,6 +1313,7 @@ impl PrintDialog {
     /// selected without the mode changing under the operator's hand.
     fn job_spec(&self, page_sizes: &[(f64, f64)], current_page: usize) -> JobSpec {
         let mode = match self.scale {
+            _ if self.poster.on => ScaleMode::Custom(poster::plan_scale(self.poster)),
             ScaleMode::Custom(_) => ScaleMode::Custom(f64::from(self.custom_percent) / 100.0),
             other => other,
         };
@@ -1421,6 +1449,9 @@ impl PrintDialog {
             PrintTab::PagesLayout => tabs::pages_layout(ui, self, page_count, job),
             PrintTab::CopiesFinishing => tabs::copies_finishing(ui, self),
             PrintTab::Comments => tabs::comments(ui, self),
+            PrintTab::Position if self.poster.on => {
+                ui.label(t::poster_positions_fixed());
+            }
             PrintTab::Position => position::group(ui, self, job, page_sizes),
         }
     }

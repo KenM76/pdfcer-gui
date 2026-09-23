@@ -305,52 +305,11 @@ pub(super) fn pages_layout(
     .on_hover_text(t::subset_tooltip());
     ui.add_space(8.0);
 
-    ui.label(t::sizing_heading())
-        .on_hover_text(t::sizing_tooltip());
-    // Four modes, not three. `place_page`'s own test exists because
-    // collapsing Fit and Shrink is the natural simplification and it silently
-    // blows a business card up to fill a Letter sheet.
-    //
-    // Drawn with `radio` + `clicked` rather than `radio_value` because
-    // `ScaleMode::Custom` carries an `f64`: a `radio_value` comparison would
-    // make the Custom row deselect itself the moment the percentage changed.
-    for (mode, label) in [
-        (ScaleMode::Fit, t::scale_fit()),
-        (ScaleMode::ActualSize, t::scale_actual()),
-        (ScaleMode::ShrinkOversized, t::scale_shrink()),
-    ] {
-        let radio = ui.radio(dialog.scale == mode, label);
-        publish_scale_region(ui, mode, radio.rect);
-        if radio.clicked() {
-            dialog.scale = mode;
-        }
+    if super::poster::mode_row(ui, dialog) {
+        scale_radios(ui, dialog);
     }
-    let custom_selected = matches!(dialog.scale, ScaleMode::Custom(_));
-    ui.horizontal_wrapped(|ui| {
-        let radio = ui.radio(custom_selected, t::scale_custom());
-        publish_scale_region(ui, ScaleMode::Custom(0.0), radio.rect);
-        if radio.clicked() {
-            dialog.scale = ScaleMode::Custom(f64::from(dialog.custom_percent) / 100.0);
-        }
-        // Enabled only while Custom is chosen, and **greyed rather than
-        // absent** — which is the correct side of the no-placeholders rule
-        // here, because this really is *temporarily* unavailable: one click
-        // on the radio beside it makes it live.
-        // ★★★ …and it now SAYS so — O77's sweep. The comment above has
-        // always argued that greying is correct here *because* one click on
-        // the radio beside it makes the field live. R9 requires that argument
-        // to reach the operator, and it never did: the control was greyed with
-        // no hover explanation of any kind.
-        let custom = ui.add_enabled(
-            custom_selected,
-            egui::DragValue::new(&mut dialog.custom_percent)
-                .range(1..=1000)
-                .suffix(t::percent_suffix()),
-        );
-        if !custom_selected {
-            custom.on_disabled_hover_text(t::scale_custom_disabled());
-        }
-    });
+    ui.add_space(8.0);
+    super::lines::row(ui, dialog);
     ui.add_space(8.0);
 
     ui.label(t::orientation_heading());
@@ -661,6 +620,54 @@ fn resolution(ui: &mut Ui, dialog: &mut PrintDialog, resolution: Option<JobResol
                 .small(),
         );
     }
+}
+
+/// The Size mode's four scale choices.
+fn scale_radios(ui: &mut Ui, dialog: &mut PrintDialog) {
+    // Four modes, not three. `place_page`'s own test exists because
+    // collapsing Fit and Shrink is the natural simplification and it silently
+    // blows a business card up to fill a Letter sheet.
+    //
+    // Drawn with `radio` + `clicked` rather than `radio_value` because
+    // `ScaleMode::Custom` carries an `f64`: a `radio_value` comparison would
+    // make the Custom row deselect itself the moment the percentage changed.
+    for (mode, label) in [
+        (ScaleMode::Fit, t::scale_fit()),
+        (ScaleMode::ActualSize, t::scale_actual()),
+        (ScaleMode::ShrinkOversized, t::scale_shrink()),
+    ] {
+        let radio = ui.radio(dialog.scale == mode, label);
+        publish_scale_region(ui, mode, radio.rect);
+        if radio.clicked() {
+            dialog.scale = mode;
+        }
+    }
+    let custom_selected = matches!(dialog.scale, ScaleMode::Custom(_));
+    ui.horizontal_wrapped(|ui| {
+        let radio = ui.radio(custom_selected, t::scale_custom());
+        publish_scale_region(ui, ScaleMode::Custom(0.0), radio.rect);
+        if radio.clicked() {
+            dialog.scale = ScaleMode::Custom(f64::from(dialog.custom_percent) / 100.0);
+        }
+        // Enabled only while Custom is chosen, and **greyed rather than
+        // absent** — which is the correct side of the no-placeholders rule
+        // here, because this really is *temporarily* unavailable: one click
+        // on the radio beside it makes it live.
+        // ★★★ …and it now SAYS so — O77's sweep. The comment above has
+        // always argued that greying is correct here *because* one click on
+        // the radio beside it makes the field live. R9 requires that argument
+        // to reach the operator, and it never did: the control was greyed with
+        // no hover explanation of any kind.
+        let custom = ui.add_enabled(
+            custom_selected,
+            egui::DragValue::new(&mut dialog.custom_percent)
+                .range(1..=1000)
+                .suffix(t::percent_suffix()),
+        );
+        if !custom_selected {
+            custom.on_disabled_hover_text(t::scale_custom_disabled());
+        }
+    });
 }
 
 #[cfg(test)]

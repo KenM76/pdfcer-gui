@@ -609,7 +609,21 @@ pub const fn file_ocr() -> CommandText {
         "Read the words in a scanned page and add them as invisible text behind the image, so \
          Find and copy work. Every word is a guess and this recogniser scores none of them, so \
          you are shown what it read before anything is saved. The page still looks the same and \
-         the scan is never re-encoded.",
+         the scan is never re-encoded. Running it again replaces the text it recognised before.",
+    )
+}
+
+/// `file.remove_ocr`
+///
+/// Says which text goes (pdfcer's own recognition only) and that the page's
+/// look is untouched; greyed only while no document is open.
+#[must_use]
+pub const fn file_remove_ocr() -> CommandText {
+    CommandText::new(
+        "Remove OCR text",
+        "Take out the invisible text pdfcer recognised in this document. The pages look the \
+         same; Find and copy stop seeing that text. Text recognised by other programs is left \
+         alone. One Ctrl+Z puts it all back. Greyed while no document is open.",
     )
 }
 

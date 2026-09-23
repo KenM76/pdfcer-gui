@@ -1014,7 +1014,7 @@ mod tests {
                     continue;
                 }
                 let name = path.to_string_lossy().replace('\\', "/");
-                if name.ends_with("render/worker.rs") {
+                if name.ends_with("render/worker.rs") || name.ends_with("dialogs/print/lines.rs") {
                     continue;
                 }
                 let hits = scan(&path);
@@ -1047,6 +1047,13 @@ mod tests {
             1,
             "the canvas worker must assign `stroke_display` exactly once — zero means \
              `view.line_weights` reaches no renderer at all"
+        );
+        // O233: the print dialog's own *Fixed line width*, which the operator
+        // asked for by name. Off by default and blind to `view.line_weights`.
+        assert_eq!(
+            scan(&root.join("dialogs/print/lines.rs")),
+            1,
+            "the print dialog's fixed line width must assign `stroke_display` exactly once"
         );
     }
 

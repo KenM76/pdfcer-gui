@@ -274,9 +274,10 @@ mod tests {
         // load-bearing halves of this tuple. A new row that had refused a
         // glyph would have moved `blank` to 2 — which is legal, argued at the
         // registration, and would have to be argued here too.
+        // 35 → 36: `format.merge_text_runs` on the canvas object menu.
         assert_eq!(
             (glyph, blank, absent),
-            (35, 1, 0),
+            (36, 1, 0),
             "menu rows by icon slot state; per-menu breakdown:\n{report}"
         );
         assert_eq!(

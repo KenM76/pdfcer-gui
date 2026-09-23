@@ -161,6 +161,7 @@ impl Declined {
             Self::TextStyle(why) => return why.line(),
             Self::Rotate(why) => (*why).line(),
             Self::Unshare(why) => (*why).line(),
+            Self::RunMerge(why) => (*why).line(),
             // ★ Reaches across to `crate::text::clipboard` on the same rule the
             // arms above use: a string lives with the surface that owns its
             // subject, and this one's subject is the clipboard — where the
@@ -207,9 +208,7 @@ impl Declined {
             Self::TextRunWouldDragTheNextLine => {
                 crate::text::arrange::run_would_drag_the_next_line()
             }
-            Self::TextRunPieceHasNoPositionOfItsOwn => {
-                crate::text::arrange::line_piece_has_no_position_of_its_own()
-            }
+            Self::OcrLayer(why) => (*why).line(),
         };
         std::borrow::Cow::Borrowed(fixed)
     }

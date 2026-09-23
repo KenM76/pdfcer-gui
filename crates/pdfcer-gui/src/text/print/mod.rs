@@ -1182,6 +1182,18 @@ mod position;
 // Glob re-exported, for the reason argued over `footer` above.
 pub use position::*;
 
+/// **Poster printing** — operator request O238. One page across many sheets.
+mod poster;
+
+// Glob re-exported, for the reason argued over `footer` above.
+pub use poster::*;
+
+/// **Fixed line width** — operator request O233.
+mod lines;
+
+// Glob re-exported, for the reason argued over `footer` above.
+pub use lines::*;
+
 #[cfg(test)]
 mod tests {
     use super::*;

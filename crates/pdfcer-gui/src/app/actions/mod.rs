@@ -272,6 +272,8 @@ pub mod textstyle;
 /// things".
 pub mod vector;
 
+/// OCR text layers pdfcer wrote: the re-run policy and Remove OCR text.
+mod ocrlayers;
 // O122 — the two halves of handing the document to Acrobat: the arm that
 // raises the question, and the drain that saves, launches and then closes. Its
 // header carries the save→launch→close ordering and why the other order loses

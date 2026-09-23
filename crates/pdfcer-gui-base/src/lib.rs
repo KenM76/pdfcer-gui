@@ -1,6 +1,6 @@
 //! # pdfcer-gui-base — the floor of the pdfcer-gui crate stack
 //!
-//! Four modules that reference no other module of `pdfcer-gui`, lifted out of
+//! Modules that reference no other module of `pdfcer-gui`, lifted out of
 //! it so that the compiler, rather than a review, is what keeps them beneath
 //! the application.
 //!
@@ -27,7 +27,7 @@
 //!
 //! ## Why the callers do not mention this crate
 //!
-//! `pdfcer-gui`'s crate root re-exports all four names, so every one of the
+//! `pdfcer-gui`'s crate root re-exports these names, so every one of the
 //! roughly 1,200 existing call sites still spells them `crate::diag::…`,
 //! `crate::units::…` and so on, unchanged.
 //!
@@ -83,6 +83,11 @@ pub mod pagetree;
 /// action carrying a password writes it into the trace file `tools/ui-verify`
 /// keeps as evidence.
 pub mod secret;
+
+/// Poster printing: one page across many sheets, with a band along each
+/// sheet's top and left for cut marks and the assembly label, and the drawing
+/// of both. The tiling is `pdfcer_print::imposition::plan_poster`'s.
+pub mod poster;
 
 /// Where signature trust ANCHORS come from, and the three facts they let
 /// this shell state.

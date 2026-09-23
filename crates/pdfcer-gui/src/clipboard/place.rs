@@ -226,18 +226,22 @@ fn page_payload(
         &view,
         page,
         options,
+        // Outlines on the clipboard: Word's importer ignores embedded fonts.
         &pdfcer_render::svg::SvgOptions::default()
             .with_raster_dpi(COPY_DPI)
-            .with_background(None),
+            .with_background(None)
+            .with_text(pdfcer_render::svg::SvgText::Outlines),
     )
     .map_err(|error| Refusal::Render(error.to_string()))?;
     let emf = pdfcer_render::emf::export_emf_view(
         &view,
         page,
         options,
+        // Outlines on the clipboard: an EMF cannot carry the font.
         &pdfcer_render::emf::EmfOptions::default()
             .with_raster_dpi(COPY_DPI)
-            .with_background(None),
+            .with_background(None)
+            .with_text(pdfcer_render::emf::EmfText::Outlines),
     )
     .map_err(|error| Refusal::Render(error.to_string()))?;
     let rendered = pdfcer_render::render_page_with_view(
@@ -306,18 +310,22 @@ fn selection_bytes(
         &clipped,
         page,
         options,
+        // Outlines on the clipboard: Word's importer ignores embedded fonts.
         &pdfcer_render::svg::SvgOptions::default()
             .with_raster_dpi(COPY_DPI)
-            .with_background(None),
+            .with_background(None)
+            .with_text(pdfcer_render::svg::SvgText::Outlines),
     )
     .map_err(|error| Refusal::Render(error.to_string()))?;
     let emf = pdfcer_render::emf::export_emf(
         &clipped,
         page,
         options,
+        // Outlines on the clipboard: an EMF cannot carry the font.
         &pdfcer_render::emf::EmfOptions::default()
             .with_raster_dpi(COPY_DPI)
-            .with_background(None),
+            .with_background(None)
+            .with_text(pdfcer_render::emf::EmfText::Outlines),
     )
     .map_err(|error| Refusal::Render(error.to_string()))?;
     // ★ `render_page_with`, the four-argument form, NOT the three-argument

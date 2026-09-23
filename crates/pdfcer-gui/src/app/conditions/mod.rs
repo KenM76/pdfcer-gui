@@ -360,6 +360,21 @@ impl PdfcerApp {
             {
                 set.set("selection.in_form");
             }
+            // Two or more runs of one page text object: `format.merge_text_runs`
+            // is offered, and enabled when the engine's preflight agrees.
+            if !doc.selection.is_empty() {
+                let merge = crate::canvas::runmerge::operand(
+                    doc.page_objects().as_deref(),
+                    &doc.selection,
+                    doc.view.page_index,
+                );
+                if let Some(merge) = merge {
+                    set.set(crate::shell::menus::TEXT_MERGE_OFFERED);
+                    if merge.allowed() {
+                        set.set(crate::shell::menus::TEXT_MERGE_ALLOWED);
+                    }
+                }
+            }
             //
             // > `undo.available` and `redo.available` are still deliberately
             // > absent: there is no undo stack to report on yet. Setting them

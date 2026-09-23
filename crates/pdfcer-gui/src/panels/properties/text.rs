@@ -247,6 +247,9 @@ pub const SIZE_REGION: &str = "properties.text.size";
 /// The face chooser's own region.
 // ui-text-exempt: trace region name, never displayed
 pub const FACE_REGION: &str = "properties.text.face";
+/// The render-mode chooser's own region.
+// ui-text-exempt: trace region name, never displayed
+pub const RENDER_REGION: &str = "properties.text.render";
 
 /// What the selected text looks like now, re-read only when it can have
 /// changed.
@@ -663,6 +666,7 @@ pub fn section(
     face_row(ui, doc, draft, page, &runs, actions);
     size_row(ui, draft, page, &runs, actions);
     weight_row(ui, draft, page, &runs, actions);
+    render_row(ui, page, &runs, actions);
     if owns_colour {
         colour_row(ui, draft, page, &runs, actions);
     }
@@ -829,6 +833,36 @@ fn weight_row(
                     bold: false,
                     italic: true,
                 },
+            });
+        }
+    });
+}
+
+/// The render mode (`Tr`) — a chooser that applies, not one that reflects:
+/// nothing here reads the run's current mode back.
+fn render_row(ui: &mut Ui, page: usize, runs: &[usize], actions: &mut Vec<Action>) {
+    ui.horizontal(|ui| {
+        ui.label(t::text_render_label());
+        let mut chosen: Option<u8> = None;
+        let combo = egui::ComboBox::from_id_salt("properties-text-render")
+            .selected_text(t::text_render_choose())
+            .show_ui(ui, |ui| {
+                for mode in 0..=7_u8 {
+                    if ui
+                        .selectable_label(false, t::text_render_mode_name(mode))
+                        .clicked()
+                    {
+                        chosen = Some(mode);
+                    }
+                }
+            });
+        crate::diag::ui_rect_visible(RENDER_REGION, combo.response.rect, ui.clip_rect());
+        let _ = combo.response.on_hover_text(t::text_render_hint());
+        if let Some(mode) = chosen {
+            actions.push(Action::TextStyle {
+                page,
+                runs: runs.to_vec(),
+                change: StyleChange::RenderMode(mode),
             });
         }
     });

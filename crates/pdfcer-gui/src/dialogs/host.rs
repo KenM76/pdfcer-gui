@@ -528,7 +528,17 @@ impl Host {
     fn field_focus_key(&self) -> egui::Id {
         self.key.with("field-focus")
     }
+}
 
+/// Where [`Host::show`] tells [`Host::footer`] that a field held the keyboard
+/// when the last pass ended. Keyed on the viewport, because `footer` is handed
+/// a `Ui` and not the `Host`. Call it OUTSIDE `data`/`data_mut`:
+/// `viewport_id` takes the context lock those hold, and nesting deadlocks.
+fn enter_grace_key(ctx: &egui::Context) -> egui::Id {
+    egui::Id::new("dialog-enter-grace").with(ctx.viewport_id())
+}
+
+impl Host {
     /// **Draw one frame of this dialog in its own OS window.**
     ///
     /// `add` is handed a `Ui` inside the window and may do anything an
@@ -898,6 +908,13 @@ impl Host {
                 .data(|d| d.get_temp::<bool>(self.field_focus_key()))
                 .unwrap_or(false);
             let escape = child.input(|i| i.key_pressed(egui::Key::Escape));
+            // Enter has the same rung, for the same reason: a single-line
+            // field or a `DragValue` surrenders focus on the Enter that
+            // commits it, so by the time the footer asks, the field has let
+            // go. Handed to [`Self::footer`] through the child's memory.
+            let enter = child.input(|i| i.key_pressed(egui::Key::Enter));
+            let grace = enter_grace_key(&child);
+            child.data_mut(|d| d.insert_temp(grace, field_was_focused));
             frame.closed =
                 (escape && !field_was_focused) || child.input(|i| i.viewport().close_requested());
 
@@ -977,7 +994,7 @@ impl Host {
             // not a question about whether the operator is composing: a canvas
             // text draft is not reachable from inside a dialog, and `composing`
             // would answer about the application window rather than this one.
-            if !escape {
+            if !escape && !enter {
                 let field_focused = child.text_edit_focused();
                 child.data_mut(|d| d.insert_temp(self.field_focus_key(), field_focused));
             }
@@ -1128,11 +1145,12 @@ impl Host {
     /// accept on the first newline the operator typed, which is worse than
     /// having no Enter at all: it commits a half-written transaction.
     ///
-    /// A **single-line** field is the case this deliberately gives up. Enter in
-    /// a one-line box should accept the dialog, and here it does not, because
-    /// egui reports "a text edit has focus" without saying whether it is
-    /// multi-line. Recorded as a known limit rather than guessed at — the fix
-    /// is per-field and belongs with the field.
+    /// A **single-line** field or a `DragValue` gives up focus on the Enter
+    /// that commits it, before this runs, so `text_edit_focused` alone reads
+    /// false and the commit would also accept the dialog — typing a poster
+    /// scale and pressing Enter would print. So Enter takes the Escape rung:
+    /// **the first Enter commits the field, the second accepts**, read from
+    /// the flag [`Self::show`] carries across the pass.
     ///
     /// # ★★★ The third button, and why it is LEFTMOST rather than beside the default
     ///
@@ -1215,7 +1233,11 @@ impl Host {
         // typing-guard-exempt: the four paragraphs above are the reason. In one
         // line: a dialog is a separate OS window with its own focus, so
         // "somebody is composing on the canvas" is not a fact about this key.
-        let enter = !ctx.text_edit_focused() && ctx.input(|i| i.key_pressed(egui::Key::Enter));
+        let grace = enter_grace_key(&ctx);
+        let field_had_it = ctx.data(|d| d.get_temp::<bool>(grace)).unwrap_or(false);
+        let enter = !ctx.text_edit_focused()
+            && !field_had_it
+            && ctx.input(|i| i.key_pressed(egui::Key::Enter));
 
         let mut accepted = false;
         let mut cancelled = false;

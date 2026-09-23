@@ -183,6 +183,9 @@ pub enum Action {
         /// short of reading the output.
         pages: Vec<(usize, pdfcer_core::ocr::OcrPage)>,
     },
+    /// File ▸ Remove OCR text: every OCR layer pdfcer wrote comes off, as one
+    /// undo entry. See `super::ocrlayers`.
+    RemoveOcrLayers,
 
     /// ★★★ **The verbs whose subject is a whole annotation** — move it, resize
     /// it, remove it.

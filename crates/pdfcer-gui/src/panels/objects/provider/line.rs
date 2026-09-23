@@ -42,15 +42,11 @@
 //! 1. **A line's first fragment is the only one that can lack a position of its
 //!    own**, and only when it is run 0 of the whole object.
 //! 2. **An inherited fragment inside a line needs no move of its own** — it
-//!    follows the fragment before it. But
-//!    [`pdfcer_core::vector::edit::text_run_move_refusal`] refuses to move that
-//!    predecessor, because a single-run verb cannot tell *"the next fragment is
-//!    also moving"* from *"the next fragment is staying"*. That is request
-//!    `G030`, and until it lands
-//!    [`ObjectModelProvider::text_line_move_refusal_of`] declines the whole line
-//!    — as [`RunMoveBlock::InteriorPieceHasNoPosition`], which is a different
-//!    fact about the document from the first consequence and gets its own
-//!    sentence — rather than tearing it in half.
+//!    follows the fragment before it. A line is therefore moved as one SET
+//!    through `EditSession::move_text_runs`, and
+//!    [`ObjectModelProvider::text_line_move_refusal_of`] asks the engine's set
+//!    guard, which lets an inherited run through when its predecessor moves
+//!    too.
 
 use std::ops::Range;
 
@@ -195,60 +191,13 @@ impl ObjectModelProvider {
     }
 
     /// Why moving line `line` of `target` would be refused, or `None` when
-    /// every fragment of it can be moved.
-    ///
-    /// # It asks the engine once per fragment, and folds the answers
-    ///
-    /// Each fragment is put to [`Self::text_run_move_refusal_of`], which calls
-    /// the engine's own
-    /// [`text_run_move_refusal`](pdfcer_core::vector::edit::text_run_move_refusal)
-    /// — the function `plan_move_text_run` runs first. Comparing
-    /// `positioned_by` here instead would be a second implementation of the
-    /// engine's rule, and [`RunMoveBlock`] carries the argument for why that is
-    /// the defect that type exists to avoid.
-    ///
-    /// Two of the engine's answers mean something different once the whole line
-    /// is moving, and that difference is the fold:
-    ///
-    /// * `MoveWouldMoveNextRun` on a fragment that is **not** the line's last
-    ///   is not a problem — the run it would drag is the next fragment of this
-    ///   same line, and that one is moving too. It is fatal only on the last
-    ///   fragment, where the run after it belongs to the next line. For
-    ///   horizontal text that case cannot arise, because an inherited run
-    ///   shares its predecessor's baseline and is therefore in its
-    ///   predecessor's group; it stays checked for rotated text, whose advance
-    ///   changes `f`.
-    /// * `TextRunHasNoPositionOfItsOwn` says something different about the
-    ///   line's **first** fragment than about an interior one, so the two get
-    ///   different answers — [`RunMoveBlock::NoPositionOfItsOwn`] and
-    ///   [`RunMoveBlock::InteriorPieceHasNoPosition`] — and different
-    ///   sentences. Both refuse. The interior one refuses because the
-    ///   single-run verb will decline the *predecessor's* move (`G030`), and
-    ///   moving only the fragments that can move would tear the line in half.
+    /// the line can be moved whole: the engine's set guard over the line's
+    /// runs, [`Self::text_runs_move_refusal_of`]. A line with no runs answers
+    /// [`RunMoveBlock::NotThere`].
     #[must_use]
     pub fn text_line_move_refusal_of(&self, target: TargetId, line: usize) -> Option<RunMoveBlock> {
-        let runs = self.text_line_runs_of(target, line)?;
-        if runs.is_empty() {
-            return Some(RunMoveBlock::NotThere);
-        }
-        let last = runs.end - 1;
-        for run in runs.clone() {
-            match self.text_run_move_refusal_of(target, run) {
-                None => {}
-                Some(RunMoveBlock::NoPositionOfItsOwn) if run == runs.start => {
-                    return Some(RunMoveBlock::NoPositionOfItsOwn);
-                }
-                Some(RunMoveBlock::NoPositionOfItsOwn) => {
-                    return Some(RunMoveBlock::InteriorPieceHasNoPosition);
-                }
-                Some(RunMoveBlock::WouldMoveNextRun) if run < last => {}
-                Some(RunMoveBlock::WouldMoveNextRun) => {
-                    return Some(RunMoveBlock::WouldMoveNextRun);
-                }
-                Some(block) => return Some(block),
-            }
-        }
-        None
+        let runs: Vec<usize> = self.text_line_runs_of(target, line)?.collect();
+        self.text_runs_move_refusal_of(target, &runs)
     }
 
     /// [`Self::text_line_move_refusal_of`] for a page object index.
@@ -426,24 +375,13 @@ mod tests {
         assert_eq!(p.text_line_of_run(0, 9), None);
     }
 
-    /// ★★★ **The refusal names the JOIN, not the line** — and the whole
-    /// reason [`RunMoveBlock::InteriorPieceHasNoPosition`] exists.
-    ///
-    /// Line 0 of this fixture has a position of its own; its *second fragment*
-    /// does not. Answering [`RunMoveBlock::NoPositionOfItsOwn`] would put the
-    /// sentence *this line takes its position from the line before it* on the
-    /// bar about a line that is the first line of the object.
+    /// A line whose second fragment inherits its position moves whole: the
+    /// set guard lets the follower through because its predecessor moves too.
     #[test]
-    fn a_line_whose_second_fragment_inherits_names_the_piece_not_the_line() {
+    fn a_line_whose_second_fragment_inherits_moves_whole() {
         let p = two_lines();
-        // Run 1 has no positioning operator of its own, so it rides on run
-        // 0's advance. The gesture wants both to move; the single-run verb
-        // refuses run 0 because of run 1, and refusing the line is the honest
-        // answer until a set-taking move lands (`G030`).
-        assert_eq!(
-            p.text_line_move_refusal(0, 0),
-            Some(RunMoveBlock::InteriorPieceHasNoPosition)
-        );
+        // Run 1 has no positioning operator of its own and rides on run 0.
+        assert_eq!(p.text_line_move_refusal(0, 0), None);
         // The second line is one self-positioned fragment with nothing after
         // it, so nothing stands in the way.
         assert_eq!(p.text_line_move_refusal(0, 1), None);
@@ -586,8 +524,8 @@ mod tests {
 
         assert_eq!(
             p.text_line_move_refusal(object, 0),
-            Some(RunMoveBlock::InteriorPieceHasNoPosition),
-            "the line has a position; the join inside it does not"
+            None,
+            "the join inside the line moves with the piece before it"
         );
         assert_eq!(
             p.text_line_move_refusal(object, 1),

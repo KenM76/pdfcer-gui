@@ -50,6 +50,10 @@ pdfcer-core = { git = "file:///D:/Dev/pdfcer", branch = "main", default-features
 # `pdfcer-gui`'s, for the unification reason given above.
 pdfcer-render = { git = "file:///D:/Dev/pdfcer", branch = "main", default-features = false }
 
+# Poster tiling (`poster`): the engine lays the tiles out, this crate adds the
+# band for marks and labels and draws them.
+pdfcer-print = { git = "file:///D:/Dev/pdfcer", branch = "main" }
+
 # flate2 — `ocr`'s test fixtures `/FlateDecode` their scanned image.
 [dev-dependencies]
 flate2 = { version = "1", default-features = false, features = ["rust_backend"] }

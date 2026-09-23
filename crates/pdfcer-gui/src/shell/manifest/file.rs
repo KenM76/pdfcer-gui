@@ -128,7 +128,7 @@ pub(super) fn tab() -> Tab {
             group(
                 "recognise",
                 ribbon::group_file_recognise(),
-                [large("file.ocr")],
+                [large("file.ocr"), command("file.remove_ocr")],
             ),
             group(
                 "save",

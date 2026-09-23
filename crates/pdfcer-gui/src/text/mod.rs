@@ -195,6 +195,8 @@ pub mod export_form;
 /// instruction rather than an aside: one of the three formats cannot do it, and
 /// what is being asked for is that pdfcer be the thing that says which.
 pub mod export_image;
+/// The SVG/EMF keep-text choice and what an export that kept text owes afterwards.
+pub mod export_keeptext;
 /// ★★★ Every word the Export-text window shows, and every sentence a text
 /// export owes afterwards.
 ///
@@ -380,6 +382,8 @@ pub mod ribbon;
 /// dimension silently stopped being axis-locked will find out later and blame
 /// something else."*
 pub mod rotating;
+/// Why merging text runs was declined, and the width it wrote.
+pub mod runmerge;
 /// Every word the Set-scale dialog shows. The hardest job in this catalog:
 /// explaining what a ratio is measured *against*, when the honest answer for a
 /// PDF is 1/72 inch and nobody's intuition is in those.

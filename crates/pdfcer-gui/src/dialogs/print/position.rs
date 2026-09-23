@@ -865,6 +865,7 @@ mod tests {
                 index: 3,
                 placement: flush(),
                 render_scale: 1.0,
+                tile: None,
             }],
         };
         let mut positions = Positions::default();

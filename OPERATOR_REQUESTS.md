@@ -116,17 +116,21 @@ exactly that. **The canvas needs the same treatment and does not have it.**
 
 > **Ken:** *"I want an option in the print dialogue to turn off line weights and print at a fixed width - I want an auto setting checkbox that when unchecked lets me enter a line width value. I want the auto setting to make the lines as thin as practically possible that the printer can still render and are visible to a user. Also the print pop out box should have the controls to maximize on screen, and its preview resolution should match the resolution set for the print if it doesn't already - when I zoomed in it looked really blurry and I'm not sure if that is because it is actually matching the resolution set. also when I clicked to change the print resolution which is for some reason under the comments section instead of on the pages section, the next time I opened the print dialogue the box to enter the resolution was missing. Also we should have a poster printing option with the same options as acrobat."*
 
-## O233 — **BLOCKED on engine G039** — print every line at one fixed width, with an Auto that picks the thinnest the printer can render visibly
+## O233 — **BUILT, NOT DRIVEN — awaiting your verdict** — print every line at one fixed width, with an Auto that picks the thinnest the printer can render visibly
 
-A print-time option that ignores the document's line weights. Checkbox **Auto**
-(checked): the thinnest width the target printer can still put on paper and a
-person can still see — derived from the printer's resolution, not a constant.
-Blocked: the renderer can only cap strokes at one device pixel, which is too
-thin to see at print resolution. Filed as
-`request_G039_stroke_display_has_no_fixed_width_so_print_cannot_render_every_line_at_one_chosen_width.md`;
-Auto will be `max(1 device px, 0.13 mm)`, the thinnest ISO 128 width.
-Unchecked: a width field, in the operator's units. Remembered like the other
-print settings; the preview shows it.
+A print-time option that ignores the document's line weights.
+
+**Built.** Print dialog › Pages tab: **Fixed line width**, off by default so a
+print keeps the drawing's own weights. Tick it and **Auto** appears, ticked:
+every line prints at 0.1 mm — the thin pen of CAD plot styles — or one printer
+dot where the job's resolution is too coarse for that, so it never vanishes.
+Clear Auto and a width field appears, in millimetres. The width is measured on
+the paper whatever the scale or poster tiling, the preview and its zoomed
+detail show the same width that prints, and all three settings are
+remembered. Only the print changes; the document does not.
+
+**Not driven** — built on the engine's fixed-width strokes and unit-tested; the
+release went out without a driven check for lack of memory on the machine.
 
 ## O234 — **BUILT, NOT VERIFIED — awaiting your verdict** — the print pop-out window can be maximised
 
@@ -162,10 +166,39 @@ a value the printer could meet hid it. It is now drawn on every open. **BUILT,
 partly driven:** the check above asserts the field is present, but that run
 was in the capped state; the uncapped state is not driven.
 
-## O238 — **FILED** — poster printing, with Acrobat's options
+## O238 — **BUILT, PARTLY DRIVEN — awaiting your verdict** — poster printing, with Acrobat's options
 
 Acrobat's Poster mode: tile scale, overlap, cut marks, labels, and "tile large
 pages" only — every option it offers, per the standing rule on option sets.
+
+**Built.** Pages tab › *Sizing*: **Size** (the old four scale choices) or
+**Poster**. Poster offers:
+- *Tile scale* in percent (10–5000);
+- *Overlap* in millimetres (0–100);
+- *Cut marks* and *Labels*;
+- *Tile only large pages*.
+
+All five are remembered. A caption under the options reads, for example,
+*7 across × 6 down = 42 sheets, assembling to 1680 × 1188 mm*. Each sheet is
+its own step in the preview. Cut marks and the label (file name, row and
+column) print in an 18 pt strip along the sheet's top and left edges, so they
+never cover the drawing. With either one on, a poster can therefore need a
+few more sheets. The Position tab says that page positions do not apply to a
+poster.
+
+**Driven.** `poster_printing_tiles_the_page_across_sheets` passes on the
+benchmark CAD drawing: 4 sheets at 100 %, and 42 at 400 %. The screenshot
+shows the drawing's top-left corner on sheet 1.
+
+**Not driven.** Printed marks and labels (unit-tested only), and overlap.
+
+**Found on the way.** Pressing Enter to confirm a number typed into the
+print dialog also pressed Print. The first Enter now confirms the field and
+the second prints. The driven check caught this by spooling 42 real sheets,
+which were cancelled at about 18. The check now asserts that nothing spools.
+
+**Engine requests.** G040 (the engine carries the marks and labels flags but
+nothing draws them) and G041 (the label needs a whole layout).
 
 ## O232 — **BUILT AND DRIVEN — awaiting your verdict** — an optional colour mode for the icons, subtle, in the manner of Word and SolidWorks
 

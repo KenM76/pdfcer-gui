@@ -376,6 +376,11 @@ mod markup;
 
 pub use markup::*;
 
+/// Render mode and single-run width words.
+mod runtext;
+
+pub use runtext::*;
+
 // ===========================================================================
 // ★ The selected object's geometry — X, Y, W, H typed rather than dragged
 //

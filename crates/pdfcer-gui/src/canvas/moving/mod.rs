@@ -402,12 +402,12 @@ pub enum MoveSubject {
 /// no decomposition anywhere near the test that proves it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct MoveContext {
-    /// The paint-order index of the first selected object that is **not** a
-    /// path, if there is one.
+    /// The paint-order index of the first selected object `move_objects`
+    /// refuses on its kind — an image — asked of the engine's own guard,
+    /// `object_move_refusal`. Paths and text objects move by operand rewrite.
     ///
-    /// Operand translation is path-only, and `move_objects` refuses the WHOLE
-    /// call over a single non-path member rather than moving the paths and
-    /// leaving a text object behind — a partial application that would read as
+    /// `move_objects` refuses the WHOLE call over a single such member rather
+    /// than moving the rest and leaving an image behind — a partial application that would read as
     /// a rendering fault rather than as a refusal. The *index* is carried
     /// rather than a bare `bool` because the engine's own error carries it for
     /// exactly this purpose: a refusal that cannot say which object refused is
@@ -929,21 +929,24 @@ fn context(
     let entry = selection.entered_object();
     let entered = entry.map(|e| e.object);
     Some(MoveContext {
-        non_path: selection
-            .object_indices_on(page)
-            .into_iter()
-            .find(|&i| provider.part_kind(i) != Some(PartKind::Subpath)),
+        non_path: selection.object_indices_on(page).into_iter().find(|&i| {
+            provider
+                .page_objects()
+                .objects
+                .get(i)
+                .is_none_or(|o| pdfcer_core::vector::edit::object_move_refusal(o, i).is_some())
+        }),
         part_kind: entered.and_then(|target| provider.part_kind_of(target)),
         run_move: run_move(selection, page, provider),
     })
 }
 
-/// **The engine's own move guard, asked of EVERY selected chunk**, run once
-/// per frame of the drag.
+/// **The engine's set move guard, asked of every run of every selected
+/// chunk at once** — the guard `EditSession::move_text_runs` runs — once per
+/// frame of the drag.
 ///
-/// Answers the first block found over the whole selected set, or `None` when
-/// every one of them would move. That is what makes a multi-chunk drag refuse
-/// *whole*: obligation 3 in this module's header says no ghost may be drawn
+/// Answers the engine's refusal of the whole set, or `None` when it moves.
+/// That is what makes a multi-chunk drag refuse *whole*: obligation 3 in this module's header says no ghost may be drawn
 /// for a move that will not happen, and a set is a move that will not happen
 /// as soon as one member of it cannot go.
 ///
@@ -963,8 +966,8 @@ fn context(
 /// that rung, and the condition is written here once rather than being
 /// re-derived where it is read.
 ///
-/// The cost is a `Vec::get` and two enum comparisons inside the engine per
-/// selected chunk, over a decomposition the provider has already built.
+/// The cost is a few comparisons inside the engine per selected run, over a
+/// decomposition the provider has already built.
 fn run_move(
     selection: &SelectionState,
     page: usize,
@@ -974,10 +977,16 @@ fn run_move(
         return None;
     }
     let object = selection.entered_object()?.object;
-    selection
-        .selected_parts_on(page, object)
+    let lines = selection.selected_parts_on(page, object);
+    if lines.is_empty() {
+        return None;
+    }
+    let runs: Vec<usize> = lines
         .into_iter()
-        .find_map(|line| provider.text_line_move_refusal_of(object, line))
+        .filter_map(|line| provider.text_line_runs_of(object, line))
+        .flatten()
+        .collect();
+    provider.text_runs_move_refusal_of(object, &runs)
 }
 
 /// The entered anchor's current page-space position, or `None` if the object's

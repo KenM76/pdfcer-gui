@@ -30,7 +30,7 @@ grepping it — a count only goes stale, a name can be born false.
 
 | What | Command | What the command alone will not tell you |
 |---|---|---|
-| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `c5a80c3b` — a **branch** pin with no `rev`, so cargo re-resolves it opportunistically and it moves with no `cargo update` on our side. Re-read the lock in the same breath as quoting it; never carry a sha forward from a paragraph written an hour ago. `check-pin-citation.sh` reads this row's third cell and `FEATURES.md`'s first `**Updated:**` line, and fails if either disagrees with the lock |
+| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `5a901336` — a **branch** pin with no `rev`, so cargo re-resolves it opportunistically and it moves with no `cargo update` on our side. Re-read the lock in the same breath as quoting it; never carry a sha forward from a paragraph written an hour ago. `check-pin-citation.sh` reads this row's third cell and `FEATURES.md`'s first `**Updated:**` line, and fails if either disagrees with the lock |
 | Engine HEAD | `git -C /d/Dev/pdfcer log --oneline -1 main` | The question is never whether the two shas MATCH — it is whether CODE has landed since the pin, because only that can falsify a sentence beginning *"the engine cannot"*. `git -C /d/Dev/pdfcer diff --stat <pin>..main -- '*.rs'` is the test; empty means such a sentence may be written. Read this log in the same breath as listing `open/`: a delivery has arrived here as a commit before it arrived as a reply three times |
 | Engine version | `grep -A1 'name = "pdfcer-core"' Cargo.lock` | — |
 | Last release | `git fetch --tags origin && gh api repos/KenM76/pdfcer-gui/releases/latest` | **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in an unfetched tree answers with an older tag and reports a commits-unreleased count wrong by a factor. Read every field back out of the API rather than inferring it from the flags passed in, and check the local zip's byte count against the asset's — agreement to the unit is the cheapest proof the upload is the file and not a truncation. The binary's own stamp and `published_at` sit twelve to twenty minutes apart on every release; label which clock |
@@ -68,12 +68,11 @@ on, and the colour is a settings swatch written to the preferences file as
 `ocr_layer_colour` and read back on the next run. Both carry unit coverage and
 **neither has a driven check yet** — the owed ones are in `DESIGNS.md`.
 Not built: the second view, and every editing verb.
-Blocked: **G034** (no write path sets text render mode, so insert and rebuild
-print visible ink over the scan), **G035** (no merge verb), **G038** (no
-box-resize verb). Carried as a risk rather than blocked: **G037** — the two
-text models share no index space, so the shell joins them by byte position and
-a mismatch edits the wrong word silently. Unasked-for and filed: **G036** —
-re-running OCR stacks a second invisible copy of every word. Also standing:
+Wired against engine `5a901336`, built and undriven: render mode and fit-to-width
+(**G034**, **G038**; the add-text half of G034 is not wired), merge runs
+(**G035**), glyph-to-run resolution by the engine (**G037**), re-run OCR
+replaces the old layer plus Remove OCR text (**G036**).
+Also standing:
 `D:\dev\OCRcer\` is a second, MIT-model OCR engine being built for this project
 — **design to `pdfcer_core::ocr::OcrEngine`, never to OCRcer**, and treat
 `reports_confidence()` as an R8 capability (`ocrs` answers `false`).

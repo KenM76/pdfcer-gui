@@ -228,6 +228,8 @@ mod paint;
 /// `pub` for [`text`]'s reason: `crate::panels::PanelsState` holds its state,
 /// because the face list costs a provenance extraction and a pre-flight.
 pub mod refusedchar;
+/// One text run's width, typed in points (`G038`).
+mod runwidth;
 
 pub mod swatch;
 /// ★ The **selected text's** face, size, weight and colour — O37's Font
@@ -504,6 +506,7 @@ fn body_sections(
     // of it", which is the order `RIBBON_IA.md` §5.6 asks a properties surface
     // to use.
     let drew_text_object = textobject::section(ui, doc, state.text_object_mut(), actions);
+    let drew_run_width = runwidth::section(ui, doc, actions);
     let drew_geometry = geometry::section(ui, doc, state.geometry_mut(), actions);
     let drew_paint = paint::section(ui, doc, actions);
     // ★★★ **BOUND** — `OPERATOR_REQUESTS.md` O75: *has anything in this panel
@@ -539,6 +542,7 @@ fn body_sections(
         // a sibling drawing is a predicate that breaks when the sibling is
         // gated on something new.
         || drew_text_object
+        || drew_run_width
         // ★★★ And so is the PAINT section, whose answer must not be discarded.
         //
         // Discarding it is harmless only while `paint::section` draws for a

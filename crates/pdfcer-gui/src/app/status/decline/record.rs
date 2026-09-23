@@ -266,6 +266,12 @@ pub(crate) fn record_unshare(why: crate::text::unshare::UnshareRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::Unshare(why)));
 }
 
+/// Record why `format.merge_text_runs` merged nothing. A success is narrated
+/// through the funnel's disclosures instead.
+pub(crate) fn record_run_merge(why: crate::text::runmerge::RunMergeRefusal) {
+    LAST.with_borrow_mut(|slot| *slot = Some(Declined::RunMerge(why)));
+}
+
 /// Record that `file.save_copy` was given a destination and produced no file.
 ///
 /// Called from `crate::app::save::write_and_report`, which is in the **apply**
@@ -448,4 +454,12 @@ pub(crate) fn record_field_rename_refusal(declined: Declined) {
 /// which is the exact defect the variant exists for.
 pub(crate) fn record_markup_node_refused(why: crate::text::markup::NodeEditRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::MarkupNodeRefused(why)));
+}
+
+/// Record that an OCR-layer write or removal did nothing, and why.
+///
+/// Called from inside the edit closure in `crate::app::actions`, so the
+/// funnel's floor yields to this sentence rather than the generic one.
+pub(crate) fn record_ocr_layer(why: crate::text::ocr::OcrLayerRefusal) {
+    LAST.with_borrow_mut(|slot| *slot = Some(Declined::OcrLayer(why)));
 }

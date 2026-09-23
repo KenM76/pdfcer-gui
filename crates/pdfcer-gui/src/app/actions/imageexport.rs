@@ -264,6 +264,9 @@ pub struct ImagePlan {
     /// carried anyway, so that switching format and switching back does not
     /// lose the number the operator chose.
     pub quality: u8,
+    /// SVG and EMF: write text as text (`SvgText::KeepText` /
+    /// `EmfText::KeepText`) rather than outlines. Ignored by the raster formats.
+    pub keep_text: bool,
 }
 
 impl ImagePlan {
@@ -604,6 +607,7 @@ mod tests {
             dpi: 300.0,
             transparent,
             quality: 90,
+            keep_text: false,
         }
     }
 

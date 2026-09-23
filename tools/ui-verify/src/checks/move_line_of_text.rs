@@ -20,20 +20,20 @@
 //! backlog gate can see it (`ENGINE_BACKLOG.md`) so that the delivery arrives
 //! as a failing gate rather than as a quietly wrong assertion.
 //!
-//! # What it asserts: four drags, four answers, one document
+//! # What it asserts: four drags, three answers, one document
 //!
-//! A line move succeeds on most lines and refuses on three shapes, and the
-//! operator is shown a different sentence for each refusal. So the check
-//! drives all four answers against one fixture:
+//! A line move succeeds on most lines, including one written in pieces whose
+//! joins carry no position, and refuses on two shapes, each with its own
+//! sentence. So the check drives four drags against one fixture:
 //!
 //! | the line under the pointer | what must happen |
 //! |---|---|
-//! | one written in two pieces, the join having no position of its own | refused, *a piece inside this line has no position* |
+//! | one written in two pieces, the join having no position of its own | **it MOVES**, both pieces as one set |
 //! | one that states its own position, with no successor | **it MOVES** |
 //! | one the NEXT line's position is measured from | refused, *moving it would drag that line along too* |
 //! | one whose position this document does not state | refused, *there is no position here to change* |
 //!
-//! ★★★ **The row that MOVES is not a bonus, it is what makes the other three
+//! ★★★ **The rows that MOVE are not a bonus, they are what make the other two
 //! mean something.** A table of refusals alone passes for ever against the
 //! build this check was originally written for — the one that refused every
 //! line move. A check that cannot fail on the dangerous build is not a check.
@@ -154,8 +154,8 @@
 //! operators at 12 pt on a 612 × 792 page — three horizontal, then a pair
 //! turned a quarter turn — with a positioning operator in front of three of
 //! them and **none** in front of the other two. Grouped into visual lines that
-//! is **four** lines producing all four of the engine's answers in one
-//! document, which is what [`AIMS`] drives.
+//! is **four** lines: two that move and one for each of the engine's two
+//! line-move refusals, in one document, which is what [`AIMS`] drives.
 //! `tools/gen-inherited-runs-fixture.py` builds it and carries the reasoning;
 //! `fixtures/inherited-runs.PROVENANCE.md` carries the measured spans the aims
 //! in [`AIMS`] were computed from.
@@ -263,9 +263,10 @@ const PAGE: usize = 0;
 /// which decomposes the same file.
 ///
 /// ★★ **The aim is not asserted directly, and it does not need to be.** The
-/// four lines produce four *different* answers, so an aim that landed on the
-/// wrong one produces the wrong answer and this check fails — loudly, naming
-/// what it got. That is the property a table of four buys that four separate
+/// two refusing lines produce different answers and differ from the two that
+/// move, so an aim that landed on the wrong one mostly produces the wrong
+/// answer and this check fails — loudly, naming what it got. That is the
+/// property a table of four buys that four separate
 /// checks against four separate fixtures could not: the discriminating power
 /// is in the document, not in the harness's arithmetic.
 ///
@@ -280,10 +281,7 @@ const AIMS: [Aim; 4] = [
     Aim {
         what: "the first line, written in two pieces, the second of which has no position",
         at: (87.0, 704.0),
-        expect: Expect::Declines {
-            reason: "line-piece-has-no-position",
-            recorded: "text-line-piece-has-no-position",
-        },
+        expect: Expect::Moves,
     },
     Aim {
         what: "the second line, which states its own position and nothing follows on from it",
@@ -341,8 +339,8 @@ enum Expect {
 /// `move-text-line page=0 n=N epoch=N disclosures=…`.
 ///
 /// ★ `n=` is the number of show operators the line is written in, not `1`.
-/// One `move_text_run` is issued per piece and the whole set is folded into
-/// one undo step, so a line a producer wrote as nine `Tj`s reports `n=9`.
+/// The pieces go to one `move_text_runs` as a set, one undo step, so a line
+/// a producer wrote as nine `Tj`s reports `n=9`.
 ///
 /// ★★ Asserted instead of `canvas-move`, and the difference is the whole
 /// point of asserting it. `canvas-move` is written by the canvas when it
@@ -670,9 +668,9 @@ fn moved(
             .map(|l| l.raw.clone());
         return Ok(Some(format!(
             "★★★ THE DEFECT: dragging {what} did not move it. No `{MOVED_EVENT}` line \
-             follows the release, so the edit never reached `EditSession::move_text_run` \
+             follows the release, so the edit never reached `EditSession::move_text_runs` \
              through the funnel. {} This line states its own position and has no successor \
-             that depends on it, so `text_run_move_refusal` answers `None` for it and the \
+             that depends on it, so `text_run_move_refusal_of_set` answers `None` for it and the \
              engine would accept the move — which means the refusal, if there was one, is \
              this shell's and not the document's. That is `OPERATOR_REQUESTS.md` O188 \
              unfixed. Trace: {}.",

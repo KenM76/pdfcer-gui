@@ -459,6 +459,9 @@ pub(crate) struct PagePlan {
     /// whose value is thin lines — that is the difference an operator notices
     /// first.
     pub(crate) render_scale: f64,
+    /// The poster sheet this is, when poster mode tiled the page; see
+    /// `dialogs::print::poster`. `None` for an ordinary page.
+    pub(crate) tile: Option<pdfcer_gui_base::poster::Tile>,
 }
 
 /// The resolution a job will render at, and whether pdfcer's cap bound.
@@ -901,6 +904,7 @@ pub(crate) fn plan(
                 index: plan.index,
                 placement: from_engine_placement(plan.placement),
                 render_scale: plan.render_scale,
+                tile: None,
             })
             .collect(),
     })
@@ -1278,16 +1282,19 @@ mod tests {
                     index: 4,
                     placement: placed(false),
                     render_scale: 4.0,
+                    tile: None,
                 },
                 PagePlan {
                     index: 0,
                     placement: placed(true),
                     render_scale: 4.0,
+                    tile: None,
                 },
                 PagePlan {
                     index: 2,
                     placement: placed(true),
                     render_scale: 4.0,
+                    tile: None,
                 },
             ],
         };
@@ -1300,6 +1307,7 @@ mod tests {
                 index: 0,
                 placement: placed(false),
                 render_scale: 1.0,
+                tile: None,
             }],
             ..job
         };

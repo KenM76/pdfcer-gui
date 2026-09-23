@@ -280,6 +280,10 @@ pub(crate) enum Declined {
     /// act: [`Self::still_true`] answers `true` unconditionally, deliberately
     /// **not** on `selection_in_form` the way [`Self::InsideForm`] does.
     Unshare(crate::text::unshare::UnshareRefusal),
+    /// **`format.merge_text_runs` was refused**, by the preflight on the press
+    /// or by the engine. Nothing changes on the page, so the sentence is the
+    /// only report. Retired by the operator's next act.
+    RunMerge(crate::text::runmerge::RunMergeRefusal),
     /// **The Settings window's Save wrote nothing.**
     ///
     /// # ★ Why this is not [`Self::SaveFailed`], although both are failed writes
@@ -1093,30 +1097,10 @@ pub(crate) enum Declined {
     ///
     /// The wording is [`crate::text::arrange::run_would_drag_the_next_line`].
     TextRunWouldDragTheNextLine,
-    /// ★★★ **A drag on a line one of whose PIECES has no position of its
-    /// own** — O214's refusal, and the third of the set.
-    ///
-    /// A producer may write one visual line as several show operators, and an
-    /// operator has no way to see the joins. When a piece other than the first
-    /// takes its origin from the piece before it, moving the line means moving
-    /// that predecessor, which the single-run verb declines because it cannot
-    /// be told the follower is moving too (request `G030`). pdfcer declines the
-    /// whole line rather than move the pieces it can and leave the rest.
-    ///
-    /// # ★★ Why this is not [`Self::TextRunHasNoPositionOfItsOwn`]
-    ///
-    /// That sentence states *this line carries on from the line above it*,
-    /// which here is **false** — the line has a position, it is one of its
-    /// fragments that does not. An operator who believes it looks at the row
-    /// above, finds it unremarkable, and concludes the program is guessing.
-    /// Same remedy, different fact: the rule the pair above was split under.
-    ///
-    /// Same `retire`-only class and for the same reason: the wording states a
-    /// property of the document, and the remedy it names changes the selection.
-    ///
-    /// The wording is
-    /// [`crate::text::arrange::line_piece_has_no_position_of_its_own`].
-    TextRunPieceHasNoPositionOfItsOwn,
+    /// An OCR-layer write or File ▸ Remove OCR text did nothing: a layer was
+    /// already present under a Refuse policy, one went missing mid-removal, or
+    /// the document has none. Worded in [`crate::text::ocr::OcrLayerRefusal`].
+    OcrLayer(crate::text::ocr::OcrLayerRefusal),
 }
 
 impl Declined {

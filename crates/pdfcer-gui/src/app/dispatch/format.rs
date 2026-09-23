@@ -81,6 +81,8 @@ pub(crate) fn handles(id: &str) -> bool {
             // same way: from a LEAF, which is the only operand either command
             // can be built from.
             | "format.unshare_form"
+            // Joins the selected runs of one text object (G035).
+            | "format.merge_text_runs"
             // The Font group. All five, including the three whose
             // ribbon control is an `Item::Custom` — a custom control REPORTS
             // (it parks an operand and returns a token) and this file ACTS, so
@@ -534,6 +536,41 @@ pub(crate) fn dispatch(
         // not. Reusing it would state the exact inverse of what happened.
         // ★ Guarded — it WRITES TO THE DOCUMENT (`EditSession::unshare_form`)
         // and is reachable from Read by the same route as the re-aims above.
+        "format.merge_text_runs" if !app.capabilities().edit_content => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                "format-merge-text-runs-declined reason=mode-cannot-edit-content".to_owned()
+            });
+        }
+        // The operand is re-derived from the selection on the press, so a
+        // stale menu cannot merge runs the preflight has not just approved.
+        "format.merge_text_runs" => {
+            if let Status::Open(doc) = &app.status {
+                let page = doc.view.page_index;
+                let merge = {
+                    let targets = doc.page_objects();
+                    crate::canvas::runmerge::operand(targets.as_deref(), &doc.selection, page)
+                };
+                use crate::text::runmerge::RunMergeRefusal;
+                match merge {
+                    Some(merge) => match merge.refusal {
+                        None => actions.push(Action::Vector(
+                            crate::app::actions::VectorAction::MergeTextRuns {
+                                page,
+                                object: merge.object,
+                                runs: merge.runs,
+                            },
+                        )),
+                        Some(why) => crate::app::status::decline::record_run_merge(
+                            RunMergeRefusal::of_vector(&why),
+                        ),
+                    },
+                    None => {
+                        crate::app::status::decline::record_run_merge(RunMergeRefusal::NeedsTwoRuns)
+                    }
+                }
+            }
+        }
         "format.unshare_form" if !app.capabilities().edit_content => {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI

@@ -181,6 +181,8 @@ pub(super) struct Context {
     settings: pdfcer_core::settings::Settings,
     /// The printable area in ce dimensions, from the planned device geometry.
     printable_pt: (f64, f64),
+    /// The fixed line width on paper, points (O233); `None` when off.
+    lines_pt: Option<f64>,
 }
 
 impl Context {
@@ -194,11 +196,13 @@ impl Context {
         scope: pdfcer_render::AnnotationScope,
         settings: &pdfcer_core::settings::Settings,
         printable_pt: (f64, f64),
+        lines_pt: Option<f64>,
     ) -> Self {
         Self {
             scope,
             settings: settings.clone(),
             printable_pt,
+            lines_pt,
         }
     }
 
@@ -215,8 +219,17 @@ impl Context {
     /// Building the key in two places instead — one for the texture and one
     /// for the verdict — is the exact shape of drift this project has been
     /// caught by repeatedly: two readings of one rule, kept level by memory.
-    pub(super) fn preview_key(&self, page: usize) -> PreviewKey {
-        PreviewKey::new(page, self.scope, &self.settings)
+    ///
+    /// `placement` is the page's paper points per page point; it joins the
+    /// key only while a fixed line width is on, because only then does it
+    /// change the pixels.
+    pub(super) fn preview_key(&self, page: usize, placement: f64) -> PreviewKey {
+        PreviewKey::new(
+            page,
+            self.scope,
+            &self.settings,
+            self.lines_pt.map(|pt| (pt, placement)),
+        )
     }
 }
 

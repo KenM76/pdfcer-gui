@@ -210,10 +210,6 @@ pub mod reflow;
 /// middle row of it exists.
 pub mod report;
 pub use caret::{backspace, delete_forward, insert, word_left, word_right};
-/// **Which single show operator a keystroke changed** — the narrowing that
-/// keeps a title-block line where the producer put it while engine request
-/// `G028` is open. Delete this module when `G028` lands.
-pub mod narrow;
 /// **Naming the exact show operator, and the exact buffer it lives in** — the
 /// one producer of `(pinned_span, EditTarget)` in this shell, shared by the
 /// caret's `edit_text` and the restyle verbs' `format_text`.

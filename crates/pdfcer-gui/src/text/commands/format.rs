@@ -90,6 +90,21 @@ pub const fn format_select_text_line() -> CommandText {
     )
 }
 
+/// `format.merge_text_runs`
+///
+/// The tooltip is static, so it states the conditions the greyed row stands
+/// for; the exact refusal reaches the status line if the press is refused.
+#[must_use]
+pub const fn format_merge_text_runs() -> CommandText {
+    CommandText::new(
+        "Merge text runs",
+        "Join the selected pieces of one line of text into a single run, keeping the first \
+         piece's font and stretching it over the same width. Greyed when the pieces are not \
+         next to each other, differ in font, size, spacing or colour, or when merging would \
+         move the text after them. Undo reverses it.",
+    )
+}
+
 /// `format.select_form`
 ///
 /// **The deliberate second act that pays for the deep hit test.**

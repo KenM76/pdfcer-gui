@@ -215,6 +215,9 @@ pub struct ExportImagePrefs {
     /// setting that survives being hidden is one the operator does not have to
     /// re-find when they come back to the format it belongs to.
     pub quality: u8,
+    /// SVG and EMF: keep text as text instead of outlines. Off by default,
+    /// because outlines look the same in every program.
+    pub keep_text: bool,
 }
 
 impl Default for ExportImagePrefs {
@@ -249,6 +252,7 @@ impl Default for ExportImagePrefs {
             // is `#[non_exhaustive]` and this is a `u8` in a window, not an
             // options struct.
             quality: 90,
+            keep_text: false,
         }
     }
 }
@@ -600,6 +604,9 @@ pub(super) fn parse_key(prefs: &mut ExportPrefs, key: &str, value: &str) -> KeyO
                 .map(|n| n.clamp(MIN_JPEG_QUALITY, MAX_JPEG_QUALITY)),
             prefs.image.quality
         ),
+        "export_image_keep_text" => {
+            store!(super::opening::bool_from_key(value), prefs.image.keep_text)
+        }
 
         // --- Export text ----------------------------------------------------
         "export_text_pages" => store!(page_scope_from_key(value), prefs.text.scope),
@@ -706,6 +713,19 @@ pub(super) fn write_block(prefs: &ExportPrefs, out: &mut String) {
     // ui-text-exempt: a file KEY, as above.
     out.push_str("export_image_quality = ");
     out.push_str(&prefs.image.quality.to_string());
+    out.push('\n');
+
+    out.push_str(
+        "\n\
+         # export_image_keep_text: true | false\n\
+         # svg and emf only. true writes text as words that can be selected\n\
+         # and searched; false writes it as outlines, which look the same in\n\
+         # every program. An svg carries its fonts; an emf cannot, so its\n\
+         # words are drawn in whatever font of that name is installed.\n",
+    );
+    // ui-text-exempt: a file KEY, as above.
+    out.push_str("export_image_keep_text = ");
+    out.push_str(super::opening::bool_key(prefs.image.keep_text));
     out.push('\n');
 
     // --- Export text --------------------------------------------------------

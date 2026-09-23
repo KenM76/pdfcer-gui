@@ -504,6 +504,18 @@ pub enum TextStyleRefusal {
     Other,
     /// Some of the selection was restyled before something stopped the rest.
     PartOnly,
+    /// The engine rejected the render mode (outside 0..=7).
+    RenderModeInvalid,
+    /// A render mode combined with synthetic bold, which is itself a mode.
+    RenderModeWithFakeBold,
+    /// A run width that is zero, negative or not a number.
+    WidthNotPositive,
+    /// The run's font carries no advance widths to scale against.
+    WidthNoMetrics,
+    /// The run carries per-glyph spacing adjustments (`TJ` kerning).
+    WidthKerned,
+    /// The run has no baseline length on the page to measure along.
+    WidthNoBaseline,
 }
 
 impl TextStyleRefusal {
@@ -582,6 +594,22 @@ impl TextStyleRefusal {
             // and that Ctrl+Z takes back what did happen.
             Self::PartOnly => {
                 "Part of the selection was restyled before that happened. Ctrl+Z takes back what did change."
+            }
+            Self::RenderModeInvalid => {
+                "pdfcer does not know that way of drawing text and changed nothing. Pick one of the modes in the list."
+            }
+            Self::RenderModeWithFakeBold => {
+                "This text is made bold by outlining its letters, which already sets how it is drawn. Turn bold off first, then change how the text is drawn."
+            }
+            Self::WidthNotPositive => "Type a width greater than zero. Nothing changed.",
+            Self::WidthNoMetrics => {
+                "This text's font does not say how wide its letters are, so pdfcer cannot fit it to a width. Nothing changed."
+            }
+            Self::WidthKerned => {
+                "This text has spacing set between individual letters, and fitting it to a width would change that spacing. pdfcer changed nothing."
+            }
+            Self::WidthNoBaseline => {
+                "This text has no length along its line on the page, so it has no width to set. Nothing changed."
             }
         };
         std::borrow::Cow::Borrowed(fixed)
@@ -887,6 +915,18 @@ pub const fn text_style_faked_warning() -> &'static str {
 // ARGUMENT — that "pdfcer faked it" without the reason invites the operator to
 // go looking for a bold face that is right there and does not work — and that
 // argument is now carried by `text_style_faked`'s doc comment.
+
+/// Disclosure: the restyled text is now invisible (render mode 3 or 7).
+#[must_use]
+pub const fn text_render_mode_invisible() -> &'static str {
+    "That text is now invisible: it can still be searched, selected and copied, but it is not drawn on screen or in print. This is how an OCR text layer is stored."
+}
+
+/// Disclosure: a fitted run's following text was held where it was.
+#[must_use]
+pub const fn text_run_width_held() -> &'static str {
+    "The text was stretched or squeezed to the width you typed. Text after it on the same line stayed where it was, so the gap between them changed."
+}
 
 /// Disclosure: how many separate pieces of text one gesture restyled.
 ///

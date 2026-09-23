@@ -700,6 +700,16 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
             menus::RUN_SELECT_OFFERED,
             crate::canvas::runmenu::parked(&ctx).offered(),
         ));
+        // The frame's conditions predate a right-click that moved the
+        // selection, so the merge row is re-asked here.
+        let merge = crate::canvas::runmerge::operand(targets, selection, page);
+        overrides.extend([
+            (menus::TEXT_MERGE_OFFERED, merge.is_some()),
+            (
+                menus::TEXT_MERGE_ALLOWED,
+                merge.as_ref().is_some_and(|m| m.allowed()),
+            ),
+        ]);
     }
     let conditions = host.with_conditions(&overrides);
 

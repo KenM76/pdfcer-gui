@@ -56,6 +56,7 @@
                     caption: "Recognise",
                     items: [
                         Command(id: "file.ocr", size: Large),
+                        Command(id: "file.remove_ocr"),
                     ],
                     collapse: 4,
                 ),
@@ -505,6 +506,7 @@
                         Command(id: "format.properties"),
                         Command(id: "format.select_form", visible_when: "mode.edit_content"),
                         Command(id: "format.unshare_form", visible_when: "mode.edit_content"),
+                        Command(id: "format.merge_text_runs", visible_when: "mode.edit_content"),
                         Command(id: "format.delete", visible_when: "selection.delete_permitted"),
                     ],
                 ),
@@ -614,6 +616,7 @@
                 Command(id: "format.select_text_line", visible_when: "canvas.run_select_offered"),
                 Command(id: "format.select_form"),
                 Command(id: "format.unshare_form"),
+                Command(id: "format.merge_text_runs", visible_when: "selection.text_merge_offered"),
                 Command(id: "edit.redact_selection"),
                 Command(id: "format.delete", visible_when: "selection.delete_permitted"),
             ],

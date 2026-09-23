@@ -74,6 +74,7 @@ fn the_image_default_is_what_the_dialog_used_to_hard_code() {
     assert!((prefs.dpi - 300.0).abs() < f32::EPSILON);
     assert!(prefs.transparent);
     assert_eq!(prefs.quality, 90);
+    assert!(!prefs.keep_text);
 }
 
 /// ★ The Export-text window opens exactly as it did before O196.
@@ -526,6 +527,7 @@ fn everything_changed() -> ExportPrefs {
             dpi: 600.0,
             transparent: false,
             quality: 72,
+            keep_text: true,
         },
         text: ExportTextPrefs {
             scope: PageScope::CurrentPage,
@@ -588,7 +590,7 @@ fn every_export_preference_round_trips_through_the_file() {
     let mut read = ExportPrefs::default();
     let accepted = parse_block(&out, &mut read);
 
-    assert_eq!(accepted, 12, "twelve keys are declared in this module");
+    assert_eq!(accepted, 13, "thirteen keys are declared in this module");
     assert_eq!(read, written, "a value changed on its way through the file");
     assert_ne!(
         read,
@@ -600,7 +602,7 @@ fn every_export_preference_round_trips_through_the_file() {
 
 /// The default set round-trips too, and is written unconditionally.
 ///
-/// The second half is the point: a fresh profile must still find all twelve keys
+/// The second half is the point: a fresh profile must still find all thirteen keys
 /// in the file, with their comment blocks, because *a preference nobody can
 /// discover is a preference nobody has.*
 #[test]
@@ -609,7 +611,7 @@ fn the_defaults_are_written_too_so_the_file_teaches_its_own_vocabulary() {
     write_block(&ExportPrefs::default(), &mut out);
 
     let mut read = ExportPrefs::default();
-    assert_eq!(parse_block(&out, &mut read), 12);
+    assert_eq!(parse_block(&out, &mut read), 13);
     assert_eq!(read, ExportPrefs::default());
 
     // Each key's own comment block names it, so an operator reading the file

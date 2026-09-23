@@ -431,8 +431,8 @@ pub enum VectorAction {
         /// `ObjectModelProvider::text_line_count` produces and
         /// [`Self::DeleteTextLine`] already uses. **Nothing renumbers**: the
         /// move family rewrites operands in place, so the selection survives
-        /// the drag naming the same line, and the apply arm may therefore call
-        /// `move_text_run` straight along the line's run range.
+        /// the drag naming the same line. The apply arm hands the line's runs
+        /// to `EditSession::move_text_runs` as one set.
         line: usize,
         /// Horizontal displacement, PDF user-space points.
         dx: f64,
@@ -440,7 +440,7 @@ pub enum VectorAction {
         dy: f64,
     },
     /// ★★★ **Displace one line of a text object INSIDE a form XObject** —
-    /// `EditSession::move_text_run_in_form`.
+    /// `EditSession::move_text_runs_in_form`.
     ///
     /// ★★ **This is the variant O188 is actually about.** On the operator's
     /// SolidWorks sets the title block *is* a form XObject, drawn once per
@@ -472,28 +472,18 @@ pub enum VectorAction {
         dy: f64,
     },
     /// ★★★ **Displace SEVERAL chunks of one text object by one drag** —
-    /// `EditSession::move_text_run` once per run of every named line, folded
-    /// into one undo entry.
+    /// `EditSession::move_text_runs` over every run of every named line: one
+    /// command, one press of Undo.
     ///
-    /// # Why a loop is safe here, where the module header forbids one
+    /// A set is planned whole, so a run positioned relative to its
+    /// predecessor moves with it when both are in the set.
     ///
-    /// *"Never loop the singular verbs over a selection"* is about verbs that
-    /// **excise byte spans**: each call invalidates the offsets the next was
-    /// planned against. The move family rewrites operands **in place** and adds
-    /// no operator that a run index counts, so nothing renumbers and every
-    /// index in `lines` still names the same chunk after the call before it.
-    /// [`Self::MoveTextLine`] already depends on exactly that to walk one
-    /// line's runs; this walks several lines' runs for the identical reason.
+    /// # The refusal is asked of the whole set, before the ghost
     ///
-    /// The engine has no plural run verb — `G030` — so `pieces` counts every
-    /// run across every line and `coalesce_last` folds them. One drag is one
-    /// press of Undo, as it is for the singular variant.
-    ///
-    /// # The refusal is asked of every line, before the ghost
-    ///
-    /// `crate::canvas::moving::run_move` asks the engine's own guard of each
-    /// selected chunk and refuses the set whole if any one of them is blocked,
-    /// so this arm cannot be reached holding a line the planner will decline.
+    /// `crate::canvas::moving::run_move` asks the engine's set guard,
+    /// `text_run_move_refusal_of_set`, and refuses the drag whole if it
+    /// declines, so this arm cannot be reached holding a set the planner will
+    /// decline.
     /// Moving the movable ones and leaving the rest would read as a rendering
     /// fault rather than as a refusal.
     MoveTextLines {
@@ -712,6 +702,17 @@ pub enum VectorAction {
         objects: Vec<usize>,
         /// The transform, **in PAGE space**. See the variant's docs.
         matrix: Matrix,
+    },
+    /// Join consecutive text runs of one page text object into one run
+    /// (`EditSession::merge_text_runs`, default `MergeOptions`). One undo entry,
+    /// `CommandKind::MergeTextRuns`; later runs renumber down by `runs.len() - 1`.
+    MergeTextRuns {
+        /// The 0-based page.
+        page: usize,
+        /// The page object index of the text object.
+        object: usize,
+        /// Ascending, consecutive run indices; at least two.
+        runs: Vec<usize>,
     },
 }
 
@@ -1112,18 +1113,9 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                 .page_objects()
                 .and_then(|provider| provider.text_line_runs(object, line))
             {
-                let pieces = runs.len();
-                vector_edit_on_page(doc, "move-text-line", page, pieces, |session| {
-                    let mut disclosures = Vec::new();
-                    // ASCENDING is safe where descending was necessary above:
-                    // `plan_move_text_run` rewrites operands in place and puts
-                    // the run back, so nothing renumbers and no byte span this
-                    // loop will visit has moved.
-                    for run in runs.clone() {
-                        disclosures.extend(session.move_text_run(page, object, run, dx, dy)?);
-                    }
-                    fold_undo(session, pieces, CommandKind::MoveTextRun, &mut disclosures);
-                    Ok::<_, pdfcer_core::edit::EditError>(disclosures)
+                let runs: Vec<usize> = runs.collect();
+                vector_edit_on_page(doc, "move-text-line", page, runs.len(), |session| {
+                    session.move_text_runs(page, object, &runs, dx, dy)
                 });
             }
         }
@@ -1140,18 +1132,11 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                     line,
                 )
             }) {
-                let pieces = runs.len();
-                vector_edit_on_page(doc, "move-text-line-in-form", page, pieces, |session| {
-                    let mut disclosures = Vec::new();
-                    for run in runs.clone() {
-                        disclosures.extend(
-                            session
-                                .move_text_run_in_form(page, leaf, run, dx, dy)
-                                .map(|outcome| outcome.disclosures)?,
-                        );
-                    }
-                    fold_undo(session, pieces, CommandKind::MoveTextRun, &mut disclosures);
-                    Ok::<_, pdfcer_core::edit::EditError>(disclosures)
+                let runs: Vec<usize> = runs.collect();
+                vector_edit_on_page(doc, "move-text-line-in-form", page, runs.len(), |session| {
+                    session
+                        .move_text_runs_in_form(page, leaf, &runs, dx, dy)
+                        .map(|outcome| outcome.disclosures)
                 });
             }
         }
@@ -1177,14 +1162,8 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                 })
                 .unwrap_or_default();
             if !runs.is_empty() {
-                let pieces = runs.len();
-                vector_edit_on_page(doc, "move-text-lines", page, pieces, |session| {
-                    let mut disclosures = Vec::new();
-                    for &run in &runs {
-                        disclosures.extend(session.move_text_run(page, object, run, dx, dy)?);
-                    }
-                    fold_undo(session, pieces, CommandKind::MoveTextRun, &mut disclosures);
-                    Ok::<_, pdfcer_core::edit::EditError>(disclosures)
+                vector_edit_on_page(doc, "move-text-lines", page, runs.len(), |session| {
+                    session.move_text_runs(page, object, &runs, dx, dy)
                 });
             }
         }
@@ -1207,19 +1186,17 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                 })
                 .unwrap_or_default();
             if !runs.is_empty() {
-                let pieces = runs.len();
-                vector_edit_on_page(doc, "move-text-lines-in-form", page, pieces, |session| {
-                    let mut disclosures = Vec::new();
-                    for &run in &runs {
-                        disclosures.extend(
-                            session
-                                .move_text_run_in_form(page, leaf, run, dx, dy)
-                                .map(|outcome| outcome.disclosures)?,
-                        );
-                    }
-                    fold_undo(session, pieces, CommandKind::MoveTextRun, &mut disclosures);
-                    Ok::<_, pdfcer_core::edit::EditError>(disclosures)
-                });
+                vector_edit_on_page(
+                    doc,
+                    "move-text-lines-in-form",
+                    page,
+                    runs.len(),
+                    |session| {
+                        session
+                            .move_text_runs_in_form(page, leaf, &runs, dx, dy)
+                            .map(|outcome| outcome.disclosures)
+                    },
+                );
             }
         }
         VectorAction::MoveNode {
@@ -1401,6 +1378,38 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                     matrix.e,
                     matrix.f,
                 )
+            });
+        }
+        VectorAction::MergeTextRuns { page, object, runs } => {
+            vector_edit_on_page(doc, "merge-text-runs", page, runs.len(), |session| {
+                session
+                    .merge_text_runs(
+                        page,
+                        object,
+                        &runs,
+                        &pdfcer_core::text_edit::merge::MergeOptions::default(),
+                    )
+                    .inspect_err(|e| {
+                        crate::app::status::decline::record_run_merge(
+                            crate::text::runmerge::RunMergeRefusal::of_format(e),
+                        );
+                    })
+                    .map(|report| {
+                        crate::diag::trace(|| {
+                            // ui-text-exempt: diagnostic trace, never displayed.
+                            format!(
+                                "merge-text-runs-applied page={page} object={object} merged={} scale={:?}",
+                                report.runs_merged, report.h_scale_change,
+                            )
+                        });
+                        let mut said = report.disclosures;
+                        if let (Some((before, after)), true) =
+                            (report.h_scale_change, said.is_empty())
+                        {
+                            said.push(crate::text::runmerge::width_changed(before, after));
+                        }
+                        said
+                    })
             });
         }
     }

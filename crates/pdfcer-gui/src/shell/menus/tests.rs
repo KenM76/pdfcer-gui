@@ -485,6 +485,7 @@ fn each_menu_holds_exactly_the_documented_items() {
                 "format.select_text_line",
                 "format.select_form",
                 "format.unshare_form",
+                "format.merge_text_runs",
                 "edit.redact_selection",
                 "format.delete",
             ][..],

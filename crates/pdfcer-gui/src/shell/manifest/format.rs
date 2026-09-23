@@ -428,6 +428,9 @@ pub(super) fn tab() -> Tab {
                     // authors nothing is a promise the dispatch arm must then
                     // break in silence.
                     command("format.unshare_form").shown_when(FONT_VISIBLE_WHEN),
+                    // Rewrites a content stream, so withheld where content is
+                    // not authored; greyed on the engine's preflight otherwise.
+                    command("format.merge_text_runs").shown_when(FONT_VISIBLE_WHEN),
                     // ★★★ **Withheld, not greyed, where the engine would refuse
                     // the delete** — `visible_when` rather than a second
                     // `enabled_when`, and the difference is R9 stated by
@@ -493,6 +496,7 @@ mod tests {
         "format.italic",
         "format.select_form",
         "format.unshare_form",
+        "format.merge_text_runs",
     ];
 
     /// Read on this tab: describe what is selected, and delete it where the

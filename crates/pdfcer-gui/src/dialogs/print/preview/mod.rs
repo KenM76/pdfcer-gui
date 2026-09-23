@@ -327,6 +327,9 @@ pub(super) struct PreviewKey {
     /// The operator's configuration, whole — see the type's own docs on why it
     /// is not the rendering fields spelled out.
     settings: pdfcer_core::settings::Settings,
+    /// The fixed line width on paper and the page's placement scale (O233);
+    /// `None` when the document's own weights print.
+    lines: Option<(f64, f64)>,
 }
 
 impl PreviewKey {
@@ -355,11 +358,21 @@ impl PreviewKey {
         page: usize,
         scope: pdfcer_render::AnnotationScope,
         settings: &pdfcer_core::settings::Settings,
+        lines: Option<(f64, f64)>,
     ) -> Self {
         Self {
             page,
             scope,
             settings: settings.clone(),
+            lines,
+        }
+    }
+
+    /// Set the fixed line width, if any, on a render at `scale` pixels per
+    /// page point.
+    pub(super) fn apply_lines(&self, options: &mut pdfcer_render::RenderOptions, scale: f64) {
+        if let Some((pt, placement)) = self.lines {
+            super::lines::apply(options, Some(pt), scale, placement);
         }
     }
 }
@@ -569,12 +582,17 @@ pub(super) fn column(
     // `egui_response_drag_predicates_are_button_agnostic.md` the unqualified
     // form fires for middle and right drags too, which would silently claim the
     // right-drag this preview may later want for a context menu.
-    let page_rect = job.plans.get(shown).and_then(|plan| {
-        inputs.page_sizes.get(plan.index).map(|&size| {
-            let (_, printable) = frames(job, rect, dialog.preview_pan, scale);
-            placed_rect(printable, plan.placement, size, scale)
-        })
-    });
+    // A poster sheet is not draggable: its position is the imposition's.
+    let page_rect = job
+        .plans
+        .get(shown)
+        .filter(|plan| plan.tile.is_none())
+        .and_then(|plan| {
+            inputs.page_sizes.get(plan.index).map(|&size| {
+                let (_, printable) = frames(job, rect, dialog.preview_pan, scale);
+                placed_rect(printable, plan.placement, size, scale)
+            })
+        });
     if response.drag_started_by(egui::PointerButton::Primary) {
         let origin = ui.input(|i| i.pointer.press_origin());
         dialog.preview_grab = match (origin, page_rect) {
@@ -623,6 +641,7 @@ pub(super) fn column(
     // operator is merely passing over.
     if response.has_focus()
         && let (Some((dx, dy)), Some(plan)) = (position::arrow_nudge(ui), job.plans.get(shown))
+        && plan.tile.is_none()
     {
         dialog.page_positions.nudge(plan.index, dx, dy);
         ui.ctx().request_repaint();
@@ -879,15 +898,28 @@ fn paint(
     // The intersection is right on both counts: its centre is inside the page
     // AND inside the canvas by construction, and it is empty only when the page
     // really has been panned off the canvas and cannot be grabbed at all.
+    // A poster sheet shows only its tile: the page is clipped to the tile's
+    // content, and the band's marks and label are drawn as the sheet has them.
+    let canvas = plan.tile.map_or(rect, |tile| {
+        super::poster::paint_band(
+            &painter,
+            printable,
+            &tile,
+            scale,
+            &super::poster::document_name(inputs.doc),
+        );
+        super::poster::on_screen(printable, tile.content_pt, scale).intersect(rect)
+    });
+    let painter = painter.with_clip_rect(canvas);
     let grabbable = placed.intersect(rect);
-    if grabbable.is_positive() {
+    if grabbable.is_positive() && plan.tile.is_none() {
         crate::diag::ui_rect(REGION_PAGE, grabbable);
     }
 
     // The rendered page, if one is available. The fallback is a flat fill — a
     // preview showing the right rectangle and no content is degraded but
     // honest; one showing a stale page would be wrong.
-    let texture = texture_for(ui.ctx(), inputs, dialog, plan.index);
+    let texture = texture_for(ui.ctx(), inputs, dialog, plan.index, plan.placement.scale);
     if let Some(texture) = texture {
         painter.image(
             texture,
@@ -907,11 +939,11 @@ fn paint(
     if texture.is_some() {
         let frame = detail::Frame {
             doc: inputs.doc,
-            key: inputs.context.preview_key(plan.index),
+            key: inputs.context.preview_key(plan.index, plan.placement.scale),
             page: plan.index,
             size,
             placed,
-            canvas: rect,
+            canvas,
             base_scale: raster_scale(size),
             print_scale: (f64::from(job.resolution.dpi) / 72.0 * plan.placement.scale) as f32,
             scope: dialog.scope,
@@ -1193,13 +1225,14 @@ fn texture_for(
     inputs: &Inputs<'_>,
     dialog: &mut PrintDialog,
     page: usize,
+    placement: f64,
 ) -> Option<TextureId> {
     // From the frame's context, not built here — see [`PreviewKey::new`].
     // The verdict cache's validity is defined by that context, so a key
     // derived from it cannot be stronger than the one the verdicts are held
     // under, which is the property that stops a remembered "the overhang is
     // blank" outliving the raster it was measured from.
-    let key = inputs.context.preview_key(page);
+    let key = inputs.context.preview_key(page, placement);
     if let Some((cached, texture, _)) = &dialog.preview_texture
         && *cached == key
     {
@@ -1210,7 +1243,8 @@ fn texture_for(
     // The SAME builder the spooler calls. See `super::render_options` for the
     // choices it encodes and why a second copy of them here would defeat the
     // preview's entire purpose.
-    let options = super::commit::render_options(dialog.scope, &inputs.doc.settings);
+    let mut options = super::commit::render_options(dialog.scope, &inputs.doc.settings);
+    key.apply_lines(&mut options, f64::from(raster_scale(size)));
     // `session.view()`, NOT `session.document()` — the view composes the
     // overlay and the staging buffer, so unsaved edits are what the operator
     // is about to print.

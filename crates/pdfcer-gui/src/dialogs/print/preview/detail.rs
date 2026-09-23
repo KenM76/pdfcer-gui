@@ -233,6 +233,7 @@ impl Detail {
         };
         let cancel = pdfcer_render::cancel::RenderCancel::new();
         let mut options = super::super::commit::render_options(frame.scope, &frame.doc.settings);
+        frame.key.apply_lines(&mut options, f64::from(want.scale));
         options.cancel = Some(cancel.clone());
         let session = std::sync::Arc::clone(&frame.doc.session);
         let (tx, rx) = mpsc::channel();

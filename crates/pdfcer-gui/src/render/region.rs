@@ -362,6 +362,16 @@ pub fn page_region(visible_canvas: (f64, f64, f64, f64), frame: PageFrame) -> Re
     Rect::from_corners(ax, ay, bx, by)
 }
 
+/// A canvas rectangle in PDF user space, **exactly** — no grid snap and no
+/// overscan. For print, where the region is a poster tile and every point of
+/// it lands on paper; [`page_region`] grows its input for panning.
+#[must_use]
+pub fn exact_region(canvas: (f64, f64, f64, f64), frame: PageFrame) -> Rect {
+    let (ax, ay) = frame.canvas_to_user(canvas.0, canvas.1);
+    let (bx, by) = frame.canvas_to_user(canvas.2, canvas.3);
+    Rect::from_corners(ax, ay, bx, by)
+}
+
 /// Where a region's raster belongs on screen, given where the whole page would
 /// have been drawn.
 ///

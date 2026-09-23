@@ -143,7 +143,7 @@ pub const fn format_hint(format: ImageFormat) -> &'static str {
         ImageFormat::Svg => {
             "Lines stay lines, so it can be scaled up without going blocky and \
              edited in Inkscape or Illustrator. Text arrives as outlines \
-             rather than as words."
+             rather than as words, unless you keep it as text below."
         }
         ImageFormat::Emf => {
             "Also lines rather than pixels, for the programs that will not \
@@ -518,7 +518,25 @@ pub const fn refused(why: Impossible) -> &'static str {
 #[must_use]
 pub fn svg_fidelity(tally: &ExportTally, dashed: usize, blends: usize) -> Vec<String> {
     // Always, and first: the one nothing counts. See clause 3 above.
-    let mut out = vec![svg_text_is_outlines().to_owned()];
+    svg_fidelity_with(
+        vec![svg_text_is_outlines().to_owned()],
+        tally,
+        dashed,
+        blends,
+    )
+}
+
+/// [`svg_fidelity`] with the text sentences supplied by the caller: the
+/// outlines sentence, or `crate::text::export_keeptext::svg_kept` when the
+/// export kept text. They lead; the recording's losses follow.
+#[must_use]
+pub fn svg_fidelity_with(
+    text: Vec<String>,
+    tally: &ExportTally,
+    dashed: usize,
+    blends: usize,
+) -> Vec<String> {
+    let mut out = text;
 
     if tally.shadings_rasterised > 0 {
         out.push(match tally.shadings_rasterised {
@@ -674,7 +692,15 @@ pub fn emf_fidelity(counts: &EmfCounts) -> Vec<String> {
     // Always, and first: the one nothing counts. `svg_fidelity`'s clause 3,
     // and the same reasoning — a disclosure that listed only *counted* things
     // would go silent on the largest surprise the format holds.
-    let mut out = vec![emf_text_is_outlines().to_owned()];
+    emf_fidelity_with(vec![emf_text_is_outlines().to_owned()], counts)
+}
+
+/// [`emf_fidelity`] with the text sentences supplied by the caller: the
+/// outlines sentence, or `crate::text::export_keeptext::emf_kept` when the
+/// export kept text.
+#[must_use]
+pub fn emf_fidelity_with(text: Vec<String>, counts: &EmfCounts) -> Vec<String> {
+    let mut out = text;
 
     if counts.rasters_embedded > 0 {
         out.push(format!(

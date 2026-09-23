@@ -652,6 +652,8 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(preview_popout::ThePrintPreviewPopsIntoItsOwnWindow),
         // After the print checks above it, for the reason they give.
         Box::new(print_preview_detail::TheZoomedPrintPreviewIsAsSharpAsThePrint),
+        // After the print checks above it, for the reason they give.
+        Box::new(print_poster::PosterPrintingTilesThePageAcrossSheets),
         // After the print checks above it, for the reason they give: every
         // skip it can produce — "the dialog never opened", "the ribbon control
         // is missing" — is `print_dialog`'s subject, not this one's, and a

@@ -699,7 +699,6 @@ fn a_run_the_engine_would_refuse_declines_before_the_ghost_is_drawn() {
     let sel = run_entered();
     for block in [
         RunMoveBlock::NoPositionOfItsOwn,
-        RunMoveBlock::InteriorPieceHasNoPosition,
         RunMoveBlock::WouldMoveNextRun,
     ] {
         let ctx = MoveContext {
@@ -748,10 +747,6 @@ fn a_refused_drag_on_one_line_of_text_asks_for_a_sentence() {
         (
             RunMoveBlock::WouldMoveNextRun,
             CanvasDecline::TextRunWouldDragTheNextLine,
-        ),
-        (
-            RunMoveBlock::InteriorPieceHasNoPosition,
-            CanvasDecline::TextRunPieceHasNoPositionOfItsOwn,
         ),
     ] {
         let mut actions = Vec::new();
@@ -888,7 +883,6 @@ fn all_refusals() -> Vec<Refusal> {
         // matters most: it is the only arm that says nothing, and an omission
         // here would read as a pass.
         Refusal::TextRunCannotMove(RunMoveBlock::NoPositionOfItsOwn),
-        Refusal::TextRunCannotMove(RunMoveBlock::InteriorPieceHasNoPosition),
         Refusal::TextRunCannotMove(RunMoveBlock::WouldMoveNextRun),
         Refusal::TextRunCannotMove(RunMoveBlock::NotThere),
         Refusal::NoNodeEntered,
@@ -913,7 +907,6 @@ fn all_refusals() -> Vec<Refusal> {
             // was checked by nothing.
             | Refusal::TextRunCannotMove(
                 RunMoveBlock::NoPositionOfItsOwn
-                | RunMoveBlock::InteriorPieceHasNoPosition
                 | RunMoveBlock::WouldMoveNextRun
                 | RunMoveBlock::NotThere,
             )

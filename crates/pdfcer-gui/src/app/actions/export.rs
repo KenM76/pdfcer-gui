@@ -828,6 +828,11 @@ fn svg_bytes(
             None
         } else {
             Some(pdfcer_render::export::Rgb::WHITE)
+        })
+        .with_text(if plan.keep_text {
+            pdfcer_render::svg::SvgText::KeepText
+        } else {
+            pdfcer_render::svg::SvgText::Outlines
         });
     let export = pdfcer_render::svg::export_svg_view(view, page, options, &svg_options)
         .map_err(|error| Failed::Render(error.to_string()))?;
@@ -837,10 +842,17 @@ fn svg_bytes(
     } else {
         crate::text::export_image::flattened_to_white().to_owned()
     }];
-    // Rule 4's content. `svg_fidelity` always leads with the fact nothing
-    // counts — that text is glyph outlines — and then names every counter the
-    // recording had to raise. See `crate::text::export_image`.
-    notes.extend(crate::text::export_image::svg_fidelity(
+    // Rule 4's content. The text sentences lead — outlines, or what keep-text
+    // kept and why the rest fell back — then every counter the recording had
+    // to raise. See `crate::text::export_image` and `export_keeptext`.
+    let text = if plan.keep_text {
+        trace_svg_text(&export.outcome.text);
+        crate::text::export_keeptext::svg_kept(&export.outcome.text)
+    } else {
+        vec![crate::text::export_image::svg_text_is_outlines().to_owned()]
+    };
+    notes.extend(crate::text::export_image::svg_fidelity_with(
+        text,
         &export.outcome.tally,
         export.outcome.dashed_strokes_pre_applied,
         export.outcome.blend_modes_used,
@@ -904,6 +916,11 @@ fn emf_bytes(
             None
         } else {
             Some(pdfcer_render::export::Rgb::WHITE)
+        })
+        .with_text(if plan.keep_text {
+            pdfcer_render::emf::EmfText::KeepText
+        } else {
+            pdfcer_render::emf::EmfText::Outlines
         });
     let export = pdfcer_render::emf::export_emf_view(view, page, options, &emf_options)
         .map_err(|error| Failed::Render(error.to_string()))?;
@@ -920,7 +937,13 @@ fn emf_bytes(
     // counters-to-sentences mapping is the part of this path most worth
     // testing.
     let counts = crate::app::actions::imageexport::EmfCounts::from(&export.outcome);
-    notes.extend(crate::text::export_image::emf_fidelity(&counts));
+    let text = if plan.keep_text {
+        trace_emf_text(&export.outcome.text);
+        crate::text::export_keeptext::emf_kept(&export.outcome.text)
+    } else {
+        vec![crate::text::export_image::emf_text_is_outlines().to_owned()]
+    };
+    notes.extend(crate::text::export_image::emf_fidelity_with(text, &counts));
     Ok(Output {
         bytes: export.emf,
         kind: Produced::Metafile {
@@ -929,6 +952,44 @@ fn emf_bytes(
         },
         notes,
     })
+}
+
+/// Trace an SVG keep-text outcome, in the engine CLI's `svg-text:` vocabulary.
+fn trace_svg_text(o: &pdfcer_render::svg::SvgTextOutcome) {
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed
+        format!(
+            "export-image-svg-text kept={} outlines={} fonts={} not_sfnt={} paint={} \
+             unmapped={} conflict={} geometry={} font_build={} restricted={}",
+            o.runs_as_text,
+            o.runs_as_outlines(),
+            o.fonts_embedded,
+            o.fallback_not_sfnt,
+            o.fallback_paint,
+            o.fallback_unmapped,
+            o.fallback_conflict,
+            o.fallback_geometry,
+            o.fallback_font_build,
+            o.fallback_restricted,
+        )
+    });
+}
+
+/// Trace an EMF keep-text outcome, in the engine CLI's `emf-text:` vocabulary.
+fn trace_emf_text(o: &pdfcer_render::emf::EmfTextOutcome) {
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed
+        format!(
+            "export-image-emf-text kept={} outlines={} paint={} unmapped={} \
+             geometry={} symbol_face={}",
+            o.runs_as_text,
+            o.runs_as_outlines(),
+            o.fallback_paint,
+            o.fallback_unmapped,
+            o.fallback_geometry,
+            o.fallback_symbol_face,
+        )
+    });
 }
 
 /// **Write the words on one or more pages out as a plain text file** — the

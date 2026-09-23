@@ -93,7 +93,7 @@ pub(super) fn remember_image(habits: ExportImagePrefs, prefs: &mut Prefs) {
     crate::diag::trace(|| {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "export-image-remembered saved={} format={} scope={} dpi={} transparent={} quality={}",
+            "export-image-remembered saved={} format={} scope={} dpi={} transparent={} quality={} keep_text={}",
             saved.is_ok(),
             exporting::image_format_key(image.format),
             // The same reduction the preferences file performs, and it must be
@@ -104,6 +104,7 @@ pub(super) fn remember_image(habits: ExportImagePrefs, prefs: &mut Prefs) {
             image.dpi,
             u8::from(image.transparent),
             image.quality,
+            u8::from(image.keep_text),
         )
     });
 }

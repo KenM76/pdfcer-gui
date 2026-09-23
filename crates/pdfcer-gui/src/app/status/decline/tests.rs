@@ -314,12 +314,12 @@ fn no_two_declines_share_a_sentence() {
         // the only fact he needs.
         Declined::TextRunHasNoPositionOfItsOwn,
         Declined::TextRunWouldDragTheNextLine,
-        // The third of that set, and the one nearest of all to the FIRST: same
-        // engine refusal, same remedy clause, and the only difference is
-        // whether the line or a join inside it lacks a position. A collapse of
-        // those two would tell an operator that a line he can see is fine
-        // carries on from the row above.
-        Declined::TextRunPieceHasNoPositionOfItsOwn,
+        Declined::OcrLayer(crate::text::ocr::OcrLayerRefusal::AlreadyPresent),
+        Declined::OcrLayer(crate::text::ocr::OcrLayerRefusal::LayerGone),
+        Declined::OcrLayer(crate::text::ocr::OcrLayerRefusal::NoneFound),
+        Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::StylesDiffer),
+        Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::WouldMoveNextRun),
+        Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::Other),
     ];
     for (i, a) in all.iter().enumerate() {
         for b in &all[i + 1..] {
@@ -715,6 +715,7 @@ fn a_new_decline_cannot_be_added_unnoticed(declined: Declined) {
         | Declined::TextStyle(_)
         | Declined::Rotate(_)
         | Declined::Unshare(_)
+        | Declined::RunMerge(_)
         | Declined::SettingsNotSaved
         | Declined::FieldNameTaken
         | Declined::FieldPathCrossesTerminal(_)
@@ -752,7 +753,7 @@ fn a_new_decline_cannot_be_added_unnoticed(declined: Declined) {
         // how a completeness test quietly stops being complete.
         | Declined::TextRunHasNoPositionOfItsOwn
         | Declined::TextRunWouldDragTheNextLine
-        | Declined::TextRunPieceHasNoPositionOfItsOwn => {}
+        | Declined::OcrLayer(_) => {}
     }
 }
 

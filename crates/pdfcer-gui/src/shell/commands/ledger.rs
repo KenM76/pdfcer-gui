@@ -424,9 +424,11 @@ fn registration_succeeds_and_registers_every_command() {
     // file, through `text_extract`, which every build has. Gating it on the
     // recogniser would refuse to show an operator the OCR text in a document
     // they were handed — in a build that can already search and copy it.
+    // 163 → 164: `file.remove_ocr`, beside `file.ocr` on File ▸ Recognise.
+    // 164 → 165: `format.merge_text_runs` (G035), canvas object menu and Format ▸ Selection.
     assert_eq!(
         registry().len(),
-        163 + usize::from(cfg!(feature = "signing"))
+        165 + usize::from(cfg!(feature = "signing"))
     );
 }
 
@@ -821,9 +823,11 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // pair sits on different tabs (File, View), one tab's band shows at a
     // time, and the labels are what tell them apart. Nothing was drawn, so
     // `icons/assets/PROVENANCE.md` is untouched.
+    // 146 → 147: `format.merge_text_runs` names `combine`, shared with
+    // `tools.merge_files`; the two are never drawn side by side.
     assert_eq!(
         named,
-        146 + usize::from(cfg!(feature = "signing")),
+        147 + usize::from(cfg!(feature = "signing")),
         "commands naming an icon"
     );
     // ★ 12 → 17: the Format ▸ Font group's five commands
@@ -1096,8 +1100,11 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
         // amount of drawing touches it, which is the distinction this ledger
         // exists to keep: a refusal about SUPPLY has an expiry date and gets
         // discharged, a refusal about a control's SHAPE does not.
+        //
+        // 17 → 18 — `file.remove_ocr`: a supply refusal. `recognise-text`
+        // says "add a layer"; no glyph for taking one off exists yet.
         refused,
-        17,
+        18,
         "commands with no icon, each argued at its registration"
     );
     // Each refusal is argued at its own registration and listed in the

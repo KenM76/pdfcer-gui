@@ -63,6 +63,7 @@ fn job_of(sheets: &[(usize, bool)]) -> Job {
                 index,
                 placement: placed(clipped),
                 render_scale: 4.0,
+                tile: None,
             })
             .collect(),
     }
@@ -80,6 +81,7 @@ fn context() -> Context {
         pdfcer_render::AnnotationScope::Document,
         &pdfcer_core::settings::Settings::default(),
         (600.0, 780.0),
+        None,
     )
 }
 
@@ -302,6 +304,7 @@ fn a_verdict_does_not_survive_a_change_of_rendering_settings() {
         pdfcer_render::AnnotationScope::Document,
         &moved,
         (600.0, 780.0),
+        None,
     );
 
     assert_eq!(
@@ -328,6 +331,7 @@ fn a_verdict_does_not_survive_a_change_of_annotation_scope() {
         pdfcer_render::AnnotationScope::DocumentAndMarkups,
         &pdfcer_core::settings::Settings::default(),
         (600.0, 780.0),
+        None,
     );
     assert_eq!(
         verdicts.claim(&after, &job, &page_sizes(8)),
@@ -353,6 +357,7 @@ fn a_verdict_does_not_survive_a_change_of_printable_area() {
         pdfcer_render::AnnotationScope::Document,
         &pdfcer_core::settings::Settings::default(),
         (560.0, 740.0),
+        None,
     );
     assert_eq!(
         verdicts.claim(&after, &job, &page_sizes(8)),
