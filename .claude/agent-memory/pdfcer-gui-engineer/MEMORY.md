@@ -153,5 +153,5 @@
 - [`git status` is not a content oracle](feedback_status_not_content.md) — 11 entries to 184, nothing changed; the reflex discards the commit.
 - [A sweep keyed on the symptom collects the healthy](feedback_sweep_keyed_symptom.md) — six correct files "repaired"; the rule was one command away.
 - [A grep returning nothing has made a claim](feedback_grep_manufactures_absence.md) — binary suppression prints an absence; re-run with -a.
-- [Next release waits for the engine](project_release_waits_on_engine.md) — build+publish on the first engine tag after v0.55.0; pre-approved.
 - [Crate split is standing work](project_crate_split_standing.md) — work Stages 2–3 between tasks unasked; Stage 3 approved.
+- [fmt moves a literal off its exemption](feedback_fmt_moves_exemption.md) — trail the exempt comment on the literal's line.
