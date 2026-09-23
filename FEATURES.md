@@ -4,7 +4,7 @@ This is the per-surface capability register for the pdfcer-gui shell: what an
 operator can reach in a real build, and what is planned, in order. It is
 authoritative for status.
 
-**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.55.0, a git dependency on the local engine repository, pinned at **`5a901336`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
+**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.55.0, a git dependency on the local engine repository, pinned at **`b82b7aba`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
 
 **What is new in this build.** A line of text in a title block is now one
 thing — you can click it, move it, delete it and correct it as the line you
