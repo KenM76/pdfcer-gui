@@ -76,11 +76,8 @@ pub mod assoc;
 /// rather than the engine growing a way to create one.
 pub mod blank;
 pub mod cache;
-/// **The one place this shell reads a wall clock.** `pdfcer-core` refuses to
-/// supply a timestamp — for determinism and because a date is a claim — so the
-/// obligation lands here, and its header carries the three ways of answering
-/// "what time is it" and why two of them are wrong.
-pub mod clock;
+/// The wall clock, in `pdfcer-gui-base`; re-exported so `app::clock` names it.
+pub use pdfcer_gui_base::clock;
 pub mod conditions;
 pub mod dispatch;
 /// How a path gets from an operator — or from a scripted harness — to

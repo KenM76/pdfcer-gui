@@ -1,7 +1,6 @@
-//! # `app::clock` — the one place this shell reads a wall clock
+//! # `clock` — the one place this shell reads a wall clock
 //!
-//! One function, one caller today, and a module header out of proportion to
-//! both — because *"what time is it"* is a question with more wrong answers
+//! A module header out of proportion to its two functions — because *"what time is it"* is a question with more wrong answers
 //! than it looks, and because the crate below this one has **deliberately
 //! refused to answer it**.
 //!
@@ -74,7 +73,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /// # Examples
 ///
 /// ```
-/// let stamp = pdfcer_gui::app::clock::pdf_date_utc().expect("a sane clock");
+/// let stamp = pdfcer_gui_base::clock::pdf_date_utc().expect("a sane clock");
 /// assert!(stamp.starts_with("D:20"));
 /// assert!(stamp.ends_with('Z'));
 /// assert_eq!(stamp.len(), 17);
@@ -108,9 +107,9 @@ pub fn pdf_date_utc() -> Option<String> {
 /// # Examples
 ///
 /// ```
-/// assert_eq!(pdfcer_gui::app::clock::iso_date_utc(0), "1970-01-01");
+/// assert_eq!(pdfcer_gui_base::clock::iso_date_utc(0), "1970-01-01");
 /// // 2024-05-27T00:00:00Z, the date on this operator's own trust store.
-/// assert_eq!(pdfcer_gui::app::clock::iso_date_utc(1_716_768_000), "2024-05-27");
+/// assert_eq!(pdfcer_gui_base::clock::iso_date_utc(1_716_768_000), "2024-05-27");
 /// ```
 #[must_use]
 pub fn iso_date_utc(unix_secs: u64) -> String {

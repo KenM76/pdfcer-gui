@@ -50,6 +50,12 @@
 // are testable without either.
 pub mod acrobat;
 
+/// The one place the program reads a wall clock: PDF and ISO dates in UTC.
+/// `pdfcer-core` refuses to supply a timestamp, for determinism and because a
+/// date is a claim; its header carries why the answer is UTC and never a local
+/// time labelled as one.
+pub mod clock;
+
 /// The opt-in trace of what the shell actually received.
 ///
 /// The instrument every other module is measured with, and the reason R1 can
@@ -73,6 +79,20 @@ pub mod ocr;
 /// action carrying a password writes it into the trace file `tools/ui-verify`
 /// keeps as evidence.
 pub mod secret;
+
+/// Where signature trust ANCHORS come from, and the three facts they let
+/// this shell state.
+///
+/// The shell half of `pdfcer-core`'s `Pass 10.2`–`10.5`: locating the trust
+/// list an installed Acrobat/Reader has downloaded, reading it (read-only, no
+/// network, opt-in and off by default), and threading it into
+/// `signature::verify_all_with_trust`.
+///
+/// Its header carries the rule that governs the whole subject — **this is the
+/// one place in the product where a wrong answer is worse than no answer** —
+/// and the consequence: integrity, coverage and trust are reported separately,
+/// never folded into one badge, and `NotChecked` renders as itself.
+pub mod trust;
 
 /// **The one length-conversion table for this program.**
 ///

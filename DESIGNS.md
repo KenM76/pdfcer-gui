@@ -1660,8 +1660,10 @@ copy list and manifest edits in `PROJECT_PLAN.md` §7.3.
 referenced only `units`, which Stage 1 put beneath it. It brings base its first
 engine dependency beyond core (`pdfcer-render`, to rasterise the page the
 recogniser is shown) and the `ocrs` feature, which `pdfcer-gui` forwards; base
-takes it as a default only so it builds and tests alone. `trust`, `pagedrag`
-and `pagetree` are one small edge each from the same position.
+takes it as a default only so it builds and tests alone. `trust` is in base
+too, with the wall `clock` it read (standard library only), which `app`
+re-exports so `app::clock` still names it. `pagedrag` and `pagetree` are
+one edge each from the same position: both call operator copy in `text`.
 
 Engine-reach instruments must scan base as well as `pdfcer-gui`, since base
 now calls the engine: `check-backlog-verdict-drift.py` and

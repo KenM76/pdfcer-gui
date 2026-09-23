@@ -64,8 +64,8 @@
 //! shell's list and mirrors the CLI's exactly, so the two front ends look in
 //! the same places in the same order.
 //!
-//! [`crate::app::prefs::Prefs::acrobat_trust_store_path`] overrides it, and it
-//! exists for the same reason [`crate::app::prefs::Prefs::acrobat_path`] does
+//! `pdfcer-gui`'s `app::prefs::Prefs::acrobat_trust_store_path` overrides it, and it
+//! exists for the same reason `Prefs::acrobat_path` does
 //! (O122): discovery is a list of conventional locations, and a conventional
 //! location is wrong the first time somebody's profile is redirected, or their
 //! Acrobat is a track this build's list does not name, or their store was
@@ -96,7 +96,7 @@
 //! **Revocation.** `PathChecks::revocation_checked` is `false` on every verdict
 //! this build can produce, because CRL/OCSP need the network `pdfcer-core`
 //! never touches (its decision 135). This shell does not fetch either, and the
-//! copy in [`crate::text::trust`] says so on every `Trusted` verdict rather than
+//! copy in `pdfcer-gui`'s `text::trust` says so on every `Trusted` verdict rather than
 //! once in a footnote — a disclosure attached to the claim it qualifies is one
 //! an operator reads.
 //!
@@ -227,7 +227,7 @@ impl Located {
 
 /// Find the trust store, preferring what the operator configured.
 ///
-/// `configured` is [`crate::app::prefs::Prefs::acrobat_trust_store_path`] as
+/// `configured` is `pdfcer-gui`'s `app::prefs::Prefs::acrobat_trust_store_path` as
 /// typed. It is trimmed here as well as on the way in, because this file is not
 /// the only route a value takes — the same argument `prefs` makes about
 /// `acrobat_path`, and the same reason: a trailing space is a path that does
@@ -367,7 +367,7 @@ impl Anchors {
 ///
 /// Deliberately a value with no methods that judge. It carries the engine's
 /// verdicts verbatim and the provenance of the anchors, and every reading of it
-/// happens in [`crate::text::trust`] where the words live.
+/// happens in `pdfcer-gui`'s `text::trust` where the words live.
 #[derive(Debug, Clone)]
 pub struct Report {
     /// What pool the verdicts were evaluated against.
@@ -508,7 +508,7 @@ pub fn examine_path<G: ObjectGraph + ?Sized>(
 #[must_use]
 pub fn modified_date(at: SystemTime) -> Option<String> {
     let secs = at.duration_since(UNIX_EPOCH).ok()?.as_secs();
-    Some(crate::app::clock::iso_date_utc(secs))
+    Some(crate::clock::iso_date_utc(secs))
 }
 
 // ---------------------------------------------------------------------------
