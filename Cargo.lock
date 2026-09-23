@@ -2683,7 +2683,9 @@ name = "pdfcer-gui-base"
 version = "0.1.0"
 dependencies = [
  "egui",
+ "flate2",
  "pdfcer-core",
+ "pdfcer-render",
 ]
 
 [[package]]

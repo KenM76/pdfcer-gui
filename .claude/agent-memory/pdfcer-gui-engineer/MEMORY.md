@@ -16,7 +16,7 @@
 - [Requests live in a file, not a chat](feedback_operator_requests.md) — file at once; only Ken closes a row.
 - [A guard on repetition does not stop creep](feedback_guard_stops.md) — needs a direction bound and a floor.
 - [Wrong surface looks like a broken one](feedback_measurement_wrong.md) — ask what it SAMPLED.
-- [Disk AND RAM are tight](project_disk_tight_target.md) — a tree per pin bump; 0xc0000142 is handles; the unblamed GB are kernel pool.
+- [Disk AND RAM are tight](project_disk_tight_target.md) — watchdog reaps BACKGROUND only; finish clippy/tests in the foreground; run-all skips tests.
 - [A backlog row is a record, not evidence](feedback_backlog_row_record.md) — verify absence against source.
 - [One row hides its neighbours](feedback_agent_given_one_row.md) — two other rows had already declined it.
 - [A SKIP is not red](feedback_skip_red_check_stop.md) — a check stops unnoticed; a SKIP can be a misfiled FAIL.
@@ -152,3 +152,5 @@
 - [`git status` is not a content oracle](feedback_status_not_content.md) — 11 entries to 184, nothing changed; the reflex discards the commit.
 - [A sweep keyed on the symptom collects the healthy](feedback_sweep_keyed_symptom.md) — six correct files "repaired"; the rule was one command away.
 - [A grep returning nothing has made a claim](feedback_grep_manufactures_absence.md) — binary suppression prints an absence; re-run with -a.
+- [Next release waits for the engine](project_release_waits_on_engine.md) — build+publish on the first engine tag after v0.55.0; pre-approved.
+- [Crate split is standing work](project_crate_split_standing.md) — work Stages 2–3 between tasks unasked; Stage 3 approved.

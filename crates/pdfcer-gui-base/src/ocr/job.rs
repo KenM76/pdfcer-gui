@@ -26,7 +26,7 @@ use super::{Refusal, Request, progress, recognise};
 
 /// A recognition running on its own thread.
 ///
-/// Held by [`crate::dialogs::ocr`] for exactly as long as one job takes. See
+/// Held by `pdfcer-gui`'s `dialogs::ocr` for exactly as long as one job takes. See
 /// the module header for why this is a thread and why it carries neither a
 /// cancellation token nor a staleness key.
 pub struct Job {

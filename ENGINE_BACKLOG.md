@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **34 of 184** <!-- counted by tools/walk-engine-backlog.py, 2026-09-20; do not retype -->
+## `wanted` — a real gap — **41 of 191** <!-- counted by tools/walk-engine-backlog.py, 2026-09-23; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -79,6 +79,11 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Edit text across show operators** — a `find` matches across consecutive … | **wanted, and what it costs now is re-measurement.** The capability is in the build this shell compiles: a document written one glyph per show operator is what `EditRefusal::SplitAcrossPieces` exists to explain, and the engine no longer refuses it. `EditReport::operators_spanned` is new and wants disclosing under rule 4, and `Plan::one_operator` stops being the thing that routes `SplitAcrossPieces`, so the operator-facing sentence must be re-derived from the engine's answer rather than deleted on the assumption it is dead. |
 | **Ask which face can hold the text about to be TYPED**, not only the text … | **wanted.** `preview_font_resources_for(page, find, pinned_span, candidate)` closes the one honest limit the face chooser carries: `panels::properties::refusedchar` coverage-tests faces against the characters ALREADY in the run, so a row can offer a face that then refuses the operator's `€`. Cost: one call swapped in `canvas::textedit::pin::font_preflight` with the refused character as candidate, and `refused_char_untested` deleted with its test. The same reply carries more than was asked — `FontPreflight.standard_14` gives a `Std14Entry` per standard-14 face whose `presence` separates `OnPage` from `WouldBeAdded`, which is the operator-licence decision nothing here reads. The two should land together. |
 | **Split one text object into several** — `split_text_object` / `text_object_split_plan`, `pdfcer text-object-split --granularity run` or `line` … | **wanted — the `cargo update` it named is paid, and the verbs are in the pin.** `EditSession::split_text_object` and `text_object_split_plan` are callable, over `vector::edit::plan_split_text_object` and `vector::edit::text_object_split_points`; nothing here names them. It is the seam under the rows above: a CAD title block written as one text object — 237 dimension labels in one `BT`…`ET` — cannot have one line moved, restyled or deleted until the object is split. `SplitGranularity::Run` infers nothing; `Line` groups in stream order rather than by baseline, an inference whose cut count is owed off-canvas (rule 4). Five refusals want sentences, not a bucket: `VectorEditError::EmptySplit`, `VectorEditError::SplitAtObjectStart`, `VectorEditError::SplitRunInheritsPosition`, `VectorEditError::SplitAtLineShowOperator`, `VectorEditError::SplitInsideMarkedContent`; the whole split is refused, never half. Wire it through the `vector_edit_on_page` funnel `move_text_run` uses; `CommandKind::SplitTextObject` is the undo entry. |
+| Set an explicit text rendering mode (`Tr`, §9.3.6 Table 106) on existing text or newly added text … — `FormatRequest::render_mode`, `AddTextRequest::with_render_mode` | **wanted — delivered on the engine's `main` in answer to our G034, not yet in a tag; wiring waits for the first release after v0.55.0.** The operator-facing act is making an edited OCR word invisible again over its scan: `FormatRequest::render_mode` on the properties panel's text section, `AddTextRequest::with_render_mode` on add-text. `FormatReport::render_mode_change` flags modes 3/7 as INVISIBLE and that sentence belongs in the status line. `InvalidRenderMode` and `ConflictingRenderMode` want their own refusal wording. |
+| Fit one existing text run to a given width on the page, by horizontal scaling … — `EditSession::set_text_run_width` | **wanted — delivered on the engine's `main` in answer to our G038, not yet in a tag; wiring waits for the first release after v0.55.0.** `EditSession::set_text_run_width` writes a corrected OCR word box back. The `FollowerDisposition::Pin` disclosure of a held follower run goes off-canvas. |
+| **Merge two or more consecutive text runs into one** … — `EditSession::merge_text_runs` | **wanted — delivered on the engine's `main` in answer to our G035, not yet in a tag; wiring waits for the first release after v0.55.0.** `EditSession::merge_text_runs` with `MergeOptions` rejoins a split word; the Run rung's multi-selection is where it belongs, with the separator and `MergeFit` choice. |
+| Map a clicked/searched glyph back to its editable run … — `vector::locate_text_run`, `locate_text_runs` | **wanted — delivered on the engine's `main` in answer to our G037, not yet in a tag; wiring waits for the first release after v0.55.0.** `vector::locate_text_run`/`locate_text_runs` replaces the shell's own byte-span join between extraction and surgery indices; the workaround is deleted with it. |
+| **The OCR sandwich layer now carries an identity, so a re-run REPLACES it instead of stacking … — `EditSession::remove_ocr_layer`, `find_ocr_layers` | **wanted — delivered on the engine's `main` in answer to our G036, not yet in a tag; wiring waits for the first release after v0.55.0.** With the pin moved, a re-run replaces the previous layer by default. The OCR dialog owes the `OcrLayerOptions` existing-layer policy and a report of what was replaced; `EditSession::find_ocr_layers`/`remove_ocr_layer` want a "Remove OCR text" command. |
 
 ### Vector objects (Inkscape-style editing)
 
@@ -128,7 +133,14 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 ---
 
-## `blocked` — waiting on something named — **2 of 184** <!-- counted by tools/walk-engine-backlog.py, 2026-09-20; do not retype -->
+### Export
+
+| Row (`FEATURES.md`, wanted) | Why |
+|---|---|
+| **SVG export can keep text as real `<text>`, font embedded** … — `SvgTextOutcome` | **wanted — delivered on the engine's `main` in answer to our G033, not yet in a tag; wiring waits for the first release after v0.55.0.** `SvgOptions::text = KeepText` is an option on the SVG export dialog; `SvgTextOutcome`'s per-reason fallback count is its report. |
+| **EMF export can keep text as real text records** … — `EmfText::KeepText` | **wanted — delivered on the engine's `main` in answer to our G033, not yet in a tag; wiring waits for the first release after v0.55.0.** `EmfOptions::with_text(EmfText::KeepText)`. MS-EMF cannot carry a font program, so a kept run draws in whatever face is installed under that name — the option's tooltip has to say so. |
+
+## `blocked` — waiting on something named — **2 of 191** <!-- counted by tools/walk-engine-backlog.py, 2026-09-23; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -146,7 +158,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 184** <!-- counted by tools/walk-engine-backlog.py, 2026-09-20; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 191** <!-- counted by tools/walk-engine-backlog.py, 2026-09-23; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -157,7 +169,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **14 of 184** <!-- counted by tools/walk-engine-backlog.py, 2026-09-20; do not retype -->
+## `declined` — deliberately no surface — **14 of 191** <!-- counted by tools/walk-engine-backlog.py, 2026-09-23; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -197,7 +209,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **134 of 184** <!-- counted by tools/walk-engine-backlog.py, 2026-09-20; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **134 of 191** <!-- counted by tools/walk-engine-backlog.py, 2026-09-23; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 

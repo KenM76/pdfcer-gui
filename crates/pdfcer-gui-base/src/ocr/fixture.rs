@@ -6,8 +6,8 @@
 //! weights on disk. Run them by name, exactly as the RON regeneration is run:
 //!
 //! ```text
-//! cargo test -p pdfcer-gui --lib write_synthetic_image_only -- --ignored
-//! cargo test -p pdfcer-gui --lib recognises_the_synthetic_page -- --ignored --nocapture
+//! cargo test -p pdfcer-gui-base --lib write_synthetic_image_only -- --ignored
+//! cargo test -p pdfcer-gui-base --lib recognises_the_synthetic_page -- --ignored --nocapture
 //! ```
 //!
 //! ## ★★ WHAT THIS FIXTURE IS, AND — MORE IMPORTANTLY — WHAT IT IS NOT
@@ -507,7 +507,7 @@ mod tests {
     /// or the raster parameters change:
     ///
     /// ```text
-    /// cargo test -p pdfcer-gui --lib write_synthetic_image_only -- --ignored
+    /// cargo test -p pdfcer-gui-base --lib write_synthetic_image_only -- --ignored
     /// ```
     #[test]
     #[ignore = "writes into fixtures/; run deliberately"]
@@ -522,7 +522,7 @@ mod tests {
     /// ★ **Regenerate `fixtures/synthetic-image-only-8pages.pdf`.**
     ///
     /// ```text
-    /// cargo test -p pdfcer-gui --lib write_synthetic_image_only_multipage -- --ignored
+    /// cargo test -p pdfcer-gui-base --lib write_synthetic_image_only_multipage -- --ignored
     /// ```
     #[test]
     #[ignore = "writes into fixtures/; run deliberately"]
@@ -704,9 +704,10 @@ mod tests {
     /// slower and a single A1 page takes minutes.
     ///
     /// ```text
-    /// cargo test --release -p pdfcer-gui --lib real_page_detection -- --ignored --nocapture
+    /// cargo test --release -p pdfcer-gui-base --lib real_page_detection -- --ignored --nocapture
     /// ```
     #[test]
+    #[cfg(feature = "ocrs")]
     #[ignore = "minutes of work; reads documents outside the repository"]
     fn real_page_detection() {
         use pdfcer_core::ocr::OcrEngine as _;
@@ -806,7 +807,7 @@ mod tests {
     /// recognition hard.
     ///
     /// ```text
-    /// cargo test -p pdfcer-gui --lib recognises_the_synthetic_page -- --ignored --nocapture
+    /// cargo test -p pdfcer-gui-base --lib recognises_the_synthetic_page -- --ignored --nocapture
     /// ```
     #[test]
     #[ignore = "several seconds, and needs the ocrs model weights on disk"]

@@ -101,7 +101,7 @@ fn split(text: &ExtractedText) -> (String, String) {
 /// `#[ignore]`d because it exists to be read, not to assert:
 ///
 /// ```text
-/// cargo test -p pdfcer-gui --lib dump_the_ocr_layer_fixture -- --ignored --nocapture
+/// cargo test -p pdfcer-gui-base --lib dump_the_ocr_layer_fixture -- --ignored --nocapture
 /// ```
 #[test]
 #[ignore = "prints; run deliberately"]

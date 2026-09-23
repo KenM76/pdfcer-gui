@@ -77,7 +77,9 @@ rule quietly narrowing.
 SCOPE, WHICH IS A CLAIM AND IS STATED SO IT CAN BE CHECKED
 ==========================================================
 
-Scanned: ``crates/pdfcer-gui/src/**/*.rs``, comment lines excluded.
+Scanned: ``crates/pdfcer-gui/src/**/*.rs`` and ``crates/pdfcer-gui-base/src/**/*.rs``,
+comment lines excluded. Base is in scope because it calls the engine too
+(``ocr``, ``acrobat``): a call site there is operator reach like any other.
 
 **Not** scanned, deliberately: ``tools/ui-verify`` — a call site there is a
 driven check, not operator reach, and treating it as evidence would let a
@@ -119,6 +121,9 @@ ROOT = os.path.dirname(HERE)
 
 REGISTER = "ENGINE_BACKLOG.md"
 SHELL_SRC = os.path.join("crates", "pdfcer-gui", "src")
+#: Every GUI crate whose source is operator reach. `SHELL_SRC` must exist; the
+#: others are scanned when present, so a self-test plant needs only the first.
+SHELL_SRCS = (SHELL_SRC, os.path.join("crates", "pdfcer-gui-base", "src"))
 
 # Sections whose rows assert an ABSENCE. A `shipped` or `declined` row makes no
 # claim this file can falsify, and `unknown` says so on its face.
@@ -144,9 +149,11 @@ def engine_imports(text: str) -> set[str]:
 
 
 def load_shell(root: str) -> dict[str, tuple[set[str], list[tuple[int, str]]]]:
-    src = os.path.join(root, SHELL_SRC)
     files: dict[str, tuple[set[str], list[tuple[int, str]]]] = {}
-    for base, _dirs, names in os.walk(src):
+    walked = [
+        w for src in SHELL_SRCS for w in os.walk(os.path.join(root, src))
+    ]
+    for base, _dirs, names in walked:
         for fn in names:
             if not fn.endswith(".rs"):
                 continue

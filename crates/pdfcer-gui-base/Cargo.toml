@@ -45,3 +45,19 @@ egui.workspace = true
 # spec as `crates/pdfcer-gui/Cargo.toml` so cargo unifies them into one build
 # of one crate; a divergence here would silently compile the engine twice.
 pdfcer-core = { git = "file:///D:/Dev/pdfcer", branch = "main", default-features = false }
+
+# pdfcer-render — `ocr` rasterises a page to show the recogniser. Same spec as
+# `pdfcer-gui`'s, for the unification reason given above.
+pdfcer-render = { git = "file:///D:/Dev/pdfcer", branch = "main", default-features = false }
+
+# flate2 — `ocr`'s test fixtures `/FlateDecode` their scanned image.
+[dev-dependencies]
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+
+[features]
+# `ocrs` — the recogniser. `pdfcer-gui` takes this crate with
+# `default-features = false` and forwards its own `ocrs`, which documents what
+# the flag gates; it is a default here only so this crate builds and tests
+# alone as the program ships.
+default = ["ocrs"]
+ocrs = ["pdfcer-core/ocrs"]

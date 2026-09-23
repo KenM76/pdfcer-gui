@@ -51,7 +51,7 @@
 //!
 //! Because a document with no extractable text is the only kind on which OCR's
 //! result is unambiguous: any text in the output came from the recogniser.
-//! `crates/pdfcer-gui/src/ocr/fixture.rs` generates it, and **its header is
+//! `crates/pdfcer-gui-base/src/ocr/fixture.rs` generates it, and **its header is
 //! required reading before believing anything here**. The short version, and it
 //! is stated in this check's own report so a green result cannot be misread:
 //! the fixture is a *rendered page*, not a scan. It has no scanner noise, no
@@ -633,7 +633,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note(
         "NOT established by this check: recognition quality on real scanned material. The \
          fixture is a rendered page with no scanner noise, skew, JPEG ringing or uneven \
-         lighting, so it flatters the recogniser — see `crates/pdfcer-gui/src/ocr/fixture.rs`'s \
+         lighting, so it flatters the recogniser — see `crates/pdfcer-gui-base/src/ocr/fixture.rs`'s \
          header. What is established is the chain: reachable in Read, recognises, discloses, \
          writes where it was told, and leaves the original alone",
     );

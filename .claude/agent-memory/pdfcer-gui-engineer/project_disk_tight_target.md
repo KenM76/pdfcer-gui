@@ -361,3 +361,17 @@ waiter is in the tree and gets reaped, which reads as the sweep having died.
 Detaching also costs the completion notification: the `SWEEP-EXIT:` line the
 wrapper appends is the only signal the run finished rather than died, and a
 timed wake-up has to come back and read it.
+
+## The FOREGROUND is outside the watchdog too — 2026-09-22
+
+A background sweep was reaped at `cargo clippy` with 5.1 GB free (commit
+22.6/47.2 GB; paged pool 1.9 GB). Finished instead in the **foreground Bash
+tool**: `CARGO_BUILD_JOBS=1 cargo clippy --workspace --all-targets` took 51 s,
+`cargo test --workspace` at jobs=1 under 10 min — both inside the 600 s ceiling,
+neither reaped. Since clippy is `run-all.sh`'s LAST step, a sweep reaped there
+has already scored every other gate; read the log for FAIL, then finish clippy
+in the foreground rather than re-running 80 gates.
+
+⚠ **`run-all.sh` does not run `cargo test`.** The same session's full test run
+caught a settings-catalog count the whole sweep could not see. "The gates are
+green" is not "the tests are green"; run both before a commit.

@@ -83,13 +83,6 @@ pub mod find;
 // the painter `egui-shell`'s ribbon calls back into. Supplying that painter
 // is what stops the ribbon falling back to text labels — see `icons::paint`.
 pub mod icons;
-// OCR: what image the recogniser is shown, the thread it runs on, and the
-// named refusals it can come back with. It authors no PDF — `pdfcer-core`'s
-// `ocr::layer` writes the invisible mode-3 sandwich and this shell is that
-// function's first caller anywhere. See OCR's own header for why recognition
-// reads the document as it was OPENED, and for the y-flip it deliberately does
-// not perform.
-pub mod ocr;
 // The dock's panel bodies — Bookmarks, Layers, Signatures, Fonts, Objects and
 // the properties panel. See PANELS' own header for the reachability contract
 // every one of them has to satisfy.
@@ -189,12 +182,14 @@ pub mod viewer;
 // they have always meant. THEY LIVE IN `pdfcer-gui-base` — a separate crate,
 // and that is the point: cargo forbids a cycle between crates, so nothing in
 // there can call back up into this one. See that crate's `Cargo.toml` for
-// the admission test and DESIGNS.md for the staged plan it is stage 1 of.
+// the admission test and DESIGNS.md for the staged plan. `ocr` (what image the
+// recogniser is shown, the thread it runs on, its named refusals) joined in
+// stage 2.
 //
 // The alternative was to rewrite ~1,200 call sites to say `pdfcer_gui_base::`.
 // That would document the crossing at every use site and buy nothing else: the
 // boundary is in the crate graph, not in the spelling.
-pub use pdfcer_gui_base::{acrobat, diag, secret, units};
+pub use pdfcer_gui_base::{acrobat, diag, ocr, secret, units};
 
 use std::path::PathBuf;
 

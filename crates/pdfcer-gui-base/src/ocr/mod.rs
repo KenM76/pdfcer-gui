@@ -16,7 +16,7 @@
 //! | 4 | detect words, group into lines, recognise | `pdfcer_core::ocr::engine_ocrs` |
 //! | 5 | image pixels (y-down) → PDF user space (y-up), **including `/Rotate`** | `pdfcer_core::ocr::words_to_page_space_on` |
 //! | 6 | write the mode-3 sandwich and save incrementally | `pdfcer_core::ocr::layer::add_ocr_layer` |
-//! | 7 | put the bytes somewhere the operator named | `crate::dialogs::ocr` |
+//! | 7 | put the bytes somewhere the operator named | `pdfcer-gui`'s `dialogs::ocr` |
 //!
 //! Steps 4, 5 and 6 are deliberately not touched here. In particular **the
 //! y-flip is not done in this module and must never be**: `words_to_page_space_on`
@@ -94,7 +94,7 @@
 //! ## Where the disclosure goes
 //!
 //! [`Recognised::report`] is `pdfcer-core`'s own `OcrLayerReport`, carried out
-//! whole. `crate::dialogs::ocr` renders `report.disclosures()` verbatim. That
+//! whole. `pdfcer-gui`'s `dialogs::ocr` renders `report.disclosures()` verbatim. That
 //! is the engine's instruction — the lines are built inside `pdfcer-core` "so
 //! the GUI and the CLI cannot disagree about what was disclosed" — and it is
 //! why nothing in this module summarises, rounds or re-words a count.
@@ -255,6 +255,19 @@ pub const MODEL_DIR: models::EngineDirName = pdfcer_core::ocr::engine_ocrs::MODE
 /// See the `ocrs`-enabled twin above.
 #[cfg(not(feature = "ocrs"))]
 pub const MODEL_DIR: models::EngineDirName = "ocrs";
+
+/// The files a model directory must hold to count as found: the engine's own
+/// published names, so a rename there cannot leave this resolving a directory
+/// the engine then refuses.
+#[cfg(feature = "ocrs")]
+const MODEL_FILES: &[&str] = &[
+    pdfcer_core::ocr::engine_ocrs::DETECTION_MODEL,
+    pdfcer_core::ocr::engine_ocrs::RECOGNITION_MODEL,
+];
+/// No recogniser is compiled in, so no file is required: resolution only has
+/// to name where the models would have gone.
+#[cfg(not(feature = "ocrs"))]
+const MODEL_FILES: &[&str] = &[];
 
 /// Why recognition did not happen, in the operator's terms.
 ///
@@ -505,21 +518,7 @@ pub fn resolve_models(
     // reached. The failure then surfaces later and in the wrong vocabulary: the
     // engine reports a missing model file after this shell has already told
     // them the models were found.
-    //
-    // ★ The filenames are the engine's own published constants, not string
-    // literals invented here. A shell that spelled them itself would keep
-    // resolving successfully on the day the engine renamed one, and would fail
-    // one layer down with a message about a file nobody asked for.
-    models::resolve_model_dir_with(
-        MODEL_DIR,
-        None,
-        exe_dir,
-        user_data,
-        &[
-            pdfcer_core::ocr::engine_ocrs::DETECTION_MODEL,
-            pdfcer_core::ocr::engine_ocrs::RECOGNITION_MODEL,
-        ],
-    )
+    models::resolve_model_dir_with(MODEL_DIR, None, exe_dir, user_data, MODEL_FILES)
 }
 
 /// The directory the running executable is in, if it can be determined.
@@ -1287,6 +1286,7 @@ mod tests {
     /// file in and requiring success is what proves the failure above was about
     /// EMPTINESS rather than about the path.
     #[test]
+    #[cfg(feature = "ocrs")]
     fn an_empty_model_directory_is_rejected_but_a_filled_one_resolves() {
         let root =
             std::env::temp_dir().join(format!("pdfcer-empty-models-9f3b-{}", std::process::id()));
@@ -1305,10 +1305,7 @@ mod tests {
 
         // Filled: must be accepted — otherwise the assertion above proves
         // nothing about emptiness.
-        for f in [
-            pdfcer_core::ocr::engine_ocrs::DETECTION_MODEL,
-            pdfcer_core::ocr::engine_ocrs::RECOGNITION_MODEL,
-        ] {
+        for f in MODEL_FILES {
             std::fs::write(dir.join(f), b"not a real model, but a real file").expect("write");
         }
         assert!(

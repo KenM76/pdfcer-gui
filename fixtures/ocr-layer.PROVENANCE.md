@@ -24,7 +24,7 @@ That fixture is the opposite case and the right one for its own job: a page
 with *no* text, built so the recogniser has something to recognise. Producing
 an OCR'd document from it costs the ~12 MB `ocrs` weights, which are not in
 this repository, several seconds of CPU, and a result that changes whenever the
-model does. `crates/pdfcer-gui/src/ocr/fixture.rs` owns that half and its header
+model does. `crates/pdfcer-gui-base/src/ocr/fixture.rs` owns that half and its header
 is explicit that a green result there establishes the plumbing and nothing
 about recognition quality.
 
@@ -159,7 +159,7 @@ in a screenshot.
 
 ## Who depends on this file
 
-* `crates/pdfcer-gui/src/ocr/layer_fixture.rs` — owns every number above and
+* `crates/pdfcer-gui-base/src/ocr/layer_fixture.rs` — owns every number above and
   fails with the live figure quoted when one moves. Its `dump_the_ocr_layer_fixture`
   is `#[ignore]`d and prints the run table, so the constants can be re-derived
   rather than trusted.

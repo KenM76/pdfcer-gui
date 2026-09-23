@@ -729,7 +729,7 @@ comment that *"ideally the threshold would be 0.5 as a neutral value"*. On a pag
 that is mostly empty paper the measured background straddles it, so the whole page
 binarises as text and detection returns one rectangle. The probability map is
 fine; the failure is downstream, in thresholding
-(`crates/pdfcer-gui/src/ocr/fixture.rs:157-182`).
+(`crates/pdfcer-gui-base/src/ocr/fixture.rs:157-182`).
 
 **A drawing sheet is exactly that shape** — a small title block, a handful of
 callouts, a very large expanse of empty paper — so an operator OCR-ing a scanned
@@ -907,8 +907,8 @@ suite.
 
 `crates/pdfcer-gui/src/text/ocr.rs:302` ships *"It takes a few seconds per page,
 and the window will not respond while it does."* The recogniser runs on a
-detached worker (`crates/pdfcer-gui/src/ocr/job.rs:115` spawns it, and
-`crates/pdfcer-gui/src/ocr/mod.rs:47` describes the shape as *"a `std::thread`
+detached worker (`crates/pdfcer-gui-base/src/ocr/job.rs:115` spawns it, and
+`crates/pdfcer-gui-base/src/ocr/mod.rs:47` describes the shape as *"a `std::thread`
 plus a channel"*), and the dialog draws a spinner, a page count, **Stop** and
 **Cancel** while it runs.
 

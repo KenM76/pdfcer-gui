@@ -153,7 +153,7 @@ signing = ["pdfcer-core/signing"]
 # entirely a core concern — and naming a feature a crate does not declare is a
 # hard Cargo error rather than a silent no-op, which is the one direction of
 # this mistake that is safe.
-ocrs = ["pdfcer-core/ocrs"]
+ocrs = ["pdfcer-core/ocrs", "pdfcer-gui-base/ocrs"]
 
 [dependencies]
 # native-window = the four `user32` calls that make a dialog OWNED by the
@@ -211,7 +211,7 @@ native-gl = { path = "../native-gl" }
 # framework — it is THIS crate, minus the four modules that reference nothing
 # above them, held below by an arrow cargo enforces. The crate root re-exports
 # all four, so call sites still spell them `crate::diag::…`.
-pdfcer-gui-base = { path = "../pdfcer-gui-base" }
+pdfcer-gui-base = { path = "../pdfcer-gui-base", default-features = false }
 
 # eframe = egui's application shell. Version, backend and feature set are
 # pinned once in this workspace's root `[workspace.dependencies]` to match

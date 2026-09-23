@@ -30,7 +30,7 @@ WHAT IT MEASURES, AND WHAT THAT MEASUREMENT IS WORTH
 
 For every public item in `pdfcer-core` whose name or module places it in the
 encryption / signature surface, whether the identifier appears anywhere in
-`crates/pdfcer-gui/src`.
+`crates/pdfcer-gui/src` or `crates/pdfcer-gui-base/src` (base calls the engine too).
 
 ★★ It is a **grep**, and the limits are the same as `verb-coverage.py`'s and
 worth restating because a number from a tool reads as authoritative:
@@ -104,7 +104,7 @@ import engine_path  # noqa: E402
 
 ENGINE_REPO = engine_path.locate() or pathlib.Path("D:/Dev/pdfcer")
 LOCK = pathlib.Path("Cargo.lock")
-GUI = pathlib.Path("crates/pdfcer-gui/src")
+GUI_SRCS = (pathlib.Path("crates/pdfcer-gui/src"), pathlib.Path("crates/pdfcer-gui-base/src"))
 
 #: The engine files this surface lives in.
 #:
@@ -222,10 +222,10 @@ def items_in(text: str, path: str) -> list[str]:
 
 
 def gui_text() -> str:
-    """Every `.rs` under the GUI crate, concatenated, with comment-only lines
+    """Every `.rs` under both GUI crates, concatenated, with comment-only lines
     removed -- see `COMMENT_ONLY`."""
     parts: list[str] = []
-    for p in sorted(GUI.rglob("*.rs")):
+    for p in sorted(f for root in GUI_SRCS for f in root.rglob("*.rs")):
         text = p.read_text(encoding="utf-8", errors="replace")
         parts.append(
             "\n".join(l for l in text.splitlines() if not COMMENT_ONLY.match(l))

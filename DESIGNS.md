@@ -1656,10 +1656,16 @@ diff: `THIRD_PARTY_LICENSES.md` (`cargo-about` enumerates members, so a new
 crate is a new line even when it adds no dependency) and the fold-in runbook's
 copy list and manifest edits in `PROJECT_PLAN.md` §7.3.
 
-**Stage 2 — what Stage 1 made acyclic.** `ocr` (1,144 code) references only
-`units`, which is now beneath it, so `ocr` has no upward reference left and
-follows. `trust`, `pagedrag` and `pagetree` are one small
-edge each from the same position.
+**Stage 2 — what Stage 1 made acyclic.** `ocr` is in `pdfcer-gui-base`: it
+referenced only `units`, which Stage 1 put beneath it. It brings base its first
+engine dependency beyond core (`pdfcer-render`, to rasterise the page the
+recogniser is shown) and the `ocrs` feature, which `pdfcer-gui` forwards; base
+takes it as a default only so it builds and tests alone. `trust`, `pagedrag`
+and `pagetree` are one small edge each from the same position.
+
+Engine-reach instruments must scan base as well as `pdfcer-gui`, since base
+now calls the engine: `check-backlog-verdict-drift.py` and
+`security-coverage.py` walk both crates.
 
 `icons` looks like a Stage 2 candidate and is not: it is in a cycle with
 `shell` (`icons`→`shell` 1, `shell`→`icons` 4). One reference in one

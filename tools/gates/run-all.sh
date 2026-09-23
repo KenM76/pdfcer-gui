@@ -1104,6 +1104,12 @@ elif [ "$RUN_CARGO" -eq 1 ]; then
     else
         run "cargo fmt" cargo fmt --all --check
         run "cargo clippy" cargo clippy --workspace --all-targets -- -D warnings
+        # R8: a capability must be removable. A build without `ocrs` is
+        # compiled by nothing else, so code naming the recogniser outside its
+        # `cfg` compiles in every build that is run and breaks the one that
+        # is not. Both crates are named because `-p pdfcer-gui --all-targets`
+        # does not compile base's own tests.
+        run "cargo clippy (ocrs removed)" cargo clippy -p pdfcer-gui -p pdfcer-gui-base --no-default-features --features pdfcer-gui/jpx,pdfcer-gui/signing --all-targets -- -D warnings
     fi
 else
     SKIPPED+=("cargo fmt (--no-cargo)")

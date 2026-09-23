@@ -61,6 +61,13 @@ pub mod acrobat;
 /// which is exactly why it is the anchor of this crate.
 pub mod diag;
 
+/// OCR: what image the recogniser is shown, the thread it runs on, and the
+/// named refusals it can come back with. It authors no PDF — `pdfcer-core`'s
+/// `ocr::layer` writes the invisible mode-3 sandwich. See its header for why
+/// recognition reads the document as it was OPENED, and for the y-flip it
+/// deliberately does not perform.
+pub mod ocr;
+
 /// A string the operator typed that must never reach a log — one type, and its
 /// whole reason for existing is its `Debug`. See its header: a `{:?}` on an
 /// action carrying a password writes it into the trace file `tools/ui-verify`
