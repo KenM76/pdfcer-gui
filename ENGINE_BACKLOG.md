@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **34 of 193** <!-- counted by tools/walk-engine-backlog.py, 2026-09-23; do not retype -->
+## `wanted` — a real gap — **34 of 194** <!-- counted by tools/walk-engine-backlog.py, 2026-09-24; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -129,7 +129,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 193** <!-- counted by tools/walk-engine-backlog.py, 2026-09-23; do not retype -->
+## `blocked` — waiting on something named — **2 of 194** <!-- counted by tools/walk-engine-backlog.py, 2026-09-24; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -147,7 +147,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 193** <!-- counted by tools/walk-engine-backlog.py, 2026-09-23; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 194** <!-- counted by tools/walk-engine-backlog.py, 2026-09-24; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -158,7 +158,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **14 of 193** <!-- counted by tools/walk-engine-backlog.py, 2026-09-23; do not retype -->
+## `declined` — deliberately no surface — **14 of 194** <!-- counted by tools/walk-engine-backlog.py, 2026-09-24; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -198,7 +198,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **143 of 193** <!-- counted by tools/walk-engine-backlog.py, 2026-09-23; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **144 of 194** <!-- counted by tools/walk-engine-backlog.py, 2026-09-24; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
