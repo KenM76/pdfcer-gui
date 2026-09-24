@@ -255,6 +255,9 @@ ENGINE = Path("D:/Dev/pdfcer")
 #: is an operator decision — so bumping them as a side effect of a build would
 #: quietly break that property and would do it in the one command nobody reads
 #: the output of.
+#:
+#: `ocrcer-core` needs no entry: the engine vendors it, so it moves with
+#: `pdfcer-core`.
 ENGINE_CRATES = ["pdfcer-core", "pdfcer-render", "pdfcer-print"]
 
 #: Where a finished build is mirrored so it syncs to the operator's other
@@ -372,6 +375,28 @@ PAYLOAD_ASSET_DIRS: list[tuple[str, str]] = [
     # `tools/engine_path.py` carries the argument; it reads the manifest Cargo
     # actually builds from, so this follows the engine's rename by itself.
     (f"crates/{_engine_path.crate_name('core')}/assets/models/ocrs", "models/ocrs"),
+]
+
+#: OCRcer's local repository — the second recogniser, linked as `ocrcer-core`.
+#: Local, never GitHub: its `master` here leads anything published.
+OCRCER = Path("D:/Dev/OCRcer")
+
+#: Files copied from :data:`OCRCER` into the package, `(source relative to
+#: OCRCER, destination relative to the package)`.
+#:
+#: The model is OCRcer's build output and is not in its git, so nothing ties
+#: it to the `ocrcer-core` revision `Cargo.lock` pins except the ignored test
+#: `ocrcer_recognises_the_synthetic_page`, which loads this same file through
+#: the pinned reader. A format mismatch reaches the operator as the OCR
+#: dialog's "the model could not be loaded" refusal, never as a crash.
+#:
+#: OCRcer's `LICENSE` and `NOTICE` travel beside the model.
+#: `tools/gates/check-shipped-assets.py` requires every destination directory
+#: here to be cited in `about.hbs` and in the About dialog.
+PAYLOAD_OCRCER_FILES: list[tuple[str, str]] = [
+    ("model/out/ocrcer.ocrw", "models/ocrcer/ocrcer.ocrw"),
+    ("LICENSE", "models/ocrcer/LICENSE"),
+    ("NOTICE", "models/ocrcer/NOTICE"),
 ]
 
 #: The one shipped binary. Unlike pdfcer's packager there is no CLI here:
@@ -615,6 +640,26 @@ def copy_asset_dirs(out: Path, engine: Path) -> tuple[list[str], list[str]]:
     return copied, missing
 
 
+def copy_ocrcer_files(out: Path, ocrcer: Path) -> tuple[list[str], list[str]]:
+    """Copy every `PAYLOAD_OCRCER_FILES` entry; return `(copied, missing)`.
+
+    `missing` holds sources that are declared and absent. The caller treats
+    any as fatal, for the same reason as :func:`copy_asset_dirs`.
+    """
+    copied: list[str] = []
+    missing: list[str] = []
+    for source, dest in PAYLOAD_OCRCER_FILES:
+        src = ocrcer / source
+        if not src.is_file():
+            missing.append(source)
+            continue
+        target = out / dest
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, target)
+        copied.append(dest)
+    return copied, missing
+
+
 def summarise_test_run(output: str) -> tuple[int, str]:
     """Total every `test result:` line; return `(binaries, one-line summary)`.
 
@@ -834,6 +879,23 @@ def self_test() -> int:
                 )
         finally:
             PAYLOAD_ASSET_DIRS = saved
+
+        ocrcer = root / "ocrcer"
+        (ocrcer / "model" / "out").mkdir(parents=True)
+        (ocrcer / "model" / "out" / "ocrcer.ocrw").write_bytes(b"\x04")
+        (ocrcer / "LICENSE").write_text("MIT", encoding="utf-8")
+        (ocrcer / "NOTICE").write_text("notice", encoding="utf-8")
+        copied, missing = copy_ocrcer_files(root / "package3", ocrcer)
+        if missing or len(copied) != len(PAYLOAD_OCRCER_FILES):
+            failures.append(f"copy_ocrcer_files copied {copied}, missing {missing}")
+        if not (root / "package3" / "models" / "ocrcer" / "ocrcer.ocrw").is_file():
+            failures.append("copy_ocrcer_files did not write the model into models/ocrcer")
+        (ocrcer / "NOTICE").unlink()
+        _copied, missing = copy_ocrcer_files(root / "package4", ocrcer)
+        if missing != ["NOTICE"]:
+            failures.append(
+                f"a missing OCRcer file was reported as {missing}, expected ['NOTICE']"
+            )
 
     # 4. The GitHub asset is ROOTED AT THE BUILD FOLDER.
     #
@@ -1874,6 +1936,17 @@ def main() -> int:
         print("  something the operator does not have.")
         shutil.rmtree(out, ignore_errors=True)
         return 1
+
+    copied_ocrcer, missing_ocrcer = copy_ocrcer_files(out, OCRCER)
+    if missing_ocrcer:
+        print(f"package-portable: declared OCRcer files are missing from {OCRCER}:")
+        for m in missing_ocrcer:
+            print(f"  {m}")
+        print("  Nothing was packaged. The OCR dialog offers OCRcer in this build,")
+        print("  and without its model it would refuse every run.")
+        shutil.rmtree(out, ignore_errors=True)
+        return 1
+    copied_assets += sorted({d.rsplit("/", 1)[0] for d in copied_ocrcer})
 
     # --- what changed since the last build ----------------------------------
     def changelog(cwd: Path, since: str | None, label: str) -> str:

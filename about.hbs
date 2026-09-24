@@ -157,8 +157,8 @@ stated per entry rather than assumed:
   faces below, which are `include_bytes!` payloads and static tables in crates
   this program links;
 - **loose files in this folder** — the `ocrs` OCR model weights below, which
-  live at `models/ocrs/` beside the executable because the program loads them
-  from disk on demand.
+  live at `models/ocrs/` beside the executable, and the OCRcer model, at
+  `models/ocrcer/`; the program loads both from disk on demand.
 
 They all arrive through the engine: `pdfcer-gui` depends on `pdfcer-core` and
 `pdfcer-render` **by path** into `D:\Dev\pdfcer`, and Rust links them
@@ -278,6 +278,19 @@ resulting model under CC-BY-SA-4.0 or a compatible licence.
 
 The human-readable licence deed is linked above; the full legal code is at
 <https://creativecommons.org/licenses/by-sa/4.0/legalcode>.
+
+### Bundled OCRcer recognition model (MIT)
+
+The file `models/ocrcer/ocrcer.ocrw` in this portable folder is the model of
+the OCRcer OCR engine, the second recogniser the OCR dialog offers. It is
+built from the OCRcer repository by **Ken Mantle** and licensed **MIT**;
+OCRcer's `LICENSE` and `NOTICE` ship beside it in `models/ocrcer/`.
+
+OCRcer's `NOTICE` records the third-party material the model is derived
+from: feature vectors measured from glyphs rendered from OFL-1.1 and
+Apache-2.0 font faces (no font file or outline data is included), and
+evaluation datasets of which no text or image is redistributed. The engine's
+code is the `ocrcer-core` crate, listed with the other crates above.
 
 ### Bundled Foxit substitute faces (BSD-3-Clause, via pdfium)
 

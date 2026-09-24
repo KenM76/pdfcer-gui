@@ -67,6 +67,8 @@ fn every_preference_round_trips_through_the_file() {
                     // a nibble instead of doubling it, both round-trip
                     // `#CC0099` and neither round-trips this.
                     ocr_layer_colour: [1, 130, 255],
+                    // Non-default, and OPTIONAL: a writer that omitted it fails here.
+                    ocr_engine: Some(crate::ocr::EngineId::Ocrcer),
                     // ★ Non-default, like every field here — and this one is
                     // the only OPTIONAL key in the file, so a writer that emitted
                     // nothing for it would fail this round trip. `Facing` rather
@@ -668,6 +670,7 @@ fn the_writer_emits_no_key_the_parser_rejects() {
         shade_form_fields: false,
         // ★ Non-default, for this test's stated reason. O229.
         ocr_layer_colour: [1, 130, 255],
+        ocr_engine: Some(crate::ocr::EngineId::Ocrcer),
         // ★ Non-default, and the only OPTIONAL key in the file. O80.
         default_page_display: Some(crate::viewer::PageDisplay::Facing),
         // ★ Non-default: the Acrobat order, so a writer emitting a constant

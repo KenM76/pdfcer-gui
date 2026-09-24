@@ -7,7 +7,8 @@
 //!
 //! Contract:
 //! - [`options`] is what [`super::Action::ApplyOcr`] writes with:
-//!   `ExistingLayers::Replace`, so a re-run is one copy of every word.
+//!   `ExistingLayers::Replace`, so a re-run is one copy of every word, and the
+//!   recogniser's key in the marker.
 //! - [`recognised_disclosures`] adds one sentence totalling `layers_replaced`
 //!   ahead of the engine's per-page lines.
 //! - [`remove_all`] is [`super::Action::RemoveOcrLayers`]: every marked layer
@@ -22,15 +23,11 @@ use crate::app::state::OpenDoc;
 use crate::app::status::decline;
 use crate::text::ocr::{self as t, OcrLayerRefusal};
 
-/// The recogniser this shell runs, recorded in the layer's marker.
-// ui-text-exempt: engine id written into the file, never displayed
-const ENGINE: &str = "ocrs";
-
-/// The options every recognition is applied with.
-pub(super) fn options() -> OcrLayerOptions {
+/// The options a recognition by `engine` is applied with.
+pub(super) fn options(engine: pdfcer_gui_base::ocr::EngineId) -> OcrLayerOptions {
     OcrLayerOptions::new()
         .with_existing(ExistingLayers::Replace)
-        .with_engine(ENGINE)
+        .with_engine(engine.key())
 }
 
 /// Every page's engine disclosures, preceded by one run-wide total of the

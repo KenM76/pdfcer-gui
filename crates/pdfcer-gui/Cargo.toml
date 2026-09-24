@@ -56,7 +56,7 @@ path = "src/main.rs"
 # `default = [...]` list out of `D:\Dev\pdfcer`'s manifest and fails the
 # build when a name in it is neither forwarded from here nor named in that
 # gate's DELIBERATELY-NOT-FORWARDED list with a reason.
-default = ["jpx", "ocrs", "signing"]
+default = ["jpx", "ocrs", "ocrcer", "signing"]
 jpx = ["pdfcer-core/jpx", "pdfcer-render/jpx"]
 
 # ---------------------------------------------------------------------------
@@ -154,6 +154,13 @@ signing = ["pdfcer-core/signing"]
 # hard Cargo error rather than a silent no-op, which is the one direction of
 # this mistake that is safe.
 ocrs = ["pdfcer-core/ocrs", "pdfcer-gui-base/ocrs"]
+
+# `ocrcer` — OCRcer, the second recogniser, offered in the Recognise-text
+# dialog beside `ocrs`. `ocrs` stays the default choice (the engine's own
+# ruling: the head-to-head decides the default, not the integration). MIT code
+# and model; the model is not in the repository and is packaged from OCRcer's
+# build by `tools/package-portable.py`. See `pdfcer-gui-base/Cargo.toml`.
+ocrcer = ["pdfcer-core/ocrcer", "pdfcer-gui-base/ocrcer"]
 
 [dependencies]
 # native-window = the four `user32` calls that make a dialog OWNED by the

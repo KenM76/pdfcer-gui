@@ -182,6 +182,8 @@ pub enum Action {
         /// mistake puts one page's words on another page with no diagnostic
         /// short of reading the output.
         pages: Vec<(usize, pdfcer_core::ocr::OcrPage)>,
+        /// The recogniser that read them, recorded in the layer's marker.
+        engine: pdfcer_gui_base::ocr::EngineId,
     },
     /// File ▸ Remove OCR text: every OCR layer pdfcer wrote comes off, as one
     /// undo entry. See `super::ocrlayers`.

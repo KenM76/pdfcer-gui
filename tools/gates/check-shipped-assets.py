@@ -595,7 +595,52 @@ def check_packaging(about: str, notice: str) -> list[str]:
                 f"      as wrong as a file received with no attribution."
             )
 
+    # --- 6c. every file copied from OCRcer is attributed -------------------
+    problems.extend(check_ocrcer_payload(packager, about, _in_app_text()))
+
     problems.extend(check_notice_freshness(about, notice))
+    return problems
+
+
+def _in_app_text() -> str:
+    path = ROOT / _IN_APP_SURFACE
+    return path.read_text(encoding="utf-8", errors="replace") if path.is_file() else ""
+
+
+def check_ocrcer_payload(packager, about: str, in_app: str) -> list[str]:
+    """Check 6c — each destination directory of `PAYLOAD_OCRCER_FILES` is
+    cited in the rendered `about.hbs` and in the About dialog's source.
+
+    Those files come from OCRcer's repository, not the engine's, so the
+    engine-asset register above cannot see them; this reads the packager's
+    own list instead.
+    """
+    problems: list[str] = []
+    try:
+        entries = list(packager.PAYLOAD_OCRCER_FILES)
+    except AttributeError:
+        return [
+            "  tools/package-portable.py\n"
+            "      has no `PAYLOAD_OCRCER_FILES`. This gate reads it to check that\n"
+            "      the OCRcer model it ships is attributed. If it was renamed,\n"
+            "      rename it here too."
+        ]
+    dirs = sorted({dest.rsplit("/", 1)[0] for _src, dest in entries})
+    for d in dirs:
+        if d not in rendered(about):
+            problems.append(
+                f"  {d}\n"
+                f"      is shipped from OCRcer by PAYLOAD_OCRCER_FILES and is not\n"
+                f"      cited in {_ABOUT_TEMPLATE}, so its licence never reaches\n"
+                f"      {_NOTICE}."
+            )
+        if d not in in_app:
+            problems.append(
+                f"  {d}\n"
+                f"      is shipped from OCRcer by PAYLOAD_OCRCER_FILES and is not\n"
+                f"      cited in {_IN_APP_SURFACE}, so the About dialog does not\n"
+                f"      attribute it."
+            )
     return problems
 
 
@@ -795,13 +840,24 @@ def self_test() -> int:
     if not check_notice_freshness("a template with no marker at all\n", "anything\n"):
         failures.append("did not notice that about.hbs had lost its epilogue marker")
 
+    class _Packager:
+        PAYLOAD_OCRCER_FILES = [("m.bin", "models/demo/m.bin"), ("LICENSE", "models/demo/LICENSE")]
+
+    if check_ocrcer_payload(_Packager, "cites models/demo", "models/demo"):
+        failures.append("reported a cited OCRcer payload directory as uncited")
+    if len(check_ocrcer_payload(_Packager, "<!-- models/demo -->", "")) != 2:
+        failures.append(
+            "did not catch an OCRcer payload directory cited in neither surface "
+            "(the notice's citation only inside an HTML comment)"
+        )
+
     for message in failures:
         print(f"shipped-assets self-test: FAIL — {message}")
     if failures:
         return 1
     print(
         "shipped-assets self-test: the gate catches all five planted violations"
-        " (including one cited only inside an HTML comment), exempts own work,"
+        " (including one cited only inside an HTML comment), exempts own work, catches an uncited OCRcer payload,"
         " and passes a documented directory."
     )
     return 0

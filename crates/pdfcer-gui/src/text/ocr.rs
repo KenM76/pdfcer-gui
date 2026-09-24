@@ -330,6 +330,44 @@ pub fn no_confidence() -> &'static str {
     "This recogniser reports no confidence score for any word, so nothing here has been checked — that is not the same as everything being right. Read the text before you rely on it."
 }
 
+/// The confidence sentence for a recogniser that scores every word.
+///
+/// Says what the score is — the recogniser's estimate of its own reading —
+/// and that it is not a check, so a high score is not read as a verified word.
+#[must_use]
+pub fn scored_confidence() -> &'static str {
+    "Every word carries the recogniser's own confidence score. That score is its estimate of its own reading, not a check — read the text before you rely on it."
+}
+
+/// The heading over the recogniser choice. Drawn only when a build offers
+/// more than one.
+#[must_use]
+pub fn engine_heading() -> &'static str {
+    "Recogniser"
+}
+
+/// A recogniser's name as the choice shows it.
+#[must_use]
+pub const fn engine_label(engine: crate::ocr::EngineId) -> &'static str {
+    match engine {
+        crate::ocr::EngineId::Ocrs => "ocrs",
+        crate::ocr::EngineId::Ocrcer => "OCRcer",
+    }
+}
+
+/// What choosing a recogniser changes, on hover.
+#[must_use]
+pub const fn engine_tooltip(engine: crate::ocr::EngineId) -> &'static str {
+    match engine {
+        crate::ocr::EngineId::Ocrs => {
+            "The ocrs recogniser: two neural networks. It gives no confidence score."
+        }
+        crate::ocr::EngineId::Ocrcer => {
+            "The OCRcer recogniser: matches each character against its model and gives every word a confidence score."
+        }
+    }
+}
+
 /// ★★★ **The sentence that replaced the whole save apparatus.**
 ///
 /// It says three things in one line, and each was a separate control before:
@@ -395,7 +433,7 @@ pub fn close() -> &'static str {
 pub fn models_missing(searched: &[String]) -> String {
     let list = searched.join(", ");
     format!(
-        "The recognition models are not installed. They ship in the models\\ocrs folder beside \
+        "The recognition models are not installed. They ship in the models folder beside \
          pdfcer-gui.exe; this build looked in: {list}"
     )
 }
@@ -624,6 +662,10 @@ mod tests {
             working().to_owned(),
             what_was_inferred().to_owned(),
             no_confidence().to_owned(),
+            scored_confidence().to_owned(),
+            engine_heading().to_owned(),
+            engine_tooltip(crate::ocr::EngineId::Ocrs).to_owned(),
+            engine_tooltip(crate::ocr::EngineId::Ocrcer).to_owned(),
             applied_to_document().to_owned(),
             scope_heading().to_owned(),
             scope_all().to_owned(),
@@ -664,6 +706,13 @@ mod tests {
     /// reported" reads as neutral, and a future copy pass tidying it into
     /// something neutral would delete the disclosure while leaving a sentence
     /// in its place.
+    #[test]
+    fn the_scored_sentence_says_the_score_is_not_a_check() {
+        let text = scored_confidence().to_lowercase();
+        assert!(text.contains("not a check"), "{text}");
+        assert!(text.contains("before you rely"), "{text}");
+    }
+
     #[test]
     fn the_confidence_sentence_refuses_the_wrong_reading() {
         let text = no_confidence().to_lowercase();

@@ -63,5 +63,9 @@ flate2 = { version = "1", default-features = false, features = ["rust_backend"] 
 # `default-features = false` and forwards its own `ocrs`, which documents what
 # the flag gates; it is a default here only so this crate builds and tests
 # alone as the program ships.
-default = ["ocrs"]
+default = ["ocrs", "ocrcer"]
 ocrs = ["pdfcer-core/ocrs"]
+# `ocrcer` — the second recogniser, `pdfcer_core::ocr::engine_ocrcer`, whose
+# `ocrcer-core` the engine vendors from OCRcer's newest local commit. Offered
+# beside `ocrs`, never instead of it.
+ocrcer = ["pdfcer-core/ocrcer"]

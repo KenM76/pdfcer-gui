@@ -328,15 +328,16 @@ fn show_in(
     // The scroll area consumes a plain wheel, so a page-turning wheel has to
     // be taken away from it BEFORE it is built; reading the delta afterwards
     // and paging on it as well would scroll and page off one gesture. The
-    // decision and the spending are two places, one frame apart, and they ask
-    // `paging::flips_pages` — one predicate, so they cannot disagree about
-    // which frames are which.
+    // decision and the spending are two places, one frame apart: this asks
+    // `paging::wheel_turns_pages` and the spending its narrowing
+    // `paging::flips_pages`, so no frame both scrolls and pages. On a one-page
+    // document the wheel does neither and the fitted page stays put (O239).
     //
     // ★ Only the wheel. The scroll BARS keep working, which matters: with the
     // wheel turning pages, dragging the bar is how the operator moves within
     // a sheet that is larger than the window, and a mode that took both away
     // would have made a zoomed-in page unreachable.
-    if paging::flips_pages(doc) {
+    if paging::wheel_turns_pages(doc) {
         scroll_source.mouse_wheel = false;
     }
 

@@ -541,7 +541,7 @@ impl PdfcerApp {
             //
             // ★★★ **A completed recognition, applied as one edit.**
             //
-            Action::ApplyOcr { pages } => {
+            Action::ApplyOcr { pages, engine } => {
                 // The borrowed view the engine's slice wants, built here so the
                 // owned `OcrPage`s outlive it. `page` for the trace is the
                 // first one touched; the count is what makes the line useful.
@@ -558,7 +558,7 @@ impl PdfcerApp {
                     // Replace policy: a re-run takes pdfcer's earlier layer
                     // off in the same undo step.
                     session
-                        .add_ocr_layer(&layers, &super::ocrlayers::options())
+                        .add_ocr_layer(&layers, &super::ocrlayers::options(engine))
                         // ★ Every page's disclosures, flattened onto the one
                         // channel every other edit reports on. The dialog does
                         // NOT re-render them: two accounts of one run, worded

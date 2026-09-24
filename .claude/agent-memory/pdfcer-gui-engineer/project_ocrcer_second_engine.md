@@ -1,34 +1,36 @@
 ---
 name: ocrcer-second-engine
-description: A second OCR engine, OCRcer, is being built from scratch at D:\dev\OCRcer for this project — design to the pdfcer-core trait, never to OCRcer
+description: OCRcer (D:\dev\OCRcer) is the second OCR engine, integrated 2026-09-24 through the engine's adapter; always the LOCAL newest, never GitHub; LLM add-on is a separate future option (O240)
 metadata:
   type: project
 ---
 
-Ken, 2026-09-22: *"Fyi we are building an new additional ocr engine for this
-project in d:/dev/OCRcer from scratch."* It is a separate project tree —
-**survey it read-only, do not edit it**.
+OCRcer is a from-scratch OCR engine at `D:\dev\OCRcer` — a separate project,
+**read-only from here**. Ken, 2026-09-24: *"add ocrcer as an ocr option"* and
+*"always use the latest version of ocrcer available in d:\dev\ocrcer . github
+might be a few versions behind."*
 
-**Why:** the shipped OCR path uses `ocrs`, whose weights are ~12 MB and are not
-in the repo, and whose `reports_confidence()` returns `false` **permanently**.
-OCRcer is MIT code *and* MIT model, ~2.2 MB, and reports per-word confidence.
-Confidence is what makes an OCR review surface possible at all — see
-`words_needing_review`.
+**State at 2026-09-24:** integrated (O230). The engine vendors OCRcer's newest
+local commit into `pdfcer_core::ocr::engine_ocrcer` (feature `ocrcer`,
+default on); this shell forwards the feature and offers a Recogniser choice
+when both are linked, ocrs default. The model `ocrcer.ocrw` is NOT in either
+git tree — `tools/package-portable.py` copies it from
+`D:\Dev\OCRcer\model\out\` with OCRcer's LICENSE and NOTICE into
+`models/ocrcer/`. OCRcer's local repo has no remote.
 
-**How to apply:** every OCR feature in this shell is written against
-`pdfcer_core::ocr::OcrEngine` and `RecognizedWord`, never against OCRcer's own
-types. Which engine is present is an **R8 capability** — express it by
-registering (or not registering) the command, and let `reports_confidence()`
-decide whether a confidence column exists at all. Under **R9** an engine that
-does not report confidence draws *nothing* there, not a greyed column.
+**Why it matters:** OCRcer reports per-word confidence; `ocrs` never does. The
+dialog's confidence sentence follows `EngineId::reports_confidence`.
 
-Ken, 2026-09-22 (O230): add it as an OCR option **when this project judges it
-ready** — the timing is ours. The bar is in O230: implements `OcrEngine`
-(OCRcer chunk 7), not worse than `ocrs` on proportional faces, and a reject
-stage. Surveyed 2026-09-22: runs end-to-end, none of the three met; 43% vs
-Tesseract.js 85% on real scans; zero commits. He also wants tables, drafting
-line work and accounting documents — the `OcrEngine` result is words only, so
-that needs a richer `pdfcer-core` type, requested only once OCRcer produces
-structure. Re-survey `D:\dev\OCRcer\RESUME.md` before quoting any of this.
+**How to apply:**
+- Never pin OCRcer from GitHub. Moving the pdfcer pin moves OCRcer with it.
+- The layer marker must carry the engine that actually ran (`EngineId::key`),
+  not a constant — it was hard-coded `"ocrs"` until 2026-09-24.
+- Known OCRcer defect, filed in `D:\Dev\FeatureRequests\OCRcer_FeatureRequests\`:
+  digit runs split around `1` (`41177` → `41 1 77`). Its fixture test asks for
+  fewer words until fixed.
+- The LLM rescoring add-on (`.ocrl`, engine Pass 327.2) is its own opt-in
+  option, O240: present only when linked and its file is on disk (R8).
+- Tables / drafting lines / accounting structure need a richer core result
+  type than words; request it only once OCRcer produces structure.
 
 Related: [[the-project-is-pdfcer-gui-since-2026-09-03]]

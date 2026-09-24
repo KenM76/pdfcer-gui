@@ -2519,6 +2519,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "ocrcer-core"
+version = "0.1.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#1d7654aac5fee7c614af7367938fe904b6f1ca1b"
+
+[[package]]
 name = "ocrs"
 version = "0.12.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2628,7 +2633,7 @@ dependencies = [
 [[package]]
 name = "pdfcer-core"
 version = "0.55.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#b82b7aba322ed18d29a25d406f49c64796664976"
+source = "git+file:///D:/Dev/pdfcer?branch=main#1d7654aac5fee7c614af7367938fe904b6f1ca1b"
 dependencies = [
  "aes",
  "brotli",
@@ -2641,6 +2646,7 @@ dependencies = [
  "hayro-jpeg2000",
  "hmac",
  "jpeg-encoder",
+ "ocrcer-core",
  "ocrs",
  "p256",
  "p384",
@@ -2692,7 +2698,7 @@ dependencies = [
 [[package]]
 name = "pdfcer-print"
 version = "0.55.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#b82b7aba322ed18d29a25d406f49c64796664976"
+source = "git+file:///D:/Dev/pdfcer?branch=main#1d7654aac5fee7c614af7367938fe904b6f1ca1b"
 dependencies = [
  "thiserror 2.0.20",
  "windows",
@@ -2701,7 +2707,7 @@ dependencies = [
 [[package]]
 name = "pdfcer-render"
 version = "0.55.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#b82b7aba322ed18d29a25d406f49c64796664976"
+source = "git+file:///D:/Dev/pdfcer?branch=main#1d7654aac5fee7c614af7367938fe904b6f1ca1b"
 dependencies = [
  "iccce-cmm",
  "iccce-color",

@@ -33,8 +33,16 @@
 //!   way a from-scratch viewer feels wrong"*.
 //! * **Deciding whether the scroll area also sees the wheel.** That is the
 //!   caller's, one line above the call, because it has to be decided *before*
-//!   the `ScrollArea` is built and this runs after. [`flips_pages`] is the
-//!   shared predicate so the two cannot disagree about which frames are which.
+//!   the `ScrollArea` is built and this runs after. It asks
+//!   [`wheel_turns_pages`], of which [`flips_pages`] is the narrowing, so a
+//!   frame can never both scroll and page.
+//!
+//! ## A one-page document
+//!
+//! The wheel is still taken from the scroll area, and turns nothing: the
+//! fitted page stays put rather than sliding over the pasteboard (O239). The
+//! scroll bars and the middle-button pan still move a zoomed-in page, as they
+//! do on a longer document in this mode.
 
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
@@ -57,16 +65,21 @@ use crate::app::state::OpenDoc;
 /// swipe pages at the speed of the hand rather than of the frame rate.
 const POINTS_PER_PAGE: f32 = 40.0;
 
-/// **Does a plain wheel turn pages this frame?**
+/// **Is the plain wheel a page turn rather than a scroll this frame?**
 ///
-/// The single predicate, asked twice per frame from two places that must
-/// agree: once before the `ScrollArea` is built, to decide whether to let it
-/// consume the wheel at all, and once after, to spend the travel. Two
-/// spellings of this condition would eventually differ, and the frame where
-/// they did would either scroll *and* page at once or do neither.
+/// Asked before the `ScrollArea` is built, to withhold the wheel from it, and
+/// by the status bar, to decide whether the toggle exists. Independent of
+/// the page count: see the module header's one-page section.
+#[must_use]
+pub(super) fn wheel_turns_pages(doc: &OpenDoc) -> bool {
+    doc.prefs.wheel_paging.flips() && !doc.view.display.is_continuous()
+}
+
+/// **Is there a page to turn to?** [`wheel_turns_pages`] on a document with
+/// more than one page; the condition under which [`flip`] spends travel.
 #[must_use]
 pub(super) fn flips_pages(doc: &OpenDoc) -> bool {
-    doc.prefs.wheel_paging.flips() && !doc.view.display.is_continuous() && doc.pages.len() > 1
+    wheel_turns_pages(doc) && doc.pages.len() > 1
 }
 
 /// Accumulate this frame's wheel travel and raise a page turn when it is
@@ -166,14 +179,14 @@ mod tests {
         );
     }
 
-    /// A one-page document has nowhere to flip to, so the wheel is left to
-    /// scroll — which on a page larger than the window is the only useful
-    /// thing it could do.
+    /// A one-page document has nowhere to flip to, and the wheel is still
+    /// withheld from the scroll area, so a fitted page does not move (O239).
     #[test]
-    fn a_single_page_document_never_flips() {
+    fn a_single_page_document_neither_flips_nor_scrolls_by_wheel() {
         let doc = &mut ready();
         doc.pages.truncate(1);
         assert!(!flips_pages(doc));
+        assert!(wheel_turns_pages(doc));
     }
 
     /// Travel below the threshold banks and does not turn a page; travel that

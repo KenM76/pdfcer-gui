@@ -832,6 +832,9 @@ impl PrintDialog {
             egui::vec2(800.0, 620.0),
             egui::vec2(520.0, 380.0),
         )
+        // Its preview is what he reads before committing paper, and a larger
+        // window is a larger preview (O241).
+        .maximizable()
     }
 
     pub(super) fn show(

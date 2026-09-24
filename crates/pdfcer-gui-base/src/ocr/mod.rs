@@ -123,6 +123,13 @@ pub mod progress;
 
 pub use job::{Job, Tally};
 
+/// Which recognisers this build carries, their model directories, and the
+/// loaded model a run holds.
+mod engines;
+pub use engines::{EngineId, OCRCER_MODEL_DIR, OCRCER_MODEL_FILE, available};
+
+use engines::Recogniser;
+
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -245,30 +252,6 @@ pub const MAX_DPI: f32 = 300.0;
 /// nonsense the disclosure warns about — is preferable to spending the time.
 pub const MIN_DPI: f32 = 50.0;
 
-/// The engine directory name, re-exported so the shell names it once.
-///
-/// `pdfcer_core::ocr::engine_ocrs::MODEL_DIR` when the recogniser is compiled
-/// in; the same literal otherwise, because a build without the engine still
-/// has to be able to say *where* the models it cannot use would have gone.
-#[cfg(feature = "ocrs")]
-pub const MODEL_DIR: models::EngineDirName = pdfcer_core::ocr::engine_ocrs::MODEL_DIR;
-/// See the `ocrs`-enabled twin above.
-#[cfg(not(feature = "ocrs"))]
-pub const MODEL_DIR: models::EngineDirName = "ocrs";
-
-/// The files a model directory must hold to count as found: the engine's own
-/// published names, so a rename there cannot leave this resolving a directory
-/// the engine then refuses.
-#[cfg(feature = "ocrs")]
-const MODEL_FILES: &[&str] = &[
-    pdfcer_core::ocr::engine_ocrs::DETECTION_MODEL,
-    pdfcer_core::ocr::engine_ocrs::RECOGNITION_MODEL,
-];
-/// No recogniser is compiled in, so no file is required: resolution only has
-/// to name where the models would have gone.
-#[cfg(not(feature = "ocrs"))]
-const MODEL_FILES: &[&str] = &[];
-
 /// Why recognition did not happen, in the operator's terms.
 ///
 /// Every variant is a **named** cause with a different action behind it. The
@@ -367,6 +350,9 @@ pub struct Recognised {
     /// order, and either mistake puts one page's words on another page with no
     /// diagnostic short of reading the output.
     pub pages: Vec<(usize, pdfcer_core::ocr::OcrPage)>,
+    /// The recogniser that read these pages; its key is written into the
+    /// layer's marker, so the file says which engine produced the text.
+    pub engine: EngineId,
     /// The resolution the page was actually rasterized at.
     ///
     /// Derived from the page's area by [`fitted_dpi`], so it varies per page and
@@ -508,6 +494,7 @@ pub fn greyscale(rgba: &[u8], width: u32, height: u32) -> Vec<u8> {
 /// [`models::ModelsNotFound`], carrying every path that was tried, which is
 /// the actionable half of the message.
 pub fn resolve_models(
+    engine: EngineId,
     exe_dir: Option<&Path>,
     user_data: Option<&Path>,
 ) -> Result<models::ModelSource, models::ModelsNotFound> {
@@ -518,7 +505,13 @@ pub fn resolve_models(
     // reached. The failure then surfaces later and in the wrong vocabulary: the
     // engine reports a missing model file after this shell has already told
     // them the models were found.
-    models::resolve_model_dir_with(MODEL_DIR, None, exe_dir, user_data, MODEL_FILES)
+    models::resolve_model_dir_with(
+        engine.model_dir(),
+        None,
+        exe_dir,
+        user_data,
+        engine.model_files(),
+    )
 }
 
 /// The directory the running executable is in, if it can be determined.
@@ -604,7 +597,10 @@ pub struct Request {
     /// Built on the UI thread by the dialog, where `Settings` lives, and moved
     /// to the worker with the rest of the request.
     pub extract_options: pdfcer_core::text_extract::ExtractOptions,
-    /// The directory holding the two `.rten` files.
+    /// The recogniser to run; one [`available`] reports.
+    pub engine: EngineId,
+    /// The directory holding `engine`'s model files, from [`resolve_models`]
+    /// for the same engine.
     pub model_dir: PathBuf,
 }
 
@@ -657,7 +653,12 @@ pub(in crate::ocr) fn recognise(
     // page 40 of 200 reports as a whole document recognised.
     let mut stopped_after: Option<usize> = None;
 
-    let recogniser = Recogniser::load(&request.model_dir)?;
+    let recogniser = Recogniser::load(request.engine, &request.model_dir)?;
+    debug_assert_eq!(
+        recogniser.reports_confidence(),
+        request.engine.reports_confidence(),
+        "the dialog words its disclosure from EngineId; the page is stamped from the engine"
+    );
 
     let mut pages = Vec::new();
     let mut total_words = 0usize;
@@ -754,6 +755,7 @@ pub(in crate::ocr) fn recognise(
     Ok(Recognised {
         pages_written: pages.len(),
         pages,
+        engine: request.engine,
         effective_dpi: dpi,
         words_recognised: total_words,
         pages_skipped,
@@ -889,11 +891,9 @@ fn recognise_one(
     Ok(OnePage {
         recognised: OcrPage {
             words: placed,
-            // Asked of the engine rather than assumed.
-            // `OcrEngine::reports_confidence` is a required method with no
-            // default precisely so this cannot be guessed at either
-            // optimistically or pessimistically.
-            confidence_available: reports_confidence(),
+            // Asked of the loaded engine rather than assumed: `ocrs` scores
+            // nothing, OCRcer scores every word.
+            confidence_available: recogniser.reports_confidence(),
         },
         words: words_recognised,
         chars: chars_recognised,
@@ -909,120 +909,6 @@ fn pages_of(request: &Request) -> Result<Vec<page_tree::Page>, Refusal> {
         .map_err(|e| Refusal::Engine(e.to_string()))
 }
 
-/// Whether the compiled-in recogniser scores its output.
-///
-/// **`false` today, and that is a fact about `ocrs` rather than a placeholder**
-/// — its output type is a character and a rectangle, with no score on a
-/// character, a word, a line or the page. Read through a function rather than
-/// written as a literal at the call site so that the day a second engine lands
-/// there is one place that has to learn to ask it.
-#[must_use]
-fn reports_confidence() -> bool {
-    #[cfg(feature = "ocrs")]
-    {
-        use pdfcer_core::ocr::OcrEngine as _;
-        // Answered by the type rather than by a constant, so a future upstream
-        // change is picked up rather than contradicted. Constructing an engine
-        // just to ask would need the models, so the answer is taken from a
-        // value that does not exist — which is why this is written as a match
-        // on the trait's own implementation through a zero-sized shim below.
-        struct Never;
-        impl pdfcer_core::ocr::OcrEngine for Never {
-            type Error = std::io::Error;
-            fn recognize(
-                &self,
-                _w: u32,
-                _h: u32,
-                _p: &[u8],
-            ) -> Result<Vec<pdfcer_core::ocr::RecognizedWord>, Self::Error> {
-                // ui-text-exempt: a panic message on a branch that cannot be
-                // taken; it reaches stderr, never the operator.
-                unreachable!("the shim is never recognised with")
-            }
-            fn reports_confidence(&self) -> bool {
-                // Mirrors `OcrsEngine::reports_confidence`, which returns
-                // `false` because there is no score to report.
-                false
-            }
-        }
-        Never.reports_confidence()
-    }
-    #[cfg(not(feature = "ocrs"))]
-    {
-        false
-    }
-}
-
-/// ★★ **The loaded recognition models, held for the whole run.**
-///
-/// # Why this is a type rather than a function call per page
-///
-///
-/// The gap document called this out as the one thing that had to change
-/// *underneath* the new page-scope control rather than beside it — a scope
-/// selector over a per-page model load would have shipped a feature whose cost
-/// grew with the number the operator typed.
-///
-/// # Why it still carries the whole feature gate
-///
-/// The `ocrs`-absent twin below has the same two methods and refuses by name.
-/// Everything above this line compiles and runs identically in a stripped
-/// build, which is what makes the gated-out path a **named refusal** rather
-/// than a silently different program — R8's rule, applied to a Cargo feature.
-///
-/// ★ The stripped build refuses at [`Self::load`], which is **before** any page
-/// is rasterized. A build with no recogniser therefore spends no time rendering
-/// images it has nothing to read.
-#[cfg(feature = "ocrs")]
-struct Recogniser(pdfcer_core::ocr::engine_ocrs::OcrsEngine);
-
-#[cfg(feature = "ocrs")]
-impl Recogniser {
-    /// Read the models off disk. Once per run — see the type's header.
-    fn load(model_dir: &Path) -> Result<Self, Refusal> {
-        use pdfcer_core::ocr::engine_ocrs::OcrsEngine;
-        OcrsEngine::from_model_dir(model_dir)
-            .map(Self)
-            .map_err(|e| Refusal::Engine(e.to_string()))
-    }
-
-    /// Recognise one greyscale image.
-    fn recognise(
-        &self,
-        width: u32,
-        height: u32,
-        grey: &[u8],
-    ) -> Result<Vec<pdfcer_core::ocr::RecognizedWord>, Refusal> {
-        use pdfcer_core::ocr::OcrEngine as _;
-        self.0
-            .recognize(width, height, grey)
-            .map_err(|e| Refusal::Engine(e.to_string()))
-    }
-}
-
-/// See the `ocrs`-enabled twin above.
-#[cfg(not(feature = "ocrs"))]
-struct Recogniser;
-
-#[cfg(not(feature = "ocrs"))]
-impl Recogniser {
-    /// A build with no recogniser refuses at the point of loading, which is
-    /// before any page is rasterized — so a stripped build spends no time
-    /// rendering images it has nothing to read.
-    fn load(_model_dir: &Path) -> Result<Self, Refusal> {
-        Err(Refusal::EngineAbsent)
-    }
-
-    fn recognise(
-        &self,
-        _width: u32,
-        _height: u32,
-        _grey: &[u8],
-    ) -> Result<Vec<pdfcer_core::ocr::RecognizedWord>, Refusal> {
-        Err(Refusal::EngineAbsent)
-    }
-}
-
 /// Whether this build carries a recogniser at all.
 ///
 /// Read by the dialog before it looks for models: *cannot look* and *could not
@@ -1030,7 +916,7 @@ impl Recogniser {
 /// wrong order would report the second when the first is true.
 #[must_use]
 pub const fn engine_compiled_in() -> bool {
-    cfg!(feature = "ocrs")
+    cfg!(any(feature = "ocrs", feature = "ocrcer"))
 }
 
 #[cfg(test)]
@@ -1224,19 +1110,13 @@ mod tests {
         assert_eq!(out[15], 0xFF, "the padding is paper, not ink");
     }
 
-    /// ★ **This engine reports no confidence, and the shell says so.**
-    ///
-    /// Pinned because the whole disclosure surface turns on it: if this ever
-    /// becomes `true` while `ocrs` is still the engine, the dialog would stop
-    /// making the "nothing here has been scored" statement and a page of
-    /// unscored guesses would present exactly as a page of checked ones.
+    /// ★ **`ocrs` reports no confidence, and the shell says so.** If this
+    /// became `true` the dialog would drop its "nothing here has been scored"
+    /// statement and a page of unscored guesses would present as checked.
     #[test]
-    fn the_shipped_recogniser_scores_nothing() {
-        assert!(
-            !reports_confidence(),
-            "`ocrs` emits a char and a rectangle and no score; a `true` here would \
-             make every word look checked"
-        );
+    #[cfg(feature = "ocrs")]
+    fn ocrs_scores_nothing() {
+        assert!(!EngineId::Ocrs.reports_confidence());
     }
 
     /// The two absences are two different refusals.
@@ -1248,7 +1128,8 @@ mod tests {
     /// The model directory name is the engine's own, not a second spelling.
     #[test]
     fn the_model_directory_is_the_engines_own_name() {
-        assert_eq!(MODEL_DIR, "ocrs");
+        assert_eq!(EngineId::Ocrs.model_dir(), "ocrs");
+        assert_eq!(EngineId::Ocrcer.model_dir(), OCRCER_MODEL_DIR);
     }
 
     /// Nothing is resolved from a directory that does not exist, and every
@@ -1258,8 +1139,9 @@ mod tests {
         // temp-path-exempt: never created -- the assertion is that resolving
         // against a directory that is not there fails.
         let nowhere = std::env::temp_dir().join("pdfcer-no-models-here-4c1a");
-        let err = resolve_models(Some(&nowhere), None).expect_err("nothing is there");
-        assert_eq!(err.engine, MODEL_DIR);
+        let err =
+            resolve_models(EngineId::Ocrs, Some(&nowhere), None).expect_err("nothing is there");
+        assert_eq!(err.engine, EngineId::Ocrs.model_dir());
         assert_eq!(err.searched.len(), 1);
         assert!(err.to_string().contains("ocrs"));
     }
@@ -1290,14 +1172,14 @@ mod tests {
     fn an_empty_model_directory_is_rejected_but_a_filled_one_resolves() {
         let root =
             std::env::temp_dir().join(format!("pdfcer-empty-models-9f3b-{}", std::process::id()));
-        let dir = root.join("models").join(MODEL_DIR);
+        let dir = root.join("models").join(EngineId::Ocrs.model_dir());
         let _ = std::fs::remove_dir_all(&root);
         std::fs::create_dir_all(&dir).expect("temp dir");
 
         // Empty: must be refused, or it shadows.
-        let err = resolve_models(Some(&root), None)
+        let err = resolve_models(EngineId::Ocrs, Some(&root), None)
             .expect_err("an empty models directory must NOT resolve, or it shadows a good one");
-        assert_eq!(err.engine, MODEL_DIR);
+        assert_eq!(err.engine, EngineId::Ocrs.model_dir());
         assert!(
             !err.searched.is_empty(),
             "the directory must be REPORTED as searched, so the message names a place the operator can go and look"
@@ -1305,11 +1187,11 @@ mod tests {
 
         // Filled: must be accepted — otherwise the assertion above proves
         // nothing about emptiness.
-        for f in MODEL_FILES {
+        for f in EngineId::Ocrs.model_files() {
             std::fs::write(dir.join(f), b"not a real model, but a real file").expect("write");
         }
         assert!(
-            resolve_models(Some(&root), None).is_ok(),
+            resolve_models(EngineId::Ocrs, Some(&root), None).is_ok(),
             "a directory containing both model files must resolve"
         );
 

@@ -812,7 +812,67 @@ mod tests {
     #[test]
     #[ignore = "several seconds, and needs the ocrs model weights on disk"]
     fn recognises_the_synthetic_page() {
-        let models = PathBuf::from("D:/Dev/pdfcer/crates/pdfcer-core/assets/models/ocrs");
+        let recognised = recognise_and_apply(
+            super::super::EngineId::Ocrs,
+            PathBuf::from("D:/Dev/pdfcer/crates/pdfcer-core/assets/models/ocrs"),
+            &MUST_RECOGNISE,
+        );
+        assert!(
+            recognised
+                .pages
+                .iter()
+                .all(|(_, page)| !page.confidence_available),
+            "this engine reports no confidence; a `true` here would make the dialog stop \
+             disclosing that and present unscored guesses as checked"
+        );
+    }
+
+    /// The same chain with OCRcer: resolved from the OCRcer repository's
+    /// build output, recognised, applied, and read back by the ordinary
+    /// extractor. Its pages must report confidence, since OCRcer scores every
+    /// word and the dialog words its disclosure on that.
+    ///
+    /// ```text
+    /// cargo test -p pdfcer-gui-base --lib ocrcer_recognises_the_synthetic_page -- --ignored --nocapture
+    /// ```
+    #[test]
+    #[cfg(feature = "ocrcer")]
+    #[ignore = "needs OCRcer's model file on disk"]
+    fn ocrcer_recognises_the_synthetic_page() {
+        let recognised = recognise_and_apply(
+            super::super::EngineId::Ocrcer,
+            PathBuf::from("D:/Dev/OCRcer/model/out"),
+            // Not "41177": OCRcer spaces the drawing number around its narrow
+            // `1` ("41 1 77"), a word-segmentation miss reported in
+            // `FeatureRequests/OCRcer_FeatureRequests`. Add it back when
+            // OCRcer reads it whole.
+            &["DRAWING", "REVISION"],
+        );
+        assert!(
+            recognised
+                .pages
+                .iter()
+                .all(|(_, page)| page.confidence_available),
+            "OCRcer scores every word; `false` would drop its confidence from the report"
+        );
+        assert!(
+            recognised
+                .pages
+                .iter()
+                .flat_map(|(_, page)| &page.words)
+                .all(|w| w.confidence.is_some_and(|c| (0.0..=1.0).contains(&c))),
+            "every OCRcer word carries a score in 0..=1"
+        );
+    }
+
+    /// Recognise the fixture page with `engine`, apply the layer as the
+    /// application does, and require every word of `must` in what the
+    /// ordinary extractor reads back.
+    fn recognise_and_apply(
+        engine: super::super::EngineId,
+        models: PathBuf,
+        must: &[&str],
+    ) -> super::super::Recognised {
         assert!(
             models.is_dir(),
             "the model weights are not at {}; this test cannot run without them, and \
@@ -837,6 +897,7 @@ mod tests {
             // configured set, because there is no `Settings` on this thread and
             // nothing here depends on one.
             extract_options: pdfcer_core::text_extract::ExtractOptions::default(),
+            engine,
             model_dir: models,
         });
         let mut job = out;
@@ -931,19 +992,12 @@ mod tests {
         );
         // Content, not a count. A recogniser returning noise would pass a
         // word-count assertion and fail this one.
-        for word in MUST_RECOGNISE {
+        for word in must {
             assert!(
                 text.to_uppercase().contains(word),
                 "expected {word:?} in the recognised text, got {text:?}"
             );
         }
-        assert!(
-            recognised
-                .pages
-                .iter()
-                .all(|(_, page)| !page.confidence_available),
-            "this engine reports no confidence; a `true` here would make the dialog stop \
-             disclosing that and present unscored guesses as checked"
-        );
+        recognised
     }
 }

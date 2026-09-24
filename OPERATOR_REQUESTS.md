@@ -112,6 +112,34 @@ exactly that. **The canvas needs the same treatment and does not have it.**
 
 # OPEN
 
+## O239 — **BUILT, NOT DRIVEN** — with Fit page and Flip pages on, a one-page document does not scroll
+
+> **Ken:** *"also with fit page and flip pages active when a pdf is a single page it shouldn't scroll on the screen."*
+
+With the page fitted to the window and flip-page view on, a single-page PDF
+still moves when scrolled. The fitted page should stay put: there is nowhere
+to scroll to.
+
+**Built.** In Flip pages mode the mouse wheel is now kept from the scroll area
+whatever the page count, so a one-page document's fitted page stays put. The
+scroll bars and middle-button pan still move a page you have zoomed into.
+
+## O241 — **BUILT, NOT DRIVEN** — the Print dialog itself can be maximised
+
+> **Ken:** *"Also the print dialogue window should be able to be maximized on screen."*
+
+O234 gave the popped-out preview a maximise button and left the dialog
+without one. The dialog now has it too; minimise stays off.
+
+## O240 — **FILED** — OCRcer's LLM rescoring as its own add-in option, when OCRcer has it
+
+> **Ken:** *"add ocrcer as an ocr option. It is also working on LLM support which should be its own add-in option too when it is available."*
+
+A separate option from the OCRcer recogniser, not a setting inside it: present
+only in a build that links OCRcer's LLM add-on and when its model file is on
+disk, absent otherwise. Waits on OCRcer shipping the add-on and the engine
+exposing it.
+
 ## O233–O238 — six print reports in one message, FILED BEFORE ANY WORK
 
 > **Ken:** *"I want an option in the print dialogue to turn off line weights and print at a fixed width - I want an auto setting checkbox that when unchecked lets me enter a line width value. I want the auto setting to make the lines as thin as practically possible that the printer can still render and are visible to a user. Also the print pop out box should have the controls to maximize on screen, and its preview resolution should match the resolution set for the print if it doesn't already - when I zoomed in it looked really blurry and I'm not sure if that is because it is actually matching the resolution set. also when I clicked to change the print resolution which is for some reason under the comments section instead of on the pages section, the next time I opened the print dialogue the box to enter the resolution was missing. Also we should have a poster printing option with the same options as acrobat."*
@@ -269,7 +297,7 @@ anchor between frames made no measurable difference against a control build
 (1.7 vs 2.2 pt average), so it was taken out. Both checks fail above
 12 screen pixels.
 
-## O230 — **FILED** — add OCRcer as an OCR option once it is good enough; tables, drawing lines and accounting documents included
+## O230 — **BUILT, NOT DRIVEN — awaiting your verdict** — OCRcer as an OCR option; tables, drawing lines and accounting documents included
 
 > *"we have a new project in a folder called d:\dev\ocrcer . It is supposed to
 > be built for your use. I'd like to be able to add it as an OCR option when you
@@ -278,23 +306,25 @@ anchor between frames made no measurable difference against a control build
 > architectural drawings, and also detection of things that are used by
 > accountanting firms."*
 
-The timing is this project's call, and so is the bar. **The bar, in order:**
+> **Ken:** *"add ocrcer as an ocr option."* — *"always use the latest version of
+> ocrcer available in d:\dev\ocrcer . github might be a few versions behind."*
 
-1. **It implements `pdfcer_core::ocr::OcrEngine`.** OCRcer's chunk 7; not
-   started. Until then there is nothing to link.
-2. **It does not read worse than the engine it would sit beside.** Measured by
-   OCRcer's own head-to-head against `ocrs` on its coverage corpus, on the
-   proportional faces a scan actually carries. At the survey it trailed on
-   every proportional face (Lato 64% vs 83% word F1, Liberation Serif 69% vs
-   88%) and led only on monospace; on 29 real scans it read 43% where
-   Tesseract.js read 85%. Its own README says *do not use this yet*.
-3. **It can decline.** No reject stage exists, which its own docs name as the
-   dominant error on real documents. An engine that cannot say "not sure" is
-   the wrong engine for a review surface, even with a confidence score.
+**Built.** The Recognise-text dialog shows a **Recogniser** choice, ocrs or
+OCRcer, whenever the build carries both; ocrs stays the default. The choice is
+remembered once a run starts. An OCRcer run reports its per-word confidence,
+and the dialog says the score is the recogniser's own estimate, not a check.
+The code is the engine's own OCRcer adapter, which vendors OCRcer's newest
+local commit; the portable folder carries the model from OCRcer's local build
+at `models/ocrcer/`, with OCRcer's licence and notice beside it.
 
-**Offering it is R8, and cheap once 1–3 hold.** A second registered engine
-command; the choice appears only in a build that links it, and the confidence
-column follows `reports_confidence()`, which OCRcer answers `true`.
+**Measured on the synthetic drawing page:** both recognisers read it end to
+end. OCRcer splits digit runs around a `1` — `41177` reads `41 1 77` — so a
+search for a drawing number can miss; filed with OCRcer.
+
+The saved OCR layer records which recogniser produced it: `ocrcer` for an
+OCRcer run, `ocrs` for an ocrs run.
+
+**Not driven** in the running program yet.
 
 **Tables and drawing lines are a larger ask than "an OCR option", and the
 boundary does not carry them yet.** `OcrEngine::recognize` returns
@@ -306,7 +336,6 @@ richer result type in `pdfcer-core`, which is an engine request from here, to
 be filed when OCRcer has a structure result to hand over — not before, or the
 type will be designed without a producer.
 
-**Survey is read-only.** OCRcer is its own project; nothing here edits it.
 
 ## O226 — **FILED** — an OCR text-layer editing mode, two synced views with a PDF↔text slider
 

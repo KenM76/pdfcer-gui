@@ -92,7 +92,7 @@ use std::path::{Path, PathBuf};
 use egui_shell::theme::Theme;
 
 use crate::app::state::{OpenDoc, Status};
-use crate::ocr::{self, Job, Refusal, Request};
+use crate::ocr::{self, EngineId, Job, Refusal, Request};
 use crate::text::ocr as t;
 
 // ---------------------------------------------------------------------------
@@ -119,6 +119,9 @@ const REGION_SCOPE: &str = "ocr-scope"; // ui-text-exempt: trace region name, ne
 
 /// The skip-existing-text toggle.
 const REGION_SKIP: &str = "ocr-skip"; // ui-text-exempt: trace region name, never displayed
+
+/// The recogniser choice, present only when the build offers two or more.
+const REGION_ENGINE: &str = "ocr-engine"; // ui-text-exempt: trace region name, never displayed
 
 /// The control that starts recognition.
 ///
@@ -249,6 +252,13 @@ pub struct OcrDialog {
     /// recognised page **adds a second invisible layer**, doubling every search
     /// hit and every copy.
     skip_pages_with_text: bool,
+    /// The recogniser to run: one [`ocr::available`] reports. Chosen only
+    /// while the dialog is [`Phase::Ready`], so it names the engine of any
+    /// run this dialog has started.
+    engine: EngineId,
+    /// Set when a run starts; [`Self::show`] then stores [`Self::engine`] as
+    /// the preference, because only `show` holds the preferences.
+    remember_engine: bool,
     /// The page list the last `ocr-scope` line reported.
     ///
     /// Kept so the trace fires on a change rather than on a frame. See
@@ -381,7 +391,7 @@ impl OcrDialog {
     /// the operation does. A dialog that started recognising on open would
     /// spend that time before the operator had decided they wanted it.
     #[must_use]
-    pub(super) fn open(doc: &OpenDoc, picked: Vec<usize>) -> Self {
+    pub(super) fn open(doc: &OpenDoc, picked: Vec<usize>, preferred: Option<EngineId>) -> Self {
         Self {
             page_index: doc.view.page_index,
             // ★ The rail's selection, captured once — see `Self::picked` for
@@ -395,6 +405,8 @@ impl OcrDialog {
             scope: Scope::All,
             range: String::new(),
             skip_pages_with_text: true,
+            engine: initial_engine(preferred),
+            remember_engine: false,
             traced_scope: Vec::new(),
             traced_progress: usize::MAX,
             phase: Phase::Ready,
@@ -408,6 +420,7 @@ impl OcrDialog {
         ctx: &egui::Context,
         doc: &OpenDoc,
         actions: &mut Vec<crate::app::actions::Action>,
+        prefs: &mut crate::app::prefs::Prefs,
     ) -> bool {
         self.poll_worker(actions);
 
@@ -435,6 +448,17 @@ impl OcrDialog {
             self.body(ui, doc);
         });
         let open = !frame.closed;
+        if std::mem::take(&mut self.remember_engine) && prefs.ocr_engine != Some(self.engine) {
+            prefs.ocr_engine = Some(self.engine);
+            let saved = prefs.save().is_ok();
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed.
+                format!(
+                    "ocr-engine-remembered engine={} saved={saved}",
+                    self.engine.key()
+                )
+            });
+        }
 
         open && !std::mem::take(&mut self.close_requested)
     }
@@ -522,6 +546,7 @@ impl OcrDialog {
                 // for one recognition.
                 actions.push(crate::app::actions::Action::ApplyOcr {
                     pages: recognised.pages,
+                    engine: recognised.engine,
                 });
                 phase
             }
@@ -699,7 +724,8 @@ impl OcrDialog {
                 // one fact a reader who skims must not miss, and it is about
                 // the RECOGNITION rather than about the edit — so it does not
                 // belong on the disclosure channel with the counts.
-                Self::answered(ui, &theme, &[t::no_confidence().to_owned()]);
+                let confidence = confidence_sentence(self.engine);
+                Self::answered(ui, &theme, confidence, &[confidence.to_owned()]);
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed.
                     format!("ocr-applied written={written} skipped={skipped} words={words}")
@@ -748,10 +774,14 @@ impl OcrDialog {
     /// report a missing model directory in a build that has no recogniser to
     /// use it — a true statement and the wrong diagnosis.
     fn ready(&mut self, ui: &mut egui::Ui, doc: &OpenDoc) {
-        if let Some(refusal) = Self::preflight(doc) {
+        if let Some(refusal) = Self::preflight(doc, self.engine) {
             ui.label(sentence(&refusal));
+            // The choice stays reachable: another recogniser may have its
+            // models where this one has none.
+            self.engine_group(ui);
             return;
         }
+        self.engine_group(ui);
         let count = doc.pages.len();
         self.scope_group(ui, count);
         ui.add_space(10.0);
@@ -883,8 +913,8 @@ impl OcrDialog {
     /// Returns `None` when recognition may proceed. Pulled out of [`Self::ready`]
     /// so that the decision is a pure function of the document and is therefore
     /// reachable from a test — the button and the window are not.
-    fn preflight(_doc: &OpenDoc) -> Option<Refusal> {
-        if !ocr::engine_compiled_in() {
+    fn preflight(_doc: &OpenDoc, engine: EngineId) -> Option<Refusal> {
+        if !engine.compiled_in() {
             return Some(Refusal::EngineAbsent);
         }
         // ★★ **There is no unsaved-edits guard, and its absence is the design.**
@@ -899,7 +929,11 @@ impl OcrDialog {
         //
         // What is left is the pair that is still real — a build with no
         // recogniser, and a build that cannot find its models.
-        match ocr::resolve_models(ocr::exe_dir().as_deref(), user_data_dir().as_deref()) {
+        match ocr::resolve_models(
+            engine,
+            ocr::exe_dir().as_deref(),
+            user_data_dir().as_deref(),
+        ) {
             Ok(_) => None,
             Err(e) => Some(Refusal::ModelsMissing(e.searched)),
         }
@@ -907,8 +941,11 @@ impl OcrDialog {
 
     /// Spawn the worker.
     fn start(&mut self, doc: &OpenDoc) {
-        let Ok(source) = ocr::resolve_models(ocr::exe_dir().as_deref(), user_data_dir().as_deref())
-        else {
+        let Ok(source) = ocr::resolve_models(
+            self.engine,
+            ocr::exe_dir().as_deref(),
+            user_data_dir().as_deref(),
+        ) else {
             // Unreachable behind `preflight`, and answered rather than
             // ignored: a button that did nothing would be indistinguishable
             // from a recognition that produced no words.
@@ -918,7 +955,8 @@ impl OcrDialog {
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed.
-                "ocr-started page={} models={} source={}",
+                "ocr-started engine={} page={} models={} source={}",
+                self.engine.key(),
                 self.page_index,
                 source.path().display(),
                 source.token()
@@ -936,8 +974,37 @@ impl OcrDialog {
                 use crate::app::settings::SettingsExt as _;
                 doc.settings.extract_options()
             },
+            engine: self.engine,
             model_dir: source.path().to_path_buf(),
         }));
+        self.remember_engine = true;
+    }
+
+    /// Which recogniser. Drawn only when this build offers more than one
+    /// (R9: a choice of one is not a choice).
+    fn engine_group(&mut self, ui: &mut egui::Ui) {
+        let offered = ocr::available();
+        if offered.len() < 2 {
+            return;
+        }
+        let before = self.engine;
+        let group = ui
+            .horizontal(|ui| {
+                ui.label(t::engine_heading());
+                for e in offered {
+                    ui.radio_value(&mut self.engine, e, t::engine_label(e))
+                        .on_hover_text(t::engine_tooltip(e));
+                }
+            })
+            .response;
+        crate::diag::ui_rect(REGION_ENGINE, group.rect);
+        if self.engine != before {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed.
+                format!("ocr-engine engine={}", self.engine.key())
+            });
+        }
+        ui.add_space(8.0);
     }
 
     /// The disclosure block: the confidence statement, then the engine's own
@@ -953,10 +1020,10 @@ impl OcrDialog {
     /// Drawn in the plain text role, never `.strong()` — `DEFECTS.md` D11
     /// records that role as unusable in this theme, and a named palette exists
     /// so a surface written later does not rediscover it.
-    fn answered(ui: &mut egui::Ui, theme: &Theme, disclosures: &[String]) {
+    fn answered(ui: &mut egui::Ui, theme: &Theme, confidence: &str, disclosures: &[String]) {
         ui.label(t::what_was_inferred());
         ui.add_space(6.0);
-        ui.label(t::no_confidence());
+        ui.label(confidence);
         ui.add_space(8.0);
         egui::ScrollArea::vertical()
             .auto_shrink([false, true])
@@ -1063,6 +1130,24 @@ fn user_data_dir() -> Option<PathBuf> {
     None
 }
 
+/// The engine a new dialog starts on: the remembered one when this build has
+/// it, else the build's default.
+fn initial_engine(preferred: Option<EngineId>) -> EngineId {
+    preferred
+        .filter(|e| e.compiled_in())
+        .or_else(|| ocr::available().first().copied())
+        .unwrap_or(EngineId::Ocrs)
+}
+
+/// The sentence saying what the engine's scores are, or that it has none.
+fn confidence_sentence(engine: EngineId) -> &'static str {
+    if engine.reports_confidence() {
+        t::scored_confidence()
+    } else {
+        t::no_confidence()
+    }
+}
+
 /// Open the dialog for the document in `status`, if there is one.
 ///
 /// The dispatch target for `file.ocr`. Lives here rather than in
@@ -1070,11 +1155,15 @@ fn user_data_dir() -> Option<PathBuf> {
 /// constructor; the guard it applies is the one `open_print` documents — the
 /// ribbon control is gated on `doc.pages`, a chord bound to the same id is not,
 /// and both are fixed by refusing here at the one place the dialog is built.
-pub(super) fn open_for(status: &Status, picked: Vec<usize>) -> Option<OcrDialog> {
+pub(super) fn open_for(
+    status: &Status,
+    picked: Vec<usize>,
+    engine: Option<EngineId>,
+) -> Option<OcrDialog> {
     let Status::Open(doc) = status else {
         return None;
     };
-    Some(OcrDialog::open(doc, picked))
+    Some(OcrDialog::open(doc, picked, engine))
 }
 
 #[cfg(test)]
@@ -1106,21 +1195,25 @@ mod tests {
         // absent — it must not depend on the epochs. That is the whole property:
         // recognition is an edit now, and an edit does not care what else is
         // unsaved.
-        let untouched = OcrDialog::preflight(&doc);
+        let untouched = OcrDialog::preflight(&doc, EngineId::Ocrs);
 
         doc.edit_epoch = 7;
         assert_eq!(
-            OcrDialog::preflight(&doc),
+            OcrDialog::preflight(&doc, EngineId::Ocrs),
             untouched,
             "an unsaved edit must not change the answer"
         );
 
         doc.saved_epoch = 7;
-        assert_eq!(OcrDialog::preflight(&doc), untouched, "nor must a save");
+        assert_eq!(
+            OcrDialog::preflight(&doc, EngineId::Ocrs),
+            untouched,
+            "nor must a save"
+        );
 
         doc.edit_epoch = 8;
         assert_eq!(
-            OcrDialog::preflight(&doc),
+            OcrDialog::preflight(&doc, EngineId::Ocrs),
             untouched,
             "nor an edit after a save — the state the operator was stuck in"
         );
@@ -1212,7 +1305,7 @@ mod tests {
     /// A dialog opened with nothing loaded is not built at all.
     #[test]
     fn no_document_means_no_dialog() {
-        assert!(open_for(&Status::Empty, Vec::new()).is_none());
+        assert!(open_for(&Status::Empty, Vec::new(), None).is_none());
     }
 }
 

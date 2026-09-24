@@ -284,6 +284,15 @@ impl Prefs {
                 // a bad value is a note, exactly as every other key here does
                 // it — a typo in a hand-edited file must not silently become
                 // a preference.
+                // ui-text-exempt: a file KEY, parsed out of preferences.txt.
+                "ocr_engine" => match crate::ocr::EngineId::from_key(value) {
+                    Some(e) => prefs.ocr_engine = Some(e),
+                    None => notes.push(PrefNote::BadValue {
+                        key: key.to_owned(),
+                        value: value.to_owned(),
+                        line,
+                    }),
+                },
                 "default_page_display" => match crate::viewer::PageDisplay::from_id(value) {
                     Some(d) => prefs.default_page_display = Some(d),
                     None => notes.push(PrefNote::BadValue {
@@ -745,6 +754,18 @@ impl Prefs {
              # ignores this. Leave the line out entirely to let each mode\n\
              # choose -- Read opens continuous, everything else single page.\n",
         );
+        if let Some(engine) = self.ocr_engine {
+            // ui-text-exempt: settings-file COMMENT text, as above.
+            out.push_str(
+                "\n\
+                 # ocr_engine: the recogniser Recognise text uses - ocrs or ocrcer.\n\
+                 # Remembered from the last run; chosen in that window.\n",
+            );
+            // ui-text-exempt: a file KEY, as above.
+            out.push_str("ocr_engine = ");
+            out.push_str(engine.key());
+            out.push('\n');
+        }
         if let Some(display) = self.default_page_display {
             // ui-text-exempt: a file KEY, as above.
             out.push_str("default_page_display = ");

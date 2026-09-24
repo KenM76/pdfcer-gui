@@ -426,6 +426,12 @@ pub struct Prefs {
     /// reason `crate::canvas::chunks` has two: the painter is handed a context
     /// and nothing else.
     pub ocr_layer_colour: [u8; 3],
+    /// The recogniser Recognise text last ran with; `None` until one has run.
+    ///
+    /// Kept when this build lacks the engine named: the dialog then offers
+    /// its first available engine without erasing the choice, so a build that
+    /// has it again picks it back up.
+    pub ocr_engine: Option<crate::ocr::EngineId>,
     /// ★★★ **How a document the program has never seen is laid out** —
     /// `OPERATOR_REQUESTS.md` O80.
     ///
@@ -951,6 +957,7 @@ impl Default for Prefs {
             // on the painter's constant, and a second copy here is a number
             // that drifts away from the sentence justifying it.
             ocr_layer_colour: crate::canvas::ocrlayer::DEFAULT_COLOUR,
+            ocr_engine: None,
             // ★ `None` — "he has not said" — so a fresh profile keeps
             // `MODES_AND_PANELS.md`'s per-mode rule. See the field.
             default_page_display: None,

@@ -4,61 +4,24 @@ This is the per-surface capability register for the pdfcer-gui shell: what an
 operator can reach in a real build, and what is planned, in order. It is
 authoritative for status.
 
-**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.55.0, a git dependency on the local engine repository, pinned at **`b82b7aba`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
+**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.55.0, a git dependency on the local engine repository, pinned at **`1d7654aa`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
 
-**What is new in this build.** A line of text in a title block is now one
-thing — you can click it, move it, delete it and correct it as the line you
-see, and correcting it no longer slides it across the sheet.
+**What is new in this build.** OCR has a second recogniser, a single page stays
+put, and the Print dialog maximises.
 
-**Editing a line keeps it where it is.** Your producer writes `#2 USE SPACERS
-8 9 10 11 IF REQUIRED.` as nine separate pieces, each with its own position.
-Correcting a character used to replace all nine and redraw the line from the
-ninth piece's origin, which put it a third of the way across the sheet. The
-correction now goes into the one piece you typed in, so nothing else moves.
-Measured on your own drawing: the line's left edge is the same number before
-and after, and a check drives that on your file so it cannot come back
-unnoticed.
+**Choose the recogniser: ocrs or OCRcer.** File › Recognise text shows a
+*Recogniser* choice. ocrs is still the default, and the choice is remembered.
+OCRcer scores every word it reads. The dialog says that the score is the
+recogniser's own estimate, not a check. The saved text layer records which
+recogniser produced it. OCRcer's model and licence ship in `models/ocrcer/`,
+taken from the newest local OCRcer build. One known weakness: it can split a
+number around a `1`, so `41177` reads as `41 1 77`. That is filed with OCRcer.
 
-**A line is what the program selects, everywhere.** Click one and the status
-row says which of the title block's lines it is; right-click and the menu
-offers the line under the pointer, not the first one in the block; the outline
-is drawn around the line; delete takes that line out and leaves its neighbours;
-and dragging carries the whole line rather than one fragment of a phrase.
+**A one-page document no longer slides under the wheel.** With the wheel set
+to turn pages, a fitted single page stays where it is. Scroll bars and
+middle-button pan still move a page you have zoomed into.
 
-**One case is declined, and it says so.** Where a line's middle fragment
-inherits its position from the fragment before it — which is how Word and
-Chrome write paragraphs, and not how your CAD exporter does — the whole line is
-declined rather than cut into pieces, and the reason is put in the status row.
-On a drawing you will not meet it.
-
-**You can see the chunks before you move one, and clicking one picks it.** Click
-a block of text and a thin box is drawn round every chunk inside it, so the
-piece a drag will pick up is something you can aim at rather than something you
-find out about after the drag. Click again inside one of those boxes and you
-are standing on that chunk — plain left button, no modifier, no double-click —
-and every click after that moves to whichever chunk is under the pointer,
-including the press that starts a drag. It is a switch — **Text chunks**,
-beside the smart selector on the View tab and on the rail — and it remembers
-whether you left it on. It changes nothing about the page: the boxes are the
-cursor, not the drawing, and a saved file looks the same with them on or off.
-
-**Hold Shift or Ctrl and you can pick several of them, and they move as one.**
-Click one chunk, hold either modifier and click a second, and both are held —
-click a held one again and it comes back out. The status row counts what you
-have, the drag takes all of them together, and one press of undo puts every one
-of them back. Aim at a chunk you have *not* held and the drag takes that chunk
-instead, even when it lies between two you are holding.
-
-**While the button is down the chunks travel with your hand.** Every chunk you
-are holding draws an outline that follows the pointer, so where the set will
-land is something you watch rather than something you discover on release. A
-translucent copy of each held line's own pixels travels with the outline, so what
-follows your hand is the writing itself and not an empty rectangle.
-
-**A whole-text-object nudge still costs a wrapper.** Moving an entire text
-object, as opposed to a line inside one, writes a small transform around it
-rather than rewriting its positions. It is filed with the engine; it changes
-nothing you can see.
+**The Print dialog can be maximised** from its own title bar.
 
 **Scope.** This shell only. `pdfcer-core` and `pdfcer` capabilities live in
 `D:\Dev\pdfcer\docs\FEATURES.md`, whose `gui` column is this project's
@@ -206,6 +169,7 @@ than the number it produced last.
 - ✅ **Deep zoom never whites out the detail under the cursor** (O231). On a zoom frame, the region the canvas asks the renderer for is chosen from that frame's forced scroll offset, not from last frame's offset (which belongs to the old zoom). Driven by `zooming_at_wheel_speed_never_blanks_the_detail_under_the_cursor`, which fails on the unfixed build at 1,049% because the ordered region misses the view. It fails from the trace; its photographs do not catch the white. `zooming_click_by_click_keeps_the_detail_under_the_cursor` walks the same range one notch at a time
 - ✅ **Three fit modes — page, width and height — and each places the view as well as setting the scale.** Fit page centres the sheet; Fit width and Fit height centre the axis they fit and keep the operator's position on the other, clamped to the page so *kept* cannot mean *still looking at pasteboard*. Fit height is the Acrobat-parity mode and the useful one for a landscape sheet in a tall window. A fit survives a window resize, and a pan gets you out of it
 - ✅ **The mouse wheel turns pages, if you ask it to** — a toggle beside the page buttons, in single-page and facing displays only, since a continuous display scrolls the whole document by definition. Off by default, persisted, and it takes effect on the next notch rather than waiting for a Settings apply
+- ⬜ **A one-page document stays put under the wheel in page-turn mode (O239). Built, undriven.** The wheel is kept from the scroll area whenever the mode is on, so a fitted single page no longer slides over the pasteboard; scroll bars and middle-button pan still move a zoomed page
 - ✅ **Cursor-anchored `Ctrl`+wheel zoom** — the point under a still cursor moves 0 to about 5 screen pixels per burst of wheel notches, driven from 29% to 232,000% and back on SW41177. That is the scroll area rounding the page to whole pixels, and it does not add up across bursts. The rule is decided once, in `canvas::zoom::anchor_point`, and all five paths route through it: the wheel, the three commands and the framing verbs
 - ✅ **Middle-drag pan**, wheel scroll, **hand tool and space-to-pan** — Space is read by the canvas itself, so it needs no keymap entry and cannot be unbound by accident
 - ✅ **Zoom to selection**, gated on `selection.bounds` rather than `selection.any`: an identity can outlive the box it described, and framing nothing is a jump to the origin that looks like a bug. Reached by right-click, which is where SolidWorks and Acrobat both put it
@@ -536,6 +500,7 @@ proper credit* enforced rather than remembered.
 | ✅ | **OCR in Read mode**, and it lives on File ▸ Recognise rather than Tools ▸ Recognise, because Tools is not in Read's tab list and building to the specification would have made the command unreachable in the mode that needs it |
 | ✅ | **A run says how far it has got, and Stop and Cancel mean different things** |
 | ✅ | **More scanning resolution makes OCR worse, and 300 DPI is the worst of five measured** — the conventional answer is wrong here, and the setting follows the measurement |
+| ⬜ | **Two recognisers, ocrs and OCRcer (O230). Built, undriven.** A Recogniser choice appears in the dialog when the build carries both; ocrs is the default and the choice is remembered. OCRcer comes through the engine's adapter; its model ships in `models/ocrcer/` from the local OCRcer build, with its licence. The saved layer names the recogniser that produced it. Known OCRcer weakness: a digit run can split around a `1` (`41177` → `41 1 77`), filed with OCRcer |
 | ✅ | **What the operator is told about confidence** — `ocrs` scores nothing, so the dialog recognises and **discloses** rather than inventing a number |
 | ⬜ | **Recognising a page again replaces its old OCR text, and File ▸ Recognise ▸ Remove OCR text takes it off. Built, undriven.** A second run no longer stacks a second invisible layer under the first; how many layers were replaced is said in the status line. Remove strips only the text pdfcer's OCR added, never text the file was made with |
 | ⬜ | **The recognised text can be looked at — operator request O226, first half. Built, undriven.** Until this landed, the only evidence a page had been recognised was that a search found words nobody could see. View ▸ Display carries a toggle that paints the invisible layer as real glyphs in the operator's own colour. Two passes with opposite subjects: a veil that fades the raster towards the renderer's own paper white, under everything including the grid because it is about the raster alone; and the runs themselves, above the grid because they are page content the file carries and does not draw, below the find wash because a search answer outranks anything merely on the page. A run counts as recognised when **any** of its glyphs is invisible rather than all, so a page whose OCR overlaps one drawn character does not drop the whole run and leave a gap the operator cannot attribute. Nothing is capped and nothing is skipped — a run below the minimum legible size is drawn as a filled box rather than omitted, so coverage is honest at any zoom. R8b holds by construction: with the mode off it paints nothing, and with it on nothing is styled as provisional. The one inference the operator cannot see is *this page was never recognised*, which draws an empty canvas indistinguishable from a broken mode, so the status bar states it off-canvas, quoting the function the alphas are derived from rather than the one that decides where the slider was left |
@@ -551,6 +516,7 @@ proper credit* enforced rather than remembered.
 | ✅ | **Page operations — rotate, delete, move up and down, extract** — the Pages context menu has no inert row left. `resync()` is a single choke point hung off `vector_edit`'s success path rather than off the four arms, so undo gets the page refresh for free |
 | ✅ | **New PDF** — `file.new`, `Ctrl+N`, at a chosen page size. Nothing in `pdfcer-core` writes a `/MediaBox`, so a blank template ships as an asset per size and `document.rs` carries a named permanent invariant against a separate builder model: creation goes through the same session every other edit does |
 | ✅ | **Print dialog** with live preview, reaching a real printer, with paper size, tray and the driver's own Properties…, all three reached from beside the printer drop-down as every other program on this desktop does it. `/Rotate` is honoured, so a rotated page is not planned portrait and rendered landscape |
+| ⬜ | **The print dialog itself can be maximised (O241). Built, undriven.** Its window carries the OS maximise button |
 | ⬜ | **The printed page can be dragged to a new position on the sheet, per page — operator request O208. Built, undriven.** pdfcer starts an oversized page flush at the top-left of the printable area so that as little as possible falls off; the drag is how the operator chooses *which* part falls off instead. Primary-drag the page in the preview (the gesture is classified against the rectangle that was last drawn, so a drag that starts on the page moves it and one that starts on the sheet pans the view), with **Centre**, **Centre horizontally**, **Centre vertically** and **Reset position** as shortcuts on a **Position** tab of the print window, **Reset all pages** beside them carrying a count of how many sheets of the job are displaced, typed entry in millimetres on both axes, and arrow-key nudge at 1 mm, 10 mm with Shift. A tab of its own and not the foot of the scale tab, where it was first built: measured there it took the dialog's body 149 pt past its scroll viewport, which is a vertical scrollbar in the one dialog whose operator report was *two scroll bars that will not go away*. The split costs little because the preview is a separate column and is visible whichever tab is open, so the feedback these controls need is never behind the tab that owns them. The displacement is held per page in the dialog and is applied to the plan at spool time, so it survives a change of scale, paper size, orientation, rotation and fit-to-page by construction — nothing but the five position verbs ever writes it. **The frame is stated on screen**, which is the half a bare offset cannot carry: measured from where pdfcer places the page, positive right and down, so `0, 0` means *where pdfcer chose* and Reset is not a synonym for Centre. Disclosure is off-canvas per R8b: a per-edge readout in whole millimetres of how far the page extends past the printable area, worded as geometry and never as loss, in no warning colour, because the ink verdict beside it is the surface entitled to claim content is lost (operator request O113). The crop hatch is **four bands, one per edge**, each clipped to the page so the union is exactly the overhang and no two bands overlap, and the preview's trace publishes which edges hang over as a four-letter word rather than a count. The driven check `the_printed_page_can_be_moved_on_the_paper` is written and registered; its last run skipped, because the drag was sized against a guess rather than against the measured preview canvas and the dialog's own OS viewport was not being converted through. Both are fixed and neither has been re-measured, so the row stays untickable until it runs green |
 | ✅ | **The print preview pops out into its own window** — a second OS viewport, resizable and maximisable, with its own taskbar entry, and the preview column inside the dialog collapses to nothing while it is out, so the room is given away to the options column. Driven by `the_print_preview_pops_into_its_own_window` |
 | ✅ | **The zoomed print preview is as sharp as the print** — zoomed in, the visible part of the page is re-rendered up to the job's own print density and never past it. Driven by `the_zoomed_print_preview_is_as_sharp_as_the_print` |

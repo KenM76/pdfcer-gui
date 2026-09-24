@@ -44,7 +44,7 @@
 - [A limitation sentence spoils in hours](feedback_limitation_sentence.md) — spell them as assertions.
 - [Our selection unit may not be his](project_shells_unit_selection.md) — one path object holds 6,681 anchors.
 - [pdfcer-gui since 2026-09-03](project_project_pdfcer_gui.md) — two references deliberately did NOT move.
-- [OCRcer is a second OCR engine](project_ocrcer_second_engine.md) — build to the core trait; confidence is an R8 capability.
+- [OCRcer is a second OCR engine](project_ocrcer_second_engine.md) — integrated via the engine; LOCAL newest only, never GitHub; LLM add-in is O240.
 - [A rename can blind an instrument](feedback_rename_blind.md) — a hard-coded path makes green over nothing.
 - [A proxy condition survives one fix](feedback_proxy_condition.md) — ask what it READS, not what it means.
 - [A right value in the wrong role](feedback_correctly_sourced.md) — gates forbid invented, not misused.

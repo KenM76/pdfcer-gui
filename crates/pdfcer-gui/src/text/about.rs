@@ -452,6 +452,18 @@ pub fn attributions() -> &'static [Attribution] {
             licence_url: Some("https://creativecommons.org/licenses/by-sa/4.0/"),
             changes: "The weights are unchanged and byte-identical to the published files; only their names were shortened.",
         },
+        // Source: D:\Dev\OCRcer\LICENSE and NOTICE, which ship beside the
+        // model; `tools/package-portable.py`'s `PAYLOAD_OCRCER_FILES` copies
+        // all three. `check-shipped-assets.py` looks for the destination
+        // directory: models/ocrcer
+        Attribution {
+            component: "The OCRcer recognition model, the second OCR engine",
+            creator: "Ken Mantle, the OCRcer project",
+            origin: "the OCRcer repository's model build; its LICENSE and NOTICE ship beside it in models/ocrcer",
+            licence: "MIT",
+            licence_url: None,
+            changes: "The model file is shipped as OCRcer builds it.",
+        },
     ]
 }
 

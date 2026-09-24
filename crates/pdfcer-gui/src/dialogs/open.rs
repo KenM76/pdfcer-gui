@@ -124,11 +124,16 @@ impl DialogsState {
     /// discard recognised bytes the operator has not saved yet — several
     /// seconds of work and an unwritten document, thrown away by the shortcut
     /// they pressed to look at it.
-    pub fn open_ocr(&mut self, status: &Status, picked: Vec<usize>) {
+    pub fn open_ocr(
+        &mut self,
+        status: &Status,
+        picked: Vec<usize>,
+        engine: Option<crate::ocr::EngineId>,
+    ) {
         if self.ocr.is_some() {
             return;
         }
-        self.ocr = ocr::open_for(status, picked);
+        self.ocr = ocr::open_for(status, picked, engine);
     }
 
     /// Open the Apply-redactions dialog for the document in `status`.

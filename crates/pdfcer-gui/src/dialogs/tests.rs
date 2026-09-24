@@ -166,7 +166,7 @@ fn opening_the_diagnostics_report_twice_leaves_the_first_one_alone() {
 #[test]
 fn no_document_means_no_recognition_dialog() {
     let mut dialogs = DialogsState::default();
-    dialogs.open_ocr(&Status::Empty, Vec::new());
+    dialogs.open_ocr(&Status::Empty, Vec::new(), None);
     assert!(dialogs.ocr.is_none());
 }
 

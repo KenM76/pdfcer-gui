@@ -68,8 +68,8 @@ alongside the other licences harvested from `Cargo.lock`.
 ## Licence overview
 
 - **Apache License 2.0** — used by 190 crate(s)
+- **MIT License** — used by 19 crate(s)
 - **Unicode License v3** — used by 19 crate(s)
-- **MIT License** — used by 18 crate(s)
 - **BSD 3-Clause &quot;New&quot; or &quot;Revised&quot; License** — used by 7 crate(s)
 - **Boost Software License 1.0** — used by 2 crate(s)
 - **BSD Zero Clause License** — used by 1 crate(s)
@@ -6187,6 +6187,37 @@ SOFTWARE.
 ### MIT License
 
 Used by:
+- [ocrcer-core 0.1.0](https://crates.io/crates/ocrcer-core)
+
+```
+MIT License
+
+Copyright (c) 2026 Ken Mantle
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software, associated documentation files, and the model data files
+distributed herewith (the &quot;Software&quot;), to deal in the Software without
+restriction, including without limitation the rights to use, copy, modify,
+merge, publish, distribute, sublicense, and/or sell copies of the Software, and
+to permit persons to whom the Software is furnished to do so, subject to the
+following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+```
+
+### MIT License
+
+Used by:
 - [iccce-cmm 0.3.0](https://github.com/KenM76/iccce)
 - [iccce-color 0.3.0](https://github.com/KenM76/iccce)
 - [iccce-profile 0.3.0](https://github.com/KenM76/iccce)
@@ -6702,8 +6733,8 @@ stated per entry rather than assumed:
   faces below, which are `include_bytes!` payloads and static tables in crates
   this program links;
 - **loose files in this folder** — the `ocrs` OCR model weights below, which
-  live at `models/ocrs/` beside the executable because the program loads them
-  from disk on demand.
+  live at `models/ocrs/` beside the executable, and the OCRcer model, at
+  `models/ocrcer/`; the program loads both from disk on demand.
 
 They all arrive through the engine: `pdfcer-gui` depends on `pdfcer-core` and
 `pdfcer-render` **by path** into `D:\Dev\pdfcer`, and Rust links them
@@ -6823,6 +6854,19 @@ resulting model under CC-BY-SA-4.0 or a compatible licence.
 
 The human-readable licence deed is linked above; the full legal code is at
 <https://creativecommons.org/licenses/by-sa/4.0/legalcode>.
+
+### Bundled OCRcer recognition model (MIT)
+
+The file `models/ocrcer/ocrcer.ocrw` in this portable folder is the model of
+the OCRcer OCR engine, the second recogniser the OCR dialog offers. It is
+built from the OCRcer repository by **Ken Mantle** and licensed **MIT**;
+OCRcer's `LICENSE` and `NOTICE` ship beside it in `models/ocrcer/`.
+
+OCRcer's `NOTICE` records the third-party material the model is derived
+from: feature vectors measured from glyphs rendered from OFL-1.1 and
+Apache-2.0 font faces (no font file or outline data is included), and
+evaluation datasets of which no text or image is redistributed. The engine's
+code is the `ocrcer-core` crate, listed with the other crates above.
 
 ### Bundled Foxit substitute faces (BSD-3-Clause, via pdfium)
 
