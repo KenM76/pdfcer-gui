@@ -375,3 +375,9 @@ in the foreground rather than re-running 80 gates.
 ⚠ **`run-all.sh` does not run `cargo test`.** The same session's full test run
 caught a settings-catalog count the whole sweep could not see. "The gates are
 green" is not "the tests are green"; run both before a commit.
+
+**2026-09-24:** `package-portable.py --verify` runs past the Bash tool's 10-minute
+foreground cap, gets moved to the background, and the memory watchdog killed it
+twice. Ken set `CLAUDE_CODE_DISABLE_BG_SHELL_PRESSURE_REAP=1` as a User
+environment variable; it takes effect only after Claude Code restarts. If it is
+not in effect, ask Ken before packaging without `--verify`.
