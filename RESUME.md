@@ -52,9 +52,11 @@ channel: a reply is an input to *how* a thing is built, never to *which*. Each
 row's argument is in `OPERATOR_REQUESTS.md`, which **only Ken closes**; the open
 set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
-**Start here on `continue`.** The release tree `d82686f` is published to
-OneDrive and GitHub as `v0.5.0-dev.20260923.1`. Its lib tests, both clippy
-configurations, every gate and an off-screen smoke launch are green. Nothing
+**Start here on `continue`.** The release tree `b1a86ee` is published to
+OneDrive and GitHub as `v0.5.0-dev.20260924.1`, packaged WITHOUT `--verify`
+because low memory killed two verified runs; its tests, both clippy
+configurations and every gate were green on the same code that day, and an
+off-screen smoke launch was clean. Nothing
 listed below has been driven. In order:
 
 0. **Close the channel.** `open/` still holds the answered G028–G041 exchanges
