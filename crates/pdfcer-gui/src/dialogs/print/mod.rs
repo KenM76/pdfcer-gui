@@ -54,7 +54,7 @@
 
 /// **Where a rendered sheet actually carries ink** — operator request O113.
 mod autopaper;
-pub(crate) mod ink;
+use pdfcer_gui_base::printink as ink;
 pub(crate) mod layout;
 /// **The preview in a window of its own** — operator request O112 ask 2. Its
 /// header carries why the feature is one call and one line, and why the print

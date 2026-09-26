@@ -1,4 +1,4 @@
-//! # `dialogs::print::ink` — which parts of a rendered sheet actually carry ink
+//! # `printink` — which parts of a rendered sheet actually carry ink
 //!
 //! ## The question this module exists to answer, and why it is asked HERE
 //!
@@ -8,7 +8,7 @@
 //! > beyond the printable page? Our drawing get drawn 1:1 and the area that
 //! > isn't printed is just empty border."*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/print/ink.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/printink.md`.
 
 use egui::Rect;
 
@@ -60,7 +60,7 @@ const INK_MAX_LEVEL: u8 = 246;
 
 /// A downsampled record of **where a rendered page carries ink**.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(super) struct InkMask {
+pub struct InkMask {
     /// Cells across, at least 1.
     cols: usize,
     /// Cells down, at least 1.
@@ -71,7 +71,7 @@ pub(super) struct InkMask {
 
 impl InkMask {
     /// Build a mask from a rendered page's **premultiplied** RGBA8 bytes.
-    pub(super) fn from_rgba_premultiplied(width: u32, height: u32, data: &[u8]) -> Self {
+    pub fn from_rgba_premultiplied(width: u32, height: u32, data: &[u8]) -> Self {
         let (w, h) = (width as usize, height as usize);
         let blank = Self {
             cols: 1,
@@ -161,7 +161,7 @@ impl InkMask {
 
     /// The **ink extent within `region`**, in normalised 0..1 page space, or
     /// `None` when no cell touching `region` carries ink.
-    pub(super) fn ink_extent(&self, region: Rect) -> Option<Rect> {
+    pub fn ink_extent(&self, region: Rect) -> Option<Rect> {
         let unit = Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0));
         if !region.min.x.is_finite()
             || !region.min.y.is_finite()

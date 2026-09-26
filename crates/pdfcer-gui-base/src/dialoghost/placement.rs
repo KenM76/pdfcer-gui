@@ -1,6 +1,6 @@
 //! `dialogs::host::placement` — WHERE a dialog's window opens.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/host/placement.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/dialoghost/placement.md`.
 
 use egui::{Pos2, Rect, Vec2};
 

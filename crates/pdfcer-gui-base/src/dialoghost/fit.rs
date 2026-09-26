@@ -1,4 +1,4 @@
-//! # `dialogs::host::fit` — growing a window to its body, without a loop
+//! # `dialoghost::fit` — growing a window to its body, without a loop
 //!
 //!
 //! ## The defect this module is shaped by
@@ -23,7 +23,7 @@
 //! Every size in this module is a **window** size in points — neither a ce
 //! dimension nor a pdf dimension appears anywhere in it.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/host/fit.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/dialoghost/fit.md`.
 
 use egui::Vec2;
 

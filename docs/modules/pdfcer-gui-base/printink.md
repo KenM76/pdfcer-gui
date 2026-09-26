@@ -1,4 +1,4 @@
-# `dialogs::print::ink` — which parts of a rendered sheet actually carry ink
+# `printink` — which parts of a rendered sheet actually carry ink
 
 ## The question this module exists to answer, and why it is asked HERE
 

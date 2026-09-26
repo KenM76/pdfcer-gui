@@ -1,4 +1,4 @@
-# `dialogs::host` — a dialog is an OS WINDOW
+# `dialoghost` — a dialog is an OS WINDOW
 
 
 > *"Print dialogue box doesn't pop up in its own movable window. It is

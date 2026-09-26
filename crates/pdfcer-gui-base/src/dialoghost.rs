@@ -1,4 +1,4 @@
-//! # `dialogs::host` — a dialog is an OS WINDOW
+//! # `dialoghost` — a dialog is an OS WINDOW
 //!
 //!
 //! > *"Print dialogue box doesn't pop up in its own movable window. It is
@@ -6,7 +6,7 @@
 //! > you've been trained on a million lines of code and software that pops it
 //! > up in its own window."*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/host.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/dialoghost.md`.
 
 use egui::{Pos2, Vec2, ViewportBuilder, ViewportClass, ViewportId};
 
@@ -797,7 +797,7 @@ impl Host {
         // whether the operator is composing anywhere in the application, and
         // the two genuinely differ here.
         //
-        // `crate::canvas::textedit::composing` - the predicate this gate
+        // `pdfcer_gui::canvas::textedit::composing` - the predicate this gate
         // normally requires - answers `true` while a canvas draft is live, and
         // a canvas draft SURVIVES the opening of a dialog: it is committed by
         // clicking away on the page, not by a print window appearing. So using

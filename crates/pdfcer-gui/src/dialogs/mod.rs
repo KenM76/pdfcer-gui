@@ -54,7 +54,7 @@ pub mod formfield;
 /// and the right answer are the same call; its header carries what an OS
 /// window actually buys, how it degrades on the web target, and the two rows
 /// (G3 ownership, G5 focus trapping) that eframe 0.35 cannot express.
-pub mod host;
+pub use pdfcer_gui_base::dialoghost as host;
 /// **A text file becomes pages** — the return journey. Its header records
 /// what it needs from `pdfcer-core` that reading a PDF does not (the ability to
 /// CREATE a page, not only to copy one) and why it is a CHOOSER where its

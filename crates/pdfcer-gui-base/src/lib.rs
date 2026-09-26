@@ -156,3 +156,9 @@ pub mod wordmarkup;
 
 /// Where and when the dock layout is written to disk.
 pub mod dockpersist;
+
+/// A dialog is an OS window: the viewport host, its fit and its placement.
+pub mod dialoghost;
+
+/// Which parts of a rendered print sheet actually carry ink.
+pub mod printink;
