@@ -1,4 +1,4 @@
-# `pdfcer-gui/app/state/identity`
+# `pdfcer-gui-base/docidentity`
 
 ## Item notes
 

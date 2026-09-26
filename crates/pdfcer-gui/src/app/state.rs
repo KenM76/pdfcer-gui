@@ -81,19 +81,14 @@ mod layers;
 
 use layers::LayerOverride;
 
-mod identity;
-/// **What the render tier needs to know about a page's colour** — one method,
-/// split out 2026-09-01 under R2. Its header carries why the ink question is a
-/// different subject from the document model around it.
+/// What the render tier needs to know about a page's colour.
 mod ink;
 pub use pdfcer_gui_base::pageepoch;
-/// **What this view is asking the renderer for** — the render key, the region
-/// and the request, split out 2026-09-10 under R2. Its header carries why the
-/// order placed with `pdfcer-render` is a different subject from the document
-/// model that produces it, and why `OpenDoc::strip` stayed behind.
+/// What this view is asking the renderer for: the render key, the region and
+/// the request.
 mod renderreq;
 
-pub use identity::{Origin, SelectedField};
+pub use pdfcer_gui_base::docidentity::{Origin, SelectedField};
 /// One open document and everything the shell knows about looking at it.
 pub struct OpenDoc {
     /// **The operator's configuration, as this document's derived data was

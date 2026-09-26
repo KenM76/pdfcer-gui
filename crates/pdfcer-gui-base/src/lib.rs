@@ -26,6 +26,9 @@ pub mod deepanchor;
 /// The opt-in trace of what the shell actually received.
 pub mod diag;
 
+/// Which file a document came from, and which form field is selected.
+pub mod docidentity;
+
 /// OCR: what image the recogniser is shown, the thread it runs on, and the
 /// named refusals it can come back with. It authors no PDF — `pdfcer-core`'s
 /// `ocr::layer` writes the invisible mode-3 sandwich. See its header for why
