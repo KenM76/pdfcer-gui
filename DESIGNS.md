@@ -1667,6 +1667,13 @@ upward edge was the refusal sentence, so it now returns a `RefusalOrigin` and
 `text::pagetree::refusal_sentence` words it. `pagedrag` has the same shape of
 edge and takes the same split: decision in the module, wording in `text`.
 
+`redact` and `sign` are in base. `redact` owns `RedactionReach`, which
+`app::prefs` re-exports; `sign::suggested_path` takes the filename suffix as an
+argument, so its caller in `dialogs` supplies the wording. Base carries a
+`signing` feature that `pdfcer-gui` forwards. `redact::sealed` sweeps both
+crates' source, since the monopoly it enforces is over every caller, not only
+those beneath it.
+
 Engine-reach instruments must scan base as well as `pdfcer-gui`, since base
 now calls the engine: `check-backlog-verdict-drift.py` and
 `security-coverage.py` walk both crates.
@@ -1675,8 +1682,8 @@ now calls the engine: `check-backlog-verdict-drift.py` and
 `shell` (`icons`→`shell` 1, `shell`→`icons` 4). One reference in one
 direction is the whole obstruction, which is the argument for the gate in
 Stage 1 — an edge that small is invisible to review and fatal to a split.
-`stamps`, `sign`, `redact`, `protect` and `clipboard` reach up into `app` or
-`text` and wait for Stage 3.
+`stamps`, `protect` and `clipboard` reach up into `app` or `text` and wait
+for Stage 3.
 
 **Stage 3 — the one that pays, and the one with real risk.** Cut
 `app` ↔ {`canvas`, `text`, `panels`, `dialogs`} by extracting the *state* the

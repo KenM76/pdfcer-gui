@@ -3,7 +3,7 @@
 //! [`super`] §2.4. One property, asserted over **every `.rs` file in this
 //! crate**:
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/redact/sealed.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/redact/sealed.md`.
 
 use std::path::{Path, PathBuf};
 
@@ -66,6 +66,28 @@ const FORBIDDEN_IN_REDACT: &str = "to_incremental_bytes";
 /// The crate's source root, resolved at **compile** time.
 fn crate_src() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("src")
+}
+
+/// Every source tree the monopoly covers: this crate and `pdfcer-gui` above
+/// it, which can reach the engine's removal verbs as directly as this one.
+fn swept_roots() -> [PathBuf; 2] {
+    [
+        crate_src(),
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../pdfcer-gui/src"),
+    ]
+}
+
+/// [`sweep`] over each of `roots`, merged. A root that cannot be read is an
+/// error, never an empty contribution.
+pub(super) fn sweep_all(roots: &[PathBuf], subject: &str) -> Result<Sweep, String> {
+    let mut out = Sweep::default();
+    for root in roots {
+        let one = sweep(root, subject)?;
+        out.files_read += one.files_read;
+        out.call_sites.extend(one.call_sites);
+    }
+    out.call_sites.sort();
+    Ok(out)
 }
 
 /// The one file permitted to call [`SUBJECT`], relative to the source root.
@@ -191,9 +213,9 @@ mod tests {
     /// proves — and exactly as many times as [`SUBJECTS`] accounts for.**
     #[test]
     fn every_removal_verb_is_called_from_exactly_one_place() {
-        let root = crate_src();
+        let roots = swept_roots();
         for (subject, expected) in SUBJECTS {
-            let swept = sweep(&root, subject).expect("the crate's own source must sweep");
+            let swept = sweep_all(&roots, subject).expect("both crates' source must sweep");
 
             // Fail closed #1: a walker that read almost nothing.
             assert!(
@@ -203,13 +225,17 @@ mod tests {
                  'found nothing' must never print the same as 'looked at \
                  nothing'",
                 swept.files_read,
-                root.display()
+                roots
+                    .iter()
+                    .map(|r| r.display().to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
             );
 
             // Fail closed #2: zero call sites is not a pass.
             assert!(
                 !swept.call_sites.is_empty(),
-                "no call to `{subject}` was found anywhere in this crate. \
+                "no call to `{subject}` was found anywhere in either crate. \
                  Either it has been renamed and this check has not been told, \
                  or the apply pipeline has stopped calling the engine — and a \
                  redaction feature that does not redact is the worse of the \

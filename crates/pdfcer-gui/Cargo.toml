@@ -104,7 +104,7 @@ jpx = ["pdfcer-core/jpx", "pdfcer-render/jpx"]
 # feature, and naming a feature a crate does not declare is a hard Cargo
 # error rather than a silent no-op, which is the safe direction of this
 # mistake.
-signing = ["pdfcer-core/signing"]
+signing = ["pdfcer-core/signing", "pdfcer-gui-base/signing"]
 
 # ---------------------------------------------------------------------------
 # `ocrs` — the OCR RECOGNISER, and only the recogniser.

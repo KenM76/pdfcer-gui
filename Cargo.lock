@@ -2693,6 +2693,7 @@ dependencies = [
  "pdfcer-core",
  "pdfcer-print",
  "pdfcer-render",
+ "syn 2.0.119",
 ]
 
 [[package]]

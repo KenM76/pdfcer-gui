@@ -23,7 +23,7 @@
 //! [`super::cancel_staged_redaction`], which is exactly the property the
 //! monopoly exists to keep true of test code as well as of production code.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/redact/tests/mod.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/redact/tests/mod.md`.
 
 // The INNER `#![cfg(test)]` is redundant — the module is declared
 // `#[cfg(test)] mod tests;` — and it is here anyway, because
@@ -1086,9 +1086,6 @@ fn where_do_the_survivors_live_on_his_drawing() {
                 println!("  survivor {s:?} is ordinary text on pages {on:?}");
             }
         }
-        Err(other) => println!(
-            "REFUSED otherwise: {}",
-            crate::text::redact::refusal_message(&other)
-        ),
+        Err(other) => println!("REFUSED otherwise: {other:?}"),
     }
 }

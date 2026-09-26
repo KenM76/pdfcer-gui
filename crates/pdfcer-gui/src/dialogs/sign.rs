@@ -536,7 +536,10 @@ impl SignDialog {
             // the field.
             Destination::ReplaceOriginal => self.source.clone(),
             Destination::NewFile => {
-                let suggested = crate::sign::suggested_path(&self.source);
+                let suggested = crate::sign::suggested_path(
+                    &self.source,
+                    crate::text::sign::suggested_suffix(),
+                );
                 let crate::app::files::Picked::Path(chosen) =
                     crate::app::files::pick_save_path(&suggested, tp::save_dialog_title())
                 else {

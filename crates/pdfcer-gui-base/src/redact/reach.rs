@@ -1,4 +1,4 @@
-//! # `app::prefs::redaction` — how far a redaction is allowed to reach
+//! # `redact::reach` — how far a redaction is allowed to reach
 //!
 //! One preference, [`RedactionReach`], and it is the only one in this directory
 //! that changes what pdfcer **destroys** rather than what it draws.
@@ -21,7 +21,7 @@
 //! every value: a fourth scope added upstream must break this build and be
 //! offered, not fall silently into a default the operator never chose.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/prefs/redaction.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/redact/reach.md`.
 
 /// **How far beyond the marked regions a redaction may act on text matching
 /// what was redacted.**
@@ -72,7 +72,7 @@ impl RedactionReach {
     /// The token written to the preferences file.
     ///
     /// Stable across releases and deliberately not the display name, for
-    /// `super::quality::RenderQuality::key`'s reason.
+    /// `pdfcer_gui::app::prefs::quality::RenderQuality::key`'s reason.
     #[must_use]
     pub const fn key(self) -> &'static str {
         match self {

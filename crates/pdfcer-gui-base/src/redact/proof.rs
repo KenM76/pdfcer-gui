@@ -1,7 +1,7 @@
 //! # `redact::proof` — the absence proof, and the only thing entitled to the
 //! word *verified*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/redact/proof.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/redact/proof.md`.
 
 use pdfcer_core::document::Document;
 use pdfcer_core::object::{ObjId, Object};

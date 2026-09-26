@@ -26,7 +26,7 @@
 # what says so.
 [package]
 name = "pdfcer-gui-base"
-description = "Floor of the pdfcer-gui crate stack: the diagnostic trace, the unit-conversion table, the secret wrapper and Acrobat discovery — the modules that reference nothing above them."
+description = "Floor of the pdfcer-gui crate stack: the modules that reference nothing above them."
 version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
@@ -57,6 +57,8 @@ pdfcer-print = { git = "file:///D:/Dev/pdfcer", branch = "main" }
 # flate2 — `ocr`'s test fixtures `/FlateDecode` their scanned image.
 [dev-dependencies]
 flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+# `redact::sealed` reads Rust source as a syntax tree; see pdfcer-gui's entry.
+syn = { version = "2.0.119", features = ["full", "visit"] }
 
 [features]
 # `ocrs` — the recogniser. `pdfcer-gui` takes this crate with
@@ -69,3 +71,6 @@ ocrs = ["pdfcer-core/ocrs"]
 # `ocrcer-core` the engine vendors from OCRcer's newest local commit. Offered
 # beside `ocrs`, never instead of it.
 ocrcer = ["pdfcer-core/ocrcer"]
+# The private-key side; `pdfcer-gui` forwards its own `signing` here. Not a
+# default: base carries no capability the top crate did not ask for.
+signing = ["pdfcer-core/signing"]

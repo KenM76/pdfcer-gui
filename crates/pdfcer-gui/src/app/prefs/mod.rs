@@ -54,10 +54,6 @@ pub(crate) mod printing;
 /// The two preferences that change what a **frame costs**.
 pub mod quality;
 
-/// How far a redaction is allowed to reach beyond the regions the operator
-/// marked. The only preference here that changes what pdfcer **destroys**.
-pub mod redaction;
-
 /// What a plain wheel does when the document is not one long scroll — O30.
 pub mod wheel;
 
@@ -85,9 +81,9 @@ pub use pastechords::PasteChords;
 // `pub(crate)` types, so it can be no more visible than they are. `Prefs` stays
 // `pub` and holds it on a `pub(crate)` field, which is legal and is what keeps
 // `private_interfaces` quiet.
+pub use crate::redact::RedactionReach;
 pub(crate) use printing::PrintPrefs;
 pub use quality::{DEFAULT_SETTLE_MS, MAX_SETTLE_MS, MIN_SETTLE_MS, RenderQuality};
-pub use redaction::RedactionReach;
 pub use wheel::WheelPaging;
 
 /// The shipped maximum zoom, as a percentage.

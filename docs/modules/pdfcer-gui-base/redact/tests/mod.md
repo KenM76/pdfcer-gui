@@ -1,4 +1,4 @@
-# `pdfcer-gui/redact/tests/mod`
+# `pdfcer-gui-base/redact/tests/mod`
 
 ## Item notes
 

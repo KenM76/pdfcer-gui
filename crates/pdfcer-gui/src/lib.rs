@@ -52,7 +52,6 @@ pub mod protect;
 // See REDACT's own header for the two full rewrites, for why the proof is made
 // unskippable rather than merely available, and for why a redaction never
 // overwrites the file it came from.
-pub mod redact;
 pub mod render;
 // The pdfcer shell definition — the seven-tab ribbon, three modes, QAT and
 // keymap, expressed as DATA over `egui-shell`'s manifest types rather than
@@ -64,8 +63,6 @@ pub mod shell;
 /// signed"*, which `pdfcer-core` answered with `pdfcer_core::sign` and which
 /// this build then failed to compile in for three days because the manifest
 /// stripped the engine's default-on `signing` feature.
-#[cfg(feature = "signing")]
-pub mod sign;
 /// **Acrobat-compatible custom stamp collections** — the shell half of
 /// engine `Pass 288.0`, and the answer to `OPERATOR_REQUESTS.md` **O169**.
 pub mod stamps;
@@ -85,7 +82,9 @@ pub mod viewer;
 // The alternative was to rewrite ~1,200 call sites to say `pdfcer_gui_base::`.
 // That would document the crossing at every use site and buy nothing else: the
 // boundary is in the crate graph, not in the spelling.
-pub use pdfcer_gui_base::{acrobat, diag, ocr, pagetree, poster, secret, trust, units};
+#[cfg(feature = "signing")]
+pub use pdfcer_gui_base::sign;
+pub use pdfcer_gui_base::{acrobat, diag, ocr, pagetree, poster, redact, secret, trust, units};
 
 use std::path::PathBuf;
 

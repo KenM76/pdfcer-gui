@@ -1,4 +1,4 @@
-# `pdfcer-gui/app/prefs/redaction`
+# `pdfcer-gui-base/redact/reach`
 
 ## Item notes
 

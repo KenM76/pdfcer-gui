@@ -1,4 +1,4 @@
-//! Design and rationale: `docs/modules/pdfcer-gui/sign/tests.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/sign/tests.md`.
 #![cfg(test)]
 //! Tests for [`super`] — the headless half of signing.
 //!
@@ -304,7 +304,7 @@ fn an_empty_or_blank_field_is_left_out_of_the_signature() {
 #[test]
 fn the_suggested_name_is_never_the_document_it_came_from() {
     let source = std::path::Path::new("D:/drawings/SW41177.pdf");
-    let suggested = suggested_path(source);
+    let suggested = suggested_path(source, "-signed");
     assert_ne!(suggested, source);
     assert_eq!(suggested.parent(), source.parent(), "same folder");
     assert_eq!(

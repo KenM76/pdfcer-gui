@@ -14,7 +14,7 @@
 //! every reach behaves the same. A fixture that cannot distinguish the values
 //! under test would make every assertion here vacuous.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/redact/tests/reach.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/redact/tests/reach.md`.
 
 // The inner `#![cfg(test)]` is what `tools/gates/check-ui-strings.sh`
 // exclusion 2 recognises as a test-only FILE.

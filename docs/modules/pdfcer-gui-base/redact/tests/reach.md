@@ -1,4 +1,4 @@
-# `pdfcer-gui/redact/tests/reach`
+# `pdfcer-gui-base/redact/tests/reach`
 
 ## Item notes
 

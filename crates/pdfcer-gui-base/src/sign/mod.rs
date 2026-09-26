@@ -7,7 +7,7 @@
 //! (`EditSession::sign`) — whose own module header says it is *"the family the
 //! `pdfcer-gui` request of 2026-09-03 asked for."*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/sign/mod.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/sign/mod.md`.
 
 use std::path::{Path, PathBuf};
 
@@ -726,14 +726,14 @@ fn non_empty(value: &str) -> Option<String> {
 ///
 /// The standing rule for every write that produces a second document.
 #[must_use]
-pub fn suggested_path(source: &Path) -> PathBuf {
+pub fn suggested_path(source: &Path, suffix: &str) -> PathBuf {
     let stem = source.file_stem().map_or_else(
         // ui-text-exempt: a filename fallback for a path with no stem, not
         // operator copy. Every sibling suggestion function makes the same one.
         || String::from("document"),
         |s| s.to_string_lossy().into_owned(),
     );
-    let named = format!("{stem}{}.pdf", crate::text::sign::suggested_suffix());
+    let named = format!("{stem}{suffix}.pdf");
     source
         .parent()
         .map_or_else(|| PathBuf::from(&named), |parent| parent.join(&named))

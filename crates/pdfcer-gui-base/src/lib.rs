@@ -45,6 +45,11 @@ pub mod secret;
 /// of both. The tiling is `pdfcer_print::imposition::plan_poster`'s.
 pub mod poster;
 
+pub mod redact;
+
+#[cfg(feature = "signing")]
+pub mod sign;
+
 /// Where signature trust ANCHORS come from, and the three facts they let
 /// this shell state.
 pub mod trust;

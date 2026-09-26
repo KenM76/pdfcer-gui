@@ -1,12 +1,14 @@
 //! # `redact` — the APPLY pipeline, and the reason a redaction in this shell
 //! cannot be shipped unverified
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/redact/mod.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/redact/mod.md`.
 
 pub mod proof;
 
+mod reach;
+
 /// **The call-site monopoly** — §2.4. Parses every `.rs` file in this crate and
-/// asserts that `apply_redactions` is called in exactly one place.
+/// `pdfcer-gui`, and asserts that `apply_redactions` is called in exactly one place.
 #[cfg(test)]
 mod sealed;
 
@@ -18,7 +20,7 @@ use pdfcer_core::object::ObjId;
 use pdfcer_core::redact::{self, RedactError, RedactionReport};
 use pdfcer_core::writer::{SaveOptions, WriteError};
 
-use crate::app::prefs::RedactionReach;
+pub use reach::RedactionReach;
 
 pub use proof::{AbsenceVerification, Residual, ResidualSite};
 
@@ -710,11 +712,11 @@ thread_local! {
 }
 
 /// Park a verified redacted document for the action funnel.
-pub(crate) fn park_applied_document(doc: Document) {
+pub fn park_applied_document(doc: Document) {
     APPLIED.with(|slot| slot.replace(Some(doc)));
 }
 
 /// Take it, exactly once.
-pub(crate) fn take_applied_document() -> Option<Document> {
+pub fn take_applied_document() -> Option<Document> {
     APPLIED.with(|slot| slot.borrow_mut().take())
 }

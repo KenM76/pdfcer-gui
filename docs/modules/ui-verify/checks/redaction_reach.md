@@ -5,7 +5,7 @@ save, measured on the bytes, twice
 
 The preference exists, the settings window offers it, the enum maps onto
 the engine's `ResidualScope` — and the value never arrives. Every unit test
-under `crates/pdfcer-gui/src/redact/` calls the apply verb with a reach
+under `crates/pdfcer-gui-base/src/redact/` calls the apply verb with a reach
 handed to it directly; none can see the chain in front of that verb:
 `preferences.txt` → the loaded preference → the action → the dialog →
 `EditSession::set_residual_scope`. A build where any link dropped the value

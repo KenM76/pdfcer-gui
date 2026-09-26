@@ -1,4 +1,4 @@
-# `pdfcer-gui/sign/tests`
+# `pdfcer-gui-base/sign/tests`
 
 ## Item notes
 
