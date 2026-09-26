@@ -57,10 +57,8 @@ pub mod offpage;
 /// a diagnostic for the first time.
 pub mod pressure;
 
-/// **Screen ⟷ PDF for a RASTER** — the two conversions the region tier
-/// needs, kept together because they are inverses and the round trip is the
-/// property that matters.
-pub mod raster;
+/// Rendered pixmaps into egui textures.
+pub use pdfcer_gui_base::raster;
 
 /// **The window's rectangle, in the space the engine documents** — the region
 /// tier's one conversion from canvas space to PDF user space.

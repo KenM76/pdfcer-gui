@@ -1,4 +1,4 @@
-//! # `render::raster` — the bridge from `pdfcer-render`'s pixmaps to egui textures
+//! # `raster` — the bridge from `pdfcer-render`'s pixmaps to egui textures
 //!
 //! One job, kept in one place: take a [`tiny_skia::Pixmap`] out of
 //! [`pdfcer_render::render_page`] and hand egui a
@@ -7,12 +7,12 @@
 //! formats is confined here so the canvas deals only in "do I have a
 //! current texture for this page at this zoom."
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/render/raster.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/raster.md`.
 
 use egui::{ColorImage, Context, TextureHandle, TextureOptions};
 use pdfcer_render::{Diagnostics, tiny_skia};
 
-use crate::render::worker::RenderKey;
+use crate::renderworker::RenderKey;
 
 /// A rasterized page, uploaded and ready to draw.
 #[derive(Clone)]
@@ -24,7 +24,7 @@ pub struct PageTexture {
     ///
     /// The scale inside it is in **device pixels** per PDF user-space unit,
     /// i.e. the operator-visible zoom already multiplied by the display's
-    /// `pixels_per_point` ([`crate::viewer::raster_scale`]). Staleness is
+    /// `pixels_per_point` (`pdfcer_gui::viewer::raster_scale`). Staleness is
     /// compared against that, not against the logical zoom, so dragging the
     /// window to a monitor with a different density re-rasterizes rather
     /// than leaving a soft picture behind.
@@ -35,7 +35,7 @@ pub struct PageTexture {
     pub diagnostics: Diagnostics,
     /// How long the rasterization that produced these pixels took.
     ///
-    /// Carried straight across from [`crate::render::worker::RenderedPixels`],
+    /// Carried straight across from [`crate::renderworker::RenderedPixels`],
     /// whose field documents what is and is not inside the measurement. Read by
     /// the `tools.render_diagnostics` dialog, which is the one surface that
     /// answers *"what did the renderer do with the last page?"* — and which
@@ -75,7 +75,7 @@ pub const BASE_MAX_PIXELS: u32 = 4_000_000;
 
 /// Whether this raster is small enough to keep as the page's backdrop.
 #[must_use]
-pub fn within_base_budget(pixels: &crate::render::worker::RenderedPixels) -> bool {
+pub fn within_base_budget(pixels: &crate::renderworker::RenderedPixels) -> bool {
     pixels
         .pixmap
         .width()
@@ -87,19 +87,19 @@ pub fn within_base_budget(pixels: &crate::render::worker::RenderedPixels) -> boo
 #[must_use]
 pub fn texture_from_pixels(
     ctx: &Context,
-    surface: crate::render::pressure::Surface,
-    pixels: &crate::render::worker::RenderedPixels,
+    surface: crate::pressure::Surface,
+    pixels: &crate::renderworker::RenderedPixels,
 ) -> PageTexture {
     let image = pixmap_to_color_image(&pixels.pixmap);
     // Recorded BEFORE the upload is ordered, and from the key rather than
     // from the image: this is the provenance a `GL_OUT_OF_MEMORY` drained at
     // the top of the next frame is matched against, and GL's error flag
-    // carries none of its own. See `crate::render::pressure`.
+    // carries none of its own. See `crate::pressure`.
     //
     // Here rather than at the call site because this is the one function every
     // page-raster upload passes through — the same reason the key is carried
     // across rather than recomputed below.
-    crate::render::pressure::record_raster(
+    crate::pressure::record_raster(
         ctx,
         surface,
         &pixels.key,

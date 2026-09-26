@@ -14,7 +14,7 @@
 # ribbon, no dock, no panels, no tools, no file dialog. Every stage of this
 # build produces a program that RUNS (PROJECT_PLAN.md §4); S0 is the
 # smallest such program that exercises the three salvaged subsystems
-# (`pdfcer-gui-base`'s `renderworker.rs`, `render/raster.rs`, `viewer/`) end to end against
+# (`pdfcer-gui-base`'s `renderworker.rs`, `raster.rs`, `viewer/`) end to end against
 # the live engine.
 #
 # `egui-shell` (the reusable shell crate, the other workspace member) is

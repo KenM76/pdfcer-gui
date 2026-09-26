@@ -235,7 +235,7 @@ uploads under a *single fixed texture name* shared with the canvas. Neither
 suits a preview, which has a pixmap and its own texture name.
 
 ⇒ **The fix is a `texture_from_pixmap(ctx, name, &pixmap)` in
-`render/raster.rs` and the deletion of this function**, which is a change to
+`pdfcer-gui-base`'s `raster.rs` and the deletion of this function**, which is a change to
 that module rather than to this one.
 
 Until then the convention is held by this doc comment and by the assertion

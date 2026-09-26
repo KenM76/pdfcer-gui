@@ -3,6 +3,8 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/pressure.md`.
 
+use crate::renderworker::RenderKey;
+
 /// Which surface ordered an upload.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Surface {
@@ -139,6 +141,22 @@ struct Ordered(Vec<Upload>);
 /// The `ctx.data` slot. One per process; GL's error flag is global too.
 fn slot() -> egui::Id {
     egui::Id::new("render::pressure::ordered")
+}
+
+/// Note that an upload of a **page raster** has been ordered this frame.
+pub fn record_raster(ctx: &egui::Context, surface: Surface, key: &RenderKey, w: u32, h: u32) {
+    record(
+        ctx,
+        Upload {
+            surface,
+            pixels: u64::from(w) * u64::from(h),
+            raster: Some(Raster {
+                page: key.page(),
+                raster_scale: key.raster_scale(),
+                whole_page: key.region().is_none(),
+            }),
+        },
+    );
 }
 
 /// Note that an upload with no page behind it has been ordered this frame.
@@ -282,5 +300,26 @@ mod tests {
             attribute(&[canvas_whole(0)], other),
             Attribution::Blamed(canvas_whole(0))
         );
+    }
+
+    /// The record survives being written and read back through `ctx.data`.
+    #[test]
+    fn a_recorded_upload_comes_back_out_once() {
+        let ctx = egui::Context::default();
+        let key = RenderKey::new(7, 4.0, true, 0, pdfcer_render::font::StrokeDisplay::Actual);
+        record_raster(&ctx, Surface::Canvas, &key, 1_000, 2_000);
+        record_other(&ctx, Surface::Icon, 32, 32);
+
+        let first = take(&ctx);
+        assert_eq!(first.len(), 2);
+        assert_eq!(first[0].surface, Surface::Canvas);
+        assert_eq!(first[0].pixels, 2_000_000);
+        assert_eq!(first[0].raster.map(|r| r.page), Some(7));
+        assert!(first[0].raster.is_some_and(|r| r.whole_page));
+        assert_eq!(first[1].raster, None);
+
+        // And is GONE — a record read twice would be attributed to two
+        // frames, the second of which uploaded nothing.
+        assert!(take(&ctx).is_empty());
     }
 }

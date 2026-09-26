@@ -1,4 +1,4 @@
-# `render::raster` — the bridge from `pdfcer-render`'s pixmaps to egui textures
+# `raster` — the bridge from `pdfcer-render`'s pixmaps to egui textures
 
 One job, kept in one place: take a [`tiny_skia::Pixmap`] out of
 [`pdfcer_render::render_page`] and hand egui a
