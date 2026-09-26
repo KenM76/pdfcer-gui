@@ -410,7 +410,7 @@ genuinely new question — what happens to the source when the gesture was a mov
 
 | stage | where |
 |---|---|
-| drag state that survives a document switch | `crates/pdfcer-gui/src/pagedrag.rs` |
+| drag state that survives a document switch | `crates/pdfcer-gui-base/src/pagedrag.rs` |
 | the drop resolves a gap and raises the action | `canvas/pagedrop.rs` — `pagedrag::end`, `wants_move`, `insert_position` |
 | the cross-document arm | `app/actions/crossdoc.rs` — `PdfcerApp::apply_insert_from_open_document(source_slot, pages, position, take)` |
 | the transfer itself | `app/actions/crossdoc.rs` calls `super::pages::insert_from_view(target, &view, pages, position)` |
@@ -1664,8 +1664,8 @@ takes it as a default only so it builds and tests alone. `trust` is in base
 too, with the wall `clock` it read (standard library only), which `app`
 re-exports so `app::clock` still names it. `pagetree` is in base: its one
 upward edge was the refusal sentence, so it now returns a `RefusalOrigin` and
-`text::pagetree::refusal_sentence` words it. `pagedrag` has the same shape of
-edge and takes the same split: decision in the module, wording in `text`.
+`text::pagetree::refusal_sentence` words it. `pagedrag` is in base on the same
+split: it returns a `DragPhase` and `text::doctabs::drag_caption` words it.
 
 `redact` and `sign` are in base. `redact` owns `RedactionReach`, which
 `app::prefs` re-exports; `sign::suggested_path` takes the filename suffix as an

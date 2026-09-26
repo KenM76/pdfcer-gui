@@ -206,6 +206,36 @@ pub fn move_left_the_source_alone(source: &str) -> String {
     )
 }
 
+/// The status-row sentence for a page drag in flight.
+///
+/// The copy case carries its hint from one catalogue function, because how two
+/// operator-visible sentences meet is itself operator-visible.
+#[must_use]
+pub fn drag_caption(phase: &crate::pagedrag::DragPhase) -> String {
+    use crate::pagedrag::DragPhase as P;
+    match phase {
+        P::OverNothing => drag_over_nothing().to_owned(),
+        P::LandsNowhere => crate::text::pages::drag_lands_nowhere().to_owned(),
+        P::Reorder {
+            moving,
+            gap,
+            page_count,
+        } => drag_landing_here(*moving, *gap, *page_count),
+        P::Move {
+            moving,
+            gap,
+            source,
+            page_count,
+        } => drag_landing_move(*moving, *gap, source, *page_count),
+        P::Copy {
+            moving,
+            gap,
+            source,
+            page_count,
+        } => drag_landing_copy_with_hint(*moving, *gap, source, *page_count),
+    }
+}
+
 /// The drag is over something that is not a drop target.
 #[must_use]
 pub const fn drag_over_nothing() -> &'static str {
@@ -229,6 +259,33 @@ pub const fn drag_refused_self_copy() -> &'static str {
 #[must_use]
 pub fn drag_target_refused(reason: &str) -> String {
     format!("Those pages could not be placed here. {reason}")
+}
+
+#[cfg(test)]
+mod drag_caption_tests {
+    use super::drag_caption;
+    use crate::pagedrag::DragPhase;
+
+    /// **The caption says copy only when the documents differ**, and names
+    /// the document the pages came from.
+    #[test]
+    fn the_caption_says_copy_only_for_another_document() {
+        let same = drag_caption(&DragPhase::Reorder {
+            moving: 2,
+            gap: 0,
+            page_count: 9,
+        });
+        assert!(!same.to_lowercase().contains("copy"), "{same}");
+        let other = drag_caption(&DragPhase::Copy {
+            moving: 2,
+            gap: 0,
+            // ui-text-exempt: test fixture, never displayed
+            source: String::from("source.pdf"),
+            page_count: 9,
+        });
+        assert!(other.to_lowercase().contains("copy"), "{other}");
+        assert!(other.contains("source.pdf"), "{other}");
+    }
 }
 
 #[cfg(test)]

@@ -1,7 +1,7 @@
 //! # `pagedrag` — a page drag in flight, wherever it started and wherever it
 //! ends
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/pagedrag.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/pagedrag.md`.
 
 /// **A page drag in flight.**
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -12,7 +12,7 @@ pub struct PageDrag {
     /// every consumer needs to compare against `PdfcerApp::active_slot` and
     /// what `PdfcerApp::slot` takes. Slot positions are stable while a drag is
     /// in flight: activating a tab does not renumber the strip
-    /// (`crate::app::documents`' `the_strip_order_is_independent_of_which_tab_is_active`
+    /// (`pdfcer_gui::app::documents`' `the_strip_order_is_independent_of_which_tab_is_active`
     /// pins that), and nothing closes a tab mid-drag.
     pub source_slot: usize,
     /// **What is being dragged** — 0-based page indices into the source
@@ -48,7 +48,7 @@ pub struct DropLanding {
     ///
     /// `false` for a same-document drag whose gap is inside its own operand
     /// run (nothing moves) and for a whole-document self-copy, which is
-    /// refused — see [`crate::text::doctabs::drag_refused_self_copy`].
+    /// refused — see `pdfcer_gui::text::doctabs::drag_refused_self_copy`.
     pub lands: bool,
 }
 
@@ -190,45 +190,71 @@ pub fn wants_move(ctx: &egui::Context) -> bool {
     ctx.input(|i| i.modifiers.shift)
 }
 
-/// **The sentence describing what this drag is about to do**, or `None` when
-/// no drag is in flight.
+/// What the drag in flight would do if released now: the decision the
+/// status-row caption words, in `text::doctabs::drag_caption`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DragPhase {
+    /// Over nothing that accepts pages.
+    OverNothing,
+    /// Over a page list or view that refuses this drop.
+    LandsNowhere,
+    /// Within the source document: a reorder, already a move.
+    Reorder {
+        moving: usize,
+        gap: usize,
+        page_count: usize,
+    },
+    /// Into another document with the move modifier held.
+    Move {
+        moving: usize,
+        gap: usize,
+        source: String,
+        page_count: usize,
+    },
+    /// Into another document: a copy, the default.
+    Copy {
+        moving: usize,
+        gap: usize,
+        source: String,
+        page_count: usize,
+    },
+}
+
+/// The drag in flight's [`DragPhase`], or `None` when no drag is in flight.
 #[must_use]
-pub fn caption(ctx: &egui::Context) -> Option<String> {
+pub fn phase(ctx: &egui::Context) -> Option<DragPhase> {
     let drag = current(ctx)?;
     let Some(landing) = landing(ctx) else {
-        return Some(crate::text::doctabs::drag_over_nothing().to_owned());
+        return Some(DragPhase::OverNothing);
     };
     if !landing.lands {
-        return Some(crate::text::pages::drag_lands_nowhere().to_owned());
+        return Some(DragPhase::LandsNowhere);
     }
+    let moving = drag.pages.len();
+    let (gap, page_count) = (landing.gap, landing.page_count);
     if landing.target_slot == drag.source_slot {
-        // Within one document the drag is a reorder, which is already a move.
-        // No modifier applies and none is offered.
-        return Some(crate::text::doctabs::drag_landing_here(
-            drag.pages.len(),
-            landing.gap,
-            landing.page_count,
-        ));
+        return Some(DragPhase::Reorder {
+            moving,
+            gap,
+            page_count,
+        });
     }
-    if wants_move(ctx) {
-        return Some(crate::text::doctabs::drag_landing_move(
-            drag.pages.len(),
-            landing.gap,
-            &drag.source_label,
-            landing.page_count,
-        ));
-    }
-    // The copy sentence AND the hint, from one catalogue function rather
-    // than joined here. How two operator-visible sentences meet is itself an
-    // operator-visible decision, so it belongs in the catalogue with them;
-    // joining them with a `format!` here would put a sentence of UI text in a
-    // module `check-ui-strings` does not read as one.
-    Some(crate::text::doctabs::drag_landing_copy_with_hint(
-        drag.pages.len(),
-        landing.gap,
-        &drag.source_label,
-        landing.page_count,
-    ))
+    let source = drag.source_label;
+    Some(if wants_move(ctx) {
+        DragPhase::Move {
+            moving,
+            gap,
+            source,
+            page_count,
+        }
+    } else {
+        DragPhase::Copy {
+            moving,
+            gap,
+            source,
+            page_count,
+        }
+    })
 }
 
 #[cfg(test)]
@@ -279,11 +305,10 @@ mod tests {
         assert!(landing(&ctx).is_none(), "the caret outlived its drag");
     }
 
-    /// **The caption distinguishes a reorder from a copy**, because those are
-    /// the two different things the same gesture does and the operator has no
-    /// other way to tell which one they are about to get.
+    /// **A reorder and a copy are different phases**, because those are the
+    /// two different things the same gesture does.
     #[test]
-    fn the_caption_says_copy_only_when_the_documents_differ() {
+    fn the_phase_is_copy_only_when_the_documents_differ() {
         let ctx = egui::Context::default();
         begin(&ctx, drag());
 
@@ -297,10 +322,13 @@ mod tests {
             },
         );
         begin_frame(&ctx);
-        let same = caption(&ctx).expect("a drag is in flight");
-        assert!(
-            !same.to_lowercase().contains("copy"),
-            "a reorder within one document was described as a copy: {same}"
+        assert_eq!(
+            phase(&ctx),
+            Some(DragPhase::Reorder {
+                moving: 2,
+                gap: 0,
+                page_count: 9
+            })
         );
 
         set_landing(
@@ -313,14 +341,14 @@ mod tests {
             },
         );
         begin_frame(&ctx);
-        let other = caption(&ctx).expect("a drag is in flight");
-        assert!(
-            other.to_lowercase().contains("copy"),
-            "a cross-document drag did not say it copies: {other}"
-        );
-        assert!(
-            other.contains("source.pdf"),
-            "the caption did not name the document the pages came from: {other}"
+        assert_eq!(
+            phase(&ctx),
+            Some(DragPhase::Copy {
+                moving: 2,
+                gap: 0,
+                source: drag().source_label,
+                page_count: 9
+            })
         );
     }
 
@@ -344,10 +372,10 @@ mod tests {
         );
     }
 
-    /// **No drag, no caption.** The status row asks unconditionally.
+    /// **No drag, no phase.** The status row asks unconditionally.
     #[test]
     fn there_is_nothing_to_say_when_nothing_is_being_dragged() {
         let ctx = egui::Context::default();
-        assert!(caption(&ctx).is_none());
+        assert!(phase(&ctx).is_none());
     }
 }

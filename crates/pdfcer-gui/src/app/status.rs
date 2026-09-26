@@ -328,7 +328,9 @@ pub fn show(
         // Costs one `egui::Memory` lookup per frame when nothing is being
         // dragged, which is every frame but the handful the operator is
         // carrying something.
-        if let Some(caption) = crate::pagedrag::caption(ui.ctx()) {
+        if let Some(caption) =
+            crate::pagedrag::phase(ui.ctx()).map(|p| crate::text::doctabs::drag_caption(&p))
+        {
             ui.label(caption);
             ui.separator();
         }

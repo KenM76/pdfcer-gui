@@ -32,6 +32,7 @@ pub mod ocr;
 /// Does a document's page tree still agree with itself: the raw `/Count`
 /// against the leaves actually reachable, audited on every save, and which
 /// refusal a disagreement owes. The wording lives in `pdfcer-gui`'s `text`.
+pub mod pagedrag;
 pub mod pagetree;
 
 /// A string the operator typed that must never reach a log — one type, and its

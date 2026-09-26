@@ -42,7 +42,6 @@ pub mod icons;
 /// **A page drag in flight** — the state four surfaces share while the
 /// operator is carrying pages from one document's page list to another's, or
 /// onto the page view.
-pub mod pagedrag;
 pub mod panels;
 /// Putting a password on a document, changing what it allows, and taking the
 /// protection off — `OPERATOR_REQUESTS.md` **O119**, approved 2026-09-04.
@@ -84,7 +83,9 @@ pub mod viewer;
 // boundary is in the crate graph, not in the spelling.
 #[cfg(feature = "signing")]
 pub use pdfcer_gui_base::sign;
-pub use pdfcer_gui_base::{acrobat, diag, ocr, pagetree, poster, redact, secret, trust, units};
+pub use pdfcer_gui_base::{
+    acrobat, diag, ocr, pagedrag, pagetree, poster, redact, secret, trust, units,
+};
 
 use std::path::PathBuf;
 
