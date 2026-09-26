@@ -16,3 +16,9 @@ passes `cargo check` and a comment-only diff can still fail a gate.
 comment text they read (`conventions:`, trace samples, exemption markers like
 `<!--namesake:`), keep those in place, and run the full suite. Long headers
 (>30 lines) belong in docs/modules per DEVELOPING §5.1 — see [[crate-split-is-standing-background-work]].
+
+Second instance, same move for item docs (2026-09-26): check-patch-residue
+reads `{NAME}` and `\uXXXX` as patch damage in `.md` though they are plain Rust
+in a doc comment — text that is legal in one file type can fail a gate in the
+other. Also: an enum variant has no `pub` prefix but is public contract; key
+"private" on a real item keyword (fn/struct/…), never on the absence of `pub`.
