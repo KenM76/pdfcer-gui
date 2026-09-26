@@ -11,28 +11,7 @@
 //! `findings`, deliberately — two tables would agree on the day they were
 //! written and disagree the first time an eleventh counter was added to one.
 //!
-//! ⇒ So the split cost no call site a character: every name is re-exported
-//! from [`super`], and `t::diagnostics_images_skipped` still resolves exactly
-//! where it always did. That is the difference between a structural fix and a
-//! churn commit, and it is the same argument [`super::selection`] carries.
-//!
-//! ## What a sentence in here has to do
-//!
-//! **Name the consequence on the page, never the mechanism in pdfcer.** The
-//! catalog's own worked example is [`diagnostics_fonts_skipped`], which says
-//! *"text from 2 fonts not drawn"* rather than *"2 unsupported fonts"*: a
-//! count of unsupported fonts is a fact about pdfcer, and missing text is a
-//! fact about the picture in front of the operator. He can act on the second.
-//!
-//! **Singular and plural are written out.** *"1 images not drawn"* is the sort
-//! of thing an operator screenshots, and every entry here pays six lines to
-//! avoid it.
-//!
-//! **And it must not accuse the document.** These are things pdfcer had to
-//! substitute or leave out; [`diagnostics_tooltip`] says so in as many words,
-//! because the difference between *"pdfcer approximated something"* and
-//! *"your document is damaged"* is the single most valuable thing this
-//! surface can teach.
+//! Design and rationale: `docs/modules/pdfcer-gui/text/status/diagnostics.md`.
 
 /// The disclosure control's label, closed and open.
 ///

@@ -1,0 +1,46 @@
+# `panels::forms::spotlight` — **the panel→canvas channel: which field is
+being filled**
+
+
+> *"when we have the fill form panel visible and I click on fields in it
+> instead it should highlight the field on the canvas that is being filled."*
+
+## ★★★ This was already named as missing, and named as PERMITTED
+
+[`super`]'s header has carried the gap since the panel was written, and it is
+worth quoting because it settles the rule-4 question in advance:
+
+> *"the old shell's Forms panel did draw on the canvas: hovering a row
+> highlighted the field's rectangle on the page … It was answering a real
+> question — 'which of these is the one I am about to type into?' — and the
+> answer is welcome under rule 4's fourth clause, which permits 'a snap
+> indicator, a hover highlight, a rubber-band, a selection handle — these are
+> the cursor'. It is still not carried, and the reason has changed: the
+> mechanism now exists … so what is missing is only the panel→canvas channel
+> for which row is hovered."*
+
+**This is that channel.** Nothing else had to be built: `crate::canvas::forms`
+already places every fillable widget in canvas space.
+
+## ★★ Why it is a cursor and not a mark on the content
+
+Rule 4 forbids *applied content* being styled differently from saved content.
+A spotlight is neither applied nor content: it is transient, it follows the
+operator's attention, and it disappears the moment they look elsewhere. It is
+the same class as the pointing hand over a widget and the marquee band.
+
+⇒ The one-line test — *would a screenshot of the canvas differ from a
+screenshot of the same document saved and reopened?* — answers **yes, while
+a row is focused**, and that is correct for the same reason a text caret is.
+
+## Why a temp-memory channel rather than a field on the document
+
+Because it is **frame state, not document state**. It must not survive a
+reload, must not be persisted, and must not travel with the document to
+another tab. `egui`'s temp store is exactly that lifetime, and
+`crate::canvas::forms` already uses it for the focused field it types into —
+so this is the same mechanism at the same scope, not a second one.
+
+★ The panel writes it and the canvas reads it, both once per frame. A panel
+that is not drawn writes nothing, so hiding the panel puts the spotlight out
+by construction rather than by anybody remembering to clear it.

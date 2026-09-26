@@ -1,0 +1,54 @@
+# `dialogs::redact::staged` — the phase for a document whose removal is
+already armed
+
+
+## ★ The seam, argued
+
+[`super`] answers *"what will applying do, and may the operator commit
+it?"*. Every part of it — the measured report, the destination choice, the
+three acknowledgements, the confirm control read one frame late — is
+machinery for taking a decision that has not been taken yet.
+
+This file answers a different question, asked by a different person: *"I
+already decided. What did I decide, and can I change my mind?"* It has no
+report (the numbers are stale by the time it is drawn — see below), no
+acknowledgements (there is nothing to consent to), no destination (the
+destination is whichever save verb he reaches for) and no confirm control.
+Sharing a file with the transaction would have meant a `match` arm inside
+`report`, inside `gates`, and inside `commit`, each testing the same phase —
+which is the shape [`super`]'s own §3 warns about in a different context: a
+control whose meaning depends on state somewhere else.
+
+## ★★★ Why it quotes no numbers, which is the decision worth reading
+
+The obvious body for this phase is the report the operator agreed to: *"4
+regions across 2 pages will be removed"*. It is not drawn, and the reason is
+`crate::redact::StagedRedaction::report`'s own:
+
+> A **preview** and not a receipt … the actual removal re-runs at save over
+> the then-current state, so if the operator edits in between, the saved
+> result reflects the edits.
+
+Between the arming and this frame he may have marked two more regions, taken
+one off, undone six steps, or edited the text under a mark. Every one of
+those changes what a save would remove, and none of them is visible in a
+number captured when he pressed the button. **A stale measurement presented
+as a current one is worse than no measurement**, on the one surface where
+the operator's whole reason for reading is to check what is about to
+happen — and this shell has a standing rule about exactly that shape
+(`crate::dialogs::redact` §2: the report has to be a measurement rather than
+a prediction, which is why the transaction runs the removal on open).
+
+The honest alternative — re-running the removal here to get fresh numbers —
+is a full rewrite of the document every time the window is opened, for a
+read-only glance. It is available (`EditSession::save_applying_redaction`
+takes `&self`) and it is not taken, because the fresh numbers would answer a
+question nobody is asking at this point: he is here to call it off or to go
+away, and both answers are the same whatever the count is.
+
+## What it does NOT draw, and it is a rule-4 statement
+
+No badge, no tint, no dashed outline, no progress. A staged removal is
+invisible on the canvas by design (`crate::redact` §1.0.3) and this window is
+the off-canvas place where it is disclosed instead. The status line and the
+tab's unsaved marker are the other two.

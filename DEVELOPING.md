@@ -70,6 +70,7 @@ tools/
 fixtures/         PDFs built by tools/gen-*.py, each with a PROVENANCE.md
 evidence/         calibration inputs the harness reads; run output is untracked
 mockups/          HTML mockups of the ribbon, the window and the modes
+docs/modules/     a module's design notes, mirroring its source path
 ```
 
 ## 3. Build and check
@@ -853,6 +854,13 @@ contract: the invariants it holds, what callers must not do, how it fits its
 parents and siblings. Then non-obvious rationale, only where the code cannot
 say it itself. Use `#` headings only when there are two or more real sections.
 
+**A header longer than thirty lines is a design document.** It lives at
+`docs/modules/<crate>/<path-under-src>.md`, and the source keeps its opening
+paragraph plus one line: ``//! Design and rationale: `docs/modules/...md`.``
+A `§` cited in the source body refers to that file's sections. Keeping the
+essay out of the `.rs` means every read of the code does not pay for it; the
+contract a caller needs belongs in the opening paragraph and the item docs.
+
 **Item docs (`///`)** — first line is one sentence, ends with a period, third
 person: *"Returns the page rect in document points."* Blank line, then detail.
 `# Errors`, `# Panics`, `# Safety`, `# Examples` where they apply. Never
@@ -939,6 +947,7 @@ touched file and diff the remainder — rather than by reading the diff.
 | Kind of fact | Where it lives |
 |---|---|
 | why this code is shaped this way | the doc comment, as a present-tense rule |
+| a module's design argument | `docs/modules/`, pointed at from its header |
 | what changed, and when | the commit message |
 | what the operator asked for | `OPERATOR_REQUESTS.md` |
 | what the engine owes us | `ENGINE_BACKLOG.md` |

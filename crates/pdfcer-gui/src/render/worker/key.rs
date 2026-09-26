@@ -10,26 +10,7 @@
 //! and a file whose tests live elsewhere has exactly the same subject it had
 //! before, only harder to read.
 //!
-//! [`super`] has two subjects and they change for different reasons:
-//!
-//! * **the worker** — a thread, a channel, a cancellation token, one in-flight
-//!   slot, and the mapping from `pdfcer-render`'s result to an [`super::Outcome`].
-//!   It changes when the rasterisation contract does, which this week meant a
-//!   new refusal variant.
-//! * **the key** — which inputs make two pictures different. It changes when a
-//!   new *control* is added: a layer override, a stroke-display mode, a region.
-//!
-//! Nothing in this file mentions a thread, and nothing in [`super`]'s worker
-//! half decides what makes a picture stale. Two subjects, two rates of change,
-//! which is this project's test for a seam.
-//!
-//! ## What did NOT move
-//!
-//! [`RenderKey`]'s tests. They stay in [`super`]'s test module beside the
-//! worker's, because several of them assert the **pairing** — that the key the
-//! worker spawns with is the key the texture is stamped with — and splitting
-//! an assertion from one of its two subjects is how the pairing stops being
-//! tested by either.
+//! Design and rationale: `docs/modules/pdfcer-gui/render/worker/key.md`.
 
 use super::RenderRequest;
 

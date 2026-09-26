@@ -3,53 +3,7 @@
 //! Four engine calls in a fixed order, and the order is the whole content of
 //! this module. Everything else here is disclosure.
 //!
-//! ```text
-//! pageops::extract(view, plan.pages_to_extract())  →  bytes of a NEW document
-//! Document::from_bytes(bytes)                      →  reopen those bytes
-//! settings.open_session(doc)                        →  the SESSION funnel
-//!   .set_info_field(InfoField::Title, category)    →  the CATEGORY
-//! stamp_file::name_stamp_pages(&mut session, …)    →  the /Names → /Pages tree
-//! session.to_full_bytes(options)                   →  the file
-//! ```
-//!
-//! ## Why it extracts instead of editing the open document
-//!
-//! Because the open document must survive the operation completely untouched.
-//! `Save as stamp collection…` is a **Read-mode-legal act** by the operator's
-//! own standing rule — *Read may produce a new document; it may not modify
-//! this one* — and the cheapest way to honour that is never to have a mutable
-//! handle on his document at all. `pageops::extract` reads a `DocumentView`
-//! and returns bytes; nothing upstream of it can be changed by anything
-//! downstream of it.
-//!
-//! The view is the **session's**, not the loaded file's, which carries his
-//! unsaved edits into the collection. `app::actions::extract` makes the same
-//! choice for the same reason (decision 018), and the alternative — silently
-//! writing the file as it was opened — is the kind of wrong answer that looks
-//! completely right.
-//!
-//! ## Why it reopens the bytes rather than reusing a session
-//!
-//! `name_stamp_pages` names `stamps[i]` to **page `i` of the session it is
-//! given**. Handing it the operator's session would name his drawing's pages.
-//! The extracted bytes are the only document whose page numbering matches the
-//! plan, so they have to become a document before they can be named. The
-//! reopen costs one parse of a file we just built and buys the positional
-//! contract for free.
-//!
-//! ⚠ It also means **a failure to reparse our own output is reachable**, and
-//! is reported as its own outcome rather than folded into "extraction failed".
-//! If pdfcer ever writes bytes pdfcer cannot read, that is a finding about the
-//! engine and the operator should not see it described as something his file
-//! did.
-//!
-//! ## What is disclosed, and why each one
-//!
-//! Under R8b rule 4 every inference this path makes is reported **off-canvas**
-//! — here, in the dialog that is about to write the file, before it writes.
-//! [`Written`] carries them; the dialog turns them into sentences. Nothing in
-//! this module marks a page, because nothing in this module has a page to
-//! mark.
+//! Design and rationale: `docs/modules/pdfcer-gui/stamps/write.md`.
 
 use std::path::Path;
 

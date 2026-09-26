@@ -1,70 +1,7 @@
 //! # `canvas::textedit::pen` — the face, size and colour **new** page text is
 //! written in
 //!
-//! ## What this closes
-//!
-//! `FEATURES.md`'s Phase 5 row, verbatim:
-//!
-//! > **`edit.add_text` has no font, size or colour surface** — it arms, sets an
-//! > origin, takes keystrokes and commits through `EditSession::add_text` with
-//! > the engine's documented default face. Unit-tested, **not driven**.
-//! > *Choosing what those three controls are is a decision, not an omission.*
-//!
-//! The decision is made here, and the operator's instruction of 2026-08-19 is
-//! why it is made now rather than deferred again: *"finish off phase 1 and
-//! phase 5. Get everything unblocked on phase 5 — no excuses."*
-//!
-//! Nothing in the engine was blocking it. `AddTextRequest` has carried `face`,
-//! `size` and `color` since it shipped, and `apply.rs`'s arm passed
-//! `AddTextRequest::new(…)` — *a bundled 12-pt black Helvetica run* — and
-//! overrode none of them.
-//!
-//! ## ★ Why this is a TOOL option and not a Format-tab property
-//!
-//! `RIBBON_IA.md` §5.8 sends `Text run → Font · Size · Colour · Spacing ·
-//! Alignment` to the Format tab, and that is right **for a run already on the
-//! page**. This is the opposite question: *what will the next thing I type look
-//! like*, which is the definition `crate::panels::tool` gives of its own
-//! subject — *this panel is about the NEXT gesture; Properties and Format are
-//! about the placed thing.*
-//!
-//! It is the same split `canvas::markup::pen` already makes, in the same words:
-//! the Markup ▸ Style group sets the pen for the next markup, and changing a
-//! placed one is Format's job.
-//!
-//! ## ★★ Why it lives in `egui::Memory` and the markup pen does not
-//!
-//! `canvas::markup::pen::Pen` is a field on `PdfcerApp`, and `panels::tool`'s
-//! header records the consequence: a panel body is handed `&OpenDoc` and
-//! `&mut PanelsState` and **nothing else**, so it cannot reach that pen — which
-//! is why the markup swatch is still absent from the Tool panel and why the
-//! honest interim there is to show nothing rather than a control that accepts a
-//! click and discards it.
-//!
-//! This one is in `egui::Memory`, beside the armed tool and the measure tool's
-//! authoring group, so **a panel can read and write it through `ui.ctx()` with
-//! no plumbing at all**. That is the precedent `canvas::measure::set_active_group`
-//! set and `panels::dimension_groups` already uses: transient UI state that
-//! decides what the *next* gesture produces is not document state, contributes
-//! nothing to the undo log, and has nothing to order against.
-//!
-//! It is **application-scoped**, like the armed tool itself: an operator who
-//! picks 8 pt Courier for a note expects it still to be 8 pt Courier in the next
-//! document, and a per-document reset would be a preference silently thrown
-//! away.
-//!
-//! ## What is deliberately NOT here
-//!
-//! - **A donor font.** `NewTextFace::Embedded` takes a whole `FontEmbedPlan`,
-//!   which is a font *file* the operator has to choose and pdfcer has to subset.
-//!   That is a real feature with a file picker and a licensing disclosure, and
-//!   it is what the `gui` column means by *"add non-Latin text via donor
-//!   font"* — offering a fourteenth entry in this combo that opened a file
-//!   dialog would be two features wearing one control.
-//! - **Alignment and a wrap box.** `AddTextRequest` carries both, and both
-//!   describe a *paragraph*. This gesture places a caret and takes keystrokes;
-//!   there is no box to align inside, and inventing one would be inventing the
-//!   text-box tool, which is `markup.text_box` and is a different command.
+//! Design and rationale: `docs/modules/pdfcer-gui/canvas/textedit/pen.md`.
 
 use pdfcer_core::fontdata::Std14;
 use pdfcer_core::text_edit::NewTextColor;

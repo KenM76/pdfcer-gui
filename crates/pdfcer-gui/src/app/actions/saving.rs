@@ -4,40 +4,7 @@
 //! to the lifecycle*. None of them decides anything about a save — the decisions
 //! live in `crate::app::save` and `crate::app::lifecycle`.
 //!
-//! ## Why all three ask, and why two of them ask the same question
-//!
-//! Every save can invalidate a document's signature, so every save asks first.
-//! What differs is **whose file is at risk**:
-//!
-//! | | asks as | because |
-//! |---|---|---|
-//! | [`Action::Save`] | `InPlace` | it overwrites the operator's own file |
-//! | [`Action::SaveCopy`] | `Copy` | it produces a new file to send somewhere |
-//! | [`Action::SaveAs`] | `Copy` | **also a new file** — see below |
-//!
-//! Save As asks the *copy's* question and not the in-place one, which looks
-//! wrong for a command that moves the document and is not. The question is about
-//! **the bytes being written**, and Save As writes a new file: the original is
-//! untouched, so there is nothing to warn about happening to it. What Save As
-//! additionally does — rebinding the session — happens after the write and
-//! cannot invalidate anything.
-//!
-//! ## `true` means "I interrupted you", not "you may proceed"
-//!
-//! `DialogsState::ask_signature` answers `true` when the question is **on
-//! screen**, and every arm here returns on `true`. Read the other way round it
-//! fails open — a build that proceeded when the dialog appeared would write the
-//! file the operator was still being asked about. `crate::dialogs::signature`
-//! carries the design; this note exists because the polarity is the one thing
-//! about these three arms that a reader can get backwards.
-//!
-//! ## Why each body is in `lifecycle` rather than here
-//!
-//! Because a signature question is answered on a **later frame**, and the answer
-//! has to resume *this* save rather than raise the action again into its own
-//! guard — which would ask the question a second time and never write anything.
-//! `crate::app::lifecycle::resume_after_signature` is the other end of that, and
-//! its header carries the rule the arrangement enforces.
+//! Design and rationale: `docs/modules/pdfcer-gui/app/actions/saving.md`.
 
 use super::Action;
 use crate::app::PdfcerApp;
