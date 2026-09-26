@@ -1,4 +1,4 @@
-# `render::halo` — rasterizing the ground OUTSIDE the sheet
+# `rasterhalo` — rasterizing the ground OUTSIDE the sheet
 
 ## The report, and which half of it this is
 

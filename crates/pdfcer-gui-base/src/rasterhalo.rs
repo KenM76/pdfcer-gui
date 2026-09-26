@@ -1,15 +1,15 @@
-//! # `render::halo` — rasterizing the ground OUTSIDE the sheet
+//! # `rasterhalo` — rasterizing the ground OUTSIDE the sheet
 //!
 //! ## The report, and which half of it this is
 //!
 //!
 //! > *"also objects should still be reachable even if they are off the page."*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/render/halo.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/rasterhalo.md`.
 
 use pdfcer_core::page_tree::Rect;
 
-use super::region::PageFrame;
+use crate::rasterregion::PageFrame;
 
 /// How far content may hang outside the crop box before it is treated as
 /// deliberately off-page, in **pdf** points.
@@ -74,7 +74,7 @@ pub fn region(crop: Rect, content: Option<Rect>, raster_scale: f32) -> Option<Re
     if !raster_scale.is_finite() || raster_scale <= 0.0 {
         return None;
     }
-    if !super::strategy::region_raster_fits(union, raster_scale) {
+    if !crate::rasterstrategy::region_raster_fits(union, raster_scale) {
         return None;
     }
     Some(union)
@@ -173,7 +173,7 @@ pub fn overhang(extent: (f32, f32), frame: PageFrame, content: Option<Rect>) -> 
 #[cfg(test)]
 mod tests {
     use super::{OVERHANG_TOLERANCE_PTS, overhang, reach, region};
-    use crate::render::region::PageFrame;
+    use crate::rasterregion::PageFrame;
     use pdfcer_core::page_tree::Rect;
 
     /// A 200 × 200 sheet at the origin — the shape of

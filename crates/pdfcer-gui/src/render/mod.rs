@@ -36,18 +36,10 @@
 /// *"zoom should stop at the limit and not end up showing an error"*.
 pub use pdfcer_gui_base::rasterceiling as ceiling;
 
-/// **The pixel proof for O137's "line weights off" display mode** — that the
-/// mode really thins a drawing, and thins it in the direction the operator
-/// asked for rather than the opposite one.
-///
-/// `#![cfg(test)]`, so it compiles to nothing in a release build. Its own
-/// header carries why four passing wiring tests were not enough.
-mod hairline;
-
 /// **The ground OUTSIDE the sheet** — O23's "see" half: the box to
 /// rasterize so that an object placed past the page edge is actually painted,
 /// and how far the visible-region tier may look past the sheet.
-pub mod halo;
+pub use pdfcer_gui_base::rasterhalo as halo;
 
 /// **Tests only** — the engine properties O23's second half will stand on,
 /// asserted here because the engine's own suite has never exercised them.

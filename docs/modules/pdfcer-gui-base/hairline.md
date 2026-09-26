@@ -1,4 +1,4 @@
-# `pdfcer-gui/render/hairline`
+# `pdfcer-gui-base/hairline`
 
 ## Item notes
 

@@ -35,6 +35,10 @@ pub mod ocr;
 
 pub mod pagedrag;
 
+/// The pixel proof that "line weights off" thins a drawing, in the right
+/// direction. Tests only.
+mod hairline;
+
 /// A revision number per page, so a change to one page repaints only it.
 pub mod pageepoch;
 
@@ -46,6 +50,10 @@ pub mod pagetree;
 /// The per-page raster scale this document has been measured unable to reach,
 /// so zoom stops there instead of showing an error.
 pub mod rasterceiling;
+
+/// The ground outside the sheet: the box to rasterize so an object past the
+/// page edge is painted.
+pub mod rasterhalo;
 
 /// The window's rectangle in PDF user space: the region tier's one conversion.
 pub mod rasterregion;

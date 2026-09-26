@@ -1,6 +1,6 @@
-//! Design and rationale: `docs/modules/pdfcer-gui/render/hairline.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/hairline.md`.
 #![cfg(test)]
-//! # `render::hairline` — **the proof that "line weights off" actually thins the
+//! # `hairline` — **the proof that "line weights off" actually thins the
 //! drawing, and thins it in the RIGHT DIRECTION**
 //!
 //!
