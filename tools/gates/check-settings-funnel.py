@@ -4,7 +4,7 @@
 ★★★ WHY THIS EXISTS, AND IT IS A DEFECT REPORT
 ==============================================
 
-`app/settings.rs` opens with the sentence this gate enforces:
+`pdfcer-gui-base/src/settings.rs` opens with the sentence this gate enforces:
 
     **A setting is a promise.** Storing one that does nothing breaks it
     silently, which is worse than not offering the choice.
@@ -324,7 +324,7 @@ def executable_text(text: str) -> str:
     sentence claiming it was applied.
 
     ★ Comments come out FIRST, and the order is load-bearing:
-    `app/settings.rs` carries a doc comment saying a neighbouring check *"skips
+    `pdfcer-gui-base/src/settings.rs` carries a doc comment saying a neighbouring check *"skips
     `#[cfg(test)]` modules"*, and treating that sentence as an attribute
     removed the funnel itself. A file that argues about a mechanism contains
     the tokens that mechanism is keyed on.
@@ -489,7 +489,7 @@ def run(explain: bool) -> int:
             "\n  A setting is a promise. Storing one that does nothing breaks "
             "it silently,\n  which is worse than not offering the choice. "
             "Either hand it to the engine\n  \u2014 a `with_*` builder in "
-            "`app/settings.rs`, a setter in `open_session`, or a\n  read at "
+            "`pdfcer-gui-base/src/settings.rs`, a setter in `open_session`, or a\n  read at "
             "the call site that acts on it \u2014 or write\n"
             f"\n      // {EXEMPT} <field> \u2014 <why, in {MIN_REASON}+ "
             f"characters>\n"

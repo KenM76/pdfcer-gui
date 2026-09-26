@@ -1674,6 +1674,10 @@ argument, so its caller in `dialogs` supplies the wording. Base carries a
 crates' source, since the monopoly it enforces is over every caller, not only
 those beneath it.
 
+The settings funnel, `SettingsExt`, is in base: it reads only the engine.
+`app::settings` re-exports it and keeps its `syn` sweeps, which walk both
+crates for the same reason `redact::sealed` does.
+
 Engine-reach instruments must scan base as well as `pdfcer-gui`, since base
 now calls the engine: `check-backlog-verdict-drift.py` and
 `security-coverage.py` walk both crates.

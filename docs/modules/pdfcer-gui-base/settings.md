@@ -1,4 +1,4 @@
-# `app::settings` — the live configuration, and the funnel that makes it real
+# `pdfcer-gui-base/settings`
 
 ## Why this module exists, and it is not "to hold a struct"
 

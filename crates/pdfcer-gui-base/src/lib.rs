@@ -41,6 +41,8 @@ pub mod pagetree;
 /// keeps as evidence.
 pub mod secret;
 
+pub mod settings;
+
 /// Poster printing: one page across many sheets, with a band along each
 /// sheet's top and left for cut marks and the assembly label, and the drawing
 /// of both. The tiling is `pdfcer_print::imposition::plan_poster`'s.
