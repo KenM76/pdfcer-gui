@@ -59,6 +59,9 @@ pub mod settings;
 /// engine `Pass 288.0`, and the answer to `OPERATOR_REQUESTS.md` **O169**.
 pub mod stamps;
 
+/// The texture cache behind a continuous strip of pages, under a texel budget.
+pub mod stripcache;
+
 /// Poster printing: one page across many sheets, with a band along each
 /// sheet's top and left for cut marks and the assembly label, and the drawing
 /// of both. The tiling is `pdfcer_print::imposition::plan_poster`'s.
