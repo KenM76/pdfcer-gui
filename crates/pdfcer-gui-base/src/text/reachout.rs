@@ -27,9 +27,9 @@
 //! and a launch action gets both facts in one line rather than two lines of
 //! which the operator reads the last.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/text/reachout.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/reachout.md`.
 
-use crate::app::reachout::ReachOut;
+use crate::reachout::ReachOut;
 
 /// **What this document reaches for**, in one sentence.
 #[must_use]

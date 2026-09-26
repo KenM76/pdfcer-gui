@@ -78,7 +78,7 @@ crates/pdfcer-gui/src/canvas/dimdrag.rs              drag-moves
 crates/pdfcer-gui/src/canvas/moving/mod.rs               drag-moves
 crates/pdfcer-gui/src/canvas/resizing.rs             drag-moves
 crates/pdfcer-gui/src/canvas/handledrag.rs           drag-moves
-crates/pdfcer-gui/src/canvas/constrain.rs            drag-moves
+crates/pdfcer-gui-base/src/constrain.rs              drag-moves
 crates/pdfcer-gui-base/src/handles.rs              handles
 crates/pdfcer-gui/src/canvas/textedit/mod.rs         text-caret
 crates/pdfcer-gui-base/src/editmodel/caret.rs       text-caret

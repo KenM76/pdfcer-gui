@@ -341,8 +341,8 @@ The rest of the chain is built, on both sides of the crate boundary:
 | piece | where |
 |---|---|
 | walks `%WINDIR%\Fonts` and the per-user font dir | `app/prefs/fonts.rs` `os_font_dirs()` |
-| parses every file, takes every advertised face name | `app/fonts.rs`, via `FontProgram::parse` and `.face_names()` |
-| holds name to path | `app/fonts.rs` `Library`, private `paths: BTreeMap<String, PathBuf>` |
+| parses every file, takes every advertised face name | `pdfcer-gui-base` `fontlibrary.rs`, via `FontProgram::parse` and `.face_names()` |
+| holds name to path | `pdfcer-gui-base` `fontlibrary.rs` `Library`, private `paths: BTreeMap<String, PathBuf>` |
 | engine: subset a donor for the characters typed | `pdfcer-render` `font::subset::plan_subset(donor, face_index, chars, base_name, subset_tag)` |
 | engine: the Add-Text seam that takes the result | `pdfcer-core` `NewTextFace::Embedded(Box<FontEmbedPlan>)`, `AddTextRequest::with_embedded_face(plan)` |
 

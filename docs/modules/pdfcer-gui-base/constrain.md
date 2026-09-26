@@ -1,4 +1,4 @@
-# `canvas::constrain` — what Shift does to a drag, written down once
+# `constrain` — what Shift does to a drag, written down once
 
 ## Why this module exists at all
 

@@ -1,7 +1,7 @@
 //! # `text::embed` — what the Embed-fonts window says before it changes
 //! anything
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/text/embed.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/embed.md`.
 
 use pdfcer_core::font_embed_missing::EmbedBlocker;
 use pdfcer_core::font_unembed::PdfaClaim;
@@ -34,8 +34,8 @@ pub fn will_embed(count: usize) -> String {
 
 /// One font that will be embedded, and where it comes from.
 #[must_use]
-pub fn embed_row(face: &str, source: &str, matched: crate::app::fonts::Match) -> String {
-    use crate::app::fonts::Match;
+pub fn embed_row(face: &str, source: &str, matched: crate::fontlibrary::Match) -> String {
+    use crate::fontlibrary::Match;
     match matched {
         Match::Exact => format!("{face} — from {source}"),
         // The weaker file match, said plainly. A stem match is this shell
@@ -450,7 +450,7 @@ mod tests {
     /// bundled one is the loudest.**
     #[test]
     fn every_rung_says_something_different_and_bundled_says_the_most() {
-        use crate::app::fonts::Match;
+        use crate::fontlibrary::Match;
         let exact = embed_row("ArialMT", "C:/f/Arial.ttf", Match::Exact);
         let stem = embed_row("Helvetica", "C:/f/Helv.ttf", Match::Stem);
         let alias = embed_row("Helvetica", "C:/f/Arial.ttf", Match::Alias);

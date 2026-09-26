@@ -19,7 +19,7 @@
 //! problem needs the one named; *"3 files were skipped"* is a number that
 //! sends somebody to look through two hundred.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/text/fonts.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/fonts.md`.
 
 use std::path::Path;
 
@@ -39,7 +39,7 @@ pub fn file_too_large(path: &Path, bytes: u64) -> String {
         "Skipped {} — {:.1} MB is past the {} MB limit for a font file.",
         path.display(),
         bytes as f64 / (1024.0 * 1024.0),
-        crate::app::fonts::MAX_FONT_FILE_BYTES / (1024 * 1024)
+        crate::fontlibrary::MAX_FONT_FILE_BYTES / (1024 * 1024)
     )
 }
 

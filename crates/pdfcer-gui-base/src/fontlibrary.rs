@@ -1,7 +1,7 @@
-//! # `app::fonts` — turning the operator's font folders into donors an embed
+//! # `fontlibrary` — turning the operator's font folders into donors an embed
 //! can use
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/fonts.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/fontlibrary.md`.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};

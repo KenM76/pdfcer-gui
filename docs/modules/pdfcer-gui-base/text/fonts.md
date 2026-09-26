@@ -1,4 +1,4 @@
-# `pdfcer-gui/text/fonts`
+# `text::fonts`
 
 ## Item notes
 

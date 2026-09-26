@@ -653,9 +653,14 @@ pub fn after() -> &'static str { "after —" }
                 }
             }
         }
+        // The catalog spans two crates: the base holds the copy that names
+        // nothing above it, this crate the copy that still reaches up.
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/text");
+        let base =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../pdfcer-gui-base/src/text");
         let mut out = Vec::new();
         walk(&root, &mut out);
+        walk(&base, &mut out);
         // This scanner sits in the catalog directory and is not catalog.
         out.retain(|p| *p != root.join("glyphs.rs"));
         out.sort();
@@ -721,9 +726,10 @@ pub fn after() -> &'static str { "after —" }
             files.len() >= 15,
             "found only {} catalog files, which is fewer than the 15 that \
              existed when this gate was written — the walk is not reaching \
-             the tree and a clean result would prove nothing. Looked in {:?}",
+             the tree and a clean result would prove nothing. Looked in \
+             src/text of {:?} and of pdfcer-gui-base",
             files.len(),
-            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/text"),
+            env!("CARGO_MANIFEST_DIR"),
         );
 
         // (char, file, line, the literal it came from)

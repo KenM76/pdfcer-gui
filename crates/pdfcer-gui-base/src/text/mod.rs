@@ -242,6 +242,19 @@ pub mod redactdestcopy;
 /// The removed words themselves, not the count of them.
 pub mod redactremoved;
 
+/// The three sentences a held Shift puts on the status row while it is
+/// constraining a drag. Consumed by `crate::canvas::constrain::caption`.
+pub mod constrain;
+pub mod embed;
+/// What the font-donor scan says when it skips a file — five sentences, all
+/// about something that did not happen. See its header for why a skip is worth
+/// a sentence.
+pub mod fonts;
+/// The sentence a document that reaches outside itself earns — a submit
+/// button, a launch action, a script that runs on open. Its header carries the
+/// two opposite ways to word it wrongly.
+pub mod reachout;
+
 use std::path::Path;
 
 /// The window title.

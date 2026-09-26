@@ -100,7 +100,9 @@ pub mod clipboard;
 /// down once for the five drags that share them. `ui-conventions/drag-moves.md`
 /// D5, found absent from every one of them by the conventions sweep of
 /// 2026-08-20. Its header carries why one module rather than five call sites.
-pub mod constrain;
+pub use pdfcer_gui_base::constrain;
+#[cfg(test)]
+mod constrain_tests;
 /// **Would a cut survive?** — the pre-press gate the engine asked for, asked
 /// from the cheap side. Its header carries why it mirrors their rule instead of
 /// calling it, and why the mirror is deliberately permissive.

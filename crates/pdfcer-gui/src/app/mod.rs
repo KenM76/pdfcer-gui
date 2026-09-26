@@ -43,7 +43,7 @@ mod fontband;
 /// Turning the operator's font folders into donors an embed can use — the half
 /// of font embedding the engine says is the shell's. See its header for why
 /// pdfcer never goes looking on its own.
-pub mod fonts;
+pub use pdfcer_gui_base::fontlibrary as fonts;
 /// The five Format ▸ Markup controls the ribbon cannot draw itself — two colour
 /// swatches, a width field, an opacity field and an arrowhead chooser, which
 /// restyle a mark that is already on the page. [`fontband`]'s twin, with the

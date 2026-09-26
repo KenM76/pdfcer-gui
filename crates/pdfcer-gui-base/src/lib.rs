@@ -321,3 +321,9 @@ pub mod objectsummary;
 
 /// Turning a document into a comment list.
 pub mod commentmodel;
+
+/// Turning the operator's font folders into donors an embed can use.
+pub mod fontlibrary;
+
+/// What Shift does to a drag, written down once.
+pub mod constrain;

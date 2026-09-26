@@ -1,4 +1,4 @@
-# `pdfcer-gui/text/reachout`
+# `text::reachout`
 
 ## Item notes
 

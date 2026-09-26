@@ -1,4 +1,4 @@
-# `app::fonts` — turning the operator's font folders into donors an embed
+# `fontlibrary` — turning the operator's font folders into donors an embed
 can use
 
 The half of font embedding that is **the shell's**, and the engine is

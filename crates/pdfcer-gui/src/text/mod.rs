@@ -19,18 +19,10 @@ pub mod buttonaction;
 /// `crate::shell::commands`.
 /// The four sentences the object clipboard can say when it cannot act.
 pub mod clipboard;
-/// The three sentences a held Shift puts on the status row while it is
-/// constraining a drag. Consumed by `crate::canvas::constrain::caption`.
-pub mod constrain;
 /// **The three sentences a Delete that removed nothing shows** — for
 /// `crate::canvas::deleting`, the module that routes a Delete to the verb for
 /// the rung the operator is on.
 pub mod deleting;
-/// The three sentences a dragged-and-dropped file can answer with.
-/// **The document tab strip, and the page drag between documents.** What a tab
-/// says, and what a drag says it is about to do.
-pub mod doctabs;
-pub mod embed;
 /// Every word the Export-image window shows, and every sentence an image
 /// export owes afterwards. `OPERATOR_REQUESTS.md` O120.
 pub mod export_image;
@@ -41,10 +33,6 @@ pub mod export_keeptext;
 /// not a refusal: the paste worked, and the sentence exists because part of the
 /// field could not travel and the operator cannot see which part.
 pub mod fieldclip;
-/// What the font-donor scan says when it skips a file — five sentences, all
-/// about something that did not happen. See its header for why a skip is worth
-/// a sentence.
-pub mod fonts;
 /// Every string the Forms panel shows. Consumed by `crate::panels::forms`.
 pub mod formfield;
 /// Font-glyph coverage: *can the stack actually draw this character?*
@@ -61,10 +49,6 @@ pub mod pick;
 /// duplicated across the seam: this module calls `security`'s wording verbatim
 /// wherever one fact serves both.
 pub mod protect;
-/// The sentence a document that reaches outside itself earns — a submit
-/// button, a launch action, a script that runs on open. Its header carries the
-/// two opposite ways to word it wrongly.
-pub mod reachout;
 pub mod redact;
 /// Every word the redaction surface says — the marking panel, the apply
 /// report, the two acknowledgements, and the residual lines. Consumed by
@@ -84,3 +68,7 @@ pub mod tool;
 
 #[cfg(test)]
 mod about_tests;
+/// The three sentences a dragged-and-dropped file can answer with.
+/// **The document tab strip, and the page drag between documents.** What a tab
+/// says, and what a drag says it is about to do.
+pub mod doctabs;

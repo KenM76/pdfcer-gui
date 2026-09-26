@@ -1,10 +1,10 @@
 //! # `text::constrain` — the sentence a held Shift puts on the status row
 //!
-//! Three strings, for [`crate::canvas::constrain`].
+//! Three strings, for [`crate::constrain`].
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/text/constrain.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/constrain.md`.
 
-use crate::canvas::constrain::{Axis, Lock};
+use crate::constrain::{Axis, Lock};
 
 /// The sentence for a live constraint.
 #[must_use]
