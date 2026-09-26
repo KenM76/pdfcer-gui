@@ -33,6 +33,14 @@ pub mod face;
 /// rules for that job are written down with them.
 pub mod layersearch;
 
+/// **Every sentence pdfcer says about which layer a selection is on** — the
+/// panel's long form and the status bar's short clause, generated from one
+/// `crate::layermembership::Membership` so the two surfaces cannot
+/// drift. Its own module under R2 and under `DEFECTS.md` D5; the module header
+/// argues the seam.
+pub mod layers;
+pub use layers::layer_selection_unlayered;
+
 /// **A choice field's `/Opt` list**, and the three `/Ff` flags Acrobat groups
 /// with it. Its own module under R2 and on the seam the code takes; the header
 /// argues the Shown/Sent vocabulary.

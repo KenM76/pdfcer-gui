@@ -242,6 +242,11 @@ pub mod redactdestcopy;
 /// The removed words themselves, not the count of them.
 pub mod redactremoved;
 
+/// **What a push button DOES** — every word the placement dialog's action
+/// chooser says, including the submit disclosure. Its own module because two of
+/// the seven choices write an address into the document that some other program
+/// may act on, and the operator cannot see that by looking at the page.
+pub mod buttonaction;
 /// The three sentences a held Shift puts on the status row while it is
 /// constraining a drag. Consumed by `crate::canvas::constrain::caption`.
 pub mod constrain;
@@ -275,8 +280,9 @@ pub mod pick;
 pub mod reachout;
 /// Every word the redaction surface says — the marking panel, the apply
 /// report, the two acknowledgements, and the residual lines. Consumed by
-/// `crate::panels::redact` and `crate::dialogs::redact`.
+/// `pdfcer_gui::panels::redact` and `pdfcer_gui::dialogs::redact`.
 pub mod resizing;
+pub mod textannot;
 
 use std::path::Path;
 

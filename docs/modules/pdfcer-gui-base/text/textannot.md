@@ -1,4 +1,4 @@
-# `pdfcer-gui/text/textannot`
+# `text::textannot`
 
 ## Item notes
 

@@ -10,11 +10,6 @@ pub mod menus;
 pub mod panels;
 pub mod settings;
 
-/// **What a push button DOES** — every word the placement dialog's action
-/// chooser says, including the submit disclosure. Its own module because two of
-/// the seven choices write an address into the document that some other program
-/// may act on, and the operator cannot see that by looking at the page.
-pub mod buttonaction;
 /// The label and tooltip of every ribbon command. Consumed by
 /// `crate::shell::commands`.
 /// The four sentences the object clipboard can say when it cannot act.
@@ -31,7 +26,6 @@ pub mod glyphs;
 /// wherever one fact serves both.
 pub mod protect;
 pub mod redact;
-pub mod textannot;
 pub mod textedit;
 /// Every sentence the text-EDITING tool shows: the three refusals a caret can
 /// meet, and the rule-4 disclosure the engine does not write for a pinned tail.

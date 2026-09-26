@@ -6,11 +6,9 @@
 //! cannot see that by looking at the page**. Everything they can learn about it
 //! has to be said here.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/text/buttonaction.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/buttonaction.md`.
 
-use crate::canvas::formfield::action::{
-    ActionBlocker, ButtonDoesKind, NamedChoice, PageViewChoice,
-};
+use crate::pushbutton::{ActionBlocker, ButtonDoesKind, NamedChoice, PageViewChoice};
 
 /// **What an EXISTING button currently does**, one sentence per state.
 #[must_use]

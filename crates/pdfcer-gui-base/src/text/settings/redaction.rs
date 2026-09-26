@@ -16,7 +16,7 @@
 //! because a scale where every step reads as an improvement is a scale with the
 //! cost hidden at one end.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/text/settings/redaction.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/settings/redaction.md`.
 
 /// Group 9 — the one setting that decides what a redaction destroys.
 #[must_use]
@@ -48,8 +48,8 @@ pub const fn reach_radius() -> &'static str {
 
 /// One sweep setting's name.
 #[must_use]
-pub const fn reach_label(reach: crate::app::prefs::RedactionReach) -> &'static str {
-    use crate::app::prefs::RedactionReach as S;
+pub const fn reach_label(reach: crate::redact::RedactionReach) -> &'static str {
+    use crate::redact::RedactionReach as S;
     match reach {
         S::MarkedOnly => "Only what I marked",
         S::HiddenCarriers => "What I marked, and the parts I cannot see (pdfcer's default)",
@@ -59,8 +59,8 @@ pub const fn reach_label(reach: crate::app::prefs::RedactionReach) -> &'static s
 
 /// One sweep setting's description.
 #[must_use]
-pub const fn reach_note(reach: crate::app::prefs::RedactionReach) -> &'static str {
-    use crate::app::prefs::RedactionReach as S;
+pub const fn reach_note(reach: crate::redact::RedactionReach) -> &'static str {
+    use crate::redact::RedactionReach as S;
     match reach {
         S::MarkedOnly => {
             "The literal reading: the content under your marks goes, and nothing \

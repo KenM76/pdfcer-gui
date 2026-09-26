@@ -1,4 +1,4 @@
-//! # `dialogs::buttonaction` — the *What pressing it does* chooser
+//! # `buttonactionpicker` — the *What pressing it does* chooser
 //!
 //! One control, drawn into the form-field placement dialog when the kind being
 //! placed is a push button. Lifted out of `dialogs::formfield` rather than
@@ -7,11 +7,11 @@
 //! a **disclosure obligation**, which is easier to review when it is not
 //! interleaved with a comb-cell checkbox.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/buttonaction.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/buttonactionpicker.md`.
 
 use egui::Ui;
 
-use crate::canvas::formfield::action::{
+use crate::pushbutton::{
     ButtonDoes, ButtonDoesKind, NamedChoice, PageViewChoice, url_is_unencrypted,
 };
 use crate::text::buttonaction as t;

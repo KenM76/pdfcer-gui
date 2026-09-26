@@ -1,4 +1,4 @@
-# `pdfcer-gui/text/panels/layers`
+# `text::panels::layers`
 
 `text::panels::layers` — **every sentence pdfcer says about which layer a
 selection is on**, in one module.

@@ -348,3 +348,9 @@ pub mod exporttext;
 
 /// Attaching the context menus to the command registry.
 pub mod menus_wiring;
+
+/// The picker for what a push button does.
+pub mod buttonactionpicker;
+
+/// Which layer a selection belongs to.
+pub mod layermembership;

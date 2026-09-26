@@ -1,9 +1,9 @@
 //! `text::panels::layers` — **every sentence pdfcer says about which layer a
 //! selection is on**, in one module.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/text/panels/layers.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/panels/layers.md`.
 
-use crate::panels::layers::highlight::{Membership, Unresolved};
+use crate::layermembership::{Membership, Unresolved};
 
 /// Where the answer's optional-content group sits **relative to the list the
 /// panel is actually drawing**.

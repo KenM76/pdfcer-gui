@@ -29,9 +29,9 @@
 //! could soften either without touching the other. The section banner below
 //! carries the measurement.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/text/textannot.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/textannot.md`.
 
-use crate::canvas::textannot::{StampSize, TextAnnotKind};
+use crate::wordmarkup::{StampSize, TextAnnotKind};
 use pdfcer_core::annot_author::{StampName, StickyIcon};
 
 /// The window's title.
@@ -381,7 +381,7 @@ mod tests {
     /// could select and could not identify.
     #[test]
     fn every_offered_stamp_is_named_distinctly() {
-        use crate::canvas::textannot::STAMPS;
+        use crate::wordmarkup::STAMPS;
         for s in STAMPS {
             assert!(!stamp_label(*s).is_empty(), "{s:?} has no label");
         }
@@ -396,7 +396,7 @@ mod tests {
     /// numeric ones carry their unit.**
     #[test]
     fn every_offered_stamp_size_is_named_distinctly_and_carries_its_unit() {
-        use crate::canvas::textannot::STAMP_SIZES;
+        use crate::wordmarkup::STAMP_SIZES;
         for size in STAMP_SIZES {
             let label = stamp_size_label(*size);
             assert!(!label.is_empty(), "{size:?} has no label");

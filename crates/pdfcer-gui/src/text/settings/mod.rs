@@ -7,9 +7,7 @@ pub use pdfcer_gui_base::text::settings::*;
 
 use egui_shell::theme::Preset;
 
-pub mod redaction;
 pub mod shell;
-pub use redaction::*;
 pub use shell::*;
 
 #[cfg(test)]

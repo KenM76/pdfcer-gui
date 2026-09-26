@@ -18,6 +18,7 @@ pub mod overprint;
 /// which of the three is there for a weak reason and should move out first if
 /// the module grows.
 pub mod print_colour;
+pub mod redaction;
 
 pub use bytes::*;
 pub use extract::*;
@@ -25,6 +26,7 @@ pub use look::*;
 pub use ocrlayer::*;
 pub use overprint::*;
 pub use print_colour::*;
+pub use redaction::*;
 
 use pdfcer_core::settings::StoreKind;
 use pdfcer_core::settings::StoreLocation;

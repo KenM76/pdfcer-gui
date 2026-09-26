@@ -1,4 +1,4 @@
-# `dialogs::buttonaction` — the *What pressing it does* chooser
+# `buttonactionpicker` — the *What pressing it does* chooser
 
 One control, drawn into the form-field placement dialog when the kind being
 placed is a push button. Lifted out of `dialogs::formfield` rather than
