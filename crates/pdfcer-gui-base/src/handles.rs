@@ -1,10 +1,10 @@
-//! # `canvas::handles` — eight grips plus move, and the cursor over each
+//! # `handles` — eight grips plus move, and the cursor over each
 //!
 //! `GUI_ROADMAP.md` Phase 1.3: *"Eight handles plus move, per the convention
 //! every drawing tool shares. Cursor changes over a handle, over a movable
 //! object, over the canvas."*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/handles.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/handles.md`.
 //!
 //! ## conventions: handles
 //!
@@ -269,7 +269,7 @@ pub fn rotate_rect_in(frame: GripFrame) -> Rect {
 ///
 /// - every corner grip reaches `GRIP_SIZE_PX / 2 + GRIP_GRAB_SLACK_PX` = **6 pt**
 ///   into the box it is drawn on, and there are two of them per axis;
-/// - [`crate::canvas::overlay::MIN_OUTLINE_EXTENT_PX`] **floors the drawn box at
+/// - `pdfcer_gui::canvas::overlay::MIN_OUTLINE_EXTENT_PX` **floors the drawn box at
 ///   6 pt**, so an object with the least body to spare is floored to a size at
 ///   which it has none.
 ///
@@ -334,7 +334,7 @@ pub enum GripFrame {
     Upright(Rect),
     /// A turned annotation's four **placed corners** in screen space, in the
     /// artwork's own frame: `[lower-left, lower-right, upper-right, upper-left]`
-    /// as [`crate::canvas::annotquad::OrientedBox::corners`] orders them.
+    /// as `pdfcer_gui::canvas::annotquad::OrientedBox::corners` orders them.
     ///
     /// "Lower" and "upper" name the *artwork's* edges, not the page's, which
     /// is the whole content of this variant: after a 100° turn the artwork's
@@ -838,6 +838,3 @@ mod tests {
         assert_eq!(grip_at(b, handle, GripSet::scale_only()), None);
     }
 }
-
-#[cfg(test)]
-mod body_strip_tests;

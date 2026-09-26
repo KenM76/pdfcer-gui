@@ -1,4 +1,4 @@
-//! # `shell::manifest::registers` — the two lists of commands this manifest
+//! # `commandregisters` — the two lists of commands this manifest
 //! does NOT emit, and the one list of commands it emits anyway
 //!
 //! ## The seam, and why it is the right one
@@ -29,7 +29,7 @@
 //! paths. That is the shape every one of this crate's data-and-rule splits
 //! has taken.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/shell/manifest/registers.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/commandregisters.md`.
 
 // ===========================================================================
 // PLANNED
@@ -103,7 +103,7 @@ pub const PLANNED: &[(&str, &str)] = &[
     // `set_media_box` rather than asking the engine to grow a creation path —
     // and why one asset suffices where an asset-per-offered-size plan could
     // never have answered a custom size at any number of assets. See
-    // `crate::app::blank`, whose §3a carries the full record.
+    // `pdfcer_gui::app::blank`, whose §3a carries the full record.
     //
     // ⚠ **Text export and `file.copy_document_text` are one answer reaching two
     // destinations.** At its defaults the export writes byte-for-byte the
@@ -133,7 +133,7 @@ pub const PLANNED: &[(&str, &str)] = &[
     // licensed code, the shipped `LICENSE` covers its notices. This one ships
     // CC-BY-SA-4.0 OCR model weights, and BY requires the notice to reach the
     // RECIPIENT of the work — which nothing but a surface inside the running
-    // program does. See `crate::text::about`.
+    // program does. See `pdfcer_gui::text::about`.
     //
     // -- View -- `RIBBON_IA.md` §5.2 ----------------------------------------
     //
@@ -152,8 +152,8 @@ pub const PLANNED: &[(&str, &str)] = &[
     // there is no `edit.form_fill`.
     //
     // Two headers carry what the absent view rows pointed at:
-    // `crate::canvas::rulers` §1 answers *"in the document's units"*, and
-    // `crate::canvas::guides` records why `guides.txt` is a fourth store beside
+    // `pdfcer_gui::canvas::rulers` §1 answers *"in the document's units"*, and
+    // `pdfcer_gui::canvas::guides` records why `guides.txt` is a fourth store beside
     // `layout.ron`, `recent.txt` and `page-display.txt` rather than a field in
     // any of them.
     (
@@ -202,7 +202,7 @@ pub const PLANNED: &[(&str, &str)] = &[
     // exactly where it is; rescaling moves every mark on the page, and would
     // have to rescale every ce dimension group's calibration with them or start
     // printing wrong measurements. Pages ▸ Transform ships the second of those.
-    // `crate::app::actions::pagesize`'s header carries the measurement and the
+    // `pdfcer_gui::app::actions::pagesize`'s header carries the measurement and the
     // argument for not building the first quietly alongside it.
     //
     // `pages.crop` above stays **N** and is a genuinely different command
@@ -344,7 +344,7 @@ pub const PLANNED: &[(&str, &str)] = &[
     ),
     // ⚠ **"Nothing calls it" is a claim about THIS shell, not about the
     // engine.** `pick_line_in_page` and `TwoLinePick` are `pdfcer-core`'s, and
-    // `crate::canvas::measure` is the caller. A reason that reads as an engine
+    // `pdfcer_gui::canvas::measure` is the caller. A reason that reads as an engine
     // gap when the gap is our own caller sends the next reader to the wrong
     // repository — and this one was contradicted by five documents at once
     // before anybody noticed.

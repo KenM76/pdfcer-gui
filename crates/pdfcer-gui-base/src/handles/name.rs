@@ -1,4 +1,4 @@
-//! # `canvas::handles::name` — a grip's stable spelling for the trace
+//! # `handles::name` — a grip's stable spelling for the trace
 //!
 //! One function, in its own file, and the reason is R2 rather than taste:
 //! `handles.rs` was **1,499 lines** when this was written — one line under the
@@ -13,7 +13,7 @@
 //! ⇒ This is the smaller, truer cut: the function has one job, no dependency
 //! on anything else in the module, and nothing else wants to live beside it.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/handles/name.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/handles/name.md`.
 
 use super::Grip;
 

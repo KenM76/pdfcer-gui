@@ -1,9 +1,9 @@
-//! # `app::prefs::fonts` — where pdfcer looks for a font it has to embed
+//! # `fontsearch` — where pdfcer looks for a font it has to embed
 //!
 //! One preference — an ordered list of folders — and it is the input
 //! `tools.embed_fonts` cannot run without.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/prefs/fonts.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/fontsearch.md`.
 
 use std::path::{Path, PathBuf};
 

@@ -1,4 +1,4 @@
-//! Tests for [`super`]'s **body strip** — the region of a selection that means
+//! Tests for [`crate::canvas::handles`]'s **body strip** — the region of a selection that means
 //! *move* rather than *resize*.
 //!
 //!
@@ -8,11 +8,12 @@
 //! The other module stays where it is; if the file needs room again, move it
 //! the same way rather than widening this one.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/handles/body_strip_tests.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui/canvas/handles_body_tests.md`.
 
 #![cfg(test)]
 
-use super::*;
+use crate::canvas::handles::*;
+use egui::{Pos2, Rect, Vec2};
 
 /// **The centre of a short, wide selection is the BODY, not a grip.**
 #[test]

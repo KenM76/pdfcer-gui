@@ -628,7 +628,7 @@ pub(super) fn large(id: &str) -> Item {
 // header for the seam and for why their tests deliberately stayed behind.
 // ===========================================================================
 
-mod registers;
+use pdfcer_gui_base::commandregisters as registers;
 
 pub use registers::{DIRECTED, PLANNED, TAB_SCOPED};
 

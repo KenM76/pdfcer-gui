@@ -121,7 +121,9 @@ pub mod dragroute;
 pub mod fieldclip;
 pub mod grid;
 pub mod handledrag;
-pub mod handles;
+pub use pdfcer_gui_base::handles;
+#[cfg(test)]
+mod handles_body_tests;
 /// **What a press would land on, and what it would mean.** Split out of
 /// `interact` under R2; its header carries the four-way precedence between a
 /// Bézier handle, an anchor, a resize grip and the selection body — the single

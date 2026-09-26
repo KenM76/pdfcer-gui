@@ -168,3 +168,12 @@ pub mod cursor;
 
 /// The measure tools' pick state machines and scale entry.
 pub mod measure;
+
+/// The eight resize grips plus move, their hit test and their cursors.
+pub mod handles;
+
+/// Where pdfcer looks for a font it has to embed.
+pub mod fontsearch;
+
+/// The planned, directed and tab-scoped command lists the manifest checks against.
+pub mod commandregisters;

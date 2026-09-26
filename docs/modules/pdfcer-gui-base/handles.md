@@ -1,4 +1,4 @@
-# `canvas::handles` — eight grips plus move, and the cursor over each
+# `handles` — eight grips plus move, and the cursor over each
 
 `GUI_ROADMAP.md` Phase 1.3: *"Eight handles plus move, per the convention
 every drawing tool shares. Cursor changes over a handle, over a movable

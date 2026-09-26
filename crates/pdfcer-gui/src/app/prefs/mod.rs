@@ -13,7 +13,7 @@
 /// Where pdfcer looks for a font it has to embed — the input
 /// `tools.embed_fonts` needs, and an unrecorded dependency of that command's
 /// blocker. See its header.
-pub mod fonts;
+pub use pdfcer_gui_base::fontsearch as fonts;
 
 /// How much memory pdfcer may spend so a page it has already drawn does not
 /// have to be drawn again.

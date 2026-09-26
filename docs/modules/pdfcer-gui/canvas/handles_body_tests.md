@@ -1,4 +1,4 @@
-# `pdfcer-gui/canvas/handles/body_strip_tests`
+# `pdfcer-gui/canvas/handles_body_tests`
 
 ## Item notes
 
