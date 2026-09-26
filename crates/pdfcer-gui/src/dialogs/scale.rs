@@ -140,32 +140,10 @@ pub const REGION_CALIBRATE: &str = "scale.calibrate"; // ui-text-exempt: trace r
 /// The region the group picker publishes -- O193.
 pub const REGION_GROUP: &str = "scale.group"; // ui-text-exempt: trace region name, never displayed
 /// The region the current-scale line publishes -- O192.
-///
-/// A region rather than only a trace line, because the defect being closed is
-/// that the operator could not **see** the scale. A trace proving the string
-/// was computed would be the same evidence the old window could have produced;
-/// what has to be asserted is that it was drawn, with a rect, inside the
-/// window's body.
 pub const REGION_CURRENT: &str = "scale.current"; // ui-text-exempt: trace region name, never displayed
 
 impl ScaleDialog {
     /// **Open on `group`, showing the scale that group is already at.**
-    ///
-    /// # It reads the document now -- O192
-    ///
-    /// This constructor took a bare [`GroupId`] until 2026-09-13 and seeded its
-    /// fields from [`ScaleEntryFields::for_group_panel`], which is seeded from
-    /// nothing. So the window opened reading `1:100` in metres over a group
-    /// calibrated to `1:50` in inches, and an operator who pressed *Set scale*
-    /// without touching a control silently recalibrated the whole drawing to a
-    /// number the window had invented. The operator's report named the visible
-    /// half -- *"does not show me the scale that is already set"* -- and the
-    /// invisible half is the one that could have damaged a file.
-    ///
-    /// [`ScaleEntryFields::for_group`] carries the whole inversion and the
-    /// proof that it is exact. The only thing done here is choosing the path:
-    /// **ratio**, because a cold-opened window has no drawn reference line and
-    /// the real-length path cannot produce a scale without one.
     #[must_use]
     pub fn open(doc: &OpenDoc, group: GroupId) -> Self {
         crate::diag::trace(|| {
@@ -204,38 +182,6 @@ impl ScaleDialog {
     }
 
     /// **Open on `group` with a reference line already measured.**
-    ///
-    /// The calibration path's constructor. Raised by the application when
-    /// `ScalePick::dialog_open()` turns true — i.e. on the click that completes
-    /// the two-point pick.
-    ///
-    /// # It seeds the REAL-LENGTH path, not the ratio one
-    ///
-    /// `ScaleEntryFields::default()` rather than `for_group_panel()`, and that
-    /// is the whole difference between the two constructors. `for_group_panel`
-    /// exists to pre-select **ratio** because its situation is "no reference
-    /// line was drawn"; here one was, so the path the operator just did the
-    /// work for is the one that should be waiting for them.
-    ///
-    /// The ratio path stays available in the same window. An operator who
-    /// picks two points and then decides they would rather type `1:100` can,
-    /// and nothing is lost — `ScaleEntryFields::entry` chooses on the radio,
-    /// not on whether a length exists.
-    ///
-    /// It also seeds from the group's stored scale (O192), for the same
-    /// reason [`Self::open`] does and with one extra consequence: the unit the
-    /// group is already in becomes the unit the real-length field is read in,
-    /// so an operator calibrating a drawing that is already in inches types
-    /// `25 ft` and gets feet, rather than typing into a field that silently
-    /// meant metres.
-    ///
-    /// ⚠ **This is now the FALLBACK entry point, not the usual one.** The
-    /// ordinary route is [`Self::deliver_measured`] on a window that never
-    /// closed. This constructor is what runs when a pick completes with no
-    /// window waiting -- which this application cannot currently reach, and
-    /// which is kept rather than removed because removing it would make the
-    /// two-point gesture depend on a window's continued existence for its
-    /// result to be usable at all.
     #[must_use]
     pub fn calibrated(doc: &OpenDoc, group: GroupId, drawn_pdf_length: f64) -> Self {
         crate::diag::trace(|| {
@@ -301,17 +247,6 @@ impl ScaleDialog {
     }
 
     /// **Hand a measured reference line back to the window that asked for it.**
-    ///
-    /// The pick completed; this is the answer coming home. Everything the
-    /// operator had already entered is still here, **because the window was
-    /// never closed** -- it was only [`hidden`](Self::hidden).
-    ///
-    /// `use_real_length` is set because the operator has just done the work
-    /// that path exists for; the ratio entry stays available in the same
-    /// window, exactly as it does on the [`Self::calibrated`] path.
-    ///
-    /// Nothing here un-hides. Un-hiding is what the caller does by disarming
-    /// the tool, and it is derived rather than done -- see [`Self::hidden`].
     pub fn deliver_measured(&mut self, drawn_pdf_length: f64) {
         self.drawn_pdf_length = Some(drawn_pdf_length);
         self.fields.use_real_length = true;
@@ -325,45 +260,6 @@ impl ScaleDialog {
     }
 
     /// **Is this window out on the page, waiting for the operator to point?**
-    ///
-    /// # Hidden is DERIVED, and that distinction is the third defect
-    ///
-    ///
-    /// # Why a flag was written first, and then deleted
-    ///
-    /// The obvious repair is an `awaiting_pick: bool` set when the button is
-    /// pressed and cleared on delivery, plus a once-a-frame invariant in
-    /// `app::frame` to clear it when the operator abandons the pick. That was
-    /// written, and then removed, because `canvas::placing`'s header already
-    /// contains the ruling against it **and names this window as the broken
-    /// precedent it was generalising away from**:
-    ///
-    /// > With a stored `hidden: bool` this arm would inherit that, five times
-    /// > over: a mode change through `tool::arm::retire_forbidden`, the Tool
-    /// > panel putting the pen down, a ribbon control arming a different tool,
-    /// > the document closing, Escape. Every one is a route somebody has to
-    /// > remember to clear a flag on. With `hidden` derived, **stranding is
-    /// > unrepresentable**.
-    ///
-    /// So it is derived. The window is hidden for exactly as long as the scale
-    /// pick is armed, and for no other reason. Every route that disarms the
-    /// tool -- Escape, a mode change, the Tool panel, a ribbon control, the
-    /// completed pick itself, and any route added next year by somebody who
-    /// has never read this file -- brings the window back with every entry
-    /// still in it, because there is no flag to forget.
-    ///
-    /// The derivation is only sound because `MeasureKind::Scale` has exactly
-    /// **one** arming site in the crate: `app::frame`, on this window's own
-    /// button. That is not an accident anybody has to maintain by hand --
-    /// `canvas::measure`'s `every_variant_is_either_offered_or_deliberately_excluded`
-    /// is a wildcard-free `match` that classifies `Scale` as `"elsewhere"`
-    /// rather than `"ribbon"`, so a future ribbon control for it does not
-    /// compile until somebody moves it between the two lists and reads why.
-    ///
-    /// [`crate::canvas::tool::selected`] and not `active`: `active`
-    /// resolves the space-bar's temporary Hand override, and an operator who
-    /// pans the page mid-pick must not have this window flash back over the
-    /// drawing they are panning to look at.
     #[must_use]
     pub fn hidden(ctx: &egui::Context) -> bool {
         crate::canvas::tool::selected(ctx)
@@ -371,32 +267,11 @@ impl ScaleDialog {
     }
 
     /// Whether the operator asked to measure the reference line on the drawing.
-    ///
-    /// Consumed by the application, which arms `MeasureKind::Scale`. Read-and-
-    /// clear rather than a returned flag, so the caller cannot forget to reset
-    /// it and re-arm on every subsequent frame.
-    ///
     pub fn take_calibrate_request(&mut self) -> bool {
         std::mem::take(&mut self.calibrate_requested)
     }
 
     /// Draw one frame. Returns `false` when it should close.
-    ///
-    /// # Screen-anchored, like every dialog here
-    ///
-    /// A surface an operator is typing into must stay where they put their
-    /// eyes, and a position derived from the page moves on every zoom and
-    /// scroll. `default_pos` rather than `anchor` so it can be dragged aside —
-    /// this one sits over a drawing the operator may want to look at while
-    /// deciding what the scale is.
-    ///
-    /// # The early return says `true`, and the `true` is load-bearing
-    ///
-    /// [`Self::hidden`] returns **without drawing**: the window still exists,
-    /// it is simply out on the page while the operator points at a line. A
-    /// `false` here would destroy exactly the state this change exists to
-    /// preserve -- it is the old `close_scale()` behaviour, spelled one layer
-    /// further in.
     pub fn show(&mut self, ctx: &egui::Context, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
         if Self::hidden(ctx) {
             return true;

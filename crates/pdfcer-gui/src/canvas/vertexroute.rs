@@ -14,11 +14,6 @@ use crate::canvas::selection::SelectionState;
 use crate::canvas::target::CanvasTargetProvider;
 
 /// **Whose node is being dragged.**
-///
-/// Two variants and not a boolean, for the reason `canvas::dimdrag`'s
-/// `VertexIntent` gives about its three: the two reach different engine verb
-/// families, and a `bool` named `is_markup` is a fact a caller may read
-/// backwards while a variant is one the compiler makes them handle.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Subject {
     /// A **ce dimension**'s corner. Re-measures — this is the one gesture in
@@ -31,11 +26,6 @@ pub enum Subject {
 }
 
 /// What one frame of a node drag needs, gathered at the call site.
-///
-/// A struct rather than ten parameters, for `dimdrag::VertexFrame`'s reason:
-/// three members are `Option`s of borrowed things and two are `Pos2`s in the
-/// same space, both of which a positional list would let a caller transpose
-/// silently.
 pub struct Frame<'a> {
     /// The frame's context — the snap settings and the live modifiers.
     pub ctx: &'a egui::Context,
@@ -63,11 +53,6 @@ pub struct Frame<'a> {
 }
 
 /// The previews one node-drag frame produced — at most one polyline is `Some`.
-///
-/// Two polyline fields rather than one, matching the preview slots
-/// `canvas::previews` already carries and for their stated reason: the painter
-/// reads each independently, and one `Vec` whose meaning depends on which
-/// selection is live is a value the paint loop has to interrogate.
 #[derive(Default)]
 pub struct Previews {
     /// A ce dimension redrawn from the corner's new position, page space.

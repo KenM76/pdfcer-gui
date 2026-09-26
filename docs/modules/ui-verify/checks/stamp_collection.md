@@ -132,3 +132,62 @@ Reuses `properties_metadata`'s opener rather than spelling the two clicks
 again. It is the same ribbon item and the same toggle hazard — pressing
 `file.document_properties` while the panel is up CLOSES it — and two copies
 of that guard would be two places for the next ribbon move to be applied.
+
+### `struct StampCollectionReachesTheEngine`
+
+# The method: the reader is the oracle for the writer
+
+This check writes a collection and then **reopens it in pdfcer**, asserting
+that Document properties discloses it as a collection with one row per page.
+That looks circular at first reading and is not, for one specific reason:
+
+> The reader was calibrated against a file pdfcer did not write.
+
+`a_stamp_collection_discloses_itself`, immediately above, proves the same
+reader on `fixtures/stamp-collection.pdf` — a file assembled byte by byte by
+`fixtures/stamp-collection.PROVENANCE.py` from §7.9.6 and §12.5, with its own
+xref computed by hand and not one line of pdfcer involved. A reader that
+agrees with an independently-built artifact and then agrees with pdfcer's
+output is evidence about the output; a reader that had only ever been shown
+pdfcer's own files would be evidence about nothing.
+
+⚠ Which is why the two checks must not be separated, and why neither may be
+deleted while the other stands. If `a_stamp_collection_discloses_itself` is
+ever removed, this check's final assertion silently loses its meaning while
+continuing to pass.
+
+# Why the round trip and not a byte scan
+
+The obvious cheaper oracle — grep the written file for the stamp names — is
+wrong here and would be *quietly* wrong. `pdfcer-core`'s writer may place the
+catalog and the name tree in an object stream, in which case the names are
+inside a Flate-compressed blob and a scan finds nothing on a perfectly good
+file. And even uncompressed, finding the bytes `SRApproved` somewhere in a
+PDF says nothing about whether they are reachable from the catalog's
+`/Names` → `/Pages` tree, which is the only thing Acrobat looks at. The
+round trip asks the question Acrobat asks.
+
+# What the same fixture proves twice
+
+The source document is `four-pages.pdf`, which is also the *control* in the
+read half — the file whose whole job there is to be provably **not** a
+collection, with the panel open and the section absent. So one fixture
+carries both ends of the claim: before pdfcer touches it, Document
+properties says nothing about stamps; after, the file pdfcer wrote from it
+discloses four of them. Neither end is asserted about a document whose
+nature was assumed — the shell's
+`stamps::tests::the_driven_checks_fixtures_are_what_the_check_believes_they_are`
+pins it through the engine on every `cargo test`.
+
+# What this does NOT prove
+
+**That Acrobat shows the stamps.** Nothing in this repository can prove
+that; Acrobat scans its stamps folder once at startup and reports nothing
+either way. What is provable — that the file carries a `/Names` → `/Pages`
+tree with the planned names resolving to the planned pages — is what this
+asserts, and the remaining gap is closed by the operator opening Acrobat
+once. The receipt the shell prints says *restart Acrobat* for that reason.
+
+It also does not prove the **naming** is right: which display name landed on
+which page, and how a duplicate was made unique, are `crate::stamps`' unit
+tests, against the same plan type, deterministically, without a window.

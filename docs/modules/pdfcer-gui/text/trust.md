@@ -124,3 +124,169 @@ date could not be read.
 Cheap, and it is what stops a tidy-up merging two of the columns. The
 engine's design note is that the three never collapse into one; a shared
 label is the first step of collapsing them.
+
+### `fn panel_intro`
+
+That sentence had to go the moment `verify_all_with_trust` was wired,
+and this project's most expensive recorded failure is exactly a claim like
+it going stale while the prose around it stayed true. What replaces it is
+**not** a reassurance: it names the three facts, in the order the rows print
+them, so a reader knows before they start that there are three answers and
+that one of them may be *not checked*.
+
+### `fn integrity_label`
+
+A shared prefix rather than three sentences that each happen to mention
+integrity: the three facts are read as a column, and a column with a ragged
+left edge is one an operator scans instead of reads.
+
+### `fn integrity_verified`
+
+It names the algorithms rather than saying "yes", and that is
+[`pdfcer_core::signature::Integrity::Verified`]'s own instruction: the two
+fields are carried *"so a shell can disclose a SHA-1 signature as
+verified-with-a-weak-digest rather than hide it"*. A shell that printed
+"verified" alone would be discarding the one field that distinguishes a
+modern signature from one nobody should rely on.
+
+### `fn integrity_weak_digest`
+
+The engine reports SHA-1 in its `notes` and does not downgrade the verdict,
+which is right: the signature genuinely verifies. This shell repeats the
+fact where the verdict is read, because *"verified"* and *"verified with a
+digest that has been collision-broken since 2017"* are different things to
+act on.
+
+### `fn integrity_digest_mismatch`
+
+The one string in this file that states a loss. Worded as the engine words
+it — the digest does not match, so the bytes changed — and deliberately not
+as *"the signature is invalid"*, because that phrase folds integrity, trust
+and coverage into one word and is the exact collapse this feature refuses.
+
+### `fn integrity_signature_invalid`
+
+A genuinely different fault from a digest mismatch and the engine keeps them
+apart, so this does too: the document's covered bytes are what was signed,
+and the signature, the certificate or the signed attributes were tampered
+with instead.
+
+### `fn integrity_unverifiable`
+
+`reason` is passed through **unedited**. The engine promises this case is
+*"never reported as either of the other three"*, and it names each cause
+precisely — an unimplemented subfilter, `adbe.x509.rsa_sha1`, RFC 3161,
+P-521, Brainpool, a malformed CMS, a hole that does not fit the range. A
+shell that paraphrased would produce a second, vaguer vocabulary for faults
+the engine already names exactly.
+
+### `fn trusted`
+
+**The single most dangerous string in this application**, and the reason
+it is long. It states four things in one sentence because separating any of
+them would leave the good news standing alone:
+
+1. the chain reached a trusted anchor, **by verified signatures**;
+2. **which** anchor, by subject — an operator who does not recognise the
+   name has learned something a tick could not tell them;
+3. its provenance (`AATL`/`EUTL`/`ADBE`), because those are three different
+   programmes with three different admission bars;
+4. **what was not checked** — revocation always, and validity dates when the
+   signature carried no signing-time clock.
+
+Point 4 is not a hedge. `PathChecks::revocation_checked` is `false` on every
+verdict this build can produce, and a certificate that was revoked the day
+after it was issued chains exactly as well as one that was not.
+
+### `fn untrusted`
+
+*"Valid but untrusted"* is a real and common state — a self-signed
+certificate, a corporate CA nobody added to Acrobat — and this sentence says
+so, because an operator who reads "untrusted" beside an intact signature will
+otherwise conclude the document was tampered with. The engine's own reason
+is carried through unedited.
+
+### `fn signer_unknown`
+
+The engine keeps this apart from `Untrusted` and so does this. *"pdfcer could
+not read the certificate"* and *"pdfcer read the certificate and does not
+trust it"* are opposite findings, and only the second says anything about the
+signer.
+
+### `fn not_checked_prefix`
+
+Its own function, and every caller of the four `not_checked_*` sentences
+goes through [`not_checked`], so the words *"Not checked"* cannot be dropped
+from one branch by a well-meaning edit that shortened it.
+
+### `fn not_checked`
+
+The `why` half is supplied by one of the four functions below. They are kept
+separate from the prefix so that a test can assert **every** one of them
+starts with the same three words — see this module's tests.
+
+### `fn not_checked_opted_out`
+
+Names the remedy and where it is, because this is the one of the four states
+the operator can fix in five seconds and will otherwise assume is a missing
+feature.
+
+### `fn not_checked_configured_missing`
+
+Not the same sentence as [`not_checked_no_store`], and the separation is
+the point: this person did not fail to have a store, they made a typo, and
+telling them their machine has no trust list would send them looking in
+entirely the wrong place.
+
+### `fn store_line`
+
+See this module's header for why the date is not separable from the count.
+`modified` is already formatted by [`crate::trust::modified_date`]; a `None`
+says the filesystem would not give a date, which is itself worth printing
+because a store whose age is unknown is not a store known to be current.
+
+### `fn store_undecodable`
+
+Only drawn when non-zero. Surfaced rather than swallowed because an operator
+whose signer happens to be one of the refused entries would otherwise see an
+inexplicable *"does not chain"* with nothing to look at.
+
+### `fn at_own_risk`
+
+Translated from `pdfcer_core::settings::AcrobatTrustStore`'s own type
+documentation and from the CLI's identical warning, deliberately: two front
+ends wording one legal limitation differently is worse than either wording,
+and this is the sentence a person would quote back at us.
+
+### `fn use_store_silence`
+
+**This one is not a spec silence and the sentence says so**, exactly as
+`quad_point_order`'s does. ISO 32000-1 is perfectly clear that validation
+has a trust leg; what it does not do — and cannot — is tell a program which
+certificates a particular person trusts. That is a fact about the operator,
+not about the format, and there is no public machine-readable bundle of the
+lists that matter.
+
+### `fn use_store_on_label`
+
+The label spells *"at your own risk"* because the engine's own persisted
+token does — `acrobat_trust_store = at_own_risk` — and an operator who opens
+`settings.txt` must find the same words they clicked.
+
+### `fn resolved_found`
+
+Reported as of the last time pdfcer looked, which is every frame this
+group is drawn — a `stat`, not a read. That differs from
+`crate::text::acrobat::resolved_note`, which cannot update as you type
+because resolving an Acrobat spawns processes. Locating a file does not, so
+this line **is** live and the field's mistakes are visible where they are
+made.
+
+### `fn inspect_button`
+
+**This control is drawn only when a store was actually found**, which is
+R9: an unavailable capability renders nothing, and greying is reserved for
+something that is *temporarily* unavailable. A person with no Acrobat store
+is not one press away from having one. The path field above stays visible in
+that case, because it is the remedy — and R9's rule cuts both ways: an
+absent capability whose remedy is also absent is a dead end.

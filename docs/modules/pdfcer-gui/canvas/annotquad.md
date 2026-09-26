@@ -91,3 +91,56 @@ screenshot.
 **No fallback quad is invented.** An annotation with no usable appearance
 returns `None` and the caller keeps drawing `/Rect`, which for such an
 annotation *is* where the mark is.
+
+## Item notes
+
+### `struct OrientedBox`
+
+Page space, PDF convention (y up), the same space `/Rect` is in — mapping to
+canvas or screen space is the caller's job, through
+[`crate::canvas::mapping::oriented_canvas_quad`], so this shares the
+projection every other overlay uses.
+
+### `fn is_upright`
+
+Used by callers that want to keep the cheap path (and the existing
+axis-aligned grip geometry) for the overwhelmingly common unturned case.
+The tolerance is a **tenth of a degree**, which at the width of a sheet
+is well under a pixel and is far larger than any float noise a
+`/Matrix` round-trip introduces.
+
+**A quarter turn is NOT upright by this test, and that is deliberate.**
+A 90°-turned annotation's `/Rect` does bound it exactly, so an outline
+drawn from `/Rect` would look right — but its *corner order* has rotated,
+so a grip the operator grabs at the artwork's own top-left is at the
+page's bottom-left. Answering `true` here would put the grips back on the
+page's frame and quietly reintroduce that mismatch. Only a genuinely
+unturned appearance, and a matrix that is not an angle at all (where
+there is no orientation to honour), take the cheap path.
+
+### `fn oriented`
+
+`None` is a **correct** answer, not a failure, and the engine lists its
+causes: no `/Rect`, no reachable appearance stream, no readable `/BBox`, or
+a transformed box so thin that §12.5.5 step (b)'s fit matrix is singular. In
+every one of those the caller should keep using `/Rect`, which for an
+annotation with no appearance **is** where the mark is.
+
+### `fn oriented_by_id`
+
+The shape most callers here want: the selection and the properties panel
+both hold an `ObjId` and a page, not an `Annotation`.
+
+Through `annot::page_annotations` rather than a hand-rolled dictionary
+read, because `appearance_placement` takes the engine's own modelled
+`Annotation` — including its `Appearance` enum, which is where `/AS`
+selection and the *"named but not painted"* distinction live. A shell that
+built an `Annotation` by hand to pass in here would be re-implementing
+exactly the part the engine was asked to take over.
+
+# Cost
+
+One `/Annots` walk, bounded by `pdfcer_core::annot::MAX_ANNOTS_PER_PAGE`,
+plus one appearance-stream resolve. Called on selection and on the frame
+after an edit — see [`crate::canvas::selection::SelectionState`]'s
+`resolve_annot` — never per frame per annotation.

@@ -34,11 +34,6 @@ pub(super) fn target_of(
 }
 
 /// Everything a pinned text verb needs in order to name one show operator.
-///
-/// The three fields travel together because they are **one measurement**. The
-/// span alone is the defect this shell shipped first: it pinned the offset and
-/// discarded the stream, and the engine correctly reported *"text not found"*
-/// about text that was plainly there.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Pinned {
     /// The show operator's byte span within its own decoded content buffer.
@@ -55,11 +50,6 @@ pub struct Pinned {
 
 /// The pin for `run`, from a model **already recognised over a
 /// provenance-carrying extraction**.
-///
-/// `None` when the extraction did not capture provenance, or when the run has
-/// no glyphs. Both mean the same thing to a caller — *this run cannot be
-/// pinned* — and both must be treated as a refusal rather than as permission to
-/// fall back to an unpinned request, for the reason the module header gives.
 #[must_use]
 pub fn of_run(model: &EditableTextModel<'_>, run: usize) -> Option<Pinned> {
     let p = model.provenance(GlyphRef::new(run, 0))?;
@@ -103,37 +93,6 @@ pub fn of_run(model: &EditableTextModel<'_>, run: usize) -> Option<Pinned> {
 }
 
 /// **Do all of this run's glyphs come from ONE show operator?**
-///
-/// ## Why this question is worth its own function
-///
-/// Because the answer decides whether the run can be addressed as a *whole
-/// operator* — `EditRequest::whole_operator`, `Pass 152.0` — and getting it
-/// wrong is the difference between an edit that refuses and an edit that
-/// duplicates text on the page.
-///
-/// [`of_run`] pins on **glyph 0's** operator. The engine's own measurement is
-/// that **13% of runs over its corpus carry glyphs from more than one show
-/// operator**, and on those runs:
-///
-/// | request | what happens |
-/// |---|---|
-/// | `find` = the run's text, pinned | `NoMatch` — the pinned operator holds only part of it |
-/// | whole-operator (empty find), pinned | the pinned operator's text is replaced **with the whole replacement**, and the run's other operators keep their glyphs |
-///
-/// ⇒ The second is worse. A refusal costs an operator a puzzled moment; the
-/// other writes `Rev BEV A` onto a drawing and reports success. So the
-/// whole-operator form is taken **only** when this answers `true`, and the
-/// find-based form — with its clean refusal — is what a split run keeps.
-///
-/// It walks the glyphs rather than trusting a count, because
-/// [`EditableTextModel::provenance`] answers `None` one past the end and that
-/// is the same termination a length would give with one fewer thing to keep in
-/// step.
-///
-/// `false` when there is no provenance at all. A caller with no pin is not
-/// entitled to the whole-operator form in the first place — the engine refuses
-/// an empty `find` without a pin, by name — and answering `true` here would
-/// build a request it would then reject.
 #[must_use]
 pub fn spans_one_operator(model: &EditableTextModel<'_>, run: usize) -> bool {
     let Some(first) = model.provenance(GlyphRef::new(run, 0)) else {
@@ -150,14 +109,6 @@ pub fn spans_one_operator(model: &EditableTextModel<'_>, run: usize) -> bool {
 }
 
 /// The pin for `run` on `page`, extracting the page with provenance on.
-///
-/// The convenience form for a caller that does not already hold a model — the
-/// restyle verbs, which start from a selection rather than from a caret. A
-/// caller that has just recognised a model should use [`of_run`] and not pay
-/// for a second extraction.
-///
-/// `None` when the page is absent, when the extraction fails, or when
-/// [`of_run`] answers `None`.
 #[must_use]
 pub fn resolve(doc: &OpenDoc, page: usize, run: usize) -> Option<Pinned> {
     inspect(doc, page, run).map(|i| i.pin)
@@ -165,19 +116,6 @@ pub fn resolve(doc: &OpenDoc, page: usize, run: usize) -> Option<Pinned> {
 
 /// What a run currently **looks like** — the three facts a properties panel
 /// shows and a restyle changes.
-///
-/// # Why this is separate from [`Pinned`] and returned beside it
-///
-/// [`Pinned`] is a *locator*: it names an operand, and every field on it is
-/// consumed by the engine. This is a *reading*: every field on it is consumed
-/// by a human. Merging them would mean the restyle verb carrying three fields
-/// it never looks at, and — the part that matters — would make it possible to
-/// pass a stale reading into an edit by passing the struct that also carries
-/// the pin.
-///
-/// They come back from one call because they come from one `GlyphProvenance`,
-/// and the extraction that produces it costs 392 ms on this operator's
-/// benchmark sheet. Two calls would be two extractions for one question.
 #[derive(Debug, Clone, PartialEq)]
 pub struct RunStyle {
     /// The `Tf` size in points.
@@ -257,10 +195,6 @@ pub struct Inspected {
 }
 
 /// Every show operator of `run` on `page`, in ONE extraction.
-///
-/// The form `crate::app::actions::textstyle` wants: a restyle acts on operators
-/// and a selection names runs, and this is the hop between them. See
-/// [`operators_in_run`] for why the two are not the same thing.
 #[must_use]
 pub fn operators(doc: &OpenDoc, page: usize, run: usize) -> Vec<Operator> {
     // The shared extraction — see `crate::app::cache::provenance`. `None`
@@ -275,73 +209,6 @@ pub fn operators(doc: &OpenDoc, page: usize, run: usize) -> Vec<Operator> {
 
 /// **Which faces on this page `set_font` would actually ACCEPT for this run**,
 /// and the string to pass for each.
-///
-///
-///
-/// The face combo was built from `fontinfo::FontInventory`, filtered to the
-/// records naming this page, showing each `/BaseFont` with its §9.6.4 subset
-/// tag stripped. The engine's own summary of that arrangement: *"a list built
-/// from the first key is a superset of the second that is usually right, and
-/// when it is wrong the operator finds out by pressing a button and getting a
-/// refusal."*
-///
-/// Two failures, and the second is much worse than the first:
-///
-/// **1. Entries that cannot work.** `fontinfo` is keyed on the font
-/// **dictionary**; `set_font` matches on `/BaseFont` and then asks whether the
-/// face can encode *this run's characters*. A face that cannot — `Times-Bold`
-/// with no code for `o` — was offered, pressed, and refused. A control whose
-/// entries may not work is what this project spends its time removing.
-///
-/// **2. The wrong twin, silently.** One page can carry **two font
-/// dictionaries sharing one `/BaseFont`** — two subsets of one face — which the
-/// survey behind the Fonts panel found in **87 % of embedding files**. A name
-/// match reaches exactly one of them, arbitrarily, and the operator is given no
-/// hint that a choice was made on their behalf. That is not a refusal an
-/// operator can see; it is the wrong font, applied.
-///
-/// `FontResourceEntry::selector` is the fix for both: it is *the string to pass
-/// to `set_font` to reach THIS resource* — normally the stripped `/BaseFont`,
-/// and the **resource key** instead when the page carries twins, with
-/// `base_font_ambiguous` set so a chooser can say so.
-///
-/// # Why it takes the run and not just the page
-///
-/// Because acceptance is per-run. The same face is accepted for one line of a
-/// page and refused for another, depending on which characters each contains —
-/// so a page-scoped list would be back to being a superset. The `find` and the
-/// pinned span are the same operands `format_text` takes, which is what makes
-/// the preview and the commit incapable of disagreeing (the engine moved the
-/// four conditions into one `accept_font_target` for exactly that reason, R221).
-///
-/// ## Cost, and why this is not called per frame
-///
-/// It is `&self` and side-effect-free, and it runs one extraction plus one
-/// acceptance test per page `/Font` resource. The callers hold it behind the
-/// same `(page, run, epoch)` stamp their style read-back uses, so it is paid
-/// once per selection change rather than sixty times a second.
-///
-///
-/// The first version of this function called [`inspect`] itself, which reads
-/// well and is a **doubling of the most expensive thing this shell does**: its
-/// only caller is the properties draft's `sync`, which had just run `inspect`
-/// to get the face, size and colour. Two extractions with provenance capture on
-/// is **784 ms** on the operator's benchmark sheet where one is 392 — paid on
-/// every selection change, to answer two halves of one question.
-///
-///
-/// `None` coverage-tests the run's own characters, which is the right question
-/// for a Properties panel describing a run as it stands. `Some(text)` tests the
-/// characters in `text` instead, which is the right question — the **only**
-/// right question — for a surface offering a way past a character the current
-/// face refused.
-///
-/// ⚠ **It is a required argument rather than an `Option` with a default, and
-/// that is deliberate.** Adding a parameter that keeps the old behaviour when
-/// omitted would have let both existing call sites silently decline the new
-/// capability: the compiler goes quiet, the tests stay green, and the surface
-/// that needed it most goes on asking the wrong question. Two call sites, two
-/// forced decisions, one compile error each.
 #[must_use]
 pub fn font_preflight(
     doc: &OpenDoc,
@@ -381,10 +248,6 @@ pub fn font_preflight(
 }
 
 /// The pin **and** the current style for `run` on `page`, in one extraction.
-///
-/// The form a properties panel wants. [`resolve`] is this with the reading
-/// dropped, kept as its own entry point so an edit path cannot accidentally
-/// hold a stale style struct alongside a fresh pin.
 #[must_use]
 pub fn inspect(doc: &OpenDoc, page: usize, run: usize) -> Option<Inspected> {
     let text = doc.provenance_page_text(page)?;
@@ -415,40 +278,6 @@ pub fn inspect(doc: &OpenDoc, page: usize, run: usize) -> Option<Inspected> {
 
 /// **Every show operator a run is made of**, in content order, each with
 /// the `find` text that names all of it.
-///
-/// # Why a run is not an operator, which is the thing this function exists to say
-///
-/// It is tempting — and this shell did it for one afternoon — to treat a
-/// `TextRun` as a show operator: pin the first glyph's operator, pass the run's
-/// text as `find`, and restyle. It works on most runs and fails on real
-/// drawings, because `layout` closes a run on *geometry* and a producer closes a
-/// show operator on *whatever its writer felt like*. A title-block cell reading
-/// `FINISH` came back as one run spanning several `Tj`s, so the pin named the
-/// first and the `find` named all of them, and `format_text` refused with *"text
-/// to format ("FINISH ") was not found in an editable run on the page"* — on a
-/// page where the very same string is found instantly by an UNpinned search.
-///
-/// That refusal is correct and is not a bug: `find` selects a contiguous code
-/// range **within one string element**, and the shell was asking for a range
-/// that spans several.
-///
-/// ⇒ **The operator is the unit of a restyle**, so the operator is what this
-/// answers with. A run of three `Tj`s is three entries, three `format_text`
-/// calls and three undo entries, and every one of them restyles exactly what it
-/// names.
-///
-/// # The `find` per entry
-///
-/// The glyphs that share that operator's span, sliced out of the run's text by
-/// their own `text_start`/`text_len`. Every byte comes from a glyph, so no
-/// **derived** character — a space the extraction synthesised from a `TJ` offset
-/// — can get in, which is the second way the naive version failed.
-///
-/// # Order
-///
-/// Content order, ascending. A caller wanting the descending order that keeps
-/// byte offsets stable across edits reverses it, and
-/// `crate::app::actions::textstyle` does, with the argument.
 #[must_use]
 pub fn operators_in_run(
     model: &EditableTextModel<'_>,
@@ -544,11 +373,6 @@ pub struct Operator {
 
 /// **Which runs of the page's extraction a selected text OBJECT is made of**,
 /// and what colour each of them is painted in.
-///
-/// The reading behind the O89 object route. One value, from one extraction,
-/// because the two questions have one answer: the walk that finds the runs is
-/// the walk that reads their fills, and provenance capture is the expensive
-/// thing this shell does (**392 ms** on the operator's benchmark sheet).
 #[derive(Debug, Clone, PartialEq)]
 pub struct ObjectText {
     /// The first run of the object, in content order.
@@ -577,23 +401,6 @@ pub struct ObjectText {
 }
 
 /// **What one run of a text object is painted in.**
-///
-/// Three states, and collapsing the first two is a real defect with no
-/// symptom on the page it is written against.
-///
-/// `GlyphProvenance::fill_color` is an `Option`, and its `None` means *"no
-/// colour operator was in force, so §8.6.8's default — black DeviceGray 0 —
-/// applies"*. A run that produced **no provenance at all** — a derived word
-/// space, a line break, an `/ActualText` replacement — also yields `None` from
-/// the same expression, and it means the opposite: *there is nothing here to
-/// have a colour*.
-///
-/// ⇒ Written as one `Option`, an object whose first run is explicitly red and
-/// whose second run carries no colour operator (and is therefore **black**)
-/// would read as *one colour, red* — and a control that opened on red would
-/// propose flattening the black run to it, silently. That is exactly the
-/// flattening `OPERATOR_REQUESTS.md` O89 refused to ship for multi-object
-/// selections, arriving through the other door.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum RunFill {
     /// The run carries no glyphs, so it has no colour and cannot disagree with
@@ -608,24 +415,6 @@ pub enum RunFill {
 }
 
 /// Read [`ObjectText`] for the page object at `object`, or `None`.
-///
-/// `None` — and every one of these is a legitimate, silent, *not an error*
-/// answer, which is why they are one return value rather than a `Result`:
-///
-/// * the page is not open, or the object model could not be built;
-/// * `object` is not an index into this page's own paint order;
-/// * the object is **not text** (a path, an image, a form);
-/// * the extraction produced no run whose show operator lies inside the
-///   object's span — a text object whose every string failed to decode, which
-///   is a real state on a drawing with a broken font.
-///
-/// # The cost, stated because a caller must not put this in a paint loop
-///
-/// One `extract_page_view` with `capture_provenance` **on**, plus one block
-/// recognition. That is 392 ms on the operator's benchmark sheet. Every caller
-/// holds it behind a `(page, object, edit epoch)` stamp, exactly as
-/// [`crate::panels::properties::text::TextStyleDraft`] holds [`inspect`], and
-/// for the same measured reason.
 #[must_use]
 pub fn object_text(doc: &OpenDoc, page: usize, object: usize) -> Option<ObjectText> {
     // The object's own byte span, and the confirmation that it is text at all.

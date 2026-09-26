@@ -16,18 +16,6 @@ use crate::app::prefs::{
 use crate::text::settings as t;
 
 /// How sharply a page is rasterised.
-///
-/// # Why this is a real setting on the drawings this shell is for
-///
-/// The benchmark sheet is 5.6 MB of dense vector site plan, and rasterising it
-/// is the expensive thing this program does. The multiplier is the only control
-/// an operator has over that cost, and both directions are wanted by real
-/// people: someone panning a big sheet looking for a detail wants `Faster`, and
-/// someone reading small text over a hairline grid wants `Sharper`.
-///
-/// The radius line says it affects speed as well as appearance, because that is
-/// the trade being made and a control that mentioned only sharpness would be
-/// describing half of itself.
 pub fn render_quality(ui: &mut Ui, prefs: &mut Prefs) {
     widgets::header(
         ui,
@@ -47,23 +35,6 @@ pub fn render_quality(ui: &mut Ui, prefs: &mut Prefs) {
 }
 
 /// How much memory the page cache may hold.
-///
-/// # Why this is in *Drawing the page* and not in a group of its own
-///
-/// This window files by the **symptom that brings an operator looking**
-/// (`super`'s header), and the symptom here is *"scrolling back to a sheet
-/// makes me wait"* — which is a fact about how a frame is drawn, exactly like
-/// the two controls above it. A "Memory" group would file it by what it spends
-/// rather than by what it does, and nobody arrives with the symptom *"pdfcer is
-/// using the wrong amount of RAM"*.
-///
-/// # Third rather than first in the group, and it is the newest
-///
-/// Quality and settle are read on every frame by an operator who is *looking at
-/// the page*; this one is read when they are annoyed by a wait they have
-/// already had. That is the same ordering argument the group makes about the
-/// two opening-view controls below: settings that affect what you are looking
-/// at now, then settings that affect what happens next.
 pub fn page_cache(ui: &mut Ui, prefs: &mut Prefs) {
     widgets::header(
         ui,
@@ -89,20 +60,6 @@ pub fn page_cache(ui: &mut Ui, prefs: &mut Prefs) {
 }
 
 /// How long a zoom must stop changing before the page is redrawn sharply.
-///
-/// # A slider, and linear
-///
-/// Linear because the useful resolution is even: 50 ms against 150 ms matters
-/// about as much as 500 against 600, since both answer *how long am I willing
-/// to look at a soft page*. That is the same argument the parallel-tolerance
-/// slider makes and the opposite of the word-gap one, whose useful range is all
-/// at the low end.
-///
-/// The range is the store's own `MIN_SETTLE_MS..=MAX_SETTLE_MS`, not a local
-/// pair of literals — the third instance of that rule in this window, and it
-/// exists for the same reason each time: a control narrower than what the file
-/// accepts silently rewrites a hand-edited value on open, and the operator
-/// never touched the control.
 pub fn zoom_settle(ui: &mut Ui, prefs: &mut Prefs) {
     widgets::header(
         ui,
@@ -119,15 +76,6 @@ pub fn zoom_settle(ui: &mut Ui, prefs: &mut Prefs) {
 }
 
 /// How the first page of a newly opened document is sized to the window.
-///
-/// # Why this is offered at all, when a fit command already exists
-///
-///
-/// # A radio group, not a dropdown
-///
-/// Three values, each needing a sentence about what it costs on a large sheet.
-/// A dropdown shows one at a time and hides the comparison, which is the only
-/// thing that makes the choice decidable.
 pub fn opening_fit(ui: &mut Ui, prefs: &mut Prefs) {
     widgets::header(
         ui,
@@ -147,31 +95,6 @@ pub fn opening_fit(ui: &mut Ui, prefs: &mut Prefs) {
 }
 
 /// What a plain mouse wheel does under a one-page-at-a-time display mode.
-///
-/// # Here as well as on the status bar, and that is not duplication
-///
-/// The status-bar control is the one the operator will use: it sits beside the
-/// page buttons, which is where they are already looking when they are
-/// thinking about pages. This one is how they *find* the choice — and how they
-/// read the two sentences that make it decidable, which a one-word toggle in a
-/// 24-point bar has no room for. Both write the same field, so neither can
-/// **Which chord pastes a form field as a new one, and which as a duplicate.**
-///
-/// `OPERATOR_REQUESTS.md` **O58**. Ken, 2026-08-29: *"let's make it an option to
-/// have it swap to match Acrobat or work the way we have it now."*
-///
-/// # Here rather than on a keyboard-shortcuts page, and there is no keyboard page
-///
-/// The shortcuts dialog *lists* bindings; it does not edit them. And this is not
-/// really a question about keys — it is a question about **which of two pastes
-/// is the ordinary one**, which is why the labels name the behaviour and the
-/// chords are the parenthetical rather than the other way round.
-///
-/// # It is in Display because that is where input-gesture preferences already live
-///
-/// Beside `wheel_paging`, which is the same shape of question: an operator
-/// deciding what a familiar input should mean in this program. Neither is about
-/// what the document *is*, which is what keeps them out of Saving and Pages.
 pub fn paste_chords(ui: &mut Ui, prefs: &mut Prefs) {
     widgets::header(
         ui,
@@ -211,33 +134,6 @@ pub fn wheel_paging(ui: &mut Ui, prefs: &mut Prefs) {
 
 /// Which of the three View ▸ Display overlays are already on when a document
 /// opens.
-///
-/// # One setting with three switches, not three settings
-///
-/// [`widgets::toggle`]'s own documentation carries the control-shape argument.
-/// The reason they are **one setting** is different and is about the operator
-/// rather than the widget: the three interlock. A guide is dragged out of a
-/// ruler gutter, so `guides` without `rulers` is a switch that appears to do
-/// nothing. That relationship needs saying once, in a place all three readers
-/// will be looking — which is what a single header and a shared disclosure buy.
-///
-/// # The disclosure is not a note under the guides switch
-///
-/// It is true whichever way that switch is set — a document with remembered
-/// guides opens with them showing either way — so it belongs to the setting
-/// rather than to one of its parts. Putting it under the switch would make it
-/// read as an argument for turning guides on, which it is not; it is a fact
-/// about what pdfcer will do regardless. Same distinction the replacement-text
-/// bound makes, and `widgets::disclosure` exists for exactly this.
-/// **Shade the fillable fields** — `OPERATOR_REQUESTS.md` O96.
-///
-/// In *Display* rather than in a Forms group, which is where he asked for it
-/// (*"in our display section"*) and is also right: it changes nothing about the
-/// form and everything about what the page looks like. An operator turning it
-/// off is tidying their view, not altering how fields behave.
-///
-/// [`crate::app::prefs::Prefs::shade_form_fields`] carries why a wash over part
-/// of a page is an affordance rather than the content marking rule 4 forbids.
 pub fn field_shade(ui: &mut Ui, prefs: &mut Prefs) {
     widgets::header(
         ui,
@@ -255,20 +151,6 @@ pub fn field_shade(ui: &mut Ui, prefs: &mut Prefs) {
 
 /// **What colour the recognised text is drawn in over a scan** —
 /// `OPERATOR_REQUESTS.md` O229.
-///
-/// In *Display* beside the field wash, because it is the same kind of
-/// answer: a colour pdfcer paints over the page that never reaches the file.
-/// Not in *Appearance*, which is about how the program itself looks — a
-/// preset and a theme, neither of which knows anything about a particular
-/// scan. `crate::app::prefs::Prefs::ocr_layer_colour` carries why choosing a
-/// colour for invisible text is not the content marking R8b forbids.
-///
-/// # The reset is ABSENT rather than greyed when there is nothing to reset
-///
-/// R9's rule, and here it also carries information: a swatch with no button
-/// beside it *is* the default, so the control answers "have I changed this?"
-/// without a second sentence. A permanently greyed button would answer it
-/// only on hover, and would suggest the colour could not be put back.
 pub fn ocr_colour(ui: &mut Ui, prefs: &mut Prefs) {
     widgets::header(
         ui,
@@ -294,21 +176,6 @@ pub fn ocr_colour(ui: &mut Ui, prefs: &mut Prefs) {
 }
 
 /// **The two auto-hide settings** — 2026-09-05.
-///
-/// One header over both, because they are one decision the operator makes
-/// twice: *"how much of the window do I want the drawing to have?"* Two
-/// separate sections would ask it twice and would put the sentence that makes
-/// the feature safe — the drawing does not move — under only one of them.
-///
-/// In *Display* beside the page chrome, and not in *Appearance*: Appearance
-/// is about how pdfcer LOOKS (its preset, its colours), and this is about how
-/// much of the window the drawing gets. `field_shade` was filed here by the
-/// same test and the operator put it here himself.
-///
-/// The Settings window is also where the **state** of these two lives, which
-/// is why they are checkboxes here and plain commands on View ▸ Window: see
-/// `shell::commands::catalog::view`'s note on why neither ribbon control
-/// renders pressed, and on what Office does.
 pub fn auto_hide(ui: &mut Ui, prefs: &mut Prefs) {
     widgets::header(
         ui,

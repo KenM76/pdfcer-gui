@@ -166,3 +166,92 @@ are sourced from the Acrobat reference rather than chosen.
 same page and cross page — because the target arm has to win in each,
 and a fix that only reached one of them would look right in whichever
 case the author happened to try.
+
+### `enum PasteAs`
+
+A two-variant enum rather than a `bool`, because `paste(ctx, doc, true)` at
+the call site says nothing about which is which, and the two differ in what
+they do to the operator's *form* rather than merely in where a copy lands.
+
+### `enum Refusal`
+
+A sentence on the status row, never a silence — the same posture
+[`crate::canvas::clipboard::Refusal`] takes, for the same D4a reason.
+
+Two variants went when `formclip` landed: `KindCannotBeAuthored` (a
+signature field, now copyable) and `RadioNeedsItsOwnExportValue` (the engine
+refuses the collision itself, with a better message).
+[`EngineRefused`](Self::EngineRefused) carries both now, in the engine's
+wording — which is the wording that is right, because it reports what the
+operation *did* rather than what this shell *intended*.
+
+### `struct ClippedField`
+
+Parked inside [`crate::canvas::clipboard::Clipped`] rather than under a key
+of its own, so that **one clipboard holds one thing**: copying a markup
+after copying a field replaces it, which is what every program in the class
+does and what makes `Ctrl+V` mean one thing at a time.
+
+# Why the BYTES and not the live `FieldClip`
+
+The same three reasons `Clipped::Selection` carries bytes, and here the third
+is decisive rather than merely convenient:
+
+1. `egui::Memory` wants `Clone + Send + Sync + 'static`; bytes are all four
+   without asking anything of the engine's type.
+2. `Clipped` derives `PartialEq`, which bytes give for free.
+3. **`FieldClip::to_bytes` is total.** A field clip is dictionaries and
+   streams, and the engine tests that a clip through bytes and one that
+   stayed in memory produce **byte-identical documents**. So this
+   representation loses nothing, and it is the same one a private OS
+   clipboard format will take.
+
+This used to add *"unlike `ObjectClip`, whose `to_bytes` drops its
+annotations"*, and **that stopped being true on 2026-08-29** — clip format
+version 2 carries them, and `annotations_survive_serialisation()` now
+answers `true` for every clip. Corrected here rather than deleted, because
+the contrast was the reason this field is bytes and a reader who finds the
+claim elsewhere should know it expired rather than that it was wrong. It is
+the third stale absence-claim about `pdfcer-core` this project has corrected
+in a week: **an absence claim about a crate you do not build has a shelf
+life**, and what catches it is reading the reply, not re-deriving the claim.
+
+### `fn copy`
+
+# Errors
+
+Every [`Refusal`] except [`Refusal::NothingCopied`], which only a paste
+raises.
+
+### `fn cut`
+
+The delete travels as an [`Action`] rather than being applied here, because
+this function borrows `doc` immutably and because every other destructive
+gesture in this shell goes through the queue. `DeleteWidget` rather than
+`DeleteField` is deliberate: the operator pointed at **a box**, and on a
+field with three boxes removing all three is not what they asked for. The
+engine collapses the field when its last widget goes.
+
+# Errors
+
+As [`copy`].
+
+### `fn paste`
+
+# Where it lands
+
+[`crate::canvas::clipboard::PASTE_OFFSET_PT`] down and to the right on the
+**same** page, in place on a different one. The same rule the markup
+clipboard uses and for the same two reasons, which pull in opposite
+directions and are both right: a same-page paste that landed exactly on the
+original is invisible, and a cross-page paste that offset would move the
+copy away from the position that was the reason for copying it.
+
+A [`PasteAs::Duplicate`] onto the same page offsets too. Two widgets of one
+field stacked exactly on each other is a form the operator cannot separate,
+and the fact that they share a value does not make them one box.
+
+# Errors
+
+[`Refusal::NothingCopied`] when the clipboard holds no field. The engine's
+own refusals arrive when the action drains, not here.

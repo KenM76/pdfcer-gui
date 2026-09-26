@@ -18,15 +18,6 @@ use crate::canvas::textedit::TextEditKind;
 pub(super) const TOOL_MEMORY_KEY: &str = "pdfcer-canvas-tool"; // ui-text-exempt: internal memory id, never displayed
 
 /// What the primary button does over the page.
-///
-/// **Does a primary drag select, move the paper, or draw?** — the only question
-/// the pan, marquee and markup paths need settled, and settling it here keeps
-/// them from inventing three different answers.
-///
-/// Four variants, not nine: [`Self::Markup`] and [`Self::Measure`] each carry
-/// **which** kind is armed rather than there being one variant per shape or per
-/// dimension. See those variants' docs for the argument, and the module header
-/// for what changed since this enum said it would stay at two.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CanvasTool {
     /// Click selects, drag rubber-bands. The shipped behaviour, and the
@@ -303,19 +294,6 @@ pub enum CanvasTool {
 impl CanvasTool {
     /// Whether a primary-button drag pans the view rather than reaching the
     /// gesture machine.
-    ///
-    /// The whole branch, in one predicate, so the pan path and the
-    /// gesture-suppression path cannot disagree about which tool pans — a
-    /// disagreement whose symptom would be a drag that pans **and** marquees,
-    /// which is one of the two things this stage must not ship.
-    ///
-    /// The markup tool answers `false`, which is what makes a markup drag reach
-    /// the gesture machine at all: `canvas::interact` hands that machine a
-    /// **blank** frame whenever this is `true`. Space-to-pan still works over
-    /// the markup tool, because [`resolve`] composes the held space bar *before*
-    /// this is asked — so a held space bar borrows the hand out of the markup
-    /// tool exactly as it does out of the select tool, and releasing it hands
-    /// the markup tool back with nothing stored and nothing to restore.
     #[must_use]
     pub fn pans_with_primary(self) -> bool {
         matches!(self, Self::Hand)
@@ -323,51 +301,6 @@ impl CanvasTool {
 
     /// The cursor this tool shows, or `None` to leave the cursor to whatever
     /// else the canvas is doing with it (a grip, a marquee, a move drag).
-    ///
-    /// `Grab` when the hand is available and `Grabbing` while it is closed, in
-    /// the direction every browser, CAD package and image editor uses. The
-    /// pair matters: the requirement is that the cursor *changes and changes
-    /// back*, and a single hand cursor for both states would leave an operator
-    /// unable to tell a hand tool that is working from one that has run out of
-    /// scroll range — the exact ambiguity the middle-drag path's own
-    /// `Grabbing` was added to remove.
-    ///
-    /// `Select` returns `None` rather than `Default`: returning a cursor here
-    /// would overwrite the grip cursors that [`crate::canvas::handles`] sets
-    /// for the eight resize handles, and a resize grip that loses its cursor
-    /// is a grip nobody can find.
-    ///
-    /// `Markup` returns `Crosshair` in **both** states, and the sameness is
-    /// deliberate where the hand's pair is deliberately different. The hand
-    /// needs to distinguish "available" from "closed" because a pan that has
-    /// run out of scroll range is otherwise indistinguishable from a pan that
-    /// is not working; a markup drag has no such failure — the band under the
-    /// pointer is the feedback, and a cursor that changed under it would
-    /// compete with the thing it is describing. What the crosshair says is
-    /// *"this canvas draws now"*, which is true from the moment the tool is
-    /// armed until it is retired, and returning it also **suppresses the grip
-    /// cursors** — correctly, because a markup drag over a selected object
-    /// draws a shape rather than resizing anything.
-    ///
-    /// `Text` returns `CursorIcon::Text` in both states, on the same argument
-    /// the crosshair makes and with one extra consequence worth naming. The
-    /// I-beam is what Acrobat, Inkscape and SolidWorks all show over selectable
-    /// text, and [`cursor_for`]'s own note records why this shell would not
-    /// paint it on **hover** — answering *"is there a glyph under the pointer?"*
-    /// per frame is a hit test against the page's extraction on every frame the
-    /// pointer moves, paid on canvases nobody is selecting on. Armed, the
-    /// question does not arise: the tool is a statement about what the next drag
-    /// means, so the cursor is constant while it is armed and costs nothing.
-    /// That is precisely the "becomes free on the day a `CanvasTool::Text`
-    /// lands" this pair of comments anticipated.
-    ///
-    /// It suppresses the grip cursors too, and here that is load-bearing rather
-    /// than incidental: in Edit a content selection can be on the page *while*
-    /// this tool is armed, and [`crate::canvas::gesture::press_kind`] gives the
-    /// armed tool the press. A grip that still showed its resize cursor would be
-    /// promising a gesture the press rule has already decided against — the
-    /// exact mismatch [`retire_forbidden`] exists to prevent at the other end of
-    /// a tool's life.
     #[must_use]
     pub fn cursor(self, dragging: bool) -> Option<CursorIcon> {
         match self {
@@ -417,12 +350,6 @@ impl CanvasTool {
     }
 
     /// Which markup kind is armed, if any.
-    ///
-    /// The accessor `crate::app::PdfcerApp::conditions` needs in order to render
-    /// exactly one Markup button pressed, and the accessor
-    /// [`crate::canvas::gesture::press_kind`] needs in order to decide what a
-    /// press means. Both would otherwise write the same `if let` — which is how
-    /// a canvas ends up drawing one shape while the ribbon says another.
     #[must_use]
     pub fn markup_kind(self) -> Option<MarkupKind> {
         match self {
@@ -432,12 +359,6 @@ impl CanvasTool {
     }
 
     /// Which measure kind is armed, if any.
-    ///
-    /// [`Self::markup_kind`]'s twin, and it exists for the identical two
-    /// callers: `crate::app::PdfcerApp::conditions`, so exactly one Measure
-    /// button renders pressed, and
-    /// [`crate::canvas::gesture::press_kind`], so a click is offered to the
-    /// pick machines instead of to the selection.
     #[must_use]
     pub fn measure_kind(self) -> Option<MeasureKind> {
         match self {
@@ -459,12 +380,6 @@ impl CanvasTool {
     }
 
     /// Which placement is armed, if any — `OPERATOR_REQUESTS.md` O66.
-    ///
-    /// [`Self::markup_kind`]'s and [`Self::measure_kind`]'s sibling, with the
-    /// same contract and one fewer caller: nothing publishes a `selected:`
-    /// condition for it, because a placement is armed from **inside a dialog**
-    /// and has no ribbon control to render pressed. `panels::tool::armed`
-    /// records that absence rather than inheriting it.
     #[must_use]
     pub fn place_kind(self) -> Option<crate::canvas::placing::PlaceKind> {
         match self {
@@ -474,55 +389,18 @@ impl CanvasTool {
     }
 
     /// **Whether the text tool is armed.**
-    ///
-    /// [`Self::markup_kind`]'s and [`Self::measure_kind`]'s third sibling,
-    /// answering `bool` rather than `Option<Kind>` because [`Self::Text`] carries
-    /// no kind — see that variant's docs for why it carries nothing at all.
-    ///
-    /// It exists for the same reason the other two do, and it has the same three
-    /// callers, which is what stops them writing three `matches!` that could
-    /// drift: [`crate::canvas::textsel::takes_the_press`], which decides what a
-    /// press means; `crate::app::PdfcerApp::conditions`, which decides whether the
-    /// ribbon control renders **pressed**; and [`crate::canvas::gesture::press_kind`],
-    /// which reads it through `takes_the_press` rather than directly, so the
-    /// drag's meaning and the click's routing cannot disagree.
-    ///
-    /// Deliberately `selected`-agnostic: like its siblings it is a question about
-    /// a [`CanvasTool`] value, and *which* value — the chosen one or the one a
-    /// held space bar composes — is the caller's decision. [`active`] and
-    /// [`selected`] answer differently on purpose.
     #[must_use]
     pub fn is_text(self) -> bool {
         matches!(self, Self::Text)
     }
 
     /// Whether this tool's subject is **anchors** rather than whole objects.
-    ///
-    /// True for [`Self::Node`] alone. Read by the paint pass — which draws every
-    /// anchor of the selected object while it is armed, rather than only after a
-    /// descent — and by the click router, which selects an anchor directly.
     #[must_use]
     pub fn is_node(self) -> bool {
         matches!(self, Self::Node)
     }
 
     /// **Which text-edit kind is armed, if any.**
-    ///
-    /// [`Self::markup_kind`]'s and [`Self::measure_kind`]'s fourth sibling, with
-    /// the same three-caller contract: [`crate::canvas::gesture::press_kind`],
-    /// which decides that the press is a caret placement and not a marquee;
-    /// `crate::app::PdfcerApp::conditions`, so exactly one of the two Edit
-    /// controls renders pressed; and `canvas::interact`, which routes the
-    /// resulting click to `canvas::textedit::click`. Three `matches!` written
-    /// separately is how a canvas comes to place a caret while the ribbon says
-    /// Add text.
-    ///
-    /// Note what it is **not** a sibling of: [`Self::is_text`]. That answers
-    /// *"is the text SWEEP armed"* and this answers *"is the text CARET armed"*,
-    /// and they are false at the same time and true at different times. They are
-    /// two questions with confusingly similar names, so each names the other
-    /// here — a reader who calls the wrong one gets a compile error only if the
-    /// return types differ, and they do not.
     #[must_use]
     pub fn text_edit_kind(self) -> Option<TextEditKind> {
         match self {

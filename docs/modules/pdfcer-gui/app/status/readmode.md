@@ -125,3 +125,15 @@ or fails here.
 The failure this forbids is a default: `Ctrl+H` as a fallback would be a
 second spelling of the binding wearing a fallback's clothes, and it would
 be wrong in exactly the case it was reached for.
+
+### `fn show`
+
+Returns nothing: like the rest of the left half this is a readout, and the
+one case that is not — the unbound button — acts on `egui::Memory` rather
+than raising an action (see the module header).
+
+**Called before [`super::show`]'s `Status::Open` guard**, deliberately. Read
+mode is per *window*, not per document (`app::window` §3), so an operator can
+close their last file while in it — and a bar that only explained the way out
+when a document happened to be open would go silent in the state where the
+window has the least in it.

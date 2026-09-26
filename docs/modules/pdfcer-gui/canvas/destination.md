@@ -42,3 +42,21 @@ change to the framing every zoom in the product shares.
 [`crate::canvas::destscroll`] instead — this module parks the scroll, it
 does not solve it. O200 / D47 is the report that separated the two, and
 `destscroll`'s header carries the argument.
+
+## Item notes
+
+### `enum PendingDestination`
+
+Two shapes, because §12.3.2.2's five destination views reduce to exactly two
+things a viewport can do: put a point at the top-left, or frame a rectangle.
+The fits — `/Fit`, `/FitH`, `/FitV` — travel as an ordinary `Action::Fit`
+beside one of these rather than as more variants here, so this type stays
+about POSITION and the shell's fit vocabulary stays in one place.
+
+### `fn arrive`
+
+A ONE-SHOT — consumed on the frame it is acted on, never left standing.
+A destination that survived its frame would fight every subsequent pan, and
+the operator would find the view springing back to a bookmark they clicked a
+minute ago. The one exception is [`ArriveStep::Hold`], which is bounded by
+[`MAX_WAIT_FRAMES`] precisely so that it cannot become that.

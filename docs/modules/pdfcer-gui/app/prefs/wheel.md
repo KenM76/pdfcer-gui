@@ -37,3 +37,20 @@ is a dead control.
 2. **The control renders only where the choice exists** — R9. Under a
    continuous mode nothing is drawn, rather than a disabled stub explaining
    that the setting does not apply.
+
+## Item notes
+
+### `enum WheelPaging`
+
+A two-value enum rather than a `bool` for the reason
+[`super::OpeningFit`] is one: the file token is then a *word* the operator
+can read and correct, the settings window can give each answer its own
+sentence, and a third answer (flip only once the page's edge is reached,
+say) is an added variant rather than a changed type.
+
+### `fn flips`
+
+The single predicate the canvas asks. It exists so that the canvas
+never matches on this enum: a second `match` would be a second place to
+forget a variant, and the canvas's question is genuinely a yes/no even
+though the setting is not.

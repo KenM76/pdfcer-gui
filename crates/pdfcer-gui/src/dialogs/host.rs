@@ -26,20 +26,6 @@ const OWNER_KEY: &str = "dialog-host-owner"; // ui-text-exempt: a memory key, ne
 
 /// **Tell the dialog host which window owns its dialogs.** Called once a frame
 /// by the application, before any dialog draws.
-///
-/// # Why a channel through `egui::Memory` and not an argument
-///
-/// Because the alternative is a fourteenth argument on thirteen call sites to
-/// carry one fact that never varies. `eframe` hands the application window's
-/// handle out **exactly once**, to `PdfcerApp` at start-up, and every dialog in
-/// the program wants the same one; threading it by hand would be thirteen
-/// opportunities to pass `None` and one dialog that quietly kept G3's
-/// symptoms.
-///
-/// It is safe as a hidden channel for the reason most hidden channels are
-/// not: **it has exactly one writer**, `app::frame`, on the frame path, and the
-/// value is a constant for the life of the process. There is no ordering to get
-/// wrong and no second producer to disagree with.
 pub fn set_owner(ctx: &egui::Context, window: Option<isize>) {
     let key = egui::Id::new(OWNER_KEY);
     match window {
@@ -117,12 +103,6 @@ const ENGAGED: bool = true;
 
 /// One dialog's window: what it is called, how big it opens, and where the
 /// operator last left it.
-///
-/// Held by the dialog it belongs to, so its lifetime is the dialog's — which is
-/// what makes the position memory correct without anything having to clear it.
-/// A dialog that is closed and reopened gets a fresh `Host` and therefore opens
-/// where the platform puts it; a dialog that stays open across frames keeps the
-/// position it has been dragged to.
 pub struct Host {
     /// The viewport id, stable for this dialog across frames.
     ///
@@ -209,17 +189,9 @@ pub struct Frame {
 pub const REGION_ACCEPT: &str = "dialog.buttons.accept";
 
 /// The region the cancelling footer button publishes.
-///
-/// This is the button `dialogs.md` G4 makes indistinguishable from Escape and
-/// from the OS close button, so a driven check that presses it is measuring
-/// all three routes at once.
 pub const REGION_CANCEL: &str = "dialog.buttons.cancel";
 
 /// The region the optional third footer button publishes, when there is one.
-///
-/// Absent from the trace on every dialog that passes `None`, which is all of
-/// them but Print. An absent region is not a defect here; it is the R9 answer
-/// -- a route that does not exist renders nothing.
 pub const REGION_KEEP: &str = "dialog.buttons.keep";
 
 /// `response`, with `hover` attached to it when there is a sentence to attach.
@@ -236,10 +208,6 @@ impl Host {
     const BODY_MARGIN_PTS: f32 = 12.0;
 
     /// A dialog window.
-    ///
-    /// `id` must be unique and stable per dialog — `"print"`, `"insert-image"`.
-    /// It keys the OS window, and it is also what the diagnostic channel
-    /// publishes, so a driven check names the same string the code does.
     #[must_use]
     pub fn new(id: &str, title: impl Into<String>, default_size: Vec2, min_size: Vec2) -> Self {
         Self {
@@ -272,31 +240,6 @@ impl Host {
     /// **Open near `at`** — a position in the application window's own egui
     /// screen coordinates, the space `ctx.input(InputState::content_rect)`
     /// reports and every `ui_rect` in the main window is published in.
-    ///
-    /// # Why this exists: A16c
-    ///
-    ///
-    /// # What the host promises about the position, and what it does not
-    ///
-    /// * It is honoured **only on the pass the window is created**, and only
-    ///   when there is nothing remembered — a position the operator dragged the
-    ///   dialog to always wins over one the program computed. G6 is unchanged.
-    /// * It is **clamped onto the application window**, so a caller may compute
-    ///   freely without knowing the desktop's size or which monitor the
-    ///   application is on, and cannot open a dialog half off the screen or over
-    ///   the ribbon. See `placement::opening`.
-    /// * It positions the window's **outer** corner, so the dialog lands about
-    ///   one title bar higher than a caller thinking in content coordinates
-    ///   imagines. This is a "roughly here" placement; a child window's
-    ///   decoration height is not knowable before the window exists.
-    ///
-    /// A builder method rather than a fifth argument to [`Host::new`],
-    /// because having an opinion about where you open is the rare case: a
-    /// dialog raised from a menu has no reason to, and only one raised by a
-    /// gesture on the page does. Every dialog that does not care should not
-    /// have to pass `None` to say so. (Deliberately not stating how many do
-    /// care — a count written in prose beside the thing it counts is a claim
-    /// that decays, and this project has spent six corrections on that shape.)
     #[must_use]
     pub fn opening_near(mut self, at: Pos2) -> Self {
         self.preferred = Some(at);
@@ -330,20 +273,6 @@ fn enter_grace_key(ctx: &egui::Context) -> egui::Id {
 
 impl Host {
     /// **Draw one frame of this dialog in its own OS window.**
-    ///
-    /// `add` is handed a `Ui` inside the window and may do anything an
-    /// `egui::Window`'s closure could. What it returns comes back untouched, so
-    /// a dialog that computes something while drawing does not need a field to
-    /// carry it out.
-    ///
-    /// # Why the close signal comes back rather than through an `&mut bool`
-    ///
-    /// `egui::Window::open(&mut bool)` is the idiom this replaces, and it has a
-    /// property worth losing: the flag is written *during* the draw, so a
-    /// caller reading it afterwards cannot tell whether the operator closed the
-    /// window or the caller's own code did. [`Frame::closed`] is a report about
-    /// this frame only, and the caller decides what closing means — which for
-    /// a dialog that is mid-transaction is not always "stop".
     pub fn show<R>(
         &self,
         ctx: &egui::Context,
@@ -806,53 +735,6 @@ impl Host {
 
     /// **Put the body in its own scrolling space and pin the footer to the
     /// bottom of the window**, so the buttons are reachable at any size.
-    ///
-    ///
-    /// > *"Those buttons should always be available, and if there isn't size
-    /// > for all the features they get scrolled in their own space."*
-    ///
-    /// He said it while reporting one dialog, and it is written here rather
-    /// than there because it is a statement about **every** dialog. It is also
-    /// the shape Word and Acrobat use for every options window they have, which
-    /// under this project's standing *"use the conventional interaction, never
-    /// invent one"* rule makes it the spec and not a preference.
-    ///
-    /// # Why this is the structural fix and [`Host::fit`] is not
-    ///
-    /// `fit` grows a window to its content, and it is a good mechanism, but it
-    /// is a **negotiation with the window manager** — it can be refused, it is
-    /// bounded by a budget, and it cannot help at all once the operator has
-    /// made the window small on purpose or the screen is smaller than the
-    /// content. Everything it does is best-effort.
-    ///
-    /// This is not best-effort. The footer is allocated **first**, out of the
-    /// window's own rectangle, so the body can only ever have what is left.
-    /// There is no size at which the buttons are off-screen, because there is
-    /// no path by which the body can take their space. A window too small for
-    /// its content becomes a window with a scrollbar, which is a nuisance; the
-    /// alternative was a transaction the operator could not finish, which is a
-    /// defect.
-    ///
-    /// ⇒ The two compose rather than compete: `fit` still opens the dialog big
-    /// enough that the scrollbar never appears in the ordinary case, and this
-    /// guarantees the outcome when it does.
-    ///
-    /// # Why `state` is threaded rather than captured
-    ///
-    /// Both closures nearly always want `&mut self` of the calling dialog, and
-    /// two closures capturing the same `&mut` cannot coexist even though they
-    /// run one after the other. Passing the state through as a parameter is the
-    /// borrow-checker-shaped way to say *"sequentially, not simultaneously"*.
-    ///
-    /// # A note for `fit`
-    ///
-    /// A `ScrollArea` reports the size it was GIVEN, not the size of what is
-    /// inside it, so a dialog converted to this shape stops asking to grow.
-    /// That is deliberate and is already documented in [`Host::fit`] — it is
-    /// why the print dialog, the first to have a scrollbar, was unaffected by
-    /// the fit mechanism. The consequence is that a converted dialog's stated
-    /// `default_size` becomes the size it actually opens at, so that number
-    /// wants to be generous rather than minimal.
     pub fn scrolled<S, R>(
         ui: &mut egui::Ui,
         state: &mut S,
@@ -896,13 +778,6 @@ impl Host {
 
     /// **Draw a dialog's affirmative and cancelling buttons**, with Enter and
     /// Escape wired and the default drawn as the default.
-    ///
-    /// The two-route convenience form of [`Host::footer`], which is where all
-    /// of the reasoning lives. Neither button carries a hover sentence and
-    /// there is no third route out; a dialog that wants either calls `footer`
-    /// directly.
-    ///
-    /// Returns `(accepted, cancelled)`.
     pub fn buttons(ui: &mut egui::Ui, accept: &str, cancel: &str) -> (bool, bool) {
         let (accepted, cancelled, _) = Self::footer(ui, (accept, ""), (cancel, ""), None);
         (accepted, cancelled)
@@ -911,84 +786,6 @@ impl Host {
     /// **Every route out of a dialog**, laid out right-to-left, with Enter
     /// wired to the affirmative button and every button's rectangle published
     /// for the driven harness.
-    ///
-    /// Each argument is `(label, hover)`. An **empty hover draws no tooltip**,
-    /// which is the case [`Host::buttons`] passes for both of its pair.
-    ///
-    /// Returns `(accepted, cancelled, kept)`. `kept` is always `false` when
-    /// `keep` is `None`, and no two of the three are ever `true` together:
-    /// they are three different rectangles and Enter belongs to exactly one of
-    /// them.
-    ///
-    /// # The order is Cancel then Accept, right-aligned
-    ///
-    /// Which is Windows' order and the order every dialog on this operator's
-    /// machine uses. It is not a preference: a button's meaning is learned by
-    /// position long before it is read, and a dialog that reverses the pair is
-    /// a dialog whose Cancel gets clicked by muscle memory aimed at OK.
-    ///
-    /// # Enter is refused while a text field wants it
-    ///
-    /// `ctx.text_edit_focused()` — the same predicate `canvas::textedit`
-    /// enforces one copy of, and `tools/gates/check-typing-guard.sh` fails the
-    /// build on a second. Without it, a dialog with a multi-line field would
-    /// accept on the first newline the operator typed, which is worse than
-    /// having no Enter at all: it commits a half-written transaction.
-    ///
-    /// A **single-line** field or a `DragValue` gives up focus on the Enter
-    /// that commits it, before this runs, so `text_edit_focused` alone reads
-    /// false and the commit would also accept the dialog — typing a poster
-    /// scale and pressing Enter would print. So Enter takes the Escape rung:
-    /// **the first Enter commits the field, the second accepts**, read from
-    /// the flag [`Self::show`] carries across the pass.
-    ///
-    /// # The third button, and why it is LEFTMOST rather than beside the default
-    ///
-    /// Added for **O185**, the print window's *Keep and close*. `dialogs.md`
-    /// G4 makes the OS close button, Escape and the cancel button deliberately
-    /// indistinguishable — one meaning for every route the window chrome
-    /// offers — so a dialog that owns persistent state cannot express *"keep
-    /// what I set, but do not act"* through any of them. That is the
-    /// `OK / Cancel / Apply` triad, and the third button is the only member of
-    /// it G4 does not already govern: it is a labelled control the operator
-    /// pressed **on purpose**, which is precisely the case G4 never
-    /// contemplated.
-    ///
-    /// It is drawn last in a `right_to_left` layout, so it lands **leftmost**,
-    /// furthest from the default. That is the correct position for the
-    /// least-used of the three and it keeps the accept/cancel pair in the
-    /// place muscle memory expects: adding a route out must not move the two
-    /// routes that were already there.
-    ///
-    /// It is deliberately NOT bound to a key. Enter is the default's and
-    /// Escape is Cancel's; a third chord would be a gesture with no affordance
-    /// naming it, and the one thing worse than an undiscoverable button is an
-    /// undiscoverable key that means something different from the button
-    /// beside it.
-    ///
-    ///
-    /// `tools/ui-verify` presses controls by name. This function contained no
-    /// `crate::diag::ui_rect` call at all, so **no driven check could press
-    /// any dialog's Print, OK or Cancel** — the three most consequential
-    /// controls in the application were the ones the harness could not reach.
-    /// It was found while designing O185's check, which cannot exist without
-    /// them.
-    ///
-    /// The names are **generic** — `dialog.buttons.accept`, `.cancel`,
-    /// `.keep` — rather than per-dialog, because the labels are not: this
-    /// function is handed *"Print"*, *"Print — 3 sheets will be clipped"*,
-    /// *"OK"* or *"Save"* depending on the caller and the state, and a check
-    /// that had to know which would be asserting the label rather than
-    /// pressing the button.
-    ///
-    /// ⚠ **Two dialogs open at once share these three names**, and the last
-    /// one drawn wins the frame. Stated rather than guarded: the alternative
-    /// is threading a dialog identity through every caller to disambiguate a
-    /// case the driven checks never construct, and a name that is sometimes
-    /// qualified and sometimes not is worse than one that is never qualified.
-    /// A check that needs certainty asserts the dialog's own body region in
-    /// the same frame.
-    ///
     pub fn footer(
         ui: &mut egui::Ui,
         accept: (&str, &str),

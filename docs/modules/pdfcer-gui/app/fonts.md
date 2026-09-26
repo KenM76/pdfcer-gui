@@ -178,3 +178,96 @@ in the header. A test may look where a product may not.
 
 SKIPPED rather than failed where that directory is absent, because its
 absence is a fact about the machine and not about this code.
+
+### `const MAX_FONT_FILE_BYTES`
+
+Sixteen mebibytes, matching `pdfcer`'s own ceiling. It is not about
+memory — it is that a "font file" above this size is nearly always
+something else that happens to have a font extension, and reading it costs
+an operator a visible pause for an answer that will be *"not a usable
+font"*. The skip is reported rather than silent.
+
+### `struct Donor`
+
+Borrows from the [`Library`] that resolved it. The bytes are held once, in
+the environment; a donor that owned a copy would clone a whole face on every
+lookup, for a value most callers only read a name out of.
+
+### `enum Match`
+
+`pdfcer_render::font::EmbedMatch`'s three rungs minus its bundled one, plus
+a distinction of this shell's own. See the module header for why `Stem`
+exists here and not there.
+
+### `fn source`
+
+A path, or the words for a bundled face. `pdfcer` writes
+`"bundled: FoxitSans"` for the same value and the engine's own field doc
+says the string is *"never parsed; only reported"* — so it is prose, and
+prose the operator reads belongs in [`crate::text`]. This is the join,
+not the wording.
+
+### `struct Library`
+
+The names live in a `FontEnvironment` — which owns the bytes and answers
+the three-rung question — and the **paths** live here, because the
+environment has no notion of where a face came from and the operator is owed
+exactly that.
+
+### `fn scan`
+
+# Later folders do NOT win
+
+The first folder holding a name keeps it, which is the opposite of the
+renderer environment's own precedence (*"duplicate-name precedence: last
+wins"*) and is deliberate. That environment is built once per render and
+the last registration is simply the surviving one; **this** list is the
+operator's, in an order they typed, and the Settings hint promises
+*"searched in the order they appear here"*. First-wins is what makes
+that sentence true.
+
+Enforced by [`Self::offer`] rather than by registration order, because
+`FontEnvironment::insert_named` is last-wins and would silently reverse
+it.
+
+### `fn scan_with`
+
+# The operator asked for this, and the licensing argument survives
+
+`OPERATOR_REQUESTS.md` **O47**, answered *"yes"* on 2026-08-28. The
+module header's argument — that pdfcer must not choose a font program on
+somebody's behalf, silently, in a file that outlives the decision — is
+not overruled by this. It is satisfied the same way **O50**'s checkbox
+satisfies it: the operator decided, once, explicitly.
+
+And it is the **last** rung, which is what makes it safe to leave on.
+`resolve_for_embedding` consults the bundled table only after an exact
+name match and after a standard-14 family equivalence have both failed,
+so a machine with real fonts configured reaches a real face first and
+this never fires. It is a floor, not a preference.
+
+### `fn donor_for`
+
+The subset tag is handled by the engine — `resolve_for_embedding`
+strips it on its second rung — and it has to be: a §9.6.4 tag is six
+uppercase letters and a `+`, minted per subset, so `ABCDEF+ArialMT` and
+`GHIJKL+ArialMT` are the same face and neither is a name any font file
+advertises. Matching without stripping would find nothing, ever, on
+exactly the documents that need embedding most.
+
+Whether pdfcer's own faces may answer is [`Self::scan_with`]'s
+argument, carried on the library rather than passed here — the decision
+is the operator's and belongs to the whole scan, not to one lookup.
+
+### `fn strip_subset_tag`
+
+Exactly six uppercase letters and a `+`, per the standard. Anything else
+before a `+` is part of the name and is kept — `Foo+Bar` is a legal, if
+unusual, font name, and treating it as a tag would look for a face called
+`Bar`.
+
+Kept even though [`Library::donor_for`] no longer calls it: the
+**display** side needs it, because a row reading `ABCDEF+ArialMT` shows an
+operator a tag that is an artefact of subsetting and means nothing to them.
+Resolution and presentation happen to want the same rule, and only one of
+them is the engine's.

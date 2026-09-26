@@ -65,10 +65,6 @@ pub struct OffPageDialog {
 
 impl OffPageDialog {
     /// Open, showing nothing yet.
-    ///
-    /// Infallible and unconditional for a document that is open, unlike every
-    /// other window in this folder that computes a plan first. See the header:
-    /// the empty answer is an answer.
     #[must_use]
     pub fn open(doc: &OpenDoc) -> Self {
         let total_pages = doc.pages.len();

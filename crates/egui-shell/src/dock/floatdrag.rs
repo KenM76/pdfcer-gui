@@ -31,6 +31,8 @@
 //! previewed by the same replay. Two drawing paths for one question are how two
 //! affordances come to promise two different outcomes, which is the disclosure
 //! defect the compass exists to prevent.
+//!
+//! Design and rationale: `docs/modules/egui-shell/dock/floatdrag.md`.
 
 use egui::Pos2;
 
@@ -72,10 +74,6 @@ pub struct FloatDrag {
 }
 
 /// **Offer the drop for a float being carried, and apply it on release.**
-///
-/// Runs from [`super::Dock::show`] after [`super::overlay::draw`] and
-/// [`super::tear::draw`], so a frame on which the pointer's own gesture
-/// published has already published.
 pub(super) fn draw(ui: &egui::Ui, ctx: &mut Ctx<'_>, layout: &DockLayout) {
     let Some(drag) = ctx.float_drag.take() else {
         return;

@@ -106,3 +106,15 @@ with a literal `%ProgramFiles%` in it, so such a registration is
 declined rather than launched. Saying so here is the honest thing —
 this is a known, bounded gap, not an oversight — and the operator's
 escape hatch is the Settings field.
+
+### `struct Windows`
+
+A unit struct with no state: every answer is read fresh, because the
+operator can install Acrobat while pdfcer is running and a cached "no"
+would outlive the fact it recorded.
+
+### `fn value_from_reg_output`
+
+Public to the crate rather than private so that its tests can be real: the
+format is the thing most likely to be wrong, and it is the only part of
+this file that can be tested without a registry.

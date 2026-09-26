@@ -29,17 +29,6 @@ pub mod redact;
 pub mod signatures;
 
 /// One dockable panel.
-///
-/// An enum rather than a trait object, for one reason that matters and one
-/// that follows from it. The reason that matters: [`Panel::ALL`] makes the
-/// set **enumerable**, which is what lets a test sweep every panel and
-/// assert something about each one — the reachability check below is exactly
-/// that, and it is the check three panels shipped without. A registry of
-/// boxed closures would be extensible and unsweepable.
-///
-/// The reason that follows: a dock hosting these needs to persist which
-/// panels are open, and a `Copy`, `Eq`, `Debug` enum serialises to a token
-/// that survives a restart. A closure does not.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Panel {
     /// The document's outline, as navigation.
@@ -201,12 +190,6 @@ pub enum Panel {
 
 impl Panel {
     /// Every panel.
-    ///
-    /// Hand-written, because Rust cannot enumerate an enum. That makes it
-    /// the classic array that silently stops being exhaustive when a variant
-    /// is added — so [`tests::the_panel_catalog_is_complete`] pins its
-    /// length against a match that the compiler *does* check, which is the
-    /// only way to make a hand-written catalog self-defending.
     pub const ALL: [Self; 13] = [
         Self::Attachments,
         Self::Bookmarks,
@@ -224,27 +207,6 @@ impl Panel {
     ];
 
     /// The ribbon command that shows this panel.
-    ///
-    /// **This is the reachability contract**, and it is the answer to the
-    /// defect in this module's header. Every panel names a command; the test
-    /// below asserts every one of those commands is both registered in
-    /// `crate::shell::commands` and referenced by
-    /// `crate::shell::manifest::built_in`. A panel with no route from the
-    /// ribbon cannot get past that.
-    ///
-    /// Seven of the thirteen are **not** on View ▸ Panels, and every placement is
-    /// `RIBBON_IA.md`'s:
-    ///
-    /// - **Fonts is `file.fonts`.** §7's migration map moves it from View ▸
-    ///   Panels to File ▸ Document, because the Fonts panel answers "what is
-    ///   inside this file", not "what is on my screen".
-    /// - **Properties is `file.properties`.** The document's own title,
-    ///   author, subject and keywords are a second panel and a second command,
-    ///   so this tooltip says only what its own panel does. See
-    ///   [`Self::DocumentProperties`].
-    /// - **Document properties is `file.document_properties`**, beside it in
-    ///   File ▸ Document for the reason Fonts is there: it answers *"what is
-    ///   inside this file"*.
     #[must_use]
     pub fn command_id(self) -> &'static str {
         match self {
@@ -359,59 +321,12 @@ impl Panel {
     }
 
     /// The panel whose [`Self::command_id`] is `id`, if any.
-    ///
-    /// The dock stores opaque ids, so something has to turn one back into a
-    /// panel, and this is deliberately the only thing that does. Written as
-    /// a search over [`Self::ALL`] rather than a second `match`: a second
-    /// `match` is a second list to keep in step, and the failure when it
-    /// drifts is a panel that opens from the ribbon and draws nothing in
-    /// the dock — which looks like a rendering bug and is not.
-    ///
-    /// Returns `None` for an id this build does not have, which is a
-    /// reachable state: a saved layout can name a panel whose capability
-    /// was compiled out.
     #[must_use]
     pub fn from_command_id(id: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|p| p.command_id() == id)
     }
 
     /// Draw this panel.
-    ///
-    /// The one entry point a dock calls. `doc` is `None` when nothing is
-    /// open, and that case is handled **here** rather than once per panel: the
-    /// answer does not vary by panel, and a bespoke "open a document to…"
-    /// sentence per panel would be one chance each for one of them to drift.
-    ///
-    /// The bodies below therefore all have the shape
-    /// `fn body(ui, doc: &OpenDoc, state: &mut PanelsState, actions: &mut Vec<Action>)`
-    /// and never see the empty case.
-    ///
-    /// # Two routes out, and why context-menu commands take the second
-    ///
-    /// `actions` carries what a panel decides for itself — the Bookmarks
-    /// panel's `GoToPage`, the Layers panel's `SetLayerVisible`. The
-    /// **return value** carries `egui_shell::HandlerToken`s: the commands an
-    /// operator chose from a panel's context menu.
-    ///
-    /// A panel must not translate those into `Action`s, for the same reason
-    /// the canvas must not. A token is resolved to an id and dispatched by
-    /// `PdfcerApp::dispatch_token`, which is the single choke point where a
-    /// confirmation gate, an undo entry or a refusal lives; a panel that
-    /// translated `file.properties` for itself would be a second
-    /// implementation of a command that already has one, and the two would
-    /// drift the first time the command grew a precondition.
-    ///
-    /// `host` is `None` when the application has no validated shell (see
-    /// [`MenuHost`]), in which case no panel attaches a menu and a
-    /// right-click does nothing.
-    ///
-    /// **Two panels attach a menu today**, and only one of them can open
-    /// one. Objects attaches `objects.row`, which `crate::shell::menus`
-    /// defines. [`pages`] attaches `pages.row`, which it does **not** — so
-    /// that right-click opens nothing at all, which is the correct behaviour
-    /// for a surface with nothing to offer and becomes the intended menu the
-    /// day the context is defined, with no edit in the panel. The other five
-    /// return an empty `Vec` because no context is defined for them either.
     #[must_use]
     pub fn show(
         self,
@@ -455,52 +370,6 @@ impl Panel {
 }
 
 /// The little state the panel bodies own between frames.
-///
-/// # Why this exists at all, and why it is not on `PdfcerApp`
-///
-/// Two panels are not pure functions of the document: the Objects
-/// panel remembers which rows are expanded and which row was last picked, and
-/// the Properties panel reads that pick. None of it is document state, and
-/// none of it is derivable from anything — but all of it has to outlive a
-/// frame.
-///
-/// It lives here rather than as fields on `crate::app::PdfcerApp` because
-/// *this* is the module that owns the concepts. A dock hands one `&mut
-/// PanelsState` to whichever panel it is drawing, and the app holds it the
-/// way it holds any other subsystem's state. Spreading these fields across
-/// `PdfcerApp` would put the Objects panel's expansion set next to the render
-/// worker.
-///
-/// # What is NO LONGER here: the two caches, and their identity key
-///
-/// Until S4 this struct also held the page decomposition and the font
-/// inventory, guarded by a `DocKey` assembled from the `Arc<EditSession>`'s
-/// **address** plus the path, page count and edit epoch. The header of that
-/// type documented its own residual hazard: an address is not an identity,
-/// because a dropped `Arc`'s allocation can be reused, so a reopened document
-/// could in principle have been served the previous one's decomposition. It
-/// also documented why the obvious fix was worse — holding an `Arc` or a
-/// `Weak` clone would make it a real identity and would break
-/// `crate::app::state::OpenDoc::session`'s `Arc::get_mut` mutation path,
-/// disabling document editing to fix a cache.
-///
-/// Both caches now live on `crate::app::state::OpenDoc`, where the document's
-/// own lifetime bounds them and **no identity key is needed at all**:
-/// `OpenDoc::new` constructs a whole new document state per open, so a cache
-/// inside it can never describe a previous file. `DocKey` was deleted rather
-/// than repaired, because an identity key existed only to compensate for a
-/// cache outliving the thing it described.
-///
-/// What is left here genuinely does outlive a document — it hangs off the
-/// application — and it is handled by *forgetting* rather than by keying:
-/// [`Self::forget_document`] is called from `PdfcerApp::open_path`, the one
-/// place a document is ever opened, and from [`Panel::show`] when nothing is
-/// open. A single statement at the one moment it is true beats a comparison
-/// made sixty times a second.
-///
-/// Within one document, [`Self::sync`] still drops this state on a page or
-/// revision change, keyed on `(page index, edit epoch)` — two plain values,
-/// no address, no ABA hazard.
 #[derive(Default)]
 pub struct PanelsState {
     /// The `(page index, edit epoch)` [`Self::tree`] describes, or `None`
@@ -759,10 +628,6 @@ pub struct PanelsState {
 }
 
 /// What the operator has opened and picked in the Objects tree.
-///
-/// Every field is cleared when the page or the document revision changes
-/// (see [`PanelsState::sync`]), because a paint-order index is a **position
-/// on one page of one revision**, not an identity.
 #[derive(Default)]
 pub struct ObjectTreeUi {
     /// Which object rows are expanded, by paint-order index.
@@ -845,32 +710,6 @@ impl PanelsState {
     }
 
     /// Forget everything about whatever document was open.
-    ///
-    /// Called from two places, and both are needed: `PdfcerApp::open_path`,
-    /// because a new document makes every paint-order index here meaningless,
-    /// and [`Panel::show`] when nothing is open, because a panel that never
-    /// draws while the shell is empty would never get the chance.
-    ///
-    /// `*self = Self::default()` rather than clearing fields one at a time,
-    /// so a field added later is forgotten by construction — which is right
-    /// for everything here that describes a DOCUMENT, and wrong for the two
-    /// fields that describe the OPERATOR.
-    ///
-    /// **The page-preview tick and its time limit are carried across the
-    /// reset**, and the body says at length why. In one sentence: they are
-    /// preferences read from `preferences.txt` at construction, this function
-    /// runs after construction on every launch that opens a file, and a reset
-    /// over them makes `OPERATOR_REQUESTS.md` O187 do nothing at all.
-    ///
-    /// **One thing this struct's reset cannot reach**, and it is named here
-    /// rather than left to be discovered: `properties::refusedchar` keeps the
-    /// refusal that has been *recorded and not yet adopted* in a thread-local,
-    /// because it is written by the dispatcher and read by a body that is handed
-    /// `&OpenDoc` shared — there is no `&mut` path between them. A refusal left
-    /// there when a document closes would be adopted by the next document's
-    /// first draw, where its `(page, run)` names different text. So the reset
-    /// says so explicitly, and the "forgotten by construction" property above
-    /// holds for every field that a `Default` can reach.
     pub fn forget_document(&mut self) {
         // THE TWO PAGE-PREVIEW PREFERENCES ARE CARRIED ACROSS THE RESET,
         // and this is the whole of O187 working or not working.
@@ -908,27 +747,11 @@ impl PanelsState {
 
     /// The operator's state in the Objects tree — what is expanded, and what
     /// is focused.
-    ///
-    /// Handed out whole rather than through a method per field, because the
-    /// Objects panel reads the expansion sets while it draws and writes them
-    /// after; splitting that across four accessors would gain nothing and
-    /// cost the panel the ability to hold one borrow for the frame.
-    ///
-    /// Note what it is **not** paired with any more. Until S4 this came back
-    /// alongside the page decomposition from one method, because the panel
-    /// needed `&provider` and `&mut tree` simultaneously and Rust permits
-    /// that only as two disjoint borrows of one struct. The provider now
-    /// lives on `OpenDoc`, so the two come from different objects entirely
-    /// and the pairing has no reason to exist.
     pub fn tree_mut(&mut self) -> &mut ObjectTreeUi {
         &mut self.tree
     }
 
     /// Which object the Properties panel is describing.
-    ///
-    /// Delegates to [`ObjectTreeUi`], which is where the field lives. The
-    /// forwarder exists so a panel that only needs to *read* the focus — the
-    /// Properties panel — does not have to reach through the grouping.
     #[must_use]
     pub fn focus(&self) -> Option<usize> {
         self.tree.focus()
@@ -941,26 +764,11 @@ impl PanelsState {
     }
 
     /// The Pages panel's own state — its picked sheets and its thumbnails.
-    ///
-    /// Handed out whole for the same reason [`Self::tree_mut`] is: the body
-    /// reads the cache while it lays tiles out and writes the selection while
-    /// it reads the clicks, and splitting that into accessors per field would
-    /// cost it the ability to hold one borrow for the frame.
     pub fn pages_mut(&mut self) -> &mut pages::PagesUi {
         &mut self.pages
     }
 
     /// The Redact panel's own state — the search query and the match mode.
-    ///
-    /// Handed out whole for [`Self::pages_mut`]'s reason: the body reads the
-    /// query while it draws the field and writes the mode while it reads the
-    /// switch, and splitting that into accessors per field would cost it the
-    /// ability to hold one borrow for the frame.
-    /// The Layers panel's search box, mutably.
-    ///
-    /// One accessor for one `String`, matching [`Self::redact_mut`]'s shape:
-    /// the panel needs the `&mut` to hand to a `TextEdit` and needs to read
-    /// the trimmed value back in the same frame.
     pub fn layers_search_mut(&mut self) -> &mut String {
         &mut self.layers_search
     }
@@ -970,14 +778,6 @@ impl PanelsState {
     }
 
     /// The **Document properties** panel's metadata drafts.
-    ///
-    /// Same shape as [`Self::pages_mut`] and [`Self::redact_mut`]: the body is
-    /// handed `&mut PanelsState` and reaches its own state through an
-    /// accessor, so the field stays private and no other panel can write it.
-    ///
-    /// Named after [`Panel::DocumentProperties`] and not after Properties:
-    /// an accessor named for the panel that does not own the state is how a
-    /// caller writes the wrong drafts.
     pub fn docprops_mut(&mut self) -> &mut docprops::InfoDrafts {
         &mut self.docprops
     }
@@ -994,20 +794,6 @@ impl PanelsState {
 
     /// **The rename draft for the selected form field**, re-seeded whenever the
     /// selection moves.
-    ///
-    /// The re-seeding is the whole reason this is a method rather than a
-    /// bare `&mut String`. Without it, clicking field A, typing a new name, then
-    /// clicking field B leaves A's half-typed name in the box — aimed at B. The
-    /// operator presses Rename and renames the wrong field to a name they chose
-    /// for a different one, and nothing on screen said which field the box
-    /// belonged to.
-    ///
-    /// So the key travels with the draft and a mismatch reseeds. `for_field` is
-    /// the FULLY-QUALIFIED name (the identity), and the draft is seeded with the
-    /// **last dotted segment** — the partial name, which is what
-    /// `rename_field` takes. Seeding it with the qualified name would invite the
-    /// operator to press Rename on a string containing a dot, authoring a `/T`
-    /// nothing can address.
     pub fn field_rename_mut(&mut self, for_field: &str) -> &mut String {
         if self.field_rename_key.as_deref() != Some(for_field) {
             self.field_rename_key = Some(for_field.to_owned());
@@ -1018,40 +804,22 @@ impl PanelsState {
 
     /// The Properties panel's geometry draft.
     /// The selected text's style draft, for `properties::text`.
-    ///
-    /// No re-seed argument, unlike [`Self::field_rename_mut`]: the draft owns
-    /// its own stamp and decides for itself when what it holds is stale, which
-    /// is right here because the staleness condition includes the edit epoch
-    /// and a caller would have to be handed that as well.
     pub fn text_style_mut(&mut self) -> &mut properties::text::TextStyleDraft {
         &mut self.text_style
     }
 
     /// The clicked text object's draft, for `properties::textobject`.
-    ///
-    /// No re-seed argument, like [`Self::text_style_mut`] and for its reason:
-    /// the draft owns its `(page, object, epoch)` stamp and decides for itself
-    /// when what it holds is stale.
     pub fn text_object_mut(&mut self) -> &mut properties::textobject::TextObjectDraft {
         &mut self.text_object
     }
 
     /// The refused-character offer's state, for `properties::refusedchar`.
-    ///
-    /// No re-seed argument, like [`Self::text_style_mut`]: the struct owns its
-    /// own `(page, run, epoch)` stamp and its own retirement rule, and decides
-    /// for itself when what it holds has stopped being true.
     pub fn refused_char_mut(&mut self) -> &mut properties::refusedchar::RefusedCharUi {
         &mut self.refused_char
     }
 
     /// The selected annotation's memoised deletion collateral, for
     /// `properties::annotdelete`.
-    ///
-    /// No re-seed argument, like [`Self::text_style_mut`]: the memo owns its own
-    /// `(id, epoch)` stamp and decides for itself when what it holds is stale,
-    /// which is right here because the staleness condition includes the edit
-    /// epoch and a caller would have to be handed that as well.
     pub fn annot_delete_mut(&mut self) -> &mut properties::annotdelete::DeletionPreview {
         &mut self.annot_delete
     }
@@ -1089,51 +857,17 @@ impl PanelsState {
     }
 
     /// The Attachments panel's authoring state — the optional description.
-    ///
-    /// Same shape as [`Self::bookmarks_mut`]: the body is handed
-    /// `&mut PanelsState` and reaches its own state through an accessor, so the
-    /// field stays private and no other panel can write it.
     pub fn attachments_mut(&mut self) -> &mut attachments::AttachmentsUi {
         &mut self.attachments
     }
 
     /// **The pages the operator has picked in the Pages panel.**
-    ///
-    /// Read-only, and this is the accessor a `pages.*` dispatch arm must
-    /// use when the first one lands. The ribbon's Pages tab already promises
-    /// this set in every one of its tooltips — `pages.delete` is *"Remove
-    /// **the selected pages** from this document"* — and
-    /// `crate::shell::commands`' comment on that band says those verbs
-    /// *"respect the thumbnail rail's selection when there is one"*.
-    ///
-    /// It is exposed *before* anything reads it, deliberately, because the
-    /// alternative is that the first arm to arrive invents a second page
-    /// selection of its own — the exact drift [`ObjectTreeUi::focus`]'s docs
-    /// refuse for objects. Empty is a defined answer, not a missing one: with
-    /// nothing picked those commands act on the current page.
     pub fn selected_pages(&self) -> &std::collections::BTreeSet<usize> {
         self.pages.selection.pages()
     }
 }
 
 /// Apply this project's scroll-bar style to `ui`.
-///
-/// Scoped to the `Ui` that owns the scroll area rather than to the app
-/// style, because "always show a solid bar" is right for a narrow panel
-/// column and not obviously right for every surface in the application.
-///
-/// Three settings, and all three are needed — see this module's header for
-/// the measurement behind each:
-///
-/// 1. `solid()` over the `floating()` default, so the bar allocates layout
-///    and is drawn when the pointer is elsewhere.
-/// 2. `foreground_color = true`, so the handle is drawn in the visuals' TEXT
-///    colour rather than `widgets.inactive.bg_fill` — which on a light
-///    preset is a near-white handle on a near-white panel. This is also the
-///    theme-respecting form: the handle inherits whatever contrast the
-///    active theme gives its text, so it stays correct across light and dark
-///    without a hard-coded colour.
-/// 3. `bar_width = 10.0`, wide enough to grab with a mouse.
 pub fn scroll_style(ui: &mut egui::Ui) {
     let mut scroll = egui::style::ScrollStyle::solid();
     scroll.foreground_color = true;
@@ -1143,38 +877,6 @@ pub fn scroll_style(ui: &mut egui::Ui) {
 
 /// The width a scrolling container must declare so its rows are not
 /// squeezed.
-///
-/// # The defect this prevents
-///
-/// `Ui::allocate_ui_with_layout_dyn` fits its requested size into the space
-/// **remaining in the parent region**, so a row that asks for 600 pt inside
-/// a 370 pt viewport receives 370. The row's `min_rect` therefore measures
-/// exactly the viewport width, `ScrollArea` compares content against
-/// viewport, finds them equal, and draws no bar. The visible symptom is a
-/// label cut off at the panel's edge with no way to reach the rest of it,
-/// and nothing errors or warns.
-///
-/// `auto_shrink([false, false])` does not help — it stops the area shrinking
-/// *below* the viewport, it does not let content exceed it. `max_width` does
-/// not help either; it bounds the viewport, which was already right.
-///
-/// The fix is to state the content's own width on the container:
-/// `Ui::set_width` calls `set_max_width`, and `Placer::set_max_width` GROWS
-/// `max_rect` rather than only shrinking it, which is what gives the rows
-/// their real width and lets the area measure content > viewport.
-///
-/// # Why `.max(viewport)`
-///
-/// So a wide panel still fills rather than leaving a dead strip to the right
-/// of the rows.
-///
-/// # Why this is a function and not three lines at the call site
-///
-/// So it can be tested. The RAG note this comes from is explicit that the
-/// value must not be a measurement of the *laid-out* row — measuring is what
-/// produced the squeezed number in the first place — and the difference
-/// between "the intrinsic width of this text" and "the width this row ended
-/// up with" is invisible at a call site and obvious in a test.
 #[must_use]
 pub fn content_width(row_widths: impl IntoIterator<Item = f32>, viewport: f32) -> f32 {
     row_widths
@@ -1184,53 +886,11 @@ pub fn content_width(row_widths: impl IntoIterator<Item = f32>, viewport: f32) -
 }
 
 /// The character this crate ends a shortened row with.
-///
-/// One code point, not three periods. Three periods measure wider, and at the
-/// width where a row is being shortened at all, three periods is another
-/// character and a half of the operator's text spent on the punctuation that
-/// says text was spent.
 pub const ELLIPSIS: char = '\u{2026}';
 
 /// **Shorten `label` until it fits `available`, or say that it already does** —
 /// `OPERATOR_REQUESTS.md` **O123**: *"rows that ellipsise with a tooltip
 /// instead of hard-clipping mid-character."*
-///
-/// Returns `None` when the whole label fits, and `Some(shortened)` when it does
-/// not. The caller draws whichever it got and attaches the **full** text on
-/// hover in the `Some` case.
-///
-/// # Shortening is not the clipping that is ruled out
-///
-/// The standing requirement is that **row text must not clip**: a panel that
-/// cuts a row at the pane's edge with no bar, no mark and no recovery loses
-/// text **silently**, and silence is what is forbidden. This shortens the row,
-/// says so with a character the eye reads as *there is more*, and puts the
-/// whole string one hover away. The thing that must not happen — an operator
-/// seeing `AAAAAA+SpaceGrotesk-Bold 1` and having no idea a `2` was cut off —
-/// cannot happen.
-///
-/// # Why a `measure` closure rather than a `&Ui`
-///
-/// So the decision is a pure function and can be tested against a synthetic
-/// font. Every earlier attempt at this in this crate ended as three lines
-/// inside a draw closure, and [`content_width`]'s own doc records what that
-/// costs: *"the difference between 'the intrinsic width of this text' and 'the
-/// width this row ended up with' is invisible at a call site and obvious in a
-/// test."*
-///
-/// # The search
-///
-/// Binary search over **character** counts, never bytes: slicing a UTF-8 string
-/// at a byte offset panics mid-code-point, and this crate's rows carry the
-/// middle dot, the em dash, the multiplication sign and font names with
-/// accents. The predicate is monotone — a longer prefix is never narrower — so
-/// the search is sound, and it costs `log2(len)` measurements on the rows that
-/// need it and one on the rows that do not.
-///
-/// Returns `Some` of the bare ellipsis when not even one character plus the
-/// ellipsis fits. That is a legitimate state at a very narrow dock and it is
-/// **still better than a clipped row**: a lone ellipsis says *this is a row,
-/// and it has content you cannot see here*, and it still carries the hover.
 #[must_use]
 pub fn elide_to_width(
     label: &str,
@@ -1267,18 +927,6 @@ pub fn elide_to_width(
 }
 
 /// Measure the intrinsic width of a row's text, in points.
-///
-/// The *intrinsic* width — what the text would occupy with no wrapping and
-/// no container — which is the number [`content_width`] needs and the one a
-/// laid-out row cannot give (a laid-out row has already been clamped).
-///
-/// `layout_no_wrap` is what makes it intrinsic — the same call the widget
-/// itself will make, so the number is the width the row would want rather
-/// than an estimate of it.
-///
-/// The colour is [`egui::Color32::PLACEHOLDER`] because a galley's *width*
-/// does not depend on its colour, and naming a real one here would tie a
-/// measurement to a theme decision.
 #[must_use]
 pub fn text_width(ui: &egui::Ui, text: &str) -> f32 {
     let font_id = egui::TextStyle::Body.resolve(ui.style());

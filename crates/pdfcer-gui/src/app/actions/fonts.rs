@@ -28,15 +28,12 @@
 //! showed. The two are computed by the same function from the same request, so
 //! they will agree — and building the report from the returned one means they
 //! cannot silently stop agreeing.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/app/actions/fonts.md`.
 
 use crate::app::state::OpenDoc;
 
 /// **Embed every font the request names, as one undoable command.**
-///
-/// No pre-flight refusal check here. `embed_fonts` runs `embed_refusal` itself
-/// before any mutation and returns the refusal as an `Err`, so calling it first
-/// would be a second implementation of a guard the engine already owns — the
-/// failure `dispatch::routes`' header names in a different register.
 pub(super) fn embed(doc: &mut OpenDoc, request: &pdfcer_core::font_embed_missing::EmbedRequest) {
     let supplied = request.supplied.len();
     super::apply::vector_edit(doc, "embed-fonts", 0, supplied, |session| {
@@ -69,17 +66,6 @@ pub(super) fn embed(doc: &mut OpenDoc, request: &pdfcer_core::font_embed_missing
 
 /// **Remove every embedded font program the request names, as one undoable
 /// command.**
-///
-/// No pre-flight refusal check, for [`embed`]'s reason: `unembed_fonts` runs
-/// `unembed_refusal` itself before mutating.
-///
-/// And **no PDF/A gate here either**, deliberately. The engine leaves PDF/A
-/// out of its refusal and says why: *"unembedding genuinely breaks that
-/// conformance … but it is a consequence the operator may knowingly accept, not
-/// a structural impossibility. The core reports it and **the shells gate on
-/// it**."* This shell's gate is the sentence in `dialogs::unembed`, which the
-/// operator reads before pressing the button — a disclosure, not a refusal,
-/// because the decision is theirs and the engine says so.
 pub(super) fn unembed(doc: &mut OpenDoc, request: &pdfcer_core::font_unembed::UnembedRequest) {
     super::apply::vector_edit(doc, "unembed-fonts", 0, 1, |session| {
         session.unembed_fonts(request).map(|plan| {

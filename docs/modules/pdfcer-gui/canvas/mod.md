@@ -114,3 +114,83 @@ paths (wheel, in, out, actual size, and the two framing commands) lives in
 over the canvas, the viewport's centre when it is not**. This file no
 longer decides an anchor; it arms one ([`zoom::arm_anchor`]) and consumes
 one ([`zoom::consume_anchor`]).
+
+## Item notes
+
+### `mod deleting`
+
+Three engine verbs — `delete_subpath`, `delete_text_run`, `delete_node` —
+had their MOVE twins wired and themselves called by nothing, so on a CAD
+export a line could be entered, selected and dragged and could not be
+removed. Its header carries the whole argument, including why one refusal is
+pre-empted (R83) and the rest are left to the engine.
+
+Pure — no egui, no pointer, no document — because both the Delete key and
+the ribbon's `format.delete` ask it, and a destructive rule stated twice is
+a rule that drifts.
+
+### `mod overlays`
+
+`egui_shell::theme::Overlays` is a generic role map because **R7** forbids
+the shell learning what a ce dimension is; the roles are pdfcer's, exactly as
+the ribbon manifest's command ids are. Its header carries the mapping
+argument and the distinctness test the shell says the application owes.
+
+### `mod pagedrop`
+
+The operator's request of 2026-08-19: *"…or onto the canvas to add pages
+and insert them in between the pages we've dragged to"*. The drag itself
+lives in [`crate::pagedrag`], which is what lets a gesture that began in a
+panel — possibly in another document — end here.
+
+### `mod notepopup`
+
+The operator, 2026-09-05: *"I could add a yellow sticky note but even in
+read mode I don't think I could figure out how to read it."* He was right,
+and the measurement was worse than the report: the only route to a comment
+was the Comments panel, on the `markup` tab, which Read is not shown.
+
+It lives on the **canvas** rather than on the ribbon precisely so that it
+is mode-independent by construction — no future edit to a tab list can take
+reading away from Read mode again. Its header carries the whole argument,
+including why the pop-up is chrome rather than content under rule 4.
+
+### `mod pasteboard`
+
+O23's second half. The operator, 2026-09-10: *"how do I view and edit
+objects that are off of the page? we added this feature but I didn't see
+how to enable it."* There was nothing to enable: the pasteboard — the
+viewport of scrollable slack [`geometry::content_extent`] puts on every side
+of the strip — sensed hover and refused clicks, so a press out there never
+became a gesture and an object dragged past the sheet edge was unreachable.
+
+Its header carries the whole argument, including why this is a choice
+between two responses rather than one widened page rect, and the two
+clauses about a drag that crosses the sheet edge mid-gesture.
+
+### `mod pick`
+
+`OPERATOR_REQUESTS.md` O17. This is the replacement for Edit ▸ Content's
+declare-your-intention-then-point model, and its header carries the whole
+argument: why a filter belongs on the status bar rather than the ribbon,
+why it is **subtractive only** (so `default()` reproduces today's behaviour
+and R6 holds by construction), and why it composes with
+[`crate::app::modes::capability::Capabilities`] as an `AND` rather than an
+override.
+
+Pure: no egui, no pointer, no document. Which is exactly why the popup that
+drives it still has to be driven before any of it counts — R1.
+
+### `mod previews`
+
+Its header carries the convention it **reverses** by operator ruling —
+`handledrag.rs`'s *"a preview shows the cursor, the render shows the
+document"* — and the measurement that makes it possible: a rasterised
+preview is a second away on a CAD sheet, and this never touches the
+rasteriser.
+The fourteen **pre-commit** slots one frame of the canvas might fill — the
+marquee, the ghosts, the shape preview, the snap marker, the ink trail.
+
+Extracted from [`interact`] under R2; its header carries the one argument
+they all share (why each is its own value and not a variant of another) and
+the Rule 4 reading that makes every one of them permitted.

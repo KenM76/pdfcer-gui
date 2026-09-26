@@ -297,3 +297,54 @@ The rule `crate::shell::menus`' header states — *only real commands* —
 checked from the panel's side before the menu exists, so the menu can
 be written from this list rather than from memory. A verb that failed
 here would be one to leave out, not one to add and grey.
+
+### `const PAGES_ROW`
+
+Defined by `crate::shell::menus::built_in` — see this module's header,
+section 2. The constant lives here rather than being spelled at the attach
+site for the reason that module gives for its own four: *"a context id is
+used in exactly two places that must agree… a typo in either produces
+silence rather than an error."*
+
+`crate::shell::menus::PAGES_ROW` is the other spelling, and
+[`tests::the_page_tile_menu_context_is_named_and_defined`] asserts the two
+agree — because a menu attached to a context nobody defines opens nothing at
+all, silently.
+
+The six verbs it offers all reach a dispatch arm. `pages.split` does not,
+and is deliberately **not** on this menu: the dispatcher records what it is
+waiting for. `pages.merge_into` and `pages.insert_from_file` are wired but
+are document-level verbs rather than verbs about the sheets pointed at, so
+they stay on the ribbon's Pages tab.
+
+### `fn body`
+
+Returns the handler tokens a right-click produced — **intent**, never an
+executed command. See [`crate::panels::Panel::show`] on why a panel must
+not translate a context-menu command into an [`Action`] for itself.
+
+### `fn columns_for`
+
+At least one, always: a dock dragged narrower than a single tile must show
+a column of squeezed thumbnails rather than none at all, because zero
+columns is a panel that has silently emptied itself.
+
+### `fn tile_height_for`
+
+The shape is free — it comes from the page tree, not from rendering — so
+every tile is the right shape from the first frame, before any picture
+exists. That is what makes the scroll bar honest while the grid fills:
+each row occupies its final height whether or not its pictures have
+arrived, so nothing jumps.
+
+### `fn viewport_centre`
+
+Falls back to the current page when nothing is visible, which happens on
+the frame a panel is first mounted and on any frame the dock gives it no
+height.
+
+### `struct PagesUi`
+
+Held by [`crate::panels::PanelsState`], which owns every panel's
+inter-frame state — see its header for why that is there rather than on
+`PdfcerApp`.

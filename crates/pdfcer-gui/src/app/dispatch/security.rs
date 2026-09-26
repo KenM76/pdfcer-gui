@@ -6,12 +6,6 @@ use crate::app::PdfcerApp;
 use crate::protect::Task;
 
 /// Whether `id` is one of the Security commands this module dispatches.
-///
-/// Paired with [`PdfcerApp::dispatch_security`] over the same list, and the
-/// two are pinned together by a test — [`super::panels::claims`]' arrangement
-/// and its reason: a guard and a dispatcher that disagree turn a registered
-/// command into one that traces `command-unimplemented`, which looks from the
-/// outside exactly like a command nobody wired.
 #[must_use]
 pub(crate) fn claims(id: &str) -> bool {
     // `file.sign` is behind the `signing` feature, so a build without it
@@ -25,17 +19,6 @@ pub(crate) fn claims(id: &str) -> bool {
 
 impl PdfcerApp {
     /// Open the Encrypt / Permissions window on the right starting point.
-    ///
-    /// The two commands differ in exactly one value — the [`Task`] — and
-    /// everything else about them is one implementation, which is the whole
-    /// argument `crate::protect::Task`'s own doc makes: two windows would put
-    /// the password fields, the destination choice, the disclosures and the
-    /// atomic write in two files, and the second copy is where a disclosure
-    /// goes missing.
-    ///
-    /// The already-open guard lives in
-    /// [`crate::dialogs::DialogsState::open_protect`] rather than here, so a
-    /// chord and a ribbon click are gated by one expression.
     pub(in crate::app) fn dispatch_security(&mut self, id: &str) {
         // Signing is its own window, not a third `Task`. The two encryption
         // commands share a window because they differ in exactly one value; a

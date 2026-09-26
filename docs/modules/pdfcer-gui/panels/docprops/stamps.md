@@ -66,3 +66,38 @@ draws**, with no cache, and that is a decision rather than an oversight.
 as [`super::facts`] reads. That is right rather than merely convenient: no
 verb in this shell edits a name tree, so the base revision's tree *is* the
 current one, and there is no session state that could disagree with it.
+
+## Item notes
+
+### `const REGION`
+
+That conditional publication is the contract, and it is the half a driven
+check can only test with a **second launch**: a region declared on
+`fixtures/stamps-standard-business.pdf` *and* declared on an ordinary
+drawing would be a heading that is always there — a different defect wearing
+the same green tick. [`super::REGION_ANOMALIES`] carries the same shape and
+the same warning.
+
+Named under the `properties.` prefix like its neighbours, so that the
+`declared_names(&trace, "properties")` dump several checks print when they
+cannot find a region lists it. A region under a prefix nobody enumerates is
+discoverable only by whoever wrote it.
+
+### `const REGION_ROW_PREFIX`
+
+⚠ Indexed by tree position, **not** by page number, and the difference is
+the whole subject of [`crate::stamps`]' re-opening logic: the name tree is
+sorted lexicographically (§7.9.6) and the pages are not, so tree entry 1 is
+routinely not page 2. A check that wants a particular stamp must read the
+row it finds, never compute an index from a page.
+
+### `fn section`
+
+# The test is the name tree, never the title
+
+[`crate::stamps::is_collection`] asks whether the document has **named
+pages**. A PDF with a `/Title` and no name tree is just a PDF with a title,
+and every drawing the operator opens has one of those. Testing the title
+would put this section on most of his files, which is the failure mode a
+conditional section has: shown too often, it stops being information and
+becomes furniture.

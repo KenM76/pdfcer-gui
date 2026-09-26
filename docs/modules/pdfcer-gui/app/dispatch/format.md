@@ -86,3 +86,17 @@ It does not clear the selection, it does not take the erase preview, and it
 does not word anything. The first two belong to `actions::vector::apply`
 (which owns the four-step protocol and the O63 preview) and the third to
 [`crate::text::deleting`]. This function's whole job is *ask, then raise*.
+
+### `fn handles`
+
+`pub(crate)` rather than `pub(super)`, for the reason `dispatch::pages`
+gives: `shell::commands::reach`'s `guard_claiming` calls it, because the
+reachability checker must be able to EVALUATE every guard arm it finds — a
+guard it cannot evaluate is a place commands could hide from the check that
+exists to find them.
+
+### `fn dispatch`
+
+`id` is guaranteed to be one [`handles`] claims — the caller's arm is
+guarded on it — so the fall-through is unreachable and says so rather than
+silently doing nothing.

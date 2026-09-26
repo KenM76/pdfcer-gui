@@ -130,3 +130,71 @@ Deliberately does **not** refuse an impossible combination. The window
 prevents it (the checkbox is dead while JPEG is selected) and the writer
 refuses it by name; a third refusal here would silently drop the press
 with no sentence anywhere, which is the one outcome worse than either.
+
+### `fn region_for_format`
+
+# Why the group region was not enough, and what it cost to find out
+
+[`REGION_FORMAT`] is the union of the whole group ([`ExportImageDialog::
+format_group`] takes `start.union(ui.cursor())`), which is exactly right for
+*"where is the format chooser"* and useless for *"press EMF"*. A harness
+holding one union rectangle can only guess at a radio inside it by dividing
+the height by the number of radios — which is a guess that silently selects
+the wrong format the day a hint wraps onto a second line.
+
+⇒ **A driven check that clicks a computed offset inside a container is a
+check that will one day pass while pressing something else.** So each radio
+declares its own rectangle, named after the format, and the harness clicks
+what it asked for.
+
+The names are trace identifiers rather than prose — they are matched by
+`tools/ui-verify`, never displayed — and they are `const` per variant rather
+than formatted, so the harness's string and this one cannot drift.
+
+### `fn region_for_scope`
+
+Same argument as [`region_for_format`], which states it in full and is
+not repeated here: a check that presses the group's rectangle plus an
+offset is a check that presses the wrong control the day a hint gains a
+line.
+
+These exist for O196. Until the export windows remembered anything, a
+driven check had nothing to assert about a radio beyond "it is drawn";
+now the question is which one is *selected on open*, and that cannot be
+asked of a group.
+
+### `const REGION_QUALITY`
+
+⚠ Published only while JPEG is selected, because the control is drawn
+only then — see [`ExportImageDialog::quality_group`]. A driven check that
+cannot find it has not found a defect; it has found a PNG.
+
+### `fn open`
+
+> *"the export windows forget everything. every time I export a dxf I
+> have to set it up again."*
+
+Five of the fields below were literals until that day. The membership
+rule — **a setting is remembered only if it would still be the right
+answer for a different document** — and the argument for every
+inclusion and every omission live on
+[`crate::app::prefs::ExportImagePrefs`]. Read that first; this is only
+the seeding.
+
+⚠ `range_text` is NOT seeded and is not a preference. A typed range
+is a statement about *this document's* page numbering, and restoring
+"12-40" onto a nine-page file would open the window in a state whose
+Export button is already dead for a reason the operator did not cause.
+
+### `fn show`
+
+Takes `&mut Prefs` for O196 alone: the Export press writes this
+window's habits to the preferences file before the action is pushed.
+See [`crate::dialogs::export_remembered`] for why it happens at the
+press and not at the close.
+
+### `fn open_for`
+
+The `doc.pages` guard is the command's too, and it is real rather than
+ceremonial: every control in the window is a statement about a page, and the
+largest-page measurement has nothing to fold over on an empty document.

@@ -92,3 +92,65 @@ It is not a policy about *what* the model is used for, and it holds no
 `egui` state of its own. It is a pure predicate over the frame's facts, so
 every rule in it is a unit test rather than something to be hoped for in a
 running window.
+
+## Item notes
+
+### `struct Need`
+
+A struct rather than six positional arguments, for the reason
+`canvas::keys::Keys` gives: the list has grown four times and every growth
+was a defect being fixed, so the next one should read as a new named fact
+rather than as a seventh `bool` nobody can order correctly at the call site.
+
+### `fn wanted`
+
+The four terms are OR-ed and each is documented on its own field or
+function. Nothing here short-circuits for cost reasons — every term is a
+field read or a `matches!`, and the expensive thing is what this decides
+to call, not the deciding.
+
+### `fn delete_at_a_deeper_rung`
+
+Delete at the Part or Node rung reaches
+[`crate::canvas::deleting::subject`], which needs the decomposition to
+answer *what kind of part is this* — a subpath and a show operator wear
+the same `subpath: Some(n)` field on a
+[`crate::canvas::selection::Selection`] and reach **different engine
+verbs** (`delete_subpath` and `delete_text_run`). Without a model it
+declines `NoObjectModel`, which is the correct refusal for *"the page
+would not decompose"* and was, for one commit, reporting *"nobody asked
+for it"*.
+
+# Why the rung is part of the condition
+
+The **Object** rung answers from the selection alone: an entry already
+holds a resolved `TargetId` and `object_indices_on` is a filter over
+four integers. Asking for a decomposition on every Delete would make
+the commonest destructive keystroke in the program pay 531 ms after
+each content edit for a value that arm never reads. `subject`'s own
+signature encodes the same asymmetry and says why.
+
+# Why it is deliberately over-broad in the other direction
+
+This does not replicate `canvas::keys`' guards — a focused text widget,
+a draft in flight, a mode without `edit_content`, a form field or an
+annotation claiming the key first. Every one of those would be a second
+statement of a rule that already exists three hundred lines away, free
+to drift from it; and being wrong in this direction costs a **cache
+hit**, while being wrong in the other direction is the defect this
+module exists to end. Over-asking is the safe error and it is chosen on
+purpose.
+
+### `fn gesture_needs_model`
+
+An exhaustive `match` with **no wildcard arm**, and that is the whole
+point of the function. A new [`GestureOutcome`] variant is a compile error
+here until somebody answers this question for it — where the `matches!`
+this replaces would have answered `false` in silence, which is exactly how
+`Resize`, `Handle` and `DimensionVertex` each shipped needing the model and
+not asking for it.
+
+⚠ **Do not add a `_ =>` arm.** It compiles, it looks tidy, and it restores
+the defect this function was written to remove. If a variant genuinely does
+not need the model, say so by name — the `false` arms below are a list of
+deliberate answers, not a default.

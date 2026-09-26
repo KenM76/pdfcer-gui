@@ -6,11 +6,6 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/scaling.md`.
 
 /// What rides along with the geometry when an annotation is resized.
-///
-/// Every field maps one-to-one onto a `pdfcer_core::edit::ResizeOptions` field,
-/// deliberately. A shell-side name that aggregated two engine options, or
-/// inverted one for readability, would be a second vocabulary to keep in step —
-/// and the inversion is exactly where such a thing goes wrong silently.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Modifiers {
     /// Scale `/BS /W` by the same factor as the geometry.
@@ -51,16 +46,6 @@ pub fn store(ctx: &egui::Context, modifiers: Modifiers) {
 
 impl Modifiers {
     /// The engine request these describe.
-    ///
-    ///
-    ///
-    /// ⇒ It also made the operator's answer unreachable. Once the switch
-    /// exists, deriving the same flag from geometry **overrides them silently**
-    /// on exactly the resizes where they were most likely to have an opinion.
-    ///
-    /// What replaced it is a **worded decline**: the engine's refusal is
-    /// caught and turned into a sentence naming both remedies, so the operator
-    /// meets a choice rather than a nothing. `app::status::decline` carries it.
     #[must_use]
     pub fn to_options(self) -> pdfcer_core::edit::ResizeOptions {
         // Builders, not a struct literal: `ResizeOptions` is

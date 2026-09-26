@@ -12,16 +12,6 @@
 
 /// **The run ended where the operator asked it to** — said on the outcome
 /// screen, above the reassurance that the words are in the document.
-///
-/// A stopped run is a success and an incomplete one at the same time, and this
-/// is the sentence that stops the first half hiding the second. Somebody who
-/// ends a 200-page recognition at page 40 must not walk away believing the
-/// document is done; they find out otherwise months later, searching for a word
-/// on page 150 that is not in the layer.
-///
-/// It names both numbers. "Stopped early" alone leaves them to guess how much
-/// they have, and the answer is the whole point of having pressed Stop rather
-/// than Cancel.
 #[must_use]
 pub fn stopped_early(attempted: usize, of: usize) -> String {
     format!(
@@ -30,10 +20,6 @@ pub fn stopped_early(attempted: usize, of: usize) -> String {
 }
 
 /// **Everything was thrown away**, which is what Cancel means.
-///
-/// It says the document is untouched, because that is the fact the operator
-/// is actually checking for — a half-written layer is the thing they pressed
-/// Cancel to avoid, and silence about it leaves them to wonder.
 #[must_use]
 pub fn cancelled(attempted: usize) -> String {
     if attempted == 0 {
@@ -46,15 +32,6 @@ pub fn cancelled(attempted: usize) -> String {
 }
 
 /// **What the recogniser is doing right now.**
-///
-/// Operator request, 2026-09-01: *"so that the user can see that it is doing
-/// something and hasn't frozen on large documents."*
-///
-/// Three moving numbers, and each answers a different worry. The page count
-/// answers *"how far"*; the character count answers *"is it still alive"* —
-/// it moves on a dense sheet where the word count barely does; and naming the
-/// page it is ON rather than only the count tells an operator whose scan is bad
-/// exactly which sheet to look at afterwards.
 #[must_use]
 pub fn working_progress(attempted: usize, of: usize, words: usize, chars: usize) -> String {
     format!("Page {attempted} of {of} — {words} words, {chars} characters so far")
@@ -96,24 +73,12 @@ pub fn title() -> &'static str {
 }
 
 /// The sentence at the top of the dialog, before anything has been run.
-///
-/// Says what the operation *does to the page*, because that is the first
-/// question an operator has about a tool that rewrites a document they may
-/// have to defend the provenance of. The answer — nothing visible changes, the
-/// image is not re-encoded — is `ocr::layer`'s own guarantee and is worth
-/// leading with rather than burying under a progress bar.
 #[must_use]
 pub fn intro() -> &'static str {
     "Reads the words in the page image and adds them as invisible text behind it, so Find and copy work. The page still looks exactly the same, and the scan itself is never re-encoded."
 }
 
 /// The label on the control that starts recognition.
-///
-/// **No longer "Recognise this page".** It said that because that was all it
-/// could do, and the operator's 2026-08-26 report — *"how do I OCR more than
-/// one page? Why does the tool stop at one?"* — was as much about the label as
-/// about the capability: a button naming one page is a button that has already
-/// answered the question, wrongly.
 #[must_use]
 pub fn run() -> &'static str {
     "Recognise"
@@ -134,22 +99,12 @@ pub fn scope_heading() -> &'static str {
 }
 
 /// Every page of the document — the default.
-///
-/// First in the list **and** pre-selected, which are two decisions and both
-/// deliberate. First because the surveyed tools put it first; pre-selected
-/// because recognising a scan means recognising the scan, not one sheet of it.
-/// The old behaviour is the second option and one click away.
 #[must_use]
 pub fn scope_all() -> &'static str {
     "All pages"
 }
 
 /// Only the page the dialog opened on. `page` is one-based, for display.
-///
-/// It names the number rather than saying *"the current page"* because the
-/// operator can page the document while this window is up, and by the time
-/// they read the label "current" may no longer mean what the run will do. The
-/// number cannot drift.
 #[must_use]
 pub fn scope_current(page: usize) -> String {
     format!("This page only (page {page})")
@@ -157,27 +112,6 @@ pub fn scope_current(page: usize) -> String {
 
 /// **The pages picked in the thumbnail rail** —
 /// `OPERATOR_REQUESTS.md` O79.
-///
-/// The operator: *"I should have options to do the whole document, or the
-/// pages I have selected in the thumbnails."*
-///
-/// `count` is how many are picked, so the label states the operand rather than
-/// naming a place the operator then has to go and count. *"Selected pages"*
-/// alone would be a promise whose size is invisible from the dialog — and this
-/// is a run that can take minutes, so the number is the part that decides
-/// whether he presses the button.
-///
-/// # Why it is drawn only when something is picked
-///
-/// R9. With an empty rail selection this option has no operand at all, and a
-/// greyed radio saying *"Selected pages (0)"* would be a control explaining
-/// its own uselessness in a window that already has three working answers. The
-/// remedy is not on this surface — it is *go and pick some pages* — so there
-/// is nothing a hover could usefully say either.
-///
-/// The plural is written out for the same reason every count in this crate is:
-/// *"1 pages"* costs credibility on a surface whose whole job is being
-/// believed.
 #[must_use]
 pub fn scope_picked(count: usize) -> String {
     if count == 1 {
@@ -194,21 +128,12 @@ pub fn scope_range() -> &'static str {
 }
 
 /// The hint beside the range field.
-///
-/// Shows the syntax by example rather than describing it, because the syntax
-/// is `dialogs::print::tabs::parse_page_range`'s and an example is both shorter
-/// and harder to get subtly wrong than a description of it.
 #[must_use]
 pub fn scope_range_hint() -> &'static str {
     "e.g. 1-4, 7, 9-12"
 }
 
 /// Said under the range field when what was typed names no page.
-///
-/// Not an error — a **status**. A half-typed `1-` is an ordinary state of a
-/// text field the operator is in the middle of using, and colouring it red or
-/// popping a message would be scolding them for typing. The Recognise button is
-/// simply not available until the range resolves, and this says why.
 #[must_use]
 pub fn scope_range_unresolved() -> &'static str {
     "Type page numbers to recognise, like 1-4 or 2, 5, 9."
@@ -228,15 +153,6 @@ pub fn skip_pages_with_text_tooltip() -> &'static str {
 }
 
 /// Its tooltip.
-///
-/// Names the cost in the operator's terms. There is no measured figure to
-/// quote — see the module header on what this surface is not entitled to
-/// claim — so it says *seconds* and says which page, which are both true and
-/// checkable.
-///
-/// ⚠ **The last clause is false.** The recogniser runs on a detached worker
-/// (`crate::ocr::job`) and the dialog stays live with a spinner, a page count,
-/// Stop and Cancel. `DEFECTS.md` D40.
 #[must_use]
 pub fn run_tooltip() -> &'static str {
     "Runs the recogniser over the pages you chose. It takes a few seconds per page, and the window will not respond while it does."
@@ -255,18 +171,6 @@ pub fn what_was_inferred() -> &'static str {
 }
 
 /// **The confidence sentence, and the most load-bearing string here.**
-///
-/// Worded to refuse a specific wrong reading rather than to state a neutral
-/// fact, because the wrong reading is the one a reader arrives with: a page of
-/// recognised text with no warnings on it looks checked. It is not checked. It
-/// was never scored either way.
-///
-/// The engine emits its own version of this through
-/// `OcrLayerReport::disclosures()`, and the two are deliberately both present:
-/// that one appears in the list of disclosures beside the counts, this one is
-/// the dialog's own heading-level statement, and the operator reads the second
-/// before they read the list. Duplication is the point — this is the one fact
-/// that must not be missed by someone who skims.
 #[must_use]
 pub fn no_confidence() -> &'static str {
     "This recogniser reports no confidence score for any word, so nothing here has been checked — that is not the same as everything being right. Read the text before you rely on it."
@@ -311,17 +215,6 @@ pub const fn engine_tooltip(engine: crate::ocr::EngineId) -> &'static str {
 }
 
 /// **The sentence that replaced the whole save apparatus.**
-///
-/// It says three things in one line, and each was a separate control before:
-/// the words are *in the document*, an ordinary Save writes them, and an
-/// ordinary Undo removes them.
-///
-/// The operator, 2026-08-26: *"Why do I have to save a copy instead of just go
-/// back into my pdf and save over it or save from there?"* The answer was that
-/// `add_ocr_layer` took an immutable document and handed back a whole file, so
-/// this shell had nothing to put the layer *into*. The engine's Pass 135.0
-/// (2026-08-27) made recognition an edit, and the honest sentence is now the
-/// short one.
 #[must_use]
 pub fn applied_to_document() -> &'static str {
     "The text is now in this document. Save when you are ready, or press Ctrl+Z to take it back out."
@@ -334,10 +227,6 @@ pub fn save_dialog_title() -> &'static str {
 }
 
 /// The suffix appended to the original file's stem to suggest a name.
-///
-/// A suggestion, not a rule — the operator can type anything. It exists so the
-/// default answer is never the file they opened, which is the same protection
-/// the label spells out in words.
 #[must_use]
 pub fn suggested_suffix() -> &'static str {
     "-recognised"
@@ -359,18 +248,6 @@ pub fn close() -> &'static str {
 // ---------------------------------------------------------------------------
 
 /// The models are not where this build looks for them.
-///
-/// `searched` is the engine's own list of every directory it tried, in order.
-/// It is part of the message rather than a detail: *"models not found"* is
-/// unactionable, and the list is what tells an operator either where to put
-/// the files or — just as often — that they put them somewhere pdfcer never
-/// looks.
-///
-/// It takes a **list**, not a pre-joined string, and the separator below is
-/// why: a comma and a space between two paths is punctuation an operator reads,
-/// so it is copy and belongs in this file rather than at the call site.
-/// `tools/gates/check-ui-strings.sh` caught exactly that `", "` sitting in
-/// `dialogs::ocr::sentence`, and it was right to.
 #[must_use]
 pub fn models_missing(searched: &[String]) -> String {
     let list = searched.join(", ");
@@ -381,45 +258,24 @@ pub fn models_missing(searched: &[String]) -> String {
 }
 
 /// This build was compiled without the recogniser.
-///
-/// A named refusal rather than a greyed control, and distinct from
-/// [`models_missing`] on purpose: *"cannot look for text"* and *"could not
-/// find the files to look with"* call for completely different actions, and
-/// the engine's own feature block insists the two never collapse into one
-/// answer.
 #[must_use]
 pub fn engine_absent() -> &'static str {
     "This build was made without the text recogniser, so it cannot read words from an image. A standard pdfcer build can."
 }
 
 /// Recognition ran and found no word it could place.
-///
-/// Distinct from a failure: the engine worked, the page simply had nothing on
-/// it a recogniser could read. Blank paper and a photograph of a wall both
-/// land here, and so does a page whose ink is too faint.
 #[must_use]
 pub fn nothing_recognised() -> &'static str {
     "No text was recognised on this page. There may be nothing readable on it, or the image may be too small or too faint."
 }
 
 /// Every page in the run already had text, so nothing was recognised.
-///
-/// Distinct from [`nothing_recognised`], which reports that the recogniser
-/// looked and found nothing. This reports that it **declined to look**, which
-/// is a different fact with a different remedy — one is "there is nothing
-/// readable here", the other is "there is already text here and I did not want
-/// to double it". Collapsing them would leave the operator with no way to tell
-/// a blank scan from a document that was already recognised last week.
 #[must_use]
 pub fn already_has_text() -> &'static str {
     "Every page selected already has text, so none were recognised. Turn off \u{201c}Skip pages that already have text\u{201d} to recognise them anyway."
 }
 
 /// What a multi-page run did, in pages.
-///
-/// Only shown when the run covered more than one page — a one-page run reports
-/// its words and nothing else, because *"1 page recognised"* is a sentence that
-/// tells the operator only what they already did.
 #[must_use]
 pub fn pages_outcome(written: usize, skipped: usize) -> String {
     let pages = if written == 1 { "page" } else { "pages" };
@@ -434,12 +290,6 @@ pub fn pages_outcome(written: usize, skipped: usize) -> String {
 }
 
 /// The recogniser or the layer writer refused, carrying the engine's reason.
-///
-/// The engine's own sentence is appended rather than replaced. `pdfcer-core`'s
-/// error types name specific causes — an encrypted document, a page index past
-/// the end, a model file the runtime rejected — and paraphrasing them here
-/// would produce a second, vaguer account of a diagnosis that was already
-/// precise.
 #[must_use]
 pub fn failed(reason: &str) -> String {
     format!("Recognition did not finish: {reason}")
@@ -450,24 +300,12 @@ pub fn failed(reason: &str) -> String {
 // ---------------------------------------------------------------------------
 
 /// **The sentence the Find bar shows when the page has no text at all.**
-///
-/// It reports the *page*, not the search. That distinction is the whole rule
-/// and the operator stated it: the trigger is *"this document is images"*, and
-/// it is **not** *"this search had no matches"*. A search for a word that
-/// simply is not in a text PDF is an ordinary empty result, and offering to
-/// recognise it would be nonsense — so this sentence says what was actually
-/// established, which is that there is no text on this page for any search to
-/// have found.
 #[must_use]
 pub fn offer() -> &'static str {
     "This page has no text on it — only an image."
 }
 
 /// The control beside it.
-///
-/// Ellipsis, because it opens the dialog rather than recognising on the spot.
-/// A search bar is the wrong place to start several seconds of work from a
-/// single click.
 #[must_use]
 pub fn offer_action() -> &'static str {
     "Recognise text…"
@@ -481,32 +319,18 @@ pub fn offer_tooltip() -> &'static str {
 
 /// The View ▸ Display blend control, which fades between the scan and the
 /// recognised text drawn over it.
-///
-/// Worded as a **position between two things**, not as an opacity: the one
-/// number moves the picture down and the text up at once, and "opacity" would
-/// name only half of what the operator sees move.
 #[must_use]
 pub fn layer_blend_label() -> &'static str {
     "Text layer"
 }
 
 /// Its tooltip.
-///
-/// Says what each end of the travel *is*, because the middle of the range is
-/// self-explanatory and the ends are the two states worth reaching
-/// deliberately — read the paper, or read what the recogniser thinks the paper
-/// says, with nothing behind it to argue.
 #[must_use]
 pub fn layer_blend_tooltip() -> &'static str {
     "Fades between the scanned page and the recognised text drawn over it. All the way left is the page alone; all the way right is the recognised text alone, on blank paper."
 }
 
 /// The unit on the blend control's number.
-///
-/// Its own function rather than a literal in the band, for the reason every
-/// suffix in this catalog is: the control shows it and the status bar shows
-/// it, and a unit spelled twice is a unit that will one day be spelled two
-/// ways.
 #[must_use]
 pub fn layer_blend_suffix() -> &'static str {
     "%"

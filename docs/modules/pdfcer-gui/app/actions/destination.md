@@ -85,3 +85,15 @@ The mirror of this test is the one that cannot be written here and is
 stated instead: a `left` of `0.0` is a REAL left edge and must reach the
 scroll. Collapsing the two conventions is how a destination at a page's
 top-left corner silently becomes "no change".
+
+### `fn actions_for`
+
+The page step is always first and always unconditional: every view is
+relative to a page, and a view applied before the page turn would frame a
+region of the wrong sheet. `GoToPage` is idempotent, so a destination on the
+current page costs nothing.
+
+Returns actions rather than performing the move, because this is called
+from a panel body — `panels::bookmarks` states the rule its own header
+carries: *"it changes no document at all"*, and framing a view is a change
+to `OpenDoc::view` that belongs in the apply phase with every other.

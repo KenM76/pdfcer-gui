@@ -8,10 +8,6 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/text/dropped.md`.
 
 /// More than one file was dropped and only the first was acted on.
-///
-/// Said rather than swallowed: an operator who drags four drawings and gets
-/// one open has been told something false by the silence — that the other three
-/// failed, or that they missed the window with them.
 #[must_use]
 pub fn only_the_first(count: usize) -> String {
     format!(
@@ -20,12 +16,6 @@ pub fn only_the_first(count: usize) -> String {
 }
 
 /// An image was dropped with no document open.
-///
-/// The one refusal here that **must** name the remedy. There is no page to
-/// put a picture on, and *"cannot insert"* leaves the operator to work out for
-/// themselves that a document is the missing ingredient — which is exactly the
-/// deduction they are least likely to make, because they were thinking about the
-/// picture.
 #[must_use]
 pub const fn image_needs_a_document() -> &'static str {
     // "the File tab" rather than the ribbon-path spelling with a

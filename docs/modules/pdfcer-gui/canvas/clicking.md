@@ -108,3 +108,14 @@ That is the honest direction. `page_text` is `None` before the extraction has
 run for this page; treating "I do not know yet" as "there is text here" would
 make the image unclickable for the first frames after a page turn, which is
 the flicker an operator reports as *"sometimes it does not work"*.
+
+### `struct Frame`
+
+The `Frame` shape this codebase already uses for `resizing`, `handledrag`
+and `dimdrag`, and for the reason those give: the members are read-only
+facts about one frame, so grouping them says what they are and removes the
+failure a long parameter list invites — three of the four `bool`s below
+would compile in each other's places.
+
+The two things that are **mutated** stay outside it, deliberately: a
+`Frame` is what the frame knows, and a selection is what the document is.

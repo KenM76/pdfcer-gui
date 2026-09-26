@@ -12,42 +12,15 @@ use pdfcer_core::document::Document;
 use pdfcer_core::page_tree::Page;
 
 /// **The blank document, as bytes.**
-///
-/// 443 bytes: one A4 page with an empty content stream, a classic
-/// cross-reference table, and nothing else. `assets/PROVENANCE.md` documents
-/// every object in it and why each is shaped the way it is.
-///
-/// `include_bytes!` rather than a read at start-up, for two reasons that both
-/// bite in the field: a portable folder whose template file was deleted would
-/// produce a New that fails on a machine nobody can see, and a template that
-/// can be replaced on disk is a template whose bytes are not the bytes the
-/// tests pinned.
 pub const TEMPLATE: &[u8] = include_bytes!("assets/blank-a4.pdf");
 
 /// The template page's width in PDF units. ISO 216 A4: 210 mm at 72/inch.
-///
-/// Public so the test below can assert the *asset* matches the *decision*
-/// rather than merely matching itself. A constant compared against nothing is
-/// documentation; compared against the parsed `MediaBox` it is a check.
 pub const WIDTH_PT: f64 = 595.276;
 
 /// The template page's height in PDF units. ISO 216 A4: 297 mm at 72/inch.
 pub const HEIGHT_PT: f64 = 841.89;
 
 /// **Parse [`TEMPLATE`] into a document and its page vector.**
-///
-/// The same two steps `PdfcerApp::open_path` performs on a file, in the same
-/// order, so a created document reaches `OpenDoc` through the identical
-/// pipeline an opened one does. Nothing here is a shortcut around the engine.
-///
-/// # Errors
-///
-/// The engine's own message, ready to be shown by
-/// `crate::text::open_failed`. **Unreachable in a correct build** — the bytes
-/// are compiled in and [`tests::the_template_parses_and_holds_exactly_one_page`]
-/// pins that they parse — but returned rather than unwrapped, because the
-/// state it would describe is "this binary was built with a corrupt asset",
-/// and an operator meeting that deserves a sentence rather than a stack trace.
 pub fn document() -> Result<(Document, Vec<Page>), String> {
     let doc = Document::from_bytes(TEMPLATE.to_vec()).map_err(|err| err.to_string())?;
     let pages = pdfcer_core::page_tree::pages(&doc).map_err(|err| err.to_string())?;

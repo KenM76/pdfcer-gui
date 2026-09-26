@@ -19,33 +19,6 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/app/prefs/quality.md`.
 
 /// How sharply a page is rasterised, as a multiplier on the natural scale.
-///
-/// # What "natural" is, and why this multiplies rather than replaces
-///
-/// `viewer::raster_scale` is `zoom × pixels_per_point`: one raster pixel per
-/// *device* pixel, which is the scale at which a page is exactly as sharp as
-/// the display can show and no sharper. That is the right default and it is
-/// what [`RenderQuality::Normal`] means.
-///
-/// The two other values trade against it in opposite directions, and both are
-/// real needs on the drawings this shell is for:
-///
-/// - **Faster** renders at 0.75× and lets the GPU upscale. On the benchmark
-///   CAD sheet — 5.6 MB of dense vector site plan — that is roughly half the
-///   pixels and therefore roughly half the rasterisation time, at the cost of
-///   softness that is most visible on the thin linework such a drawing is
-///   made of. An operator panning around a big sheet looking for something may
-///   well want it; an operator checking a dimension will not.
-/// - **Sharper** renders at 1.5×. Pointless on most content and genuinely
-///   better on small text over a hairline grid, where a device pixel straddles
-///   two strokes and neither survives.
-///
-/// # Why three values and not a slider
-///
-/// Because the useful range is narrow and the middle of it is almost always
-/// right. A slider invites an operator to spend attention tuning a number that
-/// will not repay it, and — more practically — every intermediate value costs a
-/// full re-raster of every visible page to evaluate.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum RenderQuality {
     /// 0.75× — fewer pixels, softer lines, quicker.
@@ -59,11 +32,6 @@ pub enum RenderQuality {
 
 impl RenderQuality {
     /// Every value, in the order the settings window lists them.
-    ///
-    /// Worst-to-best rather than best-to-worst, so the control reads left to
-    /// right as *less … more*, which is the direction a reader expects of a
-    /// quality scale. The default sits in the middle of it, where a three-way
-    /// control wants it.
     pub const ALL: &'static [Self] = &[Self::Faster, Self::Normal, Self::Sharper];
 
     /// The multiplier applied to the natural raster scale.
@@ -77,11 +45,6 @@ impl RenderQuality {
     }
 
     /// The token written to the preferences file.
-    ///
-    /// Stable across releases and deliberately not the display name: a display
-    /// name is operator copy and may be reworded or translated, and a file
-    /// whose keys moved when the wording did would silently reset everybody's
-    /// preference. Same rule `egui_shell::theme::Preset::key` follows.
     #[must_use]
     pub const fn key(self) -> &'static str {
         match self {
@@ -95,10 +58,6 @@ impl RenderQuality {
     }
 
     /// Read a token back, or `None` if it names nothing.
-    ///
-    /// `None` rather than a default, so the loader can *report* an unreadable
-    /// value rather than silently substituting one — the per-key recovery
-    /// contract in the module header.
     #[must_use]
     pub fn from_key(key: &str) -> Option<Self> {
         Self::ALL.iter().copied().find(|q| q.key() == key)
@@ -106,27 +65,12 @@ impl RenderQuality {
 }
 
 /// The shortest zoom-settle delay offered, in milliseconds.
-///
-/// Zero is excluded and that is a decision. A settle of zero means *rasterise
-/// every intermediate value of a wheel gesture*, which on a dense CAD sheet is
-/// dozens of full-page renders producing images nobody sees — the exact cost
-/// the debounce exists to avoid. 20 ms is short enough to feel immediate and
-/// long enough to swallow the burst of events one wheel notch produces.
 pub const MIN_SETTLE_MS: u64 = 20;
 
 /// The longest offered.
-///
-/// Beyond about a second the interim scaled texture stops reading as "still
-/// settling" and starts reading as "stuck", which is a worse impression than
-/// the CPU cost it saves.
 pub const MAX_SETTLE_MS: u64 = 1000;
 
 /// The shipped settle, in milliseconds.
-///
-/// 150 ms, measured against real CAD sheets, and the same value
-/// `crate::render::settle::ZOOM_SETTLE` compiles in. The two must agree: a
-/// preferences file that names no settle has to debounce exactly as the
-/// compiled-in deadline does, or the choice changes behaviour by existing.
 pub const DEFAULT_SETTLE_MS: u64 = 150;
 
 #[cfg(test)]

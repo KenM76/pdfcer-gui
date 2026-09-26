@@ -29,32 +29,9 @@ mod readmode;
 mod selected;
 
 /// The worded decline — a command that was invoked and did not run.
-///
-/// Split out under R2 like [`page_box`], and along a seam of the same kind:
-/// what is left here answers *"how is the bar laid out, and what does each
-/// group show?"*, while that module answers *"what did a refused command owe
-/// the operator, and how long does it owe it for?"* — its own store, its own
-/// vocabulary, its own pure retirement predicate, and an argument about speech
-/// acts that nothing else on this surface shares.
-///
-/// `pub(super)` rather than private, unlike [`page_box`]: `crate::app::dispatch`
-/// is the choke point that records a decline and retires it, so the store has
-/// to be reachable from a sibling of this module. Nothing outside `crate::app`
-/// can see it, which is the right boundary — a decline is written by the one
-/// dispatcher and read by the one bar.
 pub(super) mod decline;
 
 /// The narrator — the render-diagnostics disclosure and its one line.
-///
-///
-/// It is `pub(crate)` rather than private for exactly one export:
-/// [`notes::findings`], the ordered, filtered list of what a raster
-/// compromised on. The Render-diagnostics dialog
-/// (`crate::dialogs::diagnostics`) shows the same facts with room for more than
-/// one line, and the *editorial* rules behind that list — which counters are
-/// actionable, which two are excluded, and in whose interest the order is —
-/// belong to the narrator and must be stated once. The dialog joins nothing and
-/// filters nothing; it lists what this module already decided.
 pub(crate) mod notes;
 
 use egui::{Align, Layout, Vec2};
@@ -66,28 +43,13 @@ use crate::find::FindState;
 use crate::text::find as t_find;
 
 /// The **Select** popup — what a click on the page may land on (O17).
-///
-/// The one control on this bar that is not a readout: everything else here
-/// reports what is true about the view, and this changes what the pointer
-/// does. Its header carries why that earns it both its own file and its own
-/// position at the left edge of the fixed cluster.
 pub(super) mod filter;
 /// The **maximum-zoom** popup, behind the zoom readout — O24, and the
 /// operator's *"put the max zoom setting on the bar at the bottom"*.
-///
-/// Its header carries why the readout rather than a new control: the bar's
-/// height and right-hand cluster are fixed, and a label that turns out to be
-/// a button is already this surface's idiom.
 pub(super) mod maxzoom;
 /// **Why zooming in stopped** — O186's fourth clause, the one sentence that
 /// keeps the learned raster ceiling from being a control that silently stops
 /// responding.
-///
-/// The only line on this bar that needs **no store and no retirement rule**: it
-/// is a pure function of the current frame's state, so it appears at the ceiling
-/// and is gone the moment he zooms out, turns the page, or edits it. Its header
-/// carries why that follows from what the sentence means rather than being a
-/// shortcut, and why [`decline`]'s partial-grant ruling does not cover it.
 pub(super) mod rasterstop;
 /// The zoom controls and the maximum-zoom popup the readout opens.
 ///
@@ -100,18 +62,6 @@ pub(super) mod zoom;
 // ---------------------------------------------------------------------------
 
 /// The exact outer height, in egui points, the status panel must be given.
-///
-/// **Pass this to `egui::Panel::bottom(..).exact_size(..)`, not to
-/// `default_height`.** The difference is rule R128: `exact_size` pins the
-/// panel's outer size so its content cannot perturb the central region at
-/// all, and every other sizing API leaves the fit-to-viewport feedback loop
-/// open. The module docs carry the measured case.
-///
-/// [`ROW_HEIGHT_PTS`] plus egui's own `Frame::side_top_panel` inner margin
-/// (2 pt above and below) plus a little room for the panel's separator
-/// stroke. Generous rather than tight: a bar whose content is clipped by one
-/// point is a legibility defect, and the cost of the slack is four pixels of
-/// canvas that never change size.
 pub const HEIGHT_PTS: f32 = 30.0;
 
 /// **The panel's height for a given theme** — use this, not [`HEIGHT_PTS`].
@@ -189,11 +139,6 @@ pub fn height_for(theme: &egui_shell::theme::Theme) -> f32 {
 }
 
 /// The height of the single row every control is laid out inside.
-///
-/// [`show`] allocates exactly this, so the bar's content height is a
-/// constant rather than a function of what there is to say — which is the
-/// second half of the R128 defence and the reason the disclosure draws its
-/// line *beside* the triangle rather than beneath it.
 pub const ROW_HEIGHT_PTS: f32 = 24.0;
 
 /// The panel must be taller than the row it contains, or the bar's own
@@ -208,11 +153,6 @@ const _: () = assert!(
 const ZOOM_READOUT_WIDTH_PTS: f32 = 46.0;
 
 /// The share of the bar the render-notes line may occupy before eliding.
-///
-/// The notes are the *least* urgent thing on this surface (`DEFECTS.md`:
-/// "excellent information, wrong prominence"), so on a narrow window they
-/// yield to the navigation controls rather than squeezing them. The full
-/// text is always available on hover, so nothing is lost — only deferred.
 pub(super) const NOTES_WIDTH_FRACTION: f32 = 0.45;
 
 // ---------------------------------------------------------------------------
@@ -226,33 +166,15 @@ pub(super) const NOTES_WIDTH_FRACTION: f32 = 0.45;
 const REGION_BAR: &str = "status-bar"; // ui-text-exempt: trace region name, never displayed
 
 /// The last fill's rule-4 disclosure, when one is live for this revision.
-///
-/// Named as a region so `ui-verify` can assert it is **on screen and
-/// legible** rather than merely constructed — which for a disclosure is the
-/// whole of the requirement.
 pub(super) const REGION_FILL_DISCLOSURE: &str = "status-group:fill-disclosure"; // ui-text-exempt: trace region name, never displayed
 
 /// The last vector edit's rule-4 disclosure, when one is live for this
 /// revision.
-///
-/// Named as a region for the same reason as its fill sibling: a disclosure's
-/// whole requirement is that it is **on screen and legible**, and `ui-verify`
-/// can only assert that about a rect the application published.
 pub(super) const REGION_EDIT_DISCLOSURE: &str = "status-group:edit-disclosure"; // ui-text-exempt: trace region name, never displayed
 
 /// See [`recovered_disclosure`].
 pub(super) const REGION_RECOVERED: &str = "status-group:recovered"; // ui-text-exempt: trace region name, never displayed
 /// The *"this file contradicted itself and pdfcer decided"* line.
-///
-/// The **third** region here that is about the FILE rather than about a gesture,
-/// and the one a driven check most needs by name: the engine's notice makes the
-/// whole tolerant-loading Pass conditional on the shell disclosing what was
-/// decided, so a census built into a zero-width rect would be the loader
-/// shipping without the thing that makes it honest. Only a published rect can
-/// tell "on screen and legible" from "constructed".
-///
-/// Distinct from [`REGION_RECOVERED`] on purpose — the two conditions are
-/// disjoint and can be live together; see [`anomalies`]' header for the table.
 pub(super) const REGION_LOAD_ANOMALIES: &str = "status-group:load-anomalies"; // ui-text-exempt: trace region name, never displayed
 /// The blend-space disclosure's rect, for `ui-verify`.
 ///
@@ -260,20 +182,9 @@ pub(super) const REGION_LOAD_ANOMALIES: &str = "status-group:load-anomalies"; //
 /// harness: renaming it turns a check into a skip rather than a failure.
 pub(super) const REGION_BLEND_SPACE: &str = "status-group:blend-space"; // ui-text-exempt: trace region name, never displayed
 /// The "the picture is still being drawn" line (`OPERATOR_REQUESTS.md` O63).
-///
-/// The one region in this group naming a **state** rather than an event, so a
-/// check reading it is asking *"is the page behind right now"* and not *"did an
-/// edit disclose something"*.
 pub(super) const REGION_CATCHING_UP: &str = "status-group:catching-up"; // ui-text-exempt: trace region name, never displayed
 /// The "line weights are off, so this is not what will print" line —
 /// `OPERATOR_REQUESTS.md` **O137**.
-///
-/// The **second** state region, and the one a driven check must be able to find
-/// by name, because the whole safety argument for the feature rests on the
-/// disclosure being **on screen and legible** rather than merely constructed.
-/// A `line_weights` toggle whose disclosure was built into a zero-width rect
-/// would be the feature shipping without the thing that makes it safe, and
-/// nothing but a published rect can tell those apart.
 pub(super) const REGION_LINE_WEIGHTS: &str = "status-group:line-weights"; // ui-text-exempt: trace region name, never displayed
 
 /// `Actual size · Fit width · Fit page`.
@@ -717,12 +628,6 @@ fn find_group(ui: &mut egui::Ui, find: &mut FindState) {
 // Right — fit
 
 /// Fixtures the bar's own tests and [`page_box`]'s tests both need.
-///
-/// A module of its own rather than helpers inside `mod tests`, because two
-/// sibling test modules share them and `pub(super)` on a helper buried in one
-/// of them would read as "the other module reaches into my tests" rather than
-/// as "this is the shared harness". Visible to `crate::app::status` and its
-/// descendants, and to nothing else.
 #[cfg(test)]
 pub(super) mod test_support {
     use super::{Action, PickFilter, Status, show};
@@ -730,11 +635,6 @@ pub(super) mod test_support {
     use egui::{Context, Event, Key, Modifiers, RawInput};
 
     /// An application status with the four-page fixture open.
-    ///
-    /// Opened through `crate::app::state::open_fixture`, which is the same
-    /// three calls `PdfcerApp::open_path` makes in the same order — so what
-    /// these tests drive is the real state machine rather than a hand-built
-    /// approximation of it.
     pub(in crate::app::status) fn opened() -> Status {
         Status::Open(Box::new(open_fixture(FOUR_PAGES)))
     }
@@ -783,27 +683,6 @@ pub(super) mod test_support {
 
     /// One frame of the bar, measured: how tall it was, and how many shapes
     /// it painted.
-    ///
-    /// `None` when no measurement happened at all — the closure never ran, or
-    /// it produced a non-finite height. **A measurement that did not happen
-    /// must not read as a measurement**, and that is not theoretical here:
-    /// `cargo test -p egui-shell` and `cargo test --workspace` compile `egui`
-    /// with different features (no fonts vs `default_fonts`), so a layout
-    /// assertion can be entirely vacuous under one of the two commands a
-    /// developer runs. A helper that returned a bare `f32` would hand a
-    /// vacuous run the same `NAN == NAN`-adjacent silence a real one gets.
-    ///
-    /// The shape count is the second half of the same discipline, and it is
-    /// the half that matters for a *sentence*: a height comparison between two
-    /// frames that both drew nothing is true and worthless. Counting the
-    /// painted shapes is how a test proves the line reached the painter rather
-    /// than merely reaching the data.
-    ///
-    /// Lives here rather than in `mod tests` because **three** R128 tests need
-    /// it — the fill line, the edit line and [`super::decline`]'s — and the
-    /// third is in a sibling module. `pub(super)` on a helper buried inside one
-    /// test module would read as "the other module reaches into my tests"
-    /// rather than as "this is the shared harness".
     pub(in crate::app::status) fn bar_frame(
         ctx: &Context,
         status: &Status,
@@ -834,12 +713,6 @@ pub(super) mod test_support {
     }
 
     /// Two frames, reporting the second.
-    ///
-    /// egui settles over a pass: fonts are laid out lazily, widget galleys are
-    /// cached on first sight, and animations start at their "from" value. A
-    /// single frame therefore compares one state's *first* look against
-    /// another state's *first* look, which is a comparison of two different
-    /// things. Every caller wants the steady state.
     pub(in crate::app::status) fn settled_bar_frame(
         ctx: &Context,
         status: &Status,

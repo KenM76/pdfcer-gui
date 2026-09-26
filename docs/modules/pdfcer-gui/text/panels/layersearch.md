@@ -47,3 +47,64 @@ read as a different string from the one typed.
 Decision 1 (names only, never state) is invisible to an operator
 until they type `hidden` and are surprised. This is the one place it
 is said, so it is the one place a test can hold it.
+
+### `fn field_hint`
+
+*"Search layers"* and not *"Filter…"* or *"Type to filter"*. The
+operator asked for *"a search to implement on the layers"* and that is
+the word they used; a control whose label is not the word the person
+asking for it used is a control they have to translate. "Filter" is also
+the wrong promise in a small way — a filter usually implies a set of
+fixed criteria you choose from, which is what a state filter would be
+(see `panels::layers::search`'s Decision 1) and what this is not.
+
+No ellipsis: it is a hint, not a command that opens something.
+
+### `fn field_tooltip`
+
+It states what is matched, because Decision 1 in
+`panels::layers::search` is a decision an operator can otherwise only
+discover by typing `hidden` and being surprised. One clause, at the one
+moment they are looking at the control.
+
+### `fn clear_label`
+
+It exists at all because the field is drawn **above a list the
+search may have emptied**, and an empty list is the one state in which
+the operator most needs to undo the thing that caused it. Clearing a
+text field by selecting and deleting is three gestures; this is one, and
+it is beside the state it repairs.
+
+A word rather than a `×` glyph: the icon set has no clear-field art, and
+`icons::paint` draws a visible mark for an unknown key rather than
+nothing — so an invented key would ship a placeholder rectangle, which
+is precisely what R9 forbids.
+
+### `fn narrowed`
+
+`None` when the search removed nothing, which is the whole of rule 3: a
+panel with no query in it says exactly what it said before this feature
+existed.
+
+It reports `shown of total` rather than `hidden`, and the two are not
+interchangeable. The operator is looking at the list; the useful number
+is the size of the thing in front of them and how much of the whole it
+is. *"13 layers hidden"* makes them do the subtraction to find out
+whether the one they want could still be there.
+
+### `fn none_matched`
+
+R9 says an unavailable capability renders nothing, and an empty list is
+not a placeholder — but *"no rows"* and *"no rows because of what you
+typed"* are different states, and the operator can see the layers are in
+the document because they were on screen a moment ago.
+
+The query is quoted back, per rule 2. The count of what was hidden
+follows it, because the two together are the complete answer: *what you
+asked for*, and *what is still there behind it*.
+
+The query is **not** truncated. A pasted paragraph would make a long
+line, and a long line in a narrow panel wraps — which is ugly and
+correct. Eliding it would produce a sentence quoting something the
+operator did not type, which for the one string whose job is to prove
+the search ran is the one thing it must never do.

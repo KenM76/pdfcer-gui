@@ -28,18 +28,6 @@ const REGION_MEMORY_KEY: &str = "pdfcer-canvas-zoom-region"; // ui-text-exempt: 
 const WAITED_MEMORY_KEY: &str = "pdfcer-canvas-anchor-waited"; // ui-text-exempt: internal memory id, never displayed
 
 /// The smallest region, in canvas units, that a zoom-to-rect will fit.
-///
-/// A marquee can be dragged three pixels, and a selected horizontal rule has a
-/// real bounding box that is *exactly zero* high (see
-/// [`crate::canvas::overlay::visible_outline_rect`], which grows outlines for
-/// the same reason). Fitting either literally asks for an unbounded scale,
-/// which the ceiling then clamps to something that shows the operator a
-/// featureless field of ink. Growing the region to a minimum first makes the
-/// answer *"as close as this page can go, framed on what you pointed at"*
-/// rather than *"as close as this page can go, framed on nothing"*.
-///
-/// Applied symmetrically about the region's own centre, so the thing the
-/// operator aimed at stays in the middle of what they get.
 pub const MIN_REGION_EXTENT: f32 = 8.0;
 
 // ---------------------------------------------------------------------------
@@ -48,10 +36,6 @@ pub const MIN_REGION_EXTENT: f32 = 8.0;
 
 /// The geometry the last drawn canvas frame settled on — everything an entry
 /// point outside the canvas needs in order to describe a zoom.
-///
-/// `Copy` and small, for the same reason [`PageMapping`] is: it is a fact
-/// about one frame, and anything that outlived a frame would be a mapping for
-/// a page rect that has since moved.
 #[derive(Debug, Clone, Copy)]
 pub struct CanvasFrame {
     /// The frame's screen ⟷ canvas map — used here only to convert a pointer
@@ -134,11 +118,6 @@ pub fn remember_frame(ctx: &Context, frame: CanvasFrame) {
 
 /// The last drawn frame's canvas geometry, or `None` before the canvas has
 /// ever drawn a page.
-///
-/// `None` is a real state and every entry point declines on it rather than
-/// guessing: before the first frame there is no viewport, no page rect and no
-/// offset, and a zoom described against invented geometry would move the view
-/// to somewhere the operator did not ask for.
 #[must_use]
 pub fn last_frame(ctx: &Context) -> Option<CanvasFrame> {
     ctx.data(|d| d.get_temp::<CanvasFrame>(egui::Id::new(FRAME_MEMORY_KEY)))
@@ -149,15 +128,6 @@ pub fn last_frame(ctx: &Context) -> Option<CanvasFrame> {
 // ---------------------------------------------------------------------------
 
 /// **The anchor rule.** The canvas-space point a zoom step must hold still.
-///
-/// `pointer` is the pointer's latest screen position, if it has one. It is
-/// honoured when it lies inside the canvas viewport; otherwise the viewport's
-/// own centre is used. See the module docs for why those two, and why the
-/// page's top-left is not a third option.
-///
-/// Note what is *not* consulted: the zoom. The result is a canvas coordinate,
-/// which is the same number before and after the step — that is what allows an
-/// anchor to be described before the new zoom is known.
 #[must_use]
 pub fn anchor_point(pointer: Option<Pos2>, frame: &CanvasFrame) -> Pos2 {
     let screen = pointer
@@ -168,16 +138,6 @@ pub fn anchor_point(pointer: Option<Pos2>, frame: &CanvasFrame) -> Pos2 {
 
 /// A canvas-space point as a fraction of the page's drawn size — the form
 /// [`ZoomAnchor`] carries.
-///
-/// `canvas_point / extent`, and therefore **zoom-independent**: `display` is
-/// `extent × zoom` and a canvas point projects to `canvas_point × zoom` inside
-/// it, so the ratio cancels. Dividing by the *drawn size* instead would give
-/// the same number by a longer route and would need a zoom to do it, which is
-/// the argument for computing it here.
-///
-/// A degenerate extent yields `0.5` on that axis — the middle of the page —
-/// rather than a NaN that would reach a scroll offset. `viewer::clamp_zoom`'s
-/// discipline: fail to a finite, harmless value.
 #[must_use]
 pub fn frac_of(point: Pos2, extent: (f32, f32)) -> (f32, f32) {
     fn axis(v: f32, extent: f32) -> f32 {
@@ -205,23 +165,6 @@ pub fn hold(frac: (f32, f32), frame: &CanvasFrame) -> ZoomAnchor {
 
 /// An anchor that **places** the point at `frac` at the centre of the viewport
 /// — the framing shape, used by zoom-to-selection and zoom-to-region.
-///
-/// # How one struct expresses both
-///
-/// [`crate::canvas::geometry::zoom_anchor_offset`] reads its "before" fields
-/// only through [`crate::canvas::geometry::anchor_screen_pos`], i.e. only as
-/// the single quantity *"where was the anchor on screen"*. So placing the
-/// anchor somewhere else is a matter of stating that quantity directly, and
-/// `offset_before` is solved backwards from it with
-/// [`crate::canvas::geometry::offset_holding_anchor_at`] — the exact inverse,
-/// pinned by `placing_an_anchor_and_measuring_it_are_exact_inverses`.
-///
-/// The field is therefore truthful in the only sense the solver uses it: it is
-/// *the offset at which the anchor would have been sitting in the middle of the
-/// view*. It is not this frame's scroll offset, and it is not claimed to be.
-/// The alternative — a second `Option` field on `OpenDoc` and a second consume
-/// path in `show` — would be two mechanisms for one two-frame handshake, and
-/// the second one would be the one that gets the clamp gate wrong.
 #[must_use]
 pub fn place_centred(frac: (f32, f32), frame: &CanvasFrame) -> ZoomAnchor {
     let centre = (frame.viewport.0 / 2.0, frame.viewport.1 / 2.0);
@@ -258,12 +201,6 @@ pub enum AnchorStep {
 }
 
 /// The consume gate. See the module docs for the whole argument.
-///
-/// `waited` is whether this same anchor already saw one frame in which nothing
-/// had changed. One frame of grace and no more: an action raised at step 1a is
-/// applied at step 3 of the same frame, so a zoom that is going to land has
-/// landed by the *next* frame's `show`, and anything still pending after that
-/// is a zoom that did not happen.
 #[must_use]
 pub fn anchor_step(anchor: &ZoomAnchor, display_now: (f32, f32), waited: bool) -> AnchorStep {
     // Exact inequality rather than a tolerance: `display_before` was written
@@ -288,10 +225,6 @@ pub fn anchor_step(anchor: &ZoomAnchor, display_now: (f32, f32), waited: bool) -
 
 /// Resolve this frame's pending anchor, returning the scroll offset the canvas
 /// must force — or `None` to leave the scroll area alone.
-///
-/// The whole of `canvas::show`'s zoom-anchor wiring, so that the gate, the
-/// solve and the one-frame grace counter cannot be re-derived differently at
-/// the call site.
 pub fn consume_anchor(ctx: &Context, doc: &mut OpenDoc, display_now: (f32, f32)) -> Option<Vec2> {
     let anchor = doc.frame.zoom_anchor?;
     let waited_id = egui::Id::new(WAITED_MEMORY_KEY);
@@ -342,12 +275,6 @@ pub enum ZoomStep {
 
 impl ZoomStep {
     /// The action this step raises.
-    ///
-    /// `ActualSize` is [`Action::ZoomTo`] and **not** `Fit(FitMode::None)`:
-    /// that distinction was a live defect (see `Action::ZoomTo`'s docs — a
-    /// control whose label promised 100 % and whose behaviour pinned 73 %),
-    /// and it is restated here rather than re-derived because this is now a
-    /// second place that has to know it.
     #[must_use]
     pub fn action(self) -> Action {
         match self {
@@ -360,15 +287,6 @@ impl ZoomStep {
 }
 
 /// Arm the anchor for a discrete zoom that is about to be raised.
-///
-/// The primitive. Call it immediately before pushing a zoom action from
-/// anywhere that is not the canvas — a keyboard chord, a ribbon button, the
-/// status bar's ± — and the next frame's `show` will keep the anchored point
-/// still. Calling it and then raising *no* zoom costs one frame of grace and
-/// a `Drop`; it cannot move the view on its own.
-///
-/// Does nothing before the canvas has drawn (no geometry to describe an anchor
-/// against), which is also the state in which no zoom command can be reached.
 pub fn arm_anchor(ctx: &Context, doc: &mut OpenDoc) {
     let Some(frame) = last_frame(ctx) else {
         return;
@@ -379,10 +297,6 @@ pub fn arm_anchor(ctx: &Context, doc: &mut OpenDoc) {
 
 /// Whether an action is a **discrete** zoom — one that arrives in one piece
 /// and therefore wants an anchor.
-///
-/// [`Action::ZoomBy`] is deliberately absent: it is the *wheel*, which arms
-/// its own anchor inside `canvas::show` from the pointer it can see, and
-/// which arrives as a stream of steps rather than as a command.
 #[must_use]
 pub fn is_discrete_zoom(action: &Action) -> bool {
     matches!(action, Action::ZoomIn | Action::ZoomOut | Action::ZoomTo(_))
@@ -390,27 +304,6 @@ pub fn is_discrete_zoom(action: &Action) -> bool {
 
 /// **Arm the anchor for any discrete zoom in `actions`.** The one-line
 /// integration point, and the one to prefer.
-///
-/// Called once per frame at the action funnel — immediately before the
-/// actions are applied — it covers **every** surface that can raise a zoom in
-/// one call: the keyboard chords collected at step 1a, the manifest chords,
-/// the ribbon at 1b, the status bar's ± at 1b², and a canvas context menu.
-/// The alternative is arming at each of those five sites, which is the shape
-/// the defect already took: `Action::ZoomIn` is raised from three places today
-/// and not one of them anchors.
-///
-/// Two guards, both of which matter:
-///
-/// * **an anchor already pending is left alone.** The framing verbs
-///   ([`zoom_to_rect`], [`zoom_to_selection`]) raise `Action::ZoomTo` *and*
-///   arm a centring anchor of their own; overwriting it here with a
-///   hold-the-pointer anchor would turn every marquee zoom back into a zoom
-///   about the cursor, which is the one thing a marquee zoom must not be.
-///   The same guard keeps a wheel anchor armed at the end of the previous
-///   frame intact;
-/// * **nothing is armed when no zoom is present**, so this is free on the
-///   overwhelming majority of frames — one `matches!` per action, over a list
-///   that is almost always empty.
 pub fn arm_for_actions(ctx: &Context, doc: &mut OpenDoc, actions: &[Action]) {
     if doc.frame.zoom_anchor.is_none() && actions.iter().any(is_discrete_zoom) {
         arm_anchor(ctx, doc);
@@ -420,10 +313,6 @@ pub fn arm_for_actions(ctx: &Context, doc: &mut OpenDoc, actions: &[Action]) {
 /// **Zoom in / out / actual size, anchored.** The explicit alternative to
 /// [`arm_for_actions`], for a caller that would rather say so at the call
 /// site than rely on a funnel.
-///
-/// Arms the anchor and raises the action, in that order, so a caller cannot do
-/// one and forget the other — which is the shape the defect took: the actions
-/// were raised from three surfaces and none of them anchored.
 pub fn zoom_step(ctx: &Context, doc: &mut OpenDoc, step: ZoomStep, actions: &mut Vec<Action>) {
     arm_anchor(ctx, doc);
     actions.push(step.action());
@@ -435,33 +324,6 @@ pub fn zoom_step(ctx: &Context, doc: &mut OpenDoc, step: ZoomStep, actions: &mut
 
 /// **A modified wheel notch, turned into an anchored zoom** — the body of the
 /// Ctrl+wheel gesture, with the hover gate left to the caller.
-///
-/// Does nothing when this frame carries no `zoom_delta`, which is every frame
-/// but the ones the operator is actually turning the wheel on. That early
-/// return is why the caller can be a bare `if hovered` with no second test.
-///
-/// # Why this is a function rather than a block in `present`
-///
-/// It has **two** callers, and it had to before either of them could be
-/// trusted: the ordinary one in `canvas::present`, and the escape hatch in
-/// `canvas::escape` that runs on a frame where nothing was drawn.
-/// `OPERATOR_REQUESTS.md` **O186** is the reason the second exists — a view
-/// carried off the sheet publishes `canvas-unavailable reason=nothing-visible`
-/// and `present` returns **above** its own input handling, so the one gesture
-/// that would have got the operator out was unreachable.
-///
-/// Inlining it at the second site would be the **fourth** spelling of the
-/// zoom rule in this crate's history, and the first three drifted: the wheel
-/// built its own [`ZoomAnchor`] from the pointer position while the discrete
-/// commands went through [`arm_anchor`], and *"the rule is decided once for all
-/// four"* is what fixed it. A rescue path that zoomed *without* arming the
-/// anchor would zoom about the viewport's top-left, which on a blank canvas
-/// means the operator claws his way out and arrives somewhere else again.
-///
-/// Takes the [`Context`] and not a `Ui`, so the escape hatch can call it on a
-/// frame where no `Ui` for the canvas *content* exists — which is the very
-/// condition the hatch is for. Nothing in here needs a `Ui`: the wheel delta and
-/// the pointer position are both context-wide input, not widget state.
 pub fn wheel_step(ctx: &Context, doc: &mut OpenDoc, actions: &mut Vec<Action>) {
     let factor = ctx.input(|i| i.zoom_delta());
     if (factor - 1.0).abs() <= f32::EPSILON {
@@ -478,11 +340,6 @@ pub fn wheel_step(ctx: &Context, doc: &mut OpenDoc, actions: &mut Vec<Action>) {
 // ---------------------------------------------------------------------------
 
 /// What a framing zoom did, or why it did not.
-///
-/// `#[must_use]` because the *declining* variants are the whole point: a
-/// caller that drops this on the floor has silently turned "there is nothing
-/// to zoom to" into "the command did nothing", which is the difference between
-/// a control that declines and a control that looks broken.
 #[must_use]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ZoomOutcome {
@@ -510,58 +367,6 @@ pub enum ZoomOutcome {
 
 impl ZoomOutcome {
     /// Whether the per-page raster ceiling (or the floor) changed the answer.
-    ///
-    /// # How the ceiling reports itself, and why this follows rather than
-    /// invents
-    ///
-    /// The ceiling already has a self-report and it is deliberately quiet:
-    /// `viewer`'s header states that *"rather than let the operator zoom into
-    /// an error message, `max_zoom_for_page` lowers the ceiling per page and
-    /// `ViewState` clamps against it — the zoom buttons simply stop"*, and the
-    /// status bar's readout then shows the scale that was actually pinned.
-    /// The report is **the number on the status bar being the truth**.
-    ///
-    /// A framing zoom must not break that contract by claiming a fit it did
-    /// not get, so it does two things and neither is a new mechanism:
-    ///
-    /// 1. it raises [`Action::ZoomTo`] carrying the **clamped** scale, so the
-    ///    status readout states the real answer on the same frame;
-    /// 2. it still frames the region *centred*, at whatever scale it got —
-    ///    because the offset is solved on the following frame from the page's
-    ///    real drawn size, the framing is correct even when the scale was not
-    ///    granted. The operator gets "as close as this page can go, centred on
-    ///    what you asked for", which is the honest partial answer.
-    ///
-    /// ## The surface now exists, and this is deliberately NOT wired to it
-    ///
-    /// This sentence used to read *"this predicate is what a caller with a
-    /// notice surface would key on to say so in words. There is no such
-    /// surface in this shell yet."* Both halves are now out of date: the
-    /// status bar words declines (`crate::app::status::decline`, 2026-08-14),
-    /// and the operator's ruling was that **the clamped region zoom must not
-    /// be worded through it.**
-    ///
-    /// The reason is the two numbered points above, taken seriously. A clamped
-    /// framing zoom is **a partial grant, not a decline**:
-    ///
-    /// * the region really is framed, centred, at the closest scale this page
-    ///   can go to — the operator got the honest partial answer;
-    /// * the scale that was pinned is already stated, in words, in the one
-    ///   place an operator looks for a scale: the status bar's zoom readout,
-    ///   on the same frame, because point 1 raises `Action::ZoomTo` carrying
-    ///   the clamped number. **The report is the number on the status bar
-    ///   being the truth**, and that contract is kept.
-    ///
-    /// Adding a sentence beside it would word a non-event, and would train the
-    /// operator to read a decline line that fires when nothing was declined —
-    /// which is how a surface stops being read at all. Only
-    /// [`ZoomOutcome::NoBounds`] and [`ZoomOutcome::NoCanvas`] are worded; see
-    /// `crate::app::status::decline`'s header, whose `Declined` type cannot
-    /// even represent a grant.
-    ///
-    /// So this predicate keeps exactly the job it has: it feeds the
-    /// `PDFCER_DIAG` line, and it is returned to the dispatcher, which reads it
-    /// and correctly says nothing.
     pub fn ceiling_changed_the_answer(self) -> bool {
         match self {
             Self::Zoomed { requested, applied } => (requested - applied).abs() > 1e-4,
@@ -571,11 +376,6 @@ impl ZoomOutcome {
 }
 
 /// Grow a region to [`MIN_REGION_EXTENT`] on each axis, about its own centre.
-///
-/// Also normalises: a marquee is dragged in any of four directions, and a
-/// rect whose `min` is not the smaller corner has a negative width that would
-/// make [`viewer::fit_scale`] return the degenerate fallback and the zoom a
-/// no-op.
 #[must_use]
 pub fn framed_region(rect: Rect) -> Rect {
     let rect = Rect::from_two_pos(rect.min, rect.max);
@@ -601,12 +401,6 @@ pub fn framed_region(rect: Rect) -> Rect {
 
 /// A framing zoom, decided in full — **without a document, so it is testable
 /// without one.**
-///
-/// The split is this project's standing one (`PROJECT_PLAN.md`: the
-/// unit-testable arithmetic on one side, the wiring on the other). Everything
-/// that can be wrong about a framing zoom — the scale, the clamp, the anchor,
-/// a degenerate region — is decided here and asserted headlessly; the two
-/// public verbs below add only "read the selection" and "raise the action".
 #[derive(Debug, Clone, Copy)]
 pub struct FramingPlan {
     /// What the operator asked for and what the page's raster ceiling allowed.
@@ -617,13 +411,6 @@ pub struct FramingPlan {
 
 /// Decide a framing zoom: the scale that fits `region`, the scale the page's
 /// raster ceiling actually permits, and the anchor that centres it.
-///
-/// The scale is [`viewer::fit_scale`] under [`FitMode::Page`], which is the
-/// *same* derivation "Fit page" uses, against the region instead of the page.
-/// One derivation, so a region zoom and a page fit cannot disagree about what
-/// "fits" means. `margin` is subtracted from the viewport first for the same
-/// reason `canvas::show` subtracts it before fitting a page: fitting exactly
-/// and then being clipped by the gap is not fitting.
 #[must_use]
 pub fn plan_framing(
     frame: &CanvasFrame,
@@ -681,10 +468,6 @@ pub fn plan_framing(
 
 /// **Zoom so a canvas-space region fills the viewport, centred.** The shared
 /// verb behind both marquee-zoom and zoom-to-selection.
-///
-/// `region` is in canvas space — the space the marquee already reports and the
-/// space the selection's outlines are cached in — so neither caller performs a
-/// coordinate conversion of its own.
 pub fn zoom_to_rect(
     ctx: &Context,
     doc: &mut OpenDoc,
@@ -747,33 +530,6 @@ fn frame_rect(
 }
 
 /// **Zoom to the selection.** The entry point `view.zoom_selection` calls.
-///
-/// # Where the bounds come from, and what happens when there are none
-///
-/// The selection is *identity* — page, object, subpath, node — and carries no
-/// rectangle. Its bounds are therefore resolved the way every other consumer
-/// resolves them: through
-/// [`crate::canvas::selection::SelectionState::outline_union`], the union of
-/// the outlines the selection layer has already resolved against the current
-/// decomposition, in canvas space. That is the same value the eight resize
-/// grips are laid out on ([`crate::canvas::overlay::grip_box`]), so **what
-/// this command frames is exactly the box the operator can see**, which is the
-/// only definition that cannot surprise them.
-///
-/// `outline_union` returns `None` in three situations that are one situation
-/// from the operator's side — nothing is selected, the selection is on another
-/// page, or it no longer resolves after an edit — and in all three this
-/// declines with [`ZoomOutcome::NoBounds`] and **raises no action at all**.
-/// It does not fall back to fit-page, and it does not zoom to the page's
-/// origin: a command that quietly did something else when it could not do the
-/// thing asked is worse than one that does nothing.
-///
-/// **The visible half of the decline belongs to the caller**, and
-/// [`can_zoom_to_selection`] is what it binds: with no resolvable bounds the
-/// command must render *unavailable*, which is this shell's established way of
-/// declining visibly (`FEATURES.md`: *"a menu with nothing to offer never
-/// opens"*). The outcome returned here is the second line of defence, for the
-/// keyboard chord that reaches the verb without passing the condition.
 pub fn zoom_to_selection(
     ctx: &Context,
     doc: &mut OpenDoc,
@@ -806,12 +562,6 @@ pub fn can_zoom_to_selection(doc: &OpenDoc) -> bool {
 /// Arm the next primary drag on the canvas to **zoom to the region it
 /// encloses** instead of selecting what it encloses. The entry point
 /// `view.zoom_region` calls.
-///
-/// One-shot: [`crate::canvas::show`] disarms it when the drag completes, so
-/// the canvas returns to selecting without the operator having to leave a
-/// mode. That matches every other marquee-zoom in the product class and it is
-/// what keeps this from becoming a fourth thing the primary button might mean
-/// with nothing on screen to say which.
 pub fn arm_region_zoom(ctx: &Context) {
     ctx.data_mut(|d| d.insert_temp(egui::Id::new(REGION_MEMORY_KEY), true));
 }
@@ -827,10 +577,6 @@ pub fn region_zoom_armed(ctx: &Context) -> bool {
 }
 
 /// Disarm the marquee zoom, returning whether it had been armed.
-///
-/// The return value is what lets Escape spend itself on exactly one thing: the
-/// canvas ascends the selection ladder only when this reports there was
-/// nothing armed to retire first.
 pub fn disarm_region_zoom(ctx: &Context) -> bool {
     let was = region_zoom_armed(ctx);
     ctx.data_mut(|d| d.insert_temp(egui::Id::new(REGION_MEMORY_KEY), false));

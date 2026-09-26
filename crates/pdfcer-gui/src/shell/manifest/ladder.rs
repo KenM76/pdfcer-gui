@@ -44,14 +44,6 @@ const LADDER: &[(&str, &str, u32)] = &[
 ];
 
 /// Apply [`LADDER`] to a built shell.
-///
-/// Called once, at the end of `built_in`, so the tab modules stay lists of
-/// commands and this file stays the only place a ranking is stated.
-///
-/// Silently ignores an entry naming a group that does not exist — the test
-/// below is what makes that safe, and it is the right split: a typo should
-/// fail the build, not the running application, and a *layer* that removed a
-/// group at runtime should not panic the ribbon.
 pub(super) fn apply(shell: &mut Shell) {
     for (tab_id, group_id, priority) in LADDER {
         if let Some(group) = shell

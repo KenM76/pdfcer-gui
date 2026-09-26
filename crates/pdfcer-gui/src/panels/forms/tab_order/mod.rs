@@ -34,14 +34,6 @@ const OPEN_SLOT: &str = "forms-tab-order-open";
 const MAX_TRACED_ROWS: usize = 200;
 
 /// Draw the Tab order section.
-///
-/// Called from [`super::body`] with the `/AcroForm` it has already parsed and
-/// the `DocumentView` it already holds — neither is re-derived here, because two
-/// parses of one form per frame is a cost with no benefit and because a second
-/// `parse_acroform` could in principle disagree with the first one the panel is
-/// drawing from.
-///
-/// `actions` is pushed at most once, with [`Action::GoToPage`].
 pub(super) fn section(
     ui: &mut egui::Ui,
     doc: &OpenDoc,

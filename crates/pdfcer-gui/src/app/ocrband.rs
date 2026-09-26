@@ -12,21 +12,6 @@ use crate::text::ocr as t;
 const TRAVEL_PT: f32 = 110.0;
 
 /// Draw the blend control, if `kind` is its kind.
-///
-/// Returns the position the operator has just put it at, in `0.0..=1.0`, or
-/// `None` on every frame the slider was not moved and for every other kind.
-///
-/// `at` is `ViewState::ocr_overlay` — `None` with nothing open and `None` with
-/// the layer off. The item's condition cannot be set in either state, so those
-/// are the defensive arm rather than a reachable one, and they draw nothing
-/// rather than a slider over a mode that is not running.
-///
-/// It takes the **number**, not the document, and that is deliberate rather
-/// than minimal. A renderer handed an `OpenDoc` can decline for two unrelated
-/// reasons — wrong kind, or nothing to show — and a test with no document
-/// cannot tell which one answered, so the kind guard could be deleted with
-/// every test still green. Taking the value makes the two independent and the
-/// guard falsifiable.
 pub(super) fn draw(ui: &mut egui::Ui, kind: &str, at: Option<f32>) -> Option<f32> {
     if kind != crate::shell::manifest::OCR_BLEND {
         return None;

@@ -28,18 +28,6 @@ const REGION_REPLACES: &str = "attachments.paste.replaces"; // ui-text-exempt: a
 const REGION_FRESH: &str = "attachments.paste.fresh"; // ui-text-exempt: a trace region name
 
 /// Draw Copy and Cut for one row.
-///
-/// `key` is the `/EmbeddedFiles` name-tree key — the thing the document is
-/// addressed with. `name` is what the row displays. They are **different**, and
-/// the distinction is `panels::attachments`' own: the key is bytes with no
-/// declared encoding (§7.9.6) which producers mangle with numeric suffixes and
-/// portfolio folder prefixes, so it is the right thing to address the document
-/// with and the wrong thing to show a person.
-///
-/// Cut is offered only where Remove is — a document-level attachment. A
-/// page-level one is removed by deleting its note, and `detach_file` answers
-/// `AttachmentNotFound` for it by name. Offering a Cut that could only refuse
-/// would be an affordance for an act this code cannot perform.
 pub(super) fn row_controls(
     ui: &mut Ui,
     doc: &OpenDoc,
@@ -99,11 +87,6 @@ fn take(ctx: &egui::Context, doc: &OpenDoc, key: &[u8], name: &str) -> bool {
 }
 
 /// Draw the Paste control, or nothing.
-///
-/// `existing` is every name already listed in **this** document, which is what
-/// the replacement question is answered from. Passed in rather than re-derived
-/// so the panel's listing and this control cannot disagree about what is here —
-/// the same rule `rows::block_reason` states for the fillable/selectable split.
 pub(super) fn paste_control(ui: &mut Ui, existing: &[String], actions: &mut Vec<Action>) {
     let Some(Clipped::Attachment(clip)) = read(ui.ctx()) else {
         // R9: nothing on the clipboard renders NOTHING, not a greyed button.

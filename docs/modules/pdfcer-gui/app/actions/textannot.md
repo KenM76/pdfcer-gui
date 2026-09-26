@@ -134,3 +134,12 @@ grounds — it is visible on the canvas as itself, and the dialog said
 it would happen before the drag was committed — and an argument in a
 comment is one an editor can delete by agreeing with the reflex. This
 is the argument in a form that goes red.
+
+### `struct Placement`
+
+A struct rather than a longer parameter list, and not only to satisfy a
+lint: every field here is part of **one thing the operator did**, while
+`prefs` and the pen are settings that happen to be in scope. A signature
+that mixed them all in a row would let a caller transpose two silently,
+which on adjacent `usize` and `f64` positions is the class of mistake that
+compiles.

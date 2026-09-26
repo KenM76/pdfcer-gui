@@ -133,21 +133,6 @@ impl<'a> PathLexer<'a> {
 }
 
 /// Parse an SVG path `d` string into `builder`.
-///
-/// Implements the full path grammar (module header). Three pieces of state
-/// make the whole thing work and are worth naming explicitly:
-///
-/// * `cur` — the current point. Relative commands are offsets from it, and a
-///   command that needs it before any `M` is [`IconError::NoCurrentPoint`]
-///   rather than an implicit origin, because an implicit origin silently
-///   draws a glyph anchored at the viewBox corner.
-/// * `start` — the current subpath's first point, which `Z` returns to and
-///   which a command *after* a `Z` continues from (SVG's rule, and the one
-///   most often got wrong).
-/// * `cubic_reflect` / `quad_reflect` — the previous cubic/quadratic control
-///   point, mirrored on demand by the smooth forms `S`/`T`. Reset to `None`
-///   after any non-curve command, per the spec: `S` after an `L` is a plain
-///   curve, not a reflection of something three commands ago.
 pub(super) fn parse_path_data(d: &str, builder: &mut PathBuilder) -> Result<(), IconError> {
     let mut lex = PathLexer::new(d);
     let mut cur = (0.0f32, 0.0f32);

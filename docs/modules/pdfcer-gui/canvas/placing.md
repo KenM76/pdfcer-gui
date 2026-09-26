@@ -122,3 +122,99 @@ the fixed one, because it was a test of the *plumbing* on a function
 whose defect was the *space*. This one asserts the flip by magnitude —
 canvas y 200 on an 800 pt page is PDF y 600 — which no unconverted
 build can satisfy.
+
+### `enum PlaceKind`
+
+One variant today. It is an enum rather than a bare marker because the
+operator's sentence is about a class — *"anything we are inserting"* — and
+the second member is the whole reason this file is shared rather than
+inlined. See [`crate::dialogs::placing`] for what a dialog has to do to
+join.
+
+### `fn capability`
+
+Asked at the press rather than only at the arm, on
+`canvas::gesture::meaning`'s standing rule: a mode can change while a
+tool is armed, and a gesture that could not commit must not begin.
+
+Placing an image is page-content authoring, so it takes `edit_content` —
+the same gate `edit.insert_image` itself carries.
+
+### `struct Pending`
+
+The **page** travels with the kind because a placement is a position *on a
+page*, and the operator can turn pages while pointing. Capturing it at the
+arm would be wrong — they may well page to the sheet they want *because*
+the window stepped aside — so this records which page the request came
+from and the result carries whichever page they actually clicked on.
+
+### `fn arm`
+
+One call rather than two, so the record and the tool cannot disagree.
+A `Pending` with no `CanvasTool::Place` armed is a hidden dialog nothing
+will ever return to, and the only way to make that unreachable is to make
+the two impossible to set separately.
+
+### `fn cancel`
+
+Called by Escape, by `tool::arm::retire_forbidden` when a mode change takes
+the capability away, and by `app::frame`'s invariant sweep when the dialog
+that asked has gone. Every one of those is a route back to a visible window,
+because clearing the record is all "un-hide" means.
+
+### `fn take_result`
+
+Read-and-clear, on `canvas::measure`'s stated rule for every edge held in
+`egui::Memory`: a value left behind fires again on some later frame, which
+the operator experiences as a window moving something they placed minutes
+ago.
+
+### `fn click`
+
+Lower-left rather than centre, and it is `canvas::clicking`'s own rule for
+the form-field arm: *"it matches what the drag does"*, so the two gestures
+agree about what the pointer means and an operator who switches between them
+is not surprised.
+**`point` is in CANVAS space and is converted here.** The two spaces
+differ by a y flip, and the flip is invisible: a mirrored placement is a
+plausible number on a plausible page, so nothing refuses it and nothing
+looks wrong until an operator clicks near the top of a sheet and the picture
+lands near the bottom.
+
+That is exactly what this function shipped doing. Every sibling arm in
+`canvas::clicking` — the form field, the sticky note — converts through
+[`crate::canvas::markup::band::endpoints`] before building a
+`page_tree::Rect`, and this one passed the raw canvas point straight into
+one. It agreed with itself, it agreed with its unit tests, and it disagreed
+with [`band_released`] by a mirror.
+
+⇒ Found on the first run of the driven check
+`the_insert_window_steps_aside_so_you_can_point`, which is the whole
+argument for R1: the click landed at PDF y 759 — the application's own
+`canvas-pointer` line says so — and the placement was recorded at 465.
+`1224 − 759 = 465`.
+
+### `fn completed`
+
+Normalised here rather than at the call site so a drag up-and-left produces
+the same rect as one down-and-right, which is what every other band in this
+canvas does.
+
+### `fn band`
+
+A plain rectangle, because that is what a placement is: two corners and the
+area between them. It borrows `markup::band`'s preview type rather than
+growing one, so the band a placement drags and the band a markup drags are
+drawn by the same code and cannot look different.
+
+### `fn band_released`
+
+The whole body of `canvas::interact`'s `GestureOutcome::Place` arm, lifted
+here so that file keeps its R2 headroom and so the page-space conversion
+sits beside the rest of this module's arithmetic rather than in the middle
+of a gesture pipeline.
+
+Declines silently when the page cannot be resolved, which is the same
+answer every other band in `interact` gives: a release over no page is not
+a placement, and inventing one would put an image at a coordinate nobody
+pointed at.

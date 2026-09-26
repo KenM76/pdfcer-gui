@@ -387,3 +387,163 @@ frame and two from the last.
 Empty on the first frame of a session, which [`fitting::affordable`] treats
 as *show everything* — see its docs on why that bootstrap is required rather
 than merely tolerant.
+
+### `mod decline`
+
+Split out under R2 like [`page_box`], and along a seam of the same kind:
+what is left here answers *"how is the bar laid out, and what does each
+group show?"*, while that module answers *"what did a refused command owe
+the operator, and how long does it owe it for?"* — its own store, its own
+vocabulary, its own pure retirement predicate, and an argument about speech
+acts that nothing else on this surface shares.
+
+`pub(super)` rather than private, unlike [`page_box`]: `crate::app::dispatch`
+is the choke point that records a decline and retires it, so the store has
+to be reachable from a sibling of this module. Nothing outside `crate::app`
+can see it, which is the right boundary — a decline is written by the one
+dispatcher and read by the one bar.
+
+### `mod notes`
+
+It is `pub(crate)` rather than private for exactly one export:
+[`notes::findings`], the ordered, filtered list of what a raster
+compromised on. The Render-diagnostics dialog
+(`crate::dialogs::diagnostics`) shows the same facts with room for more than
+one line, and the *editorial* rules behind that list — which counters are
+actionable, which two are excluded, and in whose interest the order is —
+belong to the narrator and must be stated once. The dialog joins nothing and
+filters nothing; it lists what this module already decided.
+
+### `mod filter`
+
+The one control on this bar that is not a readout: everything else here
+reports what is true about the view, and this changes what the pointer
+does. Its header carries why that earns it both its own file and its own
+position at the left edge of the fixed cluster.
+
+### `mod maxzoom`
+
+Its header carries why the readout rather than a new control: the bar's
+height and right-hand cluster are fixed, and a label that turns out to be
+a button is already this surface's idiom.
+
+### `mod rasterstop`
+
+The only line on this bar that needs **no store and no retirement rule**: it
+is a pure function of the current frame's state, so it appears at the ceiling
+and is gone the moment he zooms out, turns the page, or edits it. Its header
+carries why that follows from what the sentence means rather than being a
+shortcut, and why [`decline`]'s partial-grant ruling does not cover it.
+
+### `const HEIGHT_PTS`
+
+**Pass this to `egui::Panel::bottom(..).exact_size(..)`, not to
+`default_height`.** The difference is rule R128: `exact_size` pins the
+panel's outer size so its content cannot perturb the central region at
+all, and every other sizing API leaves the fit-to-viewport feedback loop
+open. The module docs carry the measured case.
+
+[`ROW_HEIGHT_PTS`] plus egui's own `Frame::side_top_panel` inner margin
+(2 pt above and below) plus a little room for the panel's separator
+stroke. Generous rather than tight: a bar whose content is clipped by one
+point is a legibility defect, and the cost of the slack is four pixels of
+canvas that never change size.
+
+### `const ROW_HEIGHT_PTS`
+
+[`show`] allocates exactly this, so the bar's content height is a
+constant rather than a function of what there is to say — which is the
+second half of the R128 defence and the reason the disclosure draws its
+line *beside* the triangle rather than beneath it.
+
+### `const NOTES_WIDTH_FRACTION`
+
+The notes are the *least* urgent thing on this surface (`DEFECTS.md`:
+"excellent information, wrong prominence"), so on a narrow window they
+yield to the navigation controls rather than squeezing them. The full
+text is always available on hover, so nothing is lost — only deferred.
+
+### `const REGION_FILL_DISCLOSURE`
+
+Named as a region so `ui-verify` can assert it is **on screen and
+legible** rather than merely constructed — which for a disclosure is the
+whole of the requirement.
+
+### `const REGION_EDIT_DISCLOSURE`
+
+Named as a region for the same reason as its fill sibling: a disclosure's
+whole requirement is that it is **on screen and legible**, and `ui-verify`
+can only assert that about a rect the application published.
+
+### `const REGION_LOAD_ANOMALIES`
+
+The **third** region here that is about the FILE rather than about a gesture,
+and the one a driven check most needs by name: the engine's notice makes the
+whole tolerant-loading Pass conditional on the shell disclosing what was
+decided, so a census built into a zero-width rect would be the loader
+shipping without the thing that makes it honest. Only a published rect can
+tell "on screen and legible" from "constructed".
+
+Distinct from [`REGION_RECOVERED`] on purpose — the two conditions are
+disjoint and can be live together; see [`anomalies`]' header for the table.
+
+### `const REGION_CATCHING_UP`
+
+The one region in this group naming a **state** rather than an event, so a
+check reading it is asking *"is the page behind right now"* and not *"did an
+edit disclose something"*.
+
+### `const REGION_LINE_WEIGHTS`
+
+The **second** state region, and the one a driven check must be able to find
+by name, because the whole safety argument for the feature rests on the
+disclosure being **on screen and legible** rather than merely constructed.
+A `line_weights` toggle whose disclosure was built into a zero-width rect
+would be the feature shipping without the thing that makes it safe, and
+nothing but a published rect can tell those apart.
+
+### `mod test_support`
+
+A module of its own rather than helpers inside `mod tests`, because two
+sibling test modules share them and `pub(super)` on a helper buried in one
+of them would read as "the other module reaches into my tests" rather than
+as "this is the shared harness". Visible to `crate::app::status` and its
+descendants, and to nothing else.
+
+### `fn opened`
+
+Opened through `crate::app::state::open_fixture`, which is the same
+three calls `PdfcerApp::open_path` makes in the same order — so what
+these tests drive is the real state machine rather than a hand-built
+approximation of it.
+
+### `fn bar_frame`
+
+`None` when no measurement happened at all — the closure never ran, or
+it produced a non-finite height. **A measurement that did not happen
+must not read as a measurement**, and that is not theoretical here:
+`cargo test -p egui-shell` and `cargo test --workspace` compile `egui`
+with different features (no fonts vs `default_fonts`), so a layout
+assertion can be entirely vacuous under one of the two commands a
+developer runs. A helper that returned a bare `f32` would hand a
+vacuous run the same `NAN == NAN`-adjacent silence a real one gets.
+
+The shape count is the second half of the same discipline, and it is
+the half that matters for a *sentence*: a height comparison between two
+frames that both drew nothing is true and worthless. Counting the
+painted shapes is how a test proves the line reached the painter rather
+than merely reaching the data.
+
+Lives here rather than in `mod tests` because **three** R128 tests need
+it — the fill line, the edit line and [`super::decline`]'s — and the
+third is in a sibling module. `pub(super)` on a helper buried inside one
+test module would read as "the other module reaches into my tests"
+rather than as "this is the shared harness".
+
+### `fn settled_bar_frame`
+
+egui settles over a pass: fonts are laid out lazily, widget galleys are
+cached on first sight, and animations start at their "from" value. A
+single frame therefore compares one state's *first* look against
+another state's *first* look, which is a comparison of two different
+things. Every caller wants the steady state.

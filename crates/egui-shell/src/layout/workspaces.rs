@@ -132,10 +132,6 @@ impl Workspace {
 }
 
 /// What a workspace can say about panels registered *now*.
-///
-/// Returned by [`LayoutDocument::unseen_panels`], which reports rather than
-/// decides — see [`Workspace::known_panels`] for why the decision is the
-/// application's.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Unseen {
     /// The workspace predates the record, so nothing can be concluded.
@@ -157,17 +153,6 @@ pub enum Unseen {
 impl LayoutDocument {
     /// Save `layout` under `name`, replacing any workspace already using
     /// that name **in place**.
-    ///
-    /// Returns whether an existing workspace was replaced, so an
-    /// application can offer "overwrite?" *after* the fact in a status
-    /// surface rather than asking before it — the same posture the rest
-    /// of this crate takes towards modal interruptions.
-    ///
-    /// Replacing in place rather than appending is not cosmetic: a
-    /// workspace that moved to the end of the list every time it was
-    /// updated would reorder the operator's own menu behind their back,
-    /// and a menu whose order changes when you use it is a menu you
-    /// cannot build muscle memory for.
     pub fn save_workspace(&mut self, name: impl Into<String>, layout: DockLayout) -> bool {
         let name = name.into();
         let mut layout = layout;
@@ -181,12 +166,6 @@ impl LayoutDocument {
     }
 
     /// The arrangement saved under `name`, if any.
-    ///
-    /// Returns a reference; the caller clones it into
-    /// [`crate::dock::DockState::set_layout`]. Deliberately **not** a
-    /// method that applies it: the store does not own the live state, and
-    /// a function here that reached into a `DockState` would be a second
-    /// path by which the arrangement changes.
     #[must_use]
     pub fn workspace(&self, name: &str) -> Option<&DockLayout> {
         self.workspaces
@@ -197,27 +176,6 @@ impl LayoutDocument {
 
     /// **Which currently-registered panels a saved workspace has never
     /// seen.**
-    ///
-    /// `registered` is every panel id the application has registered right
-    /// now — not the ids the layout mounts, and not the ids it *would*
-    /// mount by default. The comparison is against what EXISTED, which is
-    /// the only thing that separates "closed on purpose" from "did not
-    /// exist yet".
-    ///
-    /// Returns [`Unseen::Unknown`] for a workspace saved before the record
-    /// existed, and for a name that is not in the store at all — in both
-    /// cases the honest answer is that this document cannot say. A caller
-    /// that wants to distinguish them can check
-    /// [`Self::workspace`] first.
-    ///
-    /// # This reports; it does not act
-    ///
-    /// Consistent with [`Self::workspace`] returning a reference rather
-    /// than applying it: the store does not own the live state, and a
-    /// method here that mounted a panel would be a second path by which
-    /// the arrangement changes. What to do with the answer — mount it,
-    /// mention it in a status line, ignore it — is the application's, and
-    /// it is a product decision rather than a framework one.
     #[must_use]
     pub fn unseen_panels(&self, name: &str, registered: &[PanelId]) -> Unseen {
         let Some(workspace) = self.workspaces.iter().find(|w| w.name == name) else {
@@ -237,20 +195,6 @@ impl LayoutDocument {
 
     /// Stamp `name` with the panels registered now, without touching its
     /// arrangement.
-    ///
-    /// For the moment **after** an application has acted on an
-    /// [`Unseen`] answer: having decided what to do about the new panels,
-    /// it records that it has seen them, so the next launch reports
-    /// `New(vec![])` rather than offering the same ones again.
-    ///
-    /// Separate from [`Self::save_workspace`] because the two happen at
-    /// different times and for different reasons — saving is the operator
-    /// rearranging something, stamping is the application acknowledging a
-    /// release. Folding them together would mean an application could only
-    /// record what it had seen by also rewriting a layout it had no reason
-    /// to touch.
-    ///
-    /// Returns whether the workspace existed.
     pub fn mark_panels_seen(&mut self, name: &str, registered: &[PanelId]) -> bool {
         let Some(workspace) = self.workspaces.iter_mut().find(|w| w.name == name) else {
             return false;
@@ -269,10 +213,6 @@ impl LayoutDocument {
     }
 
     /// Delete the workspace called `name`.
-    ///
-    /// Returns whether one was removed. Deleting something that is not
-    /// there is not an error — a second click on a delete command, or a
-    /// stale menu, must not produce a failure the operator has to read.
     pub fn delete_workspace(&mut self, name: &str) -> bool {
         let before = self.workspaces.len();
         self.workspaces.retain(|w| w.name != name);
@@ -280,10 +220,6 @@ impl LayoutDocument {
     }
 
     /// Rename a workspace, refusing if the new name is taken or empty.
-    ///
-    /// Refusing rather than merging: a rename that silently absorbed
-    /// another workspace would destroy an arrangement the operator did
-    /// not mention.
     pub fn rename_workspace(&mut self, from: &str, to: impl Into<String>) -> bool {
         let to = to.into();
         if to.trim().is_empty() || self.workspaces.iter().any(|w| w.name == to) {
@@ -301,14 +237,6 @@ impl LayoutDocument {
 
 /// Sanitize every workspace in a loaded document, dropping the ones that
 /// cannot survive and repairing the ones that can.
-///
-/// **Per workspace**, which is the whole point: one saved arrangement
-/// naming a panel this build does not offer loses that tab; one with no
-/// name at all is dropped; a second one claiming a name already used is
-/// dropped; and every other workspace in the file is untouched. That is
-/// the per-item promise applied at the granularity an operator thinks in
-/// — *"my Review layout came back and my Proofing one did not"* is a
-/// sentence they can act on.
 pub(crate) fn sanitize_all(
     workspaces: &mut Vec<Workspace>,
     catalog: &dyn PanelCatalog,

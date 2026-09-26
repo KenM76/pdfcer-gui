@@ -10,24 +10,9 @@ use crate::dialogs::print::spooler::Job;
 use crate::text::print as t;
 
 /// The **narrowest** the options column may be squeezed to, in egui points.
-///
-/// A floor, not a width. It used to be a fixed 400 pt whose stated reason was
-/// that *"a fixed width is what gives the horizontal scrollbar something stable
-/// to measure"* — and that reasoning is what produced the scrollbar deadlock
-/// [`PrintDialog::body`] documents. The scrollbar does not need a stable number
-/// to measure; it needs to be told the truth about how wide the content is.
-///
-/// Sized to hold the longest radio label in the three tabs without wrapping,
-/// which is what makes it a floor worth having: below this the options start
-/// reflowing and the tab strip wraps, and scrolling is the better answer.
 pub(super) const OPTIONS_COLUMN_MIN_WIDTH_PTS: f32 = 400.0;
 
 /// The **narrowest** the preview column may be dragged to, in egui points.
-///
-/// Below this the sheet is too small to judge a margin or a clipped edge by,
-/// which is the only reason to look at a print preview. The operator can still
-/// collapse the dialog itself; what they cannot do is drag the preview into a
-/// sliver by accident and be left with a control that has no visible grab.
 pub(super) const PREVIEW_MIN_WIDTH_PTS: f32 = 220.0;
 
 /// Where the splitter sits on a freshly opened dialog, and where a double-click
@@ -38,10 +23,6 @@ pub(super) const PREVIEW_MIN_WIDTH_PTS: f32 = 220.0;
 pub(super) const PREVIEW_DEFAULT_WIDTH_PTS: f32 = 340.0;
 
 /// The splitter's hit width, in egui points.
-///
-/// Wider than the line it draws, on purpose: the line is 1-2 pt and a 1 pt drag
-/// target is not a drag target. 8 pt is the smallest band that can be hit
-/// reliably without hunting, and it is what the dock's own splitter uses.
 pub(super) const SPLITTER_WIDTH_PTS: f32 = 8.0;
 
 /// How far the splitter's drawn line stops short of the column's ends.
@@ -52,103 +33,26 @@ pub(super) const SPLITTER_INSET_PTS: f32 = 4.0;
 
 /// The space reserved out of the body so that a scrollbar's appearance on one
 /// axis cannot raise one on the other.
-///
-/// # This constant is the fix for the operator's "two scroll bars"
-///
-/// Wider than [`SCROLLBAR_WIDTH_PTS`] on purpose. egui reserves slightly more
-/// than the bar's drawn width for a solid bar — measured at **14 pt** for a
-/// 10 pt bar, by reading `available_width` inside the scroll area against the
-/// width handed to it. A reservation equal to the drawn width would leave the
-/// content one or two points wider than the viewport, which is a scrollbar just
-/// as surely as a hundred points would be.
-///
-/// 16 is that measurement rounded up, and the rounding is the point: this
-/// number's job is to be **comfortably more** than whatever egui takes, so that
-/// the common case has strictly less content than viewport and neither bar is
-/// drawn at all. Being a few points generous costs a few unused points at the
-/// window edge; being a point mean costs a scrollbar that cannot be dismissed.
 pub(super) const SCROLLBAR_ALLOWANCE_PTS: f32 = 16.0;
 
 /// The narrowest the body's content may become before it scrolls, in egui
 /// points: both column floors plus the splitter.
-///
-/// Below this the columns would have to reflow into each other, and horizontal
-/// scrolling is the better answer — the operator can see a whole column at a
-/// time rather than two half ones. The window's own 520 pt floor is below this,
-/// deliberately: a dialog dragged to its minimum should scroll, not shred.
 pub(super) const MIN_CONTENT_WIDTH_PTS: f32 =
     PREVIEW_MIN_WIDTH_PTS + SPLITTER_WIDTH_PTS + OPTIONS_COLUMN_MIN_WIDTH_PTS;
 
 /// The width a solid scrollbar occupies, in egui points.
-///
-/// Named rather than inlined because it is used **twice for one reason**: it
-/// is what the bar is drawn at, and it is what the body reserves out of the
-/// column height so that a horizontal bar appearing cannot raise a vertical one
-/// as a side effect. Those two uses must agree or the deadlock in
-/// [`PrintDialog::body`] returns, so they read one constant.
 pub(super) const SCROLLBAR_WIDTH_PTS: f32 = 10.0;
 
 /// The floor on the body's height, in egui points.
-///
-/// The window has its own 380 pt minimum, so this is reached only transiently —
-/// during a resize, or on the first frame before the viewport reports its real
-/// size. It exists so that arithmetic on `available_height` can never hand a
-/// negative or absurd height to a column that will allocate it.
 pub(super) const MIN_BODY_HEIGHT_PTS: f32 = 200.0;
 
 /// The splitter's declared region, for the driven harness.
-///
-/// A drag target's position cannot be computed from outside the process, and
-/// this one exists *because* the operator asked for it — so a check that it is
-/// present, has area, and moves the split needs somewhere to aim.
 pub(super) const REGION_SPLITTER: &str = "print.splitter";
 
 /// The preview column's own rect, for the driven harness.
-///
-/// # It exists to be able to GO AWAY
-///
-/// Every other region in this shell is published so that something can be
-/// aimed at, measured or clicked. This one is published so that
-/// `diag::end_ui_frame` can emit `ui-rect-gone name=print.preview.column` on
-/// the frame the operator pops the preview out — which is the only evidence
-/// from outside the process that the column **collapsed** rather than merely
-/// gaining a sibling in another window.
-///
-/// Without it, the honest-looking check *"a second window appeared"* passes
-/// on a build that opens the pop-out **and keeps drawing the column too** —
-/// two previews of one sheet, which is precisely the shape O112 asked against.
-/// A presence assertion cannot see that; an absence assertion can, and an
-/// absence assertion is only worth anything when the run has first been driven
-/// into the state where the absence is the claim. See `ui-verify`'s
-/// `the_print_preview_pops_into_its_own_window`, which asserts the region is
-/// there before the click and gone after it.
 pub(super) const REGION_PREVIEW_COLUMN: &str = "print.preview.column";
 
 /// **The body's horizontal division, decided once and in one place.**
-///
-/// # Why a type rather than four `let`s
-///
-/// Because there are now **two** layouts — preview beside options, and options
-/// alone with the preview in its own window (O112 ask 2) — and every number in
-/// the second differs from the first: the number of `item_spacing` gaps egui
-/// inserts, the floor the content may not go below, and both column widths.
-/// Four `let`s with an `if` threaded through them is how the two cases come to
-/// disagree about one of the four, and the failure of a width in this file has
-/// twice been a scrollbar the operator could not dismiss.
-///
-/// # It is PURE, and that is what makes the collapse falsifiable
-///
-/// The one thing a unit test genuinely can assert about this dialog's layout is
-/// a relationship between numbers we own — `layout::tests`' own header says so,
-/// and says why the *presence of a scrollbar* is not such a relationship. The
-/// collapse **is** one: *"when the preview is popped out, the preview column is
-/// zero wide, there is no splitter, and the options column is the whole
-/// content."* That is an assertion about arithmetic, it needs no window, and a
-/// build that popped the preview out and left the column standing fails it.
-///
-/// ⇒ Which matters here more than usual, because a layout change's only true
-/// oracle is a rendered frame and this session could not render one. Pushing
-/// as much of the claim as possible into arithmetic is what is left.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(super) struct Columns {
     /// The width the columns are laid out into, after the scrollbar allowance
@@ -168,18 +72,6 @@ pub(super) struct Columns {
 
 impl Columns {
     /// Divide `outer_width` between the two columns.
-    ///
-    /// `gap` is the live `item_spacing.x` — read from the style rather than
-    /// assumed, because this shell's `Metrics::gutter` differs per theme preset
-    /// and a hard-coded gap is right in one preset and reintroduces a scrollbar
-    /// in another.
-    ///
-    /// `preference` is [`PrintDialog::preview_width`] — the width the operator
-    /// dragged the splitter to. It is **clamped for layout and never written
-    /// back**, which is why this function returns a value instead of taking
-    /// `&mut`: writing the clamp back destroyed the operator's chosen width the
-    /// first time a narrow window clamped it, and the fix was to keep the
-    /// preference and the layout apart. See [`PrintDialog::body`].
     pub(super) fn split(outer_width: f32, gap: f32, preference: f32, popped: bool) -> Self {
         if popped {
             // One child, so no gaps; and the only floor still in play is the
@@ -212,22 +104,12 @@ impl Columns {
     }
 
     /// What the row will actually measure, for the `print-body` trace line.
-    ///
-    /// The columns **plus** the gaps egui inserts between them — never the sum
-    /// of the columns alone. Reporting the sum was the mistake the whole
-    /// two-scrollbar defect was made of, and it is not made twice because there
-    /// is one function that knows how many gaps there are.
     pub(super) fn laid_out(self) -> f32 {
         self.preview + self.splitter + self.options + self.gaps
     }
 }
 
 /// Height reserved under the scrolling body for the footer row.
-///
-/// The footer is drawn AFTER the scroll area, so the scroll area must be told
-/// not to eat the whole window. Reserved as a constant for the same reason
-/// [`preview`]'s strip height is: the commit button's position must not depend
-/// on how much the body happens to contain this frame.
 pub(super) const FOOTER_HEIGHT_PTS: f32 = 46.0;
 
 impl PrintDialog {
@@ -601,41 +483,6 @@ impl PrintDialog {
     // ═══════════════════════════════════════════════════════════════════════
 
     /// The footer: Close, the commit button, and the last outcome.
-    ///
-    /// # The commit button is ABSENT, not greyed, when there is nothing to print
-    ///
-    /// The no-placeholders rule's own distinction: greying is for
-    /// *temporarily* unavailable, and there are two genuinely different
-    /// reasons this button might not act.
-    ///
-    /// - **No device, or no pages selected** — the job does not exist. The
-    ///   button is not drawn. Something else on screen already says why (the
-    ///   preview column's own sentence), so a disabled button would be a
-    ///   second, quieter statement of a fact already made loudly.
-    /// - There is no third case. A job that exists can always be sent; whether
-    ///   it *should* be is the operator's call, and the clip count in the
-    ///   label is how they make it.
-    ///
-    /// # The label's count is corrected by what the preview has seen
-    ///
-    /// Operator request O113, 2026-09-04. It used to be [`Job::clipped`] —
-    /// a geometric count of page boxes exceeding the printable rectangle —
-    /// which on a 1:1 CAD sheet read *"Print — 1 sheet will be clipped"* over
-    /// a preview showing nothing hatched and saying the overhang was blank.
-    ///
-    /// It is now the geometric count **minus the sheets the preview has
-    /// examined and found blank**, with every sheet nobody has looked at still
-    /// counted. [`super::verdicts::ClipClaim`] carries both the number and how well
-    /// it is known, and picks the sentence that number can support; this
-    /// function does not choose wording, so the button and the preview's own
-    /// caption cannot come to say different things about one job.
-    ///
-    /// Drawn AFTER the body, which is what makes the sheet on screen count
-    /// as examined on the same frame it is drawn. The alternative — the
-    /// footer reading a cache the preview has not written yet — would make the
-    /// button lag the picture beside it by exactly one frame, which is a
-    /// contradiction that flickers rather than one that persists, and is
-    /// therefore harder to notice and worse.
     pub(super) fn footer(
         &mut self,
         ui: &mut Ui,

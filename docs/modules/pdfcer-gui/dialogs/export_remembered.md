@@ -76,3 +76,21 @@ That is [`crate::dialogs::print::PrintDialog::remember`]'s ruling, applied
 unchanged, and it is stated here as well because the three call sites are in
 three other files and a rule visible only from the print window is a rule
 the next export window will not find.
+
+## Item notes
+
+### `fn remember_image`
+
+Takes the group **by value** rather than by reference: the caller has just
+built it out of its own fields and has no further use for it, and a move is
+what makes the assignment below a store rather than a clone.
+
+### `fn remember_dxf`
+
+⚠ **No `scale=` here, and its absence is the design rather than an
+oversight.** The DXF scale is derived per open from the page's own
+dimension groups and is deliberately not a remembered preference — see
+[`crate::app::prefs::ExportDxfPrefs`] for the argument. A trace key naming
+a value this function does not store would be the first place somebody
+looked when the scale failed to survive a restart, and it would tell them
+the opposite of the truth.

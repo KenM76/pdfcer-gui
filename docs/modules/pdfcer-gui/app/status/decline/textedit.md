@@ -166,3 +166,107 @@ glyphs in this font; pick another font for it"*. That is what
 on a composite font `Ambiguous` arrives inside a `Refusal`, and a `Refusal`
 is hard by construction, so `is_hard()` answers the simple-font disposition
 and is the wrong question here.
+
+### `fn record_reflow`
+
+Called from **two positions**, which is deliberate rather than untidy:
+`app::dispatch::text` resolves the caret and can decline before any verb
+runs, and `app::actions::textstyle` maps the engine's own refusal after one
+has. Both name a cause the operator can act on, and neither can see the
+other's — so merging them would mean one of the two speaking for a condition
+it cannot observe.
+
+The `textstyle` call site is what makes the engine's half legible at all.
+It writes through `Result::inspect_err` **inside** the funnel's closure, and
+the ordering is what makes that work: `vector_edit` takes the decline floor
+*before* running the closure, and `BeforeTheVerb::refused` fills the slot
+only `if slot.is_none()` — so this specific sentence survives and the
+generic *"that change was refused"* stands aside. That is the floor's
+documented purpose; reflow is the first verb to use it.
+
+### `fn record_enter_cannot_split`
+
+The one decline in this module raised by a **keystroke** rather than by a
+command or a verb, and it belongs here for exactly the reason the others do:
+the operator did something, nothing happened, and the slot that says so
+wears `⊗`. A key that quietly does something else is the same defect class
+as a button that quietly does nothing — this project's founding one.
+
+It arrives by `Action`, not by a direct call. `canvas::textedit::keys` is
+outside `crate::app`, and [`super`] is `pub(super)` there on purpose — *"a
+decline is written by the one dispatcher and read by the one bar"*. So the
+keystroke raises `TextAction::EnterCannotSplit` and the apply arm calls
+this. Widening the module's visibility so a keystroke handler could reach
+the store would have traded a real invariant for two saved lines.
+
+The draft is left **alive** afterwards, which matters to the wording as
+well as to the gesture: the sentence is about the key just pressed, the
+operator is still in the text it is about, and *"press Ctrl+Enter to finish
+this edit"* therefore names something they can do right now.
+
+### `fn record_edit_text_refusal`
+
+# Why the CLASSIFICATION is here and not at the call site
+
+Two reasons, and the second is the one that decided it.
+
+**R2.** `app/actions/apply.rs` is a router sitting a handful of lines under
+the 1,500 ceiling. The arm routes; it does not decide — the rule every other
+arm in that file follows — and the judgement below is a decision.
+
+**The decline module is `pub(super)` of `app::status` on purpose**, and that
+invariant is what ruled out the tidier-looking home. This was first written
+into `canvas::textedit::report`, beside `trace_target`, on the argument that
+a refusal is the failure half of *"what an edit report is worth telling
+anyone"*. That argument is good and it does not survive contact with the
+visibility: `canvas::` is outside `crate::app`, so it cannot reach `LAST`.
+This module's own header records the same collision for the Enter keystroke
+and the same resolution — *"widening the module's visibility so a keystroke
+handler could reach the store would have traded a real invariant for two
+saved lines."* A decline is written by the one dispatcher and read by the
+one bar, and that is worth more than where these lines sit.
+
+# What it refuses to do, and why the refusals matter
+
+`crate::text::status::edit_declined_by_engine`'s documentation named two
+shortcuts and forbade both:
+
+- **matching on `EditError`'s variants** — a second copy of `pdfcer-core`'s
+  taxonomy living in this crate, which drifts and then tells the operator
+  the *wrong* reason, strictly worse than the silence it replaced;
+- **grepping its `Display` string** — prose that is theirs to reword, which
+  `check-ui-strings.sh`'s exclusion 3 rules out in as many words.
+
+It also said the generic sentence was *"written to be deleted"* the day
+`EditError` gained a coarse kind. **It has one.**
+`pdfcer_core::text_edit::RefusalKind` shipped at `b1033ab` in direct answer
+to this project's 2026-09-04 request, and is deliberately **not**
+`#[non_exhaustive]` so the match is proved complete by the compiler. It had
+never been consumed here, because both engine-watching gates are keyed on
+`EditSession`'s **verbs** and a new *type* is invisible to
+`check-verb-coverage.sh` and `check-engine-backlog.sh` alike.
+
+# `one_operator` is the fact the engine cannot have
+
+[`crate::text::textedit::EditRefusal::of`] owns the joining rule and
+[`crate::canvas::textedit::Plan::one_operator`] owns the measurement. In one
+line: `RefusalKind::NotFound` is the engine's honest answer for a request
+naming text that no single editable run contains, and on the operator's own
+document that is true because **the producer wrote the line one glyph per
+show operator** — not because anything is missing or has moved. Only this
+shell can know that, because only this shell rebuilt the `find` from a run
+it had segmented itself.
+
+# Two audiences, two lines, one event
+
+The trace line here carries the category; `funnel::vector_edit`'s error arm
+carries the engine's own diagnostic prose unchanged, one line later. Whoever
+is reading `PDFCER_DIAG` wants the clause number; the operator wants to know
+their document is intact.
+
+`said=` is traced beside `kind=`, and it is not redundant: a build that read
+the category correctly and then chose the wrong sentence is the regression
+that matters most here, and `kind=` alone cannot distinguish it.
+`tools/ui-verify`'s `a_refused_typo_fix_says_why_it_was_refused` cross-checks
+`said` against the independent `edit-text-pin` measurement and fails when the
+two disagree.

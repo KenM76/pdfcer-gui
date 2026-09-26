@@ -242,3 +242,221 @@ The existing guard answers `WholePage` for a non-finite page or scale,
 and it must keep doing so on a subtractive page: casting a NaN scale to
 `u32` for the predicate would be undefined-ish rather than merely wrong,
 and the early return is what makes it unreachable.
+
+### `const OVERSCAN`
+
+This is the dial the operator's constraint turns on, and its cost is
+quadratic, so it is written down rather than tuned by feel:
+
+| overscan | pixels | pans that cost nothing |
+|---|---|---|
+| `0.0` | 1× | none — every pixel of movement crosses the edge |
+| `0.5` | **4×** | **at least a quarter screen in every direction**, up to three quarters |
+| `1.0` | 9× | at least half a screen in every direction |
+
+`0.5` is the shipped value. At the zooms where the region tier engages the
+viewport is a few hundred thousand pixels, so 4× of it is small in absolute
+terms — which is the entire point of the region tier: **the raster stops
+scaling with the zoom**, so a constant multiple of the window is affordable
+where a constant multiple of the page would not be.
+
+# The middle column is the budget; the right column is what SURVIVES
+the snap
+
+This table said *"up to half a screen in any direction"* against `0.5` until
+2026-09-04, and that sentence was **false in two of the four directions** —
+not because the overscan was not bought, but because [`region_for`]'s snap
+spent it all on one side. The measurement and the operator report that
+exposed it are in that function's header; the correction is recorded here
+because this is the number a future reader will reach for when they want a
+bigger margin, and reaching for it would have been the wrong fix.
+
+The right-hand column is now a **guarantee at the worst grid phase**
+rather than a best case, which is the only form of it worth writing down:
+what the operator experiences is the worst side of the worst phase, because
+that is the edge the fade appears along. The spread exists because the snap
+quantises the window to half a viewport, so the margin varies between
+`OVERSCAN − 0.25` and `OVERSCAN + 0.25` viewports on each side as the view
+moves through the grid.
+
+# What a bigger number would cost, priced rather than guessed
+
+`BENCHMARK.md` carries the engine's own measurement of the region path on
+the benchmark CAD sheet: **691 ms of fixed cost** (a one-by-one-*point*
+region costs 691 ms — ~99 % of render cost there is area-independent) plus
+roughly **0.19 µs per pixel**. On a ~1.3-megapixel viewport that puts one
+region raster at ~1.6 s today, and moving this constant costs:
+
+| overscan | region | raster time | guaranteed margin |
+|---|---|---|---|
+| `0.5` (shipped) | 4× viewport | ~1.6 s | 0.25 screens |
+| `0.75` | 6.25× | ~2.1 s (**+0.5 s**) | 0.5 screens |
+| `1.0` | 9× | ~2.8 s (**+1.2 s**) | 0.75 screens |
+
+Which is why this is an operator decision and not a tuning exercise. He
+has already ruled on this trade once — *"I don't want the affect that other
+readers have where you always have to wait for detail to render after
+panning"* — and both columns of that ruling move together: a wider margin
+means fewer waits but each one is longer.
+
+### `enum Ink`
+
+`page_pts` is the page's own size in PDF points, longest edge first or not —
+both are examined. `raster_scale` is device pixels per PDF point, which is
+the operator's zoom already multiplied by the display scale.
+
+# Why the pixmap ceiling is the switch, and not a zoom percentage
+
+A zoom threshold would be wrong on exactly the documents this shell is for.
+The whole-page raster fails when `page × scale` exceeds
+`MAX_PIXMAP_EDGE` — so a small page survives to a far higher zoom than a
+large one, and an A0 sheet reaches the ceiling while an A5 is still
+comfortable. Switching on the thing that actually fails means the operator
+keeps free panning for as long as it is physically available, on every page
+size, without anybody choosing a number per document class.
+
+It also means the switch **moves with the display scale**, which is
+correct and would be easy to get wrong: `raster_scale` already includes
+`pixels_per_point`, so a 150 % display reaches the ceiling at two-thirds the
+zoom, exactly as it should.
+**Whether this page is blended in ink, and at what ceiling** — the
+second thing that ends the whole-page tier.
+
+# Why the tier has two ceilings now
+
+The operator, 2026-08-26: *"seems I get different results depending on Zoom
+level … up to 474 % they are mismatched, but at 579 % they match."*
+
+A page whose group declares a subtractive blending space (§11.4.7) is
+composited in a four-colorant buffer at 20 bytes a pixel. Above a ceiling
+the engine refuses that buffer and composites in sRGB instead — correctly,
+and it says so — and the colours move, measured at up to 16 levels of 255.
+
+That ceiling is **much lower than [`pdfcer_render::MAX_PIXMAP_EDGE`]**: on A4
+the default is reached at about 518 % zoom against the edge ceiling's
+1946 %, a factor of 3.76. Every whole-page raster in between comes back with
+approximate colours — and a **region** raster of the same view does not,
+because the buffer is sized to the region. So ending the whole-page tier at
+whichever ceiling bites first is the repair, and it needs no new tier.
+
+# Why it is OBSERVED and not assumed, which is the whole design
+
+The obvious implementation applies the ink ceiling to every page. It would
+be a serious regression, and the numbers say so plainly:
+
+* the engine measured **13 of 51** files in the print-conformance suite and
+  **15 of 4,012** in its external corpus as declaring a subtractive page
+  group — about 0.4 % of real documents;
+* on the operator's own D-size drawing sheet (1584 × 1224 pt) the default
+  ceiling is crossed at **263 % zoom**, which is well inside the range he
+  works in every day;
+* and that sheet is line work with **no transparency on it at all** — it
+  never asks for the buffer, so nothing would have been gained.
+
+Applying the ink ceiling unconditionally would therefore have taken free
+panning away from the operator's normal working zoom, on his own documents,
+to fix a problem those documents do not have.
+
+So the shell **learns**: `pdfcer-render` reports `cmyk_buffer_engaged` and
+`cmyk_buffer_refused` on every raster, and either being non-zero means *this
+page asked to be blended in ink*. `OpenDoc::absorb_render` records it, and
+only a page that has been seen doing so gets [`Ink::Subtractive`]. A
+document opens at a fit zoom and renders once before any zoom is possible,
+so the observation is in hand before it can matter.
+
+**The engine CAN now be asked directly, and this shell asks
+first.** `interpret::page_blend_space` is still private, but `Pass 296.4`
+made `pdfcer_render::page_composites_in_ink` public, and it is that same
+function with the policy taken out of the `RenderOptions` handed in.
+`OpenDoc::learn_ink` calls it once per page, so the answer is in hand from
+the page dictionary rather than one raster later. The paragraph this
+replaces described the request that produced it as still open.
+
+**The observation below is KEPT, as a second observer that can only
+agree.** The engine ships a test asserting the two match on every fixture,
+so this is not a union of two opinions and must not be read as one — it is
+one answer reachable by two routes, and the render route survives for the
+pages that are rastered before anyone thinks to ask. What the counters
+cannot supply is *which* of Table 147, the output intent or the device
+decided it; that is `OpenDoc::ink_source`, it has one writer, and an
+observed-only page correctly has no entry in it.
+
+### `fn whole_page_raster_fits`
+
+`MAX_PIXMAP_EDGE` and nothing else: no opinion about colour, no opinion
+about speed. `true` means `pdfcer_render::render_page` will get past its own
+size guard; `false` means it will return
+`RenderError::BadRasterSize { width, height }` and the caller will have a
+refusal to explain instead of a picture.
+
+
+Because two different callers need two different questions answered, and
+until O186 they were both asking [`for_page`] — which is the *union* of this
+hard limit and the soft ink one.
+
+* The **canvas** asks *"which tier should I use?"* It wants the union:
+  dropping to a region is the right answer both when the whole page cannot
+  be allocated and when it can but would lose its ink.
+* The **strip** asks *"can I order this page at all?"* A strip page is
+  handed `region: None` by construction — `OpenDoc::region_for` refuses a
+  region for any page but the current one, deliberately, because a region is
+  in one page's coordinate space — so for a strip page `Region` is not an
+  alternative tier, it is *"there is nothing I can order"*.
+
+
+> *"I think this sometimes results in similar error to 'This page could not
+> be drawn. requested raster size 50411508x32619210 is empty or exceeds
+> MAX_PIXMAP_EDGE'."*
+
+`50411508 × 32619210` is **1224 × 792 pt at scale 41185.87**, and
+`SW41177.pdf` has exactly two pages that size against thirty-four at
+1584 × 1224. The failing raster was a **neighbour** sheet in the continuous
+strip, ordered whole-page at the current page's deep scale, because
+`render::settle::fill_strip` asked for every visible page without ever
+asking whether the order could be filled.
+
+And the union would have been the *wrong* predicate for the strip even so:
+an ink page above the CMYK buffer ceiling but below the pixmap one answers
+`Region` from [`for_page`] while its whole-page raster allocates perfectly
+well. Skipping it would have left a neighbour sheet undrawn at an ordinary
+zoom to avoid a failure that was never going to happen — trading a real
+regression for an imaginary one.
+
+# Degenerate input answers `true`
+
+The same rule [`for_page`] applies, and for the same reason: a zero or
+non-finite extent cannot be reasoned about, the whole-page path refuses it
+safely with its own sentence, and answering "it does not fit" here would
+instead make the strip silently skip a page whose real problem is something
+else entirely.
+
+### `fn region_raster_fits`
+
+[`whole_page_raster_fits`]' twin, asked of an explicit rectangle in the
+page's own user space rather than of the sheet's extent. Same ceiling, same
+arithmetic, same degenerate-input rule — one definition of where the wall
+is, because two would eventually disagree about it.
+
+# Why a region needs asking at all
+
+Two different rectangles arrive here wearing one type, and they behave
+oppositely as the operator zooms:
+
+| region | device size as zoom rises |
+|---|---|
+| [`crate::canvas::tier`]'s visible-rect tier | **constant** — the box is a multiple of the WINDOW, so the raster is the same size at 800 % and at 8,000,000 % |
+| [`crate::render::halo`]'s off-page box | **grows with the zoom**, exactly as the whole sheet's does — and it is the bigger rectangle, so it hits this ceiling FIRST |
+
+A caller that assumes "a region was chosen, therefore the order is small"
+is right about the first row and wrong about the second. On the operator's
+own site plan the halo box is 2,384 × 1,684 pt against a 1,191 × 842 pt
+sheet, so it crosses `MAX_PIXMAP_EDGE` at about **half** the zoom the sheet
+does. `OpenDoc::raster_order_fillable` is where that assumption was made
+and is the caller this exists for.
+
+# Degenerate input answers `true`
+
+[`whole_page_raster_fits`]' rule, for its reason: a non-finite or inverted
+box cannot be reasoned about, the render path refuses it safely with its
+own sentence, and answering "it does not fit" here would make a caller
+silently withhold an order whose real problem is something else.

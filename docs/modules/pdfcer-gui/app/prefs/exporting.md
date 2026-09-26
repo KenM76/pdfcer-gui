@@ -171,3 +171,120 @@ Literals, deliberately: if the engine changes a default, this window's
 behaviour must change **visibly, in a diff**, not silently on a
 `cargo update`. The disagreement is then a failing test rather than a
 different DXF.
+
+### `const MIN_EXPORT_DPI`
+
+These four constants are **the controls' bounds**, not separately reasoned
+limits, and [`super::printing`]'s header states why that matters: *"a file
+that refused a value the operator could produce by dragging the box would
+silently discard a setting they had just made."* If a control's range
+changes, change it here in the same commit — the round-trip is only honest
+while the two agree.
+
+### `struct ExportImagePrefs`
+
+Five fields, every one of them an answer to *"how does this operator export
+pictures"* rather than to *"what is in this document"*. `PartialEq` and not
+`Eq` because [`Self::dpi`] is an `f32`; the derive is load-bearing rather
+than decorative — [`crate::dialogs::export_remembered::remember_image`]
+compares with `!=` and skips the file write when nothing moved.
+
+### `struct ExportTextPrefs`
+
+`PartialEq` for the same dirty-check reason as [`ExportImagePrefs`]; `Eq`
+would be derivable here, and is deliberately not derived, so the three groups
+present one shape to a reader.
+
+### `struct ExportDxfPrefs`
+
+Three fields out of `DxfOptions`' five. The other two — `scale` and
+`arc_tolerance` — are argued in the module header, and the argument for
+`scale` is the most important sentence in this file.
+
+### `fn image_format_from_key`
+
+`jpg` is **not** accepted as a synonym for `jpeg`. A second spelling is a
+second thing the writer and the parser have to agree about, and the file
+documents its own vocabulary in the block [`write_block`] emits.
+
+### `fn page_scope_key`
+
+**Lossy on purpose.** [`PageScope::Typed`] has no token, because the
+typed range it depends on is not remembered; a window restored into `Typed`
+with an empty range box would open with its Export button greyed and nothing
+on screen to explain it. The caller decides what `Typed` degrades *to* — see
+[`page_scope_key_or`], which is what both windows actually call.
+
+### `fn page_scope_key_or`
+
+`fallback` is the window's shipped default — `CurrentPage` for the image
+window, `AllPages` for the text window — so a reduction lands on the answer
+that window would have opened with anyway rather than on a third behaviour.
+
+# Panics
+
+Never in practice, and the `expect` says which contract would have to be
+broken first: `fallback` must itself be a scope with a token. Passing
+`PageScope::Typed` as the fallback is the one way to reach it, and no caller
+does — both pass a `const` default.
+
+### `fn dxf_units_key`
+
+`millimetres` with the British spelling, matching the engine's own variant
+name. The file is a vocabulary of its own and consistency with the type it
+describes beats consistency with any other file on the machine.
+
+### `fn dxf_units_from_key`
+
+`mm` and `millimeters` are accepted **in addition**, and this is the one
+place in this module that takes a synonym. The reason is not symmetry with
+the writer — the writer emits exactly one spelling — it is that this is the
+single key in the file whose British spelling an American hand-editor will
+get wrong, and the cost of a `BadValue` here is an operator silently
+exporting inches. The writer's block names the canonical spelling.
+
+### `struct ExportPrefs`
+
+Held on [`Prefs`](super::Prefs) as three separate fields rather than one, so
+that a window reads only its own group and a future fourth export window adds
+a struct rather than widening one. This type exists only so [`parse_key`] and
+[`write_block`] take one argument instead of three.
+
+### `fn parse_key`
+
+# Why the parser for this group lives HERE and not in `prefs::file`
+
+[`super::printing::parse_key`] argues this at length and the argument carries
+over unchanged: the rule *"adding a preference is one edit to one file"* is
+about **the parser and the writer staying together**, not about their being
+in `file.rs` specifically. Twelve keys, all about exporting, in the file that
+already owns their types, defaults and token vocabulary.
+
+`file.rs` keeps one chained call that delegates here and one that delegates
+to [`write_block`], so the round-trip tests over the whole of
+[`Prefs`](super::Prefs) cover this group unchanged.
+
+# The contract
+
+`value` arrives already trimmed, as `file.rs` trims both halves before it
+dispatches. Returns [`KeyOutcome`]; see its variants. [`KeyOutcome`] is
+borrowed from [`super::printing`] rather than re-declared, for the reason
+`offpage` borrows it: a second copy is a second thing that can drift.
+
+# Out of range CLAMPS; unparseable is a `BadValue`
+
+The numeric keys follow [`super::printing`]'s ruling exactly. `dpi = 99999`
+becomes [`MAX_EXPORT_DPI`] silently, because the number is a legible
+intention the control itself would have clamped. `dpi = fast` is a
+[`KeyOutcome::BadValue`] reported at its line number, because it is not.
+
+### `fn write_block`
+
+Called once by `Prefs::write_to_string`. The comments are as long as they are
+because the file is meant to be opened in a text editor, and
+`export_dxf_units = millimetres` tells an operator nothing about what else
+they could write there.
+
+Written **unconditionally**, even on a fresh profile where every value is
+the default. `offpage`'s own note is the reason: *"a preference nobody can
+discover is a preference nobody has."*

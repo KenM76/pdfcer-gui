@@ -140,3 +140,10 @@ The cost rule, from the other end: a search is a whole-document text
 extraction — 350 ms on the benchmark drawing — so a bar that raised one
 per keystroke would spend 1.4 seconds of blocked UI thread on the word
 `part`. This is what "never searches on a keystroke" means in a test.
+
+### `fn searched`
+
+Built by writing `super`'s private fields directly, which a child
+module may do. The alternative — a constructor on `FindState` that only
+tests call — would be a second way to assemble a result set, and the
+currency key is exactly the thing that must have one.

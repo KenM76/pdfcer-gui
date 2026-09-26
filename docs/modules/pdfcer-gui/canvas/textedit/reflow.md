@@ -102,3 +102,17 @@ paragraphs rather than about subscripts. It is inverted here rather than
 deleted, because the mistake is symmetrical and the next author will
 reach for the caret's recognition for exactly the reason the last one
 did.
+
+### `fn block_of_run`
+
+`None` for a page whose text cannot be extracted, a run the model does not
+place in a block, or a caret that is not on a run at all — three states that
+are one answer here (*"there is no paragraph to reflow"*) and are told apart
+by the caller only insofar as it says so.
+
+The run index is the SAME integer in both recognitions — both recognise
+one extraction, and `BlockRecognitionOptions` groups runs into blocks
+without renumbering the runs. So asking the relaxed model
+`block_at(run)` still asks *"which paragraph is the operator's run in"*.
+Only the answer's numbering changes, and its numbering is the one the
+engine will read it in.

@@ -11,12 +11,6 @@ use super::widgets;
 use crate::text::settings as t;
 
 /// The name written into `/T` on every comment this shell authors.
-///
-/// `text_value` with an identity parse, which is the honest shape for a free
-/// string: the helper exists to hold a half-typed *number* apart from a parsed
-/// value, and a name has no invalid intermediate state. `Some(..)` on every
-/// input means every keystroke reaches the draft, so Save writes exactly what
-/// is on screen.
 pub fn author_name(ui: &mut Ui, prefs: &mut crate::app::prefs::Prefs) {
     widgets::header(
         ui,

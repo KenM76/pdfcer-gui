@@ -59,3 +59,25 @@ from a window origin, because that is the crate's coordinate contract: a
 check that builds its own screen coordinates stops hitting anything the
 first time a panel width changes, and a stale coordinate is
 symptom-identical to a broken conversion.
+
+### `fn window_closes_at`
+
+The neighbour's top edge is one whole gap below the acting page's bottom edge
+and the gap is `ROW_GAP_PT × zoom`, so the edge descends past the pointer at
+roughly that rate and runs out of room at
+`(usable bottom - seam) / ROW_GAP_PT`. [`BOTTOM_DEAD_BAND_PT`] is what makes
+"usable" different from "published".
+
+Deliberately an UNDER-estimate. The real rate measured nearer `10.7 ×
+zoom`, because the pointer's document point slides down the screen a little as
+the zoom rises, so dividing by 12 predicts the window closing earlier than it
+does. An optimistic prediction here would let a run start a climb it cannot
+finish and then report an unmeasured absence, which is the exact failure this
+function exists to prevent.
+
+### `fn park_on_the_seam`
+
+Fails — as a SKIP — rather than guessing. A run that climbed from a seam
+outside the band would push one of the two pages off screen early and would
+then report "the neighbour was never visible", which is a statement about
+the harness wearing the clothes of a statement about the application.

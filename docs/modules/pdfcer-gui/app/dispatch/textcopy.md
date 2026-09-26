@@ -29,3 +29,18 @@ mid-frame, and a copy is neither.
 `crate::canvas::textsel::copy` is the one place the clipboard is written and
 the one place a copy is traced, so a copy from the ribbon and a copy from a
 sweep leave the same evidence.
+
+## Item notes
+
+### `fn handles`
+
+The same shape [`super::pages::handles`] uses, and for the same reason: the
+`match` in `super` stays a list a reader can scan, and the routing predicate
+lives beside the bodies it routes to — so a new verb here is one edit rather
+than two.
+
+### `fn dispatch`
+
+Takes the whole application rather than a `&Status`, because one of the two
+bodies records a decline and both read caches that live on the open
+document.

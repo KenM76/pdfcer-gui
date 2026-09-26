@@ -60,14 +60,6 @@ pub enum PrefAction {
 
 impl PrefAction {
     /// Write this preference through to `prefs` and save the file.
-    ///
-    /// Takes `&mut Prefs` rather than `&mut PdfcerApp` on purpose: the whole
-    /// point of the family is that none of it can touch a document, and a
-    /// signature that could would make that a convention rather than a fact.
-    /// A future member that genuinely needed more than `Prefs` would be
-    /// telling you it is not a member.
-    ///
-    /// The save failure is swallowed — property 4 in the module header.
     pub(super) fn apply(self, prefs: &mut Prefs) {
         match self {
             Self::FindZoom(on) => {

@@ -70,3 +70,48 @@ The weld between the widget's step and the file's grammar. If the
 slider could land on a value the loader would round away, the operator
 would set a scale, restart, and find a different one — with the file
 on disk holding what they chose and the program showing something else.
+
+### `const MIN_UI_SCALE`
+
+**0.8, not lower.** Below about four fifths the ribbon's two-row groups
+stop being able to fit their captions and the dock's tab labels start to
+clip — so a smaller value would not show the operator more, it would show
+them the same controls with the words cut off. `egui` will accept 0.1 and
+the result is unusable, which is exactly why the range is stated here
+rather than left to the widget.
+
+### `const MAX_UI_SCALE`
+
+**2.0.** At double size the shipped 1100 x 800 window holds the ribbon, a
+status bar and very little else, which is the point at which the control
+stops helping and starts hiding the document. Someone who needs more than
+this needs their operating system's display scaling, which multiplies with
+this one and is the setting built for the job.
+
+### `const DEFAULT_UI_SCALE`
+
+**Exactly 1.0**, which means *whatever the operating system says* — see
+[`crate::app::prefs::Prefs::ui_scale`] on why this multiplies rather than
+replaces. The standing rule for a capability becoming choosable is that the
+shipped default must reproduce the behaviour of a build that never offered
+the choice — here, leaving `zoom_factor` alone.
+
+### `const UI_SCALE_STEP`
+
+A twentieth. Fine enough that an operator can land on a size that feels
+right rather than choosing between two that do not, and coarse enough that
+the value reads as a percentage they could describe to somebody else.
+
+### `fn normalise_ui_scale`
+
+# Why the file's value is rounded and not merely clamped
+
+Because the file is hand-editable and a slider is not. An operator who
+writes `ui_scale = 1.234` gets a value the control cannot represent, so the
+next time they touch that slider it would silently jump — a change they did
+not make, to a setting they did. Rounding at load makes the file and the
+control agree from the first frame, and the loader reports it as a
+[`crate::app::prefs::PrefNote::Clamped`] so the substitution is not silent.
+
+Returns the rounded value; the caller compares it against the original to
+decide whether to report.

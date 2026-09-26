@@ -46,3 +46,19 @@ just asked to have back.
 The judgement call in this module's header, asserted so that a
 later "make reset thorough" edit fails a test instead of costing
 an operator work they deliberately kept.
+
+### `const ALL`
+
+Narrowest first. A destructive command's least destructive form
+should be the one nearest the pointer, and the one an operator
+reaches by accident.
+
+### `fn reset`
+
+The sides outside the scope are **not read, not written, and not
+normalized** — untouched is stronger than unchanged, and it is what
+makes the guarantee in this module's header checkable by inspection.
+
+Returns whether anything actually changed, so an application can skip
+a redundant save and can tell the operator *"that was already the
+default arrangement"* rather than silently doing nothing.

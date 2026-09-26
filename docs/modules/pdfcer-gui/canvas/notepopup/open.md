@@ -111,3 +111,47 @@ Both, because asserting only "opening a closed note works" would pass
 on an implementation whose override could only ever turn a pop-up on —
 and then the close button would be dead on exactly the notes that need
 it most, the ones the file authored open.
+
+### `struct Overrides`
+
+`Arc`-wrapped inside egui's store, so a read is a pointer clone rather than
+a map clone — this is read once per frame per visible note and written only
+on a click.
+
+### `fn is_open`
+
+`authored` is what the file says — [`super::model::NoteView::authored_open`]
+— and it is the answer whenever the operator has not spoken. See the
+module header for why that is an argument rather than a fallback.
+
+### `fn set`
+
+Stores the value even when it equals `authored`: *"the operator closed
+this and the file also says closed"* and *"the operator has not
+touched it"* are the same on screen today and differ the moment
+anything reads the file again, and a store that collapsed them would be
+deciding that on the caller's behalf.
+
+### `fn touched`
+
+The question the trace needs and nothing on screen can answer: a pop-up
+that is open because the *file* said `/Open` and one that is open
+because the operator *clicked* look identical, and the whole of this
+module's contract is the difference between them. An implementation
+that quietly defaulted `/Open` to `false` would look perfect right up
+until somebody opened a document another product had authored, and
+`note-popup from_file=` is the only oracle for it from outside the
+process.
+
+### `fn load`
+
+Returns an owned `Arc` rather than borrowing out of the memory lock,
+because egui's `data` is behind a `RwLock` that must not be held while the
+caller draws — the same shape `crate::canvas::interact::load_gesture` takes.
+
+### `fn set`
+
+Read-modify-write under one lock. The map is small — one entry per pop-up
+the operator has personally opened or closed in this sitting — so the clone
+is a handful of `(ObjId, bool)` pairs and the alternative (interior
+mutability inside the `Arc`) would buy nothing and cost a `Mutex`.

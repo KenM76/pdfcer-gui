@@ -312,3 +312,222 @@ fail to build rather than fail to run.
 The runtime half is the one that can actually change: the shipped
 default is a value, and a default outside its own control's bounds
 would be silently rewritten the first time anybody touched the swatch.
+
+### `enum PenSlot`
+
+# Why this exists rather than the swatch naming a field
+
+Because there are now eight colours and one control. A swatch that wrote to
+`pen.underline` by naming the field would need a second swatch for every
+slot, and the slot a control edits is a *runtime* choice — which is the
+definition of a value rather than a field name. [`Pen::colour_of`] and
+[`Pen::set_colour`] take one of these and are total over it, so the control
+is written once and a ninth slot is a compile error rather than a silent
+fallback to the shape pen.
+
+# The mapping to Acrobat's store
+
+| slot | Acrobat key | shipped colour |
+|---|---|---|
+| [`Self::Shape`] | `cSquare`, `cCircle`, `cLine`, `cLine:LineArrow`, `cPolyLine`, `cPolygon`, `cPolygon:PolygonCloud`, `cInk` | [`palette::MARKUP_RED`] |
+| [`Self::Highlighter`] | `cHighlight`, `cInk:InkHighlight` | [`palette::HIGHLIGHTER_ORANGE`] |
+| [`Self::Underline`] | `cUnderline` | [`palette::UNDERLINE_BLUE`] |
+| [`Self::StrikeOut`] | `cStrikeOut` | [`palette::STRIKEOUT_PINK`] |
+| [`Self::Squiggly`] | `cSquiggly` | [`palette::MARKUP_RED`] |
+| [`Self::Note`] | `cText` | [`palette::NOTE_PURPLE`] |
+| [`Self::TextBox`] | `cFreeText` | [`palette::MARKUP_RED`] |
+| [`Self::Stamp`] | `cStamp` | [`palette::MARKUP_RED`] |
+
+See [`super::palette`]'s header for where those readings come from and for
+the evidence that they are Adobe's factory values rather than this machine's
+history.
+
+### `const ALL`
+
+Exists for the reason `MarkupKind::ALL` does: it is what lets a test
+sweep every slot rather than a hand-written subset, so a ninth slot is
+covered without anybody remembering to add it.
+
+### `struct Pen`
+
+`Copy`, and small enough that it is passed by value everywhere. That is
+deliberate: a pen borrowed from the application while a gesture is being
+committed would conflict with the `&mut self` the commit needs, and the
+alternative — cloning at each call — would be the same bytes with a
+question about whether the copy is stale.
+
+⚠ **Keeping it `Copy` is what decided [`super::linestyle::LineStyle`]'s
+shape.** The engine's `BorderDash` owns a `Vec<f64>` and would have taken
+`Copy` away from every caller in `canvas::markup` and `app::actions`; see
+that type's header.
+
+### `const MIN_WIDTH_PTS`
+
+**A quarter point, not zero.** Zero is a legal PDF border width and means
+*"the thinnest line the device can draw"*, which on a 2400 dpi plotter is
+invisible and on screen is one pixel — so it is a width whose appearance
+depends on the output device, which is precisely the property a comment
+annotation must not have. A quarter point is the thinnest value that means
+the same thing everywhere.
+
+### `const MIN_OPACITY`
+
+A tenth, not zero. An annotation at `/CA 0` is **invisible** — it is in the
+file, it is selectable, it prints as nothing, and nothing on screen says it
+is there. A control whose bottom end authors an invisible mark is a control
+whose bottom end is a defect report waiting to be filed, and the operator
+would have no way to tell it from a markup that failed to author at all.
+
+A tenth is faint enough to be a wash over dense linework and still visible
+as a mark.
+
+### `const MAX_WIDTH_PTS`
+
+Twelve points is about a sixth of an inch — a marker rather than a pen, and
+already heavy enough to obscure the drawing underneath, which is the failure
+a comment on an engineering sheet has to avoid. Beyond it the annotation
+stops being linework and starts being a fill, and `MarkupSpec` has a
+separate concept for that which this shell deliberately does not offer.
+
+### `fn simplify_tolerance_pts`
+
+# This function exists because the constant it replaced went stale
+the day the pen became a control
+
+`ink::SIMPLIFY_TOLERANCE_PTS` was `PEN_WIDTH_PTS / 4.0`, a `const`
+derived from the pen's **shipped** width of 2 pt. That was exactly
+right while the width was a constant, and `canvas::markup::ink`'s §3.2
+wrote down what to do when it stopped being one:
+
+> it is a *rule* — **if the pen ever becomes an operator control, the
+> tolerance follows it** rather than being re-tuned by eye.
+
+
+# Why the stale value was wrong in a way an operator would see
+
+The derivation is not arbitrary. Ramer–Douglas–Peucker guarantees that
+no removed point lay further than ε from the line replacing it, so ε
+bounds how far the **drawn centreline** can move. Setting ε to half of
+the stroke's *half*-width means the simplified centreline stays strictly
+inside the body of the stroke the raw trail would have drawn: **no pixel
+of the mark can move outside the mark.** That is the strongest statement
+available about a lossy simplification, and it is the whole reason the
+number is defensible rather than tuned.
+
+A fixed 0.5 pt breaks it in one direction and merely wastes work in the
+other:
+
+| pen width | half-width | fixed ε = 0.5 | verdict |
+|---:|---:|---:|---|
+| 0.25 pt | 0.125 pt | **4× the half-width** | ⛔ the centreline can move well outside the stroke. An operator drawing a fine detail line gets a visibly different curve from the one they drew |
+| 2 pt | 1 pt | 0.5 = half the half-width | ✅ the shipped case, and the only one that was ever right |
+| 12 pt | 6 pt | 0.17× the half-width | ⚠ correct but pointlessly tight — keeps far more points than the guarantee needs |
+
+The thin-pen row is the one that matters: it is the direction that
+**changes what is authored**, it is silent, and it is worst on exactly
+the drawings this shell is for, where a 0.25 pt pen exists to match a
+CAD sheet's own linework.
+
+# It lives here rather than in `ink`
+
+Because the rule is *"the tolerance follows the pen"*, and a derivation
+kept beside the value it derives from cannot be forgotten when that
+value changes — which is precisely what happened when it lived
+elsewhere as a `const`.
+
+
+
+Two things follow, and both are load-bearing:
+
+1. **Today**, `self.width_pts` is the only width, so this signature is
+   correct and needs no kind. A `Pen` is one thickness and eight colours.
+2. **The day a width goes per-slot**, this function must gain the slot
+   and every caller must pass it. `ink::simplify` is the only consumer
+   and it already knows the kind it is simplifying, so the change is
+   mechanical — but it is *not optional*: an ink stroke simplified at the
+   shape pen's tolerance while drawn at a per-slot width would move the
+   centreline outside the stroke on exactly the thin-pen row of the table
+   above, silently, on the dense drawings this shell is for.
+
+[`tests::the_tolerance_follows_the_width`] is what enforces this rather
+than the prose — it varies the width and asserts the tolerance moves,
+which is the only form of the rule a future edit cannot read past.
+
+### `fn colour_for`
+
+Two total functions composed: [`PenSlot::of`] says which pen draws the
+kind, [`Self::colour_of`] says what colour that pen is. Neither has a
+catch-all arm, so a ninth [`MarkupKind`] or a ninth [`PenSlot`] is a
+compile error rather than a silent landing on the shape pen — which is
+what the old two-arm `match` with its `_ => self.ink` did, and was right
+to do while there were exactly two pens.
+
+### `fn colour_of`
+
+Exhaustive over [`PenSlot`], deliberately and without a `_` arm: this is
+the function a new slot must be taught about, and a catch-all here would
+let a new slot compile while authoring the shape pen's red — a defect
+with no symptom except a colour nobody chose.
+
+### `fn set_colour`
+
+The write half of [`Self::colour_of`] and the one place the operator's
+override lands. *"Once they set a colour for a kind, it sticks for that
+kind"* is this function plus the fact that [`Pen`] lives on the
+application rather than on the document — see the module header's own
+section on why a pencil does not change colour when you turn the page.
+
+Alpha is dropped; see [`Self::set_ink`] for the argument, which is about
+`/C` having three components and no fourth.
+
+### `fn text_annot_colour`
+
+Its one caller is `app::actions::apply`'s `CommitTextAnnot` arm, and
+the line it replaced read `self.pen.ink` — one colour for all three,
+which made a pdfcer sticky note shape-red where Acrobat's is violet.
+Routing through [`PenSlot::of_text_annot`] rather than exposing the three
+fields keeps the mapping total and keeps it here, beside the table it is
+derived from.
+
+### `fn set_ink`
+
+# Alpha is dropped, deliberately, and this is not a limitation
+
+`egui`'s colour picker offers an alpha channel; a PDF annotation's `/C`
+entry is **three components and no more** (§12.5.2 Table 164: an array
+of 0, 1, 3 or 4 numbers in the annotation's colour space, with
+transparency carried by `/CA` instead). Feeding the picker's alpha into
+`/C` would be a value with nowhere to go.
+
+Opacity is therefore a **separate control**, and it is one that **now
+exists** — [`Self::opacity`], drawn beside the swatches in
+[`super::swatch::show`] since 2026-08-28. This paragraph used to end
+*"it is not built yet: `/CA` support was filed against `pdfcer-core` and
+is accepted-and-scheduled rather than shipped"*, which was true when
+written and stopped being true when `Pass 81.1` landed
+`MarkupOptions::opacity`. Corrected rather than deleted, because a stale
+blocker is this project's most-repeated defect and the shape of it is the
+useful part.
+
+⇒ The alpha channel is *still* not offered **on the colour picker**, and
+that is unchanged and correct: `/C` has three components, and a picker
+alpha would be a fourth with nowhere to go. Transparency is `/CA` and it
+has its own control.
+
+### `fn opacity_option`
+
+`None` at fully opaque. See [`Self::opacity`] for why that is not the
+same as `Some(1.0)` even though it is the same on screen, and why the
+difference is worth a method rather than a comparison at each call site
+— there are three, and the one that forgot would be the one that made a
+pdfcer annotation textually unlike everybody else's.
+
+### `fn dash_option`
+
+⚠ **Not passed on the text-markup route.** `app::actions::apply`'s
+`CommitMarkup` arm sends it; `CommitTextMarkup` does not, because a
+highlight, underline, strikeout and squiggly draw no `/BS` border and
+the engine ignores the field for all four. Sending a value that is
+documented as ignored would be this shell asking for something and
+calling the silence success — which is the exact failure shape
+`MarkupStyleSupport` was shipped to end.

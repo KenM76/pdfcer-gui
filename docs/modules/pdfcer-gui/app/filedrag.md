@@ -116,3 +116,45 @@ frame, the fallback runs at the end, and exactly one of them acts.
 `app::dropped` decides that only the first is acted on and says so to
 the operator. This module must not make that decision early, or the
 claiming surface loses the ability to say how many arrived.
+
+### `struct Landed`
+
+Carries **every** path, not just the first. The claiming surface needs to
+know how many arrived so it can say so, and `dropped`'s
+"only the first" rule is that module's decision to make rather than this
+one's — this module's job ends at *where*.
+
+### `fn poll`
+
+Records a [`Landed`] when files arrived, so that a surface drawn later in
+the same frame can claim it. Requests a repaint while a file is hovering,
+because otherwise there would not *be* a later frame: `egui` repaints on
+events, a hovering file produces exactly one (`HoveredFile`, on entry), and
+a caret that appeared once and then froze would be worse than no caret.
+
+### `fn hovering`
+
+`hovered_files` is **cloned** rather than taken by `egui`'s `RawInput`, so
+it stands for as long as the drag does and this is a state rather than an
+edge — which is what makes a per-frame caret possible.
+
+### `fn claim`
+
+A surface calls this only once it has resolved what the drop means on its
+own geometry — not merely because the point is inside its rectangle. A
+claim it cannot act on would be worse than no claim, because the fallback
+has already been skipped by then.
+
+### `fn unclaimed`
+
+The same operation as [`claim`] and a different *name*, because the two
+call sites mean opposite things and a reader of `app::frame` should not
+have to work out which one a bare `claim()` is. There is exactly one caller
+of this, and it is the fallback.
+
+### `fn test_land`
+
+`#[cfg(test)]` rather than a public seam: a landing is written by exactly
+one function in the running program ([`poll`]), and a second writer would
+be a second answer to *"was a file dropped?"* that could disagree with the
+input it is supposed to be reporting.

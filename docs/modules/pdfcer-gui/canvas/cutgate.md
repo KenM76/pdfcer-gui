@@ -76,3 +76,21 @@ Asserted as strings rather than by building a document, because the
 claim under test is that this shell's spelling matches the engine's
 `CutWouldNotSurvive { subtype }` — a wording agreement across a crate
 boundary, which no fixture can check and a typo would silently break.
+
+### `struct Blocker`
+
+A `&'static str` naming the **subtype** rather than an enum, because that is
+what the engine's own `CutWouldNotSurvive { subtype }` carries and because
+the set is the file format's, not this shell's. An enum here would be a
+second taxonomy to keep in step with a first that lives in another crate —
+decision 058's failure mode.
+
+### `fn blocker`
+
+`None` — the overwhelmingly common answer — means *let them press it*.
+
+# Cost
+
+One `session.value()` on the selected annotation, or nothing at all when no
+annotation is selected. Safe to call every frame; see the module header for
+why it is not `copy_selection`.

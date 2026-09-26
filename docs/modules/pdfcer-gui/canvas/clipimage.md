@@ -118,3 +118,16 @@ it must come out `(255, 127, 127)` — a pale red. Treating the input as
 straight alpha would give `(191, 127, 127)`, a *darker* pale red, and
 the difference is exactly the "dirty edges" symptom that makes a pasted
 picture look subtly wrong without looking broken.
+
+### `fn publish`
+
+Returns the picture's size in pixels when it reached the clipboard, and
+`None` when it did not — a caller should treat `None` as *"the internal
+clip is there, the picture is not"* and say nothing to the operator about
+it, because the copy they asked for did happen.
+
+`text` is not decoration. `egui-winit` only produces a paste event when
+the OS clipboard holds non-empty text, so writing a picture alone would stop
+`Ctrl+V` arriving in this application at all. The two travel together, in
+one clipboard transaction, and `native_window::clipboard`'s header carries
+the measurement.

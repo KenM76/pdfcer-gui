@@ -132,3 +132,12 @@ drawn at any zoom this viewer offers. That is the one case that must
 report `false`, and it is read off the result rather than predicted
 before the call, so the arithmetic that decides it is the arithmetic that
 ran.
+
+### `fn rasterize`
+
+`page_index` is passed rather than read from the view because this is
+also how a **strip** page is requested, and a strip page is by
+definition not the current one. Routing of the result is by the key's
+own page — see [`OpenDoc::absorb_render`] — so a render that finishes
+after the operator has scrolled lands wherever that page now belongs
+rather than wherever it belonged when it started.

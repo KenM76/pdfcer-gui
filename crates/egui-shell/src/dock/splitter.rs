@@ -102,11 +102,6 @@ impl SplitterOutcome {
 }
 
 /// Draw one splitter in `rect` and report what the operator did to it.
-///
-/// `rect` is the **interactive** rectangle — the full
-/// [`super::plan::SPLITTER_THICKNESS`] — and the painted rule is a
-/// centred sliver of it. See the module header on why those are
-/// different sizes.
 pub(crate) fn splitter(
     ui: &mut Ui,
     id: Id,
@@ -172,12 +167,6 @@ pub(crate) fn splitter(
 
 /// The colour a splitter paints when idle, exposed for the contrast
 /// check.
-///
-/// A separator drawn in a colour indistinguishable from the panel it
-/// sits on is invisible, and an invisible boundary is one the operator
-/// never learns is draggable. The theme's own contrast gate covers text
-/// pairs; this is the one non-text pair the dock adds, and it is checked
-/// by `the_idle_splitter_is_distinguishable_from_the_panel`.
 #[must_use]
 pub(crate) fn idle_colour(theme: &Theme) -> Color32 {
     theme.palette.outline

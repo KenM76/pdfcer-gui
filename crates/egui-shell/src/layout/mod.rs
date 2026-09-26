@@ -123,11 +123,6 @@ pub use skip::{LayoutSite, LayoutSkip, LayoutSkipReason, LoadReport};
 pub use workspaces::{Unseen, Workspace};
 
 /// Why a layout could not be written.
-///
-/// Reading never fails — see this module's header — so this is a
-/// write-side error only, and it is a real `Result` because a failed save
-/// is something the operator must be told about: they are about to close
-/// an application believing their arrangement is safe.
 #[derive(Debug, thiserror::Error)]
 pub enum LayoutError {
     /// The document could not be rendered as RON.
@@ -210,14 +205,6 @@ impl LayoutDocument {
     }
 
     /// Render as RON, one field per line, for a file a person may read.
-    ///
-    /// # Errors
-    ///
-    /// [`LayoutError::Serialize`] if the document cannot be rendered,
-    /// which in practice means a non-finite `f32` reached the writer —
-    /// [`crate::dock::DockLayout::normalize`] removes those, and
-    /// `a_normalized_layout_always_serializes` is the test that says the
-    /// two agree.
     pub fn to_ron_pretty(&self) -> Result<String, LayoutError> {
         Ok(ron::ser::to_string_pretty(
             self,
@@ -226,10 +213,6 @@ impl LayoutDocument {
     }
 
     /// Write to a path, creating parent directories as needed.
-    ///
-    /// # Errors
-    ///
-    /// [`LayoutError::Serialize`] or [`LayoutError::Io`].
     pub fn save_to_path(&self, path: impl AsRef<std::path::Path>) -> Result<(), LayoutError> {
         let path = path.as_ref();
         if let Some(parent) = path.parent()
@@ -242,16 +225,6 @@ impl LayoutDocument {
     }
 
     /// Parse a document from text, dropping what it cannot use.
-    ///
-    /// **Never fails.** `fallback` is the application's built-in default
-    /// arrangement, used when the text cannot be parsed at all; pass the
-    /// same value the application would use on a fresh profile.
-    ///
-    /// `catalog` is what makes a stale panel id detectable. Pass
-    /// [`crate::dock::AnyPanel`] only in tooling that has no registry — in
-    /// an application it would disable the check that turns a mount for a
-    /// compiled-out capability into a disclosed skip rather than an empty
-    /// compartment.
     #[must_use]
     pub fn from_ron(text: &str, fallback: &DockLayout, catalog: &dyn PanelCatalog) -> Loaded {
         let mut report = LoadReport::default();
@@ -297,11 +270,6 @@ impl LayoutDocument {
     }
 
     /// Read a document from a path, dropping what it cannot use.
-    ///
-    /// **Never fails.** A missing file yields the fallback and a
-    /// [`LayoutSkipReason::FileMissing`], which
-    /// [`LoadReport::is_noteworthy`] deliberately does not count as worth
-    /// telling anybody about: a first run is not a failure.
     #[must_use]
     pub fn load_from_path(
         path: impl AsRef<std::path::Path>,
@@ -329,12 +297,6 @@ impl LayoutDocument {
 }
 
 /// Which part of a document a sanitization pass is walking.
-///
-/// A layout inside a named workspace reports its problems against the
-/// **workspace**, not against a column index, because *"workspace
-/// `Review`: `signatures` is not a panel this build offers"* is what an
-/// operator can act on, whereas *"the left dock, column 0, compartment 1"*
-/// is ambiguous between the live arrangement and four saved ones.
 pub(crate) enum Scope<'a> {
     /// The live arrangement.
     Active,
@@ -385,13 +347,6 @@ impl Scope<'_> {
 
 /// Walk one arrangement, repairing every invariant and reporting each
 /// repair.
-///
-/// This is [`crate::dock::DockLayout::normalize`] with a voice. The two
-/// must agree — a load that repaired something `normalize` would not, or
-/// vice versa, would mean an arrangement that changes shape between being
-/// loaded and being drawn — and
-/// `sanitizing_leaves_nothing_for_normalize_to_do` is the test that holds
-/// them together.
 pub(crate) fn sanitize(
     layout: &mut DockLayout,
     catalog: &dyn PanelCatalog,

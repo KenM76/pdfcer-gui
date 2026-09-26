@@ -125,3 +125,13 @@ changes** — flagged in `02-editing-and-saving.md` §1.19 as *"the opposite of
 `set_info_field`"*. Pressing the option it is already on would therefore
 write an undo entry for a no-op, so the guard is here, in the surface, where
 what the operator pressed is known.
+
+### `fn section`
+
+# Why it reports whether it drew
+
+So [`super::body`] can decide what the panel says when there is no object
+focused. A ce dimension selected on the canvas with nothing focused in the
+object tree is a perfectly ordinary state — it is what happens the moment
+the operator clicks a dimension — and *"nothing is selected"* would be
+false in front of a section describing the thing that is.

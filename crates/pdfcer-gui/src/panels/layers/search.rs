@@ -4,41 +4,9 @@
 
 /// The lower bound on how many layers a document must have before the
 /// search field is drawn at all.
-///
-/// **Two**, and it is a threshold rather than "always" for R9's reason.
-/// A search over a one-row list can do exactly one thing — remove the row —
-/// so a field offering it is a control whose only outcome is to make the
-/// panel emptier. Drawing it anyway would be the placeholder rule broken in
-/// its subtler form: not a control that does nothing, but a control whose
-/// every outcome is useless.
-///
-/// Not a larger number, though a reader will wonder. A threshold of, say,
-/// eight would be a judgement about when a list becomes hard to scan, and
-/// this panel is the wrong place to make it: a CAD sheet with three layers
-/// called `A-ANNO-TEXT`, `A-ANNO-DIMS` and `A-ANNO-NOTE` is genuinely
-/// easier to work with a filter than without one, and a threshold that hid
-/// the field would be deciding for the operator on the basis of a count
-/// that does not describe their problem. Two is the only value that follows
-/// from an argument rather than from taste.
 pub const MIN_LAYERS_FOR_SEARCH: usize = 2;
 
 /// **Does `name` match `query`?**
-///
-/// `name` is the text the row displays — see the module header on why that
-/// is not the same as `Layer::name`.
-///
-/// An empty or all-whitespace query matches **everything**, which is what
-/// makes "clearing the box restores the list" true by construction rather
-/// than by a branch somewhere else remembering to skip the filter.
-///
-/// # Why this takes `&str` and not `&Layer`
-///
-/// So that the rule cannot quietly grow a second input. A predicate handed
-/// the whole layer could be extended to consult `visible_by_default` or
-/// `locked` in one line, by someone who had not read the module header, and
-/// nothing would fail — the search would simply start returning rows for
-/// reasons the operator cannot see. Decision 1 is enforced by the
-/// signature, which is stronger than enforcing it by a comment.
 #[must_use]
 pub fn matches(name: &str, query: &str) -> bool {
     let query = query.trim();
@@ -61,11 +29,6 @@ fn contains_ignore_ascii_case(haystack: &str, needle: &str) -> bool {
 }
 
 /// What one frame's filtering removed.
-///
-/// The [`crate::panels::comments::model::Excluded`] shape: a count rather
-/// than a discard, because the panel **discloses** it. A filter that threw
-/// away the number of rows it hid could only say "nothing here", and
-/// "nothing here" is what a broken panel says too.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct Filtered {
     /// How many layers matched the query and are drawn.
@@ -79,10 +42,6 @@ pub struct Filtered {
 
 impl Filtered {
     /// Every layer, unfiltered.
-    ///
-    /// The value the panel builds when no query is in force, so that the
-    /// "nothing was filtered" case is a named construction rather than a
-    /// `hidden: 0` a reader has to interpret.
     #[must_use]
     pub const fn all(total: usize) -> Self {
         Self {
@@ -99,11 +58,6 @@ impl Filtered {
     }
 
     /// Whether the query removed **everything**.
-    ///
-    /// Distinguished from `shown == 0` on an empty document, which cannot
-    /// happen here — the panel returns before it filters when the document
-    /// has no optional content — but the distinction is named anyway so a
-    /// caller cannot accidentally use one for the other.
     #[must_use]
     pub const fn is_empty_because_of_the_query(self) -> bool {
         self.shown == 0 && self.hidden > 0

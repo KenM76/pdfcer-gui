@@ -13,10 +13,6 @@ pub const AA_BODY: f64 = 4.5;
 
 /// A bucket must hold at least this fraction of the region to be considered
 /// the foreground.
-///
-/// 0.5%: a 200×30 caption region is 6 000 pixels, so this is 30 pixels — about
-/// one glyph stroke, and far more than any stray edge pixel. Raising it makes
-/// the oracle blind to thin text; lowering it lets a scrollbar sliver vote.
 pub const MIN_FOREGROUND_SHARE: f64 = 0.005;
 
 /// Bits kept per channel when bucketing. 5 bits = 32 levels per channel.
@@ -79,11 +75,6 @@ pub struct UniformityReport {
 
 impl UniformityReport {
     /// Is this region effectively a flat colour?
-    ///
-    /// Two conditions, and both are needed. A gradient has many buckets and no
-    /// dominant one; a flat fill with a single antialiased pixel has two
-    /// buckets and a 99.99% dominant one. Only requiring "more than one
-    /// bucket" would call the second varied.
     #[must_use]
     pub fn is_uniform(&self) -> bool {
         self.distinct <= 1 || self.dominant_share > 0.999
@@ -102,10 +93,6 @@ impl UniformityReport {
 }
 
 /// WCAG relative luminance of an sRGB colour, `0.0..=1.0`.
-///
-/// The gamma expansion is not decoration. A naive `(r+g+b)/3` says mid-grey
-/// text on white has plenty of contrast; the perceptual curve says it does
-/// not, and the reader agrees with the curve.
 #[must_use]
 pub fn relative_luminance(c: Rgb) -> f64 {
     fn channel(v: u8) -> f64 {
@@ -174,11 +161,6 @@ fn bucketize(img: &Image, region: PixRect) -> (Vec<(u32, Bucket)>, usize) {
 
 /// Measure the luminance gap between the dominant foreground and background in
 /// a region.
-///
-/// See the module docs for the algorithm and for why it is not min/max. A
-/// region with no pixels — off the edge of the image, or degenerate — reports
-/// black on black at 1.0 with `sampled: 0`, and callers are expected to look
-/// at `sampled` before reading the ratio as a verdict.
 #[must_use]
 pub fn contrast_at(img: &Image, region: PixRect) -> ContrastReport {
     let (buckets, sampled) = bucketize(img, region);
@@ -246,23 +228,6 @@ pub fn region_not_uniform(img: &Image, region: PixRect) -> UniformityReport {
 }
 
 /// **How LIGHT a region is, in one number.**
-///
-/// The companion to [`contrast_at`] for a different question. That one asks
-/// *is this ink readable* and answers with a ratio between two quantised
-/// buckets; this one asks *is this the same ink, weaker* and answers with the
-/// mean over every pixel.
-///
-/// A translucent copy of a region composited over the same paper is lighter
-/// than the original at every ink pixel and identical at every paper pixel, so
-/// its mean rises - monotonely with the alpha, with no bucket boundary and no
-/// threshold able to sit between the two readings. That is the property a
-/// pre-commit affordance drawn as a tinted blit has to be measured on, and
-/// neither [`contrast_at`] nor [`ink_run_into`] has it: both quantise, and a
-/// tint small enough to leave every pixel in its own bucket moves neither.
-///
-/// `None` for a region with no pixels. A mean over nothing is not zero, and a
-/// caller comparing two regions must be able to tell the empty case apart
-/// from a black one.
 #[must_use]
 pub fn mean_luminance(img: &Image, region: PixRect) -> Option<f64> {
     let mut total = 0.0;
@@ -368,11 +333,6 @@ pub struct InkReport {
 
 impl InkReport {
     /// **Whether this is text and not furniture.**
-    ///
-    /// Three pixels, because two adjacent antialiased pixels are reachable on a
-    /// steep glyph edge and three are not — while the shortest thing an
-    /// operator would call clipped text is a lower-case x-height, which at this
-    /// project's smallest shipped size is seven.
     #[must_use]
     pub const fn is_text(&self) -> bool {
         self.longest_run >= 3

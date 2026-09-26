@@ -213,3 +213,81 @@ draws it, because it is a statement about the window's gate — the same
 gate [`Self::ready_to_confirm`] enforces two functions above — and the
 two must be read together or they drift into disagreeing about which
 condition is being explained.
+
+### `const REGION_PASSPHRASE`
+
+Its RECTANGLE, which carries nothing about what is typed into it — a
+region name is a position, and `crate::diag::ui_rect` publishes a rect and a
+name and never a value. A driven check needs somewhere to click before it
+types, and this is it.
+
+### `const REGION_BODY`
+
+NOT [`REGION_DIALOG`], and the difference cost a driven run. The window
+region is `ui.max_rect()` for the whole host and includes the separator and
+the button row **below** the scroll area. A control scrolled to just above
+that footer is inside the window rectangle and **clipped out of the scroll
+area**, so egui reports its position and refuses the click — which reads to
+a harness as *"the control is there and pressing it does nothing"*.
+
+⇒ A check that wants to press something in this form must compare against
+THIS rectangle. It is `ui.clip_rect()` taken inside the scroll closure,
+which is the viewport egui itself interacts within.
+
+### `const REGION_PLACE_BOX`
+
+Declared unconditionally, unlike its two neighbours: it is always an
+option, so its presence carries no evidence and its only job is to give a
+driven check somewhere to press. [`REGION_EXISTING`] and
+[`REGION_BOX_WHERE`] are the ones whose presence is a measurement.
+
+### `const REGION_BOX_WHERE`
+
+Its whole job is to make *retirement* measurable on a ONE-PAGE document.
+[`REGION_PAGE`] is the obvious probe and it is not drawn on a single-page
+document at all — a chooser with one possible value is a label pretending to
+be a choice — so a check aimed at it could not tell *"the page control
+retired because a pre-placed box was chosen"* from *"there was never a page
+control"*. This region is declared for `Place::Box` and for nothing else, on
+a document of any length, so its presence and its absence are both evidence.
+
+### `const REGION_PAGE`
+
+Named so that its **absence** is measurable. `--visible`/`--page` are
+refused by the engine alongside a field name, so this control retires when a
+pre-placed box is chosen; a driven check can only prove *"retired"* rather
+than *"greyed"* if the region has a name to be missing under.
+
+### `fn field_region`
+
+A function rather than a constant because there is one per field and a
+check has to aim at a particular one. The index is the position in
+[`crate::sign::Standing::empty_fields`], which is the order the engine's own
+form projection returns — stable for a given document, which is all a check
+needs.
+
+### `enum Place`
+
+A three-way choice on screen, matching [`Placement`]'s three arms — but a
+`Copy` enum of its own rather than `Placement` itself, because
+`egui::Ui::radio_value` compares and assigns its value and `Placement`'s
+third arm owns a `String`. The two are converted once, at
+[`SignDialog::commit`].
+
+### `enum Destination`
+
+[`crate::dialogs::protect::Destination`]'s twin; §6 of [`crate::sign`]'s
+header is the argument, including why replacing is more defensible here
+than for a redaction and still not the default.
+
+### `fn outcome`
+
+Called by [`super::DialogsState::sign_outcome`]. A method rather than a
+public field so the only transition out of [`Phase::Signing`] is this
+one.
+
+### `fn open_for`
+
+The already-open and no-document guards live in
+[`super::DialogsState::open_sign`], so a chord and a ribbon click are gated
+by one expression.

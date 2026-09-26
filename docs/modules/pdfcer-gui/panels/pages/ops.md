@@ -202,3 +202,77 @@ nothing an operator could do about it. Asserted exhaustively over every
 non-empty subset of a five-page document, in both directions — 62 cases,
 which is cheap and is the difference between "the examples above work"
 and "the rule is sound".
+
+### `enum MoveDirection`
+
+A two-variant enum rather than a signed step, because the two directions do
+**not** share an implementation — the up rule scans ascending and pins from
+the top, the down rule scans descending and pins from the bottom — and a
+`delta: i32` would invite a single body with a sign flip in it that is
+correct in one direction and off by one in the other.
+
+### `enum MoveRefusal`
+
+Returned rather than folded into a bare `None` so the caller can say *which*
+nothing happened — the same argument `crate::app::dispatch` makes for
+tracing `no-circle-fit-to-finish` separately from
+`mode-cannot-author-measure`. A reader of a trace from a machine they cannot
+see should not have to guess.
+
+### `fn operands`
+
+The panel's multi-select when it has one, the current page when it does not.
+See the module header for why that is the rule and where it was written down
+before anything read it.
+
+Every index is checked against `page_count`, so a selection that has not yet
+been reconciled with a shrunken document cannot hand the engine an operand
+it would refuse the whole batch over. That is belt to
+[`super::select::PageSelection::retain_below`]'s braces: the panel clamps on
+its next frame, and a verb invoked from a **keyboard chord** can arrive
+before that frame has been drawn.
+
+# Returns
+
+Ascending, de-duplicated (both by construction, from a `BTreeSet`) and
+in-range. **Empty** when the document has no pages at all, which is a legal
+PDF (`/Count 0`) and is why the callers check rather than assume — although
+the commands are additionally gated on `doc.pages`, so an empty return is
+reachable only through a customized keymap.
+
+### `fn drag_is_a_no_op`
+
+True in two cases, and both are ordinary rather than pathological — they
+are what a drag that has not gone anywhere yet looks like:
+
+1. **The boundary is inside the block.** Dragging pages 4–6 and hovering
+   the gap between 5 and 6 asks for them to be re-inserted where they
+   already are.
+2. **The boundary is either lip of a contiguous block.** Dragging 4–6 to
+   the gap immediately before 4, or immediately after 6, is the same
+   request.
+
+A **non-contiguous** selection dropped at its own first lip is NOT a no-op
+— pages 1, 5 and 9 dropped before page 1 become 1, 5, 9 adjacent at the
+top, which is a real edit — so the predicate tests contiguity rather than
+only the endpoints. Getting that wrong would refuse the single most useful
+thing a drag does on a drawing set: gathering scattered sheets together.
+
+### `fn inverse`
+
+The inverse of a [`move_order`] permutation, and the one thing every reader
+of a reorder needs that the permutation itself does not directly say:
+`order` answers *"which page is at position `i`?"* and this answers *"where
+did page `p` go?"*, which is the question a selection has to ask in order to
+follow its pages across the move.
+
+Kept here beside the rule it inverts rather than in
+[`super::select`], because `PageSelection` is a set of indices and knows
+nothing about reordering — the same reason the click policy lives there and
+not here.
+
+# Returns
+
+A vector of length `order.len()`. An entry of `order` that is out of range
+is skipped, which cannot happen for a [`move_order`] result and is handled
+so this stays total for a caller that built its own.

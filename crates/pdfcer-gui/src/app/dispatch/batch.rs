@@ -12,34 +12,12 @@ use crate::app::PdfcerApp;
 use crate::app::actions::Action;
 
 /// Whether this module owns `id`.
-///
-/// The membership half of the membership-test guard pattern; see
-/// `shell::commands::reach::guards`' paragraph on `pages::handles` for why this
-/// shape is tolerated and what mitigates it. The mitigation is honoured below:
-/// [`dispatch`]'s fall-through is `unreachable!` naming the id, so a member of
-/// this set missing from that match panics loudly in a developer build rather
-/// than silently doing nothing.
 pub(crate) fn handles(id: &str) -> bool {
     // ui-text-exempt: registered command ids, never displayed.
     matches!(id, "tools.merge_files")
 }
 
 /// Do whatever this build does about a Batch command.
-///
-/// # Both pickers run HERE, during dispatch, between frames
-///
-/// The same position `file.open`'s does, and for the same reason: an `rfd`
-/// modal opened from inside an `egui` layout closure blocks the frame it is
-/// being drawn in, leaving the window half-painted underneath a dialog the
-/// operator cannot dismiss to finish it. Dispatch is outside the layout for
-/// every route that reaches this arm — ribbon, QAT, chord — and the one
-/// exception in this shell (`PdfcerApp::central` dispatching canvas context-menu
-/// tokens from inside `CentralPanel::show`) cannot reach a Tools-tab command.
-///
-/// `actions` is taken and unused, deliberately: it keeps this arm's signature
-/// identical to its six siblings, so a reader comparing them does not have to
-/// work out whether the difference means anything. A merge raises no `Action`
-/// because it changes no document — see `app::actions::merge`'s header.
 pub(crate) fn dispatch(app: &mut PdfcerApp, id: &str, _actions: &mut [Action]) {
     match id {
         "tools.merge_files" => merge_files(app),

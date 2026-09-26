@@ -22,10 +22,6 @@ pub const DEST_EDGE_MARGIN: f32 = crate::canvas::CANVAS_MARGIN;
 const VISIBLE_CLEARANCE: f32 = DEST_EDGE_MARGIN;
 
 /// A destination that named a point, waiting for a frame that can solve it.
-///
-/// Spans frames for the same reason `find_reveal` and `zoom_anchor` do: the
-/// page change is applied after the canvas has drawn, so the earliest frame on
-/// which the target page's drawn size is known is a later one.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct DestScroll {
     /// The page the destination is on. Solved only on a frame showing it.
@@ -54,17 +50,6 @@ pub struct DestScroll {
 
 /// A `/XYZ`-family destination's PDF point as a per-canvas-axis page fraction,
 /// or `None` for a page whose device transform will not invert.
-///
-/// # Why the axes are probed rather than assumed
-///
-/// `left` and `top` are PDF user space; the canvas is the page as drawn, with
-/// `/Rotate` applied. The probe transforms a second point displaced along PDF
-/// *x*: whether that displacement comes out mostly along canvas *x* or mostly
-/// along canvas *y* is the answer, and it is right for every rotation without
-/// this module reading `/Rotate` at all.
-///
-/// The value substituted for a null axis never reaches the result — that axis's
-/// fraction is dropped by the `map` below.
 #[must_use]
 pub fn fracs_for(
     left: Option<f64>,
@@ -94,17 +79,6 @@ pub fn fracs_for(
 }
 
 /// O200's second clause: does this axis already show the point?
-///
-/// `point` and `current` are both content-space — the position of the
-/// destination along the scroll content, and the offset the view sits at.
-///
-/// # Why it is applied to the horizontal and not to both
-///
-/// A link is overwhelmingly a request for a vertical position: a heading, a
-/// sheet, a paragraph. Applying this test vertically would make a link to a
-/// heading half a screen below the current one do nothing at all, which reads
-/// as a broken link. Horizontally there is no such expectation, and moving
-/// sideways for a point already on screen is the lurch being reported.
 #[must_use]
 pub fn axis_stays_where_it_is(point: f32, current: f32, viewport: f32) -> bool {
     if !point.is_finite() || !current.is_finite() || !viewport.is_finite() {
@@ -128,29 +102,6 @@ pub struct Solved {
 
 /// **O200's rule, and the whole of it**, as arithmetic on four already-solved
 /// positions.
-///
-/// Separated from [`take_dest_scroll_offset`] so that the rule has an enforcer
-/// that does not need a window: everything above this line is geometry shared
-/// with the zoom anchor and the find reveal, and everything the operator
-/// actually asked for is the choice made here.
-///
-/// # Arguments
-///
-/// * `point` — where the destination sits along the content: the offset that
-///   would put it at screen position zero.
-/// * `want` — the offset that puts it [`DEST_EDGE_MARGIN`] in from the
-///   top-left corner. Used only on an axis that moves.
-/// * `current` — the offset the view is sitting at this frame, after whatever
-///   outranked this in `canvas::offset` has had its say.
-///
-/// # The two answers to "hold this axis still"
-///
-/// * A **null** axis is §12.3.2.2's *"leave this one as it is"*, and "as it
-///   is" means whatever won this frame's ranking — a fit-width's placement,
-///   say. Held at `current`, so this cannot undo it.
-/// * A **specified** horizontal axis already on screen is the operator's own
-///   position, and that is [`DestScroll::origin_x`]: the offset before the page
-///   turn, not the strip's horizontal centring of the page it turned to.
 #[must_use]
 pub fn solve(
     pending: &DestScroll,
@@ -187,23 +138,6 @@ fn frac_field(frac: Option<f32>) -> String {
 
 /// The scroll offset that puts a parked point destination at the top-left of
 /// the view, or `None` to leave the scroll area alone.
-///
-/// # Arguments that are not obvious
-///
-/// * `current` — the offset the view is sitting at this frame, in content
-///   space. What a NULL axis is held at; see [`solve`] for why a specified
-///   horizontal axis is held at [`DestScroll::origin_x`] instead.
-/// * `to_strip` — the caller's page-local ⇒ content-space conversion. Passed in
-///   because a continuous strip's conversion needs the strip layout, the
-///   pasteboard overhang and the row rect, none of which belong here.
-///
-/// # The probe for "where is the point?", and what its clamp costs
-///
-/// `to_strip` clamps to the scrollable range, so near either end of the content
-/// the probe reports the clamp rather than the point. That degrades safely: in
-/// every clamped case the probe lands at the limit of the range, the visibility
-/// test therefore answers *not visible*, and the offset the axis is then moved
-/// to is that same limit — so the view does not move.
 pub fn take_dest_scroll_offset(
     doc: &mut OpenDoc,
     display: (f32, f32),

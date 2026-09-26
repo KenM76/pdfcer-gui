@@ -60,10 +60,6 @@ pub const REGION_BODY: &str = "dialog:insert-image"; // ui-text-exempt: trace re
 pub const REGION_WIDTH: &str = "insert-image.width"; // ui-text-exempt: trace region name, never displayed
 /// The region the Insert button publishes.
 /// The **Place it on the page…** button's region — `OPERATOR_REQUESTS.md` O66.
-///
-/// Published on every frame the dialog draws, which is every frame it is NOT
-/// hiding for a placement — so its absence from a trace means the window has
-/// stepped aside, which is exactly the state a driven check needs to observe.
 pub const REGION_PLACE: &str = "insert-image.place"; // ui-text-exempt: trace region name, never displayed
 pub const REGION_INSERT: &str = "insert-image.insert"; // ui-text-exempt: trace region name, never displayed
 
@@ -125,21 +121,6 @@ pub struct InsertImageDialog {
 
 impl InsertImageDialog {
     /// Open the window for an already-imported picture.
-    ///
-    /// # The box is seeded at the picture's NATURAL size, centred
-    ///
-    /// Natural size is what the file asks for — its pixels at the resolution it
-    /// declares, or one pixel per point when it declares none — so an operator
-    /// who presses Insert immediately gets the placement the picture was made
-    /// for. Seeding at some fraction of the page would be pdfcer choosing a
-    /// scale nobody asked for, and the operator would have no way to tell that
-    /// from the picture's own size.
-    ///
-    /// It is **clamped to the sheet** on both axes, because a 300-pixel-wide
-    /// logo at 72 dpi is bigger than an A4 page and a window that opened
-    /// refusing its own default would be a window that looks broken. The clamp
-    /// preserves the aspect ratio, so a clamped default is still the picture's
-    /// shape.
     #[must_use]
     pub fn open(image: Arc<ImportedImage>, name: String, doc: &OpenDoc) -> Self {
         let page_index = doc.view.page_index;
@@ -245,28 +226,11 @@ impl InsertImageDialog {
     }
 
     /// The box, in PDF points, as the engine wants it.
-    ///
-    /// One function, read by the validity check, the landing preview and the
-    /// action. Three separate conversions is how a window comes to promise one
-    /// rectangle and produce another — the same argument
-    /// `dialogs::new_document::sheet_pt` makes for its own single derivation.
-    /// Drain the operator's request to point at the page — O66.
     pub fn take_place_request(&mut self) -> bool {
         self.place.take_request()
     }
 
     /// **Write a placed rectangle back into the four millimetre fields** — O66.
-    ///
-    /// Through the INVERSE of [`rect_pt`], not through a second conversion.
-    /// That function's own doc comment exists to keep one arithmetic for
-    /// millimetres and points; a placement that converted separately would be
-    /// the second, and the two would drift by a rounding rule nobody chose.
-    ///
-    /// A **degenerate** rect — what a click produces — writes the corner and
-    /// leaves the size alone. The dialog already has a width and a height, typed
-    /// or defaulted from the picture's own aspect, and a click is a statement
-    /// about *where*, not about *how big*. Overwriting the size with zero would
-    /// throw away the one thing the operator did not ask to change.
     pub fn place(&mut self, rect: Rect) {
         self.x_mm = crate::units::mm_from_points(rect.llx);
         self.y_mm = crate::units::mm_from_points(rect.lly);
@@ -478,11 +442,6 @@ fn spinner(value: &mut f64, range: std::ops::RangeInclusive<f64>) -> egui::DragV
 }
 
 /// Open the window for `status`, or decline.
-///
-/// Applies the two guards every dialog in [`super`] applies at the one place it
-/// is built. The no-document guard is real here rather than ceremonial: the
-/// window's box is seeded from a page's extent, and a window over an empty
-/// canvas would open on a zero-sized sheet and refuse its own default.
 #[must_use]
 pub fn open_for(
     status: &Status,

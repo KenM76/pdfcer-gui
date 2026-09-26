@@ -16,40 +16,13 @@ use crate::text::stamps as t;
 
 /// **The section's own region**, published only when the open document really
 /// is a stamp collection.
-///
-/// That conditional publication is the contract, and it is the half a driven
-/// check can only test with a **second launch**: a region declared on
-/// `fixtures/stamps-standard-business.pdf` *and* declared on an ordinary
-/// drawing would be a heading that is always there — a different defect wearing
-/// the same green tick. [`super::REGION_ANOMALIES`] carries the same shape and
-/// the same warning.
-///
-/// Named under the `properties.` prefix like its neighbours, so that the
-/// `declared_names(&trace, "properties")` dump several checks print when they
-/// cannot find a region lists it. A region under a prefix nobody enumerates is
-/// discoverable only by whoever wrote it.
 pub const REGION: &str = "properties.stamp-collection"; // ui-text-exempt: trace region name, never displayed
 
 /// The prefix of the per-stamp row regions; the stamp's **index in the name
 /// tree** is appended.
-///
-/// ⚠ Indexed by tree position, **not** by page number, and the difference is
-/// the whole subject of [`crate::stamps`]' re-opening logic: the name tree is
-/// sorted lexicographically (§7.9.6) and the pages are not, so tree entry 1 is
-/// routinely not page 2. A check that wants a particular stamp must read the
-/// row it finds, never compute an index from a page.
 pub const REGION_ROW_PREFIX: &str = "properties.stamp-collection."; // ui-text-exempt: trace region name, never displayed
 
 /// Draw the stamp-collection section, or draw nothing at all.
-///
-/// # The test is the name tree, never the title
-///
-/// [`crate::stamps::is_collection`] asks whether the document has **named
-/// pages**. A PDF with a `/Title` and no name tree is just a PDF with a title,
-/// and every drawing the operator opens has one of those. Testing the title
-/// would put this section on most of his files, which is the failure mode a
-/// conditional section has: shown too often, it stops being information and
-/// becomes furniture.
 pub(super) fn section(ui: &mut Ui, doc: &OpenDoc) {
     let collection = pdfcer_core::stamp_file::read(doc.session.document());
     if !crate::stamps::is_collection(&collection) {

@@ -21,14 +21,6 @@ pub mod acrobat;
 pub mod clock;
 
 /// The opt-in trace of what the shell actually received.
-///
-/// The instrument every other module is measured with, and the reason R1 can
-/// be satisfied at all: a GUI defect's only honest oracle is the running
-/// application, and what happens between the window manager and the first line
-/// of our code is unobservable from the source.
-///
-/// Lowest thing in the stack by fan-in — sixteen modules report through it —
-/// which is exactly why it is the anchor of this crate.
 pub mod diag;
 
 /// OCR: what image the recogniser is shown, the thread it runs on, and the
@@ -55,16 +47,6 @@ pub mod poster;
 
 /// Where signature trust ANCHORS come from, and the three facts they let
 /// this shell state.
-///
-/// The shell half of `pdfcer-core`'s `Pass 10.2`–`10.5`: locating the trust
-/// list an installed Acrobat/Reader has downloaded, reading it (read-only, no
-/// network, opt-in and off by default), and threading it into
-/// `signature::verify_all_with_trust`.
-///
-/// Its header carries the rule that governs the whole subject — **this is the
-/// one place in the product where a wrong answer is worse than no answer** —
-/// and the consequence: integrity, coverage and trust are reported separately,
-/// never folded into one badge, and `NotChecked` renders as itself.
 pub mod trust;
 
 /// **The one length-conversion table for this program.**

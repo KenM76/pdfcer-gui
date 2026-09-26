@@ -24,104 +24,30 @@ pub const fn printer_label() -> &'static str {
 }
 
 /// Label for the button that opens the **driver's own** properties dialog.
-///
-/// # Why an ellipsis, and why this exact word
-///
-/// The ellipsis is the platform convention for "this opens something", and it
-/// is doing real work here: the button is beside a combo box, and without it
-/// a reader scanning the row has no way to tell that one of the two controls
-/// hands them off to another window.
-///
-/// *Properties* rather than *Setup*, *Preferences* or *Options* because it is
-/// the word Windows itself uses on that dialog's own title bar, and because
-/// it is what the operator asked for: *"pretty much every program I have ever
-/// seen lets you press a properties button beside the selected printer in the
-/// drop-down menu to open the printer options."*
 #[must_use]
 pub const fn properties() -> &'static str {
     "Properties…"
 }
 
 /// Hover text for [`properties`].
-///
-/// # It states the override, and that is the non-obvious half
-///
-/// The driver's dialog offers orientation and paper alongside media type,
-/// quality and finishing. pdfcer **asserts its own** orientation over whatever
-/// that dialog set — always, because a `DEVMODE` handed to `CreateDC` carries
-/// one and this dialog's radios are what the preview was drawn from. An
-/// operator who sets landscape there and gets portrait paper would have no
-/// way to find out why, and would reasonably conclude the driver dialog was
-/// ignored wholesale. It is not: everything pdfcer does not name survives.
-///
-/// Paper is the other way round and is stated as such — a sheet chosen in the
-/// driver's dialog is adopted by the combo beside it, so the two surfaces
-/// cannot end up describing the same job differently.
 #[must_use]
 pub const fn properties_tooltip() -> &'static str {
     "Opens this printer's own settings — media type, quality, finishing and anything else the driver offers. pdfcer keeps the orientation chosen here in the Print dialog; a paper size chosen there is picked up by the Paper list."
 }
 
 /// Disclosure that the driver's settings are being carried with the job.
-///
-/// Shown only once the operator has been through [`properties`] and accepted
-/// it, because before then there is nothing to say: pdfcer sends no `DEVMODE`
-/// at all and the device's own defaults apply in full.
-///
-/// # Why it is worth a line of the operator's attention
-///
-/// Because the settings it refers to are invisible from this dialog. A print
-/// configured for glossy photo paper at best quality looks, from inside
-/// pdfcer, exactly like one configured for plain draft. The line is the only
-/// evidence in the application that a job is carrying anything beyond what
-/// the three tabs show.
 #[must_use]
 pub const fn properties_held() -> &'static str {
     "This printer's own settings are being sent with the job."
 }
 
 /// The driver's properties dialog could not be opened, and why.
-///
-/// `detail` is `pdfcer-print`'s own error `Display`, passed through for the
-/// same reason [`failed`] passes one through.
-///
-/// **Cancel is not this.** An operator who pressed Cancel gets nothing at
-/// all: the engine reports that as `Ok(None)` and it is them declining, not a
-/// failure. Showing a message there would be scolding them for using the
-/// dialog correctly.
 #[must_use]
 pub fn properties_failed(detail: &str) -> String {
     format!("This printer's own settings could not be opened. {detail}")
 }
 
 /// **pdfcer could not ask this system about its printers at all.**
-///
-/// The first of the three no-printer sentences (module docs). It is what this
-/// build says when the print spooler itself could not be queried.
-///
-///
-/// It read *"This build cannot reach a print device"* for the whole of
-/// v0.1.0, which was true when it was written — `pdfcer-print` was not a
-/// dependency — and became false the moment the manifest line landed while
-/// the adapter's four calls were left refusing. So the dialog told every
-/// operator that the program they were running could not print, on a machine
-/// with printers, in a build that had the printing crate linked into it.
-///
-/// The wording is now about the **spooler**, not the build, because that is
-/// the only thing this sentence can honestly be about: a query was attempted
-/// and it failed. [`crate::dialogs::print::spooler::Unavailable`] carries the
-/// engine's own account of *why*, and [`spooler_detail`] is how it is shown —
-/// a general sentence an operator can act on, plus the specific one they can
-/// quote at whoever administers the machine.
-///
-/// Deliberately **not** "no printers were found": that would be a claim about
-/// the operator's hardware made on evidence pdfcer does not have. It also
-/// covers the honest non-Windows case, where `pdfcer-print`'s every entry
-/// point returns `Unsupported`.
-///
-/// Says plainly that the capability is absent rather than showing controls
-/// the shell would then ignore — the same choice, for the same reason, as
-/// [`crate::text::open_needs_password`].
 #[must_use]
 pub const fn spooler_unavailable() -> &'static str {
     "pdfcer could not ask this system about its printers, so there is nothing to \
@@ -130,20 +56,6 @@ pub const fn spooler_unavailable() -> &'static str {
 
 /// The engine's own account of a spooler failure, shown beneath
 /// [`spooler_unavailable`].
-///
-/// # Why two sentences rather than one
-///
-/// They answer different people. [`spooler_unavailable`] tells the operator
-/// what happened and that nothing was printed; this tells them — or whoever
-/// they forward it to — *which* thing failed, in `pdfcer-print`'s own words,
-/// which already carry the remedy ("the Print Spooler service may be
-/// stopped", "run `pdfcer list-printers` to see the names this machine
-/// knows").
-///
-/// Merging them would mean either dropping the specific half or building one
-/// sentence by concatenation, and a concatenated sentence is the one that
-/// reads badly in exactly the cases nobody tested. This is the same split
-/// [`failed`] already uses for a spool that was attempted and refused.
 #[must_use]
 pub fn spooler_detail(detail: &str) -> String {
     format!("The print system reported: {detail}")
@@ -159,12 +71,6 @@ pub const fn no_printers() -> &'static str {
 }
 
 /// **This particular printer's driver would not describe itself.**
-///
-/// The third. Everything the preview draws — the sheet, the printable
-/// rectangle, the unprintable margins — comes from the device's own reported
-/// geometry, so without it there is no honest picture to draw. Saying so is
-/// better than drawing a plausible sheet: a guessed rectangle is exactly the
-/// "confidently wrong" preview the whole feature exists to prevent.
 #[must_use]
 pub const fn device_unavailable() -> &'static str {
     "This printer's driver did not report its paper size, so pdfcer cannot show \
@@ -172,10 +78,6 @@ pub const fn device_unavailable() -> &'static str {
 }
 
 /// The dialog was asked to draw with no document open.
-///
-/// Reachable only if a document is closed while the dialog is up. The dialog
-/// closes itself in that case; this is the sentence for the spool path, which
-/// must refuse rather than assume.
 #[must_use]
 pub const fn no_document() -> &'static str {
     "No document is open, so there is nothing to print."
@@ -186,13 +88,6 @@ pub const fn no_document() -> &'static str {
 // ---------------------------------------------------------------------------
 
 /// Tab 1's label.
-///
-/// One word, like every other tab here. The strip is 404 pt wide in the
-/// narrowest layout the dialog allows and there are now four tabs; the fuller
-/// names measured 360 pt for three and wrapped the strip onto a second row,
-/// which the dialog has no vertical room for. The qualifier lives in
-/// [`tab_pages_layout_tooltip`], which is where a tab strip conventionally
-/// keeps it.
 #[must_use]
 pub const fn tab_pages_layout() -> &'static str {
     "Pages"
@@ -274,11 +169,6 @@ pub const fn range_custom() -> &'static str {
 }
 
 /// Hover text for the range box.
-///
-/// **States the syntax by example**, because the syntax is shared verbatim
-/// with `pdfcer` — see [`crate::dialogs::print::tabs::parse_page_range`]
-/// for why there is exactly one parser — and an operator who learns it here
-/// can use it there.
 #[must_use]
 pub const fn range_hint() -> &'static str {
     "Page numbers or ranges, for example 3 or 1-4 or 5,1-2. \
@@ -286,11 +176,6 @@ pub const fn range_hint() -> &'static str {
 }
 
 /// The typed range names no page in this document.
-///
-/// A refusal, not a correction. The parser yields *nothing* rather than a
-/// guess for malformed input, precisely so this sentence can be shown and the
-/// commit button can go absent — instead of printing a range nobody asked
-/// for.
 #[must_use]
 pub const fn range_unparsable() -> &'static str {
     "That range does not name any page in this document."
@@ -321,11 +206,6 @@ pub const fn subset_even() -> &'static str {
 }
 
 /// Hover text over the subset row.
-///
-/// **Says which numbering is meant**, because the answer is not obvious and
-/// getting it wrong prints the wrong half of the document. `pdfcer-print`
-/// (`PageSubset::Odd`): *"an operator printing '2-9, odd' means document
-/// pages 3, 5, 7, 9 — the numbers printed on the paper."*
 #[must_use]
 pub const fn subset_tooltip() -> &'static str {
     "Odd and even mean the page numbers printed on the paper, not positions \
@@ -363,12 +243,6 @@ pub const fn scale_custom() -> &'static str {
 }
 
 /// Hover text over the sizing group.
-///
-/// **Names the difference between Fit and Shrink**, which is the one thing
-/// about this group an operator can get wrong without noticing. `pdfcer-print`
-/// keeps them as separate modes because collapsing them *"silently blows a
-/// business card up to A4"* — `ScaleMode`'s own doc — and a UI that does not say so
-/// re-creates the confusion the engine avoided.
 #[must_use]
 pub const fn sizing_tooltip() -> &'static str {
     "Fit scales in both directions, so a small page is enlarged to fill the \
@@ -416,11 +290,6 @@ pub const fn copies_label() -> &'static str {
 }
 
 /// The collation checkbox, phrased as the *un*-collated option.
-///
-/// Phrased this way round because collated is the default and the checkbox
-/// therefore describes the change, not the state. "Collate" as a checked-by-
-/// default box reads as a feature being switched off, which is the more
-/// confusing of the two framings.
 #[must_use]
 pub const fn uncollated() -> &'static str {
     "Group each page's copies together, rather than repeating the whole set"
@@ -439,13 +308,6 @@ pub const fn reverse_tooltip() -> &'static str {
 }
 
 /// Heading over the duplex radios.
-///
-/// The whole group is **absent** on a device whose driver does not report
-/// duplex support, rather than greyed — see the tab body for why, and
-/// `docs/core-api/03` §6.3 item 4 for the engine's side of it. There is
-/// deliberately no "your printer cannot do this" sentence here: no setting in
-/// this dialog would ever make it possible, so there is nothing to explain
-/// and nothing to hope for.
 #[must_use]
 pub const fn duplex_heading() -> &'static str {
     "Two-sided"
@@ -470,22 +332,6 @@ pub const fn duplex_short() -> &'static str {
 }
 
 /// Label for the tray-by-sheet-size checkbox.
-///
-///
-/// It was removed because it did nothing: `DeviceSettings::pick_tray_by_page_size`
-/// was a field `pdfcer-print` declared and read nowhere, so the job spooled,
-/// the paper came out of the default tray, and nothing reported that the
-/// request had been dropped — indistinguishable, from the operator's side,
-/// from a driver that had declined it.
-///
-/// The engine now honours it (`DMBIN_FORMSOURCE`, asserted only when this box
-/// is ticked). The control is therefore backed, and the reason it was removed
-/// no longer holds.
-///
-/// **What is worth carrying forward is the removal, not the restoration.**
-/// Deleting a control that succeeds while doing nothing is the correct move
-/// and it is a harder call than deleting one that visibly fails, because
-/// there is no symptom to point at.
 #[must_use]
 pub const fn tray_by_size() -> &'static str {
     "Let the printer choose the tray from each page's size"
@@ -498,24 +344,6 @@ pub const fn tray_tooltip() -> &'static str {
 }
 
 /// Disclosure for a driver that did not advertise tray-by-size.
-///
-/// # Why the control is still offered, which inverts this project's usual rule
-///
-/// R83 says never offer an affordance the hardware cannot honour — which is
-/// why there is no duplex control on a simplex device. It does **not** apply
-/// here, and `pdfcer-print` declined this project's proposal to gate the
-/// control the same way, with a measurement:
-///
-/// > *"`DC_BINS` on Microsoft Print to PDF returns nothing at all, while that
-/// > same device's `dmDefaultSource` is already `DMBIN_FORMSOURCE` — it picks
-/// > by form by default. A bool would have collapsed 'the driver said
-/// > nothing' into 'no', and told the operator a device cannot do the thing
-/// > it was already doing."*
-///
-/// So a query that answered *"I do not know"* is not a query that answered
-/// *"no"*, and hiding the control on that basis would remove a working
-/// capability on the commonest Windows printer there is. It stays, with this
-/// line under it, and the request is still sent.
 #[must_use]
 pub const fn tray_not_advertised() -> &'static str {
     "This printer does not advertise tray selection by sheet size. The request is still sent; the driver may ignore it."
@@ -532,37 +360,12 @@ pub const fn paper_heading() -> &'static str {
 }
 
 /// The paper entry meaning "say nothing; use whatever this printer is set to".
-///
-/// # Why it is not called "Default"
-///
-/// Because *default* invites the reading "the default for this document" or
-/// "pdfcer's default", and it is neither: it is the sheet named in this
-/// printer's own Windows settings, which the operator may have changed
-/// yesterday for a different job in a different program. Naming the source
-/// rather than the status is what makes the entry checkable.
-///
-/// It is also genuinely different from picking the same size explicitly. This
-/// entry sends **no paper request at all**, so a driver that would have
-/// ignored one is not being asked to; the explicit entries are requests, with
-/// everything [`paper_is_a_request`] says about them.
 #[must_use]
 pub const fn paper_device_default() -> &'static str {
     "From the printer's own settings"
 }
 
 /// One entry in the paper list: the driver's name for it, and its size.
-///
-/// # Why the size is repeated when the name usually contains it
-///
-/// Because *usually* is not *always*, and the exceptions are the ones that
-/// matter. `"A4"` and `"Letter"` are self-describing; `"Roll Paper 24in"`,
-/// `"User Defined"`, `"Custom"`, `"Photo Paper (Borderless)"` and
-/// `"Oversize"` are not, and a plotter operator choosing between three roll
-/// entries has nothing else to go on. Repeating it costs a familiar entry
-/// nothing and rescues the unfamiliar ones.
-///
-/// Millimetres, not points, and for the same reason [`sheet_from_driver`]
-/// gives: the operator is matching this against a ream label or a roll box.
 #[must_use]
 pub fn paper_form(name: &str, size_pt: (f64, f64)) -> String {
     use crate::units::whole_mm_from_points as mm;
@@ -571,44 +374,12 @@ pub fn paper_form(name: &str, size_pt: (f64, f64)) -> String {
 
 /// The paper entry meaning "look at the pages and pick the sheet yourself" —
 /// operator request O167, 2026-09-10.
-///
-/// # Why the label names the SOURCE of the decision, not the decision
-///
-/// Same argument as [`paper_device_default`]: an entry called *"Automatic"*
-/// says only that something is chosen for you, and leaves an operator with a
-/// mixed drawing set no way to predict what. Naming the input — the pages of
-/// this document — makes the choice checkable against something the operator
-/// can already see, and the sentence underneath then reports which sheet came
-/// out of it.
-///
-/// It sits directly under [`paper_device_default`] and above the driver's own
-/// forms, because the two entries above the line are pdfcer's two *policies*
-/// and everything below is one specific sheet.
 #[must_use]
 pub const fn paper_auto() -> &'static str {
     "Match the pages in this document"
 }
 
 /// What auto selection chose, when every page fits on it.
-///
-/// # Why this sentence still says a request may be ignored
-///
-/// Because it is still a request. Auto selection changes *how the sheet is
-/// chosen*, not *what happens to the choice*: the same `DEVMODE` goes out with
-/// the same `DM_PAPERSIZE` asserted, and `pdfcer-print` measured two drivers
-/// silently ignoring one. An operator who reads "pdfcer matched A3 to your
-/// pages" and takes that for a guarantee has been misled by a sentence that
-/// was trying to be reassuring. See [`paper_is_a_request`] for the full
-/// argument and for why the disclosure is words beside the control rather than
-/// a mark on the preview.
-///
-/// # Why the page size is named as well as the sheet
-///
-/// So the match can be checked rather than trusted. *"A3 — 297 × 420 mm"* on
-/// its own is an assertion; *"your largest page is 297 × 420 mm, so A3"* is
-/// the working, and an operator whose drawing is not that size learns
-/// immediately that pdfcer measured something they did not expect — a rotated
-/// page, a stray cover sheet, a range they forgot they had narrowed.
 #[must_use]
 pub fn paper_auto_matched(name: &str, sheet_pt: (f64, f64), page_pt: (f64, f64)) -> String {
     use crate::units::whole_mm_from_points as mm;
@@ -622,41 +393,12 @@ pub fn paper_auto_matched(name: &str, sheet_pt: (f64, f64), page_pt: (f64, f64))
 }
 
 /// The extra sentence when the job does not have one page size throughout.
-///
-/// # Why a mixed job gets an extra sentence rather than a different choice
-///
-/// A `DEVMODE` names one sheet and a job has many pages; there is no way to
-/// ask for two. Windows' own answer is the **choose tray by sheet size** flag,
-/// which this dialog already offers a few lines further down — so the honest
-/// disclosure is not "pdfcer cannot do this", it is "one sheet was chosen, the
-/// rest will be scaled onto it, and here is the one control that changes
-/// that."
-///
-/// Naming the control is the point. A sentence that reports a limitation
-/// without naming the remedy raises anxiety and resolves nothing; this project
-/// has written that lesson down once already, over the paper request itself.
 #[must_use]
 pub const fn paper_auto_mixed() -> &'static str {
     "This job has more than one page size. Smaller pages will be scaled onto the chosen sheet — tick Choose tray by sheet size below if this printer has more than one tray or roll."
 }
 
 /// What auto selection chose when **nothing** the printer offers is big enough.
-///
-/// # Why the biggest sheet, and why this is not treated as a failure
-///
-/// An A0 site plan on an office printer has no right answer. Falling back to
-/// saying nothing about paper would print on whatever the device happens to be
-/// standing on — chosen by nobody, reported by nothing. Picking the largest
-/// sheet the device has is the closest thing to what was asked for, and it is
-/// only defensible *because this sentence exists*: the operator is told the
-/// page is bigger than any sheet available, with both numbers, so the decision
-/// about what to do next is theirs and is made with the measurement in hand.
-///
-/// It does not say "the drawing will be cropped", because it will not be —
-/// the job is scaled to fit the sheet unless the operator has chosen actual
-/// size, and the clip disclosure in the footer covers the case where it is
-/// not. Two surfaces making overlapping claims about the same risk is how a
-/// dialog ends up contradicting itself.
 #[must_use]
 pub fn paper_auto_too_big(name: &str, sheet_pt: (f64, f64), page_pt: (f64, f64)) -> String {
     use crate::units::whole_mm_from_points as mm;
@@ -670,64 +412,18 @@ pub fn paper_auto_too_big(name: &str, sheet_pt: (f64, f64), page_pt: (f64, f64))
 }
 
 /// Shown when auto selection is chosen but there is nothing to measure.
-///
-/// Reachable only for a document with no pages, which cannot print either —
-/// the combo is not drawn at all when the driver enumerated no sheets. It
-/// exists so that the disclosure line has a sentence for every state the
-/// choice can be in, rather than falling blank on one of them: a control with
-/// no line under it, where every other state has one, reads as a control that
-/// failed.
 #[must_use]
 pub const fn paper_auto_no_basis() -> &'static str {
     "There are no pages to measure, so no sheet was chosen. The job will use whatever the printer's own settings name."
 }
 
 /// Shown in place of the paper list when the driver enumerated none.
-///
-/// # Not an error, and not the same as an empty list being a bug
-///
-/// A driver is entitled to answer nothing. `DC_PAPERS` is a query, not an
-/// obligation, and a device with one fixed sheet has a defensible reason to
-/// list none. The honest response is to say the list is missing and carry on
-/// printing on whatever the printer is set to — which is exactly what this
-/// build did for its whole life before the list existed.
-///
-/// Absent rather than an empty greyed combo: R9. A combo with nothing in it
-/// is a control that cannot ever act.
 #[must_use]
 pub const fn paper_not_listed() -> &'static str {
     "This printer did not list any paper sizes. The job will use whatever the printer's own settings name."
 }
 
 /// **The sheet a chosen paper actually means: a request, not a setting.**
-///
-/// # Why this sentence exists, in the engine's own measurement
-///
-/// `pdfcer-print` reported, while building the paper path: **two drivers were
-/// found silently ignoring a paper request.** The `DEVMODE` goes out with
-/// `DM_PAPERSIZE` asserted, the driver does as it pleases, and Win32 offers
-/// no acknowledgement to read. There is nothing pdfcer can check and nothing
-/// it can retry.
-///
-/// So this is an inference pdfcer cannot verify and the operator cannot see
-/// until the paper is already out of the machine — rule 4's *fuzzy, never
-/// sneaky*, and the half of that rule people forget: **an inference the
-/// operator cannot see still owes a report.**
-///
-/// # Why the disclosure is here and not on the preview
-///
-/// Rule 4 again, the clause that is most often got backwards. The preview
-/// draws the requested sheet exactly as it draws any other — no dashed
-/// outline, no amber tint, no "provisional" styling. Marking it would be a
-/// second rendering path for the same picture, and the operator's own
-/// objection to the old shell was that *"the nagging and red flagging made
-/// for a lot of extra bugs in the visibility when editing."*
-///
-/// # Why it names a first-sheet check
-///
-/// Because that is the only verification available to anybody. Telling an
-/// operator that something might silently fail, without telling them how they
-/// would know, is a sentence that raises anxiety and resolves nothing.
 #[must_use]
 pub fn paper_is_a_request(sheet: Option<(f64, f64)>) -> String {
     let Some((w_pt, h_pt)) = sheet else {
@@ -743,34 +439,6 @@ pub fn paper_is_a_request(sheet: Option<(f64, f64)>) -> String {
 
 /// The sheet the job was laid out on, when the operator asked for no
 /// particular one.
-///
-///
-/// It read, for as long as there was no paper control:
-///
-/// > *"Paper: 595 × 842 pt (210 × 297 mm), from this printer's own settings
-/// > in Windows. pdfcer cannot change it — set it in the printer's preferences
-/// > and reopen this dialog."*
-///
-///
-/// **The general lesson, which this project has now paid for three times:**
-/// a disclosure that names a limitation is a claim with a shelf life, and it
-/// expires silently. `check-string-gaps.sh` can find a malformed literal; no
-/// gate can find a true sentence that stopped being true.
-///
-/// # Why it names millimetres as well as points
-///
-/// Points are the document's unit and the one the rest of this dialog speaks,
-/// so they come first. Millimetres are the unit the operator's paper is sold
-/// in and the one they will compare against — *"210 × 297"* is recognisable
-/// as A4 in a way that *"595 × 842 pt"* is not, and recognising it is the
-/// whole purpose of the line.
-///
-/// # The `None` case is not an error
-///
-/// It is simply "no plan yet" — no printer chosen, or the device would not
-/// describe itself. The device-unavailable sentence covers the second and the
-/// selector covers the first, so this line steps back rather than adding a
-/// third refusal to a column that already has one.
 #[must_use]
 pub fn sheet_from_driver(sheet: Option<(f64, f64)>) -> String {
     let Some((w_pt, h_pt)) = sheet else {
@@ -802,10 +470,6 @@ pub const fn comments_heading() -> &'static str {
 }
 
 /// Page content, links and form-field widgets — no review markup.
-///
-/// The **default for printing**, which differs from the renderer's own
-/// `DocumentAndMarkups` default. Deliberate on both sides: the canvas should
-/// show markup, and a print should not carry review comments unless asked.
 #[must_use]
 pub const fn scope_document() -> &'static str {
     "Document"
@@ -830,11 +494,6 @@ pub const fn scope_fields_only() -> &'static str {
 }
 
 /// The standing note that pdfcer prints rasters, not vectors.
-///
-/// **Always true, so a caption rather than a warning.** A banner that fires
-/// on every job trains an operator to stop reading banners — which is how the
-/// *conditional* disclosure beneath it ([`dpi_capped`]) would come to be
-/// ignored too.
 #[must_use]
 pub const fn raster_note() -> &'static str {
     "pdfcer renders each page to an image at the resolution below and sends \
@@ -842,13 +501,6 @@ pub const fn raster_note() -> &'static str {
 }
 
 /// pdfcer chose a resolution the operator did not.
-///
-/// The conditional half of the resolution disclosure, and it exists because
-/// `JobResolution::capped` is pdfcer's own memory judgement rather than
-/// anything the device or the document asked for (`docs/core-api/03` §6.3
-/// item 3). It names all three numbers — what will be used, what the device
-/// could do, and what lifting the cap would cost — because an operator
-/// deciding whether to raise it needs the cost, not just the fact.
 #[must_use]
 pub fn dpi_capped(dpi: u32, device_dpi: u32, uncapped_page_mb: u64) -> String {
     format!(
@@ -885,11 +537,6 @@ pub const fn dpi_suffix() -> &'static str {
 // ---------------------------------------------------------------------------
 
 /// "Sheet i of n" — which sheet of the **job** is showing.
-///
-/// Says *sheet*, not *page*, and the distinction is load-bearing: the stepper
-/// walks the job's own sequence, which may be a custom range, odd/even
-/// filtered, reversed, or repeated for copies. Calling position 3 "page 3"
-/// would name a document page the job might not even contain.
 #[must_use]
 pub fn preview_position(index: usize, total: usize) -> String {
     format!("Sheet {index} of {total}")
@@ -944,12 +591,6 @@ pub const fn preview_zoom_actual_tooltip() -> &'static str {
 }
 
 /// The magnification readout.
-///
-/// **A percentage of ACTUAL size, never of the fit.** A number expressed
-/// against the fit would change whenever the window was dragged, without the
-/// operator touching a zoom control — so it would report the window, not the
-/// sheet, and would be useless for the one question the preview exists to
-/// answer ("will this fine print clear the margin?").
 #[must_use]
 pub fn preview_zoom_percent(percent: u32) -> String {
     format!("{percent}% of actual size")
@@ -962,25 +603,12 @@ pub const fn preview_pan_hint() -> &'static str {
 }
 
 /// Move the preview into a window of its own — operator request O112.
-///
-/// **"Pop out"** is the phrase the product class has settled on — a browser's
-/// picture-in-picture, an editor's detached panel, a chat client's detached
-/// call window all use it or a near synonym, and the operator used it himself:
-/// *"the option to pop out into its own resizeable window"*. Using his word
-/// rather than a tidier one ("Detach", "Open in new window") costs nothing and
-/// means the control is named the thing he went looking for.
 #[must_use]
 pub const fn preview_pop_out() -> &'static str {
     "Pop out"
 }
 
 /// Hover text for the pop-out button.
-///
-/// It states the way BACK, in the same breath as the way out. A control that
-/// moves a surface somewhere else owes the operator the return trip before they
-/// take it — otherwise the first thing they do after popping it out is hunt the
-/// print dialog for a button to put it back, and there is not one, because
-/// closing the window is the gesture.
 #[must_use]
 pub const fn preview_pop_out_tooltip() -> &'static str {
     "Show the preview in its own window, which you can resize and move to another screen. \
@@ -988,12 +616,6 @@ pub const fn preview_pop_out_tooltip() -> &'static str {
 }
 
 /// The pop-out window's title bar.
-///
-/// Deliberately **not** the document's name. The title bar's job is to make
-/// this window findable in the taskbar beside the print dialog it came from,
-/// and *"Print preview"* is what a person scanning a task list is looking for.
-/// A file name there would sit beside the main window's file name and the two
-/// would be told apart only by whatever the shell appended.
 #[must_use]
 pub const fn preview_window_title() -> &'static str {
     "Print preview"
@@ -1006,18 +628,6 @@ pub const fn no_pages_selected() -> &'static str {
 }
 
 /// **Content will be lost off the edge of the printable area.**
-///
-/// Shown for the whole job, always, not only for the sheet on screen — a
-/// multi-page job's clip is frequently on a sheet the operator is not looking
-/// at, and a count that only appeared when you happened to step onto the
-/// offending sheet would be a disclosure you could miss by not scrolling.
-///
-/// This is the GUI half of the divergence `pdfcer-print` was built for:
-/// *"Acrobat's documented behaviour here is to clip SILENTLY … pdfcer reports
-/// it instead"* — the doc on `Placement::clipped`, which
-/// `SpoolReport::clipped_pages` counts. That divergence is worth nothing if the
-/// shell reduces it to a number an operator can look past, which is why the
-/// same fact also reaches [`commit_with_clipping`].
 #[must_use]
 pub fn clip_summary(clipped: usize, total: usize) -> String {
     if clipped == 1 {
@@ -1030,30 +640,6 @@ pub fn clip_summary(clipped: usize, total: usize) -> String {
 /// **A CEILING on how many sheets will lose content**, for the state where
 /// some have been examined and some have not — operator request O113,
 /// 2026-09-04.
-///
-/// # Why this sentence exists rather than a reworded [`clip_summary`]
-///
-/// `clip_summary` states a number that was *counted*: every sheet it names has
-/// a page box exceeding the printable rectangle, or (once every clipped sheet
-/// has been previewed) has been measured to carry ink out in the band. This
-/// one states a number that was **bounded**. With some sheets examined and
-/// some not, the count is `known_inked + unexamined`, and the true figure can
-/// be anywhere from `known_inked` up to that — see
-/// `dialogs::print::verdicts`' header for the inequality.
-///
-/// **The hedge is a correction, not a weakening.** Saying "will" of a
-/// number nobody measured would be the invented claim; the two words that
-/// change — *"Up to"* and *"may"* — are the difference between reporting a
-/// measurement and reporting a bound, and they appear exactly when the number
-/// stops being a measurement. Nothing softens `clip_summary` itself: where
-/// nothing has been subtracted, that sentence is still what is shown, in the
-/// words it has always used.
-///
-/// # Why it does not name which sheets
-///
-/// Because the answer would be a list that grows as the operator steps through
-/// the preview, on a surface they are not looking at. The preview's own
-/// caption names the sheet on screen; this line is the job.
 #[must_use]
 pub fn clip_summary_at_most(clipped: usize, total: usize) -> String {
     if clipped == 1 {
@@ -1067,40 +653,6 @@ pub fn clip_summary_at_most(clipped: usize, total: usize) -> String {
 
 /// **The sheet on screen overhangs the printable area, and the overhang is
 /// empty paper** — operator request O113, 2026-09-03.
-///
-/// # The sentence that stops a warning and a picture contradicting
-///
-/// > *"can you make it so the red pattern you put over the page if it is going
-/// > to print beyond the printable borders is only over the areas that extend
-/// > beyond the printable page? Our drawing get drawn 1:1 and the area that
-/// > isn't printed is just empty border."*
-///
-/// [`clip_summary`] above counts sheets whose **page box** exceeds the
-/// printable rectangle. That count is a plan-time geometric fact and it is
-/// still exactly true. Since O113 the hatch beside it is not geometric: it
-/// samples the raster and covers only what actually carries ink. So on the
-/// operator's own 1:1 drawings the two disagree — a sentence saying content
-/// will be lost, over a picture that visibly loses none — and an operator
-/// resolving that disagreement resolves it by trusting neither half.
-///
-/// This is the resolution. It does **not** contradict the count and does not
-/// soften it; it adds the one thing the count could not know, which is what is
-/// actually printed on the part that will be cropped.
-///
-/// # Why it names the SHEET and says "on screen"
-///
-/// Because that is the only sheet whose raster exists. The preview renders the
-/// page it is showing and no other, so this is a statement about one sheet, and
-/// wording it as though it covered the job would be a claim nothing checked.
-/// The job-wide count above stays the statement about the job.
-///
-/// # Why "nothing is printed there" rather than "nothing will be lost"
-///
-/// The stronger phrasing would be a promise about the outcome, and the ink test
-/// has a threshold in it (`dialogs::print::ink::INK_MAX_LEVEL`) — a mark
-/// lighter than about 4% grey is treated as paper. Saying what was *observed*
-/// on the sheet is a claim this code can support; saying what *will* happen at
-/// the printer is one it cannot.
 #[must_use]
 pub const fn overhang_is_blank() -> &'static str {
     "This sheet hangs over the printable area, but nothing is printed there — the overhang is \

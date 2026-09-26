@@ -35,13 +35,6 @@ impl RegionSource {
 
 /// How one region's area is expressed, before it is resolved against a
 /// specific image.
-///
-/// Two variants because the two sources are resolved against different things
-/// and at different times: a fraction needs the image's dimensions, which are
-/// only known once the PNG is loaded, whereas a traced rect was converted to
-/// capture pixels at the moment the window was measured. Collapsing them into
-/// one would mean either resolving fractions too early or carrying a
-/// [`crate::coords::WindowFrame`] into the offline path that has no window.
 #[derive(Clone, Copy, Debug)]
 pub enum RegionArea {
     /// Fractions of the measured surface.
@@ -76,18 +69,6 @@ pub struct RegionPlan {
 }
 
 /// What the application declared this run, as a check sees it.
-///
-/// Built by the check, because only the check knows which of the declared
-/// names are the ones it is about. It carries the unmatched names too, and
-/// that is not padding: it is what lets a SKIP reason distinguish
-///
-/// * "the application declared nothing at all" — the trace channel is not
-///   working, or the diagnostic switch did not reach the process;
-/// * "the application declared five regions and none of them is a ribbon
-///   caption" — the trace channel is fine and the *ribbon* is what is missing.
-///
-/// Those two send a reader to different files, which is the entire reason this
-/// crate is fussy about reason strings.
 #[derive(Clone, Debug)]
 pub struct TraceRegions {
     /// The declared regions this check is about, already in capture pixels.
@@ -116,25 +97,6 @@ impl TraceRegions {
 }
 
 /// Decide what to measure, and say so — or explain why nothing can be.
-///
-/// `image_source` is the file being asserted against in offline mode, or
-/// `None` in live mode. `trace` is what the application declared this run, or
-/// `None` when no trace was consulted at all (offline mode, or a check that
-/// does not launch the binary).
-///
-/// Precedence is documented at length in the module docs: **trace first**,
-/// fractions second. The short version is that a rect measured on the frame it
-/// was reported for cannot go stale, and a fraction is wrong the first time a
-/// panel resizes — silently, by measuring the wrong pixels while still
-/// printing a plausible number.
-///
-/// # Errors
-///
-/// Returns `Err(reason)` when the check should SKIP. The reason is assembled
-/// from *what was actually consulted*, never from a template: a reason that
-/// says the trace declared no regions when no trace was read is not merely
-/// imprecise, it sends the reader to the wrong file — which is worse than
-/// giving no reason at all, because they will believe it.
 pub fn resolve_set(
     profile: &'static Profile,
     set_name: &str,
@@ -262,10 +224,6 @@ struct Measurement {
 }
 
 /// Measure every region in `plan` against `image`, recording a note per region.
-///
-/// Returns `None` if every region is legible, or `Some(reason)` naming every
-/// region that is not — all of them, not the first, because a reader fixing a
-/// theme wants the whole list.
 pub fn assess(
     image: &Image,
     plan: &RegionPlan,

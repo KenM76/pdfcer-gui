@@ -43,3 +43,22 @@ channel, a pending state and a way to say the operator changed their mind —
 machinery for a wait nobody notices. A **scan at 600 dpi** is the case that
 would justify it, and it is the case to re-measure before building for
 rather than the case to assume.
+
+## Item notes
+
+### `fn insert`
+
+The guard stays at the call site, with every other command's, because *"may
+this mode edit content?"* is a question about the **command** and belongs
+where the other answers to it are. Everything below is about a **file**.
+
+### `fn insert_path`
+
+Because a **dropped** image has already answered the question `insert`'s
+first line asks. Fused with the picker, drag-and-drop could not reach the
+import without opening a file dialog over a file the operator had already
+chosen — which is the shape of thing that gets built as a duplicate instead.
+
+One import, one set of disclosures, one placement window, two doors. The
+alternative is two code paths that agree today and disagree the first time
+one of them learns something.

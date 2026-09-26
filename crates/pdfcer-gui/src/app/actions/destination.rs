@@ -11,16 +11,6 @@ use crate::canvas::destination::PendingDestination::Point;
 use super::Action;
 
 /// Turn a resolved destination into the actions that arrive at it.
-///
-/// The page step is always first and always unconditional: every view is
-/// relative to a page, and a view applied before the page turn would frame a
-/// region of the wrong sheet. `GoToPage` is idempotent, so a destination on the
-/// current page costs nothing.
-///
-/// Returns actions rather than performing the move, because this is called
-/// from a panel body — `panels::bookmarks` states the rule its own header
-/// carries: *"it changes no document at all"*, and framing a view is a change
-/// to `OpenDoc::view` that belongs in the apply phase with every other.
 pub fn actions_for(page_index: usize, view: &DestView, out: &mut Vec<Action>) {
     out.push(Action::GoToPage(page_index));
     match view {

@@ -282,3 +282,185 @@ The content plan's factors are `f32` — `move_nodes` takes those — so
 the comparison is at `f32` precision, which is the honest bound: what is
 asserted is that the two arms agree to the precision the narrower one
 can express, not that a widened `f32` equals an `f64`.
+
+### `const WIDTH_REGION`
+
+Published per field rather than leaving a driven check to divide [`REGION`]
+into quarters, because the row heights are the theme's and would change under
+a UI-scale setting the operator can move. `D:/dev/rag/egui/` records the
+general form: *a harness that computes a control's position from a container's
+is asserting the layout it was written against, not the one that shipped.*
+
+### `const ANNOT_REGION`
+
+A DIFFERENT name from [`REGION`], deliberately, and it is not tidiness.
+A driven check that found `properties.geometry` could not tell which subject
+it had got, so *"the width field did nothing"* would be indistinguishable
+between a broken annotation resize and a check that had selected a path by
+accident. The region name is the one place the harness can learn what the
+section is currently about without reading the document.
+
+### `const ANGLE_REGION`
+
+Its **presence** is also the honest answer to *"does this mark have an
+angle at all?"* — the field is not drawn for an annotation with no
+appearance stream or with a sheared one, so a check that finds no region has
+found the application saying so rather than a layout it could not reach.
+(`ui_rect_visible` means an absent region can also mean *scrolled out of
+sight*, which is why a check must distinguish the two by reading the
+`annot-geometry-draft` trace's `angle=` field as well.)
+
+### `const MIN_EXTENT_PT`
+
+A quarter point, matching `resizing::is_usable`'s own floor on the factors
+it will act on. Below it the scale is a degenerate collapse — every node of
+the path onto one line — which `move_nodes` would happily perform and which
+no operator means.
+
+### `struct GeometryDraft`
+
+# Why the seed is stored and not just the values
+
+Because *what changed* is the question this section has to answer on Apply,
+and it cannot be answered by comparing the draft to the object's **current**
+bounds — those are the same numbers the draft was seeded from, so an
+operator who typed nothing and one who typed the current value back in would
+be indistinguishable. Storing the seed makes "the operator touched this
+field" a fact rather than an inference.
+
+### `enum Subject`
+
+# Why this is an enum and was a bare `usize`
+
+Because the two subjects number themselves in different, overlapping
+address spaces and neither number knows it. A page-content object is a
+**paint-order index** — 0, 1, 2 — and an annotation is a **stable object
+id**, whose `num` is also a small integer on almost every real document.
+
+With the stamp's middle member a bare `usize`, selecting content object 7
+and then an annotation that happens to be object 7 0 R, on the same page,
+in the same edit epoch, would have left [`GeometryDraft::sync`] thinking
+the draft already described the new selection. **It would not re-seed**, so
+the panel would show the path's numbers over the annotation, and pressing
+Apply would move the annotation by the difference between two unrelated
+rectangles.
+
+⇒ That is a wrong edit produced by a *coincidence of integers*, which is the
+worst class of defect this project keeps naming: it is not reproducible on
+most documents, so a test written against a fixture would pass and the
+operator would report it once, on one drawing, and never again.
+
+An enum makes the two spaces distinguishable to the compiler and to
+`PartialEq`, and costs nothing.
+
+### `struct Bounds`
+
+Derived from the object's **anchors**, which is the same set
+[`resizing::action`] moves — deliberately, so the number this panel shows
+and the number the edit acts on cannot disagree. A bounding box taken from
+any other source (the object's `/BBox`, the canvas outline, the render
+extent) would include curve bulges, line weight or a transform this section
+does not apply, and the operator would type 40 and measure something else.
+
+### `fn sync`
+
+Idempotent within a stamp, which is what lets it be called every frame:
+the operator's typing survives redraws and is discarded exactly when the
+thing it describes stops being the thing it described.
+
+### `fn angle_delta`
+
+# Why this returns a DELTA when the field is absolute
+
+Because the only verb that exists is a delta. `rotate_annotation(id,
+pivot, degrees)` composes a turn onto whatever is already there; there
+is no *set the angle to 45°*. So the panel shows an absolute number,
+which is what a typed field must be, and converts it here — once, in a
+pure function, rather than in the arm that raises the action where it
+could not be tested without a document.
+
+An absolute setter is filed as
+`request_an_annotations_rotation_angle_cannot_be_read.md`, and when it
+lands this function is what gets deleted.
+
+**Normalised into `(-180, 180]`**, which is not cosmetic. Typing `350`
+over a mark at `10` means *turn it 20° clockwise*, not *turn it 340°
+anticlockwise*. Both land in the same place for the artwork, but the
+second grows `/Rect` by an enormous factor on the way there under the
+defect O145 records — so the short way round is the one that damages the
+mark least until that is fixed, and is the one an operator means anyway.
+
+`None` when there is no angle to change, when the seed is absent, or
+when the change is smaller than [`MIN_ANGLE_DEG`] — the same
+"nothing was typed" floor the four extents get from [`near`], so a
+redraw that round-trips a float through a spinner cannot look like an
+edit.
+
+### `const MIN_ANGLE_DEG`
+
+A twentieth of a degree, chosen to match what [`near`] does for the four
+extents and for the same reason: the angle makes a round trip through the
+appearance `/Matrix`, a decomposition and an `f64` spinner, and comes back
+as `29.999999999999996`. Without a floor, selecting a turned mark and
+pressing Apply would compose a rotation of 4 × 10⁻¹⁵ degrees — a real undo
+entry, a real appearance rewrite, and a real `/Rect` recomputation, for an
+edit with no effect at any zoom.
+
+It is also far below anything an operator can mean. At a twentieth of a
+degree, the far corner of a full-width A1 title block moves by less than a
+point.
+
+### `fn plan`
+
+Returns the commands **in the order they must run**: the move first, then
+the scale. That order is not cosmetic — the scale's pivot is the object's
+bottom-left corner *as the operator sees it after the move*, so computing
+the scale against pre-move bounds and applying it after the move would put
+the object somewhere neither number described.
+
+# Why this is a pure function taking `Bounds` rather than a method on `Ui`
+
+So it can be tested without a document, a provider or an `egui::Context`.
+The four cases that matter — position only, size only, both, neither — are
+four assertions here and would each be a driven check otherwise.
+
+### `struct AnnotPlan`
+
+# Why this is a second type and not [`Plan`] reused
+
+Because the two engine verbs do not take the same numbers, and a shared
+type would have had to lie about one of them.
+
+* `EditSession::move_annotation(id, dx, dy)` takes a **delta**, like the
+  content move — that half genuinely is the same shape.
+* `EditSession::resize_annotation(id, anchor, sx, sy, opts)` takes an
+  **anchor and two `f64` factors**. [`Plan::scale`] carries a
+  [`Point`](pdfcer_core::vector::Point) and two **`f32`s**, because that is
+  what `move_nodes` takes on the content side.
+
+Reusing `Plan` would therefore have meant widening `f32` factors back to
+`f64` at the call site — a round trip through a narrower type that loses
+about seven significant figures for no reason, on numbers an operator typed
+to two decimal places precisely so they would be exact. `40.0 / 27.0` in
+`f32` and then in `f64` is not the ratio the engine would have computed.
+
+⇒ Both are built from the same [`delta`] and [`factors`], so the *decision*
+is shared and only the packaging differs.
+
+### `fn annot_plan`
+
+Returns the two verbs **in the order they must run**: the move first, then
+the resize. Same reason as [`plan`]'s and it matters more here, because the
+anchor is an absolute point rather than a factor — computing it against the
+pre-move rectangle and applying it after the move would pin a corner the
+annotation no longer has.
+
+# Two undo entries for one press, disclosed rather than hidden
+
+`move_annotation` and `resize_annotation` are separate `EditSession`
+commands and there is no combined one, so an operator who changes Left *and*
+Width gets two `Ctrl+Z` steps. That is exactly what the content half already
+does — the module header's *"the operator who changes only X gets exactly
+one entry, and the operator who changes X and W gets two"* — and it is
+stated here too because a reader arriving at the annotation arm should not
+have to infer it from the other one.

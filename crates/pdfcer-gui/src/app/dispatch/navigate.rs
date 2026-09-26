@@ -32,11 +32,6 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/app/dispatch/navigate.md`.
 
 /// The ids this module answers for.
-///
-/// A `matches!` over literals rather than a prefix test, for the reason every
-/// `handles` in this directory gives: a prefix would silently claim the next
-/// `view.*` command somebody adds, and the failure would be a command that
-/// reaches this file's `match` and falls out of it doing nothing.
 pub(crate) fn handles(id: &str) -> bool {
     // ui-text-exempt: registered command ids, never displayed.
     matches!(
@@ -51,11 +46,6 @@ pub(crate) fn handles(id: &str) -> bool {
 }
 
 /// Arm a tool, or flip the switch.
-///
-/// Note the signature: **no `actions`**. Every control here changes how the
-/// next gesture is READ and none of them changes the document, so there is
-/// nothing to push. An arm that needed one would be a control that does not
-/// belong in this row.
 pub(crate) fn dispatch(app: &mut crate::app::PdfcerApp, ctx: &egui::Context, id: &str) {
     match id {
         "view.tool_select" => {

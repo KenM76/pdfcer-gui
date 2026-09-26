@@ -72,10 +72,6 @@ pub(super) enum PrintTab {
 
 impl PrintTab {
     /// Every tab, in the order the strip draws them.
-    ///
-    /// An array rather than three literal calls at the draw site, so adding a
-    /// tab is one edit and cannot leave the strip and the content branch
-    /// disagreeing about how many there are.
     pub(super) const ALL: [Self; 4] = [
         Self::PagesLayout,
         Self::CopiesFinishing,
@@ -94,10 +90,6 @@ impl PrintTab {
     }
 
     /// The tab's suffix under [`super::REGION_TAB_PREFIX`].
-    ///
-    /// Deliberately not [`Self::label`] lowercased: a published region name is
-    /// a contract with `tools/ui-verify`, and deriving it from user-visible
-    /// copy would break every driven check the next time a label is reworded.
     pub(super) fn region_word(self) -> &'static str {
         match self {
             // ui-text-exempt: diagnostic region name, never displayed in the UI
@@ -136,17 +128,6 @@ pub(super) enum PrintRange {
 
 impl PrintRange {
     /// The zero-based document pages this range names, in document order.
-    ///
-    /// The subset filter, the reversal and the copy multiplication are **not**
-    /// applied here: they are `pdfcer-print`'s, they have a defined order of
-    /// operations (subset → reverse → copies) that is *"the only place a
-    /// defect can hide"*, and restating any of it in the shell would be a
-    /// second implementation of exactly the kind [`parse_page_range`]'s own
-    /// docs argue against.
-    ///
-    /// An unparseable custom range yields an **empty** vector rather than a
-    /// guess, which is what lets the dialog say so and withhold the commit
-    /// button instead of printing a range nobody asked for.
     pub(super) fn indices(self, text: &str, page_count: usize, current: usize) -> Vec<usize> {
         match self {
             Self::All => (0..page_count).collect(),
@@ -163,30 +144,6 @@ impl PrintRange {
 }
 
 /// Parse `3`, `1-4`, `5,1-2` into zero-based indices.
-///
-/// # Deliberately the same syntax the CLI accepts
-///
-/// Carried across verbatim, with its reasoning:
-///
-/// > Two range parsers would eventually disagree about something like
-/// > `5,1-2` — whether it reorders, whether it deduplicates — and an operator
-/// > moving between the GUI and a script would have no way to know which one
-/// > they were talking to. The syntax is kept identical and the behaviour on
-/// > malformed input is the same: an unparseable range yields NOTHING rather
-/// > than a guess, so the Print button disables and says why instead of
-/// > printing a range nobody asked for.
-///
-/// Note what "the same" *includes*, because two of these are surprising and
-/// both are deliberate: the result **preserves the order typed** (so `5,1-2`
-/// prints 5 first) and **does not deduplicate** (so `1,1` prints page 1
-/// twice). Both fall out of treating the text as a *sequence* the operator
-/// wrote rather than as a set, and both match the CLI.
-///
-///
-/// The argument above was made about the GUI and the CLI. It is the same
-/// argument between two GUI surfaces and stronger: an operator who learned this
-/// syntax on Print is entitled to it working on Insert, and a second parser
-/// here would be the drift that paragraph exists to prevent, one layer in.
 pub(crate) fn parse_page_range(spec: &str, count: usize) -> Option<Vec<usize>> {
     let mut out = Vec::new();
     for part in spec.split(',') {
@@ -239,12 +196,6 @@ fn publish_scale_region(ui: &egui::Ui, mode: ScaleMode, rect: egui::Rect) {
 }
 
 /// Which pages, and how each one lands on the sheet.
-///
-/// Takes the planned job rather than the sheet extracted from it, so that every
-/// sentence in the column names the rectangle the job was actually laid out
-/// against — the TURNED sheet — rather than the device's un-rotated default.
-/// Pulling one value out here and another out at the call site is how a tab
-/// comes to describe two different jobs in one column.
 pub(super) fn pages_layout(
     ui: &mut Ui,
     dialog: &mut PrintDialog,

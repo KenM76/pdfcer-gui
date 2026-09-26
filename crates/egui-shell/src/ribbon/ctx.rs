@@ -52,10 +52,6 @@ use crate::theme::Theme;
 use super::report::Reporter;
 
 /// A request to paint one icon into a slot the ribbon has reserved.
-///
-/// The application resolves [`Self::key`] against its own icon set —
-/// `Command::icon` is a `String` key for the reasons given on that field
-/// — and paints into [`Self::rect`].
 #[derive(Debug, Clone, Copy)]
 pub struct IconRequest<'a> {
     /// The application-defined icon key from [`Command::icon`].
@@ -123,10 +119,6 @@ pub type CustomItemRenderer<'a> =
     dyn FnMut(&mut egui::Ui, &CustomItem<'_>) -> Option<HandlerToken> + 'a;
 
 /// Everything a ribbon surface needs for one frame.
-///
-/// Not `Clone`, not `Copy`, and never stored: it borrows the
-/// application's callbacks for the duration of one
-/// [`super::Ribbon::render`] call and is dropped at the end of it.
 pub(crate) struct Ctx<'a> {
     /// The commands that exist. A manifest may only reference these.
     pub registry: &'a CommandRegistry,
@@ -150,22 +142,6 @@ pub(crate) struct Ctx<'a> {
 
 impl Ctx<'_> {
     /// Look a command id up, tracing a disclosure if it is unknown.
-    ///
-    /// # Why an unknown id is a skip and not a panic
-    ///
-    /// [`crate::manifest::Shell::validate_against`] is supposed to have
-    /// caught this at load, and [`crate::manifest::merge`] is supposed to
-    /// have turned an operator's stale reference into a disclosed
-    /// [`crate::manifest::Skip`] before that. Reaching here means an
-    /// application rendered a manifest it did not validate — a
-    /// programming error, but one whose correct penalty is *one missing
-    /// control*, not a crash in the paint loop with a document open.
-    ///
-    /// The trace is what stops it being silent. `SHELL_FRAMEWORK.md` §4
-    /// calls an unknown id a **disclosed skip**, and an undisclosed skip
-    /// is indistinguishable from a rendering fault — the lesson
-    /// [`crate::verify`]'s header records about a step that was dropped
-    /// without saying so.
     pub(crate) fn command(&self, id: &str) -> Option<&Command> {
         match self.registry.get(id) {
             Some(c) => Some(c),
@@ -184,34 +160,12 @@ impl Ctx<'_> {
     }
 
     /// An `egui::Id` for a ribbon widget, derived from the base id.
-    ///
-    /// Derived rather than auto-generated so that ids are **stable across
-    /// frames even as the layout changes**. `egui` keeps focus, hover and
-    /// popup state per id; an auto-generated id shifts when a group is
-    /// collapsed or scrolled out of the band, and the symptom is a control
-    /// that loses keyboard focus when the window is resized — which reads
-    /// as a focus bug rather than as an id bug and is very hard to
-    /// attribute.
     pub(crate) fn id(&self, kind: &str, key: &str) -> egui::Id {
         self.base_id.with(kind).with(key)
     }
 }
 
 /// Whether a `visible_when` / enable-style condition holds.
-///
-/// Mirrors [`crate::commands::Enable::When`]'s language exactly — a bare
-/// name is "this condition is set", a leading `!` negates — but without
-/// allocating a `String` per contextual tab per frame, which is what
-/// building an [`crate::commands::Enable`] to evaluate it would cost.
-///
-/// An **empty** condition is `true`: a manifest that says
-/// `visible_when: ""` has said nothing, and the tab is not usefully made
-/// permanently invisible by an empty string.
-///
-/// `the_local_condition_evaluator_agrees_with_enable` pins this against
-/// the real implementation, because two copies of a rule that can drift
-/// is exactly how a contextual tab ends up appearing under conditions its
-/// author's enable predicate would have refused.
 pub(crate) fn condition_holds(expr: &str, conditions: &ConditionSet) -> bool {
     let expr = expr.trim();
     if expr.is_empty() {

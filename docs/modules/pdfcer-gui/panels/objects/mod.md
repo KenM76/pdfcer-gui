@@ -412,3 +412,58 @@ cannot happen today. It is asserted because the row builder and the
 row renderer are separate functions, and the day something rebuilds
 one without the other, an index panic in a draw closure is a crash
 with no useful stack.
+
+### `const POINT_ROWS_PER_PART`
+
+**This number is a measurement, not a guess.** One path object on a
+real CAD export holds **6,681 anchors**, and that number is why the point
+rung is scoped to a part at all
+([`provider::ObjectModelProvider::subpath_node_points`] carries the same
+figure and the same reasoning for the *canvas* pick set).
+
+Virtualization makes a wall of rows cheap to *draw* and no more useful to
+*read*, and materialising 6,681 `ObjectTreeRow`s to find one costs a
+frame on exactly the sheet where the panel matters most. 200 is enough to
+see the shape of a part's point list and to read off an index for
+`node-move`.
+
+The cap is **disclosed with both numbers** by
+[`crate::text::panels::objects::object_tree_points_capped`]. A quietly
+shortened list is indistinguishable from a short one — the same defect
+`bookmarks_truncated` exists to prevent one panel over.
+
+### `enum ObjectTreeRow`
+
+A row's `(object, part, point)` triple **is** an address into the level
+ladder, so a canvas descent will have an exact row to land on when the
+two are connected at S4.
+
+### `fn body`
+
+The returned `egui_shell::HandlerToken`s are **intent**: this function
+executes nothing, exactly as it mutates nothing. See
+[`crate::panels::Panel::show`] for why a panel hands tokens on rather
+than translating them.
+
+### `fn build_rows`
+
+Only expanded parents contribute children, so a fully-collapsed tree
+costs exactly the object count — the same row budget a flat list would
+have.
+
+`point_cap` is a parameter rather than a constant read from
+[`POINT_ROWS_PER_PART`] so the tests can drive the capping path with two
+points instead of two hundred. The panel always passes the constant.
+
+### `fn engine_fixture`
+
+`D:\Dev\pdfcer\fixtures\synthetic\…`, reached by the same relative
+walk this crate's `Cargo.toml` uses to reach `pdfcer-core` — so if the
+crate compiles at all, this path resolves. That is why the failure
+below is an `assert!` and not a skip: a skip would silently turn
+every fixture-backed test in this tree into a no-op, which is the
+"gate that guards nothing" failure the ui-strings gate's own header
+spends four paragraphs on.
+
+`D:\Dev\pdfcer` is **read-only** for this project. These tests read
+from it and write nothing.

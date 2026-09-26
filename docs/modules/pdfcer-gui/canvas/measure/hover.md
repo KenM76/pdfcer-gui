@@ -111,3 +111,42 @@ The failure this prevents is not a missing highlight, it is a
 **misleading** one: a line drawn from a real endpoint to a fallback
 position points at geometry that is not there, and the operator would
 aim at it.
+
+### `struct Entity`
+
+`Copy`, so it can ride inside [`super::Resolved`] without changing that
+type's shape — which matters because `Resolved`'s whole contract is that it
+is one cheap value passed from the resolve pass to the paint pass.
+
+### `fn resolve`
+
+`tolerance` is the same page-space catch radius the snap query uses, so the
+highlight and the snap agree about what "near" means. Handing them different
+radii would produce the state this whole module exists to prevent: a marker
+on one line and a highlight on another.
+
+# Why `hit_test_point` rather than the snap candidate's `source_object`
+
+Because a snap candidate is often **not** owned by one object, and the two
+questions genuinely differ. `SnapCandidate::source_object` is documented as
+`None` for *"a page-axis or grid candidate, or a segment–segment
+intersection between two different objects"* — and an intersection is
+exactly the case where an operator most needs to be told which line they are
+about to take, since by construction there are two.
+
+So the entity is resolved from the **pointer**, independently. When the two
+agree, the operator sees a node on a highlighted line and everything is
+obvious. When they disagree — an intersection — they see the node at the
+crossing and the highlight on the line the click will pick, which is the
+information that was missing.
+
+### `fn shapes`
+
+Returns an empty vector rather than `Option` so a caller can `extend` a
+painter unconditionally — the same shape [`super::snap::snap_marker_shapes`]
+uses, for the same reason.
+
+`to_screen` converts a page point, returning `None` when the point does not
+map (off-page, or a degenerate transform). A segment with one unmappable end
+is dropped rather than half-drawn: a highlight from a real endpoint to an
+arbitrary fallback would be pointing at something that is not there.

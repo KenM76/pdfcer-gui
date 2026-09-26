@@ -16,17 +16,6 @@ use crate::sys;
 const RAISE_SETTLE_MS: u64 = 700;
 
 /// Capture the session's window client area.
-///
-/// Raises the window, waits for it to paint, reads the desktop region it
-/// occupies, and refuses the result if it is near-uniform.
-///
-/// # Errors
-///
-/// * The window cannot be measured (it has closed).
-/// * The screen grab failed.
-/// * The capture is near-uniform — see the module docs. This is reported as an
-///   error, not as a picture, because the caller would otherwise assert on it
-///   and produce a confident verdict about nothing.
 pub fn window(session: &Session) -> Result<Image> {
     let frame = session.frame()?;
     frame_capture(session, &frame, true)
@@ -34,17 +23,6 @@ pub fn window(session: &Session) -> Result<Image> {
 
 /// **Capture an arbitrary window of the application under test**, given the
 /// frame that describes it.
-///
-///
-///
-/// That is the worst available failure: a measurement of the wrong surface is
-/// indistinguishable from a measurement of a broken one. `settings_headings_legible`
-/// produced exactly that, naming two headings that render perfectly well.
-///
-/// `raise` is the caller's choice here rather than unconditional, because the
-/// caller may already have raised the dialog to click something in it and a
-/// second raise of the MAIN window would put it behind again — which is the
-/// same z-order trap `Driver::window_owning` exists for.
 pub fn frame_capture(
     session: &Session,
     frame: &crate::coords::WindowFrame,
@@ -103,10 +81,6 @@ pub fn frame_capture(
 }
 
 /// Capture and also write the PNG, returning both.
-///
-/// Every check that looks at pixels saves its evidence, pass or fail. On a
-/// failure it is what the reader needs; on a pass it is what makes the *next*
-/// failure diagnosable, because there is something to compare against.
 pub fn window_to_png(session: &Session, path: &Path) -> Result<Image> {
     let image = window(session)?;
     image.save_png(path)?;

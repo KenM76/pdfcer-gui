@@ -16,10 +16,6 @@ pub fn panel_title() -> &'static str {
 }
 
 /// The sentence at the top of the panel.
-///
-/// States the whole two-phase model in one line, because an operator who
-/// believes marking IS redacting is the single most-cited real-world redaction
-/// failure. Carried verbatim from the old shell's `redact_panel_intro`.
 #[must_use]
 pub fn panel_intro() -> &'static str {
     // 2026-09-04: *"writes a file"* rather than *"writes a NEW file"*. The
@@ -60,17 +56,6 @@ pub fn mark_whole_page_tooltip() -> &'static str {
 }
 
 /// Why *Mark whole page* is greyed — `OPERATOR_REQUESTS.md` O77.
-///
-/// The control's only gate is `page_count > 0`, so there is exactly one reason
-/// and it can be stated flatly. It is a document with no pages, which is legal
-/// PDF (`/Count 0`) and which pdfcer opens rather than refusing — so this is a
-/// real state an operator can be in, not a defensive branch.
-///
-/// It names the cause rather than the remedy, and that is the right way
-/// round here: there is no action he can take inside this panel to give the
-/// document a page, so *"add a page first"* would be advice about somewhere
-/// else. Where a remedy exists — the search button beside it — the sentence
-/// names the remedy instead.
 #[must_use]
 pub fn mark_whole_page_disabled() -> &'static str {
     "This document has no pages to mark."
@@ -126,26 +111,12 @@ pub fn match_pattern() -> &'static str {
 }
 
 /// Its tooltip.
-///
-/// Leads with the example rather than the syntax: the operator's actual thought
-/// is *"redact every social security number"*, not *"I would like a wildcard
-/// language."*
 #[must_use]
 pub fn match_pattern_tooltip() -> &'static str {
     "Find every run SHAPED like what you type — for example ###-##-#### marks every social-security number on every page in one action. Use this when you know the shape but not the values."
 }
 
 /// **The hint under the search field, in whichever mode is selected.**
-///
-/// The scanned-page caveat is mandatory rather than decorative, and it is
-/// carried in **both** modes deliberately. A silent zero-match result on a
-/// scanned page is a named real-world failure: an operator reads *"no matches"*
-/// as *"nothing sensitive here"* rather than as *"nothing SEARCHABLE here"*,
-/// and dropping the warning from one of two hints is how it stops being read.
-///
-/// The pattern form states the whole syntax, because it is two characters long
-/// and an operator who has to go looking for it will type a literal instead and
-/// get nothing.
 #[must_use]
 pub fn search_hint(pattern: bool) -> &'static str {
     if pattern {
@@ -156,14 +127,6 @@ pub fn search_hint(pattern: bool) -> &'static str {
 }
 
 /// **The census line above the mark list.**
-///
-/// Zero is a distinct sentence rather than "0 marks", because *"no marks"* is a
-/// state an operator reads as an answer while *"0 pending redaction mark(s)"*
-/// is one they read as a counter.
-///
-/// The non-zero form is the load-bearing one, and the shouted clause is
-/// deliberate: this is the sentence standing between a marked document and an
-/// operator who is about to email it.
 #[must_use]
 pub fn marks_count(count: usize) -> String {
     if count == 0 {
@@ -177,10 +140,6 @@ pub fn marks_count(count: usize) -> String {
 }
 
 /// One row in the mark list: which page, and how big the marked region is.
-///
-/// The size is shown because two marks on one page are otherwise
-/// indistinguishable in a list, and *"which one is the one I mis-marked?"* is
-/// the question the list exists to answer.
 #[must_use]
 pub fn mark_row(page_number: usize, size: Option<(f64, f64)>) -> String {
     match size {
@@ -199,13 +158,6 @@ pub fn mark_row_tooltip() -> &'static str {
 }
 
 /// The control that takes one mark off.
-///
-/// **A word rather than a `✕` glyph.** The old shell's note is carried
-/// because the measurement behind it is: a decorative Unicode glyph outside the
-/// bundled font chain ships as a tofu box, and U+2715 is one of the codepoints
-/// `DEFECTS.md` D12's corrected table lists as having **no supporting face** at
-/// all. `crate::icons` exists for controls that need a mark; a list row does
-/// not.
 #[must_use]
 pub fn mark_remove() -> &'static str {
     "Remove"
@@ -280,10 +232,6 @@ pub fn report_heading() -> &'static str {
 /// sentence is drawn in the warning role at the top of the report — the one
 /// sentence a reader who takes in nothing else takes in. A false claim there is
 /// worse than no claim anywhere.
-///
-/// The middle clause — the full rewrite, and that nothing brings the content
-/// back — is true either way and is worded identically in both, deliberately:
-/// it is the part the operator must not have to read twice to compare.
 pub fn permanence_statement(replacing_the_open_file: bool) -> &'static str {
     if replacing_the_open_file {
         "Applying REPLACES the file you have open with a copy that has the marked content permanently removed. It is a full rewrite, not an edit: nothing in that file can bring the removed content back — not Undo, not a previous revision, not any recovery tool. The file you are replacing is the last copy of that content, so it will not exist anywhere afterwards."
@@ -299,15 +247,6 @@ pub fn will_remove_heading() -> &'static str {
 }
 
 /// **The removal summary — the measured centrepiece of the report.**
-///
-/// These are measurements, not predictions:
-/// [`crate::redact::prepare_redaction_apply`] performs the whole removal in
-/// memory before this dialog can show anything, so every number here describes
-/// what actually happened to the bytes that will be written on confirm.
-///
-/// "character(s)", never "glyphs": the engine counts character codes removed
-/// from content streams, and *glyph* is a typesetting word an operator has no
-/// reason to know.
 #[must_use]
 pub fn removal_summary(regions: u64, pages: usize, glyphs: u64, streams: u64) -> String {
     format!(
@@ -316,13 +255,6 @@ pub fn removal_summary(regions: u64, pages: usize, glyphs: u64, streams: u64) ->
 }
 
 /// The annotation line, shown only when the count is non-zero.
-///
-///
-/// Overstating collateral damage is a smaller sin than understating it, and
-/// still a lie — and this is the one feature whose entire value is that its
-/// report can be believed. The overlap fact is still disclosed, because an
-/// operator whose highlight silently vanished is owed the reason before it
-/// happens rather than after.
 #[must_use]
 pub fn annotations_removed(count: u64) -> String {
     format!(
@@ -350,13 +282,6 @@ pub fn containers_decomposed(containers: u64, promoted: u64) -> String {
 }
 
 /// **The single-revision line — engine rule R35 in operator language.**
-///
-/// It carries more weight in this shell than it did in the one it came from.
-/// `file.save_copy`'s shipped tooltip promises that an ordinary save *"appends
-/// the edits as an update so the previous version stays intact inside the
-/// file"* — which is exactly the property a redaction must not have, and which
-/// an operator has by then been taught to expect. This is the one sentence that
-/// tells them this write is different.
 #[must_use]
 pub fn single_revision_note() -> &'static str {
     // 2026-09-04: *"the file that is written"* rather than *"the new file"*,
@@ -370,17 +295,6 @@ pub fn single_revision_note() -> &'static str {
 
 /// **The verification line — the ONLY place in this catalog permitted to
 /// use the word "verified".**
-///
-/// Rule 2 of the module header. It is shown only from a clean
-/// [`crate::redact::AbsenceVerification`], and what licenses it is that a real
-/// search ran over the real output bytes: `crate::redact::proof` re-parses the
-/// finished document, decodes every stream in it, and greps both the decoded
-/// content and the raw buffer.
-///
-/// The three clauses at the end are the three places it looked, named
-/// individually rather than summarised, because *"we checked"* is a claim and
-/// *"we looked in the page content, in every other stream, and in the raw
-/// bytes"* is a description someone could go and repeat.
 #[must_use]
 pub fn verified_line(strings_checked: usize) -> String {
     format!(
@@ -390,35 +304,6 @@ pub fn verified_line(strings_checked: usize) -> String {
 
 /// The verification line's honest companion when some removed strings were too
 /// short for a whole-file byte search to mean anything.
-///
-/// [`crate::redact::proof::MIN_VERIFIABLE_LEN`] is the four this names. A proof
-/// that quietly skipped these would be claiming a completeness it does not
-/// have.
-///
-///
-/// It read: *"Some producers draw text one letter at a time; on such a file
-/// every removed piece is one character and this proof cannot see it at all."*
-/// That was **measured, true, and operator-visible** when it shipped this
-/// morning — his 24-page Ghostscript drawing reported `["3", ".", "5", " ",
-/// "T", "Y", "P"]` for one mark over `3.5 TYP`, seven needles all under the
-/// floor, so the proof genuinely saw nothing.
-///
-/// It became false at engine `369d4de` (`Pass 286.0`, the same day), which is
-/// the rev this repository is pinned to. `RedactionReport::redacted_text` is
-/// now **one entry per `/Redact` mark**, carrying the concatenation of what
-/// that mark removed — `["3.5 TYP"]` — so the per-glyph producer produces
-/// ordinary words and clears the floor like any other file. The engine
-/// volunteered that this *also* repaired `carrier_info` and the residual sweep
-/// on such files, for the same reason.
-///
-///
-/// **The first clause stays, and it is not a leftover.** A mark that covers
-/// a genuinely short string — a single dimension `3`, an initial, a room
-/// number — still yields a genuinely short needle, and no grouping in the
-/// engine changes that. The engine said so in the same breath: *"a mark
-/// covering a single character still yields a single character, and no
-/// grouping changes that. Belt and braces is the right posture on the one
-/// operation where a false 'clean' is an incident."*
 #[must_use]
 pub fn verification_limit_line(too_short: usize) -> String {
     format!(
@@ -428,42 +313,6 @@ pub fn verification_limit_line(too_short: usize) -> String {
 
 /// **The mark covers a raster image, and those pixels will be DESTROYED** —
 /// `OPERATOR_REQUESTS.md` O103.
-///
-/// # This sentence was the exact opposite of the truth for nine hours
-///
-/// It read: *"pdfcer cannot yet remove image pixels, so applying redactions to
-/// this document will be refused until no marked region touches an image."*
-/// That was accurate when it was written on 2026-09-03 — it is the operator's
-/// own report, reproduced with `pdfcer` — and `pdfcer-core` **v0.26.0**
-/// (`Pass 245.0`, the same day) made it false: a region covering image samples
-/// now clears those samples, and a region covering a whole image removes it.
-///
-/// ⇒ The class this belongs to is the one this project keeps paying for: **a
-/// sentence describing an external limitation is a dated citation, not a
-/// verdict.** Nothing compiles differently when the limitation lifts, no test
-/// goes red, and the gates stay green *precisely because* the code around the
-/// sentence is unchanged. The engine's own reply said to re-word this, by name.
-/// It is worth noticing that the engine had to tell us — see
-/// `tools/gates/check-stale-blockers.sh`, which is aimed at exactly this and
-/// could not have caught a claim phrased as a UI string.
-///
-/// # Why it is still said at MARK time, and why it is not a warning
-///
-/// The disclosure changed subject rather than going away. It used to say *"this
-/// will be refused"*; it now says *"this will be destroyed"*, and that is the
-/// more important of the two. A raster redaction is irreversible in a way a
-/// text one is not: the samples are overwritten, the image is re-encoded, and
-/// what the operator gets back is a black block where their logo was. Seeing
-/// that fact while the rectangle is being drawn — rather than discovering it in
-/// the saved file — is the same argument the original sentence made, applied to
-/// the opposite outcome.
-///
-/// It offers no remedy, deliberately, for the reason it always did: telling
-/// him to move the rectangle is advice we cannot check, because on a title
-/// block the value and the logo may genuinely overlap.
-///
-/// The mark is still authored. This blocks nothing, and now nothing further
-/// down the line blocks either.
 #[must_use]
 pub fn mark_covers_image(images: usize) -> String {
     format!(
@@ -473,15 +322,6 @@ pub fn mark_covers_image(images: usize) -> String {
 
 /// The heading for the residual section — the part that makes the feature
 /// honest.
-///
-/// It states the **consequence** and never a limit of pdfcer, because the
-/// section below it collects three different causes and only one of them is a
-/// limit: content pdfcer could not reach, a byte run it could not rule out,
-/// and — once the redaction reach is narrowed — copies it found, can remove,
-/// and was told to leave. A heading reading "pdfcer could not" would make that
-/// third kind read as a failure, which is the one thing the engine keeps two
-/// separate verdicts to prevent. What every line under it has in common is
-/// what the heading says: it survives the save.
 #[must_use]
 pub fn residual_heading() -> &'static str {
     "⚠  Read before continuing — the following will still be in the saved file:"
@@ -502,31 +342,6 @@ pub use carriers::{
 
 /// **One residual line for a removed string that still occurs somewhere in
 /// the saved file while occurring in nothing the document draws.**
-///
-/// Worded so it claims exactly what pdfcer knows and nothing more: the byte run
-/// is there, in *this* kind of place; whether it is a real leftover copy or an
-/// unrelated coincidence is not something pdfcer can decide. See
-/// `crate::redact::proof`'s table for why this is disclosed rather than refused.
-///
-///
-/// This sentence used to end at *"somewhere in the saved file"*, and the
-/// operator's report of that day is what a warning of that shape produces:
-///
-/// > *"it always finds text that wasn't redacted, and it always … counts
-/// > everything I selected as unredactable."*
-///
-/// He was right on the facts and the sentence gave him nothing to do about
-/// them. The commonest cause by far — an embedded font program whose `name`
-/// table happens to spell an ordinary English word — is one an operator can
-/// dismiss in a second **if they are told that is where it is**, and cannot
-/// evaluate at all if they are not. A warning nobody can act on is a warning
-/// everybody learns to click past, which then costs the real one its force.
-///
-/// It still refuses to judge. It says where the bytes are, in the operator's
-/// vocabulary, and then repeats that pdfcer cannot tell a coincidence from a
-/// carrier. Naming the place is more information, not a verdict — the catalog's
-/// rule 1 is *"never say removed without qualification when anything was left"*,
-/// and nothing here says removed.
 #[must_use]
 pub fn raw_residual_line(text: &str, site: crate::redact::ResidualSite) -> String {
     use crate::redact::ResidualSite as S;
@@ -566,21 +381,6 @@ pub fn raw_residual_line(text: &str, site: crate::redact::ResidualSite) -> Strin
 
 /// **What happened to the raster images under the regions** — `pdfcer-core`
 /// v0.26.0, `Pass 245.0`.
-///
-/// # Why this is stated even though it is a SUCCESS
-///
-///
-/// That is exactly what they asked for and it is still worth saying out loud —
-/// the same argument the mark-time sentence makes, restated where the numbers
-/// are. A report that lists glyphs removed and says nothing about a destroyed
-/// photograph is a report that has quietly picked which irreversible act is
-/// worth mentioning.
-///
-/// `over_covered` is separate and is a disclosure rather than a count: a
-/// rotated or skewed image placement is cleared by its bounding rectangle **in
-/// image space**, so more is destroyed than was marked. Never less — the
-/// engine's own guarantee — but "more than you drew" is a fact about the
-/// operator's file and it is theirs to know.
 #[must_use]
 pub fn images_destroyed(cleared: u64, removed: u64, over_covered: u64) -> String {
     let mut line = String::new();
@@ -605,12 +405,6 @@ pub fn images_destroyed(cleared: u64, removed: u64, over_covered: u64) -> String
 /// **A shared image was copied so the other pages keep theirs** — the
 /// disclosure the engine asks for when one image object is painted in more than
 /// one place.
-///
-/// Not a residual and not a warning: the *unmarked* placements were not
-/// marked, so leaving them intact is correct. What the operator needs to know is
-/// that the same picture still exists elsewhere in the document, because "I
-/// redacted the logo" and "the logo is gone from this file" are different
-/// claims and the second one is false here.
 #[must_use]
 pub fn images_shared_copied(count: u64) -> String {
     format!(
@@ -619,20 +413,6 @@ pub fn images_shared_copied(count: u64) -> String {
 }
 
 /// **Marks that were left in the document unapplied** — `RedactionReport::marks_retained`.
-///
-/// # The one number that must be read before the word "redacted" is used
-///
-/// The engine says so by name: a retained mark is a region where **nothing was
-/// removed**. It happens when a region touches an image whose samples pdfcer
-/// cannot decode — a codec feature it lacks, a corrupt codestream — and the
-/// engine's choice is to apply every other mark and leave that one standing
-/// rather than refuse the document. That is the right choice and it makes a
-/// half-redacted file that looks finished.
-///
-/// So this is a residual, in the strongest sense in this module: the content the
-/// operator asked to be removed is still there, under a rectangle that says it
-/// is not. It goes in the acknowledgement list, and the mark itself is still
-/// visible in the output so a second pass can find it.
 #[must_use]
 pub fn marks_retained_line(count: u64) -> String {
     format!(
@@ -641,33 +421,6 @@ pub fn marks_retained_line(count: u64) -> String {
 }
 
 /// **Vector geometry crossing a region that could not be cut.**
-///
-/// `RedactionReport::vector_paths_intersecting`. Since `pdfcer-core` v0.27.0 the
-/// engine **cuts** paths at the region boundary, so this counts only the ones it
-/// could not rewrite as a unit — a malformed path object — and reads zero on
-/// every well-formed page. A non-zero value is therefore rare and is a real
-/// residual rather than the ordinary case.
-///
-/// # This paragraph has been wrong twice in one morning, in both directions
-///
-/// Written first from `D:\Dev\pdfcer`'s **working tree**, which described
-/// cutting the engine had not committed. Corrected to say cutting does not
-/// exist, citing the pinned revision — and within the hour the engine shipped
-/// v0.27.0 and the correction became the false half.
-///
-/// ⇒ The rule is not *"do not read the engine's source"*: reading it is right,
-/// and the second version was right about the revision it named. The rule is
-/// that **a sentence about what the engine cannot do is a dated citation with a
-/// shelf life measured in hours**, because that session runs in parallel and
-/// answers within the hour. Where the claim can be spelled as an **assertion**,
-/// spell it as one — `redact::tests`'s image test went red the moment the
-/// engine changed underneath it, which is exactly the behaviour a paragraph
-/// cannot have.
-///
-/// On a CAD sheet this is the residual that matters most and the one nobody
-/// asks about. A title-block border or a view's geometry running through a
-/// redacted rectangle is a shape, and a shape can be as identifying as the text
-/// it surrounded.
 #[must_use]
 pub fn vector_paths_residual_line(count: u64) -> String {
     format!(
@@ -676,16 +429,6 @@ pub fn vector_paths_residual_line(count: u64) -> String {
 }
 
 /// **The clip whose outline had to be kept after its ink was cut.**
-///
-/// `RedactionReport::vector_clips_kept`. ISO 32000-1 §8.5.4 applies a clipping
-/// path *after* painting, so an object marked `W`/`W*` sets the window every
-/// later object on the page draws through. The engine cuts its paint and keeps
-/// its original geometry as the clip, because shrinking the clip would hide
-/// later, **unmarked** content.
-///
-/// Kept geometry is not painted content — nothing of it is visible — and it is
-/// still a shape in the file. Rule 1: named, in the operator's terms, rather
-/// than judged harmless on their behalf.
 #[must_use]
 pub fn vector_clips_kept_line(count: u64) -> String {
     format!(
@@ -695,19 +438,6 @@ pub fn vector_clips_kept_line(count: u64) -> String {
 
 /// **The drawn geometry that was cut out of the regions** — `pdfcer-core`
 /// v0.27.0.
-///
-/// # Why a success gets a line on a drawing
-///
-/// Because until v0.27.0 it did not happen. Lines ran straight through a
-/// redacted rectangle, the file was reported as redacted, and nothing said
-/// otherwise — the engine found it while verifying the image work and called it
-/// *"the bigger one on a drawing"*. On a CAD sheet the geometry under a black
-/// box can be as identifying as the text was.
-///
-/// So this is the count that turns *"the drawing under the box is gone"* from an
-/// assumption into a statement. `dropped` is the subset that lay wholly inside a
-/// region and was deleted outright, and it is named separately because a
-/// deleted object and a trimmed one are different facts about the file.
 #[must_use]
 pub fn vector_paths_cut_line(cut: u64, dropped: u64) -> String {
     if dropped > 0 {
@@ -740,11 +470,6 @@ pub fn scope_reminder() -> &'static str {
 
 /// **The extra acknowledgement, shown ONLY when the report has a residual
 /// section.**
-///
-/// Distinct from [`confirm_checkbox`] on purpose: a partial redaction must
-/// never be mistaken for a complete one. Showing it always would make it a box
-/// operators tick without reading, which is the failure mode that makes every
-/// other acknowledgement in the program worthless.
 #[must_use]
 pub fn residual_acknowledgement_checkbox() -> &'static str {
     "I have read the items above, I understand they will NOT be removed, and I still want to apply the redactions that can be completed."
@@ -796,45 +521,6 @@ pub fn confirm_button() -> &'static str {
 
 /// Why *Permanently remove & save as…* is greyed —
 /// `OPERATOR_REQUESTS.md` O77's sweep.
-///
-///
-/// # It names WHICH box, because *"tick the box"* is ambiguous here
-///
-/// Two checkboxes gate this button and they do not both appear. The
-/// acknowledgement is always shown; the residual acknowledgement is shown only
-/// when the engine reported content it could not prove was removed — which is
-/// precisely the situation in which an operator is reading carefully and is
-/// least able to afford a vague refusal.
-///
-/// Four states, three of them reachable: the pair is only ever consulted when
-/// the button is off, so `(true, true)` cannot be seen here. It is answered
-/// anyway rather than left to a `_` arm, because a sentence that cannot be
-/// reached is better than a panic and better than a wrong one, and because the
-/// day the gate grows a third term this arm is where the omission shows.
-///
-///
-/// The gate grew a third term: [`overwrite_acknowledgement_checkbox`], asked
-/// for only when the operator has chosen to replace the open file. The comment
-/// above predicted where the omission would show and it showed there — the
-/// `(true, true)` arm stopped being unreachable and started meaning *"both the
-/// boxes I know about are ticked"*, which on a replace would have greyed the
-/// button and said **"Ready."**
-///
-/// So the parameters are now three, and all three are stated as
-/// **outstanding** rather than as *acknowledged*. That is not tidying. A box
-/// that is not being asked for is neither ticked nor untickable, and reading
-/// `residuals_acknowledged == false` as *"go and tick it"* when no such box is
-/// on screen is exactly the vague refusal this function exists to prevent. The
-/// caller — which is the only surface that knows which boxes it drew — answers
-/// the question *"is this one still owed?"*, and the answer for a box that was
-/// never drawn is *no*.
-///
-/// # The order the boxes are named in
-///
-/// Top to bottom as they are drawn, because the operator is being sent to look
-/// at one: the overwrite acknowledgement sits directly under the destination
-/// choice, the residual acknowledgement under that, and the permanence
-/// acknowledgement immediately above the button.
 #[must_use]
 pub fn confirm_disabled(
     permanence_outstanding: bool,
@@ -879,19 +565,6 @@ pub fn cancel_button() -> &'static str {
 }
 
 /// **The no-shortcut disclosure, in the dialog's footer.**
-///
-/// Visible text rather than an omission an operator has to notice: this shell
-/// binds `Ctrl+Z`, `Delete` and the whole `Ctrl` chord family to
-/// destructive-but-reversible actions everywhere else, so the ABSENCE of a
-/// chord on the one irreversible action is a deliberate asymmetry worth
-/// stating.
-///
-///
-/// The fix is to make the sentence true on **every** destination rather than
-/// to branch it, because the reason for the missing chord does not vary: what
-/// this button starts always ends in a write that no Undo reaches. Branching
-/// would have produced a second pair of strings to keep in step, which is the
-/// condition that produced this defect.
 #[must_use]
 pub fn no_shortcut_note() -> &'static str {
     "There is deliberately no keyboard shortcut for this button. It is the one action in pdfcer that ends in a change nothing can undo, so it takes a deliberate click."
@@ -904,13 +577,6 @@ pub fn save_dialog_title() -> &'static str {
 }
 
 /// **The suffix appended to the original file's stem to suggest a name.**
-///
-/// A suggestion, not a rule — the operator can type anything. It exists so the
-/// default answer is never the file they opened, which on this operation is the
-/// difference between a copy and the destruction of the only remaining source
-/// of the content being removed. `crate::dialogs::ocr::suggested_suffix` and
-/// `crate::text::files::save_copy_suffix` enforce the identical rule for the
-/// two milder writes.
 #[must_use]
 pub fn suggested_suffix() -> &'static str {
     "-redacted"
@@ -933,16 +599,6 @@ pub fn suggested_suffix() -> &'static str {
 /// sounds and which nothing else on screen would tell them: the window in front
 /// of them still shows the marks and the content, because the session was not
 /// touched, while the file those bytes came from no longer contains either.
-///
-/// **CORRECTED the same evening.** The replace form used to explain that
-/// staleness with *"because pdfcer cannot apply a redaction into an open
-/// document"*. That was true when it was written and stopped being true a few
-/// hours later, when `Pass 250.1` shipped `EditSession::apply_redactions` and
-/// [`destination_open_document`] became the default. The window is still stale
-/// on the two write-now destinations — that has not changed — but the reason is
-/// now a **choice the operator made**, not a limit of the program, and a
-/// sentence that blames the program for a chosen behaviour teaches him the
-/// wrong thing about a control he is holding.
 pub fn applied_clean(file_name: &str, regions: u64, pages: usize, replaced: bool) -> String {
     if replaced {
         format!(
@@ -956,11 +612,6 @@ pub fn applied_clean(file_name: &str, regions: u64, pages: usize, replaced: bool
 }
 
 /// The line shown once a redaction that had acknowledged residuals is on disk.
-///
-/// Never shortened, never omitted, and never allowed to borrow the clean form's
-/// wording: an operator who acknowledged a residual in a dialog and then closed
-/// it is still owed a standing record of what remains. This is rule 1 —
-/// **the residual is named in the same sentence as the success.**
 #[must_use]
 pub fn applied_with_residuals(
     file_name: &str,
@@ -980,12 +631,6 @@ pub fn applied_with_residuals(
 }
 
 /// The sentence for a refusal that happened before anything was written.
-///
-/// Every variant of [`crate::redact::RedactApplyRefusal`] gets its own sentence
-/// rather than one "redaction failed", for `crate::text::ocr`'s reason: the
-/// engine refuses by name because the causes have different remedies, and
-/// folding four named causes into one message throws that away at the last
-/// step.
 #[must_use]
 pub fn refusal_message(refusal: &crate::redact::RedactApplyRefusal) -> String {
     use crate::redact::RedactApplyRefusal as R;
@@ -1064,22 +709,6 @@ pub fn refusal_message(refusal: &crate::redact::RedactApplyRefusal) -> String {
 
 /// **The sentence for a save that could not be built because the staged
 /// removal was refused.**
-///
-///
-/// It is separate from [`refusal_message`] because the moment is different
-/// and so is what the operator is holding. That one is read when he presses
-/// *Review & apply* and nothing has been decided. This is read after he pressed
-/// **Save** and expected a file, so it leads with the fact that no file was
-/// written and ends with the one control that unblocks him — named, because a
-/// refusal an operator cannot act on is a refusal he learns to ignore.
-///
-/// The `_` arm is not a shrug. Every other [`crate::redact::RedactApplyRefusal`]
-/// reaching this path means the engine declined the removal itself — an
-/// undecodable image, an encrypted document, a hybrid base — and those already
-/// carry [`refusal_message`]'s own worded cause. Repeating the cause here in
-/// different words is how two sentences about one event come to disagree; what
-/// this adds is the part [`refusal_message`] cannot know, which is that the
-/// operator was trying to **save**.
 #[must_use]
 pub fn save_refused_message(refusal: &crate::redact::RedactApplyRefusal) -> String {
     use crate::redact::RedactApplyRefusal as R;
@@ -1096,12 +725,6 @@ pub fn save_refused_message(refusal: &crate::redact::RedactApplyRefusal) -> Stri
 }
 
 /// The sentence for a write that was attempted and produced no file.
-///
-/// Distinct from [`refusal_message`] because the two happen at different
-/// moments and mean different things to the operator: a refusal happens when
-/// they press *Review & apply* and nothing has been decided yet, and this
-/// happens after they have confirmed, named a destination and expect a file to
-/// be there.
 #[must_use]
 pub fn write_failed(reason: &crate::redact::WriteRefusal) -> String {
     use crate::redact::WriteRefusal as W;
@@ -1135,11 +758,6 @@ pub fn write_failed(reason: &crate::redact::WriteRefusal) -> String {
 
 /// The status-bar note appended to an ordinary save while marks are still
 /// pending.
-///
-/// Fires in ADDITION to the save's own outcome, never instead of it: the save
-/// genuinely succeeded, and the operator also needs to know what it did not do.
-/// This is the sentence that stands between `file.save_copy` and a marked file
-/// leaving the building.
 #[must_use]
 pub fn save_kept_pending_marks(count: usize) -> String {
     format!(
@@ -1159,12 +777,6 @@ pub const fn appearance_heading() -> &'static str {
 }
 
 /// What the heading means, said once so no control below has to repeat it.
-///
-/// It says **applied**, twice over, because that is the distinction the
-/// whole panel turns on. Nothing chosen here changes anything until the
-/// operator applies — a mark is a red outline whatever fill is set — and an
-/// operator who expected the swatch to recolour their marks would otherwise
-/// conclude the control does nothing.
 #[must_use]
 pub const fn appearance_intro() -> &'static str {
     "Marks are outlined in red while you review them. These settings are what \
@@ -1192,11 +804,6 @@ pub const fn fill_option_label(fill: crate::panels::redact::appearance::Fill) ->
 }
 
 /// What "Nothing" actually does, which is not what it sounds like.
-///
-/// The one fill an operator can misread as "do not redact". It removes the
-/// content exactly as the others do; what it omits is the box that says so.
-/// Said at the control rather than in a tooltip, because a tooltip is not
-/// read before a choice is made and this is the choice with a surprise in it.
 #[must_use]
 pub const fn fill_transparent_note() -> &'static str {
     "The content is still removed. Nothing is drawn over the gap, so the page \
@@ -1216,14 +823,6 @@ pub const fn overlay_hint() -> &'static str {
 }
 
 /// The warning shown when a caption would be drawn in black on a dark fill.
-///
-/// The engine hard-codes black text in the `/DA` it authors and said so when
-/// it shipped the burn-in: *"Wire a fill-colour picker, let someone choose a
-/// dark red, and the caption will be black on dark red — we saw it in our own
-/// verification render."* There is no overlay-text colour on the API yet.
-///
-/// So this is a **disclosure of a known engine limit**, not a style opinion,
-/// and it names the two ways out rather than only the problem.
 #[must_use]
 pub const fn overlay_illegible_warning() -> &'static str {
     "pdfcer draws this caption in black, and it will be hard to read on a dark \
@@ -1248,11 +847,6 @@ pub const fn quadding_option_label(q: pdfcer_core::vartext::Quadding) -> &'stati
 }
 
 /// What the operator should know about the caption before they rely on it.
-///
-/// Two engine limits in one sentence, both stated when the burn-in shipped:
-/// the face is Base-14 Latin, so anything outside it becomes `?`; and the
-/// size is auto-chosen within a clamp, so a long caption on a small mark is
-/// not going to be readable however it is justified.
 #[must_use]
 pub const fn overlay_bound() -> &'static str {
     "Captions use a standard Latin font — other alphabets come out as question \
@@ -1261,16 +855,6 @@ pub const fn overlay_bound() -> &'static str {
 }
 
 /// What a mark-by-search says when part of the document could not be read.
-///
-/// The strongest wording anywhere in this catalogue, and deliberately so.
-/// Every other disclosure in pdfcer reports something the operator can take or
-/// leave. This one reports that **an operation they believe completed may not
-/// have**, on the one action with no undo and the one whose failure they will
-/// discover after sending the file.
-///
-/// It does not say "0 results". It says what was searched and what could not be
-/// searched, and it says the consequence in the operator's own terms — the text
-/// is still there — rather than in the mechanism's.
 #[must_use]
 pub fn unreadable_warning(fonts: u64) -> String {
     if fonts == 1 {
@@ -1289,28 +873,6 @@ pub const fn unreadable_tooltip() -> &'static str {
 }
 
 /// **What was marked from a canvas selection.**
-///
-/// `OPERATOR_REQUESTS.md` **O60**. The third marking route's disclosure.
-///
-/// # Why it says MARKED and not REDACTED
-///
-/// Because nothing has been removed, and the difference is the single most
-/// important thing about this whole feature. A `/Redact` annotation is a
-/// **mark** (§12.5.6.23): it covers nothing, deletes nothing, and is perfectly
-/// reversible until *Apply* is pressed.
-///
-/// An operator who read *"3 objects redacted"* would reasonably believe the
-/// content was gone, stop reviewing, and save a document that still contains
-/// every word of it. That is the one mistake in this feature that cannot be
-/// undone by undoing — because it is a mistake about what to do next.
-///
-/// ⇒ So the sentence names the state and the next step, in that order.
-///
-/// # Why it counts OBJECTS and not marks
-///
-/// One gesture makes one annotation carrying one quad per object, so the mark
-/// count is always 1 and would tell the operator nothing. What they chose was
-/// objects; what they should be told about is objects.
 #[must_use]
 pub fn marked_selection(objects: usize) -> String {
     if objects == 1 {

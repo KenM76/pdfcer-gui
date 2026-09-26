@@ -102,3 +102,39 @@ transform, so the geometry and the picture agree by construction. This is
 deliberately the identical route `canvas::textsel::hit` takes, because a
 second conversion here is how a caret comes to land on a different line from
 the highlight.
+
+### `fn click`
+
+Returns the refusal to show, if the click could not begin one. `Ok(())` means
+a draft is now in flight and the next keystroke will reach it.
+
+# Why an existing draft is committed rather than discarded
+
+Clicking elsewhere while composing is the operator saying *"that word is
+finished"*, not *"throw it away"* — every editor behaves this way, and the
+old shell settled it under the name `commit_on_click`. So the caller is
+handed the commit as an [`crate::app::actions::Action`] before the new draft
+starts. **Nothing discards** — Escape writes the draft too, on the operator's
+ruling that a commit by mistake is one `Ctrl+Z` and a discard by mistake is
+unrecoverable, because a draft never reaches the undo stack.
+
+### `fn begin_box`
+
+The operator, 2026-08-21: *"I should be able to make it multi line."*
+
+# The conversion is `markup::band::endpoints`, not a new one
+
+That function is the canvas → page hop the markup band and the
+text-annotation band already use, and reusing it is the standing rule rather
+than convenience: a second conversion is how a preview and an authored box
+come to disagree about where the operator dragged. It also normalises the
+two raw endpoints exactly once, which is why the outcome carries them raw.
+
+# A degenerate drag opens nothing
+
+A box with no width has no width to wrap against, so it would accept
+keystrokes and author a single line at an arbitrary place — a control that
+takes input and does something else with it, which is this project's
+defining defect class. The floor is deliberately generous: below it the
+operator did not mean to draw a box, and a click is the gesture that places
+a caret.

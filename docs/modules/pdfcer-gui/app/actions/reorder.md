@@ -105,3 +105,89 @@ Reachable after an undo or an external reload, when a selection names an
 object the page no longer lists. Building a permutation that silently
 omitted it would ask the engine to pin every entry it could not name,
 which is a page whose annotations quietly stop being reorderable.
+
+### `fn reorder_annotations`
+
+# Three disclosures, and two of them are about things the operator did
+not ask for
+
+A tab order is a list of *fields*. `/Annots` order is more than that, and the
+engine reports the difference rather than letting it happen quietly:
+
+* **`non_widgets_moved`** — `/Annots` order is **paint order** for every
+  annotation, so moving a widget past a `/Link` or a markup changes which is
+  drawn on top where they overlap. The operator arranged a tab order and got
+  a z-order change; that has to be said.
+* **`pinned`** — entries written as direct dictionaries have no object id to
+  be named by, so they cannot be moved and stay at their index while the rest
+  flow around them. A list that did not fully take, disclosed rather than
+  discovered.
+* **`array_copied`** — the page's `/Annots` was shared with another page and
+  had to be copied first. Nothing is wrong, and it is a structural change to
+  the file that nobody asked for.
+
+`moved == 0` is a **success with nothing to say**: the order given was the
+order the page already had, the engine recorded no command, and there is
+nothing to disclose. It is the common case for a drag that ends where it
+started, and it must not read as a refusal.
+
+### `enum ArrangeTo`
+
+# Why all four, when only two were asked for
+
+The brief for this work said to ship the two ends *"and consider Bring
+forward / Send backward too if the verb supports a single-step move cheaply;
+if it only takes a whole array, say so and ship the two that are honest."*
+
+`EditSession::reorder_annotations` **takes a whole array** — and that is
+exactly what makes the single step cheap rather than what forbids it. A
+one-place move is a permutation like any other: the same list with two
+entries exchanged. There is no per-step verb to be missing, no second engine
+call, and no partial support to disclose. What a whole-array verb would have
+made expensive is the *opposite* pair — a move that could not name every
+entry — and this shell has to name them all anyway, because the engine
+refuses a list that is not a permutation of the page's indirect entries
+(`AnnotsNotAPermutation`) rather than silently dropping the ones a caller
+forgot.
+
+⇒ So all four ship, and the honest statement is the one in this paragraph:
+nothing about the single step is approximated.
+
+### `fn arrange`
+
+# The order is computed HERE, at apply time, and not at the press
+
+The obvious arrangement is for the dispatcher — which has the selection and
+the document in front of it — to work out the new array and put it on the
+action. It is wrong, and the reason is the action queue itself: an action is
+raised on one frame and drained on another, with every action queued ahead of
+it applied first. A permutation computed at the press is a permutation of the
+`/Annots` the page had **before** whatever ran in between, and the engine
+refuses a stale one by name (`AnnotsNotAPermutation`) rather than applying it
+approximately.
+
+So the action carries the **intent** — this mark, that end — and the array is
+read from the revision the edit is actually applied to. That is the same rule
+[`crate::app::actions::annot::AnnotAction::Move`] follows by carrying a delta
+rather than a rectangle, and for the same reason: *a value resolved at the
+press is a value that may have moved under you.*
+
+# What is held still, and it is not the operator's choice
+
+A `/TrapNet` annotation **shall be the last element** of `/Annots`
+(ISO 32000-1 §12.5.6.21, restated §14.11.6.2 — the trap network prints after
+everything else). The engine enforces it with `TrapNetMustStayLast` for any
+list that tries to move it. This shell never builds such a list: the trap
+network is lifted out of the permutation, everything else is arranged, and it
+is put back on the end.
+
+⇒ A *Bring to front* on such a page therefore puts the mark in front of
+everything the operator can see and behind one thing they cannot, and
+[`crate::text::arrange::trap_net_stays_last`] says so. Saying nothing would
+leave a command that visibly worked and technically did not.
+
+**Entries with no object id are not listed at all**, which is how a caller
+asks the engine to pin them — they are written into the page as direct
+dictionaries, nothing can name them, and they keep the index they had while
+the rest flow around them. That is a list which *did not fully take*, and it
+is disclosed rather than discovered.

@@ -181,3 +181,112 @@ is what proves the value survives a restart.
 The specification of [`PrintPrefs::default`], asserted rather than left
 as a comment: deleting `preferences.txt` must be a way to reset pdfcer,
 never a way to change what it does.
+
+### `const MIN_PRINT_DPI`
+
+**36, because that is the floor of the dialog's own `DragValue`.** The
+numbers here are deliberately the control's numbers rather than a
+separately-reasoned pair: a file that refused a value the operator could
+produce by dragging the box would silently discard a setting they had just
+made, and a file that accepted one the box could not reach would put the
+control out of range of its own stored value.
+
+A hand-edited `print_max_dpi = 5` is a typo, and it is clamped to this
+rather than rejected — see `parse_key`'s note on why out-of-range and
+unreadable are different answers.
+
+### `const MAX_PRINT_DPI`
+
+The dialog's own `DragValue` ceiling, for [`MIN_PRINT_DPI`]'s reason.
+
+The bound exists to limit **memory**, not quality: the dialog's disclosure
+reports the uncapped megabytes a page would take, and a job at 2400 DPI on
+an A0 sheet is measured in gigabytes per page.
+
+### `const MAX_PRINT_COPIES`
+
+Matches the dialog's own `DragValue` range. A driver may refuse fewer; the
+dialog reads the device's `max_copies` and clamps against it separately,
+because that limit belongs to a device and this one belongs to the file.
+
+### `fn paper_key`
+
+⚠ [`PaperChoice::Form`] writes `device`, not its id. That is not a lossy
+accident — it is the rule the module header argues: a `dmPaperSize` above
+`DMPAPER_USER` means whatever one driver says, and a preferences file
+outlives printers. There is deliberately no token that could parse back into
+a `Form`, so no hand-edited file can reintroduce the problem either.
+
+### `fn scale_from_key`
+
+`custom` parses to `ScaleMode::Custom(1.0)` — a placeholder payload, because
+the real one is derived from the separately stored percentage the moment the
+dialog plans a job. Any other payload here would be a second copy of a number
+that already exists, and the two would eventually disagree.
+
+### `fn scope_key`
+
+`AnnotationScope::ContentOnly` has a token even though the dialog does not
+offer it. It is a legal value of the type, a hand-edited file may name it,
+and the round-trip test below covers every variant this build can name — so
+it must have one. Omitting it would make the writer capable of emitting a
+token nobody could parse the day the dialog grows a fifth radio.
+
+# ⚠ The `_` arm is the engine's, not a shortcut
+
+`pdfcer_render::AnnotationScope` is `#[non_exhaustive]`, so this crate is
+*forbidden* from matching it exhaustively — a newer engine may put a scope
+here that this build has never heard of, and the compiler will not point at
+this function when it does. The arm returns the token for
+[`AnnotationScope::Document`], which is what an unknown scope is written as.
+
+That is a deliberate, disclosed loss rather than a silent one: the operator
+cannot select an unknown scope from this dialog in the first place (the four
+radios name the four this build knows), so the arm is unreachable from the
+UI, and the only way to reach it is a build whose engine moved underneath
+its shell — in which case "print the document without review markup" is the
+answer that cannot put a comment on paper unasked.
+
+### `enum KeyOutcome`
+
+Three outcomes rather than an `Option<bool>` because the caller has to tell
+*three* things apart and a boolean can only carry two: **not one of ours**
+must fall through to the next family and eventually to `UnknownKey`, while
+**ours but unreadable** must be reported as `BadValue` against this build's
+own key. Collapsing those two would report every mistyped print value as an
+unknown key, which tells the operator to check their spelling of a key they
+spelled correctly.
+
+### `fn parse_key`
+
+# Why the parser for this group lives HERE and not in `prefs::file`
+
+`prefs::file`'s header states the rule this obeys: *"adding a preference is
+one edit to one file"*, because the parser and the writer are two spellings
+of one vocabulary and a two-file change is how a writer comes to emit a key
+its own parser rejects. That rule is about **the pair staying together**,
+not about the pair being in `file.rs` specifically.
+
+This group is thirteen keys — more than the rest of the file has between
+them — and every one of them is about printing. Inlining them would put a
+third of `file.rs` under one subject and hand the *commonest* future edit
+(a new print preference) a 900-line file to find its place in. So the pair
+moves together, into the file that already owns this group's type, its
+defaults and its token vocabulary: adding a print preference is still one
+edit to one file, and it is now **this** file.
+
+`file.rs` keeps one arm that delegates here and one call that delegates to
+[`write_block`], so the round-trip tests over the whole of
+[`Prefs`](super::Prefs) cover this group unchanged.
+
+# The contract
+
+`value` arrives already trimmed, as `file.rs` trims both halves before it
+dispatches. Returns [`KeyOutcome`]; see its variants.
+
+### `fn write_block`
+
+Called once by `Prefs::write_to_string`. The comments are as long as they
+are because the file is meant to be opened in a text editor, and
+`print_paper = match-pages` tells an operator nothing about what else they
+could write there.

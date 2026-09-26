@@ -3,14 +3,6 @@
 //! Design and rationale: `docs/modules/ui-verify/png.md`.
 
 /// Encode 8-bit RGB scanlines as a PNG.
-///
-/// `rgb` must be exactly `width * height * 3` bytes, row-major, top row first.
-///
-/// # Panics
-///
-/// Never. A length mismatch returns `None` rather than panicking: this is
-/// diagnostic plumbing, and a panic in the evidence writer would destroy the
-/// evidence of whatever it was called to record.
 #[must_use]
 pub fn encode_rgb(width: u32, height: u32, rgb: &[u8]) -> Option<Vec<u8>> {
     let expected = (width as usize)

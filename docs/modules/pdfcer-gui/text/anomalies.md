@@ -75,3 +75,219 @@ values the feature has not been built, only counted.
 The container arms name a shape instead of expanding it; the assertion
 that matters is that none of them is empty and none of them contains a
 newline, because either would break the one-line bar (**R128**).
+
+### `fn key_name`
+
+Lossy UTF-8 rather than a refusal. A PDF name is *raw bytes* (§7.3.5:
+interpretation as UTF-8 applies only where a name is used as text), so a key
+that is not valid UTF-8 is legal and reachable. Refusing to name it would
+hide the one thing the row exists to say — *which* key was doubled — behind
+an encoding technicality the operator did not create and cannot fix.
+
+### `fn value`
+
+[`pdfcer_core::object::Object`] had no `Display`, only `Debug`, and `Debug`
+on a `Dict` is a whole object graph. So this shell wrote the sentence-sized
+rendering itself: scalars shown exactly, containers named rather than
+expanded. That asymmetry is still the design — it is just no longer ours.
+
+`Pass 296.2` (`90576a8`, consumed 2026-09-11) put `Display` on `Object` and
+on `Name`, **with the contract this file had arrived at**, because the
+argument for it was the one that decided the request: the type is
+`#[non_exhaustive]`, so the catch-all arm below rendered *"a value this
+build does not recognise"* — and **adding a variant in the engine would
+have quietly made every shell say that about it, with nothing red
+anywhere**. A rendering that degrades silently on the consuming side is a
+correctness problem, not a tidiness one, and it belongs where the variant
+is added.
+
+The engine improved on two arms while it was there, and both are visible in
+what an operator now reads:
+
+* a **string** renders `(Hello)` or `<0102FF>`, the forms §7.3.4.2/.3 use,
+  instead of this shell's `from_utf8_lossy` — which put U+FFFD replacement
+  characters in front of the operator and called them the value;
+* a **stream** reports its dictionary's size rather than the bare word
+  `a stream`.
+
+# Why the function survived the arms
+
+Two reasons, and neither is sentiment.
+
+**R4.** `check-ui-strings` requires every operator-visible literal to live
+in this catalog. The two drawing sites are in `crate::app::status::anomalies`
+and must contain none; routing through here keeps that true whatever the
+rendering becomes.
+
+**Width is ours.** The engine's reply said so explicitly — *"localisation,
+wrapping, truncation and width are yours"*. A doubled key whose two values
+are large dictionaries still has a sentence-length budget, and this is the
+one place a truncation rule could be applied without a second call site
+disagreeing about it. There is no such rule today; there is a place to put
+one.
+
+### `fn subject`
+
+`None` is a real answer, not a missing one:
+[`pdfcer_core::document::LoadAnomaly::DuplicateDictKey`] carries
+`object: None` when the contradicting dictionary is the **trailer**, which is
+not an indirect object and therefore has no id. Saying "the file's trailer"
+is more useful than any placeholder id, and it is the only case where a
+reader would otherwise wonder which object "object 0 0" meant.
+
+### `fn status_line`
+
+# Why it names the panel
+
+The bar answers *"is there something I should know?"* and has room for
+nothing else — **R128** caps it at one elided row. The clause list is a
+census, so the operator who reads it knows *that* pdfcer chose and *how many
+times*, and the next question is always *which*. The recovered-index line
+beside it settled this shape on 2026-08-26 and points at the same panel for
+the same reason; two disclosure lines that sent the operator to two different
+places would be worse than either.
+
+### `fn clause_unreadable`
+
+The gravest clause, and the wording says so without alarm: this is the one
+class where content is **absent from the document**, not merely chosen
+between. [`crate::app::status::anomalies::clauses`] orders it first so a
+truncating bar drops it last — see that function's ordering note.
+
+### `fn clause_unknown`
+
+# Why an unknown class is counted out loud instead of being skipped
+
+`LoadAnomaly` is `#[non_exhaustive]`, so a newer engine can report a class
+this build cannot name, and the `_` arm that catches it is not decoration —
+`tools/gates/check-engine-api-drift` exists precisely because the compiler
+will *not* raise its hand. Dropping such an anomaly on the floor would make
+two very different states identical from a chair: *the file is clean* and
+*the file contradicted itself in a way this build cannot describe*. The first
+is a claim; the second is an admission, and only one of them is true.
+
+### `fn note`
+
+It says the document is fine *as opened* and that the choices are pdfcer's
+documented defaults, because without that the list underneath reads as a list
+of damage the operator is expected to repair. There is nothing to repair
+here; saying so is what keeps the disclosure from behaving like a prompt,
+which decision 059 and the engine's own notice both forbid by name.
+
+**Corrected 2026-09-10.** This doc used to end *"and no control that
+would repair it"*, which was true when it was written and stopped being true
+the day [`reread_first_button`] landed under these rows. The sentence itself
+did not need changing and has not changed — *"the document is complete and
+usable as it is"* is exactly what a control **underneath** must not
+contradict, and it is what makes pressing the button a choice rather than a
+repair. What needed changing was the doc's claim about the shell, and a
+stale limitation sentence is a defect in whoever believes it.
+
+### `fn reread_first_button`
+
+# The third of the operator's three obligations
+
+> *"...and if the user can intervene in a decision that should always be an
+> option along with them not having to intervene."*
+
+
+# Why it names the VALUE and not the policy
+
+The engine's term is `DuplicateKeyPolicy::KeepFirst`, and *"keep first"* is
+meaningless to an operator looking at a titleblock. The rows above have just
+said *"pdfcer kept /UseOutlines and left /UseOC"*, so the button says the
+thing that follows from those rows: take the one it left. The word *"first"*
+appears because the rows are ordered and the operator can see which is which.
+
+⚠ **Whole file, not this row.** `LoadOptions::with_duplicate_keys` sets one
+policy for the entire load — there is no per-key form — so the label must not
+promise one. *"every"* is doing that work and is not decoration.
+
+### `fn reread_last_button`
+
+**R9, and the reason there are two strings rather than one greyed
+control.** A re-read is not a toggle whose off state is unavailable: after
+re-reading, the *other* choice is exactly as available as this one was, so
+the honest control is one button whose label names whichever reading the
+operator does not currently have. A disabled *"use the first value"* button
+on a document already read that way would be a placeholder describing a
+state the operator is standing in.
+
+It says *usual* rather than *default*, and *last* rather than *KeepLast*,
+for [`reread_first_button`]'s reason: the operator is choosing between two
+values they can see, not between two settings.
+
+### `fn reread_tooltip`
+
+# It states the cost, because the button cannot show it
+
+Pressing this closes the document and parses the bytes on disk again. The
+tab does not go away, the path does not change and the pages look identical
+— and every edit made since the file was opened is gone, because the
+intervention is a re-load rather than a patch. That is the single most
+surprising fact about this control and it is the first clause here.
+
+⚠ It is not the whole guard. `crate::app::actions::document`'s
+`apply_reread_with_duplicate_keys` asks about unsaved edits before anything
+is discarded, exactly as a close does. A tooltip is a warning; the prompt is
+the protection, and an operator who never hovers still keeps their work.
+
+### `fn duplicate_key_row`
+
+# The row the whole feature is for
+
+`kept` and `discarded` are both carried out of the engine — see
+[`pdfcer_core::document::LoadAnomaly::DuplicateDictKey`], whose own comment
+says a count *"makes the intervention theoretical"*. This sentence is where
+that pair becomes readable, and it answers the operator's exact question —
+*"what if it is the wrong one?"* — as far as this build can: he can see both
+values and judge.
+
+**And, since 2026-09-10, take the other one.** Choosing it is a re-load
+rather than an edit — the engine is explicit that *"a decision made during
+parsing is not a value that can be edited afterwards"* — and the button that
+performs that re-load is drawn directly under these rows by
+`crate::panels::docprops`. This row is what makes it meaningful: without both
+values on screen, *use the first value instead* is a button an operator has
+no basis to press. (This paragraph used to say the ask *"is filed in
+`ENGINE_BACKLOG.md`"*. It was, as rows 280 and 281; both are wired.)
+
+"left" rather than "discarded" or "threw away". The discarded value is
+still in the file and still visible to any other reader; pdfcer did not
+destroy anything, it declined to use one of two things the file offered.
+
+### `fn stream_length_row`
+
+No alternative is offered because there is none — the engine's own comment
+on this variant says *"the alternative to the scanned extent is no object at
+all. The record exists so the operator learns the file is damaged, not so a
+decision can be re-taken."* The sentence therefore states what happened and
+stops, and it does **not** invite an action.
+
+### `fn unreadable_row`
+
+# The one class where something is genuinely missing
+
+The others are choices between two readings; this one is content the document
+does not contain. It is still not an error: §7.3.10 says a reference to an
+undefined object *"shall not be considered an error by a conforming reader;
+it shall be treated as a reference to the null object"*, so the document
+pdfcer produced is one the standard describes rather than a repair pdfcer
+invented. The sentence says the consequence plainly — something a page
+referred to is not there — because this is the only class here where the
+operator might see a difference on screen and needs to know why.
+
+`reason` is the loader's own words, passed through rather than rewritten: it
+names *which* failure, and a paraphrase would lose the only detail that
+distinguishes one unreadable object from another.
+
+### `fn unknown_row`
+
+It prints the engine's own stable token from
+[`pdfcer_core::document::LoadAnomaly::kind`], which is exactly what that
+method is documented for — *"a short stable token for machine-readable
+output"*. That token plus [`pdfcer_core::document::LoadAnomaly::object`] are
+the **only** two things reachable through a wildcard arm, and between them
+they still answer *which object* and *what class*, which is enough for the
+operator to report it and enough for a maintainer to recognise which variant
+went unwired.

@@ -374,3 +374,18 @@ Without the epoch in the stamp, committing a max-length would leave the
 spinner showing the number it had *before* the commit — and it would
 stay there, because the name has not changed. The operator would see
 their own edit not take.
+
+### `fn section`
+
+Returns whether it drew, which is always `true` when a field is selected:
+**every** field type has required, read-only and a tooltip, so there is no
+field for which this section is empty. The type-specific rows come and go.
+
+### `struct FieldPropsDraft`
+
+# Why only two properties have a draft
+
+Because only two take typing. Every checkbox reads `field.flags` straight
+from the session each frame, which is what makes a refused press leave the
+box where it was — see [`flag_row`]. A draft for a boolean would show the
+operator's intent while the document disagreed with it, silently.

@@ -28,14 +28,6 @@ const GRID_MINOR_ALPHA: u8 = 26;
 const GRID_MAJOR_ALPHA: u8 = 56;
 
 /// Draw the grid on every page the frame is showing.
-///
-/// One call from `super::interact`'s draw step, so the "which space"
-/// decision this module exists to enact is made in exactly one place rather
-/// than being spread across the canvas's page loop.
-///
-/// `clip` is the scroll viewport: the grid is confined to the intersection of
-/// it with each page, which is both correct (there is no paper outside a page)
-/// and what bounds the cost — see [`MIN_GRID_PITCH_PTS`].
 pub(super) fn draw(ui: &Ui, doc: &OpenDoc, pages: &[PageView], clip: Rect) {
     let scale = Scale::of(doc);
     let ladder = Ladder::for_lines(scale, doc.view.zoom, MIN_GRID_PITCH_PTS);

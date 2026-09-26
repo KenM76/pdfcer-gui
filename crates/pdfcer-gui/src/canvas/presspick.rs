@@ -38,19 +38,6 @@ use crate::canvas::tool::CanvasTool;
 const CHANGED_KEY: &str = "pdfcer-canvas-press-changed"; // ui-text-exempt: internal memory id, never displayed
 
 /// Did the press that began the gesture in flight change the selection?
-///
-/// **The one fact that tells a first click from a second.** A click is a
-/// press and a release, and [`at_press`] runs on the press while
-/// [`crate::canvas::clicking`] runs on the release — by which time the state
-/// they would both read is identical: one object selected, at the Object rung.
-/// So *"the operator clicked a block that was already selected"* and *"the
-/// operator clicked a block and this press is what selected it"* are the same
-/// state, and without this they cannot be told apart.
-///
-/// They must be, because the chunk rung is entered on the **second** click.
-/// Descending on the first would advance two rungs in one gesture: the block
-/// would never be selectable, and the boxes O215 ask 3 draws around its chunks
-/// would never be on screen when the operator went to aim at one.
 #[must_use]
 pub(super) fn changed_selection(ctx: &egui::Context) -> bool {
     ctx.data(|d| d.get_temp::<bool>(egui::Id::new(CHANGED_KEY)))

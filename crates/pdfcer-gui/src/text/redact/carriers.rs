@@ -10,27 +10,6 @@
 // ---------------------------------------------------------------------------
 
 /// **A carrier's engine key, in the operator's words.**
-///
-/// The fourteen keys are the **union** of two sets that do not coincide: the
-/// ten `pdfcer_core::redact::CarrierStatus::carrier` documents, and the twelve
-/// `pdfcer_core::redact`'s own `add_carrier` calls actually emit. `thumbnails`
-/// and `overlapping_annotations` are documented and never produced;
-/// `residual_sweep`, `images`, `vector_paths` and `shadings` are produced and
-/// never documented. Both halves are matched anyway, because the cost of an
-/// unused arm is nothing and the cost of a missing one is the raw key on
-/// screen.
-///
-/// Grep `add_carrier(` in the engine to re-measure the emitted set; it is a
-/// set that grows without a signature change, which is exactly why this match
-/// falls through to the key itself rather than to an `unreachable!`.
-///
-/// Returns the input unchanged for a key it does not know — see the module
-/// header for why that beats returning nothing.
-///
-/// Each phrase is a **noun phrase**, because every caller drops it into the
-/// subject slot of a sentence it does not control (*"⚠ {name}: present in this
-/// document…"*, *"pdfcer also checked … — {list} —"*). A phrase that read as a
-/// clause would break both.
 #[must_use]
 pub fn carrier_name(carrier: &str) -> &str {
     match carrier {
@@ -63,13 +42,6 @@ pub fn carrier_name(carrier: &str) -> &str {
 // ---------------------------------------------------------------------------
 
 /// One residual line for a carrier the engine detected and could not scrub.
-///
-///
-/// Dispatches to [`residual_sweep_line`] for the one carrier the generic
-/// sentence is **false** about. Selecting the sentence here rather than at the
-/// call site is deliberate: the call site is a `.map` over the whole carrier
-/// list and has no business knowing that one member of that list is a different
-/// kind of thing. The catalog owns the words, and owns which words.
 #[must_use]
 pub fn residual_carrier_line(carrier: &str) -> String {
     if carrier == "residual_sweep" {
@@ -83,25 +55,6 @@ pub fn residual_carrier_line(carrier: &str) -> String {
 
 /// **The residual sentence for the whole-file sweep, which is not a carrier
 /// at all.**
-///
-/// The engine reports `residual_sweep` as `DisclosedNotScrubbed` for two
-/// distinct reasons, and this sentence has to be true of both, because the
-/// carrier list does not distinguish them:
-///
-/// | cause | engine site | what happened |
-/// |---|---|---|
-/// | the sweep never ran | `carrier_residual_sweep`, its `evidence.is_empty()` branch | every removed piece is shorter than the engine's match floor, so searching for them would edit on a coincidence |
-/// | the sweep ran and stopped short | `carrier_residual_sweep`, its `disclosed` branch | some stream objects hold the text and are not safe to blank — a font programme, an image, or text drawn through a subset font whose operand bytes are glyph codes rather than characters |
-///
-/// **The second cause is the operator's own files.** `OPERATOR_REQUESTS.md`
-/// O142's finding is that his CAD sheets draw text one glyph at a time through
-/// subset fonts, which is exactly the shape the engine names here. So this is
-/// not the rare arm; on his sheets it is the likely one.
-///
-/// It ends by pointing at [`engine_notes_heading`]'s section, because that is
-/// where the *object numbers* are — the engine puts them in a note, and a
-/// sentence that says "some objects" while the numbers sit four inches below is
-/// withholding the only part he can act on.
 #[must_use]
 pub fn residual_sweep_line() -> &'static str {
     "⚠  Copies elsewhere in the file: pdfcer searches every object in the document for the text it removed, and this search did not finish. Either no removed piece was long enough to search for without editing on a coincidence, or the text turned up inside objects pdfcer will not blank unread — a font programme, an image, or text drawn one glyph at a time through a subset font. pdfcer's own notes, at the foot of this report, say which. Check or remove them by hand."
@@ -144,31 +97,6 @@ pub fn checked_clean_line(names: &[&str]) -> String {
 }
 
 /// **What the whole-file sweep found and will remove, beyond the pages.**
-///
-/// The three counters `pdfcer-core` `369d4de` added, in one sentence. They are
-/// reported separately by the engine and stay separate here for the reason its
-/// own doc comment gives: *"A single total would hide the fact that the second
-/// number is the one nobody expected to be non-zero."*
-///
-/// * `entries` — stored text entries removed from dictionaries anywhere in the
-///   file: a superseded copy of the document properties, a thread's information
-///   dictionary, anything else whose strings quoted the removed text.
-/// * `objects` — how many objects are edited in total. Always ≥ the number of
-///   dictionaries, because it also counts metadata packets blanked and content
-///   streams blanked.
-/// * `content_streams` — of those, the ones that are **drawing instructions**.
-///
-/// The third gets its own clause and no other treatment would do. Every
-/// other member of the sweep removes a metadata string, which changes nothing
-/// anybody looks at. This one changes what a page would paint if anything still
-/// pointed at it — and the engine's own note on the field says a shell
-/// disclosing *"pdfcer edited N objects"* should be able to say how many of them
-/// were content. That is rule 1 in a different costume: a report that folds an
-/// edit to drawing instructions into a count of metadata edits has quietly
-/// picked which of the two is worth mentioning.
-///
-/// Future tense throughout, like every other sentence in the report body: this
-/// is shown **before** the operator confirms, and nothing has happened yet.
 #[must_use]
 pub fn sweep_scrubbed_line(entries: u64, objects: u64, content_streams: u64) -> String {
     let mut out = format!(
@@ -210,14 +138,6 @@ pub fn engine_notes_heading(count: usize) -> String {
 }
 
 /// The one line above the notes, saying whose voice they are in.
-///
-/// Rule 1 territory: some of these notes ARE residuals — the retained-mark
-/// note, the sweep's object list — and some are cosmetic. They are shown
-/// unedited rather than summarised because a note pdfcer wrote about its own
-/// uncertainty is the one thing this report must not paraphrase, and because
-/// the sentences that matter most are already lifted out into the residual
-/// section above by their own derivations. This section is the record; the
-/// section above it is the warning.
 #[must_use]
 pub fn engine_notes_lead() -> &'static str {
     "In pdfcer's own words, unedited. These name objects by number and cite the PDF standard by clause; anything here that needed your attention is already stated above in plain English."

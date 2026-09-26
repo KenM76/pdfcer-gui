@@ -11,12 +11,6 @@ use crate::canvas::{deep, fit, offset, zoom};
 use crate::viewer;
 
 /// **This frame's geometry**, as the placement decision needs it.
-///
-/// Every field is already bound in [`super::present::show_in`] before this is
-/// called; none is derived here. Grouped into a struct rather than passed as
-/// seven positional arguments because five of them are sizes and three of
-/// those are `(f32, f32)` — an argument order a caller can get wrong in
-/// silence is a defect waiting for a resize.
 pub(super) struct Geometry {
     /// The page the view is currently about.
     pub current: usize,
@@ -54,12 +48,6 @@ pub(super) struct Position {
 }
 
 /// **Settle where the view is, before anything is drawn.**
-///
-/// Called once per canvas frame, from [`super::present::show_in`], immediately
-/// before the `ScrollArea` is shown. Mutates `doc` in three places — the
-/// published overhang, the deep tier's anchor bookkeeping inside
-/// [`deep::track`], and the frame counter — and every one of those is a fact
-/// about *this* frame that a later frame reads.
 pub(super) fn position(
     ui: &egui::Ui,
     doc: &mut OpenDoc,

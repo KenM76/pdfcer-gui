@@ -94,3 +94,20 @@ The failure this guards is a mapping that drops a field: three
 checkboxes on the Tool row, two of which do something, and no error
 anywhere. It is asserted by turning them on **one at a time**, because
 all-three-on would pass on a build that ORed them together.
+
+### `struct Modifiers`
+
+Every field maps one-to-one onto a `pdfcer_core::edit::ResizeOptions` field,
+deliberately. A shell-side name that aggregated two engine options, or
+inverted one for readability, would be a second vocabulary to keep in step —
+and the inversion is exactly where such a thing goes wrong silently.
+
+### `fn to_options`
+
+⇒ It also made the operator's answer unreachable. Once the switch
+exists, deriving the same flag from geometry **overrides them silently**
+on exactly the resizes where they were most likely to have an opinion.
+
+What replaced it is a **worded decline**: the engine's refusal is
+caught and turned into a sentence naming both remedies, so the operator
+meets a choice rather than a nothing. `app::status::decline` carries it.

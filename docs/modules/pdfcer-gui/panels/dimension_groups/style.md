@@ -134,3 +134,43 @@ excluded it from both would under-report the wider edit.
 `256.0` a pure red would be written as `0.996` and the swatch an operator
 reopened would not be the one they chose — a difference small enough to
 dismiss and permanent once it is in the file.
+
+### `const REGION_TEXT_HEIGHT`
+
+One driveable, non-popup control is named deliberately.
+`NO_SURFACE.md` §4 records what a colour picker costs a harness: *"the
+picker's popup publishes no regions, so a check can assert the swatch was
+drawn and driven but cannot aim at a hue inside it."* Any group of controls
+containing a colour picker therefore needs a numeric neighbour the harness
+**can** move, and this is it.
+
+### `fn show`
+
+# Read-modify-write, once per frame at most
+
+The section starts from the group's **live** style, mutates a copy as the
+operator touches controls, and raises one action if the copy differs at the
+end. That is the CLI's own convention (`pdfcer group-style`: setting one
+property leaves the others alone) and it is what keeps a click here and a
+command-line invocation the same edit.
+
+One action per frame rather than one per control is not an optimisation: two
+`SetGroupStyle` actions raised in the same frame would each carry a *whole*
+tier computed from the same starting point, so the second would silently
+undo the first. The queue drains in order and the last writer would win.
+
+# Why tolerance is not drawn here
+
+`GroupStyle` carries `tolerance` and `tolerance_places`, so a group *can*
+default them — and a group-level tolerance is the rarer half of the feature.
+A tolerance is a statement about **one manufactured feature**: two holes on
+the same drawing routinely carry different ones even though they share the
+drawing's units and precision, which is the ui-spec's own reasoning
+(§C.11.1) and the reference tool's.
+
+So tolerance belongs on the **per-ce-dimension** surface, where it is drawn,
+and putting a second control for it here would invite an operator to set a
+group default that almost every member then overrides — the shape that makes
+the moving-count read *"no change on screen"* on nearly every press. It is
+reachable from the CLI for the drawing that genuinely wants one, and this
+paragraph is the record of that being a decision rather than an omission.

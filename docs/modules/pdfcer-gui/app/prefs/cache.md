@@ -75,3 +75,67 @@ Both halves are the decision recorded on the variant: the operator asked
 for the maximum, and taking 2 GB on his behalf risks an allocation
 failure in a program holding unsaved edits. The larger step exists and is
 one click away.
+
+### `enum PageCache`
+
+# Why four steps and not a slider
+
+[`super::quality::RenderQuality`]'s argument applies unchanged: *the useful
+range is narrow, the middle of it is almost always right, and a slider
+invites an operator to spend attention tuning a number that will not repay
+it.* It applies with more force here, because the effect of an intermediate
+value is unobservable — an operator cannot tell 900 MB from 1,024 MB by
+using the program, so a slider would be asking for precision that cannot be
+felt.
+
+# The steps, and what each is for
+
+The megabyte column is what [`Self::megabytes`] reports and what the label
+shows; it is the texel count times four bytes over 1,048,576.
+
+| | texels | RGBA | roughly |
+|---|---|---|---|
+| [`Self::Small`] | 48 M | 183 MB | a few large sheets |
+| [`Self::Medium`] | 128 M | 488 MB | a report, or a dozen large sheets |
+| [`Self::Large`] | 256 M | 976 MB | **the default** — about twenty-five large sheets at screen size |
+| [`Self::Maximum`] | 512 M | 1,953 MB | a whole drawing set resident |
+
+[`Self::Small`] is kept so an operator who finds the default heavy has a
+smaller budget available **by name**, rather than having to discover a
+number.
+
+### `const ALL`
+
+Smallest-first so the control reads left to right as *less … more*,
+which is [`super::quality::RenderQuality::ALL`]'s rule and the direction
+a reader expects of a quantity.
+
+### `fn texels`
+
+Texels rather than bytes because that is the unit the cache counts in,
+and it counts in texels because **a page is not a unit of memory**: a
+thumbnail and an Annex C sheet differ by four orders of magnitude, so a
+page count that admitted six of the latter would admit 1.5 GB without
+saying so.
+
+### `fn megabytes`
+
+Derived from [`Self::texels`] rather than written beside it, which is
+this project's recurring lesson applied before it bites: two spellings
+of one quantity drift, and the drift here would be a settings window
+promising an operator 488 MB while the cache spent 2 GB. It is
+`NO_SURFACE.md`'s standing rule — assert the *relation*, because two
+copies of one constant cannot disagree — applied to a label.
+
+### `fn key`
+
+Stable across releases and deliberately not the display name: a display
+name is operator copy and may be reworded, and a file whose keys moved
+when the wording did would silently reset everybody's preference. Same
+rule [`super::quality::RenderQuality::key`] follows.
+
+### `fn from_key`
+
+`None` rather than a default, so the loader can *report* an unreadable
+value rather than silently substituting one — the per-key recovery
+contract in [`super`]'s header.

@@ -33,3 +33,37 @@ R2 forced the timing — `mod.rs` passed 1,500 lines the moment this work
 landed — but the seam was already here. A file that grows past the limit is
 usually a file that acquired a second subject, and the limit is only how
 anybody notices.
+
+## Item notes
+
+### `fn dismiss`
+
+Returns whether the window stays open, which is what
+[`PrintDialog::show`] returns in turn — so a `false` from here is the
+window going away this frame.
+
+# The one place that knows WHY
+
+Every route sets [`PrintDialog::dismissal`] except the window chrome,
+which arrives as egui's own `frame.closed` and is mapped to
+[`Dismissal::Revert`] below. Collecting all four here rather than
+writing the settings at each button is what makes the decision
+auditable: there is one `match`, it is total, and a fifth route added
+later stops the crate building rather than silently doing nothing.
+
+# The arguments, and why two of them are not fields
+
+- `closed` is egui's report that the viewport was dismissed, which is
+  only true for the frame it happened in and is therefore not state this
+  struct could hold.
+- `saved_on_commit` is whether the Print press earlier in the same frame
+  left the settings persisted. It is a local of that block and is handed
+  across rather than stored, because storing it would make it readable
+  on frames where no press happened — and a field that is only
+  meaningful for part of a frame is a field somebody will read in the
+  other part.
+
+An explicit button wins over `closed`. They cannot both be produced by
+the same gesture, but a frame carrying a viewport close AND a footer
+press should honour the press: it carries a decision and the other does
+not.

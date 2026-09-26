@@ -160,3 +160,127 @@ predicate instead of re-spelling `hidden() || no_view()` here.
 notes still count it. R50: *"a page carrying content the operator cannot
 see is a fact they are entitled to know."* The claim is narrower and
 exact: **it is not clickable on a canvas that is not drawing it.**
+
+### `enum AnnotKind`
+
+Two variants, and the distinction is load-bearing rather than descriptive —
+see the module header. Deliberately not `is_ce_dimension: bool` on a struct:
+a bool is a fact a caller may forget to read, while a variant is one the
+compiler makes them handle.
+
+### `fn selectable_on`
+
+# What is excluded, and why each one
+
+The same four exclusions [`crate::panels::comments`] makes, for the same
+reasons, plus one this surface needs that the panel does not:
+
+| excluded | why |
+|---|---|
+| `/Widget` | the form field surface owns it — a click there focuses an editor, and two owners of one press is how a field becomes unfillable |
+| `/Popup` | §12.5.6.14 is a `shall`: a pop-up *"shall not appear alone but is associated with a markup annotation"*. It is a reader-UI window, not content |
+| `/Link`, `/Movie`, `/PrinterMark`, `/TrapNet` | not authored by the operator and not restylable. `/TrapNet` in particular is prepress output state |
+| **hidden** (§12.5.3 bit 2) | **this surface's own**, and it is not shared with the panel |
+
+The hidden case is the one worth stating. The Comments panel *lists* a
+hidden annotation, deliberately — it is on the page and the operator has a
+right to know. The canvas must not **select** one, because nothing is drawn
+there: a click on blank paper would produce a selection outline around
+nothing, and a Delete would remove something the operator cannot see. The
+panel is where a hidden annotation is reached, which is exactly the split
+the forms surface already makes for an undrawn field.
+
+# Ordering
+
+`/Annots` order, which is paint order — later entries draw on top. The
+caller takes the **last** match, so the topmost annotation wins a click,
+which is the rule page content already follows.
+
+# Cost
+
+One `/Annots` walk and one dictionary read per entry, bounded by
+`pdfcer_core::annot::MAX_ANNOTS_PER_PAGE`. No decomposition, no content
+stream, no cache — see the module header's table.
+
+### `fn hit`
+
+`point` is **canvas space**, the same space `selectable_on` returns and the
+same space the content hit test works in.
+
+# A RECTANGLE IS NOT ALWAYS THE SHAPE, and assuming it was cost the
+# operator the ability to select anything under a dimension
+
+This function tested `rect.contains(point)` and nothing else. The reasoning
+below about tolerance was careful and correct — and it never asked the prior
+question, which is *is the rectangle the thing?*
+
+For a stamp, a highlight or a sticky note, yes: the `/Rect` **is** the mark.
+For a **ce dimension** it is emphatically not. A dimension is two thin
+witness lines, a dimension line, two arrowheads and a small label — and its
+`/Rect` is the box around all of that, which for anything but a perfectly
+horizontal dimension is mostly empty air. A perimeter traced round a
+building is worse still: its rectangle covers the entire footprint and its
+ink is the outline.
+
+So clicking inside that box selected the dimension, and the operator could
+not reach the drawing underneath:
+
+> *"selecting space not actually occupied by the lines or text of the
+> dimension still selects it if I am selecting within the box area it
+> occupies — I can't select objects underneath it. Where did you learn that
+> behaviour? It's not in any program I've seen."*
+
+He is right, and the convention is universal: **a click selects what is
+under the cursor, not what merely encompasses it.** An unfilled shape's
+interior belongs to whatever is behind it — every drawing program, every CAD
+package, every vector editor. A bounding box is what a MARQUEE tests
+against, and a marquee is a different gesture.
+
+A candidate may therefore carry a precise `shape` — its drawn segments in
+canvas space — and where it does, that is what is tested. Where it does not,
+the rectangle stands, because for those kinds it is the truth.
+
+# Tolerance: none for a rect, and necessarily some for a segment
+
+The engine's argument for testing `/Rect` bare:
+
+> *"`bounds_of` applies the pen half-width at **authoring** time, so the
+> stored `/Rect` already contains it. A shell hit-testing `/Rect` is
+> already correct today."*
+
+The rectangle is the geometry **plus** the margin a tolerance would add, so
+adding a second would make two adjacent markups claim each other's clicks.
+
+A **segment** is the opposite case: it is a mathematical line with no width
+at all, and without a tolerance nothing could ever be clicked. So the shape
+path takes one, and it is the same click tolerance the content hit test uses
+— which is what makes a dimension line as easy to hit as the drawing line
+beside it, rather than easier or harder.
+
+# Topmost wins
+
+The **last** match in `/Annots` order, which is the last one painted. A
+stamp dropped on top of a rectangle is the thing the operator sees and
+therefore the thing they mean.
+
+### `fn under_pointer`
+
+# Why this is a function and not four lines at the call site
+
+Because answering it takes four collaborators — the annotation list, the set
+of which ones are ce dimensions, those dimensions' drawn ink, and the click
+tolerance — and every one of them has to agree with what is on screen. Four
+lines inline in `canvas::interact` is four lines that can each be got subtly
+wrong somewhere else, and the "somewhere else" is what this project keeps
+paying for.
+
+It also puts the whole hit-testing story in one file with [`hit`]'s
+argument, which is where a reader will look for it.
+
+# The tolerance comes from the MAPPING, so it is zoom-invariant
+
+[`crate::canvas::mapping::PageMapping::tolerance`] is the same click
+tolerance the content hit test uses. That is deliberate: a dimension line
+must be exactly as easy to hit as the drawing line beside it, and a
+separately chosen number here would drift from it the first time either was
+tuned.

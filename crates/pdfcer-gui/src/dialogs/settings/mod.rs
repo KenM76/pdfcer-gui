@@ -40,13 +40,6 @@ pub mod pages;
 pub mod redaction;
 pub mod saving;
 /// May pdfcer read the trust list Acrobat has downloaded, and where is it.
-///
-/// The two settings behind `ENGINE_BACKLOG.md`'s trust rows. Its header carries
-/// why it is NOT filed under *Where Acrobat is* — the symptom that brings
-/// somebody here is *"the Signatures panel says it did not check who signed
-/// this"*, and nobody carrying that symptom looks under a group about which
-/// program a button starts — and why the inspect control is absent when there
-/// is no store while the path field stays visible.
 pub mod signatures;
 pub mod text;
 pub mod widgets;
@@ -57,56 +50,19 @@ use pdfcer_core::settings::{Settings, StoreLocation};
 use crate::text::settings as t;
 
 /// The region the window publishes for its whole body.
-///
-/// **This is what aims `ui-verify`'s `settings_headings_legible`**, the
-/// regression test for `DEFECTS.md` D2 — a collapsible heading rendering
-/// near-white on light grey, at around **1.1:1** against a 3:1 floor. The
-/// check measures the running program rather than a screenshot, so it finds
-/// the window by this name. Renaming this constant un-aims it.
 pub const REGION_BODY: &str = "dialog:settings"; // ui-text-exempt: trace region name, never displayed
 
 /// The Cancel button's rect, so a driven check can press the abort path itself
 /// rather than pressing Escape and assuming the two agree.
-///
-/// The two DO agree — `app::settings_window` documents both as dropping the
-/// draft — but a check that can only reach one of them proves nothing about the
-/// other, and the whole point of the check that wanted this is that the
-/// coupling it guards fails **silently**.
 pub const REGION_CANCEL: &str = "dialog:settings.cancel"; // ui-text-exempt: trace region name, never displayed
 
 /// The region each group heading publishes, suffixed with the group's key.
-///
-/// One per collapsible header, so the contrast check can measure **each**
-/// heading against its own background rather than sampling the window and
-/// hoping. D2's defect was a foreground/background *pairing*, and a pairing
-/// only exists once something is drawn — so the check needs the rectangle the
-/// application actually laid the text into, not a rectangle derived from a
-/// palette.
 pub const REGION_HEADING_PREFIX: &str = "settings.heading."; // ui-text-exempt: trace region name, never displayed
 
 /// The region each theme radio publishes, suffixed with the preset's key.
-///
-/// Exists so a check can **click** one. Proving that a theme picker is on
-/// screen is not the property anybody cares about; the property is that
-/// choosing Dark makes the window dark, which needs a rect to aim at and a
-/// capture afterwards. See `DEFECTS.md` D10.
 pub const REGION_THEME_PREFIX: &str = "settings.theme."; // ui-text-exempt: trace region name, never displayed
 
 /// How far the working copy has drifted from what the window opened on.
-///
-/// # Theme is the one setting that breaks the draft contract, on purpose
-///
-/// Every other setting here is draft-until-Save. A theme cannot be judged from
-/// a radio label — you choose it by *seeing* it — so the selection takes effect
-/// on the next frame. The draft still governs what is **saved**; it just no
-/// longer governs what is **shown**.
-///
-/// The mechanism is one line in the application's per-frame `ui()`, before any
-/// widget is built: the theme token is read from the draft when a draft exists
-/// and from the live settings otherwise. Cancel drops the draft, so the look
-/// reverts with it — no separate undo path, and nothing that can get out of
-/// step. The window says so in the theme setting's own radius line rather than
-/// leaving it to be discovered.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Draft {
     /// **Which group to open and scroll to, once, on the first frame.**
@@ -191,11 +147,6 @@ pub struct Draft {
 
 impl Draft {
     /// Start editing from the **live** configuration.
-    ///
-    /// Live rather than a re-read of the file, and the difference matters in
-    /// exactly one case: if a previous save failed, the session is honouring a
-    /// choice the disk does not have. The window must show what pdfcer is
-    /// actually doing, not what it wished it had written.
     #[must_use]
     pub fn new(current: &Settings, prefs: &crate::app::prefs::Prefs) -> Self {
         Self::focused_on(current, prefs, None)
@@ -237,28 +188,12 @@ impl Draft {
     }
 
     /// Whether anything has actually changed since the window opened.
-    ///
-    /// Drives whether *Save* is offered at all. A Save button that is always
-    /// live cannot tell the operator whether they have unsaved changes, and
-    /// this is a window someone may open just to read.
-    ///
-    /// **Not latched.** Click a radio and click it back, and the draft is clean
-    /// again — because it is, and a dirty flag that only ever went one way
-    /// would make Save mean "you visited this window".
     #[must_use]
     pub fn is_dirty(&self) -> bool {
         self.working != self.original || self.working_prefs != self.original_prefs
     }
 
     /// Whether every value is still pdfcer's own answer.
-    ///
-    /// # Why this is not the same question as [`Self::is_dirty`]
-    ///
-    /// A draft opened from non-default settings is **clean but not
-    /// all-default**: loading is not editing. Collapsing the two predicates
-    /// would disable *Restore defaults* for exactly the operator who most needs
-    /// it — the one who changed something in a previous session and wants it
-    /// back.
     #[must_use]
     pub fn is_all_default(&self) -> bool {
         self.working == Settings::default()
@@ -267,12 +202,6 @@ impl Draft {
 }
 
 /// What the window is asking the application to do.
-///
-/// Returned rather than performed. This module renders and does not own
-/// application state — the split every other dialog and panel in this shell
-/// uses — and the three verbs have consequences (adopting a configuration,
-/// writing a file, invalidating every cached raster) that belong in the
-/// dispatcher where they can be seen together.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Outcome {
     /// Nothing was pressed this frame.
@@ -290,29 +219,6 @@ pub enum Outcome {
 }
 
 /// Draw one frame of the window. Returns what the operator asked for.
-///
-/// # Geometry, and why every number has a reason
-///
-/// | aspect | value | why |
-/// |---|---|---|
-/// | screen source | `content_rect` | not `viewport_rect`: it subtracts safe-area insets, so centring uses *usable* space |
-/// | width | `620` clamped to `[420, screen − 40]` | wide enough for a full sentence at the body's text size |
-/// | height | `82 %` of screen, clamped `[420, 900]` | a fixed height leaves half the screen unused *while still scrolling* — the worst combination |
-/// | position | `default_pos`, centred, `−20` vertically | see below |
-///
-/// **`default_pos` rather than `anchor`**, so the operator can drag it aside.
-/// A window pinned in the middle of the screen is a window in the way of the
-/// document it is about. And egui's own default position put it top-left, over
-/// the quick-access toolbar and the ribbon tabs — so *opening Settings hid the
-/// control that opened it*. The `−20` keeps the button row on a short screen.
-///
-/// # The scroll area's height is computed, not fixed
-///
-/// `available − 96`, floored at 180. A fixed height clips the last group's
-/// heading in half on a short screen, and a half-drawn heading reads as a
-/// rendering fault rather than as a group. The reserved 96 is the intro, the
-/// store line, two separators and the button row — everything that is not the
-/// list.
 pub fn show(
     ctx: &egui::Context,
     draft: &mut Draft,

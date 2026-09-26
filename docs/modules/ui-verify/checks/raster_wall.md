@@ -351,3 +351,38 @@ that away.
 [`drive_a`]'s session. The fixtures differ, and a check that opened a second
 document into the first's window would be measuring the multi-document tab
 machinery as well as the raster wall — two subjects, one verdict.
+
+### `struct TheRasterWallStopsTheZoomInsteadOfPaintingAnError`
+
+# Why this is a SEPARATE check, decided by driving rather than by taste
+
+
+The first half needs several pages of differing sizes in one strip. This half
+needs the rasterizer to REFUSE, and on a repository fixture it never does —
+the measured run climbed to a zoom of ten billion, a trillion percent, with
+zero refusals of any kind, because above `SUB_PIXEL_CONTENT_EXTENT` the
+region tier asks only for the visible region and the visible region SHRINKS
+as the zoom rises. There is no page size at which that order becomes too
+large. What makes the rasterizer give out is the amount of INK inside the
+region, which is why the operator met it on a 36-sheet SOLIDWORKS drawing
+set and this check meets it on a dense CAD site plan. See [`FIXTURE_DENSE`].
+
+Keeping them separate buys the thing the project keeps relearning: one check
+is red for one reason. A merged check would have been SKIPPED on every
+machine without the operator's drawings, taking the neighbour-sheet half —
+which is measurable anywhere — down with it.
+
+### `fn panic_was_converted`
+
+[`Session::expect_thread_panic`] silences the harness's panic detector for
+the whole session, and on its own that is an assertion both outcomes satisfy:
+a rasterizer that gave out and was caught and one that simply died look the
+same afterwards. `pdfcer-render` catches the panic and hands back a
+`RasterizerLimit`, which the canvas publishes as a `raster-limit` line
+carrying the panic text in its `panic=` field — so the conversion has a
+witness, and a check that declares a panic owes the reader that witness.
+
+Measured 1:1 across three runs on 2026-09-15: one `raster-limit` per panic in
+each of the two zoom climbs, two of each in this check's own part B.
+
+Returns the failure sentence, or `None` when every panic was converted.

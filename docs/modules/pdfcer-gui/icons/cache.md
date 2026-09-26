@@ -91,3 +91,35 @@ There is nothing to vary: none of it reaches this layer.
 Reached by asking for more distinct *sizes* than the cap, which is
 the only axis an operator can actually drive without bound (drag a
 window between monitors of different scale, repeatedly).
+
+### `struct CacheKey`
+
+The tint is absent for a plain glyph — see this module's header. A
+coloured glyph has two colours and a mask can carry only one, so its
+colours are baked into the pixels and are part of the key.
+
+### `fn texture`
+
+# What happens when the asset is broken
+
+It degrades to a 1×1 transparent texture and a one-line stderr
+complaint rather than panicking. The assets are compiled-in
+constants, so a failure here means the *build* shipped a broken one —
+a condition `super::tests::every_icon_parses` is designed to catch
+first — and taking down an editor holding the operator's unsaved
+edits over a missing 16 px glyph would be a far worse outcome than a
+blank slot with an intact tooltip and accessible name.
+
+Note the asymmetry with an **unknown key**, which is a different
+failure with a different answer: see [`super::paint_ribbon_icon`].
+A broken asset is a build defect that the test gate catches before an
+operator ever sees it, and the stderr line is addressed to the
+developer who broke it. An unknown key can reach a real operator
+(a command naming an icon the set does not have), so it is drawn
+visibly instead of silently.
+
+### `fn with_cache`
+
+Kept private so no caller can hold the `RefMut` across a re-entrant call
+(which would panic); every entry point in [`super`] borrows, does one
+lookup, and releases before it draws anything.

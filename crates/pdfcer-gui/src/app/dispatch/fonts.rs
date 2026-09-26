@@ -27,6 +27,8 @@
 //! editing. It is the same seam `PDFCER_DIAG_SAVE_PATH` is, for the same reason
 //! `save_copy`'s header gives: the alternative is a check that mutates
 //! persisted state and leaves it mutated.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/app/dispatch/fonts.md`.
 
 use std::path::PathBuf;
 
@@ -45,11 +47,6 @@ use crate::dialogs::DialogsState;
 const FONT_DIR_ENV: &str = "PDFCER_DIAG_FONT_DIR";
 
 /// Whether this file owns `id`.
-///
-/// `pub(crate)` for [`super::routes::handles`]' reason: `shell::commands::reach`'s
-/// reachability checker must be able to evaluate every guard arm it finds, and
-/// a guard it cannot evaluate is a place commands could hide from the check
-/// that exists to find them.
 #[must_use]
 pub(crate) fn handles(id: &str) -> bool {
     // ui-text-exempt: registered command ids, never displayed.
@@ -57,11 +54,6 @@ pub(crate) fn handles(id: &str) -> bool {
 }
 
 /// Where pdfcer may look for a donor font on this run.
-///
-/// The operator's list first, then anything the harness named. Order is search
-/// order and the first match wins — see [`crate::app::prefs::fonts`] — so the
-/// operator's own folders take precedence over a harness's, which is the only
-/// ordering that keeps a driven run honest about what a real one would do.
 #[must_use]
 pub(crate) fn folders(prefs: &Prefs) -> Vec<PathBuf> {
     // The operator's own folders, then this computer's if they asked for
@@ -86,24 +78,6 @@ pub(crate) fn folders(prefs: &Prefs) -> Vec<PathBuf> {
 }
 
 /// Dispatch a font command.
-///
-/// **`tools.embed_fonts` depends on the font-folder preference, not on the
-/// engine verb.** The verb exists; what it will not do is find a donor. Read
-/// [`folders`] before concluding this command is blocked on `pdfcer-core`.
-///
-/// ⇒ The general rule, because it costs a re-derivation every time it is
-/// forgotten: **ask what a verb's own request struct requires, not whether the
-/// verb exists.** A command can be unreachable because an operand has no
-/// source in this shell, and nothing about the verb's signature says so.
-///
-/// ## It can decline with a sentence, and the sentence is recorded
-///
-/// A document whose fonts are all embedded is the **normal** case, not an
-/// error, and opening a window to say so would be a modal an operator has to
-/// dismiss to learn they did not need it. So the construction declines, and the
-/// decline goes to `record_note` — the same channel a refused clipboard cut
-/// uses, for the same reason: the operator still believes the gesture worked,
-/// and silence is what would leave them believing it.
 pub(crate) fn dispatch(id: &str, dialogs: &mut DialogsState, status: &Status, prefs: &Prefs) {
     // The epoch is read before a window is built, so a decline is stamped with
     // the revision the operator is looking at. Nothing here edits, so it cannot

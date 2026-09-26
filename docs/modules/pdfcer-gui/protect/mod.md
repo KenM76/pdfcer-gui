@@ -141,3 +141,158 @@ The authentication and the throwaway in one act — see §2. The document is
 read from disk rather than from the open session because the two mutating
 verbs take `&mut EditSession` and what they mutate would disarm
 `save_incremental`'s refusal on the session the operator is still using.
+
+### `enum Task`
+
+Two commands, one window. The alternative — two windows — would put the
+password fields, the destination choice, the disclosures and the atomic write
+in two files, and the second copy is where a disclosure goes missing. What
+the task decides is the **title**, which of the jobs is offered, and which
+section the window opens on; everything below that is one implementation.
+
+### `enum Job`
+
+Four values rather than three, because *change the passwords* and *change
+what it allows* reach the same engine verb (`set_permissions`) with opposite
+intentions, and the difference is what the surface must protect: a password
+change **preserves** the permission bits the document already has, and a
+permission change **preserves** nothing about the passwords because the
+engine cannot recover them (see [`Standing::preserved_grants`]).
+
+### `fn edits_permissions`
+
+Decides whether the permission list is drawn as **controls** or as a
+read-back, and therefore whether
+[`crate::text::security::permissions_are_advisory`] is drawn beside
+controls the operator is about to use or beside a report.
+
+### `fn needs_current_owner`
+
+True for every job that acts on an already-protected document, which is
+every job but the first — and it is the condition that decides whether
+[`crate::text::protect::owner_password_note`], O119's third disclosure,
+is on screen.
+
+### `struct Standing`
+
+The reason this type exists at all is one line of the build brief:
+*"A permissions dialog that opens with everything ticked, on a document that
+forbids printing, has told the operator a falsehood before he touches
+anything."* Every control on the window is seeded from a field here, and
+nothing on it has a hard-coded default.
+
+### `fn refusal`
+
+Pure, and the whole of R9's rule for these two controls: *no
+placeholders — the control is absent or explained, never a button that
+fails on press.* The controls stay on the ribbon, because whether THIS
+document is signed is not known when the registry is built; the window
+opens and states the refusal instead of drawing a form whose only
+possible outcome is a failure.
+
+### `fn jobs`
+
+Pure, and the single source of what appears on the window — so the radio
+group, the confirm control's label and the engine call cannot disagree
+about what is being done.
+
+### `fn preserved_grants`
+
+This is what makes *change the passwords* a safe verb. It reaches
+`set_permissions`, which takes a whole `EncryptionSettings` and re-derives
+`/O`, `/U`, `/OE`, `/UE` and `/Perms` from scratch — so a caller that did
+not supply the current bits would silently **grant everything** to a
+document that had been restricting things, and the operator would have
+changed a password and quietly unlocked the drawing.
+
+`None` — the bit is not meaningful at this document's revision — becomes
+**granted**, and that is the conservative reading in the direction that
+matters. pdfcer writes `/R` 6, where all eight bits mean something, so
+every bit must take a side. An `/R` 2 document's author did not decline
+to permit form-filling; the concept did not exist to decline, and turning
+their silence into a prohibition would invent a restriction they never
+wrote. `PermissionBit::applies_at`'s own doc says exactly that.
+
+### `fn initial_ticks`
+
+This is deliberately **not** the same list as [`Self::grants`], and
+the difference is a difference of tense. `grants` is *what this file
+says today* and is drawn under
+`crate::text::protect::permissions_now_heading`; this is *what the file
+pdfcer is about to write will say*, and it is the seed for controls the
+operator can move.
+
+They differ in exactly one place, and only on a document some other
+program wrote: a bit for which [`always_granted`] holds is forced on
+here even when the document declines it, because the engine will grant
+it on the way out no matter what this surface passes. Seeding the box
+from the file would show an unticked control that becomes ticked in the
+written result — a promise the program cannot keep.
+
+### `fn always_granted`
+
+`pdfcer_core::crypto::encrypt::assemble_permissions` implements the engine's
+write-path rule **W19**, and its own doc states the clause verbatim:
+
+> bit **10** — writers `shall` always set it to 1 for 1.7-reader
+> compatibility, regardless of whether accessibility extraction is granted
+> (at `/R` 6 the bit no longer gates it).
+
+Bit 10 is [`PermissionBit::AccessibilityExtract`]. The engine sets it on
+**every** file it writes, whether or not the caller listed it in
+`EncryptionSettings::permissions`, and the read side then reports it as
+granted — correctly, because the file does say so.
+
+⇒ A tick-box for this bit would be a control the operator can clear and
+which comes back ticked in the file that is written. That is the exact shape
+of falsehood the build brief forbids — *"a permissions dialog that opens with
+everything ticked, on a document that forbids printing, has told him a
+falsehood before he touches anything"* — only worse, because it would happen
+**after** he touched it. So the row is drawn as a fixed statement with
+`crate::text::protect::accessibility_always_granted` beside it, and this
+function is the single predicate both the drawing and
+[`Standing::initial_ticks`] consult.
+
+It takes the whole [`PermissionBit`] and matches exhaustively rather than
+comparing against one variant, so a future engine rule that pins a second
+bit is a change in one place and a compile error if the enum grows.
+
+### `struct Passwords`
+
+`Secret` rather than `String` the moment they leave the text fields, for
+`crate::dialogs::password`'s reason and its module's rule: the value never
+enters a trace, a queue or an `Action` unwrapped. Everything traced about a
+password on this surface is its **length** and whether it is ASCII.
+
+### `fn write_to`
+
+Temp file, then rename — `crate::redact::PreparedRedaction::write_to`'s
+mechanism, taken deliberately. The destination may be the file the
+operator has open, and a torn write there leaves them with neither the
+protected document nor the one they started with.
+
+The temporary is removed if the rename fails, for the same reason it is
+there: a half-written copy of the operator's drawing sitting beside it
+under a name nothing will ever open again is an artefact, not a recovery.
+
+# Errors
+
+[`WriteFailure`] — the file system refused.
+
+### `fn prepare`
+
+The one place any of the three engine verbs is called, and §2 of this
+module's header is the whole of why the two branches differ.
+
+# Errors
+
+[`PrepareFailure`] — the document is out of scope, the owner password did
+not open the file, it opened as somebody other than the owner, or the engine
+refused the verb by name.
+
+### `fn suggested_path`
+
+The standing rule for every write that produces a second document, and the
+suffix depends on the job because the two files it can produce are opposites:
+a protected one and an unprotected one. Suggesting `-protected` for a removal
+would name the file after the thing it no longer is.

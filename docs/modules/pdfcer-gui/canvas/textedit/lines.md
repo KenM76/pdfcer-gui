@@ -103,3 +103,61 @@ hides wherever it is not looked at.
 A draft is written from the pointer handler, the keystroke handler and
 the diagnostic seam within one frame, so an index one step behind its
 string is a reachable state and must not be a panic.
+
+### `fn spans`
+
+The one decomposition every other function here is built on, so *"what is a
+line"* is answered once. A line runs from just after the previous `\n` to
+just before the next one; the `\n` itself belongs to neither, which is what
+makes [`end_of_line`] land *before* the break rather than on the first
+character of the next line.
+
+Always at least one entry, including for an empty draft: a draft with no
+characters still has one line, the empty one the caret is sitting on.
+Returning an empty `Vec` there would make every caller write the same
+`if lines.is_empty()` guard, which is the shape a function should absorb.
+
+A trailing `\n` produces a **final empty line**, and that is correct
+rather than tolerated: an operator who has just pressed Enter is standing on
+a new, empty line and expects Home, End, Up and Backspace to behave as if
+they are on it — because they are.
+
+### `fn locate`
+
+Clamped to the end of the text, so a caret index left over from a longer
+draft answers the last line rather than panicking. That is the same choice
+[`super::caret::backspace`] makes for the same reason: a draft is edited
+from several places in a frame and an index can legitimately be one step
+behind the string it addresses.
+
+### `fn offset_of`
+
+The inverse of [`locate`], and the reason the two exist as a pair: a
+vertical move is *"read the column here, write the same column there"*, and
+a second derivation of either half is how a caret comes to land one
+character out on lines containing a wide glyph.
+
+Clamping the column to the target line's length is what makes Up and Down
+behave the way every editor does when the line above is shorter: the caret
+goes to its end rather than past it.
+
+### `fn up`
+
+`None` rather than "stay put", so the caller can tell *"the caret moved
+nowhere"* from *"there is nothing above"* — the distinction
+[`super::blocks::step`] had to add a whole second trace line for, and the
+one that decides whether a key event has been consumed.
+
+### `fn start_of_line`
+
+The LINE's start, not the draft's, which is the whole difference this
+module makes to that key. On a one-line draft the two are the same answer,
+so the behaviour the operator already had is unchanged by construction.
+
+### `fn is_multi_line`
+
+The predicate the key handler branches on, named rather than spelled
+`text.contains('\n')` at four call sites. One statement of *"multi-line"*
+means the four keys cannot come to disagree about when they are in it — the
+same argument `canvas::tool::space_held` makes about a predicate with two
+claimants, which cost this shell its space bar for two days.

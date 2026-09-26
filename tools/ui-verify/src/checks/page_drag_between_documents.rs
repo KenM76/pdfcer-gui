@@ -41,18 +41,6 @@ const TOOK_REFUSED: &str = "page-move-take-refused";
 const TOOK: &str = "page-move-took";
 
 /// **The same gesture, with and without Shift.**
-///
-/// One implementation and two registrations rather than two files, because the
-/// only thing that differs is a key held during the drag and two assertions at
-/// the end — and a copied file would drift on the twenty-odd things that are
-/// the same.
-///
-/// Both are registered, and the copy one is not redundant. The failure this
-/// pair is really shaped to catch is a build where the modifier is read at the
-/// **press** instead of the release, or read from the wrong field, or ignored:
-/// such a build makes one of the two behave like the other, and only running
-/// both can see it. A single check would pass on a build that always copied, or
-/// always moved.
 pub struct PageDraggedBetweenDocuments {
     /// Whether Shift is held for the whole gesture.
     take: bool,

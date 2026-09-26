@@ -38,10 +38,6 @@ use crate::viewer;
 
 /// This frame's geometry and its already-solved one-shots, gathered so the
 /// decision below reads as a ranked list rather than as an argument list.
-///
-/// A struct rather than nine parameters because the ranking is what a reader
-/// comes here for, and nine positional arguments at the call site would be the
-/// thing they had to read first. Every field is `Copy` and small.
 pub(super) struct Frame {
     /// Whether the `f64` position tier owns the view this frame.
     pub deep: bool,
@@ -73,33 +69,9 @@ pub(super) struct Frame {
 }
 
 /// **The canvas frame the open-seed arm places a freshly opened view on.**
-///
-/// `OpenDoc::canvas_frames` counts the canvas frames this document has had and
-/// is incremented at the end of [`super::viewpos::position`], *after* this
-/// chain has run — so during the chain it reads as the zero-based index of the
-/// frame being decided. The seed fires on index `1`, the **second** frame; see
-/// the open-seed arm for the four bisecting runs that argued against index `0`.
-///
 pub(super) const SEED_FRAME: u8 = 1;
 
 /// **Which arm of the ranked chain won this frame, and what it produced.**
-///
-/// # Why the winner is returned and not merely the number
-///
-///
-/// That cost a full session of diagnosis. A regression placed a freshly
-/// opened multi-page document off the bottom-right corner, the published
-/// offset was `[0.0 0.0]`, and **three different arms of this chain can
-/// produce exactly `(0.0, 0.0)`** — the deep-tier arm returns it as a literal,
-/// [`geometry::strip_offset`]'s lower clamp produces it from any sufficiently
-/// negative page-local solve, and a strip-space page scroll to the very top of
-/// the content produces it honestly. With only the number in hand, those are
-/// indistinguishable, and so is a fourth case: no arm firing at all. Naming
-/// the winner collapses four hypotheses into one measurement.
-///
-/// The name is a short stable token, never a sentence, because its readers are
-/// a `grep` in a trace file and a `ui-verify` assertion rather than a person
-/// reading prose.
 pub(super) struct Decision {
     /// The offset the winning arm produced, or `None` when no arm claimed the
     /// frame and egui's own scrolling is left alone.
@@ -141,10 +113,6 @@ impl Decision {
 
 /// **The offset this frame's `ScrollArea` should be forced to**, or
 /// [`Decision::NONE`] to leave it wherever the operator left it.
-///
-/// See the module header for the ranking. The body below is that table in
-/// code, in the same order, and the comments on each arm are the ones that
-/// were written when each source was added.
 pub(super) fn decide(
     ui: &egui::Ui,
     doc: &mut OpenDoc,

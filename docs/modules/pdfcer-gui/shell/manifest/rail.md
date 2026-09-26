@@ -124,3 +124,10 @@ other test in this file green and would silently make the strip answer
 The folded set is asserted too: the toggle must be **behind the
 chevron**, not gone. A row that is neither drawn nor folded is the
 unreachable-control defect this whole surface was built against.
+
+### `fn groups`
+
+Consumed by [`super::build`] through `Shell::with_rail`, so this list is
+**manifest data**: it merges, it validates, it serializes, and an operator
+overlay can reorder it. `SHELL_FRAMEWORK.md`'s reason, in one line — *"a
+rail that only `pdfcer-gui` knows about breaks it quietly."*

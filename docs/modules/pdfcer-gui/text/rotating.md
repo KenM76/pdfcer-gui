@@ -53,3 +53,79 @@ two things here and excludes several that look like candidates.
 a stamp, a dimension and a dashed box around it; they cannot see a `/Rect`,
 an `/IT /LineDimension` or an appearance stream. A refusal phrased in the
 file format's vocabulary is a refusal that reads as an internal error.
+
+## Item notes
+
+### `enum RotateRefusal`
+
+# Five variants, and the founding rule they answer
+
+> A REFUSAL MUST BE A SENTENCE, NEVER A SILENCE.
+
+This project's founding defect shape is a grip that is dragged, released,
+and does nothing with no explanation — `DEFECTS.md` D4a, and the eight
+resize grips lived in exactly that state for the whole life of this shell.
+A ninth handle shipped without this enum would have reproduced it on its
+first day.
+
+# Why a `Copy` enum rather than the engine's own `Display`
+
+[`crate::text::status::TextStyleRefusal`]'s reason, adopted unchanged: a
+`format!` of an `EditError` would route **diagnostic prose into the UI**,
+which `tools/gates/check-ui-strings.sh`' exclusion 3 names in as many words.
+An enum keeps `crate::app::status::decline::Declined` `Copy` and keeps every
+operator-visible word in this file, under **R1**.
+
+# Two of the five are unreachable today, and they are kept
+
+[`Self::WrongVerb`] and [`Self::NoDimensionRecord`] describe **routing
+failures**, and this shell routes: `canvas::rotating` matches on
+`AnnotKind` and sends a markup to `rotate_annotation` and a ce dimension to
+`rotate_dimension`, and a widget is never an annotation selection at all.
+If either sentence ever appears, the routing has broken.
+
+⇒ **That is the argument for keeping them, not against.** A routing bug
+with a sentence is a bug report; a routing bug without one is a handle that
+does nothing, which is the exact defect the handle was built to close and
+the one this canvas has now produced four times. The sentences are written
+for an operator, not for a maintainer — they say what to do next — but their
+*existence* is a tripwire.
+
+### `fn line`
+
+Remedy first wherever there is one, for [`crate::text::resizing`]'s
+stated reason: the operator is looking at something that did not turn,
+and the useful half is *what to do now*.
+
+### `fn axis_lock_relaxed`
+
+The engine commissioned this sentence by name, and its argument is the
+whole reason the disclosure exists rather than the relaxation being silent:
+
+> A `Linear` dimension locked to horizontal or vertical cannot stay locked
+> through a rotation. We relax it to *aligned* and report
+> `constraint_relaxed: true`. **Say so: an operator whose dimension silently
+> stopped being axis-locked will find out later and blame something else.**
+
+There were three options and two are wrong, which is worth carrying here
+because the sentence has to sound like a *choice* rather than a failure:
+**refusing** makes rotation impossible for the most common constrained
+dimensions, which is most of a CAD drawing; **keeping** the constraint
+leaves the drawn line and its own stated constraint disagreeing, which is
+worse than either alone and invisible until something regenerates from the
+constraint. Relaxing preserves exactly what is on the page.
+
+**It says the measurement did not change**, in the same breath, and that
+clause is doing real work. An operator told *"the constraint was relaxed"*
+and nothing else will reasonably wonder whether the number moved too. It
+cannot: a rotation preserves every distance, so the value is identical by
+construction. Saying so here is the one place that fact belongs — a separate
+disclosure asserting the number is unchanged would fire on every rotation
+and invite a reader to look for a change that cannot exist.
+
+# Vocabulary
+
+"Straight across or straight up" rather than *horizontal/vertical
+constraint*, and "follows the two points you picked" rather than *aligned*.
+The operator set that lock by clicking a control; they did not name an
+`AxisConstraint`.

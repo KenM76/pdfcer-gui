@@ -21,35 +21,14 @@ use crate::panels::PanelsState;
 use crate::text::panels::attachments as t;
 
 /// Putting a file into the document — the writing half of this panel.
-///
-/// Its header carries the two rules it obeys rather than rediscovers: a control
-/// that must always be reachable cannot be placed after an unbounded
-/// `ScrollArea`, and the picker opens in the apply phase because a native
-/// dialog must not open inside a layout pass.
 pub mod attach;
 
 /// The region the first row's Save button publishes.
-///
-/// **The FIRST row's**, not every row's. `crate::diag`'s region names are a
-/// flat namespace keyed by string, so publishing one name from twenty rows
-/// would emit twenty rectangles under one key and leave a driven check clicking
-/// whichever won the race. The Comments panel reached the same conclusion and
-/// carries the same `published` flag; see [`rows`].
 pub const REGION_SAVE: &str = "attachments.save"; // ui-text-exempt: trace region name, never displayed
 /// The region the first row's Remove button publishes. See [`REGION_SAVE`].
 pub const REGION_REMOVE: &str = "attachments.remove"; // ui-text-exempt: trace region name, never displayed
 
 /// The panel's state between frames.
-///
-/// One field, and it is the operator's own typing rather than a cache of the
-/// document — which is the line `crate::panels`' header draws for what may live
-/// here versus what may live behind interior mutability on `OpenDoc`.
-///
-/// Reset with the document by `PanelsState::forget_document`, and that
-/// matters here for `docprops::InfoDrafts`' reason rather than for
-/// tidiness: a half-typed description carried into a second file would be
-/// written into **that** file's `/Desc` by the next attach, describing one
-/// operator's spreadsheet with another document's note.
 #[derive(Default)]
 pub struct AttachmentsUi {
     /// What has been typed into the optional description field.
@@ -71,25 +50,6 @@ impl std::fmt::Debug for AttachmentsUi {
 }
 
 /// Draw the Attachments panel.
-///
-/// # The order of the four blocks is load-bearing, and only one of them is
-/// obvious
-///
-/// 1. **The count**, so the answer to *"does this document carry anything?"* is
-///    the first thing read.
-/// 2. **The listing's own caveats, ABOVE the list.** Three panels in this crate
-///    share the rule and `crate::text::panels`' header states it: *"A caveat
-///    below a list arrives after the operator has already drawn a
-///    conclusion."* An operator who scrolls a short list and stops has decided
-///    the document holds two files; the sentence saying pdfcer stopped reading
-///    early has to reach them before that.
-/// 3. **The attach row**, above the list — see [`attach`]'s header for the
-///    driven-run defect that makes this a rule rather than a preference.
-/// 4. **The list**, last, inside the only `ScrollArea` on the panel.
-///
-/// An empty document is **not** an early return. That is the state an operator
-/// most wants to attach the first file in, and returning before the attach row
-/// is what made the Bookmarks panel read-only-looking for its whole life.
 pub fn body(ui: &mut Ui, doc: &OpenDoc, state: &mut PanelsState, actions: &mut Vec<Action>) {
     let (listed, notes) = {
         let view = doc.session.view();

@@ -14,29 +14,13 @@ use egui_shell::layout::{LayoutDocument, LoadReport};
 use pdfcer_core::settings::{self, StoreKind};
 
 /// The layout file's name, inside the settings directory.
-///
-/// `.ron` because that is what `egui-shell` serializes a
-/// [`LayoutDocument`] as, and because an operator may open it: RON keeps
-/// real enum names, comments and trailing commas, which a layout file
-/// benefits from for the same reason the shell manifest does.
 pub const LAYOUT_FILE: &str = "layout.ron"; // ui-text-exempt: a file name, never displayed as copy
 
 /// How long the layout must stop changing before it is written.
-///
-/// A splitter drag reports a change on every frame of the gesture, so this
-/// is what turns one gesture into one write. It is short enough that
-/// letting go of a splitter and pulling the power cord a second later
-/// still keeps the arrangement, and long enough that a two-second drag
-/// costs one write rather than a hundred and twenty.
 pub const SAVE_SETTLE: Duration = Duration::from_millis(750);
 
 /// The longest a change may be deferred, however continuously the operator
 /// keeps changing things.
-///
-/// Without a ceiling, [`SAVE_SETTLE`] is re-armed by every change and a
-/// slow, continuous rearrangement can starve the write indefinitely — the
-/// exact failure the "not only at exit" requirement exists to prevent,
-/// reintroduced by the mechanism that was supposed to prevent it.
 pub const SAVE_MAX_DEFER: Duration = Duration::from_secs(5);
 
 /// When a change is waiting to be written.
@@ -57,10 +41,6 @@ impl Pending {
 
 /// The dock layout's home on disk: where it is, what it says, and what the
 /// load could not carry across.
-///
-/// Held by the application for the whole session. Cheap to construct once
-/// and never again — [`Self::load`] performs the writability probe and one
-/// file read, and nothing after that touches the filesystem except a save.
 #[derive(Debug)]
 pub struct LayoutStore {
     /// Where the file is, or `None` when no writable location exists.
@@ -111,18 +91,6 @@ impl Default for LayoutStore {
 
 impl LayoutStore {
     /// Load the layout from the directory `pdfcer-core` puts settings in.
-    ///
-    /// **Never fails.** A missing file, an unreadable one, broken syntax
-    /// or a newer schema all yield `fallback` with a reason recorded in
-    /// [`Self::report`]; a panel `catalog` does not recognise loses its tab
-    /// and nothing else. See the module header.
-    ///
-    /// `fallback` is the arrangement a fresh profile starts with — for
-    /// pdfcer, [`crate::app::modes::layout_for_build`] of the mode the
-    /// application opens in. `catalog` must be the **real** panel registry:
-    /// passing [`egui_shell::dock::AnyPanel`] would disable the check that
-    /// turns a mount for a compiled-out capability into a disclosed skip
-    /// rather than an empty compartment.
     #[must_use]
     pub fn load(fallback: &DockLayout, catalog: &dyn PanelCatalog) -> Self {
         let store = settings::resolve_store();
@@ -131,12 +99,6 @@ impl LayoutStore {
     }
 
     /// Load from an explicit directory.
-    ///
-    /// The twin of `pdfcer_core::settings::store_in`, and it exists for the
-    /// same two reasons: tests, and a future `--user-data-dir` override.
-    /// It reports [`StoreKind::Portable`] because an explicitly named
-    /// directory is portable by definition — it travels with whatever the
-    /// operator pointed at.
     #[must_use]
     pub fn load_in(dir: &Path, fallback: &DockLayout, catalog: &dyn PanelCatalog) -> Self {
         Self::at(
@@ -209,10 +171,6 @@ impl LayoutStore {
     }
 
     /// The path [`Self::load`] resolves, without loading anything.
-    ///
-    /// Exists so the location convention is assertable: it is derived from
-    /// the same `pdfcer_core::settings::resolve_store()` call that decides
-    /// where `settings.txt` goes, so the two cannot drift.
     #[must_use]
     pub fn default_path() -> Option<PathBuf> {
         settings::resolve_store()
@@ -227,34 +185,18 @@ impl LayoutStore {
     }
 
     /// Whether a save can be attempted at all.
-    ///
-    /// `false` means no writable location was found — a state in which
-    /// everything else works. A status surface may want to say so **once**,
-    /// on the first change the operator makes, rather than at start-up:
-    /// nobody cares that their layout cannot be saved until they have
-    /// arranged something.
     #[must_use]
     pub fn can_save(&self) -> bool {
         self.path.is_some()
     }
 
     /// What the load could not carry across.
-    ///
-    /// Returned rather than rendered: the shell has no business deciding
-    /// how the application words a note to its operator, and a surface that
-    /// wants to offer "remove this stale entry" needs the structured skip
-    /// rather than a sentence containing it. Every [`egui_shell::layout::LayoutSkip`]
-    /// also implements `Display` for the diagnostic case.
     #[must_use]
     pub fn report(&self) -> &LoadReport {
         &self.report
     }
 
     /// Whether the load lost anything an operator would want to hear about.
-    ///
-    /// Forwards to `LoadReport::is_noteworthy`, which excludes "there was
-    /// no file" — a first run is not a failure. Deliberately a forward
-    /// rather than a re-implementation: one definition of "worth saying".
     #[must_use]
     pub fn is_noteworthy(&self) -> bool {
         self.report.is_noteworthy()
@@ -268,12 +210,6 @@ impl LayoutStore {
 
     /// The document, mutably — how a workspace is saved, renamed or
     /// deleted.
-    ///
-    /// **Arms a write.** Handing out `&mut` means this module cannot see
-    /// what was changed, so it assumes something was; a caller that takes
-    /// the borrow and changes nothing costs one file write. That is the
-    /// right way round: a missed write loses an operator's arrangement, and
-    /// a spurious one costs a few kilobytes.
     pub fn document_mut(&mut self) -> &mut LayoutDocument {
         self.arm(Instant::now());
         &mut self.document
@@ -286,26 +222,12 @@ impl LayoutStore {
     }
 
     /// The mode in force when this file was last written, if any.
-    ///
-    /// `None` covers three real cases and the caller must treat them alike —
-    /// see [`egui_shell::layout::LayoutDocument::active_mode`]. So must an id
-    /// this build's manifest no longer declares, which is why the caller checks
-    /// `Modes::is_known` rather than trusting what it reads here.
     #[must_use]
     pub fn active_mode(&self) -> Option<&str> {
         self.document.active_mode.as_deref()
     }
 
     /// Record which mode is in force, arming a write if it actually changed.
-    ///
-    /// [`Self::record_active`]'s twin, and the equality check is there for the
-    /// same reason: `Modes::on_mode_changed` may be driven from the ribbon's
-    /// state every frame, so re-recording the mode already recorded must cost
-    /// nothing. Without the check, every frame would arm the debounce and the
-    /// ceiling in [`SAVE_MAX_DEFER`] would turn an idle application into one
-    /// that writes its layout file every five seconds forever.
-    ///
-    /// Returns whether anything changed.
     pub fn record_active_mode(&mut self, mode_id: &str) -> bool {
         if self.document.active_mode.as_deref() == Some(mode_id) {
             return false;
@@ -316,33 +238,11 @@ impl LayoutStore {
     }
 
     /// Record the live arrangement, arming a write if it actually moved.
-    ///
-    /// Called when the dock reports
-    /// [`egui_shell::dock::DockFrameReport::layout_changed`]. The equality
-    /// check is what keeps a caller honest: a frame that reports a change
-    /// which nets out to nothing — a splitter dragged one way and back
-    /// within the frame, a menu that closed without acting — does not cost
-    /// a write.
-    ///
-    /// Returns whether anything changed.
     pub fn record_active(&mut self, layout: &DockLayout) -> bool {
         self.record_active_at(layout, Instant::now())
     }
 
     /// [`Self::record_active`], against a supplied clock.
-    ///
-    /// The debounce is a **schedule**, and a schedule is only assertable
-    /// against a clock the test controls: the alternative is a suite that
-    /// sleeps, which is slow, flaky, and still cannot reach
-    /// [`SAVE_MAX_DEFER`] without taking five real seconds. Both halves of
-    /// the schedule therefore take their instant from the caller — this and
-    /// [`Self::tick`] — and a caller that mixes the wall clock into one and
-    /// a synthetic instant into the other gets nonsense, which is exactly
-    /// why they are spelled differently.
-    ///
-    /// Public rather than test-only because a harness driving the
-    /// application frame by frame is a real second caller, and a
-    /// `#[cfg(test)]` seam is one such harness cannot use.
     pub fn record_active_at(&mut self, layout: &DockLayout, now: Instant) -> bool {
         if self.document.active == *layout {
             return false;
@@ -373,26 +273,12 @@ impl LayoutStore {
     }
 
     /// When the outstanding change will be written, if there is one.
-    ///
-    /// The schedule, exposed rather than inferred: a diagnostic surface can
-    /// say *"unsaved, writing in 0.4 s"* and a test can assert the deadline
-    /// itself instead of guessing at it from the outside.
     #[must_use]
     pub fn due_at(&self) -> Option<Instant> {
         self.pending.map(Pending::due)
     }
 
     /// Write if the debounce has expired; otherwise say how long is left.
-    ///
-    /// Call once per frame with `Instant::now()`. A `Some(remaining)`
-    /// answer is a request for another frame at about that time —
-    /// `ctx.request_repaint_after(remaining)` — because nothing else will
-    /// wake `egui` on an idle window and the change would otherwise sit
-    /// unwritten until the operator moved the mouse. `None` means there is
-    /// nothing outstanding.
-    ///
-    /// Takes `now` rather than reading the clock so the schedule is
-    /// testable without sleeping.
     pub fn tick(&mut self, now: Instant) -> Option<Duration> {
         let pending = self.pending?;
         let due = pending.due();
@@ -404,10 +290,6 @@ impl LayoutStore {
     }
 
     /// Write immediately, if anything is outstanding.
-    ///
-    /// For an exit path, which must not lose the last change to a debounce
-    /// that had not yet expired. Returns whether a write was attempted;
-    /// [`Self::save_error`] says whether it succeeded.
     pub fn flush(&mut self) -> bool {
         if self.pending.is_none() {
             return false;
@@ -450,11 +332,6 @@ impl LayoutStore {
     }
 
     /// Why the last write failed, if it did.
-    ///
-    /// A real `Result` on the way in, because a failed save is something
-    /// the operator must be told about — they are about to close an
-    /// application believing their arrangement is safe. Cleared by the next
-    /// successful write.
     #[must_use]
     pub fn save_error(&self) -> Option<&str> {
         self.save_error.as_deref()

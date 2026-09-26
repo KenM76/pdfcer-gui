@@ -7,19 +7,9 @@ use crate::coords::PageGeometry;
 use crate::trace::Trace;
 
 /// The census line the canvas publishes for every **selectable** widget.
-///
-/// `form-target`, not `form-box`: the second lists what a click can FILL,
-/// which excludes drop-downs, push buttons and any widget with no appearance.
-/// `form_field`'s own constant carries the longer version of this note.
 pub const TARGET_LINE: &str = "form-target";
 
 /// One `form-target` line, parsed back into a canvas-space rectangle.
-///
-/// The application's numbers, never the fixture's: `canvas/forms.rs` publishes
-/// this census precisely so a harness can aim at where the *program* says the
-/// box is. A check that recomputed the rect from the PDF would be asserting
-/// that two independent derivations agree, and would report a disagreement as
-/// a hit-test failure.
 #[derive(Clone, Debug)]
 pub struct WidgetBox {
     /// Zero-based page index.
@@ -43,11 +33,6 @@ impl WidgetBox {
     }
 
     /// Is `p` inside this box, grown by `margin` on every side?
-    ///
-    /// The margin is what makes "outside" mean *comfortably* outside. A
-    /// point one unit clear of an edge survives this test and can still land
-    /// inside the widget once the canvas mapping has rounded it to a whole
-    /// screen pixel, which at a fit zoom of 0.29 is three canvas units wide.
     #[must_use]
     pub fn contains(&self, p: (f64, f64), margin: f64) -> bool {
         p.0 >= self.min.0 - margin
@@ -93,27 +78,6 @@ const CLEARANCE: f64 = 8.0;
 const INSET: f64 = 0.04;
 
 /// **A point on the same sheet that is blank paper**, in canvas space.
-///
-/// `from` is the canvas-space centre of the widget the caller is about to
-/// select; the returned point is somewhere near it that no widget occupies, so
-/// that a primary click there CLEARS the form selection (`select_click`'s
-/// table, quoted in the module header) and the caller's next click on `from`
-/// is a genuine change.
-///
-/// ## The search, and why it is a ring rather than one offset
-///
-/// Candidates are tried in order: **above** the widget first, then below, then
-/// left, then right, each at two distances. Above is first because it is the
-/// direction with the most room in the two shapes this is used on — a field
-/// placed at 55 % of the page height, and one placed at the sweep's
-/// `--doc-point` near the bottom edge of a landscape CAD sheet. Each candidate
-/// must clear every box in `boxes` on page `page` by [`CLEARANCE`] and sit at
-/// least [`INSET`] of the sheet in from every edge.
-///
-/// Returns `None` when every candidate is occupied or off-sheet — which the
-/// caller must report as a SKIP, not a failure: a document whose widgets crowd
-/// out every candidate is a fixture problem, and the gesture under test was
-/// never attempted.
 #[must_use]
 pub fn blank_canvas_point(
     boxes: &[WidgetBox],

@@ -306,3 +306,20 @@ an off-canvas report. Nothing is marked on the canvas.
 It names **zooming out** as the remedy, because that is the one that
 works, is instant, and is the opposite of what an operator chasing a colour
 difference would try.
+
+### `fn disclosure_line`
+
+The shared body of [`fill_disclosure`] and [`edit_disclosure`], written once
+for the reason `crate::app::actions::vector_edit` is written once: the
+R128 defence here is not one rule but four small ones that only work
+together — a **bounded** sub-region so a long sentence cannot push the
+navigation controls off the right of the bar, a **fixed** row height,
+`truncate()` rather than wrapping (wrapping is how a one-row bar becomes a
+two-row bar, which is the feedback loop with extra steps), and the full text
+on **hover** so eliding defers rather than loses. Two hand-written copies
+would be two chances to omit one of the four, and the omission would show up
+as a page that re-fits itself at the moment an operator finishes a gesture.
+
+`region` is published so `ui-verify` can assert the sentence is on screen
+and legible rather than merely constructed — which, for a disclosure, is the
+whole of the requirement.

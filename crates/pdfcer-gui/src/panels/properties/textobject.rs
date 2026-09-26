@@ -63,15 +63,6 @@ pub(crate) enum Colour {
 }
 
 /// The object's text, read once and re-read only when it can have changed.
-///
-/// The stamp is three parts and every one is load-bearing, exactly as
-/// [`super::text::TextStyleDraft`]'s is:
-///
-/// * **page** — an object index means nothing without one;
-/// * **object** — the operator clicked a different shape;
-/// * **edit epoch** — the same shape, restyled, and the swatch must show the
-///   new colour. Without this term the panel would show the pre-edit colour for
-///   ever after the first change.
 #[derive(Default)]
 pub struct TextObjectDraft {
     /// `(page, object, edit epoch)` the reading below was taken at.
@@ -142,16 +133,6 @@ fn classify(found: &ObjectText) -> Colour {
 }
 
 /// Draw the section, or nothing.
-///
-/// Returns whether it drew, so [`super::body_sections`] knows the panel has
-/// said something about the selection.
-///
-/// # The four gates, in the order they are cheapest
-///
-/// An annotation is not page text; more than one object has no single subject
-/// (the rule [`super::geometry::section`] states and this shares); an object
-/// that is not text has nothing to say here; and only then is the expensive
-/// reading attempted. Every one of the first three is free.
 pub fn section(
     ui: &mut Ui,
     doc: &OpenDoc,

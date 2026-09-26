@@ -69,3 +69,9 @@ which `allowed` deliberately reads as *let it through* — so the guard
 that matters here is the one in `advance`'s caller, and this pins the
 one thing `stops` itself can promise: it never invents a target index
 that is not in this provider's own lists.
+
+### `fn advance`
+
+Does nothing on the overwhelming majority of frames: `tabnav::take` answers
+`None` unless the hook claimed a press, which it does only while a canvas
+surface holds egui's keyboard focus.

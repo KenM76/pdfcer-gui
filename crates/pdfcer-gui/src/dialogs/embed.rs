@@ -123,11 +123,6 @@ pub struct EmbedDialog {
 
 impl EmbedDialog {
     /// Build the plan and open, or answer `None` when there is nothing to show.
-    ///
-    /// `None` for a document with no missing fonts is deliberate: opening a
-    /// window to say *"there is nothing to do"* is a modal an operator has to
-    /// dismiss to learn they did not need it. The disclosure line says it
-    /// instead — see [`open_for`]'s caller.
     #[must_use]
     pub fn open(doc: &OpenDoc, folders: &[std::path::PathBuf]) -> Option<Self> {
         // ONE SCAN, TWO REQUESTS, and `true` here is not the decision.

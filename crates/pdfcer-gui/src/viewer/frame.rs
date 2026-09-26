@@ -12,10 +12,6 @@ use std::time::Instant;
 use super::ZoomAnchor;
 
 /// **What one canvas observed about itself on the previous frame.**
-///
-/// Written by [`crate::canvas`] at the end of a frame, read by it at the
-/// start of the next. Nothing outside the canvas and the render settle logic
-/// has a reason to write any of it.
 #[derive(Debug, Clone, Copy)]
 pub struct ViewFrame {
     /// The zoom seen at the end of the previous frame, used to detect that
@@ -78,10 +74,6 @@ pub struct ViewFrame {
 impl ViewFrame {
     /// **A canvas that has not yet presented a frame**, seeded with the zoom
     /// the view opens at.
-    ///
-    /// `observed_zoom` takes that zoom rather than a sentinel so the first
-    /// frame does not read as "the zoom just changed" and schedule a
-    /// rasterization the opening render is already doing.
     pub fn new(zoom: f32) -> Self {
         Self {
             observed_zoom: zoom,

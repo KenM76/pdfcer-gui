@@ -53,22 +53,6 @@ impl Drop for ButtonHeld {
 impl Driver {
     /// **Drag from `from` to `to`, and run `observe` at the destination with
     /// the button still down.**
-    ///
-    /// The gesture is [`Self::drag`]'s, up to the point where that verb
-    /// releases: raise, confirm both endpoints are uncovered, press at `from`,
-    /// walk to `to`. Then the pointer rests at `to` for [`OBSERVE_DWELL`],
-    /// nudged one pixel between ticks so a build that repaints only on input
-    /// still runs the frame being photographed, and `observe` is called.
-    ///
-    /// The release happens after `observe` returns — or unwinds — and it
-    /// happens **at the destination**, so the drag completes normally and the
-    /// caller may go on to assert that the move landed. A check written this
-    /// way measures the affordance and the outcome in one gesture, which is
-    /// the only way to know the two describe the same drag.
-    ///
-    /// # Errors
-    ///
-    /// As [`Self::drag`], plus whatever `observe` returns.
     pub fn drag_observed<T>(
         &self,
         from: ScreenPoint,

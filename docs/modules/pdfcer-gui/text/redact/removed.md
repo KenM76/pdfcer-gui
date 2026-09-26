@@ -39,3 +39,67 @@ disclosed rather than smoothed over:
   entry, so the entry count is a floor on the region count and never equals
   it by construction. An operator counting entries to check his marks would
   be counting the wrong thing, so [`removed_text_lead`] says so.
+
+## Item notes
+
+### `const MAX_ENTRIES`
+
+A backstop, not the normal case: a whole-page mark on a dense sheet can
+concatenate a page per region, and a list nobody can reach the end of is a
+list that gets skimmed — which is the failure this whole surface exists to
+prevent. When it bites, [`removed_text_more`] says by how much; the cut is
+never silent.
+
+### `const MAX_CHARS`
+
+Sized for the case this block was built for and one order above it: a welded
+bill-of-materials row on the operator's own drawing runs to a few dozen
+characters, so a row is never truncated and only a region that swallowed a
+paragraph is. Counted in `char`s and cut on a `char` boundary, because a
+byte cut inside a multi-byte sequence panics and the strings arriving here
+are whatever the document's fonts decoded to.
+
+### `fn removed_text_heading`
+
+It says *text* rather than *words*: what a region removed is a run of
+character codes, which may be a part-number fragment or a single digit, and
+calling that a word invites the reader to expect prose and to distrust the
+list when he does not get it.
+
+### `fn removed_text_lead`
+
+Both of `redacted_text`'s shape properties in one sentence, because an
+operator who reads the list without them draws two wrong conclusions from
+it: that each line is one piece of text on the page, and that the number of
+lines is the number of marks.
+
+### `fn removed_text_entry`
+
+Quoted so leading and trailing spaces are visible: a region that took
+`" 4 "` and one that took `"4"` are different marks, and on a table row the
+difference is whether the cell's padding went with it.
+
+### `fn removed_text_none`
+
+Not an omission and not an error: a mark over a drawing, a photograph or a
+blank margin removes no character codes, and this is the sentence that keeps
+*"pdfcer found nothing"* distinguishable from *"pdfcer did not look"*. R9's
+rule — an unavailable capability renders nothing — does not apply, because
+the answer here is a finding rather than an absent feature.
+
+### `fn removed_text_undecodable`
+
+The honest half of the block and the reason it is not an `if !is_empty()`.
+Saying nothing here would let a silent empty list read as *"nothing textual
+is in the marks"*, which is the opposite of what is true, and an inference
+the operator cannot see owes a report under R8b whether or not the report is
+comfortable.
+
+**It names no cause, deliberately.** At least two produce this state and
+the shell cannot tell them apart from the report: a font whose encoding
+cannot be inverted decodes to nothing, and a removed region whose mark the
+engine could not attribute is skipped when `redacted_text` is assembled. The
+sentence therefore states the observation — codes counted, no text reported
+— and stops. A sentence naming one of two indistinguishable causes is a
+guess wearing a report's voice, and this is the surface where that costs the
+most.

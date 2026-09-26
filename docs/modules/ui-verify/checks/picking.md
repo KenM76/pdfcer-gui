@@ -89,3 +89,49 @@ misled.
 It is keyed on the OTHER module's constant, not on a literal
 restatement of it here, so it measures the copy rather than measuring
 this test's own opinion.
+
+### `const PICK_PROMOTED`
+
+Matched on the **field**, never on the raw line, so a future addition to the
+message cannot silently stop a check recognising a promotion. A promotion
+that went unrecognised would be counted as a resolved pick carrying no
+`committed=` field, and every downstream assertion would then fail against a
+working build — which is precisely how this module came to exist.
+
+### `const MAX_CLICKS_PER_PICK`
+
+**Two**, and the number is `canvas::snap::snap_commit_clicks`'s own: a
+routine candidate commits on the first click, a derived one on the second.
+
+A third would mean `MeasureState::resolve_click` is not converging. Its
+promote branch compares `derived_promoted != Some(point)`, so a click at the
+same screen pixel that promoted *again* would mean the point the snap query
+resolved to **moved between two clicks of a stationary pointer** — a real
+finding, and not a reason to keep clicking.
+
+### `fn resolve_pick`
+
+`label` names the pick in every message — `"A"`, `"B"`, `"2 of 3"`;
+whatever the caller's reader will recognise. `settle` is the caller's own
+frame budget, because the window a calibration pick drives back into is not
+the window a dimension placement draws into, and neither should inherit the
+other's timing.
+
+# What it asserts, and why each one is here
+
+* **Exactly one [`PICK_EVENT`] line per click.** `canvas::measure::click`
+  traces exactly once per click it is handed — on the promote path and on
+  the resolve path alike. Zero means the click never became a pick, which
+  has three readings worth separating: the gesture machine swallowed it
+  (`canvas::gesture::press_kind` returns `click: caps.author_measure`, so a
+  mode that had lost the `measure` tab from its tab list would swallow every
+  one), the click landed outside the page rect, or `canvas::interact`'s
+  `Click` arm no longer branches on `active_tool.measure_kind()`. More than
+  one means the click was delivered twice.
+* **At most [`MAX_CLICKS_PER_PICK`] clicks.** See that constant.
+
+# Errors
+
+Only for harness faults — the trace could not be read, or the click could
+not be delivered. A *finding* comes back as `Ok(Err(PickFailure))`, because
+a finding is the check's verdict to phrase and a fault is not.

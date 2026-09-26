@@ -60,3 +60,48 @@ as it is for every other edit — which is what the operator asked for in
 `OPERATOR_REQUESTS.md` O125. `crate::app::save::write_copy` is what routes
 them through the removal. The two *write-now* destinations still live in
 `crate::dialogs::redact` and still reach no arm in this file.
+
+## Item notes
+
+### `enum RedactAction`
+
+A sub-enum here rather than five variants on [`super::Action`], under
+**R2**, and the deciding term is not the line count. It is
+[`super::pages::PageAction`]'s own argument verbatim: *"the destination
+already existed. This module has held the five verbs' bodies since page
+operations shipped, and `apply` already routed every one of them here. The
+enum was the only half still living elsewhere."* The markup family is
+larger and would be the bigger saving, and its bodies are split across
+`canvas::markup` and `actions::annots`, so moving it is two destinations
+rather than one.
+
+## The property that puts all five in an `Action` at all: they are
+REVERSIBLE
+
+Marking authors a `/Redact` annotation and removes nothing — the engine
+records each as an undoable command, so every one goes through `vector_edit`
+exactly as a markup does and `Ctrl+Z` takes it back. [`Self::Pending`] arms
+the removal at the next save and can be called off.
+
+**The verb that actually destroys content is not in this family and is not
+an `Action`.** Routing the one operation that cannot be undone through a
+queue that replays would be the defect, not the tidiness.
+
+## The variants carry no `Redaction` stutter
+
+`RedactAction::BySearch`, not `MarkRedactionsBySearch`: the family name is
+carried by the enum, so repeating it in every variant would spell it twice
+at every call site.
+
+### `fn apply`
+
+Takes the whole `Action` rather than destructured fields, so the match here
+is the same shape as the one it was lifted out of and a reader comparing
+them sees one dispatch rather than two spellings of it.
+
+# Panics
+
+Never. The `_` arm is unreachable — `super::apply` routes only the four
+redaction variants here — and it is spelled rather than `unreachable!()`
+because a future fifth variant sent here by mistake should do nothing
+visible rather than end the process an operator is mid-edit in.

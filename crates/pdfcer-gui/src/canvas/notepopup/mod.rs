@@ -33,20 +33,6 @@ use self::model::NoteView;
 
 /// **The region an open pop-up publishes**, for the first open pop-up and only
 /// that one.
-///
-/// # Why the first, when several can be open at once
-///
-/// A region name is a key, and publishing one name from four windows would
-/// leave a driven check clicking whichever happened to be drawn last — a
-/// coordinate nobody chose, which moves when an unrelated note is opened. The
-/// first is the only deterministic choice available without inventing a
-/// per-annotation naming scheme that nothing would consume.
-///
-/// It is published with `ui_rect_visible` against the **canvas viewport**,
-/// not with `ui_rect`, because a rect on its own proves *layout* and not
-/// *visibility*. A pop-up constrained off the edge of the canvas lays out
-/// perfectly and is invisible, so a check asserting only the rect would pass
-/// on a window no operator could reach.
 pub const REGION_POPUP: &str = "notepopup.window"; // ui-text-exempt: trace region name, never displayed
 /// The region an open pop-up's close control publishes.
 pub const REGION_CLOSE: &str = "notepopup.close"; // ui-text-exempt: trace region name, never displayed
@@ -60,12 +46,6 @@ pub const REGION_SAVE: &str = "notepopup.save"; // ui-text-exempt: trace region 
 pub const REGION_DELETE: &str = "notepopup.delete"; // ui-text-exempt: trace region name, never displayed
 /// The region the *Open by default* control publishes — the one control in
 /// this window whose effect is **in the file** and invisible on screen.
-///
-/// Which is exactly why it needs a region of its own rather than being
-/// counted among the others: nothing about the pop-up changes when it is
-/// pressed, so a driven check has no visual oracle for it at all and the rect
-/// plus the `set-annotation-open-applied` trace line are the whole of what a
-/// harness can see.
 pub const REGION_OPEN_DEFAULT: &str = "notepopup.open_default"; // ui-text-exempt: trace region name, never displayed
 
 /// The pop-up's width, in **screen points**.
@@ -78,25 +58,6 @@ const POPUP_MAX_BODY: f32 = 220.0;
 const POPUP_GAP: f32 = 8.0;
 
 /// **Draw every open pop-up, and the hover tooltip.**
-///
-/// The one entry point, called from `crate::app::surfaces` immediately after
-/// `crate::canvas::show` returns. See the module header for why it is there
-/// and not in the paint pass.
-///
-/// # Why it takes `caps`
-///
-/// To decide whether the editor is drawn at all — see the module header's mode
-/// table. It is the frame's sampled value, passed in rather than read here,
-/// for the reason every canvas sample is: two readings within one frame can
-/// disagree, and a disagreement here would be an editor that appeared for one
-/// frame.
-///
-/// # Why it takes `&OpenDoc` and `&mut Vec<Action>`
-///
-/// Actions, not mutations — the discipline every panel and every canvas
-/// gesture in this crate follows. This function reads the document and pushes
-/// intent; it never touches the session. The shared reference makes that a
-/// compile-time fact rather than a convention.
 pub fn show(ctx: &egui::Context, doc: &OpenDoc, caps: Capabilities, actions: &mut Vec<Action>) {
     // This frame's map and viewport, published by `canvas::present` before it
     // called `interact`. `None` on a frame with no canvas at all — no
@@ -514,33 +475,6 @@ fn tooltip(
 const TOOLTIP_OFFSET: f32 = 16.0;
 
 /// **A click landed on the canvas — open or close a note's pop-up.**
-///
-/// Called from `crate::canvas::clicking` beside the annotation hit test, and
-/// **it consumes nothing**: the click goes on to mean exactly what it meant
-/// before this module existed. That is the property that made a single click
-/// the right gesture in all three modes — see the module header.
-///
-/// Returns the note it toggled, for the trace at the call site.
-///
-/// # Why the hit test is repeated here rather than reusing `annot_hit`
-///
-/// Because `crate::canvas::clicking`'s `annot_hit` is gated on
-/// `caps.author_markup` — Review and Edit only — and **that gate is the
-/// operator's complaint**. In Read mode it is `None` on every click, so a rung
-/// that consumed it would do nothing in the one mode this whole feature exists
-/// for.
-///
-/// The two hit tests also exclude different things, deliberately, and
-/// [`model::notes_on`]'s header states the difference and why each is right
-/// for its surface. This one is a *reading* question and the other is a
-/// *restyling* question.
-///
-/// # Cost
-///
-/// One `/Annots` walk per click — not per frame — bounded by
-/// `pdfcer_core::annot::MAX_ANNOTS_PER_PAGE` and decomposing nothing. It is
-/// the same walk the annotation hit test beside it already pays, so a click on
-/// the 129,758-object benchmark sheet costs what it did.
 pub fn clicked_on(
     ctx: &egui::Context,
     doc: &OpenDoc,

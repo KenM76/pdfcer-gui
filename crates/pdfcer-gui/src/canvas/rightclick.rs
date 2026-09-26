@@ -19,12 +19,6 @@ use crate::canvas::selection::SelectionState;
 use crate::shell::menus::MenuHost;
 
 /// Everything one frame's secondary-click decision needs.
-///
-/// A struct rather than eleven arguments, and it crossed clippy's threshold
-/// on its way here — the same conversion `Press`, `Keys`, `Frame`, `Drag` and
-/// `Swept` all made in this crate. What it buys beyond satisfying a lint is
-/// that each field can carry its own note, which eleven positional arguments
-/// cannot.
 pub struct Click<'a> {
     /// The canvas response the popup attaches to.
     pub response: &'a egui::Response,
@@ -83,11 +77,6 @@ impl Click<'_> {
 }
 
 /// Decide the menu, attach it, and report the commands the operator chose.
-///
-/// **Nothing is executed here.** The returned tokens are *intent*; the
-/// application dispatches them at the one choke point a ribbon click and a
-/// keyboard chord also reach, which is what makes it impossible for a menu item
-/// and a button that share a command to do different things.
 #[must_use]
 pub fn attach(click: Click<'_>) -> Vec<HandlerToken> {
     // The object hit test is `menus`' own — see `menus::right_clicked_object`

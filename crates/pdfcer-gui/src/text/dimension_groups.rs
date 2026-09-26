@@ -15,33 +15,18 @@
 use pdfcer_core::dimension::{ArrowForm, DimStandard, ScaleState, Unit};
 
 /// The heading over the rename and delete controls.
-///
-/// Not "Name". The section carries **both** verbs that act on the group's
-/// identity, and a fold captioned "Name" would read as a text field — which is
-/// exactly what it looks like when folded shut, with Delete hidden inside it.
-/// A caption is a promise about what is under it and this one has to name the
-/// destructive half.
 #[must_use]
 pub const fn identity_heading() -> &'static str {
     "Rename or remove this group"
 }
 
 /// The heading over the scale phrase, the Set-scale button and the unit combo.
-///
-/// One caption for both, because `set_group_scale` takes the scale and the
-/// number format together: an operator changing the unit is calling the verb
-/// that also carries the scale, and two folds would hide that from them.
 #[must_use]
 pub const fn scale_heading() -> &'static str {
     "Scale and unit"
 }
 
 /// The paragraph under the title.
-///
-/// Says what a group *carries*, because that is the fact every control below
-/// depends on and the one nothing else on screen states. The second sentence is
-/// the reach-backwards disclosure in its shortest honest form; the per-control
-/// counts make it concrete.
 #[must_use]
 pub const fn intro() -> &'static str {
     "A group is a set of the dimensions you draw that share one scale, one \
@@ -62,12 +47,6 @@ pub const fn draw_into_heading() -> &'static str {
 }
 
 /// The hint under the draw-into column.
-///
-/// This is the control the operator asked for by name and could not find —
-/// *"I still can't get to edit dimension groups when I click on it."* The
-/// authoring group was fixed at the default for the whole life of the build
-/// before this window, so a second group could be created from nowhere and
-/// joined by nothing.
 #[must_use]
 pub const fn draw_into_hint() -> &'static str {
     "The next dimension you draw joins the group ticked here. Dimensions \
@@ -85,12 +64,6 @@ pub fn member_count(n: usize) -> String {
 }
 
 /// A group's scale, as a phrase.
-///
-/// The `NeverSet` arm renders `pdfcer_core::dimension::NO_SCALE_DISCLOSURE`
-/// **verbatim**. That string lives in the engine precisely so shells cannot
-/// invent their own wording for it, and
-/// `docs/core-api/03-capabilities.md` §1.5 obligation 2 requires it be shown
-/// rather than paraphrased. Do not "improve" it here.
 #[must_use]
 pub fn scale_phrase(scale: ScaleState, unit: Unit) -> String {
     match scale {
@@ -140,12 +113,6 @@ pub const fn standard_heading() -> &'static str {
 }
 
 /// What the drafting standard governs.
-///
-/// Deliberately does **not** claim conformance. `pdfcer-core`'s own
-/// `DimStandard` doc applies the same discipline — pdfcer draws *ISO-style*,
-/// never *ISO 129-1 conformant*, because the standard is paywalled and was not
-/// obtained. A window that promised conformance would be making a claim the
-/// engine explicitly declines to make.
 #[must_use]
 pub const fn standard_hint() -> &'static str {
     "Sets the terminator form, whether the dimension line breaks for its text, \
@@ -167,11 +134,6 @@ pub const fn layer_visible() -> &'static str {
 
 /// What hiding a layer actually does, said once so nobody assumes it is a view
 /// toggle.
-///
-/// It is not `View ▸ Layers`. That one changes what *this window* draws and
-/// nothing a save would write; this one writes the group's default visibility
-/// into the document's optional-content configuration, so it is what the file
-/// tells the next reader — in any viewer that honours optional content.
 #[must_use]
 pub const fn layer_hint() -> &'static str {
     "This is saved into the document, not just applied here: a reader opening \
@@ -180,10 +142,6 @@ pub const fn layer_hint() -> &'static str {
 }
 
 /// Why the default group has no layer switch.
-///
-/// R9: an affordance that cannot be honoured is not drawn. The engine refuses
-/// to hide the default group, so the control is absent and this sentence says
-/// why — an omission with no explanation reads as a bug.
 #[must_use]
 pub const fn layer_default_group() -> &'static str {
     "The default group cannot be hidden — it is where a dimension goes when no \
@@ -224,10 +182,6 @@ pub const fn new_button() -> &'static str {
 }
 
 /// Why the Add button is unavailable with an empty name.
-///
-/// Greying with an explanation, not silence: this is the *temporarily*
-/// unavailable case R9 reserves greying for, and the reason is one the operator
-/// can act on in one keystroke.
 #[must_use]
 pub const fn new_needs_a_name() -> &'static str {
     "Type a name first. A group with no name is a row in this list that nothing \
@@ -259,10 +213,6 @@ pub const fn delete_button() -> &'static str {
 }
 
 /// Why the default group has no Delete.
-///
-/// R9 again, and the same shape as the layer switch above it: the engine
-/// refuses, so the control is **absent** rather than offered and declined. The
-/// sentence is what stops the omission reading as a bug.
 #[must_use]
 pub const fn delete_default_group() -> &'static str {
     "The default group cannot be removed — it is where a dimension goes when no \
@@ -270,16 +220,6 @@ pub const fn delete_default_group() -> &'static str {
 }
 
 /// **A populated group is not deleted; the operator is asked.**
-///
-/// The engine refuses by default and puts the **count** in the refusal, and its
-/// reply says why in a line worth keeping: *"this group is not empty"* and
-/// *"this group holds forty dimensions"* prompt different decisions, and only a
-/// surface can put that question in front of an operator.
-///
-/// So this is the question, with the number in it. The two answers below are
-/// the only two the engine offers — and the third an operator might expect,
-/// *delete the dimensions too*, is deliberately absent from the engine and is
-/// therefore absent here. Saying so is [`delete_cannot_remove_members`]'s job.
 #[must_use]
 pub fn delete_needs_a_home(members: usize) -> String {
     if members == 1 {
@@ -301,14 +241,6 @@ pub const fn delete_move_to() -> &'static str {
 }
 
 /// What moving members to another group DOES to them, said before it happens.
-///
-/// Not a warning — a fact, and the one an operator would otherwise discover by
-/// reading a drawing. A ce dimension's label is derived from its group's scale,
-/// unit and number format, so members arriving in a different group are
-/// **re-measured** and print different numbers. The engine's own measured
-/// example: `70.6 mm` in a 1:1 millimetre group becomes `2.00 m` in a metre
-/// group at 1 cm per point. Same geometry, different group, correctly different
-/// label.
 #[must_use]
 pub const fn delete_move_changes_labels() -> &'static str {
     "They will be re-measured against the group they move to, so the numbers \
@@ -316,13 +248,6 @@ pub const fn delete_move_changes_labels() -> &'static str {
 }
 
 /// Why *delete the dimensions as well* is not on offer.
-///
-/// Stated because it is the answer an operator may be reaching for, and its
-/// absence is a decision on the engine's side with a reason worth passing on
-/// rather than a gap. Deleting a ce dimension also removes its annotation from
-/// the page, so doing it inside the group verb would be a second implementation
-/// of that removal — and looping the existing one would make undoing a group
-/// deletion take one press per member and be able to stop halfway.
 #[must_use]
 pub const fn delete_cannot_remove_members() -> &'static str {
     "pdfcer will not delete the dimensions with the group. Select them on the \
@@ -336,16 +261,6 @@ pub const fn unit_label() -> &'static str {
 }
 
 /// Why changing a group's unit is a bigger act than it looks.
-///
-/// It goes through `set_group_scale`, because a unit lives inside the group's
-/// `NumberFormat` and there is no narrower verb — the engine's reply called
-/// that *"a discoverability problem, not a missing capability"*, and this
-/// sentence is the discoverability half.
-///
-/// The consequence is real and is the reason the sentence exists: every member
-/// is re-formatted and its appearance regenerated, exactly as a recalibration
-/// does. An operator who expects a unit change to be cosmetic is expecting the
-/// wrong thing.
 #[must_use]
 pub const fn unit_hint() -> &'static str {
     "Changing the unit re-writes every dimension in the group, the same as \
@@ -366,13 +281,6 @@ pub const fn appearance_hint() -> &'static str {
 }
 
 /// The label of the checkbox that turns a group default on.
-///
-/// **The checkbox IS the `Option`.** `GroupStyle`'s seven fields are each an
-/// `Option`: clear means *this group has not spoken, use the factory value*,
-/// ticked means *this group says this*. Rendering the tick as "set by this
-/// group" rather than as "enabled" is what keeps the two states legible —
-/// "enabled" would imply the property is off when unticked, and it is not, it
-/// is inherited.
 #[must_use]
 pub const fn set_by_group() -> &'static str {
     "Set by this group"
@@ -385,16 +293,6 @@ pub fn using_factory(value: &str) -> String {
 }
 
 /// **How many members a group edit will visibly move.**
-///
-/// `moving` is computed by the caller from `StyleProvenance::follows_group()`
-/// over the group's members, **before** the edit. It is deliberately not the
-/// engine's returned count — see this module's header for why that number
-/// answers a different question.
-///
-/// `total` is stated beside it so the difference is visible rather than
-/// implied: *"3 of 40"* tells an operator that thirty-seven members have their
-/// own value, which is the fact that stops the change being a surprise in
-/// either direction.
 #[must_use]
 pub fn members_that_will_move(moving: usize, total: usize) -> String {
     match (moving, total) {
@@ -410,14 +308,6 @@ pub fn members_that_will_move(moving: usize, total: usize) -> String {
 }
 
 /// The names of the seven group-level appearance properties.
-///
-/// **One vocabulary, shared with the CLI.** `pdfcer group-style` uses
-/// `text-height`, `line-width`, `arrow-length`, `arrow-form`, `color`,
-/// `tolerance` and `tolerance-places` for these same seven, and the ui-spec's
-/// Amendment B §B.5 names the hazard of diverging: *"a panel using different
-/// words for the same nine things is how an operator ends up unable to script
-/// what he just clicked."* These are the same words, capitalised for a label
-/// and spelled in the operator's own English where the flag is hyphenated.
 #[must_use]
 pub const fn prop_text_height() -> &'static str {
     "Text height"
@@ -449,21 +339,12 @@ pub const fn prop_color() -> &'static str {
 
 /// A point-valued property's inherited value, for the caption that stands in
 /// for the editor when the group has not set it.
-///
-/// In the catalog rather than formatted at the call site because it is
-/// operator-visible text — and because the unit belongs beside the number in
-/// exactly one place. `10` and `10 pt` are different claims.
 #[must_use]
 pub fn points_value(v: f64) -> String {
     format!("{v}{}", points_suffix())
 }
 
 /// The unit suffix on the three point-valued properties.
-///
-/// Points, and said so, because a text height of `10` is meaningless without it
-/// and because these are the one place in this window where the number is in
-/// **paper** units rather than in the group's own unit — a dimension's text is
-/// 10 pt tall whatever the drawing is scaled at.
 #[must_use]
 pub const fn points_suffix() -> &'static str {
     " pt"

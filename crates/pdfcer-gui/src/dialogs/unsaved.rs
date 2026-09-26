@@ -14,24 +14,9 @@ pub const REGION_BODY: &str = "dialog:unsaved"; // ui-text-exempt: trace region 
 pub const REGION_SAVE: &str = "unsaved.save_copy"; // ui-text-exempt: trace region name, never displayed
 
 /// The **Save all** control, published only while it is drawn.
-///
-/// Its absence in the trace is the assertion a driven check wants: this
-/// button is drawn if and only if more than one document is dirty, so a run
-/// with one dirty document must show no such region at all.
 pub const REGION_SAVE_ALL: &str = "unsaved.save_all"; // ui-text-exempt: trace region name, never displayed
 
 /// The **Save-over-the-open-file** button's region — `OPERATOR_REQUESTS.md` O65.
-///
-/// Its own name rather than sharing [`REGION_SAVE`], because the two buttons
-/// mean different things to the file on disk and a check that could not tell
-/// them apart would pass on a build that had silently swapped one for the
-/// other.
-///
-/// Published only on the frames the button is DRAWN, which is what lets a
-/// driven check tell "this document has never been saved, so there is no Save
-/// button" from "the Save button is off screen" — two states with the same
-/// screenshot, and a distinction this project has twice had to make the hard
-/// way.
 pub const REGION_SAVE_IN_PLACE: &str = "unsaved.save_in_place"; // ui-text-exempt: trace region name, never displayed
 /// The region the discard button publishes.
 pub const REGION_DISCARD: &str = "unsaved.discard"; // ui-text-exempt: trace region name, never displayed
@@ -39,25 +24,6 @@ pub const REGION_DISCARD: &str = "unsaved.discard"; // ui-text-exempt: trace reg
 pub const REGION_CANCEL: &str = "unsaved.cancel"; // ui-text-exempt: trace region name, never displayed
 
 /// What the operator asked for, held until they have answered the question.
-///
-/// # Four variants because four `Action`s replace the open document
-///
-/// Not "close", which is how this would have been built if it had been written
-/// from the tooltip that exposed the defect. `crate::app::lifecycle`'s
-/// `save_pending` doc already names the set — *"an Open, a New or a Close must
-/// not proceed while a save is pending"* — and `Action::NewSized` joined it on
-/// 2026-08-14 **by reusing that predicate rather than growing a second rule**.
-///
-/// This type is that same set, and building it as a set rather than as a
-/// `bool` on the close path is the whole reason Open cannot quietly keep the
-/// defect: an operator who has marked up a drawing and then opens the next one
-/// has destroyed exactly as much work as one who pressed Close, and is
-/// **more** likely to do it, because opening the next file is what you do all
-/// day.
-///
-/// It carries owned data (`Action::Open`'s `PathBuf`) rather than borrowing,
-/// because it outlives the frame that raised it by construction — that is what
-/// makes it a *pending* intent.
 #[derive(Debug, Clone, PartialEq)]
 pub enum PendingIntent {
     /// `Action::Close`, and `Action::CloseDocument` once it has brought the
@@ -123,12 +89,6 @@ pub enum PendingIntent {
 
 impl PendingIntent {
     /// The sentence naming what is about to happen to the open document.
-    ///
-    /// Four sentences rather than one, and it is worth the four: *"Close this
-    /// document?"* and *"Open another document?"* are different questions, and
-    /// an operator who pressed Open and is asked about closing will read the
-    /// prompt as being about a control they did not touch — which is how a
-    /// confirmation gets dismissed unread.
     #[must_use]
     pub fn question(&self) -> &'static str {
         match self {
@@ -143,13 +103,6 @@ impl PendingIntent {
     }
 
     /// The label of the button that goes ahead without saving.
-    ///
-    /// Named for **what it does**, never *"Yes"* or *"OK"*. The standing
-    /// rule this project inherited: a destructive button says the destructive
-    /// thing, so that an operator who reads only the buttons — which is most
-    /// operators, most of the time — cannot get it wrong. *"Close without
-    /// saving"* is unambiguous in a way that *"Yes"* under a question nobody
-    /// finished reading is not.
     #[must_use]
     pub fn discard_label(&self) -> &'static str {
         match self {
@@ -196,10 +149,6 @@ pub enum Outcome {
 }
 
 /// The dialog's live state.
-///
-/// Existence is the "open" state, as everywhere in [`super`]. It holds the
-/// intent and one drained answer; there is nothing else to remember, because a
-/// confirmation has no draft.
 pub struct UnsavedDialog {
     /// What the operator asked for before this question interrupted them.
     intent: PendingIntent,
@@ -245,11 +194,6 @@ impl UnsavedDialog {
 
     /// The same, told how many documents are dirty — the quit cycle's
     /// constructor.
-    ///
-    /// A second constructor rather than a parameter on the first, so that
-    /// every existing caller keeps saying what it means (*"this is about one
-    /// document"*) without being edited, and the one caller that is part of a
-    /// cycle says so. `new` delegates, so there is one initialiser.
     #[must_use]
     pub fn for_cycle(
         intent: PendingIntent,
@@ -268,38 +212,18 @@ impl UnsavedDialog {
     }
 
     /// **Did the operator answer Cancel?**
-    ///
-    /// Read by the quit cycle. A Cancel parks no outcome — it closes the
-    /// window and nothing else — so `take_outcome` reports nothing, which is
-    /// indistinguishable from *"they have not answered yet"*. The cycle needs
-    /// the difference, or it re-asks on the next frame forever.
     #[must_use]
     pub const fn was_cancelled(&self) -> bool {
         self.cancelled
     }
 
     /// Take the operator's answer, if they have given one.
-    ///
-    /// Returns the intent **with** the outcome, because the owner needs both
-    /// and holding them apart would let a future edit drain one without the
-    /// other — which would resume the wrong intent, silently, on a path whose
-    /// failure mode is destroying a document.
     pub fn take_outcome(&mut self) -> Option<(PendingIntent, Outcome)> {
         let outcome = self.outcome.take()?;
         Some((self.intent.clone(), outcome))
     }
 
     /// **Whether an answer is parked here and has not been drained.**
-    ///
-    /// The twin of `signature::SignatureDialog::answered`, and it is here
-    /// because this window carries the **same latent defect** its neighbour
-    /// shipped: [`Self::show`] answers `false` on the very frame a button is
-    /// pressed, and its owner used to read that `false` as *"this dialog is
-    /// finished"* and drop the dialog — with the outcome still inside it —
-    /// before `PdfcerApp::resume_after_unsaved` could take it out.
-    ///
-    ///
-    /// See [`crate::dialogs::retire`] for the rule both now obey.
     #[must_use]
     pub const fn answered(&self) -> bool {
         self.outcome.is_some()
@@ -426,12 +350,6 @@ impl UnsavedDialog {
 }
 
 /// Ask about `intent` if the document in `status` has unsaved edits.
-///
-/// Returns `None` when there is nothing to ask about — no document, or a
-/// document nobody has edited — and the caller then proceeds as before. That
-/// shape is deliberate: the guard is **one call at the top of an arm** whose
-/// `None` answer is the unchanged path, so adding it to a fifth
-/// document-replacing action later is one line rather than a new rule.
 #[must_use]
 pub fn ask_for_cycle(
     status: &Status,

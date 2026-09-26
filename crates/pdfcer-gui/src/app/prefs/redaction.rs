@@ -67,12 +67,6 @@ pub enum RedactionReach {
 
 impl RedactionReach {
     /// Every value, in the order the settings window lists them.
-    ///
-    /// Narrowest to widest, so the control reads top to bottom as *less … more*
-    /// destruction. Unlike `super::quality::RenderQuality::ALL` the default is
-    /// **not** in the middle by accident: it is second because that is where
-    /// the scale puts it, and a reader who stops at the first two has met the
-    /// only two values that never edit a page they did not look at.
     pub const ALL: &'static [Self] = &[Self::MarkedOnly, Self::HiddenCarriers, Self::WholeDocument];
 
     /// The token written to the preferences file.
@@ -98,11 +92,6 @@ impl RedactionReach {
     }
 
     /// **The one place this choice becomes the engine's.**
-    ///
-    /// Exhaustive on this crate's enum by construction, which is the whole
-    /// reason the shell carries one: the engine's `ResidualScope` is
-    /// `#[non_exhaustive]` and a match on it would compile with a catch-all
-    /// that silently swallowed a fourth value.
     #[must_use]
     pub const fn scope(self) -> ResidualScope {
         // Spelled out rather than aliased. `tools/gates/check-engine-api-drift.sh`

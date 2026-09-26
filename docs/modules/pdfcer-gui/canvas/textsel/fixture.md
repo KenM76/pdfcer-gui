@@ -56,3 +56,15 @@ Without this, the generator and the file could drift and every test that
 reads the fixture would still pass — while the header above, which
 explains the fixture in terms of the generator's `LINES` table, would
 have quietly become fiction.
+
+### `fn path`
+
+`../../fixtures/` — **this** repository's, not the engine's. The engine's
+tree is read-only for this project, and a fixture written into it would be
+the one kind of write the governing rule forbids outright.
+
+### `fn bytes`
+
+Split out from [`regenerate`] so the assertion that the fixture on disk
+still matches the generator is a byte comparison rather than a rerun — see
+[`tests::the_committed_fixture_matches_its_generator`].

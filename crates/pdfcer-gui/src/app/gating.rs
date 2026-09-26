@@ -12,63 +12,12 @@ use crate::app::state::Status;
 impl PdfcerApp {
     /// **What the mode the operator is in lets the canvas do to the
     /// document.**
-    ///
-    /// One expression, in one place, so that every consumer — the canvas
-    /// gestures, the Delete key, the context menus, the tool arming — reads
-    /// the same answer rather than re-deriving it. Cheap enough to call per
-    /// frame per consumer (a linear scan of at most a handful of modes over a
-    /// handful of tab ids) and `Copy`, so nothing has to cache it and no
-    /// cache can go stale.
-    ///
-    /// The ribbon rather than `self.modes` is asked for the active mode,
-    /// deliberately: the ribbon is where the operator's click lands, and
-    /// `self.modes` catches up with it later in the same frame (see the
-    /// mode-change arm in [`Self::dock_area`]). Reading the laggard would put
-    /// the canvas one frame behind the selector on the frame the mode
-    /// changes — which is precisely the frame a stray click is most likely,
-    /// because the pointer is already down over the chrome.
-    ///
-    /// See `app::modes::capability` for the derivation and for why an
-    /// unrecognised mode gets everything.
     #[must_use]
     pub fn capabilities(&self) -> Capabilities {
         Capabilities::for_mode(self.shell.as_ref(), self.ribbon.mode())
     }
 
     /// **Bring the canvas into line with a mode the operator has just entered.**
-    ///
-    /// Called once, from the mode-change arm in [`Self::dock_area`], *after*
-    /// `Modes::on_mode_changed` has rearranged the panels — so the two halves
-    /// of "what this mode is" land in one frame and in a fixed order.
-    ///
-    /// Three things, and each is a thing that would otherwise **survive** into
-    /// a mode that forbids it. That is the shape of the whole problem: the
-    /// gesture gate in `canvas::gesture::press_kind` stops anything *new* from
-    /// starting, and cannot by itself retire what was already there.
-    ///
-    /// 1. **An armed tool** — see [`crate::canvas::tool::retire_forbidden`],
-    ///    which carries the argument. Its visible symptom is the cursor.
-    /// 2. **The selection.** A selection made in Edit outlives the switch,
-    ///    because it lives on the document and `MODES_AND_PANELS.md` rule 1
-    ///    forbids a mode change from destroying work. A selection is **not
-    ///    work** — nothing about the document changes, the undo stack is
-    ///    untouched, and it is re-made with one click on returning. Leaving it
-    ///    would put eight resize handles and an outline on a page in Read:
-    ///    controls the operator can see, aim at, and drag with no effect, which
-    ///    is precisely the *"visible control, silently inert"* failure the mode
-    ///    system exists to avoid. Clearing is what lets the gesture gate refuse
-    ///    a grip **that is not there** rather than one the operator is looking
-    ///    at.
-    /// 3. **A gesture in flight.** Rule 1 again, and this time it is the rule's
-    ///    own wording: *"If a mode change would hide a pending, uncommitted
-    ///    gesture … that gesture is committed or cancelled first."* Cancelled,
-    ///    not committed — the operator asked for a mode, not for the half-drawn
-    ///    rectangle under their pointer, and `GestureOutcome::Cancelled`'s
-    ///    contract is that nothing is written.
-    ///
-    /// Nothing here fires when capability did not change: `retire_forbidden`
-    /// reports `false` for a permitted tool, a `clear` on an empty selection is
-    /// a no-op, and Read → Review leaves an armed Rectangle armed.
     pub(crate) fn on_mode_capabilities_changed(&mut self, ctx: &egui::Context) {
         let caps = self.capabilities();
         // Park it where a dock panel can read it. `crate::panels::tool` has

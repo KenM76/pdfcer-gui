@@ -271,3 +271,67 @@ achieve it. Asserting an exact set rather than a spot check is what
 makes that visible here. See [`super::offers_command`]'s header, and
 [`both_text_copy_commands_are_offered_by_every_mode`] for the property
 that has a test of its own.
+
+### `struct Capabilities`
+
+Three independent facts rather than one ordered level, even though the
+three built-in modes happen to form a ladder. The ladder is a property of
+*that manifest*, not of the type: Review offers markup without content
+editing, so the two are already independent in the shipped product, and a
+customized manifest may offer any combination at all. An ordered
+`enum { Read, Review, Edit }` would have to be re-derived — wrongly —
+from any manifest that did.
+
+Copied freely: three `bool`s, computed once per frame in
+[`crate::app::PdfcerApp`] and passed down by value.
+
+### `const NONE`
+
+Not used as a fallback anywhere. It exists so a test can name the
+expected value rather than spell three fields, and so the Read row of
+the module header's table has a name in code.
+
+### `fn for_mode`
+
+The one place the derivation lives. `shell` is `Option` because
+`PdfcerApp::shell` is: a build whose manifest failed to validate has
+none, and that build gets [`Self::FULL`] along with every other
+unknown case (module header §3).
+
+### `fn authors_anything`
+
+The predicate a surface asks when it wants to know "is this a reading
+stance?" without caring which authoring verb it is about — the canvas
+context menu uses it to decide whether it has anything to offer at
+all.
+
+### `fn content_gesture`
+
+Free function rather than a method because it is the exact predicate the
+gesture machine needs at three call sites and it reads as a sentence
+there: `content_gesture(caps)`. The marquee is the interesting caller —
+a *zoom* band is not a content gesture even though it is the same rubber
+band, so the branch is on the release intent, not on the band.
+
+### `fn publish_edit_content`
+
+# Why a published value rather than a further parameter
+
+`canvas::pressing::grabbable` decides which grips a selection offers, and
+per `OPERATOR_REQUESTS.md` O71 that answer depends on the mode: a content
+selection is reachable in **Read**, where every grip would commit an edit
+the mode forbids. Most of its callers hold no `Capabilities`, so the
+alternative is threading a boolean through call chains that have no other
+interest in it.
+
+This is the same shape `canvas::tool` uses for the armed tool and
+`crate::pagedrag` for the active document, and it carries the same
+obligation: **one writer**. `app::frame` publishes it once per frame before
+any surface draws, so a reader cannot get last frame's answer.
+
+### `fn edit_content_now`
+
+`false` when nothing has been published — a unit test with a bare
+`egui::Context`, or a frame before the publication. That is the safe
+direction: the consequence of a wrong `false` is a selection that offers no
+grips, and of a wrong `true` is eight controls whose drag is refused.

@@ -287,3 +287,101 @@ state that no longer exists — a reply deleted a moment ago would go on
 being counted, which is exactly the failure that makes a properties
 panel untrustworthy. Asserted the same way round: the poison must be
 gone.
+
+### `fn gate`
+
+# The one derivation, because there are two consumers
+
+This function is asked by [`section`], which draws the sentence, and by
+`crate::app::conditions`, which publishes `selection.delete_permitted` and
+thereby decides whether `format.delete` is drawn at all. **They must not ask
+different questions.** A control withheld by one rule while a panel explains
+a different one is the shape the forms audit found in miniature — three
+comments arguing about which query to ask, and no call.
+
+# The order of the three checks, and why it is this order
+
+1. **`locked`** first — §12.5.3 Table 165 bit 8, *the file says the user
+   interface may not change this annotation's properties*. It is a fact about
+   **this annotation** rather than about the document, so it is the most
+   specific answer available and the one that tells the operator the most.
+   It is read off `AnnotTarget::locked`, which
+   `crate::canvas::selection::annot` carries on the target for precisely this
+   reason: *"so a surface can omit the controls it governs rather than offer
+   them and let the engine refuse."*
+2. **`annotation_deletion_refusal`** second — the document-wide gates,
+   `/Encrypt` then the certification permission, in the engine's own order.
+3. Nothing else. There is no third source, and a check invented here would be
+   a second implementation of a rule the engine owns.
+
+⇒ Locked is checked **first even though the engine would refuse a
+certified document anyway**, because the two sentences are not
+interchangeable: an operator told *"this comment is marked as not to be
+changed"* can go and look at that comment, and an operator told *"the
+document is certified"* cannot do anything about one annotation. The more
+actionable fact wins when both are true.
+
+### `fn refuses`
+
+The form `crate::canvas::interact` must use, and the reason is on
+[`refuses_selected`] at length: inside a canvas frame the document's own
+selection has been moved out into a local, so a query that reaches for
+`doc.selection` is asking about an empty one and answers `false` — *"the
+delete is permitted"* — for every document there is.
+
+`doc` is still needed and is still the whole document: `gate`'s second and
+third checks are `EditSession::annotation_deletion_refusal`, which is a fact
+about the **file** (its `/Encrypt`, its `/Perms /DocMDP`) and not about
+anything selected. Only the first check — §12.5.3 Table 165 bit 8 — is
+per-annotation, and it is read off the target the selection carries.
+
+### `enum Refusal`
+
+Two variants rather than one enum with a `Locked` arm folded into
+[`AnnotDeleteRefusal`], because the two come from **different sources and
+have different scopes**: one is a bit on the selected annotation's flags word
+and the other is the engine's verdict on the whole document. Folding them
+would put a per-annotation fact into a type whose every other member is
+derived from an `EditError`, and the mapping function below would have to
+answer for a variant no `EditError` produces.
+
+### `struct DeletionPreview`
+
+See the module header's cost section for why this is memoised rather than
+hover-gated. The stamp is `(annotation id, edit epoch)`; the payload is the
+finished sentence, or `None` for the ordinary case where there is nothing to
+say.
+
+The **sentence** is cached rather than the engine's `AnnotationDeletion`
+record, deliberately. Caching the record would leave the wording to be
+re-derived every frame, which is cheap but pointless, and it would put a
+`pdfcer_core` type in `crate::panels::PanelsState` — a struct whose whole
+purpose is *the operator's own state*. What is stored here is what is drawn.
+
+A **failed** preview caches as `None` too, and that is not a bug being
+papered over. `annotation_deletion_preview` returns `Err` for exactly the
+refusals [`gate`] has already asked about, plus a target that has gone; in
+every one of those cases the section either drew a refusal sentence instead
+or is describing an annotation that no longer exists, and a second sentence
+about a failed preview would be noise on top of an answer already given.
+
+### `fn section`
+
+Returns whether it drew, so [`super::body_sections`] knows the panel is
+already saying something — the same contract its five sibling sections have,
+and for the same reason: *"nothing is selected"* under a section describing
+the thing that is selected would be the panel contradicting itself.
+
+## The three outcomes
+
+| state | drawn |
+|---|---|
+| nothing selected, or a content selection | nothing, and `false` |
+| a gate refuses | the refusal sentence, and `true` |
+| the delete would work and carry collateral | the collateral sentence, and `true` |
+| the delete would work and carry none | nothing, and `false` — the overwhelmingly common case |
+
+The last row is R9 rather than an omission. A line reading *"deleting this
+affects nothing else"* on every selection would be read three times and
+skipped for ever after, which is precisely what makes the row above it
+invisible when it matters.

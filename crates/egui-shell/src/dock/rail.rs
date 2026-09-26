@@ -99,32 +99,13 @@ use super::model::DockSide;
 use super::{Ctx, report};
 
 /// What an application draws into a side's rail.
-///
-/// Called at most once per side per frame, with a [`egui::Ui`] whose
-/// `max_rect` **and clip rectangle** are the strip. The clip is the
-/// load-bearing half, for [`super::banner::BannerHandler`]'s reason: a caller
-/// that draws a wider row than the strip gets it clipped rather than pushing
-/// the panel body sideways, which is the R128 feedback loop this crate is
-/// arranged to make unwritable.
 pub type RailHandler<'a> = dyn FnMut(&mut egui::Ui) + 'a;
 
 /// **Which panels the rail can raise** — the predicate an application supplies
 /// through [`Dock::with_rail_reach`].
-///
-/// R7, in one line: the dock cannot answer this itself. It is handed
-/// opaque [`PanelId`]s and a [`crate::manifest::Rail`] of opaque command ids,
-/// and **the map between them is application knowledge** — an application is
-/// free to name a panel's switch `file.fonts` or `markup.comments`, neither of
-/// which a `view.panel_*` pattern would find. A shell that guessed at that
-/// mapping by string shape would suppress a tab strip over a panel the rail
-/// cannot reach, which is the unreachable-panel defect.
 pub type RailReach<'a> = dyn FnMut(&super::PanelId) -> bool + 'a;
 
 /// **The rail's width, in points. A constant at every rung.**
-///
-/// 52 pt, which is the approved mockup's own value and wide enough for a
-/// 16 pt glyph with a short word under it. See the module header for why this
-/// may not become a function of the content.
 pub const WIDTH_PTS: f32 = 52.0;
 
 /// Height of one entry drawn with its word under it.
@@ -147,28 +128,9 @@ pub const PADDING_PTS: f32 = 12.0;
 
 /// **The sliver reserved in the rail's place when its auto-hide is on** — the
 /// trigger, in [`crate::peek`]'s terms.
-///
-/// Ten points, and the number is chosen against two floors rather than for
-/// looks. [`crate::peek::Peek::MIN_TRIGGER_PTS`] is 8 and is the point below
-/// which `Peek` refuses to hide the surface at all; Windows gives a window's
-/// resize border 8 and VS Code's collapsed sidebar edge about the same. Ten
-/// clears the first with margin and matches the second, and is wide enough to
-/// draw a chevron in so the strip **says** it is there rather than being a
-/// stripe the operator has to discover.
-///
-/// ⚠ **It is reserved whether the rail is revealed or not**, and that is the
-/// whole of the no-reflow guarantee: the panel body beside it is
-/// `side_width − PEEK_WIDTH_PTS` in the hidden state and in the revealed state,
-/// because the revealed strip is painted *over* the panel rather than beside
-/// it. A build that reclaimed the sliver on reveal would resize the panel under
-/// the pointer that revealed it, which is R128 exactly.
 pub const PEEK_WIDTH_PTS: f32 = 10.0;
 
 /// One rung of the fold ladder. Widest first.
-///
-/// Ordered, and the order is the ladder: [`plan`] walks these in sequence and
-/// takes the first that fits. See the module header's table for what each one
-/// gives up and why it is that one.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub enum Rung {
     /// Everything, with captions and words. The resting state.
@@ -410,14 +372,6 @@ pub fn build(rail: &Rail, conditions: &ConditionSet, rung: Rung) -> RailPlan {
 }
 
 /// Walk the ladder and return the widest rung that fits in `height_budget`.
-///
-/// Falls through to [`Rung::Cramped`] when nothing fits, and that plan may be
-/// taller than the budget — deliberately. The rail does not keep shrinking
-/// past the floor; it **scrolls**, which is `RIBBON_SCALING.md` §3.3's third
-/// rung, and the application wraps the rows in a `ScrollArea` to honour it.
-/// The alternative — dropping rows until they fit — is the unreachable-control
-/// defect, on the one surface whose whole promise is that every control is one
-/// click away.
 #[must_use]
 pub fn plan(rail: &Rail, conditions: &ConditionSet, height_budget: f32) -> RailPlan {
     for rung in Rung::LADDER {
@@ -430,12 +384,6 @@ pub fn plan(rail: &Rail, conditions: &ConditionSet, height_budget: f32) -> RailP
 }
 
 /// How wide the rail actually gets, given the side it must share.
-///
-/// Returns `0.0` when reserving the strip would leave the panel body below
-/// [`super::plan::MIN_COLUMN_WIDTH`] — **absent rather than squeezed**, which
-/// is [`super::banner::resolve_height`]'s rule and its reasoning: a strip that
-/// publishes a rectangle beside a panel too narrow to read is a surface that
-/// passes every gate and reaches nobody.
 #[must_use]
 pub fn resolve_width(side_width: f32) -> f32 {
     if !side_width.is_finite() {
@@ -489,29 +437,6 @@ impl<'a> super::Dock<'a> {
 
 /// Reserve and draw the rail for `side`, returning the rectangle the columns
 /// get.
-///
-/// Returns `area` unchanged when there is no rail for this side or the width
-/// resolved to zero, so the no-rail path costs one comparison and changes no
-/// geometry — which is what keeps every existing dock layout test valid.
-///
-/// # The region is published against the SIDE's `Ui`, not the child's
-///
-/// [`report::Reporter::report`]'s own doc states the rule: reporting a region
-/// against a clip derived from itself is *"the tautology `visible == 1.0`
-/// dressed up as a measurement"*. The question asked of
-/// `dock.<side>.toolrail` is *can the operator reach this strip*, and only the
-/// side's clip can answer it.
-///
-/// # Why the region is not called `dock.<side>.rail`
-///
-/// That name is taken, by [`report::rail`], for a **different feature**: the
-/// sliver a *collapsed* side leaves behind as the way back. The mockup's
-/// legend draws the distinction explicitly — *"This one replaces the dock's
-/// arrangement while the dock is open. VS Code's activity bar, not its
-/// collapsed sidebar."* Two surfaces sharing one trace name is how a driven
-/// check reads the wrong one —
-/// `D:/dev/rag/egui/two_trace_lines_sharing_an_event_name_make_a_check_read_the_wrong_one.md`
-/// carries the finding.
 pub(super) fn draw(
     ui: &mut egui::Ui,
     ctx: &mut Ctx<'_>,

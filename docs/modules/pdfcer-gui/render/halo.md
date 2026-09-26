@@ -102,3 +102,117 @@ nothing here authors anything.
 Its own function because `Bounds::EMPTY` is built from infinities on
 purpose — see [`region`]'s case 1 — so "is this box real?" is a question
 this module asks twice and must answer the same way both times.
+
+### `const OVERHANG_TOLERANCE_PTS`
+
+See the module header. One point is about a stroke's half-width on a heavy
+border and about 1/72 inch — far below anything an operator could see, and
+far below anything he would have placed on purpose.
+
+### `fn region`
+
+* `crop` — the page's crop box, in PDF user space.
+* `content` — the drawn content's bounding box in the same space, as
+  `PageObjects::page_bbox` reports it. [`None`] when the page has not been
+  decomposed, which is the ordinary state of a strip neighbour.
+* `raster_scale` — the device scale the whole-page tier would render at.
+
+Returns [`None`] in three distinct situations, and they are three different
+facts about the page rather than three spellings of "no":
+
+1. **nothing is known** — `content` is `None` or empty. Not "there is no
+   off-page content"; *"nobody has looked"*. The caller must not read this
+   as a guarantee.
+2. **nothing hangs over** — the union is the crop box, to within
+   [`OVERHANG_TOLERANCE_PTS`]. The overwhelming majority of pages, and the
+   reason this whole module costs a normal document nothing.
+3. **it would not fit** — see the module header; O24's visible-region tier
+   takes over.
+
+### `fn reach`
+
+O24's visible-region tier asks *"what part of this page can be seen?"* and
+answered it, until this function existed, with `visible.intersect(page)` —
+which is correct as a statement about the **sheet** and wrong as a statement
+about the **page's content**. It is what made an off-page object invisible
+at every zoom above the pixmap ceiling even after [`region`] had covered
+every zoom below it.
+
+* `place` — where the sheet is on screen.
+* `extent` — the page's canvas extent in points, as
+  [`crate::viewer::page_extent_pts`] reports it (rotation already resolved).
+  `place` was laid out from this, so the two scales come from the pair and
+  not from the crop box — a page whose extent rounded is still placed
+  exactly on itself, which is
+  [`crate::render::region::region_on_screen`]'s rule and must stay one rule.
+* `frame` — the page's crop box and `/Rotate`.
+* `content` — the drawn content's bounding box in PDF user space, or
+  [`None`] when nobody has looked.
+
+Returns `place` unchanged whenever there is nothing to add, so the caller
+has no branch and the ordinary page keeps exactly today's behaviour.
+
+## Why this takes the content box and not [`region`]'s answer
+
+[`region`] returns [`None`] above the pixmap ceiling — which is precisely
+when this function matters. Feeding it here would switch the visible-region
+tier's reach off at the one zoom it is the only tier left.
+
+### `fn overhang`
+
+Returns `(x, y)`, each the **larger** of the two sides on that axis and
+never negative. `(0.0, 0.0)` whenever nothing is known or nothing hangs
+over, so a caller has no branch and the ordinary page keeps exactly today's
+behaviour.
+
+* `extent` — the page's canvas extent in points, as
+  [`crate::viewer::page_extent_pts`] reports it (`/Rotate` resolved).
+* `frame` — the page's crop box and `/Rotate`.
+* `content` — the drawn content's bounding box in PDF user space, or
+  [`None`] when nobody has decomposed the page. [`None`] is *"nobody has
+  looked"*, not *"there is nothing out there"*, and the caller must not read
+  the resulting zero as a guarantee — see
+  [`crate::app::cache`]'s `content_bounds_if_known`, which peeks rather than
+  builds precisely so the canvas can run this every frame.
+
+# Why the canvas needs this and [`reach`] would not do
+
+[`reach`] answers *"what rectangle on screen may I paint into"*, and it
+needs the page's **placement** to answer, which is only known **after** the
+scroll area has laid out. The scroll area's own content size has to be
+decided **before** it lays out. Feeding it `reach` would be a frame late and
+would be R128's feedback loop besides — a content size that depends on where
+the content was put.
+
+So this states the same fact one step earlier in the frame, in canvas points
+rather than screen pixels, and the caller multiplies by the zoom. Both
+functions take the box from [`crate::render::region::PageFrame::canvas_box_of`],
+which is the single place `/Rotate` is resolved — O174's rule, and the
+reason neither of them maps corners by hand.
+
+# What it is for, stated as the defect it removes
+
+
+`content_extent` puts **one viewport of slack** on every side of the strip,
+and a viewport is a count of **screen pixels**. So the pasteboard is a fixed
+number of pixels wide at every zoom, and the region of the *drawing* it
+covers shrinks in exact proportion to the zoom. An object 100 pt off the
+left edge of the sheet can be brought to the middle of a 470 px-wide canvas
+only while `235 / zoom ≥ 100` — that is, **only below about 235 %**. Above
+it the operator can see the object, select it and drag it, and cannot zoom
+in on it: every notch walks it back toward the edge of the screen and then
+off it, because the scroll offset has hit a clamp that the anchor solve
+knows nothing about.
+
+The same arithmetic is what made the driven check fail. It panned to a point
+3.6 pt below the bottom of the sheet and zoomed; at 7,683 % the view was
+274 px into a 578 px pasteboard, at 9,384 % it was against the clamp at
+289 px, and the page point under the viewport centre slid 0.48 pt. The zoom
+anchor was solving correctly and [`crate::canvas::geometry::strip_offset`]
+was clamping its answer away.
+
+With the overhang folded into the pasteboard the slack stops being a count
+of pixels and becomes a region of the drawing plus half a screen, so every
+point of the content can be brought to the centre of the viewport at **any**
+zoom. That is [`crate::canvas::geometry::content_extent`]'s rule; this
+function only supplies the number it needs.

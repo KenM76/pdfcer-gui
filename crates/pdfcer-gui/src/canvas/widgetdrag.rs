@@ -34,17 +34,6 @@ pub struct Frame {
 }
 
 /// The selected widget's box, in canvas space, when one is draggable.
-///
-/// It reads the **same** target list `canvas::forms` hit-tests and draws, and
-/// asks it for the selection's own `(field, widget)`. Three surfaces, one
-/// rectangle: what the operator can see, what they can grab, and what moves.
-/// `dimdrag::grab_box` and `annotdrag::grab_box` state the identical rule, and
-/// it exists because a grab box larger than the drawn outline is a press that
-/// works where nothing is shown, and one smaller is an operator missing
-/// something they can see.
-///
-/// The list is cached on `(path, edit_epoch)` by `forms::placed`, so asking
-/// every frame costs a map lookup rather than a form walk.
 #[must_use]
 pub fn grab_box(ctx: &egui::Context, doc: &OpenDoc, map: &PageMapping) -> Option<Rect> {
     let selected = doc.selected_field.as_ref()?;
@@ -56,14 +45,6 @@ pub fn grab_box(ctx: &egui::Context, doc: &OpenDoc, map: &PageMapping) -> Option
 }
 
 /// Drive one frame of the drag.
-///
-/// Returns the ghost outline to draw, in **canvas space**, or `None` when there
-/// is nothing to draw — which covers both *"nothing draggable is selected"* and
-/// *"this is the frame that commits"*.
-/// No `PageMapping`, unlike [`grab_box`]. A grab box has to be projected to
-/// SCREEN space to be hit-tested against a pointer; a ghost is drawn in CANVAS
-/// space, which is what the target list already holds. Taking the mapping here
-/// would be a parameter used to convert a value into the space it started in.
 pub fn drag(
     frame: &Frame,
     ctx: &egui::Context,

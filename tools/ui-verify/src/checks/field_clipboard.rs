@@ -98,30 +98,6 @@ impl Order {
 pub struct AFormFieldCanBeCopiedAndPastedBothWays;
 
 /// The same three chords under the **Acrobat** paste order — O58.
-///
-/// Ken, 2026-08-29: *"let's make it an option to have it swap to match Acrobat
-/// or work the way we have it now."*
-///
-/// # Why this is a second check and not an extra phase of the first
-///
-/// Because the setting is applied **once, at start-up**, when the shell's
-/// keymap is assembled. Testing it needs a second process, not a second
-/// gesture — and a check that relaunched mid-run would be asserting two
-/// different programs under one name.
-///
-/// # What it would catch that the first check cannot
-///
-/// A setting that saves, reloads, reads back correctly in the pane, and
-/// **changes nothing when the key is pressed**. That is the silently-inert
-/// control this project has shipped before, and it is invisible to every unit
-/// test: `PasteChords` round-trips through its file token, `apply_paste_chords`
-/// rewrites the map, and the keystroke can still reach the old command if any
-/// link between them is missed.
-///
-/// The assertion is deliberately the MIRROR of the first check's, not a copy
-/// of it: under this order `Ctrl+V` must add a **box without a name** and
-/// `Ctrl+Shift+V` must add a **name**. A build that ignored the setting would
-/// pass the first check and fail this one on its first assertion.
 pub struct TheAcrobatPasteOrderSwapsWhichChordDoesWhich;
 
 impl Check for TheAcrobatPasteOrderSwapsWhichChordDoesWhich {

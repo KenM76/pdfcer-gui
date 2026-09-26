@@ -40,3 +40,25 @@ So this asserts the pairing rather than the prose — every variant is
 raised somewhere in `canvas::resizing`, which is the one file allowed to
 raise them. It cannot check that the *reason* is still true, and does
 not pretend to; what it catches is a variant whose call site has gone.
+
+### `fn line_weight_disclosure`
+
+# Why this is disclosed rather than fixed, and rather than ignored
+
+A path scaled by moving its nodes keeps its original `w`, so a box dragged
+to twice the size has the same stroke width it started with.
+
+That is **usually right and never chosen**, and both halves matter. On a CAD
+drawing a line weight is a *drafting standard* — 0.25 mm is 0.25 mm whatever
+size the detail is drawn at — so scaling it would be wrong far more often
+than keeping it, and every drafting package this operator uses keeps it.
+
+But it is a decision pdfcer made and he did not, and he cannot see that it
+was made: the shape looks right, and only a measurement would show that its
+outline is now proportionally thinner than it was. Rule 4's surviving half —
+*an inference the operator cannot see still owes an off-canvas report* — so
+it is said once, off the canvas, in the same channel every other edit
+disclosure uses.
+
+**Two sentences and no more**, because it shares the status row with
+everything else and R128 forbids that row growing.

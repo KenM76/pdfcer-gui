@@ -390,3 +390,138 @@ Asserted over `ALL` rather than for one kind, because the plausible
 failure is per-kind: a fourth entry added to the enum, given a subtype and
 a command, and reaching a `mark` that quietly special-cases the three that
 were there first.
+
+### `enum TextMarkKind`
+
+Separate from [`super::MarkupKind`] because these are not drag-shaped and
+arm no tool — see the module header §3. The order is the order the Markup
+ribbon's Text markup group lists them, after Highlight.
+
+### `const ALL`
+
+Exists for the reason [`super::MarkupKind::ALL`] does and is the same
+shape deliberately: it lets the registry side map a command id to a kind
+and back through one pair of total functions, so a fourth kind added here
+fails a both-directions test rather than arriving with no command — or
+with a command that authors nothing.
+
+The mapping itself lives in `shell::commands::mapping`, not here:
+command ids are `shell/`'s vocabulary and `shell/` is a single-writer
+resource.
+
+### `enum Refusal`
+
+Reported rather than silently absorbed, and with enough detail to act on,
+for the reason [`super::Refusal`] carries: *"nothing happened"* has several
+causes with opposite responses. A separate enum from that one because the
+causes genuinely do not overlap — a drag can be degenerate and a selection
+cannot; a selection can be stale and a drag cannot — and one enum covering
+both would have every reader asking which half applied.
+
+### `fn spec`
+
+Pure and unit-tested, for the reason [`super::spec`] is: the dispatch arm is
+a routing line, and *which subtype*, *which colour* and *which quads* are
+rules that deserve a test each.
+
+Note what it does **not** do: normalise, order, merge or clip the quads. They
+arrive from [`TextSelection::marks`] already grouped one per line of the
+selection, in content order, in PDF user space — see `canvas::textsel` §5.1.
+Touching them here would be the second geometry that section is about.
+
+# The `pen` is a parameter, not a read
+
+The exact signature change [`super::spec`] took when the Style group landed,
+and for the same reason: this is a pure function whose job is to say what a
+given request authors, and a colour it fetched for itself would make it a
+function of application state that a test cannot vary. It takes the pen the
+[`Action`] carried, and [`TextMarkKind::rgb`] decides which of the pen's two
+colours a text kind is entitled to.
+
+### `fn mark`
+
+Everything the command means is here: which selection is eligible, what a
+stale one does, and what travels to the apply arm. `app::dispatch` calls this
+and either pushes the `Ok` or traces the `Err`; it decides nothing, which is
+the choke-point rule applied to a verb whose operand is not the pointer.
+
+# Why the quads travel rather than the selection
+
+An [`Action`] is *a complete statement of intent, resolvable after the frame
+that raised it* — the same property [`Action::CommitMarkup`] and
+`VectorAction::DeleteSelection.into()` are built on. Carrying the selection instead would
+mean the apply arm re-reading `doc.text_selection`, which by then may have
+been cleared by the same frame's Escape, replaced by a click, or invalidated
+by another action applied first. Carrying the quads makes the action a fact
+about what the operator asked for at the moment they asked.
+
+The **page** travels for the same reason and from the same place: it is
+[`TextSelection::page`], not `doc.view.page_index`. A selection made on the
+title-block sheet and marked after paging away must mark the sheet it was
+made on; re-deriving the page in the apply would silently author it wherever
+the operator happens to be looking.
+
+# The pen is sampled HERE, not read in the apply arm
+
+[`Action::CommitMarkup`]'s `pen` field carries the argument in full and it
+applies here without amendment: *"reading the live pen in the apply arm
+would author a mark in whatever colour the operator happened to have
+selected by the time the queue drained, which for a queue is a real gap and
+not a theoretical one: the dispatcher raises actions during the frame and
+`apply` runs at the end of it."*
+
+It is the same rule this function's own docs already make about the quads
+and the page, applied to the third thing that can change between the ask and
+the apply. An action is a complete statement of intent; a statement of
+intent that omits the colour is one the apply arm has to finish guessing.
+
+### `fn decline`
+
+One trace shape per refusal, so a harness reads `text-markup-declined` and
+finds the cause on the same line rather than inferring it from an absence —
+the contract `super::decline` and `canvas-move-declined` already honour.
+
+### `fn trace_commit`
+
+Traced with its **quad count and its page**, not a success flag, for the
+reason [`super::drag`]'s trace carries its coordinates: a line saying only
+*"committed"* would be equally true before and after the defect anybody is
+hunting. Here the two numbers that can be wrong are *how many boxes* (a
+grouping that collapsed, or one that never merged) and *which page* (the
+selection's, or the one currently on screen), and both are on the line.
+
+Emitted from the dispatch arm rather than from [`mark`] so that a refusal and
+a commit are traced from one place in one order, and so that [`mark`] stays a
+pure function a test can call without a diagnostic channel.
+
+### `struct Swept`
+
+Returns `Some(marks)` — canvas-space rectangles, one per line the drag
+crosses — when the gesture is following text, and `None` when it is not, so
+the caller falls through to the area band.
+
+# Why this is the DEFAULT for a highlight and the band is the fallback
+
+The operator: *"we should be able to drag it along to just highlight text
+too like it works in adobe."* Acrobat's Highlight follows text, and it is the
+convergent behaviour of the class.
+
+pdfcer's fallback is **better than the reference** and is kept for that
+reason: over a scan with no text layer Acrobat's highlight draws nothing at
+all, and an area highlight there is exactly what a drawing office wants. So
+the rule is *follow text where there is text, box where there is not*, which
+strictly dominates the behaviour being matched.
+
+# Only Highlight, and the other seven band kinds are not offered this
+
+A rectangle, an ellipse, an arrow or a cloud drawn over a paragraph means the
+shape, not the words — nobody drags an arrow expecting it to follow a line of
+text. Highlight is the one band kind whose *subject* is the text it covers,
+which is why it is the one kind that appears in both geometry enums.
+
+# It commits nothing before the release
+
+Same contract every preview in this crate is held to: the marks are handed
+back on every frame so the operator can see what they are about to get, and
+the action is raised once, on `Phase::Complete`. A preview that promised
+quads and then committed a box would be the dishonesty rule 4 forbids.

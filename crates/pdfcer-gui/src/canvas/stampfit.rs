@@ -12,13 +12,6 @@ use pdfcer_core::annot_author::StampFit;
 const KEY: &str = "canvas.stampfit"; // ui-text-exempt: context-data key, never displayed
 
 /// The fit policies this shell offers, **in the order a control lists them**.
-///
-///
-/// ⇒ The order is *least surprising first*. `GrowToText` changes the geometry
-/// and shows it; `ShrinkToBox` changes the number the operator typed;
-/// `ClipToBox` removes characters they typed. A list read downwards is a list
-/// of increasing consequence, and the entry already selected is at the top for
-/// a fresh gallery.
 pub const FITS: &[StampFit] = &[
     StampFit::GrowToText,
     StampFit::ShrinkToBox,
@@ -43,25 +36,6 @@ pub fn store(ctx: &egui::Context, fit: StampFit) {
 
 /// This choice as a **stable token for a machine** — the diagnostic trace, and
 /// nothing else.
-///
-/// Never `{:?}`. The rule is absolute on this project and it was bought:
-/// a driven check once reported the opposite of the truth while quoting the
-/// truth in its own failure message, because it was pattern-matching a
-/// `Debug` rendering whose shape had changed underneath it. `Debug` belongs to
-/// a programmer at a breakpoint; a trace field belongs to a parser, and a
-/// parser needs a contract. This is the contract:
-///
-/// | policy | token |
-/// |---|---|
-/// | [`StampFit::GrowToText`] | `grow` |
-/// | [`StampFit::ShrinkToBox`] | `shrink` |
-/// | [`StampFit::ClipToBox`] | `clip` |
-///
-/// ⚠ `StampFit` is `#[non_exhaustive]`, so a fourth arm the engine adds lands
-/// on `other` rather than failing to compile. That is the right trade here —
-/// a trace token is not worth a build break — but a driven check reading
-/// `fit=other` should be read as *this build does not know what it just asked
-/// for*, not as a policy.
 #[must_use]
 pub const fn trace_token(fit: StampFit) -> &'static str {
     match fit {

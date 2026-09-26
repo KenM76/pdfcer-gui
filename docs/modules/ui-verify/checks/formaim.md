@@ -90,3 +90,49 @@ of the sheet — because that is the space `form-target` publishes. Callers
 flip to PDF space with `page.height_pt - y` before handing a point to
 `CanvasMapping::doc_to_window`, exactly as they did before this module
 existed.
+
+## Item notes
+
+### `const TARGET_LINE`
+
+`form-target`, not `form-box`: the second lists what a click can FILL,
+which excludes drop-downs, push buttons and any widget with no appearance.
+`form_field`'s own constant carries the longer version of this note.
+
+### `struct WidgetBox`
+
+The application's numbers, never the fixture's: `canvas/forms.rs` publishes
+this census precisely so a harness can aim at where the *program* says the
+box is. A check that recomputed the rect from the PDF would be asserting
+that two independent derivations agree, and would report a disagreement as
+a hit-test failure.
+
+### `fn contains`
+
+The margin is what makes "outside" mean *comfortably* outside. A
+point one unit clear of an edge survives this test and can still land
+inside the widget once the canvas mapping has rounded it to a whole
+screen pixel, which at a fit zoom of 0.29 is three canvas units wide.
+
+### `fn blank_canvas_point`
+
+`from` is the canvas-space centre of the widget the caller is about to
+select; the returned point is somewhere near it that no widget occupies, so
+that a primary click there CLEARS the form selection (`select_click`'s
+table, quoted in the module header) and the caller's next click on `from`
+is a genuine change.
+
+## The search, and why it is a ring rather than one offset
+
+Candidates are tried in order: **above** the widget first, then below, then
+left, then right, each at two distances. Above is first because it is the
+direction with the most room in the two shapes this is used on — a field
+placed at 55 % of the page height, and one placed at the sweep's
+`--doc-point` near the bottom edge of a landscape CAD sheet. Each candidate
+must clear every box in `boxes` on page `page` by [`CLEARANCE`] and sit at
+least [`INSET`] of the sheet in from every edge.
+
+Returns `None` when every candidate is occupied or off-sheet — which the
+caller must report as a SKIP, not a failure: a document whose widgets crowd
+out every candidate is a fixture problem, and the gesture under test was
+never attempted.

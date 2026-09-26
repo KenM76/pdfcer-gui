@@ -34,30 +34,6 @@ fn prefetch_ranking(current: usize, last: usize, band: usize) -> Vec<usize> {
 impl OpenDoc {
     /// **Is there room for one more page picture?** — O201's whole memory
     /// bound, and the reason render-ahead cannot become a busy loop.
-    ///
-    /// `true` when the strip cache could take another page the size of the
-    /// ones it is already holding without crossing
-    /// [`crate::app::prefs::PageCache::texels`].
-    ///
-    /// # Why the estimate, rather than simply *"under budget"*
-    ///
-    /// Because *under budget* is satisfied again the instant eviction runs.
-    /// [`crate::render::strip::StripRasters::retain`] trims until the total is
-    /// **at or below** the budget, so a prefetch gated on `texels() < budget`
-    /// fills past it, is trimmed back under it, and fills again — for ever,
-    /// re-rendering one page every few frames on an idle window. Requiring room
-    /// for the page about to be added is what makes the loop terminate: once it
-    /// is false it stays false until something is evicted for a reason other
-    /// than this.
-    ///
-    /// The estimate is the mean of what is resident. A scanned document — the
-    /// case he reported — has pages of one size, so the mean is the answer; a
-    /// mixed document gets an answer that is wrong by less than one page, which
-    /// is inside what `retain` would correct on the next frame anyway.
-    ///
-    /// An empty cache answers `true`: there is nothing to average, and a
-    /// document whose visible pages have not rendered yet is not reached here
-    /// at all.
     #[must_use]
     pub(super) fn prefetch_headroom(&self) -> bool {
         let budget = self.prefs.page_cache.texels();
@@ -69,16 +45,6 @@ impl OpenDoc {
 
     /// **The nearest page outside the viewport that has no picture yet** —
     /// O201's candidate, or `None` when there is nothing worth asking for.
-    ///
-    /// Every gate a visible page passes is applied here unchanged:
-    /// [`Self::strip_page_orderable`] for O186's pixmap wall, the render key
-    /// and the per-page epoch for staleness. The two it adds are
-    /// [`Self::prefetch_headroom`] and the band itself.
-    ///
-    /// `visible` is excluded rather than assumed absent: the caller only
-    /// reaches this after every visible page has a raster, so a visible page
-    /// could not be returned anyway — but the exclusion is what makes that
-    /// true by construction instead of by the caller's good behaviour.
     #[must_use]
     pub(super) fn prefetch_candidate(&self, visible: &[usize], raster_scale: f32) -> Option<usize> {
         if !self.prefetch_headroom() {
@@ -100,13 +66,6 @@ impl OpenDoc {
 }
 
 /// **Say what render-ahead is holding, and what is left to spend.**
-///
-/// Rule 4's other half. A prefetched page renders exactly as a page he
-/// scrolled to — same request, same raster, no badge, no tint — so the only
-/// place the inference can be reported is off the canvas, and this is it.
-/// What it carries is the connection between *"pages are ready when I get to
-/// them"* and *"this program is holding a gigabyte"*: the resident count and
-/// the texels against the budget the operator chose.
 pub(super) fn disclose(doc: &OpenDoc) {
     let band = doc.strip_rasters.len();
     let texels = doc.strip_rasters.texels();

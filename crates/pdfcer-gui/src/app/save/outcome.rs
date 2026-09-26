@@ -11,20 +11,6 @@
 use pdfcer_core::writer::{SaveReport, WriteError};
 /// **Which writer produced the bytes that reached the file, and what it
 /// reported.**
-///
-/// It exists for the staged-redaction route, and it is an enum rather
-/// than `(SaveReport, Option<RedactionReport>)` because the two writers do not
-/// both run: `EditSession::save_applying_redaction` produces no
-/// [`SaveReport`] at all — it returns bytes and a
-/// [`pdfcer_core::redact::RedactionReport`] — so a struct with both would have
-/// to carry a fabricated one, and every field of a fabricated `SaveReport`
-/// (`bytes_appended`, `byte_identical`, `promoted`) is a claim about a save
-/// that did not happen in that shape.
-///
-/// The trace lines differ for the same reason and that is the point. A reader
-/// of a trace must be able to tell a save that appended a revision from one
-/// that rewrote the whole document with content removed, and the two events
-/// have no fields in common worth pretending they share.
 #[derive(Debug)]
 pub(super) enum Written {
     /// The ordinary §7.5.6 incremental update — §1, and everything this module
@@ -42,13 +28,6 @@ pub(super) enum Written {
 }
 
 /// Why a save-a-copy produced no file.
-///
-/// Two variants rather than a `String`, on `crate::app::lifecycle`'s rule that
-/// a branch is made on **structured error data, never by inspecting a message**
-/// — and because the two are genuinely different facts about different
-/// subsystems. Neither is worded to the operator separately today (the bar
-/// carries one sentence for both; see §5), and keeping them apart is what makes
-/// wording them separately a copy decision later rather than a re-plumbing.
 #[derive(Debug)]
 pub(super) enum SaveError {
     /// `pdfcer-core` could not build the update. A refusal by name from the

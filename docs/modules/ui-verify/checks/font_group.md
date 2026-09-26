@@ -145,3 +145,94 @@ the guard exists to end.
 Pinned here rather than trusted: the two lines are quoted verbatim from
 `canvas::trace` and `panels::properties::mod::object_section`, and the
 kind spelling is `summary::ObjectKind::Text` under `{:?}`.
+
+### `const FONT_ITEMS`
+
+Asserted as a **list**, not as "Bold is there". Three of the five are
+`Item::Custom`s drawn by `app::fontband`, and a custom item that the
+manifest names and no renderer matches draws **nothing** while the shell
+reserves its space — which is the defect `COLOUR_SWATCH` shipped with for
+the whole of v0.1.0, invisible because a gap in a band looks like a gap in a
+band. Only naming all five catches it.
+
+### `const FONT_COMMANDS`
+
+This module PINS its fixture: it opens `fixtures/paragraph.pdf` at a
+measured point and ignores `--pdf` and `--doc-point`, because its subject
+is a discoverability route and a route needs a known page.
+`font_group_real` is the twin that does the opposite -- it honours the aim
+and drives whatever drawing the operator names -- and it shares these two
+lists, the aim guard and the enablement renderer rather than copying them.
+
+Copying would have been the ordinary move and it is the one this
+repository has already paid for nine times over in private `click_tab`
+helpers: a shared list diverges silently, and a group measured against a
+stale copy of its own membership reports a measured group.
+
+# A second list, because a region and an enablement are different facts
+
+[`FONT_ITEMS`] holds published REGION names (`ribbon.item.format.bold`) and
+answers *where is this control*. These are the ids the same five controls
+are registered under, and they are what the enablement event is keyed by,
+because that event is about a COMMAND rather than about a rectangle.
+
+The two lists are asserted to line up by
+[`the_two_font_lists_describe_the_same_five_controls`], which exists because
+a check that read four regions and five enablements, or five regions and
+four enablements, would report a measured group either way. The pairing is
+`ribbon.item.` + the id, and it is spelled out rather than computed so that
+a rename on either side is a compile-visible edit to a literal instead of a
+silently-still-passing concatenation.
+
+### `const FACE_ROW_REGION`
+
+Asserted ALONGSIDE the section, not instead of it, for the reason
+`FONT_ITEMS` gives about the ribbon band: a section that draws its heading
+and then returns before any control is the exact shape of the regression
+this check exists to catch, and a section-level region cannot see it.
+
+### `fn aimed_at_one_text_object`
+
+A bounded poll rather than a fixed sleep, for `restyle_text`'s reason: a
+restyle re-resolves its pin from a fresh provenance extraction per run, so a
+sweep across a title-block label is a dozen extractions, and a fixed sleep
+long enough for the worst case makes every run slow while a pleasant one
+reads the trace mid-gesture and reports "nothing happened" about a gesture
+that is still running.
+**Did the phase-1 click land on one text object?** `Ok(())` if it did; an
+[`Error`] — which this check's `run` turns into a SKIP — if it did not.
+
+# Why this exists, written on the day it was needed
+
+
+The trace had the answer on the same frame the check was already reading:
+`pdfcer-diag properties-panel object=832 kind=Path notes=0`. Nothing new had
+to be published for this guard; the check simply had to look.
+
+# The two facts, and why both are needed
+
+`route` draws when **exactly one** object is selected **and** it is text.
+Those are separate refusals with separate causes, so they are read
+separately:
+
+| fact | read from | why not the other line |
+|---|---|---|
+| how many are selected | `canvas-selection … sel=N` | the panel describes only the FIRST, so it cannot count |
+| what the first one is | `properties-panel … kind=K` | the canvas line names a `TargetId`, not a kind |
+
+# An absent `properties-panel` line is "selected nothing", not "unknown"
+
+`object_section` writes that line unconditionally once it has an object to
+describe, every frame, through `diag::trace` rather than `trace_changed`. So
+its absence after a settled click means `object_indices_on` came back empty
+— no page-content object under the pointer — which is an aim problem of its
+own and is reported as one.
+
+### `fn describe`
+
+One line, both numbers, every id — including the ones that PASSED. A
+message that lists only the offenders leaves a reader unable to tell
+*"three of five are dead"* from *"three of five never reported"*, and those
+two want different investigations. `live=?` marks a control whose renderer
+has no second predicate, which is not the same as one whose second predicate
+said no.

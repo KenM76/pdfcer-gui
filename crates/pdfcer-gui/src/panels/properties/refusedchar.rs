@@ -11,23 +11,12 @@ use crate::app::state::OpenDoc;
 use crate::text::panels::face as t;
 
 /// The block itself, published on the frames it draws.
-///
-/// Published only when it draws, so its **absence** is the evidence that no
-/// character was refused — which is the distinction a driven check about this
-/// feature is actually asking about, and the one a region declared
-/// unconditionally could never provide.
 pub const REGION: &str = "properties.refusedchar"; // ui-text-exempt: trace region name, never displayed
 
 /// The chooser's combo — the control that opens the face list.
 pub const FACE_REGION: &str = "properties.refusedchar.face"; // ui-text-exempt: trace region name, never displayed
 
 /// The rule-4 disclosure, drawn above the chooser.
-///
-/// Its own region rather than a clause of [`REGION`], because *"the sentence
-/// reached a rectangle"* is the one thing about this feature that no unit test
-/// in the workspace can observe: the string is catalogued and asserted, and a
-/// build that drew it off the bottom of the panel would pass every one of those
-/// assertions.
 pub const DISCLOSURE_REGION: &str = "properties.refusedchar.disclosure"; // ui-text-exempt: trace region name, never displayed
 
 /// What the engine refused, and what pdfcer did about it.
@@ -58,17 +47,6 @@ thread_local! {
 /// **Record that an edit was refused because the run's font has no code for one
 /// character** — the one entry point, called from
 /// `crate::app::status::decline::textedit::record_edit_text_refusal`.
-///
-/// # Why the caller reads a field off `EditError` and this is not a second
-/// taxonomy
-///
-/// `crate::app::status::decline::textedit`'s header forbids two shortcuts:
-/// matching on `EditError`'s variants to *derive the operator's reason*, and
-/// grepping its `Display` prose. Neither happens. The category still comes from
-/// `RefusalKind`, which the engine made non-`#[non_exhaustive]` so a front end
-/// can match it and have the compiler prove the sentences complete; what is read
-/// here is **one datum that the coarse kind structurally cannot carry**, on the
-/// identical licence `one_operator` already has.
 pub(crate) fn record(
     page: usize,
     run: usize,
@@ -89,27 +67,12 @@ pub(crate) fn record(
 
 /// **Drop a refusal that has not been adopted yet**, called by
 /// `PanelsState::forget_document`.
-///
-/// `PanelsState::forget_document` resets that struct whole, which clears
-/// [`RefusedCharUi`] — and [`PENDING`] lives outside it, so without this a
-/// refusal recorded on the frame a document was closed would be adopted by the
-/// **next** document's first panel draw. `(page, run)` names different text
-/// there, and the offer would aim a face swap at a run nobody asked about. The
-/// same hazard `PanelsState::bookmarks`' own note records for an `ObjId`,
-/// arriving through the one field that reset does not reach.
 pub(crate) fn forget_document() {
     PENDING.with_borrow_mut(|slot| *slot = None);
 }
 
 /// The panel-side state: which refusal is live, the revision it was live for,
 /// and whether the operator has taken the offer.
-///
-/// Held on `PanelsState` for that struct's own stated rule — a panel body is
-/// handed `&OpenDoc`, shared, and this is the operator's state rather than a
-/// derived cache of the document's. It is reset with the document by
-/// `PanelsState::forget_document`, which matters here for the reason a bookmark
-/// parent does: a `(page, run)` pair names different text in a different file,
-/// so an offer carried across would restyle a run nobody asked about.
 #[derive(Default)]
 pub struct RefusedCharUi {
     /// The refusal being reported, or `None` when there is nothing to say.
@@ -199,20 +162,6 @@ impl RefusedCharUi {
 }
 
 /// Draw the offer, and say whether it drew.
-///
-/// Returns `false` on every frame where no character has been refused, which is
-/// nearly all of them — and it renders **nothing at all** in that case, heading
-/// included, on [`super::disclose`]'s rule: *"a heading present on every frame
-/// trains an operator to stop reading the region under it, which would waste the
-/// one surface a disclosure has."*
-///
-/// Its answer is deliberately **not** folded into `body_sections`'
-/// `something_drew`. That predicate is O75's and asks whether a
-/// **selection**-scoped section has spoken; a refusal from the last edit is not
-/// a description of the current selection, and letting it collapse the object
-/// section would make the panel change shape for a reason unconnected to what is
-/// picked. [`super::disclose`]'s call site records the identical exclusion for
-/// the identical reason.
 pub(super) fn section(
     ui: &mut egui::Ui,
     doc: &OpenDoc,

@@ -20,11 +20,6 @@ use crate::canvas::rulers::{CanvasGeometry, Gutters};
 use crate::canvas::strip::PageView;
 
 /// The file's name, inside the settings directory.
-///
-/// `.txt` because the format is one line per document and an operator who
-/// opens it should find exactly what they expect — the same argument
-/// `recent.txt` and `page-display.txt` make. `.ron` would promise a structure
-/// that is not there and a parser this crate does not have.
 pub const GUIDES_FILE: &str = "guides.txt"; // ui-text-exempt: a file name, never displayed as copy
 
 /// The separator between the guide payload and the path.
@@ -37,27 +32,9 @@ const SEPARATOR: char = '\t';
 const FIELD: char = ':';
 
 /// How many documents are remembered.
-///
-/// Two hundred, matching [`crate::viewer::remembered::CAP`] and for the same
-/// reason: nothing draws this list, so the cap that governs the recent menu
-/// ("what fits without becoming a scroll view") does not apply, and the only
-/// constraint is disk. A cap exists at all because the file is rewritten on
-/// every guide change and an uncapped one would grow for the life of an
-/// installation.
 pub const CAP: usize = 200;
 
 /// How many guides one document may carry.
-///
-/// Not a disk limit — a thousand guides is a few kilobytes — but a **legibility
-/// and cost** one. Every guide is a line drawn across its page and a catch band
-/// registered as a widget, so an operator who has somehow accumulated hundreds
-/// has a canvas they cannot see the drawing through and a frame that registers
-/// hundreds of widgets. Refusing further guides at a number far above any real
-/// use is cheaper than discovering the ceiling from a frame time.
-///
-/// The refusal is silent, which is the one place this module is knowingly
-/// short: it belongs on the edit-disclosure surface, alongside the other
-/// worded declines, and is not wired to it.
 pub const MAX_PER_DOCUMENT: usize = 256;
 
 /// The half-width, in logical points, of the band that catches a guide drag.
@@ -80,11 +57,6 @@ const BAND_KEY: &str = "pdfcer-canvas-guide-band"; // ui-text-exempt: internal w
 // ---------------------------------------------------------------------------
 
 /// Which way a guide runs.
-///
-/// Named for the **line**, not for the coordinate it fixes, because that is
-/// what the operator sees: a *horizontal* guide is a horizontal line, and it
-/// is dragged out of the horizontal (top) ruler. The coordinate it pins is the
-/// other axis, which is stated once, here, and nowhere else.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GuideAxis {
     /// A horizontal line, pinning a canvas **y**. Dragged from the top ruler.
@@ -95,11 +67,6 @@ pub enum GuideAxis {
 
 impl GuideAxis {
     /// The on-disk spelling.
-    ///
-    /// Beside the type, exactly as [`crate::viewer::PageDisplay::id`] is, and
-    /// for the reason `remembered.rs`'s header gives: a variant added without
-    /// a spelling is then a compile error rather than a silently unsaveable
-    /// guide.
     #[must_use]
     pub const fn id(self) -> &'static str {
         match self {
@@ -130,14 +97,6 @@ impl GuideAxis {
 }
 
 /// One guide: a line at a fixed place on one page.
-///
-/// `at` is in **canvas space** — Y-down, origin at the page's top-left,
-/// `/Rotate` applied — which is the space the ruler reads in, the space the
-/// `canvas-pointer` trace calls `page=`, and the space the selection outlines
-/// are cached in. `GUI_ROADMAP.md`'s *"Selection is identity, not position"*
-/// bars a screen point from standing for a selection, and a guide is subject
-/// to the identical hazard: a screen coordinate stops meaning anything the
-/// moment the operator zooms or scrolls.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Guide {
     /// The 0-based page it belongs to.
@@ -175,12 +134,6 @@ impl Guide {
 }
 
 /// Every guide one document carries.
-///
-/// A flat `Vec` rather than a map keyed by page, because the whole collection
-/// is small (bounded by [`MAX_PER_DOCUMENT`]), because every consumer either
-/// wants one page's worth or all of it, and because the on-disk format is a
-/// flat list — one shape end to end is one fewer place to get an ordering
-/// wrong.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Guides(Vec<Guide>);
 
@@ -203,10 +156,6 @@ impl Guides {
     }
 
     /// The guides on `page`, with their index in the whole collection.
-    ///
-    /// The index rides along because it is the identity a drag names: a guide
-    /// has no id of its own, and comparing on the coordinate would confuse two
-    /// guides an operator had deliberately placed together.
     pub fn on_page(&self, page: usize) -> impl Iterator<Item = (usize, Guide)> + '_ {
         self.0
             .iter()
@@ -216,11 +165,6 @@ impl Guides {
     }
 
     /// Add `guide`, unless the document is already at [`MAX_PER_DOCUMENT`].
-    ///
-    /// Returns whether it was added, so a caller that wants to word the
-    /// refusal later has something to word it from — see
-    /// [`MAX_PER_DOCUMENT`]'s note on the disclosure this is currently short
-    /// of.
     pub fn add(&mut self, guide: Guide) -> bool {
         if self.0.len() >= MAX_PER_DOCUMENT || !guide.at.is_finite() {
             return false;
@@ -283,13 +227,6 @@ impl Guides {
 
 /// The path this store reads and writes, or `None` when `pdfcer-core` found no
 /// writable location.
-///
-/// Derived from the same `pdfcer_core::settings::resolve_store()` call that
-/// decides where `settings.txt`, `layout.ron`, `recent.txt` and
-/// `page-display.txt` go — never a directory computed here.
-/// `persistence.rs`'s header carries the reasons in full; the short one is
-/// that a second resolution is how two of an application's files end up in
-/// different folders.
 #[must_use]
 pub fn default_path() -> Option<PathBuf> {
     settings::resolve_store()
@@ -307,21 +244,6 @@ pub fn recall(document: &Path) -> Guides {
 }
 
 /// **Remember `guides` against `document`.**
-///
-/// Read-modify-write of the whole file: the entry moves to the front, any
-/// previous entry for the same document is replaced rather than duplicated,
-/// and the list is truncated to [`CAP`]. A document whose guides are now empty
-/// has its line **removed** rather than written empty, so clearing the last
-/// guide genuinely forgets the document instead of leaving a marker behind.
-///
-/// Writes immediately rather than debouncing, for the reason `recent.rs` gives
-/// and which holds more strongly here: a guide change is a discrete gesture's
-/// *release*, not a drag reporting sixty changes a second — [`canvas_drag`]
-/// and [`ruler_drag`] raise nothing at all until the pointer comes up.
-///
-/// Failures are traced and otherwise ignored. There is no operator-facing
-/// consequence worth a dialog: the guide is on the canvas either way, and the
-/// only loss is that it will not be there on the next open.
 pub fn remember(document: &Path, guides: &Guides) {
     remember_at(default_path().as_deref(), document, guides);
 }
@@ -356,10 +278,6 @@ pub fn opening(document: &Path) -> (Guides, crate::viewer::ViewState) {
 }
 
 /// [`recall`], against an explicit file — the seam tests use.
-///
-/// The twin of `viewer::remembered::recall_at` and of
-/// `pdfcer_core::settings::store_in`, and it exists for the same two reasons:
-/// tests, and a future `--user-data-dir` override.
 #[must_use]
 pub fn recall_at(file: Option<&Path>, document: &Path) -> Guides {
     let wanted = absolute(document);
@@ -458,16 +376,6 @@ struct Drag {
 }
 
 /// Plant a drag in flight, for tests in sibling modules.
-///
-/// `canvas::keys` owns Escape's precedence and has to assert that a guide
-/// drag outranks an armed region zoom. It cannot start a real one — that
-/// needs a pointer press inside a laid-out ruler gutter — so the state it
-/// must react to is planted directly.
-///
-/// `#[cfg(test)]` so it cannot become a second way for production code to
-/// begin a drag: the real one is [`ruler_drag`] and [`canvas_drag`], and a
-/// second entry point is how two code paths come to disagree about what a
-/// drag means.
 #[cfg(test)]
 pub(super) fn plant_drag_for_test(ctx: &Context) {
     store(
@@ -496,28 +404,6 @@ fn store(ctx: &Context, drag: Option<Drag>) {
 }
 
 /// **Abandon a guide drag in flight.** Returns whether there was one.
-///
-/// # It reports rather than being asked
-///
-/// The return value is the whole interface. `canvas::keys` cannot know
-/// whether a guide is being dragged — the drag lives in this module's own
-/// `egui::Memory` slot — and a version that re-derived it there would be the
-/// version that cancels a drag *and* ascends a selection rung, which is what
-/// that module's claimant table exists to prevent. Each claimant says whether
-/// it took the key; none of them guesses about another.
-///
-/// # Why a cancelled drag leaves nothing behind
-///
-/// Clearing the memory slot is the entire operation, and that is a property
-/// of how the drag was built rather than a convenience. A guide being dragged
-/// is not a guide that has moved: the drag holds the *proposed* position, and
-/// the committed set only changes when [`settle`] raises
-/// `Action::SetGuides` on release. So there is no half-applied state to roll
-/// back — abandoning the drag abandons a proposal.
-///
-/// That is why this is safe to call unconditionally on Escape, and why it
-/// cannot be reached by anything else: a *committed* guide is removed by
-/// double-clicking it, which is a different verb with a different undo story.
 pub(super) fn cancel_drag(ctx: &Context) -> bool {
     if load(ctx).is_none() {
         return false;
@@ -583,21 +469,6 @@ fn release(ctx: &Context, doc: &OpenDoc, geometry: &CanvasGeometry, actions: &mu
 
 /// The ruler gutters' half of the gesture: **drag out of a ruler to create a
 /// guide.**
-///
-/// Called from [`super::show`] after the canvas has been drawn, so a press in
-/// a gutter is registered in the same layer as — and later than — the page
-/// widgets, exactly as [`canvas_drag`]'s bands are.
-///
-/// Starts a drag and does nothing else: the preview and the release belong to
-/// [`settle`], because a drag started **on the canvas** must resolve whether
-/// or not there are rulers. A release owned by this function would never run
-/// with the rulers hidden, leaving a guide moved in that state stuck to the
-/// pointer with no way to put it down.
-///
-/// Registers nothing when the rulers are hidden, which is why the guides
-/// toggle is usable on its own but *creating* a guide needs rulers — the same
-/// relationship every peer has, and the reason the two commands sit next to
-/// each other in View ▸ Display.
 pub(super) fn ruler_drag(ui: &mut Ui, doc: &OpenDoc, gutters: Gutters) {
     if !doc.view.guides {
         return;
@@ -620,11 +491,6 @@ pub(super) fn ruler_drag(ui: &mut Ui, doc: &OpenDoc, gutters: Gutters) {
 }
 
 /// Draw the in-flight guide, and commit it when the pointer comes up.
-///
-/// **Called unconditionally** from [`super::show`], whatever the toggles say
-/// and whether or not there are rulers — because a drag that has started has
-/// to be able to end. The two things it does are both no-ops when nothing is
-/// in flight, so the cost on an ordinary frame is one `Memory` lookup.
 pub(super) fn settle(
     ui: &Ui,
     doc: &OpenDoc,
@@ -648,14 +514,6 @@ fn cursor(axis: GuideAxis) -> egui::CursorIcon {
 
 /// The canvas's half of the gesture: **grab a guide to move it, or
 /// double-click it to remove it.**
-///
-/// Called from inside the scroll area, **after every page widget has been
-/// allocated** — which is the whole of why a guide drag cannot also marquee.
-/// See the module header §3.
-///
-/// Registers nothing at all when the toggle is off or the document has no
-/// guides, so the overwhelming majority of frames pay one boolean and one
-/// `is_empty`.
 pub(super) fn canvas_drag(
     ui: &mut Ui,
     doc: &OpenDoc,
@@ -742,11 +600,6 @@ fn preview(ui: &Ui, geometry: &CanvasGeometry) {
 }
 
 /// Draw every guide on every page the frame is showing.
-///
-/// Called from `interact`'s draw step, **above** the find wash and the
-/// selection outlines: a guide is a line the operator placed and has to be
-/// able to see while they align something to it, and a selection outline is a
-/// box a few points across that a guide crossing it does not hide.
 pub(super) fn draw(ui: &Ui, doc: &OpenDoc, pages: &[PageView], clip: Rect) {
     if !doc.view.guides || doc.guides.is_empty() {
         return;

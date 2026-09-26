@@ -32,35 +32,6 @@ pub(crate) use device::{
 // ---------------------------------------------------------------------------
 
 /// Why the print system could not be reached.
-///
-/// # Two variants, mapping onto two of the three sentences
-///
-/// [`crate::text::print`]'s header sets out three ways to have no printer,
-/// deliberately said three ways. Two of them are failures and live here; the
-/// third is not a failure at all and therefore has no variant:
-///
-/// | condition | represented by | sentence |
-/// |---|---|---|
-/// | pdfcer could not ask this system about printers **at all** | [`Unavailable::Spooler`] | [`crate::text::print::spooler_unavailable`] |
-/// | this *particular* device would not describe itself | [`Unavailable::Device`] | [`crate::text::print::device_unavailable`] |
-/// | the spooler answered and reported none installed | `Ok(vec![])` — **not an error** | [`crate::text::print::no_printers`] |
-///
-/// The third row is the one worth stating explicitly, because collapsing it
-/// into the first is the exact defect `pdfcer-print` names: a machine with no
-/// printers installed is a *normal machine*, and reporting that as a failure
-/// sends an operator looking for a fault that does not exist. The engine
-/// returns an empty `Vec` there and this type has nowhere to put one, which
-/// is the type system holding the distinction rather than a convention.
-///
-/// # Why a `String` rather than the engine's `PrintError`
-///
-/// `PrintError` is `Debug + Clone` and neither `Copy` nor `Eq`, and this
-/// value is stored in dialog state, compared in tests, and copied into trace
-/// lines. Carrying the engine's own `Display` output — which is written as
-/// operator-facing prose, complete with the remedy — keeps every one of those
-/// cheap while losing nothing: nothing in the shell branches on *which*
-/// `PrintError` it was, only on which of the two rows above applies, and that
-/// is what the variant already encodes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum Unavailable {
     /// The spooler itself could not be queried — `list_printers` or
@@ -88,14 +59,6 @@ impl fmt::Display for Unavailable {
 // ---------------------------------------------------------------------------
 
 /// How a page is sized onto the sheet.
-///
-/// **Four modes, not three**, and the fourth is not a rounding error:
-/// `pdfcer-print` keeps `Fit` and `ShrinkOversized` apart because collapsing
-/// them — *"the natural simplification"* — *"silently blows a business card
-/// up to A4"* — `ScaleMode`'s own doc. Fit scales in both directions; Shrink only
-/// ever reduces.
-///
-/// Maps to `pdfcer_print::ScaleMode`, variant for variant.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum ScaleMode {
     /// Scale to fill the printable area, up or down, preserving aspect.
@@ -134,10 +97,6 @@ pub(crate) enum Collate {
 }
 
 /// Which way up the sheet is fed. Maps to `pdfcer_print::Orientation`.
-///
-/// `Auto` is resolved **per page** from the page's own aspect, which is what
-/// keeps a document mixing portrait text with a landscape drawing upright
-/// throughout.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) enum Orientation {
     /// Choose from each page's own shape.
@@ -150,13 +109,6 @@ pub(crate) enum Orientation {
 }
 
 /// Two-sided printing. Maps to `pdfcer_print::Duplex`.
-///
-/// **Driver-gated, never simulated.** pdfcer will not fake duplex by
-/// reordering pages and asking the operator to reinsert the stack: *"that is
-/// a workflow with a documented mis-assembly failure mode, and offering it as
-/// though it were duplex would be claiming a capability the hardware does not
-/// have."* [`DeviceFeatures::supports_duplex`] is what the dialog consults
-/// before drawing the control at all.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) enum Duplex {
     /// One side only — also what a device that cannot duplex does.
@@ -169,13 +121,6 @@ pub(crate) enum Duplex {
 }
 
 /// The arithmetic half of a job: which pages, at what size, in what order.
-///
-/// Maps to `pdfcer_print::JobSpec`, field for field. **Kept separate from
-/// [`DeviceSettings`]** for the engine's own reason: everything here is
-/// arithmetic pdfcer performs and can be exact about, and everything there is
-/// a *request to the driver* which the driver may quietly decline. Presenting
-/// both as though pdfcer controlled them is what makes a job silently come out
-/// single-sided with nothing to say so.
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct JobSpec {
     /// Zero-based page indices, in document order.
@@ -198,33 +143,6 @@ pub(crate) struct JobSpec {
 
 /// Which sheet the driver is asked to feed. Maps to
 /// `pdfcer_print::PaperSelection`.
-///
-/// # Why choosing paper is a REQUEST and not a setting
-///
-/// `pdfcer-print` reported, while building this: **two drivers were found
-/// silently ignoring a paper request.** The `DEVMODE` is handed over with
-/// `DM_PAPERSIZE` asserted, the driver is free to do as it likes with it, and
-/// nothing comes back to say it declined. There is no acknowledgement in the
-/// Win32 API to read and none to invent.
-///
-/// That is a fact pdfcer cannot verify and the operator cannot see, which puts
-/// it squarely under rule 4 — *fuzzy, never sneaky*. The disclosure is
-/// [`crate::text::print::paper_is_a_request`], off-canvas, in words, beside
-/// the control that makes the choice. It is **not** a warning icon on the
-/// preview and **not** a differently-styled sheet outline: the preview draws
-/// the sheet the job was planned for, exactly as it would draw any other, and
-/// pdfcer's uncertainty about the driver is reported in text next to it.
-///
-/// # Why there is no `Custom` variant here when the engine has one
-///
-/// Because there is no surface to type a size into. The engine's
-/// `PaperSelection::Custom` takes a sheet in tenths of a millimetre and is
-/// reachable through the driver's own properties dialog — an operator who
-/// needs a 900 mm roll length sets it there, and
-/// [`super::device::ConfigSummary::custom_paper_pt`] is read back so the
-/// dialog can say what it holds. Mirroring a variant this shell cannot
-/// construct would be a value with no producer; recorded in `NO_SURFACE.md`
-/// rather than half-built here.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) enum PaperChoice {
     /// Say nothing about paper.
@@ -281,25 +199,6 @@ pub(crate) struct DeviceSettings {
 
 /// The sheet, the printable area within it, and the resolution — **already
 /// turned for this job's orientation**.
-///
-/// Maps to `pdfcer_print::DeviceGeometry`.
-///
-/// # Turned, and that word is the whole defect this type prevents
-///
-/// `printer_caps` reports the device's *default* `DEVMODE`. On a
-/// portrait-default printer that is a portrait printable area — so a
-/// landscape job planned against it under-scales every page to about 77 % of
-/// correct size, leaves a wide empty margin, and **reports no clip**, so
-/// nothing says it happened. The engine removed the `From` impl that made
-/// that mistake reachable, *"because a wrong answer that is one `.into()`
-/// away will be reached again"*, leaving `DeviceGeometry::from_caps` as the
-/// only route — and it cannot be called without stating the orientation and
-/// the first page.
-///
-/// The port honours that by not exposing raw capabilities at all: [`plan`]
-/// takes the orientation and the page sizes and hands back a geometry that
-/// has already been turned, so the picture the preview draws and the paper
-/// the job lands on are the same claim.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) struct DeviceGeometry {
     /// Resolution in dots per inch, horizontal and vertical.
@@ -369,10 +268,6 @@ pub(crate) struct PagePlan {
 }
 
 /// The resolution a job will render at, and whether pdfcer's cap bound.
-///
-/// Maps to `pdfcer_print::JobResolution`, plus one value flattened: the engine
-/// exposes `uncapped_page_mb()` as a method, and it is carried here as a
-/// field so no formula of the engine's is restated in this crate.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct JobResolution {
     /// The DPI actually used.
@@ -392,13 +287,6 @@ pub(crate) struct JobResolution {
 
 /// A job, planned: the turned geometry, the resolution verdict, and one entry
 /// per sheet in the order it will be sent.
-///
-/// # Why one struct rather than three calls
-///
-/// The three come from the same three engine calls, in a fixed order, against
-/// the same inputs — and getting the order wrong is exactly the orientation
-/// defect described on [`DeviceGeometry`]. Returning them together means the
-/// dialog cannot plan against one geometry and preview against another.
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct Job {
     /// The sheet this job was planned against, already turned.
@@ -411,24 +299,12 @@ pub(crate) struct Job {
 
 impl Job {
     /// How many sheets of this job will lose content off an edge.
-    ///
-    /// Counted over the **whole job**, not the sheet on screen, because a
-    /// multi-page job's clip is usually on a sheet the operator is not
-    /// looking at. This one number reaches three surfaces — the preview
-    /// caption, the commit button's label, and the trace — and it is computed
-    /// in one place so they cannot disagree.
     pub(crate) fn clipped(&self) -> usize {
         self.plans.iter().filter(|p| p.placement.clipped).count()
     }
 }
 
 /// One rendered page, ready to blit.
-///
-/// Maps to `pdfcer_print::PageBitmap`. **RGBA8, row-major, top row first** —
-/// i.e. `pixmap.data().to_vec()` handed over unchanged, premultiplied, with
-/// no conversion in between. The engine is explicit that this is the
-/// contract; re-encoding it here would be a second colour convention of
-/// exactly the kind [`crate::render::raster`]'s header exists to prevent.
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct PageBitmap {
     /// Width in device pixels.
@@ -444,14 +320,6 @@ pub(crate) struct PageBitmap {
 }
 
 /// What a spool attempt did. Maps to `pdfcer_print::SpoolReport`.
-///
-/// **Never constructed in this build**, because [`spool`] cannot succeed
-/// here. The `allow` is scoped to this one type and names the condition that
-/// removes it, following the precedent `crate::viewer` sets for salvaged
-/// items whose first consumer arrives in a later stage. Deleting the type
-/// instead would mean the footer had no shape to render a success into, and
-/// the day the manifest line lands the success path would be written from
-/// scratch rather than reviewed.
 #[allow(
     dead_code,
     reason = "constructed by the adapter once pdfcer-print is linked; see the module header" // ui-text-exempt: lint justification, never displayed
@@ -477,25 +345,6 @@ pub(crate) struct SpoolReport {
 
 /// Where the `DEVMODE` a job was sent with came from. Maps to
 /// `pdfcer_print::SettingsSource`.
-///
-/// # Why a shell must report this, and why it cannot be inferred
-///
-/// pdfcer writes at most four members of a `DEVMODE`. Everything else a device
-/// does — media type, print quality, colour handling, stapling, output bin,
-/// the entire vendor-private half — lives in the driver's own configuration,
-/// which pdfcer carries through untouched **when it has one**.
-///
-/// [`Self::Synthesised`] is the case where it did not. The driver refused to
-/// report its settings, so the job went out carrying only what pdfcer sets
-/// itself and everything the driver held was lost. **The job still prints**,
-/// which is exactly what makes this dangerous: the operator gets paper, and
-/// the paper is wrong in ways — plain instead of glossy, draft instead of
-/// best — that look like a printer problem rather than a pdfcer one.
-///
-/// It is not visible from the printed page, not visible from the dialog, and
-/// not derivable from anything the shell knows before the call. The engine
-/// reports it because it is the only party that can, and the shell says it
-/// out loud for the same reason.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) enum SettingsSource {
     /// No `DEVMODE` was sent at all — nothing pdfcer controls differs from
@@ -786,29 +635,6 @@ pub(crate) fn plan(
 }
 
 /// Hand the rendered sheets to the spooler.
-///
-/// Fill with
-/// `pdfcer_print::spool(printer, &bitmaps, DryRun::No, None, settings, first_page_pt)`.
-///
-/// # This is the one call in the application that consumes paper
-///
-/// `pdfcer-print`'s own header: *"Printing consumes paper, occupies a device
-/// other people may share, and cannot be undone. Nothing in this crate starts
-/// a job as a side effect of anything else: `spool` is the only function that
-/// reaches `StartDoc`, and it is reached only from a control an operator
-/// deliberately clicked."* The shell's half of that contract is that this
-/// function is reached from **one** place — the commit button — and from no
-/// keyboard chord, no dispatch arm and no frame-loop condition.
-///
-/// `first_page_pt` must come from `bitmaps.first()`, never from the
-/// document's page 0: a reversed or range-filtered job sends a different page
-/// first, and the driver picks its paper from whichever one it is handed.
-///
-/// # Errors
-///
-/// [`Unavailable::Spooler`] carrying whatever the spooler reported — passed
-/// through to the operator verbatim by [`crate::text::print::failed`],
-/// because a structured spooler error is the specific half of that sentence.
 pub(crate) fn spool(
     printer: &str,
     bitmaps: &[PageBitmap],

@@ -17,15 +17,6 @@ pub const REGION_BODY: &str = "dialog:export-dxf"; // ui-text-exempt: trace regi
 /// The region the scale field publishes.
 pub const REGION_SCALE: &str = "export-dxf.scale"; // ui-text-exempt: trace region name, never displayed
 /// The region ONE units radio publishes.
-///
-/// These exist for `OPERATOR_REQUESTS.md` **O196**. Until this window
-/// remembered anything, a driven check had nothing to assert about a radio
-/// beyond *"it is drawn"*; now the question is which one is **selected on
-/// open**, and that cannot be asked of a group rectangle.
-///
-/// It matters more here than anywhere else in the three export windows: the
-/// units radio is the control that is wrong by 25.4× when it is wrong, and the
-/// resulting DXF opens cleanly and measures consistently.
 #[must_use]
 pub const fn region_for_units(units: DxfUnits) -> &'static str {
     match units {
@@ -46,26 +37,6 @@ pub const REGION_EXPORT: &str = "export-dxf.export"; // ui-text-exempt: trace re
 
 /// Which of the three answers `suggest_scale_for_groups` gave, as a stable
 /// lowercase token.
-///
-/// # Why this exists rather than a `{:?}` on the suggestion
-///
-///
-/// **It is this project's standing lesson about `Debug` in a machine-read
-/// field.** `Calibrated` carries a scale, a unit, a group name and an agreement
-/// count; `Conflicting` carries a whole vector of candidates. A check grepping
-/// for `suggestion=Calibrated` misses `suggestion=Calibrated { scale: 0.5, …`
-/// **while quoting the truth in its own failure message** — a confident false
-/// negative that reads as an application defect.
-///
-/// **And the payload varies with the document.** A trace whose text depends on
-/// which ce dimension groups happen to be on the page is a trace a check cannot
-/// assert on at all, which in practice means the check asserts only that the
-/// window opened — a claim satisfied by every build ever shipped, including the
-/// one O196 exists to replace.
-///
-/// ⇒ The *kind* is what a check needs, because the kind is what decides whether
-/// the scale field was seeded by a measurement or left at the operator's habit.
-/// The numbers are already on the same line, spelled as numbers.
 #[must_use]
 pub fn suggestion_key(suggestion: &DxfScaleSuggestion) -> &'static str {
     match suggestion {
@@ -114,47 +85,6 @@ pub struct ExportDxfDialog {
 
 impl ExportDxfDialog {
     /// Open the window for the page on screen.
-    ///
-    /// The suggestion is computed **once, here**, from the page's own dimension
-    /// groups. Re-querying per frame would be a decomposition walk and a model
-    /// clone sixty times a second for an answer that cannot change while a
-    /// modal window is up.
-    ///
-    ///
-    /// > *"the export windows forget everything. **every time I export a dxf I
-    /// > have to set it up again.**"*
-    ///
-    /// This is the window he named. Three of its four answers — units, arcs,
-    /// text — are now seeded from the last DXF export; the fourth, the scale,
-    /// deliberately is **not** a preference at all, and the argument for that
-    /// omission is the most important sentence in
-    /// [`crate::app::prefs::ExportDxfPrefs`]'s module. Read it there.
-    ///
-    /// # THE ORDERING RULE, and it is the one part of O196 that can be
-    /// wrong by 25.4× and silent
-    ///
-    /// The operator's habit is written **first**; a calibrated ce dimension
-    /// group on this page overwrites it **second**.
-    ///
-    /// Both halves are load-bearing and they are not symmetrical:
-    ///
-    /// - A habit is a statement about *the operator* — the units their
-    ///   downstream tool wants. It is the right answer on every page that has
-    ///   nothing better to offer, which is most pages.
-    /// - A calibration is a statement about *this page* — the units the drawing
-    ///   was actually dimensioned in, measured from ce dimensions the operator
-    ///   drew themselves. Where it exists it is not an opinion, and a
-    ///   remembered habit must not be allowed to beat it.
-    ///
-    /// ⇒ Getting the two lines the other way round would let a habit of inches
-    /// silently export a metric-calibrated page at 25.4× — a DXF that opens
-    /// cleanly, measures consistently, and is wrong, discovered by whoever cuts
-    /// from it. That is the exact failure this window was built to prevent,
-    /// arriving through the door O196 opened.
-    ///
-    /// `dialogs::export_dxf::tests::a_calibrated_page_overrules_the_remembered_units`
-    /// is the guard, and it exists because this rule is two adjacent
-    /// assignments whose order nothing else enforces.
     #[must_use]
     pub fn open(doc: &OpenDoc, remembered: &crate::app::prefs::ExportDxfPrefs) -> Self {
         let page_index = doc.view.page_index;
@@ -203,11 +133,6 @@ impl ExportDxfDialog {
     }
 
     /// Draw it. Returns `false` when it should close.
-    ///
-    /// Takes `&mut Prefs` for O196 alone: the Export press writes this window's
-    /// habits to the preferences file before the action is pushed. See
-    /// [`crate::dialogs::export_remembered`] for why it happens at the press
-    /// and not at the close.
     pub fn show(
         &mut self,
         ctx: &egui::Context,
@@ -394,25 +319,6 @@ impl ExportDxfDialog {
 
 /// The two seedings, in the order that matters — **the operator's habit
 /// first, the page's own calibration second**.
-///
-/// Lifted out of [`ExportDxfDialog::open`] so the ordering rule has something a
-/// unit test can call. `open` needs an [`OpenDoc`] and therefore an
-/// `EditSession` and therefore a real document, which is exactly the amount of
-/// scaffolding that stops the one rule in this file worth a test from having
-/// one. Here it is a pure function of two values.
-///
-/// The argument for the order is on [`ExportDxfDialog::open`] and is not
-/// repeated; in one sentence: **a habit is a statement about the operator and a
-/// calibration is a statement about the page, so the page wins where it speaks
-/// at all.**
-///
-/// `Conflicting` is deliberately NOT seeded from the first candidate. Picking
-/// one would be pdfcer answering a question it has just said it cannot answer,
-/// and the operator would find a plausible number already in the box. Note what
-/// that means for the units: on a conflicting page the operator's remembered
-/// units survive, because nothing has overruled them — the window then asks
-/// which candidate, and choosing one writes both halves of that candidate's
-/// opinion.
 #[must_use]
 pub fn seeded_options(
     remembered: &crate::app::prefs::ExportDxfPrefs,

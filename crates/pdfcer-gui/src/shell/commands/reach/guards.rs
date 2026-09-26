@@ -27,21 +27,10 @@
 //! while it is invisible *all* of its commands go red together — not one of them
 //! quietly. A checker that failed open would have shipped four dead controls
 //! with a green suite, which is the outcome this whole module exists to prevent.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/shell/commands/reach/guards.md`.
 
 /// The guard function that claims `id`, if any — **by calling it**.
-///
-/// This is the half a shell script could not have written. Each name returned
-/// is the same string [`read_arms`] extracts from the guard arm that consults
-/// it, so the two halves can be compared as sets; and each answer comes from
-/// the real mapping rather than from a re-derivation of it, so there is no
-/// second table to drift. [`super::super::mapping`]'s header states the property this
-/// preserves: *"two hand-written tables can disagree, and one table plus a
-/// derived search cannot."*
-///
-/// Order is irrelevant here even though it is load-bearing in the dispatcher,
-/// where `match` takes the first arm that matches. Reachability asks only
-/// whether **some** arm claims the id; which one wins is asserted, in both
-/// directions, by the disjointness tests in [`super::super::mapping`].
 pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     // ui-text-exempt: Rust function names, compared against the parsed syntax tree.
     if super::super::measure_for_command(id).is_some() {
@@ -243,14 +232,6 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
 }
 
 /// Every guard [`guard_claiming`] knows how to run.
-///
-/// **Not a mirror of the dispatcher**, and the distinction is the one `D5`
-/// turns on: this list is *asserted equal* to the set read out of
-/// `dispatch.rs`'s syntax tree by
-/// [`tests::the_guards_the_checker_evaluates_are_the_guards_the_dispatcher_has`],
-/// so it cannot drift without a named failure. A hand-maintained list that
-/// nothing checks is the defect; a hand-written list that a test pins against
-/// the source is a declaration.
 pub(crate) const EVALUATED_GUARDS: &[&str] = &[
     // ui-text-exempt: Rust function names, compared against the parsed syntax tree.
     "measure_for_command",

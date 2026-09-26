@@ -9,6 +9,8 @@
 //!
 //! Every engine returns words in the input image's pixel space, y-down;
 //! `words_to_page_space_on` is the one place they are flipped, for all of them.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui-base/ocr/engines.md`.
 
 use std::path::Path;
 
@@ -88,11 +90,6 @@ impl EngineId {
     }
 
     /// Whether the engine scores its words.
-    ///
-    /// The value its `OcrEngine::reports_confidence` returns, stated per
-    /// engine so the dialog can word its disclosure before a model is loaded.
-    /// Each page is stamped from the LOADED engine instead, and `recognise`
-    /// debug-asserts the two agree.
     #[must_use]
     pub const fn reports_confidence(self) -> bool {
         match self {

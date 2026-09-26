@@ -106,3 +106,94 @@ no new reason.
 Without this the feature would be a cage: the operator could select a
 container and never anything in it, which is strictly worse than the
 behaviour it replaces.
+
+### `struct Entered`
+
+Carries the page and the document epoch with the object index for the reason
+in the module header: the record invalidates itself rather than relying on
+five call sites to clear it.
+
+### `fn enabled`
+
+# Why the default is ON, when the operator asked for a checkbox
+
+Because the checkbox exists so the behaviour can be turned **off**, and the
+behaviour is what every program in the class does. A default of `false`
+would ship the convention switched off and leave the complaint that produced
+this row — *"I'm still not entirely clear how to reliably get to a point
+where I can edit nodes"* — answered only for an operator who found a
+checkbox first.
+
+### `fn sync`
+
+# Why this is not [`set_enabled`], which looks like the same function
+
+`set_enabled` is what a **press** calls, and it also leaves whatever
+container the operator is inside — because switching the mechanism off while
+scoped to a container would leave the next click resolving by a rule that is
+no longer switched on.
+
+This runs every frame from `app::frame`, changed or not. Leaving on every
+call would make entering a container impossible; leaving on every *change*
+would make it identical to `set_enabled` and the two would not need to exist
+separately. It does neither — it writes the value and nothing else, and the
+consequence lives on the press path where the operator's intent is.
+
+⇒ The direction is strictly `Prefs` → memory. The only writer of the
+persisted answer is the dispatch arm an operator's press runs, so there is
+one source of truth and one mirror of it.
+
+### `fn entered`
+
+Returns `None` — and clears nothing — when the record names another page or
+another document. Reading is not the place to write; the record is replaced
+the next time one is written and is harmless meanwhile.
+
+### `fn leave`
+
+The `bool` is what makes Escape composable. `canvas::keys` consults this as
+its **last** claimant — one press clears the selection, a second steps back
+out of the container — which follows that ladder's own rule of retiring the
+most transient thing first: a selection inside a title block is remade by
+every click, while the fact that the operator is working inside it survives
+all of them.
+
+### `struct Scope`
+
+# Why a value rather than reading the context at each call site
+
+The pick helpers in [`crate::canvas::input`] are pure functions over a
+`&dyn CanvasTargetProvider`, deliberately: they are the most heavily
+unit-tested code in this crate and they answer *"what did this click
+land on?"* without a running application. Handing them an `egui::Context`
+to consult would make every one of those tests build a context and would
+put a global read in the middle of a hit test.
+
+⇒ So the scope is read **once**, at the surface that has the context, and
+travels as two facts. Every consumer then resolves identically by
+construction — which is the property that matters, because a press and the
+click that follows it must agree about what is under the pointer or a drag
+starts on one thing and selects another.
+
+### `fn resolve`
+
+The whole rule, in one function so that the click path, the press path
+and any future caller cannot each have their own version of it:
+
+| switched on | target | inside its container | resolves to |
+|---|---|---|---|
+| no | anything | — | itself — the behaviour before O70, unchanged |
+| yes | a page object | — | itself |
+| yes | a **leaf** | no | its **outermost container** |
+| yes | a **leaf** | yes | itself |
+
+The third row is the whole feature and the fourth is what stops it
+from being a cage: once you have entered a title block, clicking its
+lines selects its lines.
+
+### `fn scope`
+
+The document slot comes from `crate::pagedrag::active`, which the frame
+publishes before any surface draws — the same source the Pages panel uses
+to know which document it is showing, so *"which document is this?"* has
+one answer in this crate rather than two.

@@ -165,3 +165,45 @@ tabular.
 
 This asserts it directly: for a band of `n` groups, the reservation is
 at least the width of every label the control could ever show.
+
+### `const SLACK`
+
+`egui` rounds widget rectangles to whole physical pixels, so an edge
+can land a fraction of a point beyond an exact arithmetic boundary
+without anything being wrong. One point is well below anything a person
+could see and well above the rounding.
+
+### `fn band_height`
+
+Every group in a band is padded to the same height (see
+[`super::band::captioned_group`]'s `rows_height`), so any one of
+them reports it — and the maximum is taken rather than the first so
+that a group which somehow drew taller than the others is a failure
+rather than a coin toss.
+
+`None` when the band drew no group at all, which is a real state:
+at a width narrower than one group plus the overflow reservation,
+every group is in the menu. A caller that wants R128's claim at
+*those* widths has to ask [`Self::ribbon_height`] instead, and the
+two are deliberately separate so neither can be mistaken for the
+other.
+
+### `fn context`
+
+`install` asserts that text measures non-zero and that the face is
+proportional, so a test built on this context cannot silently revert to
+measuring nothing.
+
+### `fn render_shell`
+
+The generalisation of [`render_view_tab`], for the tab-strip tests:
+those need a manifest with enough tabs to overflow a strip, which the
+two-tab fixture in [`super::tests`] deliberately is not.
+
+### `fn render_shell_with`
+
+The two-row tests need labels long enough to trip
+[`super::plan::GROUP_WRAP_WIDTH`], and the shared fixture registry is
+deliberately small and short-labelled — widening it would change the
+measured numbers in every other test in this file for a reason that has
+nothing to do with what they are about.

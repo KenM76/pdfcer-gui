@@ -69,3 +69,17 @@ Distinct from [`TOOK`]'s `removed=0`, and the distinction decides the
 verdict: `removed=0` says *the source still has them*, which has two causes
 pointing opposite ways — a build that never attempted the delete (a defect)
 and an engine that refused it for a reason about the document (not one).
+
+### `struct PageDraggedBetweenDocuments`
+
+One implementation and two registrations rather than two files, because the
+only thing that differs is a key held during the drag and two assertions at
+the end — and a copied file would drift on the twenty-odd things that are
+the same.
+
+Both are registered, and the copy one is not redundant. The failure this
+pair is really shaped to catch is a build where the modifier is read at the
+**press** instead of the release, or read from the wrong field, or ignored:
+such a build makes one of the two behave like the other, and only running
+both can see it. A single check would pass on a build that always copied, or
+always moved.

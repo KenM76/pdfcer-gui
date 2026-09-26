@@ -64,3 +64,46 @@ asked again, not one that silently discards an operator's work.
 Two adjacent buttons and a run the operator has decided against: the
 order the clicks land in must not decide whether a partial layer is
 written. Abandonment wins in both orders.
+
+### `enum Wish`
+
+One atomic rather than two booleans, because the states are **ordered** and
+mutually exclusive: a job cannot be both cancelled and stopped, and a Cancel
+arriving after a Stop must win. An enum in a `u8` makes that a single
+compare-and-set instead of two loads whose order a reader has to reason
+about.
+
+### `fn wish`
+
+`Relaxed` is correct and deliberate. There is no other memory being
+published alongside this flag — the results travel by channel, which
+carries its own ordering — so the only requirement is that the value
+eventually arrives, and a page of OCR is several orders of magnitude
+longer than any plausible propagation delay.
+
+### `fn stop`
+
+Refuses to downgrade a Cancel. An operator who cancelled and then hit
+Stop — two clicks in the same second on adjacent buttons — must not have
+the abandonment quietly turned into a partial write.
+
+### `fn cancel`
+
+Unconditional: Cancel outranks Stop, because it is the one that cannot
+be undone by waiting and because it is what an operator reaches for when
+they have realised the whole run was a mistake.
+
+### `enum Update`
+
+`Page` is sent **after** the page is recognised, carrying that page's own
+counts. The dialog accumulates; the worker does not send running totals,
+because a message that is a total rather than an event cannot be dropped
+safely and this channel is allowed to be drained in batches.
+
+### `enum Outcome`
+
+`Stopped` is a distinct outcome and NOT a successful run with fewer
+pages. The disclosure has to say the run ended early, or an operator who
+stopped at page 40 of 200 is left believing the whole document was
+recognised — which they will discover months later, searching for a word
+that is on page 150 and is not in the layer.

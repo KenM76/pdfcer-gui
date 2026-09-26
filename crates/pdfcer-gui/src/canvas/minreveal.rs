@@ -14,20 +14,9 @@ use crate::canvas::geometry;
 
 /// How many frames a parked [`MinReveal`] waits for its page before it is
 /// abandoned.
-///
-/// Deliberately [`crate::canvas::destscroll::DEST_GRACE_FRAMES`]: both are
-/// "wait for the page turn the action beside me raised", and a second number
-/// would be two answers to one question. A reveal held indefinitely would be
-/// spent minutes later, on an unrelated page change, as a view that lurches on
-/// its own.
 pub const REVEAL_GRACE_FRAMES: u8 = crate::canvas::destscroll::DEST_GRACE_FRAMES;
 
 /// Paper left between the revealed rectangle and the edge of the view.
-///
-/// The same constant a fit is framed with, so "clear of the edge" means one
-/// thing across the canvas. It is applied on both the near and the far side,
-/// which is what stops a field that is technically visible but sitting under
-/// the scroll bar from counting as reached.
 pub const REVEAL_MARGIN: f32 = crate::canvas::CANVAS_MARGIN;
 
 /// A rectangle waiting for a frame that can scroll to it.
@@ -52,10 +41,6 @@ pub struct MinReveal {
 
 /// Express a **canvas-space** rectangle on `page` as the fraction pair
 /// [`MinReveal`] carries.
-///
-/// Measured against the page extent rather than its drawn size, which is what
-/// makes the value independent of the zoom and so recordable now, spendable
-/// later.
 #[must_use]
 pub fn fracs_for_canvas_rect(
     rect: egui::Rect,
@@ -69,31 +54,12 @@ pub fn fracs_for_canvas_rect(
 }
 
 /// Park a reveal, replacing any reveal already waiting.
-///
-/// Replacing rather than queueing is the correct rule for a key the operator
-/// holds down: three fast Tab presses are a request to be at the third stop,
-/// and a queue would walk the view through the first two.
 pub fn park(doc: &mut OpenDoc, reveal: MinReveal) {
     doc.min_reveal = Some(reveal);
 }
 
 /// What one axis should do about a rectangle that spans `[lo, hi]` along the
 /// scroll content while the view sits at `current` and is `viewport` long.
-///
-/// `lo` and `hi` are content-space positions — the offsets at which the
-/// rectangle's near and far edges would sit exactly at the start of the view.
-/// The margin is applied outside both, so the answer is the offset at which the
-/// rectangle *and its paper* are inside the view.
-///
-/// Returns `None` for *"this axis already shows it — do not move"*, which is
-/// the answer the whole module exists to be able to give.
-///
-/// # The rectangle larger than the viewport
-///
-/// When `hi - lo + 2 * margin` exceeds `viewport` the two constraints conflict
-/// and no offset satisfies both. The near edge wins: a field taller than the
-/// screen is read from its start, and aligning to the far edge would put the
-/// caret off the top of the view on the frame the operator began typing.
 #[must_use]
 pub fn solve_axis(lo: f32, hi: f32, current: f32, viewport: f32, margin: f32) -> Option<f32> {
     if !lo.is_finite() || !hi.is_finite() || !current.is_finite() || !viewport.is_finite() {
@@ -116,17 +82,6 @@ pub fn solve_axis(lo: f32, hi: f32, current: f32, viewport: f32, margin: f32) ->
 }
 
 /// Spend a parked reveal, if this frame is drawing the page it names.
-///
-/// `display` is the page's drawn size and `viewport` the visible extent, both
-/// in the units `geometry` works in; `current` is the offset the view is
-/// sitting at, in strip space; `to_strip` is `canvas::offset`'s own page-local
-/// → strip conversion, handed in rather than reimplemented so the visibility
-/// test is made in the same space as the answer.
-///
-/// Returns the offset the `ScrollArea` should be forced to, or `None` for
-/// *"nothing to do"* — which covers both "no reveal parked" and "parked, and
-/// both axes already show it". In the second case the reveal is still consumed:
-/// it has been satisfied.
 pub fn take_reveal_offset(
     doc: &mut OpenDoc,
     display: (f32, f32),

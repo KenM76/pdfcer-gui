@@ -9,23 +9,6 @@
 use crate::viewer::FitMode;
 
 /// How the first page of a newly opened document is sized to the window.
-///
-/// # Why the enum is not [`FitMode`] itself
-///
-/// [`FitMode`] has three variants and one of them, [`FitMode::None`], means
-/// *"the operator pinned an explicit zoom; the viewport no longer influences
-/// it"*. It carries no zoom of its own — the zoom lives beside it on
-/// [`crate::viewer::ViewState`] — so `FitMode::None` on its own does not
-/// describe a state a document can be opened in. It describes the absence of a
-/// rule.
-///
-/// A preference has to name a **complete** opening state, so this enum's third
-/// value is [`OpeningFit::ActualSize`], which is `FitMode::None` *and* a zoom
-/// of exactly 1.0. [`Self::to_view`] is where the pair is produced, and it is
-/// the only place the pairing is stated.
-///
-/// Storing `FitMode` directly would have shipped a preference file in which
-/// `opening_fit = none` was legal and meant nothing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum OpeningFit {
     /// The whole page is visible. pdfcer's shipped answer.
@@ -50,11 +33,6 @@ pub enum OpeningFit {
 
 impl OpeningFit {
     /// Every value, in the order the settings window lists them.
-    ///
-    /// Whole-page first because it is the default and the least surprising,
-    /// then the two single-axis fits, then actual size — which is *most*
-    /// zoomed on the drawings this shell is for and therefore reads as the far
-    /// end of a scale.
     pub const ALL: &'static [Self] = &[Self::Page, Self::Width, Self::Height, Self::ActualSize];
 
     /// The token written to the preferences file.
@@ -82,21 +60,6 @@ impl OpeningFit {
     }
 
     /// The `(fit, zoom)` pair a [`crate::viewer::ViewState`] opens with.
-    ///
-    /// # The zoom returned for the two fitting modes is not ignored
-    ///
-    /// `FitMode::Page`, `FitMode::Width` and `FitMode::Height` are recomputed
-    /// every frame against the viewport, so the zoom handed back for them is
-    /// only what the state holds until the first frame measures the window. It
-    /// is `1.0` rather than
-    /// `0.0` because a `ViewState` is legal to inspect before any frame has run
-    /// — `OpenDoc::assemble` copies it straight into `observed_zoom` — and a
-    /// zero there would make the first `observed_zoom` comparison meaningless
-    /// and could divide by zero in any geometry that scales by it.
-    ///
-    /// Returning a pair rather than mutating a `&mut ViewState` keeps this
-    /// pure, which is what lets [`tests`] assert the mapping without building a
-    /// document.
     #[must_use]
     pub const fn to_view(self) -> (FitMode, f32) {
         match self {
@@ -110,26 +73,6 @@ impl OpeningFit {
 
 /// Which of the three View ▸ Display overlays are already on when a document
 /// opens.
-///
-/// A struct of three `bool`s rather than three loose fields on [`super::Prefs`],
-/// because they are one setting in the window and one line in this module's
-/// reasoning — see the header. Grouping them here also means the settings
-/// window's control takes one argument rather than three, so a fourth overlay
-/// added later changes one signature instead of every call site.
-///
-/// # These are file-format `bool`s, and they are the first in the project
-///
-/// `pdfcer_core::settings` has **no boolean settings at all** — every one of its
-/// thirteen is a named enum, because a named enum states what each side means
-/// and `true`/`false` does not. That is a good rule and it is deliberately not
-/// followed here, for a reason that is about the *control* rather than the
-/// file: a switch is not a choice between named alternatives, and rendering
-/// "rulers shown / rulers hidden" as a two-option radio group would draw six
-/// controls where three belong and would imply the six were somehow related.
-///
-/// The file pays a small price for that — `show_rulers = true` says less than
-/// `mask_resample = nearest` does — and the file's own comment block pays it
-/// back by naming both legal values.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct PageChrome {
     /// Rulers down the top and left gutters.
@@ -160,10 +103,6 @@ pub struct PageChrome {
 
 impl PageChrome {
     /// Whether every overlay is off — the shipped state.
-    ///
-    /// Used by the file writer to decide nothing, and by the tests to assert
-    /// that a build which omits nothing behaves as the build before this
-    /// module did.
     #[must_use]
     pub const fn all_hidden(self) -> bool {
         !self.rulers && !self.grid && !self.guides
@@ -171,11 +110,6 @@ impl PageChrome {
 }
 
 /// The token a `bool` preference is written as.
-///
-/// Two spellings and no synonyms. Accepting `yes`/`on`/`1` as well would mean
-/// the writer picks one of four and the file then teaches the operator a
-/// spelling different from the one they wrote — and a value pdfcer silently
-/// rewrites is exactly what [`super::PrefNote`] exists to make impossible.
 #[must_use]
 pub const fn bool_key(value: bool) -> &'static str {
     if value {
@@ -188,12 +122,6 @@ pub const fn bool_key(value: bool) -> &'static str {
 }
 
 /// Read a `bool` token back, or `None` if it is neither spelling.
-///
-/// `None` rather than "anything that is not `true` is `false`", which is the
-/// conventional lenient reading and is wrong here: an operator who typed
-/// `show_rulers = ture` would get rulers off, which is also what they would get
-/// from a correct `false`, and nothing would ever tell them. The per-key
-/// recovery contract turns that into a reported [`super::PrefNote::BadValue`].
 #[must_use]
 pub fn bool_from_key(key: &str) -> Option<bool> {
     match key {

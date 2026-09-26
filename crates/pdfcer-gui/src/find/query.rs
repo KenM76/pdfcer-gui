@@ -9,18 +9,6 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/find/query.md`.
 
 /// **Does the raw query have whitespace at either end?**
-///
-/// The predicate behind the bar's disclosure row, and it is deliberately about
-/// the RAW query rather than about whether trimming changed anything: the
-/// operator is owed the sentence whether the setting is on (*"the space was
-/// ignored"*) or off (*"the space is part of what you asked for"*). Those are
-/// two different sentences about one observable fact, which is why the
-/// predicate answers the fact and the caller chooses the sentence.
-///
-/// `str::trim` rather than a space test, because he wrote *"spaces/tabs/etc"*
-/// and a clipboard hands over a tab, a non-breaking space or a zero-width
-/// anything just as readily as a space — and all of them are invisible in a
-/// one-line text box, which is the entire problem.
 #[must_use]
 pub fn has_edge_whitespace(raw: &str) -> bool {
     raw.trim() != raw
@@ -28,17 +16,6 @@ pub fn has_edge_whitespace(raw: &str) -> bool {
 
 /// **The needle the engine is given**, for a raw query and the current
 /// preference.
-///
-/// Borrowing rather than allocating: with the setting off, or with a query that
-/// has no edge whitespace — which is nearly every search — this returns the
-/// caller's own string and costs nothing.
-///
-/// A query that is ENTIRELY whitespace trims to the empty string, and that is
-/// correct rather than a hole: `find::search` treats an empty needle as *"you
-/// have not typed anything"* rather than as *"there is nothing here"*, which is
-/// exactly the right reading of a box containing one space. Without the trim
-/// the operator would get a confident *"no results"* for a document that is
-/// full of spaces.
 #[must_use]
 pub fn for_search(raw: &str, trim: bool) -> &str {
     if trim { raw.trim() } else { raw }

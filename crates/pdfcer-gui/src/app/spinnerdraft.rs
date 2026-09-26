@@ -7,6 +7,8 @@
 //! `pub(crate)` rather than scoped to the module that needs it first: a helper
 //! reachable only from there leaves every sibling control free to reinvent the
 //! same dead drag.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/app/spinnerdraft.md`.
 /// **Hold a spinner's value across frames while it is being dragged.**
 ///
 /// # The defect this exists to stop
@@ -63,10 +65,6 @@ where
 }
 
 /// Store or drop [`drafted`]'s value according to the widget's own state.
-///
-/// Returns whether the interaction just ended, which is the frame a commit is
-/// allowed on. Keeping that decision here is what stops two controls drifting
-/// apart about what "the operator has finished" means.
 pub(crate) fn keep_draft<T>(
     ui: &egui::Ui,
     id: egui::Id,

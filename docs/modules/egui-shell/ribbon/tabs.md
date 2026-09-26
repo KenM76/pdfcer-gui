@@ -106,3 +106,97 @@ the set to the fill.
 header: `RichText::strong()` in `egui` 0.35 is a stronger *colour*
 at the same weight, and treating it as a weight cue is exactly the
 mistake this project's own preferences document made.
+
+### `struct TabCues`
+
+A struct rather than three `if active` expressions scattered through
+the drawing code, because R84 is a property of the *set* of cues and a
+property of a set cannot be asserted about three separate expressions.
+
+### `fn visible_tabs`
+
+# The rules, and why each is what it is
+
+- **A mode names its tabs, and the mode's order wins.** A mode is a
+  *workspace*, and a workspace that reordered itself to match the
+  underlying manifest would not be one.
+- **No modes, or an unknown mode id, means every ordinary tab.** The
+  manifest is allowed to have no modes at all — a small application
+  does not need them — and an unknown id is a stale customization,
+  which per `SHELL_FRAMEWORK.md` must lose one thing and not the
+  layout. Showing everything is the safe direction: it can never hide
+  a capability.
+- **Hidden tabs are skipped.** [`Tab::hidden`] is the operator's own
+  choice and outranks the mode's list.
+- **Contextual tabs come last and are never mode members.** Their
+  presence is decided by application state rather than by
+  configuration, which is exactly why [`Shell::contextual_tabs`] is a
+  separate field.
+- **A tab with nothing left to show is not shown.** The rule that
+  comes with [`crate::manifest::Item`]'s `visible_when`, and the symmetric
+  completion of the band's own — *a group with nothing left is not drawn at
+  all*. Without it the two halves disagree: hide every item on a tab and
+  the groups all vanish, leaving a tab an operator can click and an empty
+  band beneath it.
+
+  It is also what makes a **generous tab list** safe, which is the point.
+  A mode can name a tab it only sometimes needs, hide the items that do not
+  apply, and the tab appears exactly when it has something to offer. That
+  turns `Mode::tabs` from *"which tabs exist here"* into *"which tabs may
+  appear here"*, and it is the mechanism by which a command can live on the
+  tab it belongs on rather than the tab a mode happened to be granted.
+
+  A tab whose items carry **no conditions at all** is never affected:
+  the question asked is *"is every item conditioned away?"*, and an
+  unconditioned item answers no. So this cannot hide a tab that a manifest
+  written before conditions existed would have shown.
+
+### `fn measure_tab`
+
+# Why a tab is measured at all
+
+[`super::strip`] must decide which tabs fit **before** any of them is
+drawn, for the reason [`super::plan`]'s header gives at length: an
+affordance emitted into whatever the content left is an affordance the
+content can take. So a tab is estimated the same analytic way a band
+item is — the galley `egui` will lay out, plus the padding `egui` will
+add — and the estimate is floored at
+[`super::plan::MIN_ITEM_WIDTH`] by [`ItemWidths::total`].
+
+A tab has no icon slot and no gap, so this is text plus padding. The
+active tab is *not* measured wider even though it is drawn with a
+stroke and `RichText::strong()`: an `egui` stroke is painted inside the
+button's own rect, and `strong()` in `egui` 0.35 changes the colour and
+not the face (see this module's header). Neither costs a point of
+width, so a strip does not reflow when the operator changes tab — which
+it very visibly would if the estimate said otherwise.
+
+### `fn render_tabs`
+
+`visible` is the subset [`super::plan::plan_tab_strip`] decided to
+draw, already in display order and already including the pinned active
+tab. The tabs that did not fit are drawn by
+[`render_overflow_menu`] instead; both paths call [`draw_tab`], so a
+tab in the menu carries the same cues, the same accessible name and the
+same tooltip as one in the strip. (That is the same rule
+[`super::band`] follows for overflowed groups, and for the same reason:
+a second, simpler drawing path for the menu is how the salvage
+source's caption-less groups happened.)
+
+Returns the newly clicked tab's id, if any. The caller writes it into
+[`super::RibbonState`]; this function mutates nothing, so a test can
+call it without owning shell state.
+
+### `fn render_overflow_menu`
+
+The menu is a vertical run of the *same* tab buttons the strip draws —
+see [`render_tabs`] on why there is no second drawing path. Clicking
+one activates it, and because
+[`super::plan::plan_tab_strip`] pins the active tab, the tab the
+operator just picked out of the menu is guaranteed to be in the strip
+on the next frame. That is the property that makes the menu a *route*
+to a hidden tab rather than a place a tab can be looked at.
+
+`active_id` is passed even though the active tab is never in `hidden`:
+it costs nothing, and it means a future change that unpins the active
+tab cannot accidentally draw it in the menu without its cues.

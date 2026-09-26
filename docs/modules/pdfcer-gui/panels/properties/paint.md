@@ -205,3 +205,11 @@ states and this test is what keeps them different.
 If it were, one red line plus one PANTONE line would read as "mixed" —
 which tells the operator that picking a colour will unify them, and it
 will not. The honest reading is "red, and one ink I will leave alone".
+
+### `fn section`
+
+Returns `false` for a selection this section has nothing to say about — an
+annotation, a form field, a selection with no path in it — rather than
+drawing an empty heading. `geometry::section` states the same rule and for
+the same reason: a heading with nothing under it reads as a control that
+failed to load.

@@ -77,3 +77,53 @@ always off.
 its tooltip is the only place the operator is told that. If link picking
 lands and this tooltip is not rewritten, the shell starts lying in the
 helpful direction — which is the direction nobody reports.
+
+### `fn filter_button`
+
+One word, because the status bar's whole right-hand cluster is one word per
+control ("Find", "Fit width", "Fit page") and a longer label here would be
+the widest thing on the bar.
+
+"Select" rather than "Filter" because it names what the control *governs*
+rather than the mechanism it uses to govern it. An operator scanning the bar
+for "how do I stop grabbing the border" is looking for the word for the
+thing they are doing.
+
+### `fn filter_button_tooltip`
+
+Names the count, because the button's own label cannot: "Select" looks
+identical whether every class is on or one is, and the difference is the
+entire state of the control.
+
+### `fn nothing_selectable`
+
+This exists because the state is legitimate and its symptom is
+indistinguishable from a fault. An operator who switched everything off
+half an hour ago, and has since been panning and reading, will click an
+object, get nothing, click again, get nothing, and reasonably conclude the
+program is broken. They would be right to: from where they are sitting, a
+canvas that ignores every click *is* broken.
+
+So the shell says so, on the bar, in the operator's own terms, next to the
+control that caused it. Not a dialog, not a toast, not a mark on the page —
+a standing statement that goes away when the cause does.
+
+### `fn nothing_selectable_tooltip`
+
+The one place in this file that comes close to an instruction, and it earns
+it: the operator reading this has already concluded something is wrong, and
+the fact they need is *which control did this*.
+
+### `fn class_label`
+
+A single function over the enum rather than eleven free functions, because
+the popup renders `PickClass::ALL` in a loop and a per-variant function set
+would need a `match` at the call site anyway — one that could silently omit
+a variant. This way, adding a class is a compile error here.
+
+### `fn class_tooltip`
+
+Every sentence describes the same shape of consequence — *clicks stop
+landing on X and reach whatever is behind it* — because that is genuinely
+what a subtractive filter does, and eleven differently-phrased sentences
+would imply eleven different mechanisms.

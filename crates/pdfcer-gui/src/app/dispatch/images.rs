@@ -7,10 +7,6 @@ use crate::app::state::Status;
 use crate::dialogs::DialogsState;
 
 /// The whole of `edit.insert_image` after its capability guard.
-///
-/// The guard stays at the call site, with every other command's, because *"may
-/// this mode edit content?"* is a question about the **command** and belongs
-/// where the other answers to it are. Everything below is about a **file**.
 pub(super) fn insert(dialogs: &mut DialogsState, status: &Status) {
     let crate::app::files::Picked::Path(path) = crate::app::files::pick_image_source() else {
         return;
@@ -19,16 +15,6 @@ pub(super) fn insert(dialogs: &mut DialogsState, status: &Status) {
 }
 
 /// Import the file at `path` and open the placement window.
-///
-///
-/// Because a **dropped** image has already answered the question `insert`'s
-/// first line asks. Fused with the picker, drag-and-drop could not reach the
-/// import without opening a file dialog over a file the operator had already
-/// chosen — which is the shape of thing that gets built as a duplicate instead.
-///
-/// One import, one set of disclosures, one placement window, two doors. The
-/// alternative is two code paths that agree today and disagree the first time
-/// one of them learns something.
 pub(crate) fn insert_path(dialogs: &mut DialogsState, status: &Status, path: &std::path::Path) {
     // Read and import on this thread — see the module header for why a worker
     // would be machinery for a wait nobody notices.

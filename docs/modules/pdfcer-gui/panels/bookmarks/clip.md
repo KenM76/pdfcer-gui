@@ -63,3 +63,28 @@ Returns whether it worked, so a cut can call off its own delete half — the
 ordering rule `canvas::clipboard::cut` established: *a cut that silently
 becomes a delete is a different verb wearing the operator's control, and
 they would find out by pasting.*
+
+### `fn copy_row`
+
+# Why cut is copy-then-`Delete` and not `cut_outline_item`
+
+`app::dispatch::pageclip`'s reason, unchanged: the clipboard lives in
+`egui::Memory` and the action applier has no `egui::Context`, so a
+single-call cut could not put its own clip anywhere. The engine's own
+`cut_outline_item` is literally `copy_outline_item` followed by
+`delete_outline_item`, so this is the same two steps in the same order —
+and `BookmarkAction::Delete` already drops the selection, warns about the
+subtree and is one undo entry.
+
+### `fn paste_row`
+
+Drawn only then — R9: an unavailable capability renders **nothing**, and a
+Paste button on a program that has never had a bookmark copied is a control
+whose only possible outcome is a refusal.
+
+# The warning is beside the button, not after the press
+
+See the module header. A pasted bookmark whose page does not exist here is
+**silently dead** — it shows, it has its title, and clicking does nothing —
+so the count of how many would land that way is computed from the clip and
+the page count and drawn where the operator is already looking.

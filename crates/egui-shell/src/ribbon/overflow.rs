@@ -92,10 +92,6 @@ impl Direction {
 }
 
 /// **How wide a scroll arrow is**, and therefore what the band must reserve.
-///
-/// Deliberately a function of the theme rather than a constant: the arrow sits
-/// in a row of controls and an arrow that did not scale with them would be a
-/// misalignment at every scale but one.
 pub(crate) fn arrow_width(ctx: &Ctx<'_>) -> f32 {
     ctx.theme.metrics.control_height
 }
@@ -118,23 +114,6 @@ pub(crate) fn set_first(ui: &egui::Ui, ctx: &Ctx<'_>, tab_id: &str, at: usize) {
 }
 
 /// **The furthest left index that still fills the band**, given the widths.
-///
-/// # Why this is a pure function and why it runs every frame
-///
-/// A remembered scroll position is an input to layout. Widen the window and a
-/// position that was correct becomes one that leaves blank space at the right
-/// of the band — the group list ends before the viewport does. The operator did
-/// nothing wrong and there is nothing for them to press.
-///
-/// The tempting fix is to notice the blank space after drawing and pull the
-/// band back. That is a measurement feeding the size that produced it — the
-/// feedback loop R128 forbids. So instead: compute, from
-/// the offered width and the group widths alone, the largest `first` at which
-/// the remaining groups still reach the right edge — and clamp to it before
-/// anything is drawn.
-///
-/// Walks from the end backwards, accumulating until the budget is exceeded.
-/// The last index that fitted is the answer.
 pub(crate) fn clamp(widths: &[f32], available: f32, separator: f32) -> usize {
     let n = widths.len();
     if n == 0 {
@@ -173,16 +152,6 @@ pub(crate) fn clamp(widths: &[f32], available: f32, separator: f32) -> usize {
 }
 
 /// Draw one arrow, and report whether it was pressed.
-///
-/// `rect` is computed by the caller from the band's own edge **before any group
-/// is laid out**, for the reason `plan`'s header gives: the affordance must
-/// not be the thing that gets squeezed out when the band is short of room,
-/// because it is the only way back.
-///
-/// Returns the `Response`, not a bare `clicked()`. The band publishes its `Id`
-/// as `BandOutcome::overflow_id`, which is how a driven check finds the control
-/// to click without knowing where it is; two tests fail loudly if it stops
-/// being honoured.
 pub(crate) fn arrow(
     ui: &mut egui::Ui,
     ctx: &mut Ctx<'_>,

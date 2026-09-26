@@ -45,10 +45,6 @@ const PAGE_BOX_ID: &str = "pdfcer-status-page-box"; // ui-text-exempt: widget id
 const PAGE_STATE_ID: &str = "pdfcer-status-page-state"; // ui-text-exempt: widget id, never displayed
 
 /// Draw `⏴ ⟨n⟩ / ⟨N⟩ ⏵`, plus the last commit's note when there is one.
-///
-/// Omitted entirely for a document with no pages (`/Count 0` is legal PDF):
-/// every input to a page box over such a document is out of range, and a
-/// control whose every answer is "no" is not a control.
 pub(super) fn group(
     ui: &mut egui::Ui,
     doc: &OpenDoc,
@@ -240,12 +236,6 @@ fn field(
 // ---------------------------------------------------------------------------
 
 /// Everything the page box remembers between frames.
-///
-/// Kept in `egui`'s per-id store beside the `TextEditState` it belongs with.
-/// [`crate::app::status`]'s module docs carry the argument for why that is
-/// right for a text-editing draft and wrong for a canvas selection: this
-/// value is discarded on focus loss, always, so it cannot outlive a document
-/// and there is no identity to key on.
 #[derive(Clone, Default, Debug, PartialEq, Eq)]
 pub(super) struct PageBox {
     /// What the operator has typed and not yet successfully committed.

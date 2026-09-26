@@ -55,3 +55,60 @@ unknown-theme disclosure.
 The property the disclosure promises. A draft carrying a token from a
 newer pdfcer must still carry it after the window has drawn — this test
 covers the data half; the sentence is covered in the catalog.
+
+### `fn theme`
+
+# Why this cannot use [`widgets::option`]
+
+That helper compares a `&mut T` against a `T` by `PartialEq`, which requires
+the stored type and the offered type to be the same. Here they are not: the
+store holds a `String` token and the window offers a `Preset`. Mapping in
+both directions inside a generic helper would mean a second type parameter
+and a pair of closures at every call site, to serve one setting.
+
+So it is hand-rolled, and kept honest by being *short*: read the current
+token once, draw a radio per preset, write the token back on a click.
+
+## The dead store the source carried, removed
+
+The original wrote `selected = true;` inside the click arm and then
+`let _ = selected;` to silence the unused-assignment lint — a write nothing
+reads, plus a second statement to hide that fact from the compiler. Two
+lines whose combined effect is nothing. The radio's selected state is a
+pure function of the token, so it is computed inline and there is no local
+to leave stale.
+
+### `fn ui_scale`
+
+# Why it is in this group rather than with the other preferences
+
+The other four preferences live in *Drawing the page*, and this one does
+not, because the window's groups are a **navigation model**: an operator
+arrives with a symptom and the heading is how the symptom finds its
+setting. The symptom here is *"the program's text is too small to read"*,
+which is a question about the window, not about the page — and Appearance
+is the group of settings that change **the program's own appearance and
+nothing about the document.** Theme is the other one.
+
+It also means the group's two members are the only two settings in the
+window that preview live, which makes that exception legible in one place
+instead of scattered.
+
+# A slider, not a radio group
+
+Unlike every enum in this window there are no named alternatives to
+compare: the values are a continuum and the right one is *the one at which
+this operator can read this screen*. There is nothing to explain per value
+and everything to try. Twenty-five steps is far too many radios and exactly
+the right number for a drag.
+
+The range and the step are the store's constants rather than local
+literals, for the reason repeated at every slider in this window: a control
+narrower than what the file accepts silently rewrites a hand-edited value
+on open, and the operator never touched the control.
+
+# Why the value is shown as a percentage
+
+Because "125 %" is a quantity an operator can compare against the Windows
+display setting they already know, and "1.25" is a number they have to
+interpret. It is the same value; the suffix is doing the explaining.

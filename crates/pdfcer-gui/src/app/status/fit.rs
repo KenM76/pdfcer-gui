@@ -8,6 +8,8 @@
 //! `Actual size · Fit width · Fit height · Fit page`; the calls below run in
 //! the reverse of that. Getting it backwards does not break anything — it
 //! silently reorders four controls an operator has learned the positions of.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/app/status/fit.md`.
 
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
@@ -17,18 +19,6 @@ use crate::viewer::FitMode;
 use super::REGION_FIT;
 
 /// `Actual size · Fit width · Fit page`, mirroring View ▸ Zoom under P1a.
-///
-/// **Two of the three are toggles and one is a button, and that asymmetry
-/// is honest rather than sloppy.** `FitMode::Page` and `FitMode::Width` are
-/// *modes*: they persist, they re-fit on every window resize, and a control
-/// that shows whether you are in one is telling the truth. `FitMode::None`
-/// is the absence of a mode, so a "selected" Actual size would light up at
-/// any pinned zoom — including 73 % — which is the module docs' defect
-/// rendered on screen instead of merely wired. A plain button makes no claim
-/// about state.
-///
-/// Called *last* of the three groups because the layout runs right-to-left;
-/// see [`show`].
 pub(super) fn group(ui: &mut egui::Ui, doc: &OpenDoc, actions: &mut Vec<Action>) {
     let fit = doc.view.fit;
     let rect = ui

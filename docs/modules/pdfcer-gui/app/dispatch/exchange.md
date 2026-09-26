@@ -36,3 +36,23 @@ which is what every verb here does and the only thing they all do.
 band and are not here. They write the document *itself*, not a derivative of
 it, and they stay in [`super`] beside `file.save` where an operator's mental
 model puts them.
+
+## Item notes
+
+### `fn claims`
+
+Spelled as a `matches!` over the literals rather than a
+`starts_with("file.export")` prefix test, which would be shorter and wrong
+twice over: it would swallow a future `file.export_settings` that has
+nothing to do with page content, and it would miss the imports, which do
+not start with `export` and are the reason this module is not called that.
+
+### `fn dispatch_exchange`
+
+Every arm here is either *open a window* or *pick a file, then open a
+window* — never *do the thing*. That is the band's shape and it is worth
+stating once: each of these verbs has at least one decision that cannot
+be recovered from a picker, so none of them can be a bare command, and
+the two that look like exceptions (`export_form_data`,
+`import_form_data`) carry their own note about why the file's
+**extension** is the decision.

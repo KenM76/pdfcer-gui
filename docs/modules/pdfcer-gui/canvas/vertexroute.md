@@ -70,3 +70,24 @@ wrong verb, which never looks broken from a chair.
 does not name a shape they own, and a default that carried a `Some`
 would put a stale polyline on the canvas for every drag that reached no
 verb.
+
+### `enum Subject`
+
+Two variants and not a boolean, for the reason `canvas::dimdrag`'s
+`VertexIntent` gives about its three: the two reach different engine verb
+families, and a `bool` named `is_markup` is a fact a caller may read
+backwards while a variant is one the compiler makes them handle.
+
+### `struct Frame`
+
+A struct rather than ten parameters, for `dimdrag::VertexFrame`'s reason:
+three members are `Option`s of borrowed things and two are `Pos2`s in the
+same space, both of which a positional list would let a caller transpose
+silently.
+
+### `struct Previews`
+
+Two polyline fields rather than one, matching the preview slots
+`canvas::previews` already carries and for their stated reason: the painter
+reads each independently, and one `Vec` whose meaning depends on which
+selection is live is a value the paint loop has to interrogate.

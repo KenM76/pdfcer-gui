@@ -19,17 +19,6 @@ pub const REGION_RENAME: &str = "bookmarks.rename"; // ui-text-exempt: trace reg
 pub const REGION_DELETE: &str = "bookmarks.delete"; // ui-text-exempt: trace region name, never displayed
 
 /// Draw the rename-and-remove block for the selected bookmark.
-///
-/// `selected` is the item the operator last clicked, already resolved against
-/// the outline **as it stands this frame** by the caller. Resolving it there
-/// rather than here is what lets the whole block be skipped when nothing is
-/// selected — R9, one call site up — and it means this function never has to
-/// consider an id that no longer names anything, which is the ordinary state
-/// one frame after an undo.
-///
-/// Nothing is mutated except `ui_state`'s own draft. Both verbs leave through
-/// `actions`: no code path runs from a widget to a document, which is what
-/// keeps one gesture equal to one undo entry. See `app::actions`' `OVERVIEW.md`.
 pub fn show(
     ui: &mut Ui,
     selected: &OutlineItem,

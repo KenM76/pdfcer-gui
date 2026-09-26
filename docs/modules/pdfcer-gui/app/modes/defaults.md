@@ -327,3 +327,53 @@ name an id that is neither implemented nor declared absent, and an
 id declared absent may not already exist. The second half is the one
 that matters over time — it makes the day a Pages panel lands a
 failing test rather than a stale comment.
+
+### `const ABSENT_PANELS`
+
+`(id, reason)`, in the shape and for the reasons
+`crate::shell::manifest::PLANNED` uses for absent *commands*: an
+omission that is data can be tested, enumerated and grepped, whereas an
+omission that is a comment becomes stale the day it stops being true.
+
+Tested in both directions by
+`every_default_panel_is_registered_or_declared_absent`: nothing in a
+default layout may be missing from both `Panel::ALL` and this list, and
+nothing in this list may already exist as a panel. So the day either
+panel lands, the suite fails until this entry is removed — which is the
+same commit in which the default starts mounting it.
+
+### `fn pages`
+
+A function rather than a `const`, because the id must come from
+[`Panel::command_id`] like every other one — a second spelling of the same
+string is a second thing to keep in step, and [`SideSpec`]'s own doc
+comment explains why that matters here.
+
+It is a function and not an inline call only so the three arms below read
+alike, and so this doc comment has somewhere to live.
+
+`pub(super)` rather than private: it belongs with the arrangements, and
+`super`'s upgrade-reconciliation tests name the Pages panel the same way
+its own arms do. Deliberately not `pub` —
+outside this module the id comes from [`Panel::command_id`] directly.
+
+### `fn layout_for`
+
+The intended arrangement, naming every panel the mode is specified to
+offer whether or not this build has it. Almost every caller wants
+[`layout_for_build`] instead; this exists so the intent is expressible,
+testable and readable on its own.
+
+An unrecognised `mode_id` gets the full arrangement — see the module
+header on why removing is the opinionated act.
+
+### `fn layout_for_build`
+
+This is the one an application calls. `SHELL_FRAMEWORK.md` §5b: a
+capability's presence is expressed by registering it and by nothing
+else, so a default that mounts a panel nothing registers must mount
+nothing rather than produce a tab whose body cannot be drawn.
+
+The filter runs over the same [`PanelCatalog`] the dock and the layout
+loader use, so "what a fresh profile starts with" and "what a saved
+layout is allowed to contain" cannot disagree.

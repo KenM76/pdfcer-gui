@@ -41,3 +41,62 @@ What *is* shared is the arithmetic: the position of a page point along the
 scroll content comes from [`geometry::offset_holding_anchor_at`], the same
 function the zoom anchor, the find reveal and the destination scroll all
 use, so no second opinion about where a page point sits can exist.
+
+## Item notes
+
+### `const REVEAL_GRACE_FRAMES`
+
+Deliberately [`crate::canvas::destscroll::DEST_GRACE_FRAMES`]: both are
+"wait for the page turn the action beside me raised", and a second number
+would be two answers to one question. A reveal held indefinitely would be
+spent minutes later, on an unrelated page change, as a view that lurches on
+its own.
+
+### `const REVEAL_MARGIN`
+
+The same constant a fit is framed with, so "clear of the edge" means one
+thing across the canvas. It is applied on both the near and the far side,
+which is what stops a field that is technically visible but sitting under
+the scroll bar from counting as reached.
+
+### `fn fracs_for_canvas_rect`
+
+Measured against the page extent rather than its drawn size, which is what
+makes the value independent of the zoom and so recordable now, spendable
+later.
+
+### `fn park`
+
+Replacing rather than queueing is the correct rule for a key the operator
+holds down: three fast Tab presses are a request to be at the third stop,
+and a queue would walk the view through the first two.
+
+### `fn solve_axis`
+
+`lo` and `hi` are content-space positions — the offsets at which the
+rectangle's near and far edges would sit exactly at the start of the view.
+The margin is applied outside both, so the answer is the offset at which the
+rectangle *and its paper* are inside the view.
+
+Returns `None` for *"this axis already shows it — do not move"*, which is
+the answer the whole module exists to be able to give.
+
+# The rectangle larger than the viewport
+
+When `hi - lo + 2 * margin` exceeds `viewport` the two constraints conflict
+and no offset satisfies both. The near edge wins: a field taller than the
+screen is read from its start, and aligning to the far edge would put the
+caret off the top of the view on the frame the operator began typing.
+
+### `fn take_reveal_offset`
+
+`display` is the page's drawn size and `viewport` the visible extent, both
+in the units `geometry` works in; `current` is the offset the view is
+sitting at, in strip space; `to_strip` is `canvas::offset`'s own page-local
+→ strip conversion, handed in rather than reimplemented so the visibility
+test is made in the same space as the answer.
+
+Returns the offset the `ScrollArea` should be forced to, or `None` for
+*"nothing to do"* — which covers both "no reveal parked" and "parked, and
+both axes already show it". In the second case the reveal is still consumed:
+it has been satisfied.

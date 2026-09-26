@@ -14,19 +14,6 @@ use pdfcer_core::text_edit::{EditOptions, FollowerDisposition};
 /// The engine's alignment finding, reduced to the two fields this decision
 /// reads — **the argument type, and it is a pair rather than the struct on
 /// purpose.**
-///
-/// [`DetectedAlignment`] is `#[non_exhaustive]`, so nothing outside
-/// `pdfcer-core` can build one, so a [`choose`] that took it could only ever be
-/// tested through a real page. Its *fields* are two plain `Copy` enums whose
-/// variants are constructible anywhere, and they are the entire input to the
-/// rule — the three raggedness measurements and the tolerance beside them are
-/// evidence for the finding, not part of it.
-///
-/// So the seam is here: [`from_detection`] does the one-line reduction at the
-/// single place a real detection arrives, and every case in the table on
-/// [`choose`] is a unit test with no fixture. That is the same shape
-/// `canvas::textsel::gate` uses — a pure predicate over two small values,
-/// separated from the page that produces them.
 pub type Finding = (BlockAlignment, AlignmentSource);
 
 /// Reduce an engine detection to the pair [`choose`] reads.
@@ -39,30 +26,9 @@ pub fn from_detection(d: DetectedAlignment) -> Finding {
 }
 
 /// Axis-alignment tolerance for a text or transformation matrix off-diagonal.
-///
-/// **Ported, not chosen.** It is `pdfcer-core`'s own `MTX_EPS` from
-/// `text_edit/reflow_apply.rs`, the constant its `check_uniform_axis_aligned`
-/// compares `b` and `c` against before refusing a rotated block. A second
-/// tolerance picked here would be a second answer to "is this upright", free to
-/// disagree with the engine's on exactly the matrices where it matters.
 pub const MTX_EPS: f64 = 1e-6;
 
 /// **Why** a disposition was chosen — the operator-facing half of the answer.
-///
-/// [`choose`] returns this beside the disposition rather than only the
-/// disposition, for two reasons that are both about honesty rather than
-/// tidiness:
-///
-/// 1. `Pin` has a cost (a tail that does not make room) and `Reflow` has a cost
-///    (a line that may overrun its margin). Which one the operator is about to
-///    pay is a fact they are entitled to before they press Accept, and it is a
-///    different fact in each case — so one generic "the line may move" sentence
-///    would be a sentence that is never quite true.
-/// 2. [`Self::AlignmentUndetectable`] is a **fall-back, not a finding**, and the
-///    difference is invisible from the disposition alone: it produces the same
-///    `Reflow` a confidently left-aligned block does. Collapsing them would make
-///    the shell state as detected something it defaulted to, which is the exact
-///    shape rule 4 forbids.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Reason {
     /// The run's `Tm` or CTM is rotated or skewed, so a follower shift computed
@@ -112,11 +78,6 @@ pub enum Reason {
 
 impl Reason {
     /// The disposition this reason implies.
-    ///
-    /// Written as a method on the reason rather than as a second `match` in
-    /// [`choose`] so the two can never disagree: a reason is the *whole* of the
-    /// input to the choice, and a future fifth reason is a compile error here
-    /// rather than a silent `Reflow`.
     #[must_use]
     pub const fn disposition(self) -> FollowerDisposition {
         match self {
@@ -127,11 +88,6 @@ impl Reason {
 
     /// Whether the operator is about to pay `Pin`'s cost — an untouched tail
     /// that does not make room for a longer replacement.
-    ///
-    /// The predicate the status-bar disclosure gates on, kept here beside the
-    /// reason it derives from rather than re-spelled as a `matches!` at the one
-    /// call site, for the reason `CanvasTool::markup_kind`'s docs give: a
-    /// predicate with two readers is a predicate that drifts.
     #[must_use]
     pub const fn pins_the_tail(self) -> bool {
         matches!(self.disposition(), FollowerDisposition::Pin)
@@ -140,19 +96,6 @@ impl Reason {
 
 /// **Whether a matrix pair is upright** — the engine's own axis-alignment test,
 /// ported.
-///
-/// `true` when neither the text matrix nor the CTM carries a non-zero
-/// off-diagonal term. Both are checked because either can rotate the glyphs:
-/// §9.4.4's text rendering matrix is `Tm × CTM` (with the font scale between
-/// them), so a page whose whole content stream sits inside a rotating `cm` puts
-/// the rotation in the CTM while every `Tm` on it reads as upright. A guard
-/// that looked only at `Tm` would pass every glyph on a rotated sheet — which
-/// is exactly the SolidWorks landscape-plot case this fix is for.
-///
-/// `f32` in, because that is what
-/// [`GlyphProvenance`](pdfcer_core::text_extract::GlyphProvenance) publishes;
-/// widened to `f64` for the comparison so the tolerance is compared in the same
-/// type the engine compares it in.
 #[must_use]
 pub fn is_upright(text_matrix: [f32; 6], ctm: [f32; 6]) -> bool {
     let off = |m: [f32; 6]| f64::from(m[1]).abs() <= MTX_EPS && f64::from(m[2]).abs() <= MTX_EPS;
@@ -161,23 +104,6 @@ pub fn is_upright(text_matrix: [f32; 6], ctm: [f32; 6]) -> bool {
 
 /// **The decision.** Which [`FollowerDisposition`] a commit on this run must
 /// use, and why.
-///
-/// Pure: a matrix pair and the engine's own alignment finding in, an answer
-/// out. No document, no session, no page — which is what lets every case in
-/// the table below be a unit test rather than a fixture.
-///
-/// `alignment` is `None` when the caller could not resolve a block for the
-/// caret at all (an empty page, a caret on a run the block recogniser did not
-/// place). That is treated as [`Reason::AlignmentUndetectable`] and **not** as
-/// left alignment, because "no block" and "a left-aligned block" are different
-/// findings and only one of them is a finding.
-///
-/// | `Tm`/CTM | alignment | → | why |
-/// |---|---|---|---|
-/// | rotated/skewed | *anything* | `Pin` | the follower shift would be in the wrong frame |
-/// | upright | `Right` / `Center` / `Justified` | `Pin` | the tail is flush against something |
-/// | upright | `Left`, detected | `Reflow` | the line is meant to grow right |
-/// | upright | single-line / ambiguous / `None` | `Reflow` | the engine's default, **disclosed as a fall-back** |
 #[must_use]
 pub fn choose(
     text_matrix: [f32; 6],
@@ -236,13 +162,6 @@ pub fn choose(
 }
 
 /// The [`EditOptions`] a commit built from `reason` must carry.
-///
-/// A one-line adapter, and it exists so that **no call site constructs
-/// `EditOptions` itself**. That is the whole defect this module prevents stated
-/// as a rule: a default is what a call site gets whenever the type is
-/// constructible at the point of use, and the default is wrong for two whole
-/// classes of run. Here the only way to obtain one is to have already answered
-/// the question.
 #[must_use]
 pub fn options(reason: Reason) -> EditOptions {
     EditOptions::default().with_disposition(reason.disposition())

@@ -43,3 +43,63 @@ comparison is the ordinary string one — deliberately **not** constant-time,
 because nothing here compares a secret against a stored secret. The only
 comparison that matters is `pdfcer-core`'s, inside the document's own
 authentication.
+
+## Item notes
+
+### `struct Secret`
+
+See the module header. The `Debug` implementation reports the **length** and
+nothing else, which is enough for a diagnostic to say *"a password of 11
+characters was supplied"* — the fact a reader of a trace actually needs — and
+carries none of the value.
+
+### `fn expose`
+
+Named `expose` rather than `as_bytes` or `get` on purpose: a call site
+reading `password.expose()` says at the point of use that a boundary is
+being crossed, and a reviewer scanning for "where does the password
+actually go" has one word to grep for. There are two legitimate callers
+— `Document::load_with_password` and `from_bytes_with_password` — and a
+third would want explaining.
+
+### `fn expose_str`
+
+A second accessor rather than a caller writing
+`std::str::from_utf8(secret.expose())`, and the difference is not
+ergonomic: that expression cannot fail here (the buffer is a `String`)
+and a caller who wrote it would have to decide what to do with an
+`Err` that cannot occur — which is how an `unwrap` gets written on the
+one path in the program that must not panic while holding a secret.
+
+
+⚠ Exposing is exactly as dangerous as [`Self::expose`] and the same rule
+applies: the result must not be formatted, stored, or handed to anything
+that will outlive the call. This type's guarantee is that the *value*
+cannot be printed; it cannot follow a `&str` a caller took out of it.
+
+### `fn is_empty`
+
+An **empty** password is not the same as no password at all, and the
+engine's own doc says so: `load_with_password(path, None)` means *"try
+the empty user password, then give up"*, which every conforming reader
+does silently before prompting. Supplying `Some(b"")` is a different
+request. This shell only ever reaches the prompt after the `None` attempt
+has already failed, so an empty box means the operator pressed Open with
+nothing typed — which the dialog refuses rather than sending on, because
+re-asking the engine the question it has already answered would look
+like the password was rejected.
+
+### `fn has_non_ascii`
+
+Not idle curiosity: `pdfcer-core` reports
+`DocError::PasswordRequiresNormalisation` for a `/R` 5 document when the
+supplied password is non-ASCII, because the spec's own step 1 applies
+**SASLprep** (RFC 4013) before hashing and the engine does not implement
+it. Its doc comment is explicit that this variant exists *"so that
+failure does not masquerade as `PasswordRequired`'s 'you typed it
+wrong', which would send the operator to re-check a password that was
+correct."*
+
+The dialog therefore has a different sentence for that case, and this is
+how it can also say the useful half — *which* characters are the problem
+— without the engine having to tell it.

@@ -76,10 +76,6 @@ use super::plan_band;
 
 /// What each claimant on the tab-strip row is asking for, and the floors
 /// below which giving it anything is worse than giving it nothing.
-///
-/// A struct rather than five positional `f32`s because four of the five
-/// are widths and a transposed pair would compile, run, and produce a row
-/// that is subtly wrong at exactly the widths nobody checks by hand.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) struct RowDemand {
     /// The QAT's natural width, from [`super::super::qat::measure`].
@@ -137,10 +133,6 @@ pub(crate) struct RowDemand {
 }
 
 /// How the tab-strip row's width is divided between its three regions.
-///
-/// Returned by [`plan_strip_row`]. Widths, not rectangles — this module
-/// has no coordinate system; [`super::super::strip`] turns these into
-/// rects.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) struct RowPlan {
     /// Width granted to the quick-access toolbar, on the left.
@@ -317,11 +309,6 @@ fn sane(v: f32) -> f32 {
 
 /// How the tabs are split between the visible strip and the strip's own
 /// overflow menu.
-///
-/// Returned by [`plan_tab_strip`]. `shown` and `hidden` are **indices**
-/// rather than counts because, unlike a band, the visible set is not a
-/// prefix — the active tab is pinned into it wherever it sits. Both are
-/// ascending, so the strip and the menu each keep the manifest's order.
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct StripPlan {
     /// Indices of the tabs drawn in the strip, ascending.

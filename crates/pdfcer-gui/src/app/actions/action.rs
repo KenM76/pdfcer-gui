@@ -25,16 +25,13 @@
 //! next family of variants to grow will have to become a sub-enum beside
 //! `PageAction` and `DimensionAction`. [`super`]'s declaration of this module
 //! carries the measurement of which family that should be and why.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/app/actions/action.md`.
 
 use super::{ViewChrome, dimensions, pages};
 use crate::viewer::FitMode;
 
 /// One operator intent, applied after the frame that raised it.
-///
-/// Every variant is reachable from a real control today. A variant nothing
-/// can raise is dead code wearing a design pattern, and the "no
-/// placeholders" invariant (`PROJECT_PLAN.md` §3) applies to enums as much
-/// as to labels.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {
     /// **What is selected** — the two verbs that set it, carved into a

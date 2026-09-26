@@ -23,19 +23,6 @@ pub(super) fn seam_y(state: &CanvasState) -> f32 {
 
 /// The zoom at which the neighbour below a seam parked at `seam` is expected to
 /// leave the screen, closing part A's measuring window.
-///
-/// The neighbour's top edge is one whole gap below the acting page's bottom edge
-/// and the gap is `ROW_GAP_PT × zoom`, so the edge descends past the pointer at
-/// roughly that rate and runs out of room at
-/// `(usable bottom - seam) / ROW_GAP_PT`. [`BOTTOM_DEAD_BAND_PT`] is what makes
-/// "usable" different from "published".
-///
-/// Deliberately an UNDER-estimate. The real rate measured nearer `10.7 ×
-/// zoom`, because the pointer's document point slides down the screen a little as
-/// the zoom rises, so dividing by 12 predicts the window closing earlier than it
-/// does. An optimistic prediction here would let a run start a climb it cannot
-/// finish and then report an unmeasured absence, which is the exact failure this
-/// function exists to prevent.
 pub(super) fn window_closes_at(canvas: LRect, seam: f32) -> f32 {
     ((canvas.max.y - BOTTOM_DEAD_BAND_PT - seam) / ROW_GAP_PT).max(0.0)
 }
@@ -48,11 +35,6 @@ fn aim_at(session: &Session, canvas: LRect, x: f32, y: f32) -> Result<ScreenPoin
 
 /// Scroll the continuous strip until the gap after the acting page sits in the
 /// middle of the canvas, and return the point to roll the wheel at.
-///
-/// Fails — as a SKIP — rather than guessing. A run that climbed from a seam
-/// outside the band would push one of the two pages off screen early and would
-/// then report "the neighbour was never visible", which is a statement about
-/// the harness wearing the clothes of a statement about the application.
 pub(super) fn park_on_the_seam(
     session: &Session,
     driver: &Driver,

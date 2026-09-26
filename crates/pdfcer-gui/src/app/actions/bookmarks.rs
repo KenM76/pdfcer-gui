@@ -8,16 +8,6 @@ use pdfcer_core::object::ObjId;
 use crate::app::state::OpenDoc;
 
 /// The verbs whose subject is one entry in the document's outline.
-///
-/// See the module header for what makes them a family: every one of them names
-/// its operand by `ObjId`, because an outline is a tree that every edit to it
-/// renumbers.
-/// **`PartialEq` and not `Eq`**, and the bound cannot be restored.
-/// `pdfcer_core::outline::OutlineClip`, which [`BookmarkAction::Paste`]
-/// carries, is `PartialEq` only — a bookmark's colour is three `f64`s and
-/// floats have no total equality — and an enum holding one cannot be `Eq`.
-/// Nothing needs it: `Eq` over `PartialEq` buys a `HashMap` key, and no action
-/// is ever one.
 #[derive(Debug, Clone, PartialEq)]
 pub enum BookmarkAction {
     /// **Add a bookmark to the document's outline.**
@@ -309,29 +299,6 @@ pub enum BookmarkAction {
 }
 
 /// Apply one bookmark verb.
-///
-/// The dispatch half of this module, reached from `PdfcerApp::apply`'s single
-/// [`super::action::Action::Bookmark`] arm. It is a free function taking
-/// `&mut OpenDoc` rather than a method, exactly like [`super::dimensions::apply`]
-/// and [`super::pages::apply`], because the caller is the one place that owns
-/// the borrow and the arm should be one line.
-///
-/// **Every arm goes through [`super::apply::vector_edit`]** — the
-/// cancel–mutate–bump–invalidate protocol — and none of them may hand-roll it.
-/// Its doc comment carries the argument: four hand-written copies of a
-/// four-step protocol are four chances to omit a step, and the two steps most
-/// easily omitted (the epoch bump and the structural resync) fail *silently*,
-/// leaving an edit that happened in the document and did not happen on screen.
-///
-/// The `page` argument passed to `vector_edit` is **`0` for all three**, and
-/// that is honest rather than lazy: an outline is document-level, no page is
-/// being edited, and the parameter exists only so the diagnostic trace can say
-/// which sheet a geometry edit touched. [`super::dimensions::apply`] passes `0`
-/// for its group verbs for the identical reason. The one exception is
-/// [`BookmarkAction::Add`], which passes the destination page — not because a
-/// page is being changed, but because the page is the operand that decides what
-/// the bookmark points at, and a trace that could not say which one would be
-/// unable to check the commonest thing to get wrong.
 pub(super) fn apply(doc: &mut OpenDoc, action: BookmarkAction) {
     match action {
         // One bookmark, one undo entry, and NO count reported.

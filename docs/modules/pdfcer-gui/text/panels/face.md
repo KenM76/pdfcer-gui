@@ -138,3 +138,247 @@ failure the operator has to go and check.
 Plus the half the old sentence could not have: a dead end owes the
 operator the *next* thing to try, even when that thing is not pdfcer's
 to do.
+
+### `fn text_face_label`
+
+The **ribbon's** copy of this control has no label beside it: the group's
+caption already says *Font*, the control shows the current face, and Word's
+own font-name box carries no label for the same two reasons. A label there
+would be the third occurrence of the word within one inch of ribbon. In the
+panel the rows are stacked and each needs its noun.
+
+### `fn text_face_none`
+
+**A real state, and a rare one.**
+
+The chooser lists only faces the pre-flight has already accepted **for this
+run**, drawn from two sources: the page's own `/BaseFont`s and the standard
+fourteen. On a page where both sets come back empty the combo would be
+empty, which reads as a broken control — so this sentence is drawn instead.
+
+Reaching it therefore means something strong: not one font on this page can
+show these characters **and** every one of the fourteen is either already on
+the page in a form that cannot show them, or was not offered. In practice
+that is a run of characters no `WinAnsi`-encoded face covers — a symbol
+font's own glyphs, most often a title-block logo.
+
+It names the reason at the level an operator can act on: the fonts are
+there, and what they cannot do is show *these characters*. That is why a
+title-block label in a symbol font offers nothing while the paragraph beside
+it offers four.
+
+### `fn text_face_ambiguous`
+
+Two rows reading identically is otherwise indistinguishable from a bug,
+and the survey behind the Fonts panel found **two subsets of one face in
+87 % of embedding files** — so this is the routine case, not the exotic one.
+The operator has a real choice between them and pdfcer reaches the one the
+row is about, by resource key rather than by name.
+
+### `fn face_group_on_page`
+
+*"On this page"* rather than *"In this document"*, and the difference is
+the engine's rather than a preference. `preview_font_resources` enumerates
+the `/Font` resources of **one page's** resource dictionary — §7.8.3 makes a
+resource name local to the stream it is used from — so a face on page 4 is
+not offered here and would not be found by `set_font` if it were. A heading
+saying *document* would be describing a scope the answer below it does not
+have.
+
+The heading is drawn **even when there is only one group**, and that is
+deliberate: the operator's question is *which of these will change my file*,
+and a list whose two halves are labelled only when both are present teaches
+them to read the labels sometimes.
+
+### `fn face_group_addable`
+
+It is worded as an **act**, not as a category. *"Standard fonts"* would
+be the librarian's heading and would leave the operator to work out that
+picking one writes to their file; *"pdfcer can add"* says what the click does
+before it is clicked, which is R83's whole shape — the operator learns before
+the gesture rather than from a disclosure after it.
+
+### `fn face_addable_disclosure`
+
+# The inference the operator cannot see
+
+`pdfcer-core`'s own release note: pdfcer *"authors the font
+resource on demand, with widths, embedding nothing."* §9.6.2.2 permits that
+for exactly these fourteen faces — a four-key dictionary with no
+`/FontFile`, no `/FontDescriptor`, and no glyph outlines anywhere in the
+file.
+
+⇒ **The text is then drawn with the reader's own copy of that face.** Which
+is invisible on this screen, because the copy this machine renders with is
+the one the operator is looking at, and visible on somebody else's machine,
+where it is a different copy. That is rule 4's surviving half stated as
+plainly as it can be: *an inference the operator cannot see still owes an
+off-canvas report.* A screenshot of the canvas here and a screenshot of the
+same file opened elsewhere may genuinely differ, and nothing on this canvas
+can say so — so the sentence has to.
+
+# Once, and where they choose
+
+It is a **visible label under the group heading**, not a hover, and not a
+hover repeated on each of fourteen rows. Fourteen copies of one sentence is
+a nag; a hover is a sentence the operator has to go looking for, and this one
+is owed to every operator who opens the list, including the one who chooses
+nothing. It is drawn only when at least one addable row is present, so a page
+carrying all fourteen already never shows it.
+
+# What each clause is doing, and why none of them is decoration
+
+| clause | the fact, and why it is owed |
+|---|---|
+| *"adds it to the document"* | the act. A row in a font menu does not otherwise read as a write. |
+| *"the face's name and its letter widths — not the font program"* | what is actually written. It is also the answer to *"will my file get big?"*, without quoting a byte count this shell has not measured. |
+| *"drawn with each reader's own copy"* | the inference above. The clause the whole disclosure exists for. |
+| *"Every PDF reader carries these fourteen, so it will always show"* | the reassurance that keeps the clause above from reading as a warning against using the feature. Sourced from the engine's release note — *"the fourteen faces every PDF reader is required to have"* — and not from a general claim about readers. |
+| *"on another machine the letters may be set a little differently"* | the consequence, in the operator's terms. Not "metrics may vary": what they will see is a line that wraps one word earlier. |
+
+It does **not** promise that the fourteen render *identically* everywhere.
+They do not — that is the entire content of the third clause — and a
+sentence claiming they did would be the comfortable version of this
+disclosure rather than the true one.
+
+### `fn refused_char_heading`
+
+It names the **character's** problem, not the font's, and not the
+operator's. *"Unsupported font"* would be the engine's noun; *"That
+character isn't available"* would be the operator's own phrasing handed back
+to them without an answer. What an operator needs at the top of this block
+is the fact that decides what they do next: this font, this character, no.
+
+### `fn refused_char_named`
+
+The status bar's `⊗` slot returns `&'static str` and is truncated to 45 % of
+the bar; a panel can interpolate and wrap. So the naming happens here, beside
+the control that answers it — which is also where a disclosure belongs,
+above the thing it qualifies rather than below it.
+
+# Why the FONT is named too
+
+Because the operator's next question is *"which font?"*, and on a page with
+four faces the answer decides whether they believe the block at all. It is
+the shortened `/BaseFont` — the same spelling the chooser's rows use — so the
+name in this sentence and the name in the list are the same string.
+
+# Why *"the letters your page already prints"* and never *"subset"*
+
+O141's framing, in the operator's own words: he asked this question without
+the word, and *"the operator should be able to get from the refusal to a face
+that can type it, without knowing what a subset is."* The clause also happens
+to be the whole mechanism — a producer embeds the letters the page used and
+no others — so nothing is lost by saying it in English.
+
+### `fn refused_char_offer`
+
+# It promises ONE gesture, because the shell performs the other
+
+The operator's typed words are kept ([`crate::canvas::textedit::Committing`])
+and travel with the refusal, so **taking the offer re-applies the edit he
+already made**. A sentence adding *"then click in the text and type it
+again"* would describe a route one gesture longer than the one that runs,
+and a control that quietly does more than it claims is as hard to trust as
+one that does less.
+
+### `fn refused_char_no_face`
+
+# Why there is no caveat here, and a sentence instead
+
+`preview_font_resources_for` coverage-tests a candidate string and the
+refused character **is** that candidate, so every row in the offer is a face
+that will take it. A caveat warning that a row might refuse anyway would
+teach the operator to distrust a list that is exact.
+
+⇒ The price of that exactness is that the list can be **empty** — and it is,
+for any character outside `WinAnsiEncoding`, because none of the standard 14
+can encode one. Drawing the offer heading (*"Pick a font that has the 中"*)
+above an empty combo would be an instruction the operator cannot follow.
+
+So the dead end is **named**, and it names the two things the operator can
+still do — neither of which is pdfcer's to perform, which is why they are
+offered as information rather than as buttons that would refuse.
+
+### `fn refused_char_swapped`
+
+The swap is an edit, so it retires the offer; without this the block would
+vanish at the moment the operator most needs to be told what happened, and
+they would be left looking at a page that changed for a reason nothing named.
+
+It names the face that is now in force, because that is the one fact the
+canvas cannot show them: on a metric-compatible swap — `Arimo-Bold` to
+`Helvetica-Bold` moved the operator's own line by 0.005 pt — the page looks
+exactly as it did, and a block saying nothing would leave them unsure whether
+anything happened at all.
+
+⚠ **It must not tell the operator to type the character again.** The block
+re-applies the edit itself on this very frame, and an instruction to do
+something the program has already done is worse than none: the operator
+follows it, types the character into a document that already has it, and
+gets a second copy.
+
+### `fn refused_char_swapped_type_again`
+
+Reached when the refusal arrived with **no carried words** —
+`RefusedCharacter::typed` is `None`, which happens if the plan that produced
+the refusal named a different `(page, run)` than the refusal did. That is a
+disagreement between two facts about one commit, and this shell declines to
+paper over it: rather than guess at what the operator typed, it swaps the
+face (which is real and useful on its own) and asks for the character again.
+
+So it is the honest sentence for the one state in which the instruction is
+true, and keeping it separate is what lets
+[`refused_char_swapped`] and [`refused_char_blocked`] be unambiguous about
+their own states. A single sentence covering all three would have to hedge,
+and a hedged instruction is one the operator cannot follow.
+
+### `fn refused_char_blocked`
+
+# ⚠ It must not name a cause, and the reason is structural
+
+It is tempting to delete this function and its `retried` arm on the grounds
+that the retype always lands now — `plan_edit` takes a `&DocumentView<'_>`
+so a newly authored `/Font` resolves without a save and a reopen, and
+[`crate::canvas::textedit::facewall`] asserts that success in both request
+shapes. **That reasoning is wrong.**
+
+The block is not reached by recognising any particular cause. It is reached
+by
+**arithmetic**, as the section below explains: *the retype was raised and
+the document did not change*. That condition is agnostic about **why**, and
+there are other whys — an offered face that turns out not to cover the
+character after all, a run whose operators the pinned request cannot span, a
+document the engine declines for a reason nothing here has met yet. Deleting
+the arm would convert every one of those into **silence**, which is the
+standing cross-cutting defect this project already has on its own list
+(*"every engine refusal reaches the operator as SILENCE"*).
+
+⇒ **A state and its explanation have different lifetimes.** A cause that
+stops existing does not take the state with it, so this sentence keeps its
+voice and names nothing — the conservative direction, because an operator
+told *"it did not go in"* can still act, and one told nothing cannot.
+
+# Why this state is reached by ARITHMETIC and not by reading the error
+
+The block never inspects the engine's refusal. It knows what it asked for and
+it watches `doc.edit_epoch`: the swap moves it once, and had the retype
+landed it would move again and the block would retire on the next frame. So a
+block still on screen one frame after the retype **is** the retype having
+been refused — no prose grepped, no second copy of the engine's taxonomy,
+which is precisely what `app::status::decline::textedit`'s header forbids and
+what a string match on *"unresolvable"* would have been.
+
+⇒ That mechanism is the whole of the wording rule here: **a surface that
+cannot see a cause must not name one.** Naming the only cause anybody has
+met reads to the operator as a measurement while being an inference. The
+sentence says what the block actually knows — the face changed, the
+character did not go in — and stops there.
+
+# What it must NOT do
+
+It must not say *"something went wrong"*: the face swap **did** land, that
+is a real change to his document, and a sentence that implies otherwise
+would send him looking for damage that is not there. And it must not
+prescribe save-and-reopen, which is now a remedy for nothing and would cost
+him two gestures to learn that.

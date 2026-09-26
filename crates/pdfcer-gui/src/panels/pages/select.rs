@@ -12,11 +12,6 @@
 use std::collections::BTreeSet;
 
 /// Which pages are picked, and where a range would extend from.
-///
-/// `BTreeSet` rather than `Vec`: the set is asked *"is page N in it?"* once
-/// per tile per frame, and it is handed to commands that want it in document
-/// order. A `Vec` would answer the first question in linear time and the
-/// second only if every insertion site remembered to keep it sorted.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct PageSelection {
     /// The picked pages, 0-based, ascending by construction.
@@ -30,11 +25,6 @@ pub struct PageSelection {
 }
 
 /// What a click on a tile asked for, beyond changing the selection.
-///
-/// A struct with one field rather than a bare `bool`, because the caller
-/// reads it as *"should I raise `Action::GoToPage`?"* and a bare `bool`
-/// returned from `click` reads as *"did the selection change?"* — which is a
-/// different question with a different answer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ClickOutcome {
     /// Whether the canvas should navigate to the clicked page.
@@ -67,26 +57,12 @@ impl PageSelection {
     }
 
     /// Pick nothing.
-    ///
-    /// Clears the anchor too. An anchor without a selection is a range
-    /// endpoint for a range nobody started, and leaving it would make the
-    /// next Shift+click extend from a page the operator has no reason to
-    /// remember naming.
     pub fn clear(&mut self) {
         self.pages.clear();
         self.anchor = None;
     }
 
     /// **Apply a click on `page`, with the modifiers that came with it.**
-    ///
-    /// The whole rule, in one place. See the module header for the table and
-    /// for why only a plain click navigates.
-    ///
-    /// `ctrl` wins over `shift` when both are held. Ctrl+Shift+click means
-    /// "extend the existing set" in some applications and "extend the range
-    /// additively" in others; there is no agreed answer, so pdfcer takes the
-    /// one whose behaviour is fully described by a rule already stated
-    /// (toggle) rather than inventing a fourth gesture nothing documents.
     pub fn click(&mut self, page: usize, ctrl: bool, shift: bool) -> ClickOutcome {
         if ctrl {
             if !self.pages.remove(&page) {
@@ -125,20 +101,6 @@ impl PageSelection {
     }
 
     /// **Make a right-click's operand list agree with what was pointed at.**
-    ///
-    /// The same rule `crate::canvas::menus::select_under_right_click` states
-    /// for objects, applied to pages, and it is here rather than reasoned out
-    /// again at the call site so the two surfaces cannot come to disagree:
-    ///
-    /// 1. **Over an unpicked page** — pick it, alone. A context menu's
-    ///    implicit promise is *"these verbs apply to the thing you pointed
-    ///    at"*, and without this step right-clicking page 9 while pages 1–3
-    ///    are selected and choosing Delete destroys 1–3.
-    /// 2. **Over a page that is already picked** — change nothing. A
-    ///    Shift-selected run of eight sheets followed by a right-click on one
-    ///    of them must still offer to extract all eight.
-    ///
-    /// Returns whether the selection changed, for the trace.
     pub fn right_click(&mut self, page: usize) -> bool {
         if self.pages.contains(&page) {
             return false;
@@ -151,15 +113,6 @@ impl PageSelection {
 
     /// Drop any picked page at or beyond `page_count`, and the anchor with
     /// it.
-    ///
-    /// **Called after anything that can change how many pages there are.** A
-    /// page index is a *position in a document*, not an identity: deleting
-    /// page 2 of four does not leave "page 3" selected, it leaves a selection
-    /// naming a page that is now a different sheet. Clamping is the only
-    /// honest response available without a page-identity model, and it is
-    /// cheap.
-    ///
-    /// Returns whether anything was dropped.
     pub fn retain_below(&mut self, page_count: usize) -> bool {
         let before = self.pages.len();
         self.pages.retain(|p| *p < page_count);
@@ -170,39 +123,6 @@ impl PageSelection {
     }
 
     /// **Follow the picked pages across a reorder.**
-    ///
-    /// `landed[p]` is the position page `p` now occupies —
-    /// [`super::ops::inverse`]'s output, which is the inverse of the
-    /// permutation handed to `EditSession::reorder_pages`.
-    ///
-    /// ## Why this remaps where [`Self::retain_below`] clamps
-    ///
-    /// The two are the same problem — *a page index is a position, not an
-    /// identity* — meeting two different edits, and the honest answer differs
-    /// because the available information does:
-    ///
-    /// | edit | what happened to the picked sheets | answer |
-    /// |---|---|---|
-    /// | delete | they **stopped existing** | there is nothing to point at; the caller clears |
-    /// | reorder | they are still here, **somewhere else** | the permutation says exactly where |
-    ///
-    /// `retain_below`'s docs call clamping *"the only honest response available
-    /// without a page-identity model"*, and for a delete it is. A reorder is
-    /// the case where a page-identity model is not needed, because the
-    /// permutation **is** one for the duration of the edit: it states, per
-    /// page, where that page went. Throwing that away and clearing would mean
-    /// an operator who moved four sheets up one place had to re-select them to
-    /// move them again — which makes the reorder arrows useless for the one
-    /// gesture they exist for.
-    ///
-    /// The anchor moves with its page for the same reason a Shift+click extends
-    /// from where the operator last named something: after a move, "from here"
-    /// still means that sheet.
-    ///
-    /// A page whose new position `landed` does not state is **dropped**. That
-    /// cannot happen for an `ops::inverse` result over a real permutation and
-    /// is defined rather than panicking, because the alternative to dropping is
-    /// keeping an index whose meaning nobody can state.
     pub fn remap(&mut self, landed: &[usize]) {
         self.pages = self
             .pages

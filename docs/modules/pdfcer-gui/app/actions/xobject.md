@@ -280,3 +280,10 @@ between a dead end and an instruction.
 The catch-all is not a hole; it is the honest fallback. This pins that
 it resolves to `Other` rather than to whichever arm happens to be first,
 which is what a reordering accident would produce.
+
+### `fn apply`
+
+One arm today, matching its neighbours' shape: `super::bookmarks::apply` and
+`super::attachments::apply` are both reached from `super::apply` by a single
+line, so the family's rules live with the family rather than in the
+interpreter's match.

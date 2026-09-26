@@ -13,47 +13,18 @@ use crate::app::state::OpenDoc;
 use crate::canvas::strip::PageView;
 
 /// The smallest size this will ask egui to lay out text at.
-///
-/// Below it a run is drawn as a filled box instead — see the header. The value
-/// is where a proportional face stops resolving into distinguishable letters
-/// on a 96 dpi display; under it the glyphs are a smudge that costs a layout
-/// and reads as noise, and a solid bar reads as *text, too small*, which is
-/// what is true.
 pub const MIN_FONT_PX: f32 = 5.0;
 
 /// The largest size this will ask egui to lay out text at.
-///
-/// ⚠ A ceiling on the **font atlas**, not on the design. A run's box grows
-/// without bound as the operator zooms, and egui rasterizes a glyph per
-/// (face, size): asking for a 4,000 pt face once is a multi-megabyte atlas
-/// upload in the middle of a zoom gesture.
-///
-/// The visible consequence is that past roughly this size the overlay text
-/// stops growing with the page while the scan under it keeps growing. That is
-/// a real divergence and it is stated here rather than hidden: it begins at a
-/// zoom where one run fills the window, which is far past any zoom at which
-/// two layers are being compared.
 pub const MAX_FONT_PX: f32 = 160.0;
 
 /// Font sizes are rounded to this, in points.
-///
-/// Not cosmetic. Every distinct size is a separate set of rasterized glyphs
-/// in egui's atlas, and a page of OCR runs has as many distinct box heights as
-/// it has runs. Rounding collapses a sheet's worth of near-identical sizes
-/// onto a few dozen shared ones, so the atlas holds a face-sized set rather
-/// than a page-sized one, and a zoom re-uses what the last frame uploaded.
 pub const FONT_SIZE_QUANTUM_PX: f32 = 0.5;
 
 /// Where the overlay's colour lives while the program runs. Memory key.
 const COLOUR_KEY: &str = "pdfcer.ocr-layer.colour"; // ui-text-exempt: a memory key, never displayed
 
 /// The colour the overlay is drawn in until the operator chooses another.
-///
-/// Chosen to be a colour a **scan is unlikely to contain**. The overlay's
-/// whole job is to be told apart from the marks under it, and a scanned
-/// drawing is black, grey and — on a CAD sheet — often blue or red. Magenta is
-/// in none of those families, so the default works before anybody has thought
-/// about it, which is what a default is for.
 pub const DEFAULT_COLOUR: [u8; 3] = [204, 0, 153];
 
 /// The colour the overlay is drawn in, as the operator left it.
@@ -64,10 +35,6 @@ pub fn colour(ctx: &egui::Context) -> [u8; 3] {
 }
 
 /// Mirror the persisted colour into the live one, once per frame.
-///
-/// The guard is not an optimisation. An unconditional write every frame would
-/// make the value impossible to change from anywhere else, which is how a
-/// mirror becomes an overwrite — `canvas::chunks::sync` carries the same note.
 pub fn sync(ctx: &egui::Context, rgb: [u8; 3]) {
     if colour(ctx) != rgb {
         ctx.data_mut(|d| d.insert_temp(egui::Id::new(COLOUR_KEY), rgb));
@@ -85,17 +52,6 @@ fn colour32(ctx: &egui::Context) -> Color32 {
 }
 
 /// **Is this run part of the OCR layer?**
-///
-/// `ExtractedGlyph::invisible` is the whole selector: the engine sets it for
-/// text rendering modes 3 and 7, which is what an OCR producer writes and what
-/// a page's own lettering never is.
-///
-/// `any`, not `all`, and the difference is a silent omission. A producer
-/// that flips the rendering mode mid-run leaves a run with both kinds of
-/// glyph. Taking it draws some already-visible letters a second time, which
-/// the operator can see and dismiss. Refusing it hides recognised text with
-/// nothing on screen to say so — and *nothing on screen* is the failure mode
-/// this whole feature exists to end.
 #[must_use]
 pub fn is_ocr_run(run: &pdfcer_core::text_extract::TextRun) -> bool {
     run.glyphs.iter().any(|glyph| glyph.invisible)
@@ -103,19 +59,6 @@ pub fn is_ocr_run(run: &pdfcer_core::text_extract::TextRun) -> bool {
 
 /// **How much paint, from a slider position** — the one answer, and the one
 /// the status bar must quote.
-///
-/// A **non-finite input paints nothing**, where
-/// [`crate::viewer::normalise_ocr_overlay`] answers the same corruption with
-/// the default position. The two are not inconsistent: that one answers *where
-/// did the operator leave the slider*, and a lost preference should land
-/// somewhere useful; this one answers *how opaque is this stroke*, and a
-/// number nobody can account for must not end up drawn over the document.
-///
-/// Which is exactly why this is public and `app::status::ocrlayer` reads
-/// it rather than the raw field. A disclosure that quoted the other normaliser
-/// would report 65 % on the one input where the painter draws nothing — a
-/// sentence describing a blend that is not on screen, produced by two
-/// functions that each behave correctly.
 #[must_use]
 pub fn painted_fraction(raw: f32) -> f32 {
     if raw.is_finite() {
@@ -138,11 +81,6 @@ pub fn veil_alpha(strength: f32) -> u8 {
 }
 
 /// How opaque the overlay text is, out of 255.
-///
-/// Equal to [`veil_alpha`] by construction rather than by coincidence: the two
-/// halves of one slider are one number, and the left stop has to draw *no*
-/// text rather than faint text for the same reason the right stop has to blank
-/// the scan.
 #[must_use]
 pub fn text_alpha(strength: f32) -> u8 {
     veil_alpha(strength)
@@ -164,15 +102,6 @@ fn paper() -> Color32 {
 }
 
 /// **Fade the page raster**, by painting paper over it.
-///
-/// Called before the grid: this is about the sheet, and everything drawn on
-/// the sheet has to win.
-///
-/// Only over pages that actually have a raster this frame, and only over
-/// [`PageView::paint_rect`] — the rectangle the texture is a picture of. A
-/// page still waiting on its pixmap is left alone rather than veiled, because
-/// veiling nothing would put a white rectangle over whatever the strip is
-/// showing in its place.
 pub(super) fn draw_veil(painter: &Painter, pages: &[PageView], strength: f32) {
     let alpha = veil_alpha(strength);
     if alpha == 0 {
@@ -188,12 +117,6 @@ pub(super) fn draw_veil(painter: &Painter, pages: &[PageView], strength: f32) {
 }
 
 /// **Draw the recognised text**, in the operator's colour.
-///
-/// `clip` culls: a run whose screen rectangle misses it is never laid out.
-///
-/// The colour is read from the painter's own context rather than passed in, so
-/// the `NOT A THEME COLOUR:` argument stays beside the value it is about and
-/// `painting` does not have to carry a colour it makes no decision on.
 pub(super) fn draw_text(
     painter: &Painter,
     doc: &OpenDoc,

@@ -373,24 +373,6 @@ fn handover_offset(
 }
 
 /// **Where the strip is drawn, when the anchor owns the position.**
-///
-/// The anchor says *this page point sits under that screen pixel*, so the
-/// current page's top-left lands at `anchor.screen − anchor.page × zoom` from
-/// the scroll content's origin, and the strip's origin is that less where the
-/// page sits inside the strip.
-///
-/// Every large magnitude is subtracted **inside `f64`** before anything
-/// narrows. At a trillion percent `anchor.page × zoom` is around 10¹², where
-/// an `f32` cannot represent the difference of two neighbouring screen pixels
-/// at all — this is the same technique the engine's own deep-zoom work
-/// describes as *"one subtraction moved into `f64`"*, and it is the reason the
-/// tier exists.
-///
-/// Falls back to [`viewer::deep::DeepAnchor::origin`] rather than declining,
-/// because a frame in this tier must draw something and the origin is the one
-/// placement that needs no history. The caller seeds a real anchor on the same
-/// frame it first becomes `deep`, so the fallback is reachable only on a frame
-/// where the seed itself failed.
 pub(super) fn strip_placement(
     doc: &OpenDoc,
     layout: &viewer::strip::Strip,
@@ -416,18 +398,6 @@ pub(super) fn strip_placement(
 
 /// **What of the strip is on screen, when the anchor owns the position** — the
 /// rect that decides which pages are drawn at all.
-///
-/// The scroll offset cannot answer this at this tier, because it has been
-/// forced to zero and describes a place nobody is looking at. The strip's own
-/// placement on screen is the truth instead: whatever of it overlaps the
-/// viewport is what can be seen, so the viewport's origin expressed in strip
-/// space is simply `content_min − strip_min`.
-///
-/// A two-line function with a paragraph of reasoning, deliberately. Below the
-/// threshold the same quantity comes from
-/// [`crate::canvas::geometry::scroll_to_strip`] and the two look
-/// interchangeable; they are not, and one line of the wrong one is the whole
-/// of `canvas-unavailable reason=nothing-visible`.
 pub(super) fn visible_in_strip(
     content_min: egui::Pos2,
     strip_min: egui::Pos2,

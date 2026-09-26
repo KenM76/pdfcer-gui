@@ -9,46 +9,12 @@ use crate::text::status as t;
 
 /// Named region: the raster-stop sentence, when the zoom is at a learned
 /// ceiling.
-///
-/// The whole of this module's obligation is that the sentence is **on screen and
-/// legible**, and a driven check can only assert that about a rect the
-/// application published. A `ui-verify` check that merely found the string in a
-/// trace would assert that the shell *decided* to say it — which the code below
-/// already proves.
 pub(super) const REGION: &str = "status-group:raster-stop"; // ui-text-exempt: trace region name, never displayed
 
 /// How close to the ceiling counts as *at* it.
 const NEAR: f32 = 1e-3;
 
 /// Whether the view is sitting at this page's measured raster ceiling.
-///
-/// Split out from [`show`] so it can be unit-tested without a `Ui`, and so the
-/// condition is stated once: **a ceiling has been learned for this page at this
-/// epoch, and the current zoom is at or above what it permits.**
-///
-/// # Why the conversion happens here and not in the store
-///
-/// [`crate::render::ceiling::RasterCeiling`] holds a **raster scale** — device
-/// pixels per PDF point — where `doc.view.zoom` is a zoom, so every reader has to
-/// convert. That is the right arrangement: a ceiling kept as a *zoom* would be
-/// wrong by the density ratio on a window dragged between two monitors,
-/// silently, and only on the machine it was not measured on.
-///
-/// ⚠ The conversion is [`crate::viewer::zoom_for_raster_scale`] and not a
-/// division by the display density, because the operator's render quality is in
-/// the scale too. Getting that wrong moves this sentence away from the zoom the
-/// clamp actually stops at, which is the one place it must agree — O218.
-///
-/// ⚠ The density goes through [`crate::viewer::sane_pixels_per_point`] rather
-/// than being trusted, inside that helper. A nonsense density would otherwise
-/// make `permitted` **infinite**, so this predicate would answer `false` forever
-/// — the disclosure switching itself off in precisely the condition it exists
-/// for, leaving the operator back at a control that stops responding in silence.
-///
-/// `pixels_per_point.max(f32::MIN_POSITIVE)` reads like that guard and is not
-/// one: `f32::max` returns the *other* operand when one is `NaN`, so a `NaN`
-/// density survives as `f32::MIN_POSITIVE` and the division produces infinity
-/// anyway.
 #[must_use]
 pub(super) fn at_the_ceiling(doc: &OpenDoc, pixels_per_point: f32) -> bool {
     let page = doc.view.page_index;
@@ -64,13 +30,6 @@ pub(super) fn at_the_ceiling(doc: &OpenDoc, pixels_per_point: f32) -> bool {
 }
 
 /// Draw the sentence, if the view is at a learned ceiling.
-///
-/// Drawn through [`super::disclosure::disclosure_line`] rather than by hand,
-/// which buys the properties this surface requires and a hand-rolled `ui.label`
-/// would each have to re-earn: elision to the same fraction of the remaining
-/// width as every other left-half sentence, the whole text on hover, and **no
-/// growth in the bar's height** — a second row on this panel re-opens R128, the
-/// fit-zoom feedback loop.
 pub(super) fn show(ui: &mut egui::Ui, doc: &OpenDoc) {
     if !at_the_ceiling(doc, ui.ctx().pixels_per_point()) {
         return;

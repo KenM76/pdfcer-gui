@@ -25,37 +25,6 @@ const EXIT_CHORD_ID: &str = "pdfcer-read-mode-exit-chord"; // ui-text-exempt: me
 const FULLSCREEN_CHORD_ID: &str = "pdfcer-fullscreen-chord"; // ui-text-exempt: memory key, never displayed
 
 /// The chord a keymap binds to a command, choosing exactly as a menu chooses.
-///
-/// # Why this is derived and never written down
-///
-/// The statement on the title bar and the statement on the status bar are
-/// **claim-bearing**: they tell an operator which key to press to get their
-/// application back. `RIBBON_IA.md` and `shell::manifest` bind `Ctrl+H` today,
-/// and `SHELL_FRAMEWORK.md` §5 lets an operator rebind keys. A hard-coded
-/// `"Ctrl+H"` in `crate::text` would therefore be correct until the first
-/// rebind and then **worse than silence** — a sentence naming a key that does
-/// nothing, on the one surface an operator turns to when they are already
-/// stuck. `egui_shell::menu::shortcut`'s header states the general form:
-///
-/// > *A hand-written second copy of a key binding is wrong the first time an
-/// > operator rebinds anything, and it is wrong silently: the menu says
-/// > `Ctrl+C`, the key does something else, and the interface is now actively
-/// > lying to the person it was supposed to be teaching.*
-///
-/// So this reads the **same map `app::keyboard` dispatches from** — the shell's
-/// `keymap` — and there is no second table anywhere.
-///
-/// # Why the reverse lookup is written here rather than via `Shortcuts`
-///
-/// [`egui_shell::Shortcuts`] inverts the *whole* keymap into a `BTreeMap`,
-/// which is right for a menu drawing forty rows and wasteful for one command
-/// asked once a frame. This is the same rule — `egui_shell::menu::shortcut::prefer`,
-/// literally the same function — applied by a scan with one allocation.
-///
-/// Sharing `prefer` is not tidiness either. A command bound twice would
-/// otherwise be advertised as one chord in a context menu and a *different*
-/// chord in the title, both true, and an operator comparing the two would have
-/// no way to know that either was.
 #[must_use]
 pub fn chord_for<'a>(
     keymap: Option<&'a egui_shell::manifest::Keymap>,
@@ -79,17 +48,6 @@ pub fn chord_for<'a>(
 
 /// **Publish this frame's exit chords**, before anything that states them
 /// draws.
-///
-/// One writer, at a known point in the frame, exactly as
-/// `crate::pagedrag::publish_active` and `modes::capability::publish_edit_content`
-/// are — and for the reason `app::frame`'s step 0 block gives: the alternative
-/// is threading `&Shell` through two call chains that have no other use for it,
-/// one of which (`app::status::show`) already takes seven parameters.
-///
-/// The **shell** is the argument rather than the chord, so the resolution
-/// happens once and both readers get the identical `String`. Handing each
-/// surface the keymap instead would put two resolutions in the program, and two
-/// resolutions can drift the moment one of them acquires a fallback.
 pub fn publish_exit_chord(ctx: &egui::Context, shell: Option<&egui_shell::manifest::Shell>) {
     let keymap = shell.and_then(|s| s.keymap.as_ref());
     let put = |id: &str, command: &str| {
@@ -101,16 +59,6 @@ pub fn publish_exit_chord(ctx: &egui::Context, shell: Option<&egui_shell::manife
 }
 
 /// The chord that turns read mode off, as published this session.
-///
-/// `None` means **no key in this build does it** — a manifest that bound none,
-/// or a context nothing has published into (every headless `egui::Context` in
-/// the test suite). Both readers treat that as *say nothing about a key*, which
-/// is the only honest option: a sentence naming a chord that is not bound is
-/// the exact failure this whole mechanism exists to prevent.
-///
-/// It is deliberately **not** defaulted to `Ctrl+H`. A default here would be
-/// a second spelling of the binding wearing a fallback's clothes, and it would
-/// be wrong in precisely the case it was reached for.
 #[must_use]
 pub fn exit_chord(ctx: &egui::Context) -> Option<String> {
     ctx.data(|d| d.get_temp::<Option<String>>(Id::new(EXIT_CHORD_ID)))
@@ -118,10 +66,6 @@ pub fn exit_chord(ctx: &egui::Context) -> Option<String> {
 }
 
 /// The chord that leaves full screen, as published this session.
-///
-/// Read **only** while read mode is also on — see the module header. Full
-/// screen on its own keeps the ribbon and therefore keeps its own control, so
-/// naming its chord unconditionally would be furniture.
 #[must_use]
 pub fn fullscreen_chord(ctx: &egui::Context) -> Option<String> {
     ctx.data(|d| d.get_temp::<Option<String>>(Id::new(FULLSCREEN_CHORD_ID)))
@@ -129,23 +73,12 @@ pub fn fullscreen_chord(ctx: &egui::Context) -> Option<String> {
 }
 
 /// Whether the ribbon and the docks are drawn this frame.
-///
-/// The single question `PdfcerApp::ui` asks of this module, phrased as what the
-/// **frame** wants rather than as what the operator toggled, so the composition
-/// step reads as a statement about the frame and does not have to know that
-/// "read mode" is the reason.
-///
-/// The status bar is deliberately outside this — see §2 of the module header.
 #[must_use]
 pub fn draws_chrome(ctx: &egui::Context) -> bool {
     !read_mode(ctx)
 }
 
 /// Whether read mode is on.
-///
-/// The published state, read by [`draws_chrome`] and by
-/// `PdfcerApp::conditions`, which turns it into the `selected:` condition that
-/// renders the View ▸ Window control pressed. Two readers, one derivation.
 #[must_use]
 pub fn read_mode(ctx: &egui::Context) -> bool {
     ctx.data(|d| d.get_temp::<bool>(Id::new(READ_MODE_ID)))
@@ -153,11 +86,6 @@ pub fn read_mode(ctx: &egui::Context) -> bool {
 }
 
 /// Flip read mode, and report the state it landed in.
-///
-/// **The body of `view.read_mode`.** Returns the new value so the dispatch arm
-/// can trace it without asking a second time — a second read is a second frame's
-/// worth of opportunity for the two to disagree, and the trace is the only
-/// evidence a harness has that the command did anything.
 pub fn toggle_read_mode(ctx: &egui::Context) -> bool {
     let next = !read_mode(ctx);
     ctx.data_mut(|d| d.insert_temp(Id::new(READ_MODE_ID), next));
@@ -173,11 +101,6 @@ pub fn toggle_read_mode(ctx: &egui::Context) -> bool {
 
 /// Whether the window is in full screen, as the **windowing system** reports
 /// it.
-///
-/// `None` from `ViewportInfo` — a backend that does not report the flag, and
-/// the state of every headless `egui::Context` in the test suite — is read as
-/// *not full screen*, which is the honest default: it is what a window that has
-/// never been asked to fill the display is.
 #[must_use]
 pub fn fullscreen(ctx: &egui::Context) -> bool {
     ctx.input(|i| i.viewport().fullscreen).unwrap_or(false)
@@ -192,39 +115,6 @@ const PENDING_FULLSCREEN: &str = "pdfcer.window.fullscreen-asked"; // ui-text-ex
 const PENDING_FRAMES: u64 = 4;
 
 /// The value a press of `view.fullscreen` should ask the viewport for.
-///
-/// `reported` is what `ViewportInfo` says; `pending` is `(frame, state)` for a
-/// request this shell has made and not yet seen confirmed, and `now` is the
-/// current frame.
-///
-/// # Why the viewport's own report cannot simply be negated
-///
-/// The obvious body is one line — `!current.unwrap_or(false)` — reading
-/// `ViewportInfo` directly, and [`toggle_fullscreen`]'s own docs state why it
-/// cannot work:
-///
-/// > *"the command is queued and answered by the backend, so
-/// > `ViewportInfo::fullscreen` still reports the old value on this frame."*
-///
-/// If the report lags the request, then a **second press before the backend
-/// has caught up reads the pre-first-press state and asks for the same thing
-/// again**. Full screen turns on and will not turn off, and what the operator
-/// has is a program covering their screen that will not give it back except by
-/// being closed — which is what `read_mode_hides_the_chrome`'s failure branch
-/// says: *"the display has been left filled; close the window to recover it"*.
-///
-/// The dependency is on timing, so it presents as an intermittent: a run with
-/// more frames between the two presses passes. **An intermittent is a defect
-/// with a timing dependency, not harness flakiness** — the reading
-/// `D:/dev/rag/egui/`'s chord-matcher finding warns about by name.
-///
-/// # The rule
-///
-/// **Trust the report, unless we have an outstanding request it has not yet
-/// reflected.** Once the report agrees with what was asked, the request is
-/// spent and the report wins again — so a full screen the operator triggers
-/// *outside* this shell (a window manager's own key, a double-clicked title
-/// bar) is honoured on the very next press rather than fought.
 #[must_use]
 pub fn next_fullscreen(reported: Option<bool>, pending: Option<(u64, bool)>, now: u64) -> bool {
     let current = match pending {
@@ -246,16 +136,6 @@ pub fn next_fullscreen(reported: Option<bool>, pending: Option<(u64, bool)>, now
 }
 
 /// Flip full screen, and report the state that was asked for.
-///
-/// **The body of `view.fullscreen`.** The returned value is what the viewport
-/// was *asked* for, not what it is: the command is queued and answered by the
-/// backend, so `ViewportInfo::fullscreen` still reports the old value on this
-/// frame. That distinction is why the trace line the dispatcher writes says
-/// `asked=` rather than `on=` — a reader of a trace from a machine they cannot
-/// see should not be told a window is full screen on the strength of a request.
-///
-/// And it is why the request is **remembered**: see [`next_fullscreen`] for
-/// what reading the lagging report alone produces.
 pub fn toggle_fullscreen(ctx: &egui::Context) -> bool {
     let id = egui::Id::new(PENDING_FULLSCREEN);
     let now = ctx.cumulative_pass_nr();

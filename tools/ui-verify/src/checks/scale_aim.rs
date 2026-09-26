@@ -20,11 +20,6 @@ pub const CANVAS_EVENT: &str = "canvas";
 /// `canvas-pointer screen=(x,y) page=(x,y) pdf=(x,y) zoom=…`.
 pub const POINTER_EVENT: &str = "canvas-pointer";
 /// `canvas-pos at=… tier=… region=… want=… ext=…`.
-///
-/// `region=none` is the whole-page tier and anything else is the region tier,
-/// so this line — not an arithmetic guess — is what says which tier a rung
-/// actually reached. `tier=` names the POSITION model, which is the third
-/// boundary.
 pub const POSITION_EVENT: &str = "canvas-pos";
 /// The zoom the application last reported.
 pub fn current_zoom(session: &Session) -> Result<f32> {
@@ -37,11 +32,6 @@ pub fn current_zoom(session: &Session) -> Result<f32> {
 }
 
 /// **What tier the application says it is in**, from its own position line.
-///
-/// `region=none` is the whole-page raster; anything else is the region tier.
-/// `tier=` is the *position* model, the third boundary. Read rather than
-/// computed, because a boundary this check derived itself would be a second
-/// copy of arithmetic that lives in `render::strategy` and `viewer::ceiling`.
 pub fn tier_of(session: &Session) -> Result<String> {
     let trace = session.trace()?;
     let Some(line) = trace.events(POSITION_EVENT).last() else {
@@ -60,31 +50,6 @@ pub fn tier_of(session: &Session) -> Result<String> {
 
 /// **Steer the pointer back onto the target**, using the application's own
 /// report of where it thinks the pointer is.
-///
-/// # Why the aim is a loop and not a calculation
-///
-/// The subject of this sweep is a **0.85 pt** pair of cells on a US Letter
-/// sheet. A single conversion at the opening zoom places the pointer to within
-/// one screen pixel, which is about one page point there — larger than the
-/// thing being aimed at. Every rung after that would then be measuring blank
-/// paper beside the cells rather than the cells.
-///
-/// So the aim is corrected before every wheel batch from `canvas-pointer`,
-/// which publishes the canvas-space point the application believes the pointer
-/// is on. Because zoom-to-cursor keeps that point fixed, each correction is
-/// applied at a higher magnification than the last and the error halves with
-/// every doubling: one screen pixel of residual error is one page point at
-/// 100 %, and 5 × 10⁻⁵ of one at twenty thousand percent.
-///
-/// It is also, incidentally, a **second** reading of the conversion under
-/// test — if `screen_to_page` were lying, this loop would diverge rather than
-/// converge, and the caller would see the aim wander. That is why the corrected
-/// aim is reported at every rung.
-///
-/// The correction is capped at a third of the viewport per step: a larger jump
-/// means the target has left the window entirely, and chasing it with one
-/// enormous pointer move would land somewhere arbitrary. Capped, the loop still
-/// converges over the following steps.
 pub fn re_aim(
     session: &Session,
     driver: &Driver,
@@ -200,10 +165,6 @@ fn re_aim_once(
 }
 
 /// Ctrl+wheel at `aim` until the reported zoom reaches `wanted`.
-///
-/// Returns the zoom actually reached, and leaves `aim` corrected onto the
-/// target — see [`re_aim`]. Rolls in small batches and re-reads, because one
-/// notch's factor is egui's and not this harness's to know.
 pub fn zoom_to(
     session: &Session,
     driver: &Driver,
@@ -257,18 +218,6 @@ pub fn zoom_to(
 
 /// How far the pointer actually is from the document coordinate this sweep
 /// aims at, in **canvas points**.
-///
-/// `None` when the application has published no `canvas-pointer` line at all,
-/// which is a different fact and has its own line in [`probe_pointer`].
-///
-/// Read from the application's own report of where the pointer is, never
-/// computed from the harness's mapping. A residual computed through the same
-/// conversion the sweep is testing would be zero by construction — the shape
-/// of measurement this project calls a proxy.
-/// The pointer is put back on `aim` first. [`probe_pointer`] leaves it
-/// [`PROBE_PX`] away, and reading the residual from that position would report
-/// the probe's own displacement as an aiming error — a harness measuring its
-/// own last move.
 pub fn aim_residual(
     session: &Session,
     driver: &Driver,

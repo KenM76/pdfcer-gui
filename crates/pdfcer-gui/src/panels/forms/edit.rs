@@ -68,12 +68,6 @@ pub struct FillDisclosure {
 
 impl FillDisclosure {
     /// Whether there is anything here worth a sentence.
-    ///
-    /// The overwhelmingly common fill discloses nothing, and a panel that drew
-    /// an empty disclosure line under every edit would train the operator to
-    /// stop reading the ones that matter — the same argument
-    /// `crate::app::status::page_box`'s `Note` makes for having no `Ok`
-    /// variant.
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.applied_autosize.is_none() && self.unencodable_chars == 0
@@ -86,10 +80,6 @@ thread_local! {
 }
 
 /// What the last fill disclosed, if it still describes the open document.
-///
-/// **The panel's read** — see [`crate::panels::forms::body`]. Returns `None`
-/// when the last fill was on another document, has been undone, or had nothing
-/// to disclose.
 #[must_use]
 pub fn last_fill_disclosure(epoch: u64) -> Option<FillDisclosure> {
     LAST_FILL.with_borrow(|slot| {
@@ -105,32 +95,12 @@ fn record_fill_disclosure(disclosure: Option<FillDisclosure>) {
 }
 
 /// Plant a disclosure, for tests in other modules that must draw one.
-///
-/// `#[cfg(test)]` so it cannot become a second way to record one — the real
-/// path is [`record_fill_disclosure`], called from `apply` with the epoch the
-/// fill produced, and a second entry point is how two callers come to
-/// disagree about what "the last fill" means.
-///
-/// It exists because the status bar draws this and must prove it does not
-/// grow the bar while doing so (R128), and that measurement has to happen in
-/// `crate::app::status`, which cannot reach a `thread_local` here.
 #[cfg(test)]
 pub(crate) fn plant_fill_disclosure_for_test(disclosure: FillDisclosure) {
     record_fill_disclosure(Some(disclosure));
 }
 
 /// One thing an operator asked the Forms panel to do.
-///
-/// Every variant is reachable from a real control today. A variant nothing can
-/// raise is dead code wearing a design pattern, and the "no placeholders"
-/// invariant (`PROJECT_PLAN.md` §3) applies to enums as much as to labels.
-///
-/// **The operands travel with the intent.** A `String` field name rather than
-/// an `ObjId`, because that is the vocabulary every one of the core verbs
-/// takes and because a fully-qualified name survives the document being
-/// re-parsed between the frame that raised the action and the frame that
-/// applies it — an object id would too, but the verb would then have to
-/// translate back, and two spellings of "which field" is one too many.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FormEdit {
     /// Write `value` into the text field named `field`.
@@ -258,15 +228,6 @@ impl FormEdit {
 }
 
 /// Apply one [`FormEdit`] to `doc`.
-///
-/// **The one place a form verb is called.** Called from
-/// `PdfcerApp::apply`'s `Action::Form` arm; see this module's header for the
-/// four-step protocol and for why it is restated here rather than shared with
-/// `crate::app::actions::vector_edit`.
-///
-/// Reports nothing to the operator and returns nothing, for the reason set out
-/// in the header: everything a report would have said is re-derived by the
-/// panel from the document on the next frame. A refusal is traced.
 pub fn apply(doc: &mut OpenDoc, edit: &FormEdit) {
     let label = edit.label();
 

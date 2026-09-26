@@ -36,17 +36,6 @@ fn parse_chord(chord: &str) -> Option<(egui::Modifiers, Key)> {
 
 /// **The chords this module binds outright — viewer navigation — and every
 /// spelling a manifest might use for each.**
-///
-/// The manifest's keymap names these as deliberately absent, for the reason
-/// stated there: they are not ribbon commands, and binding them in two
-/// places would give them two owners. This table is what makes that
-/// statement *checkable* rather than a comment —
-/// [`tests::no_chord_has_two_owners`] walks it against the real keymap.
-///
-/// Several spellings per key because the guard has to catch a conflict
-/// however the author of the keymap chose to write it: `Ctrl+Plus` and
-/// `Ctrl++` are the same chord, and a test that knew only one of them would
-/// pass while the defect it exists to prevent sat in the file.
 pub const OWNED: &[(Key, &[&str])] = &[
     (Key::Plus, &["Ctrl+Plus", "Ctrl++"]),
     (Key::Equals, &["Ctrl+Equals", "Ctrl+="]),
@@ -60,13 +49,6 @@ pub const OWNED: &[(Key, &[&str])] = &[
 ];
 
 /// Read this frame's key presses and turn them into actions.
-///
-/// Only the chords [`OWNED`] lists — the viewer's own. The chords the
-/// manifest binds are [`commands`]' job, and the two sets are disjoint by
-/// test rather than by good intentions.
-///
-/// `page_count` is `None` when no document is open, in which case no
-/// binding is installed at all.
 pub fn collect(ctx: &Context, page_count: Option<usize>) -> Vec<Action> {
     let mut actions = Vec::new();
     let Some(page_count) = page_count else {

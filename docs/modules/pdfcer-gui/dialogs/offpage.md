@@ -113,3 +113,9 @@ the snapshotted total is the guard described on [`Self::total_pages`]: a
 page deleted under an open window ends the walk where the document now
 ends, and the window then shows a complete answer about a shorter
 document rather than panicking on an index that no longer exists.
+
+### `fn open`
+
+Infallible and unconditional for a document that is open, unlike every
+other window in this folder that computes a plan first. See the header:
+the empty answer is an answer.

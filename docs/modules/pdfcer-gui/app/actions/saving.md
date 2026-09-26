@@ -55,3 +55,16 @@ questions; it does not read `apply`, so it cannot fail if somebody
 "fixes" the `SaveAs` arm to `InPlace`. The durable part of this test is
 this comment — the sentence explaining why not — and a reader who wants
 the arm itself pinned has to drive `apply` and observe the pending save.
+
+### `fn apply`
+
+Takes the action by reference because it is matched and not consumed: the
+caller has already decided this is a save, and re-matching here is what keeps
+the routing in one place rather than split across two files.
+
+# Panics
+
+Never. The `_` arm is unreachable — `apply` matches the three variants before
+calling — and is written as a no-op rather than an `unreachable!` because a
+panic on the frame path is a worse answer to an impossible input than doing
+nothing, which is `crate::ribbon`'s standing rule for the same shape.

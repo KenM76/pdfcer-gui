@@ -54,10 +54,6 @@ impl ObjectModelProvider {
     }
 
     /// The show operators line `line` of `target` is written in.
-    ///
-    /// `None` for a non-text object or a line index the object does not have —
-    /// which is a stale selection, and the caller's cue to say nothing rather
-    /// than to name line 0.
     #[must_use]
     pub fn text_line_runs_of(&self, target: TargetId, line: usize) -> Option<Range<usize>> {
         lines_of(self.text_of(target)?).get(line).cloned()
@@ -87,18 +83,6 @@ impl ObjectModelProvider {
     }
 
     /// The lines under `point`, nearest first and each named once.
-    ///
-    /// Order comes from [`pdfcer_core::vector::hit_test_text_runs`], which
-    /// answers nearest-first in run indices; several runs of one line under the
-    /// pointer collapse to that line's first sighting, so the caller's
-    /// `first()` is still the nearest thing to the pointer.
-    ///
-    /// Page objects only. A text object painted from inside a form XObject has
-    /// no hit test at any granularity — [`Self::text_run_hits`] indexes the
-    /// page's own list, so answering a leaf from it would return another
-    /// object's runs entirely — and this inherits that hole rather than
-    /// papering over it. `canvas::target`'s `part_hits_of` records it in the
-    /// same terms.
     #[must_use]
     pub fn text_line_hits(&self, object: usize, point: Pos2, tolerance: f64) -> Vec<usize> {
         let Some(text) = self.text_of(TargetId::Object(object as u64)) else {
@@ -117,11 +101,6 @@ impl ObjectModelProvider {
     }
 
     /// A line's bounds in **canvas** space, for drawing its outline.
-    ///
-    /// The union of its fragments' boxes. Drawing one fragment's box instead is
-    /// the visible half of O214: the operator clicks the middle of a phrase,
-    /// gets a rectangle round nineteen points of it, and concludes the
-    /// selection is broken.
     #[must_use]
     pub fn text_line_bounds_canvas_of(&self, target: TargetId, line: usize) -> Option<Rect> {
         let text = self.text_of(target)?;
@@ -159,17 +138,6 @@ impl ObjectModelProvider {
 
     /// Whether deleting line `line` of `target` would drag the line after it —
     /// the delete twin of [`Self::text_line_move_refusal_of`]'s last clause.
-    ///
-    /// Asks about the run *after the line*, not about the run after the one the
-    /// operator clicked. Deleting a line removes every fragment of it, so the
-    /// only run whose origin can be orphaned is the first one left standing.
-    ///
-    /// `false` when the line is the whole object: deleting every run deletes
-    /// the text object, which the engine allows unconditionally.
-    ///
-    /// This one reads `positioned_by` directly, because the delete-side guard
-    /// has no exported twin to call — the standing hazard
-    /// [`ObjectModelProvider::text_run_delete_would_move_next`] records.
     #[must_use]
     pub fn text_line_delete_would_move_next_of(&self, target: TargetId, line: usize) -> bool {
         let Some(text) = self.text_of(target) else {

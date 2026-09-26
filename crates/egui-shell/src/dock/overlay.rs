@@ -35,6 +35,8 @@
 //! `Ui`: by the time it runs, every panel body has already been painted into
 //! its own layer, and an overlay drawn into the `Ui` that hosts the dock would
 //! be *under* the panels it is describing.
+//!
+//! Design and rationale: `docs/modules/egui-shell/dock/overlay.md`.
 
 use egui::{Color32, Rect, Shape, Stroke};
 
@@ -45,12 +47,6 @@ use super::model::{DockLayout, PanelId};
 use super::{drag, report};
 
 /// **A drag held over a compartment, and what releasing it would do.**
-///
-/// Published on [`super::DockFrameReport`] because the visible form of this
-/// affordance is a wash of colour over a rectangle: precise to look at, and
-/// nothing a harness can assert on. Same reason as
-/// [`super::drag::TabDragPreview`], which is its sibling for the other half of
-/// the gesture.
 #[derive(Clone, Debug, PartialEq)]
 pub struct DropPreview {
     /// The panel being dragged.
@@ -72,10 +68,6 @@ pub struct DropPreview {
 }
 
 /// **Offer the drop zones, and publish what a release would do.**
-///
-/// Draws nothing unless a drag is in flight over a compartment that is not the
-/// strip the drag began in — [`drag::preview`] owns that one and has already
-/// drawn its caret, so this stands down whenever it published.
 pub(super) fn draw(ui: &egui::Ui, ctx: &mut Ctx<'_>, layout: &DockLayout) {
     if ctx.tab_drag.is_some() {
         return;
@@ -91,12 +83,6 @@ pub(super) fn draw(ui: &egui::Ui, ctx: &mut Ctx<'_>, layout: &DockLayout) {
 
 /// **Resolve one point against the whole dock, draw the offer, and publish what
 /// a release would do.**
-///
-/// The grammar half of [`draw`], shared with [`super::floatdrag`]. The two
-/// gestures differ only in where the point comes from — `egui`'s pointer, or a
-/// float window's own drag reported by the application — and sharing this is
-/// what stops them disagreeing about which compartment a point is in, which
-/// zone of it, or what the release produces.
 pub(super) fn offer(
     ui: &egui::Ui,
     ctx: &mut Ctx<'_>,
@@ -206,10 +192,6 @@ fn draw_zones(
 }
 
 /// The accent at a given transparency.
-///
-/// Not `gamma_multiply`, which scales an opaque colour's channels and so
-/// *darkens* it against the panel instead of letting the panel through. The
-/// zones sit over a panel body the operator must still be able to read.
 pub(super) fn wash(c: Color32, alpha: u8) -> Color32 {
     // NOT A THEME COLOUR: arithmetic on a role the caller already read from
     // the palette. The channels are `c`'s; only the alpha is this module's.
@@ -220,10 +202,6 @@ pub(super) fn wash(c: Color32, alpha: u8) -> Color32 {
 pub(super) const RESTING_A: u8 = 26;
 
 /// How opaque the zone the pointer is in is drawn.
-///
-/// Far enough above [`RESTING_A`] to be unmistakable at a glance, and still
-/// short of hiding the panel underneath — the operator is choosing between five
-/// places in a compartment whose contents are how they recognise it.
 pub(super) const ARMED_A: u8 = 96;
 
 /// How opaque the hairline between two zones is.
@@ -233,8 +211,4 @@ const EDGE_A: u8 = 140;
 const ZONE_EDGE_PTS: f32 = 1.0;
 
 /// The weight of the outline around the compartment a release would produce.
-///
-/// Heavier than the zone edges: the zones are the question and this is the
-/// answer, and the answer is frequently somewhere else on the screen entirely —
-/// a column that does not exist yet, on the far side of the dock.
 pub(super) const OUTCOME_PTS: f32 = 2.0;

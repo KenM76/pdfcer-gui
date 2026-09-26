@@ -51,17 +51,6 @@ const GLYPH_ASCENT: f32 = 0.85;
 const GLYPH_DESCENT: f32 = 0.22;
 
 /// **A range of characters on one page, and everything derived from it.**
-///
-/// The two halves of §5's promise travel together: [`Self::quads`] is what the
-/// overlay paints and [`Self::text`] is what a copy writes, and both are
-/// produced by one pass of [`resolve`] over one ordered pair of positions.
-/// There is no constructor that fills one without the other.
-///
-/// Empty selections do not exist as values: [`resolve`] returns `None` when the
-/// range covers no glyphs, so a plain click — which collapses the range —
-/// clears the field rather than storing a selection with nothing in it. That is
-/// what makes `Option<TextSelection>` on the document a two-state question
-/// instead of a three-state one.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TextSelection {
     /// Which page the range is on. A selection is single-page — module header
@@ -121,11 +110,6 @@ pub struct TextSelection {
 impl TextSelection {
     /// Whether this selection still describes the revision it was made
     /// against.
-    ///
-    /// The gate the overlay and every copy path ask before spending it. See the
-    /// module header §7: after an edit the positions inside name runs that have
-    /// moved, and painting the stored quads anyway is the one thing rule 4
-    /// forbids outright.
     #[must_use]
     pub fn live(&self, epoch: u64) -> bool {
         self.epoch == epoch
@@ -133,33 +117,6 @@ impl TextSelection {
 
     /// **Which runs of the page's extraction this selection covers**, low
     /// to high, or nothing when the revision has moved.
-    ///
-    /// The operand of every restyle. `crate::app::actions::textstyle` turns
-    /// this list into one `format_text` call per run.
-    ///
-    /// # Why a list of ordinals and not the two `TextPosition`s
-    ///
-    /// The positions are the *anchor* and the *focus*, which are in gesture
-    /// order — the focus is behind the anchor on a right-to-left sweep. Every
-    /// consumer outside this module wants content order, and half of them would
-    /// get the ordering wrong exactly once. `ordered` already exists here and is
-    /// already the one place that decides it.
-    ///
-    /// # Why the byte offsets are dropped
-    ///
-    /// `format_text` restyles **one whole show operator**. There is no verb that
-    /// restyles half of one, so a caller handed byte offsets could only ignore
-    /// them or misuse them. Publishing exactly what the engine can act on is
-    /// what stops a panel implying a precision the file cannot carry — a sweep
-    /// through the middle of a word restyles the word, and the shell must not
-    /// pretend otherwise.
-    ///
-    /// # Why the staleness gate is here and not left to the caller
-    ///
-    /// Same rule as [`Self::highlights`] and for a worse reason: a stale quad
-    /// paints a wash in the wrong place, and a stale run ordinal **restyles the
-    /// wrong text**. The caller stops by being handed an empty list rather than
-    /// by remembering a check.
     #[must_use]
     pub fn runs(&self, epoch: u64) -> Vec<usize> {
         if !self.live(epoch) {
@@ -170,11 +127,6 @@ impl TextSelection {
     }
 
     /// The quads to paint on `page`, or nothing at all.
-    ///
-    /// Nothing when the page is not this selection's, and nothing when the
-    /// revision has moved — so the overlay stops drawing by being handed an
-    /// empty slice rather than by a check of its own, exactly as
-    /// `find::FindState::page_highlights` arranges.
     #[must_use]
     pub fn highlights(&self, page: usize, epoch: u64) -> &[Rect] {
         if self.page == page && self.live(epoch) {
@@ -186,28 +138,6 @@ impl TextSelection {
 
     /// A selection built from nothing but a page, a revision and a list of
     /// page-space boxes — for the tests of the modules that **consume** one.
-    ///
-    /// # Why this exists rather than a fixture
-    ///
-    /// [`resolve`] is the only constructor, deliberately (see the type's docs),
-    /// and it needs a `PageText` — which `pdfcer-core` makes
-    /// `#[non_exhaustive]`, so this crate cannot build one and every test here
-    /// drives a real extraction of a real file. That is right for *this* module
-    /// and wrong for [`crate::canvas::markup::text`], whose rules are about a
-    /// selection's **page, revision and boxes** and nothing else: forcing it to
-    /// open a fixture and hunt for a page whose glyphs happen to sit where the
-    /// assertion needs them would make its tests slower, flakier and about the
-    /// fixture instead of about the rule.
-    ///
-    /// `#[cfg(test)]`, so it cannot become a second production constructor —
-    /// which is the property that keeps "an empty selection is `None`" true of
-    /// every value the application can actually hold.
-    ///
-    /// The canvas boxes are filled with the page boxes' own numbers rather than
-    /// a projection, because there is no page here to project through. They are
-    /// therefore **not** what a real selection would paint; what is faithful is
-    /// the one property a consumer depends on — that the two vectors have the
-    /// same length and the same order.
     #[cfg(test)]
     #[must_use]
     pub fn for_test(page: usize, epoch: u64, page_quads: Vec<Quad>) -> Self {
@@ -236,20 +166,6 @@ impl TextSelection {
     }
 
     /// **The quads a text markup would be authored from**, or nothing at all.
-    ///
-    /// [`Self::highlights`]'s twin, and deliberately the same shape: the caller
-    /// is handed an empty slice rather than being asked to check a revision for
-    /// itself, so a stale selection cannot be marked by a caller who forgot —
-    /// which is the *"a highlight that may be over the wrong text"* failure
-    /// (module header §7) with an annotation written into the file instead of a
-    /// wash drawn over it.
-    ///
-    /// There is no page argument, where [`Self::highlights`] takes one: the
-    /// overlay draws a *particular* page and has to be told which, while an
-    /// authoring caller is asking *"where would this go"* and the answer
-    /// includes [`Self::page`]. Handing back the quads without the page would be
-    /// the invitation to pair them with `doc.view.page_index`, which is the
-    /// current page and not necessarily this selection's.
     #[must_use]
     pub fn marks(&self, epoch: u64) -> &[Quad] {
         if self.live(epoch) {
@@ -260,25 +176,12 @@ impl TextSelection {
     }
 
     /// How many characters are selected. For the trace line and for tests.
-    ///
-    /// Byte length rather than a `char` count, deliberately and to match the
-    /// `chars=` trace field: it is the length of the string a copy puts on the
-    /// clipboard, so a trace and a clipboard cannot disagree, and it is the unit
-    /// `TextPosition` already speaks (`pdfcer-core` keys glyphs by byte offset
-    /// because one code may decode to many code points).
     #[must_use]
     pub fn len(&self) -> usize {
         self.text.len()
     }
 
     /// Whether the selection covers nothing.
-    ///
-    /// Always `false` for a value that exists — [`resolve`] returns `None`
-    /// rather than an empty selection, which is the invariant everything else
-    /// here rests on. It is written anyway because clippy asks for it beside a
-    /// `len`, and asking for it is right: a reader meeting `len()` is entitled
-    /// to the companion, and the honest implementation *states* the invariant
-    /// instead of leaving it to be inferred from four call sites.
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.text.is_empty()
@@ -286,13 +189,6 @@ impl TextSelection {
 }
 
 /// The facts about one page that every entry point below needs.
-///
-/// A struct rather than four parameters for the reason
-/// `canvas::interact::Frame` is one: they are settled together, once, by the
-/// caller that has the document, and passing them separately invites a call
-/// site to fetch one of them for itself — which for `text` would mean a second
-/// extraction and for `epoch` would mean a selection that outlives the
-/// revision it describes.
 #[derive(Clone, Copy)]
 pub struct PageContext<'a> {
     /// The page's extracted text, from
@@ -309,27 +205,6 @@ pub struct PageContext<'a> {
 }
 
 /// **Run one frame of a sweep gesture against the open document**, and trace it.
-///
-/// The body of [`crate::canvas::interact`]'s `GestureOutcome::TextSelect` arm.
-/// It lives here rather than there because the arm is *wiring*: every rule it
-/// applies — which extraction options, what a degenerate drag means, when a
-/// range has changed enough to trace — is a rule this module owns.
-///
-/// # Returns
-///
-/// The new selection, or `None`. `None` is returned when the page has **no
-/// extractable text or no such page**, and the caller must assign it: a sweep
-/// over a page with nothing on it clears whatever was selected, which is what
-/// the operator asked for by sweeping there. Returning the *old* selection on a
-/// miss would make a sweep across a blank page do nothing at all, which reads as
-/// the gesture being broken rather than as there being nothing to select.
-///
-/// # Why the trace fires on every frame and not only at the release
-///
-/// `trace::text_selection` collapses the frames where the range did not move, so
-/// what reaches the channel is the sequence of *distinct* states the selection
-/// passed through. A harness watching `chars=` grow can see the sweep happen;
-/// one line at the end could only see that it had.
 #[must_use]
 pub fn sweep(
     doc: &crate::app::state::OpenDoc,
@@ -423,18 +298,6 @@ pub fn reresolve(ctx: &PageContext<'_>, previous: &TextSelection) -> Option<Text
 
 /// **Update the selection from a drag** — press at `from`, pointer now at `to`,
 /// both in canvas space.
-///
-/// The anchor is re-derived from `from` on every frame rather than kept from the
-/// press, and that is not laziness: `PointerFrame::press_origin` guarantees
-/// `from` is *where the button actually went down* (its own header records the
-/// 94-point error that guarantee exists to close), so re-deriving is exact, and
-/// it removes the one piece of state a drag could otherwise carry across frames
-/// and get wrong.
-///
-/// Returns `None` when the drag covers no glyphs — a sweep across blank paper
-/// selects nothing rather than the nearest word, which is what Acrobat does and
-/// what stops a stray drag on a drawing sheet's margin producing a selection the
-/// operator did not make.
 pub fn drag(ctx: &PageContext<'_>, from: Pos2, to: Pos2) -> Option<TextSelection> {
     let model = model(ctx);
     let anchor = hit(&model, ctx, from)?;
@@ -493,22 +356,6 @@ fn clamp_to_text(
 }
 
 /// **Update the selection from a click.**
-///
-/// The four cases, in the order they are tested, which is also the order of
-/// increasing emphasis:
-///
-/// | gesture | result | from |
-/// |---|---|---|
-/// | triple-click | the **line** under the pointer | Inkscape / SolidWorks — §1.1 |
-/// | double-click | the **word** under the pointer | all three |
-/// | Shift+click | extend the existing selection, keeping its anchor | all three |
-/// | plain click | collapse — i.e. **clear** | all three |
-///
-/// `current` is the selection as it stands; it is read only by the Shift case,
-/// which needs the anchor to extend *from*. A Shift+click with nothing selected
-/// falls through to a plain click, because there is no anchor to extend and
-/// inventing one at the top of the page would select a paragraph the operator
-/// never pointed at.
 #[must_use]
 pub fn click(
     ctx: &PageContext<'_>,
@@ -544,12 +391,6 @@ pub fn click(
 }
 
 /// **Select every character on the page** — Ctrl+A. Module header §1.3.
-///
-/// The range runs from the first byte of the first run to the last byte of the
-/// last: [`EditableTextModel::resolve_range`] orders and clamps the pair itself,
-/// and walks whole intervening runs, so this needs no knowledge of where the
-/// glyphs actually are. A page whose extraction produced no runs at all answers
-/// `None`, which clears — the honest result for a page with no text on it.
 #[must_use]
 pub fn select_all(ctx: &PageContext<'_>) -> Option<TextSelection> {
     let model = model(ctx);
@@ -569,33 +410,6 @@ fn model<'a>(ctx: &PageContext<'a>) -> EditableTextModel<'a> {
 }
 
 /// **Is `canvas` inside the box of any text run on this page?**
-///
-/// # CONTAINMENT, and it must not be [`hit`]
-///
-/// [`hit`] falls back to the nearest line **within one line-height** when no
-/// box contains the point — deliberately, because that is Acrobat's behaviour
-/// for a sweep begun in the margin. It therefore answers `Some` over a band of
-/// blank paper around every line, and a caller asking *"is there a word
-/// here?"* would get "yes" in the margin beside one.
-///
-/// This is the other question, and the two must not be confused. Its one caller
-/// is `canvas::clicking`, deciding whether a click in Read mode means the
-/// picture underneath or the words on top of it — and answering "words"
-/// everywhere would make a scanned page's image unselectable, which is the
-/// mirror image of the defect it exists to fix.
-///
-/// ## Artifacts count
-///
-/// A run flagged as an artifact — a running head, a folio — is still text an
-/// operator can see and expects to select. `include_artifacts` governs what
-/// goes into extracted *plain text*, which is a different question from what is
-/// under the pointer.
-///
-/// ## A run with no `bbox` is skipped rather than guessed at
-///
-/// `TextRun::bbox` is `Option` because a run whose glyphs carry no usable
-/// geometry has no honest box. Treating that as a hit would put the answer back
-/// where [`hit`]'s fallback already is.
 #[must_use]
 pub fn word_at(ctx: &PageContext<'_>, canvas: Pos2) -> Option<()> {
     let pdf = crate::viewer::canvas_to_pdf_space(canvas, ctx.page)?;
@@ -630,40 +444,6 @@ fn hit(model: &EditableTextModel<'_>, ctx: &PageContext<'_>, canvas: Pos2) -> Op
 /// **Which way the text under `canvas` runs**, in CANVAS space, as an angle
 /// in degrees from the horizontal — or `None` where the pointer is not over
 /// rotated text.
-///
-/// The cursor's whole question, and the reason it is answered here rather than
-/// in `canvas::cursor`: turning the I-beam needs the page's **extraction**, and
-/// `cursor` is a bitmap generator that must not learn what a PDF is.
-///
-/// # The two hops, and why the second one cannot be skipped
-///
-/// [`EditableTextModel`] measures directions in **PDF user space** — Y-up, from
-/// the un-rotated CropBox's lower-left. The cursor lives in **canvas space** —
-/// Y-down, page top-left, with the page's `/Rotate` applied. A direction is not
-/// a point, so it cannot be projected by [`crate::viewer::pdf_space_to_canvas`]
-/// directly; what is projected is the **two ends of a short segment along it**,
-/// and the direction is their difference.
-///
-/// Doing it that way rather than by adding `/Rotate` to the angle by hand is
-/// the same decision `hit` makes for the same reason: `viewer` inverts the
-/// renderer's own device transform, so the cursor and the picture agree by
-/// construction instead of by two implementations happening to match. A page
-/// with `/Rotate 90` turns its vertical stamp into a horizontal one on screen,
-/// and the I-beam has to follow the picture, not the file.
-///
-/// # `None` is the common answer and is not a failure
-///
-/// Ordinary horizontal text answers `None`, because the upright beam is already
-/// right for it and saying so would mean every ordinary page paying for a
-/// bitmap lookup to be told nothing changed.
-///
-/// Blank paper answers `None` for a stronger reason, and it is why this
-/// function does **not** use [`hit`]. `EditableTextModel::hit_test` falls back
-/// to the *nearest* line when no line contains the point, which is right for a
-/// drag — Acrobat does it — and wrong for a cursor: the empty inches beside a
-/// vertical stamp would turn the beam sideways over blank paper the operator is
-/// not pointing at any text on. So the test here is **containment**, and the
-/// difference between the two is deliberate rather than an inconsistency.
 #[must_use]
 pub fn tilt_at(ctx: &PageContext<'_>, canvas: Pos2) -> Option<f32> {
     let pdf = crate::viewer::canvas_to_pdf_space(canvas, ctx.page)?;
@@ -869,32 +649,6 @@ fn ordered(a: TextPosition, b: TextPosition) -> (TextPosition, TextPosition) {
 }
 
 /// **Answer the text selection's own two chords, Ctrl+A and Ctrl+C.**
-///
-/// They live here rather than in the caller because every rule they enforce is a
-/// rule about *this* module, and a caller holding them would have to know all of
-/// them to get any of them right.
-///
-/// These two live apart from [`crate::canvas::keys::canvas_keys`] because
-/// both need the page's **extraction** — one to build a range over it, one to
-/// read a string out of a selection made against it — and `canvas_keys` is
-/// deliberately a document-free function that a headless `egui::Context` can
-/// drive end to end. Escape stays there, where its precedence question is
-/// answered.
-///
-/// Gated on [`takes_the_press`], the same predicate the press is gated on, so
-/// a mode whose primary button does not select content does not answer Ctrl+A
-/// with a text selection the operator has no gesture to clear. §1.3 of this
-/// module's header records that the *other* half of Ctrl+A — select every
-/// object — is a known gap rather than an oversight.
-///
-/// **[`pending_key`] FIRST, and the ordering is load-bearing.** The chord is
-/// read off `egui::InputState` — one map lookup — and the page's extraction is
-/// fetched **only** when one fired. Asking for the extraction in order to
-/// discover that no chord was pressed builds it on the first frame of every
-/// reading canvas: **392 ms at open** on `ncored-benchmark-cad-drawing.pdf`,
-/// paid by an operator who has touched nothing. It is the same gate
-/// `canvas::interact` step 4 puts in front of `page_objects()`, for the same
-/// reason.
 pub fn keys(
     ctx: &egui::Context,
     doc: &crate::app::state::OpenDoc,

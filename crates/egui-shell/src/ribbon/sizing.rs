@@ -64,63 +64,17 @@ use crate::ribbon::measure::{button_padding, text_width};
 use crate::ribbon::plan::ItemWidths;
 
 /// The gap between a Large control's icon and its label, in points.
-///
-/// `4`, from the mockup's `.rb.big { gap: 4px }`. Two points is enough when
-/// the glyph is 16 pt — vertically the two parts are already separated by the
-/// icon's own bottom edge and the label's ascent — but the glyph here is 24 pt
-/// ([`crate::theme::Metrics::ribbon_icon_large_pts`]), and a two-point gap
-/// under a half-again-larger picture reads as the label touching it.
 pub(super) const LARGE_STACK_GAP: f32 = 4.0;
 
 /// How much wider a Large control is than its widest part, in points.
-///
-/// A Large button's content is centred rather than left-aligned, so it needs
-/// symmetric breathing room; the ordinary button padding is tuned for a row of
-/// text and looks tight around a centred icon.
-///
-/// `8` — `.rb.big { padding: 5px 8px 2px }`, the horizontal figure. Narrow
-/// on purpose: a Large control pays for its presence with **height and glyph
-/// size**, not with width, so a row of them sits closer together than the side
-/// padding alone would suggest.
 pub(super) const LARGE_SIDE_PADDING: f32 = 8.0;
 
 /// The narrowest a Large control may be drawn, in points —
 /// `.rb.big { min-width: 52px }`.
-///
-/// Why a floor is needed at all, when the control is already as wide as its
-/// widest part plus padding: because its widest part can be *tiny*. A Large
-/// control whose label is `Save` and whose glyph is 24 pt measures
-/// `24 + 16 = 40` pt, and a run of Large controls that changed width with
-/// every word would read as a ragged fence rather than as a row of equal
-/// buttons. Word, Acrobat and the mockup all pin a floor; this is the
-/// mockup's.
-///
-/// It is **not** applied to the label's wrap width — see
-/// [`LARGE_LABEL_WRAP`]. A floor that also widened the text would make the
-/// floor unreachable, because every label would grow to meet it.
 pub(super) const LARGE_MIN_WIDTH: f32 = 52.0;
 
 /// The width a Large control's label wraps at, in points —
 /// `.rb.big .lb { max-width: 76px }`.
-///
-/// **The label WRAPS.**
-///
-/// This is the half of the operator's *"text label location"* complaint that
-/// is not a manifest change. A Large
-/// control is *icon above label, centred*, and the labels this ribbon
-/// carries are sentences by button standards — `Recognise text…`,
-/// `Save a compacted copy…`, `New from template…`. Laid out on one line,
-/// such a control is 120 pt wide and 56 pt tall: a letterbox, which is not
-/// what a Large control looks like anywhere, and which pushes the groups
-/// beside it off the band.
-///
-/// So the label is laid out into a galley of at most this width and may take
-/// two lines (or more — nothing here caps the line count, because a cap would
-/// mean silently dropping a word, and `RIBBON_SCALING.md`'s ladder is this
-/// project's answer to "it does not fit"). The height that galley reports is
-/// then part of the control's own content height, which is what stops a
-/// two-line label from being clipped by
-/// [`crate::theme::Metrics::ribbon_large_pts`].
 pub(super) const LARGE_LABEL_WRAP: f32 = 76.0;
 
 /// **The one layout of a Large control's label**, shared by the measuring
@@ -138,20 +92,6 @@ fn large_label(ui: &egui::Ui, ctx: &Ctx<'_>, text: &str) -> std::sync::Arc<egui:
 }
 
 /// **Is this item drawn at all?** — `RIBBON_SCALING.md` §5.3.
-///
-/// The `visible_when` filter, applied **before measurement**, which is the
-/// whole point: a hidden item must not merely be skipped when drawing, or the
-/// group reserves space for a control that never appears and the band's plan
-/// is wrong by exactly the width of every hidden item.
-///
-/// This is **visibility**, not enablement, and R9 draws the line: *an
-/// unavailable capability renders nothing; greying is reserved for
-/// **temporarily** unavailable and is always explained on hover.*
-/// [`Command::enable`] is the greying — no document open, empty undo stack.
-/// This is the disappearing — the command does not apply on this surface, in
-/// this mode, in this build.
-///
-/// An item with no condition is always visible, which is nearly all of them.
 #[must_use]
 pub(crate) fn visible(item: &Item, conditions: &crate::commands::ConditionSet) -> bool {
     item.visible_condition()
@@ -160,16 +100,6 @@ pub(crate) fn visible(item: &Item, conditions: &crate::commands::ConditionSet) -
 
 /// **The size this control will actually render at**, which is not always the
 /// size the manifest asked for.
-///
-/// See the module header: `Small` is earned. `can_paint` is whether the
-/// application installed an icon painter at all — a manifest asking for
-/// icon-only controls in a build with no icons would otherwise draw a band of
-/// empty rectangles.
-///
-/// `Large` is **not** conditional on an icon. A large button with no icon is
-/// a large label, which is odd-looking but legible and unambiguous; a large
-/// button with an icon and no label would be the mystery, and `Large` always
-/// draws its label.
 #[must_use]
 pub(crate) fn resolved(command: &Command, asked: ItemSize, can_paint: bool) -> ItemSize {
     match asked {
@@ -181,14 +111,6 @@ pub(crate) fn resolved(command: &Command, asked: ItemSize, can_paint: bool) -> I
 }
 
 /// The width one command control occupies at `size`.
-///
-/// This and [`render`] are one decision written twice, and they must not
-/// diverge: a control measured at one width and drawn at another is how a band
-/// that "claims to fit" clips its last group. `band`'s own comment makes the
-/// same point about the icon slot. Every branch here has a matching branch
-/// there, in the same order, and
-/// [`crate::ribbon::width_tests`]'s `a_band_that_claims_to_fit_really_does_fit`
-/// is what would catch a drift between them.
 #[must_use]
 pub(crate) fn width(ui: &egui::Ui, ctx: &Ctx<'_>, command: &Command, size: ItemSize) -> f32 {
     let icon = if command.icon.is_some() {
@@ -241,21 +163,6 @@ pub(crate) fn width(ui: &egui::Ui, ctx: &Ctx<'_>, command: &Command, size: ItemS
 }
 
 /// Draw one Large control — icon above label, spanning `height`.
-///
-/// # Why this is built by hand rather than from `egui::Button`
-///
-/// `egui::Atoms` lays out with `push_right`; there is no vertical form, so a
-/// `Button` cannot stack an icon over a label. The alternatives were a nested
-/// `Ui` inside a frame that *looks* like a button — which does not respond
-/// like one, and gets the hover and pressed visuals wrong on the day the theme
-/// changes — or this: allocate the rect, take a real `Response`, and paint the
-/// button's own `WidgetVisuals` into it.
-///
-/// Painting from `ui.style().interact(&response)` rather than from theme
-/// colours directly is what keeps a Large control identical to every other
-/// button under hover, focus, disabled and selected. A hand-drawn control that
-/// picked its own colours is the shape of the defect this project's
-/// `check-theme-colors` gate exists to refuse.
 pub(crate) fn render_large(
     ui: &mut egui::Ui,
     ctx: &mut Ctx<'_>,

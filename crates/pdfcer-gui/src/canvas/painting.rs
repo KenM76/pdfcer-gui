@@ -14,11 +14,6 @@ use crate::canvas::selection::SelectionState;
 use crate::canvas::tool::CanvasTool;
 
 /// Everything the painting pass needs, and nothing else.
-///
-/// A struct rather than sixteen parameters, and the grouping is a statement:
-/// **every member is a product of the decision half.** It also removes the
-/// failure a long parameter list invites — five of them are `Option`s and
-/// several are adjacent, so a swap would compile.
 pub(super) struct Frame<'a> {
     /// The page on screen.
     pub page_index: usize,
@@ -141,10 +136,6 @@ pub(super) struct Frame<'a> {
 }
 
 /// Paint the canvas.
-///
-/// Takes `ui` and `doc` alongside [`Frame`] because both are borrows the caller
-/// still owns and neither is a *product* of the decision half — putting them in
-/// the struct would make it a bag rather than a grouping.
 pub(super) fn draw(
     ui: &Ui,
     ctx: &egui::Context,

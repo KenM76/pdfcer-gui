@@ -31,3 +31,13 @@ Blank leaves comments anonymous, which is legal, is what pdfcer did before
 `Pass 150.0`, and is what an operator sending a drawing outside their firm
 may actually want. There is no warning, no asterisk and no placeholder
 guessed from the Windows login — see `app::prefs::Prefs::author_name`.
+
+## Item notes
+
+### `fn author_name`
+
+`text_value` with an identity parse, which is the honest shape for a free
+string: the helper exists to hold a half-typed *number* apart from a parsed
+value, and a name has no invalid intermediate state. `Some(..)` on every
+input means every keystroke reaches the draft, so Save writes exactly what
+is on screen.

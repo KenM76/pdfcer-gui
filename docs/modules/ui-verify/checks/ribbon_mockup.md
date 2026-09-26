@@ -189,3 +189,58 @@ header says it exists to remove.
 The two figures are the measured ones, so a theme change that narrows
 the gap below `far`'s threshold turns this test red rather than turning
 the check silently vacuous.
+
+### `fn is_frameless`
+
+The oracle for row 4 of the module header's table, and the only assertion
+in this file that a unit test could not have made.
+
+# The measurement
+
+Four probes, one per corner, each a pair: a pixel `inset` inside the
+control's rectangle and a pixel `inset` outside it, on the diagonal. A
+control with a frame differs at the inside probe (its `weak_bg_fill`) and
+again on the boundary between them (its `bg_stroke`). A control with no
+frame is the band's own colour at both.
+
+A probe pair is **discarded** when either sample is far from the modal
+background — that is content (an icon corner, a descender) rather than
+chrome, and asserting on it would report a defect against a glyph. The
+verdict is taken over the pairs that survive; if none survives, the caller
+is told so rather than being handed a pass built on nothing.
+
+`inset` is 2 px rather than 1: `egui` rounds a button's corners
+(`Metrics::corner_radius`, 3 pt in `Quiet`), so the literal corner pixel of
+the rectangle is outside the painted shape even when a frame IS drawn, and
+a one-pixel probe would report every framed control as frameless.
+
+# `ground` is the load-bearing argument, and a wrong one makes this
+# function measure NOTHING while looking exactly like a working oracle
+
+Every verdict here is a comparison against `ground`, and both branches use
+it: `far(outside)` **discards** the pair, `far(inside)` **convicts** it. So
+a `ground` sampled from anything that is not the band makes `far` true
+almost everywhere, every pair is discarded, `judged` reaches zero and the
+function returns `None` for the entire band.
+
+That happened on 2026-09-05 and it is written up at the caller, where the
+sampling point lives: the reference was taken from inside a **collapsed
+group's plate**, `#E8E8EA` against the band's `#F2F2F3` — a channel-sum
+distance of **29 against this function's threshold of 24.** Ten points of
+grey, and the check went from PASS to *"0 resting band controls were judged
+for a frame"*.
+
+⇒ **The `None` return is what made that visible at all**, and it is worth
+keeping for that reason alone. A version answering `true` when nothing could
+be measured would have reported the band frameless — the very claim the
+check exists to establish — on a run that had measured no pixels.
+
+A hypothesis that was **falsified by driving**, recorded because the
+reasoning was plausible and wrong: when the band began stacking controls
+into columns one point apart, the diagonal outside probe looked certain to
+land on the neighbour above. It does not — the diagonal steps sideways as
+well as up, out of the control's own x range and into the group's padding,
+which is band. Reverted to the diagonal after a driven run with the fixed
+`ground` judged **11** controls either way. *A layout change is not
+automatically the cause of a probe that stopped measuring; find the
+reference first.*

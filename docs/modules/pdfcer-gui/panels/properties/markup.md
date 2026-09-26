@@ -311,3 +311,10 @@ The naïve `1 - min(1, x + k)` per channel — the same one §8.6.4.4 states as
 the default `DeviceCMYK` → `DeviceRGB` transform when no colour management is
 in play. It is an approximation and this shell says so; it is not a place to
 invent an ICC pipeline for a 16-pixel square.
+
+### `fn section`
+
+Returns whether it drew, so [`super::body`] knows the panel is already
+saying something — the same contract [`super::dimension::section`] has, and
+for the same reason: *"nothing is selected"* under a section describing the
+thing that is selected would be the panel contradicting itself.

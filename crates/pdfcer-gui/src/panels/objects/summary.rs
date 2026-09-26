@@ -11,14 +11,6 @@ use pdfcer_core::vector::{
 };
 
 /// Which kind of thing a page object is.
-///
-/// Finer-grained than [`VectorObject`]'s three variants on purpose: the
-/// model folds inline images, image XObjects and form XObjects into one
-/// `VectorObject::Image`, but those are three genuinely different answers to
-/// "what did I select?" — a form XObject in particular is an entire nested
-/// drawing treated as one opaque object, which is itself a common cause of
-/// "why is the box so big?". Collapsing them would throw away a distinction
-/// the operator needs precisely when they are confused.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ObjectKind {
     /// A path object (`re`/`m`/`l`/`c` … then a painting operator).
@@ -48,11 +40,6 @@ pub enum Degeneracy {
 
 /// A disclosable fact that explains an object the operator may not be able
 /// to SEE (module docs' table).
-///
-/// Notes are facts already known to `pdfcer-core`, never inferences: each one
-/// is a field read or an exact comparison. That is what makes surfacing them
-/// a disclosure rather than a guess (rule 4), and it is why they are safe to
-/// state flatly in a panel with no hedging.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ObjectNote {
     /// The bounds of a text object are an approximation — of the kind the
@@ -99,16 +86,6 @@ pub enum ObjectNote {
 
 impl ObjectNote {
     /// Every note, for the tests that sweep the catalog.
-    ///
-    /// A note added without an explanation sentence — or with one
-    /// copy-pasted from its neighbour — would ship as a disclosure that
-    /// discloses nothing, which is worse than no note at all because it
-    /// looks like the app answered the question. A test sweeping this list
-    /// catches that; review does not, reliably.
-    ///
-    /// [`crate::text::panels::objects::object_note_sentence`] is the
-    /// function under that sweep, and this array is what makes the sweep
-    /// exhaustive rather than a sample.
     pub const ALL: [Self; 12] = [
         Self::ApproximateTextBounds(TextBoundsBasis::FontMetrics),
         Self::ApproximateTextBounds(TextBoundsBasis::MetricAdvancesNominalHeight),
@@ -138,11 +115,6 @@ impl ObjectKind {
 }
 
 /// Everything the GUI can honestly say about one page object.
-///
-/// Cheap to build (field reads plus one anchor count) and built on demand
-/// rather than cached: the Objects panel virtualizes, so only the rows
-/// actually on screen are described, and the Properties panel describes at
-/// most one object per frame.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ObjectSummary {
     /// What kind of object it is.
@@ -210,23 +182,6 @@ impl ObjectSummary {
 
     /// Whether the object's stated extent is a deliberate APPROXIMATION
     /// rather than its measured extent.
-    ///
-    /// Today only text is approximate, but this asks the QUESTION rather
-    /// than testing the kind, so an exact text bbox turns the disclosure off
-    /// by itself with no second place to update.
-    ///
-    /// **All four [`TextBoundsBasis`] cases count as approximate**,
-    /// including [`TextBoundsBasis::FontMetrics`]: a metrics-derived box is
-    /// where a conforming reader lays the run out, but it is still not
-    /// measured ink — accented capitals exceed `/Ascent` by that entry's own
-    /// definition, and italic overhang leans past the advance. The claim
-    /// narrowed; it did not become false.
-    ///
-    /// **This drives a sentence in a panel, never a dashed outline on the
-    /// canvas.** Styling content pdfcer is unsure about is content marking,
-    /// and rule 4 forbids content marking. The predicate earns its place
-    /// because the question is worth asking once, in one place; where the
-    /// answer is shown is not this module's choice to make.
     #[must_use]
     pub fn bounds_are_approximate(&self) -> bool {
         self.notes
@@ -236,21 +191,6 @@ impl ObjectSummary {
 }
 
 /// Classify one object, and nothing more.
-///
-/// **The cheap half of [`describe_object`]**, split out and shared with it
-/// so there is still exactly one place that decides what kind of thing an
-/// object is. Three field reads and no traversal.
-///
-/// It exists because a caller that wants only kinds should not pay for a
-/// full description: [`describe_object`] counts every anchor of every
-/// subpath, and on the measured CAD export one path object holds **6,681
-/// anchors**. The Objects panel's header line tallies kinds across the whole
-/// page once per frame, which would have made that header cost more than the
-/// list beneath it.
-///
-/// The split is deliberately *extraction*, not duplication —
-/// [`describe_object`] calls this — because two kind classifiers is exactly
-/// the divergence this module exists to prevent, one layer down.
 #[must_use]
 pub fn object_kind(object: &VectorObject) -> ObjectKind {
     match object {
@@ -265,13 +205,6 @@ pub fn object_kind(object: &VectorObject) -> ObjectKind {
 }
 
 /// Describe one object — **the single description path** (module docs).
-///
-/// Note ordering is the order the operator should read them in: the note
-/// that explains *why the box looks wrong* comes before the note that
-/// explains a structural property of the object. For a text object that
-/// means the approximation disclosure leads; for a degenerate path, the
-/// zero-extent disclosure leads over "paints nothing", because an invisible
-/// hairline is more surprising than an invisible clip path.
 #[must_use]
 pub fn describe_object(object: &VectorObject) -> ObjectSummary {
     let bounds = object.page_bbox();
@@ -400,15 +333,6 @@ fn degeneracy_note(bounds: Bounds) -> Option<ObjectNote> {
 }
 
 /// How many of each kind a group of objects contains.
-///
-/// The multi-object readout's whole job is orientation, not detail:
-/// "3 objects selected (2 paths, 1 text)" tells the operator whether their
-/// marquee caught what they meant, which a per-object dump would bury.
-///
-/// Its other consumer is the Objects panel's own header line, which answers
-/// the same question about the whole page: *what is this page made of?*
-/// [`census`] takes kinds rather than a selection precisely so the input can
-/// be either, and neither consumer needs the other's shape.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct SelectionCensus {
     /// Total objects counted.
@@ -425,11 +349,6 @@ pub struct SelectionCensus {
 }
 
 /// Tally a group of objects by kind.
-///
-/// Takes kinds rather than objects so the caller can feed it whatever it
-/// already has (a `filter_map` over a selection set that may contain stale
-/// targets, most usefully) without this function needing to know how a
-/// [`crate::panels::objects::provider::TargetId`] resolves.
 #[must_use]
 pub fn census(kinds: impl IntoIterator<Item = ObjectKind>) -> SelectionCensus {
     let mut c = SelectionCensus::default();

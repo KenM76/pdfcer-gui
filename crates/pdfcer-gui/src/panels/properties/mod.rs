@@ -16,13 +16,6 @@
 /// **Whether the selected annotation can be deleted, and what would go with
 /// it** — `EditSession::annotation_deletion_refusal` and
 /// `annotation_deletion_preview`.
-///
-/// `pub` rather than private, unlike [`dimension`] and [`markup`], for two
-/// reasons that are both about a single derivation being reachable from
-/// elsewhere: `crate::panels::PanelsState` holds its `(id, epoch)`-stamped
-/// memo, and `crate::app::conditions` calls its `gate` to publish
-/// `selection.delete_permitted` — the condition that decides whether
-/// `format.delete` is drawn at all. One question, two consumers; see its header.
 pub mod annotdelete;
 /// A **choice field's `/Opt` list** and the three `/Ff` flags Acrobat groups
 /// with it. Its own module under R2 and on the seam the code takes:
@@ -38,17 +31,6 @@ mod disclose;
 /// The **face chooser**, which is one control drawn on two surfaces — this
 /// panel's [`text`] section and the ribbon's Format ▸ Font group in
 /// [`crate::app::fontband`], which draw the one loop from the one place.
-///
-/// `pub(crate)` reach rather than private, because the ribbon is not under
-/// `crate::panels` and must draw the identical body: *"a face offered in one
-/// surface and not the other"* is a divergence this project has found more than
-/// once, and a disclosure added to one copy and not the other would be worse
-/// than either.
-///
-/// Its header carries the two things this module could not have invented: the
-/// evidence that `EditSession::format_text` performs the standard-14 resource
-/// write itself, and why the fourteen are offered without being
-/// coverage-tested first.
 pub mod face;
 /// The **form field** clicked on the page in Edit mode. `pub` for the same
 /// reason [`geometry`] is: its rename box holds a draft in
@@ -71,14 +53,6 @@ mod markup;
 /// indeterminate swatch, and nothing at all over an ink pdfcer will not
 /// overwrite. Shared by [`paint`] and [`textobject`], because O89's two pieces
 /// have to answer the same three questions the same way.
-///
-/// Its header carries the reason it is hand-built rather than
-/// `ui.color_edit_button_srgb`: `egui`'s own colour button marks itself changed
-/// on **every frame of a drag inside the picker**, so a caller acting on
-/// `.changed()` authors one undo entry per frame.
-/// One `/MK` colour key as a labelled swatch, shared by the properties pane
-/// and the placement dialog. `O202` asks for colour before AND after
-/// placement, and its header carries why one module answers both.
 pub mod mkcolour;
 /// The colour of a selected path. `OPERATOR_REQUESTS.md` O89's vector half, and
 /// the colour of a whole **selection** of paths, with the indeterminate state
@@ -86,18 +60,6 @@ pub mod mkcolour;
 mod paint;
 /// **The character an edit was refused for, and the face that can type it**
 /// — `OPERATOR_REQUESTS.md` O141.
-///
-/// > *"if the character isn't available in a pdf are we able to change to a
-/// > different font?"*
-///
-/// Yes, and each piece is separately ordinary: the engine refuses by name and
-/// hands back `Refusal::character`, [`face`] offers the fourteen standard
-/// faces, and `set_font` authors a resource the page does not carry. **What
-/// connects the refusal to the chooser is this section**, and nothing else
-/// does.
-///
-/// `pub` for [`text`]'s reason: `crate::panels::PanelsState` holds its state,
-/// because the face list costs a provenance extraction and a pre-flight.
 pub mod refusedchar;
 /// One text run's width, typed in points (`G038`).
 mod runwidth;
@@ -105,33 +67,12 @@ mod runwidth;
 pub mod swatch;
 /// The **selected text's** face, size, weight and colour — O37's Font
 /// controls, built panel-first as §5.8 says to.
-///
-/// `pub` rather than private, like [`geometry`] and unlike [`markup`], because
-/// `crate::panels::PanelsState` holds its draft: the read-back costs a
-/// provenance extraction, so it is stamped and kept rather than re-taken every
-/// frame.
 pub mod text;
 /// **The colour of the text the operator CLICKED** — `OPERATOR_REQUESTS.md`
 /// O89, piece 1.
-///
-/// Every text colour control in the program was gated on a swept range, and
-/// clicking text selects the *object*, so the swatch he went looking for was
-/// greyed with no guessable way to un-grey it. This section acts on the object,
-/// through the same `Action::TextStyle` a sweep raises, with the operand
-/// derived by **byte-span containment** rather than by any geometric inference
-/// — see its header, and `crate::canvas::textedit::pin::object_text`.
-///
-/// `pub` for [`text`]'s reason: `crate::panels::PanelsState` holds its draft,
-/// because the read-back costs a provenance extraction.
 pub mod textobject;
 /// **The armed tool's own settings** — the text pen's face, size and
 /// colour, the circular measure's pick list, and the three resize switches.
-///
-/// `OPERATOR_REQUESTS.md` O123: *"I never understood why there is a tool dock
-/// when everything can be in object and properties."* They are properties of
-/// what is about to be drawn, and this is the panel that owns that category.
-/// `pub` rather than private because `block_for` is the shipped decision a
-/// driven check and a unit test both assert against.
 pub mod tool;
 /// The **box** a form field is drawn in — `EditSession::edit_widget`. Its own
 /// file rather than four more rows in [`fieldedit`],
@@ -162,17 +103,6 @@ pub enum FontEmbedded {
 }
 
 /// Whether the document embeds the program for the font named `base_font`.
-///
-/// A pure function over the inventory so it can be tested without a frame,
-/// and so the disclosure rule it implements — *never pick when the join is
-/// ambiguous* — is visible as an assertion rather than as a comment.
-///
-/// **Zero matches is [`FontEmbedded::Unknown`], not [`FontEmbedded::No`].**
-/// "This font is not embedded" is a claim about a font dictionary pdfcer
-/// found; "no font dictionary answers to this name" is a claim about pdfcer's
-/// own inventory, and the Fonts panel already states which surfaces that
-/// inventory does not cover. Reporting the second as the first would turn a
-/// coverage gap into a statement about the operator's document.
 #[must_use]
 pub fn font_embedded(
     inventory: &pdfcer_core::fontinfo::FontInventory,
@@ -193,29 +123,6 @@ pub fn font_embedded(
 }
 
 /// Draw the Properties panel.
-///
-/// ## Every section is scoped to a selection, and that is the whole rule
-///
-/// | section | subject | when |
-/// |---|---|---|
-/// | [`dimension`] | the **ce dimension** selected on the canvas | only while one is |
-/// | [`markup`] / [`annotdelete`] | the **annotation** selected on the canvas | only while one is |
-/// | [`formfield`] / [`fieldedit`] / [`widgetedit`] | the **form field** clicked on the page | only while one is |
-/// | [`text`] / [`textobject`] / [`paint`] / [`geometry`] | the **content** swept or clicked | only while something is |
-/// | [`object_section`] | the **page object** the canvas selection names | only while one is |
-///
-/// **The row that would break that pattern is the file's own title, author,
-/// subject and keywords**, which have no selection to be scoped to and so draw
-/// with no condition of any kind — on screen every frame under everything else.
-/// They are [`crate::panels::docprops`], with a tab of their own. See this
-/// module's header for the rule that leaves behind.
-///
-/// ## Why `object_section` is a function rather than inlined
-///
-/// Because it has two early returns — no selection, and a selection naming an
-/// object that has gone — and an early return written straight into `body`
-/// would skip everything after it. Nothing follows it today, so the shape costs
-/// one function and buys the guarantee back the moment a section is appended.
 pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: &mut Vec<Action>) {
     // **ONE SCROLL AREA, ROUND EVERYTHING**, and its absence is a defect an
     // operator cannot work around.
@@ -575,19 +482,6 @@ fn object_section(ui: &mut egui::Ui, doc: &OpenDoc, something_drew: bool) -> boo
 const REGION_OBJECT: &str = "properties.object"; // ui-text-exempt: trace region name, never displayed
 
 /// The panel's field list, as `(label, value)` pairs in display order.
-///
-/// A pure function, and that is the point: it is where every "is this fact
-/// present?" decision lives, so every one of them is testable without a
-/// frame. The drawing code above does nothing but lay these out.
-///
-/// **A field is omitted when the object has no such property, and present
-/// with [`crate::text::panels::properties::value_not_stated`] when it has
-/// one the file does not state.** Those are different situations and the
-/// panel distinguishes them: a path has no font at all (omit), while an
-/// object with no finite geometry *has* a position that the file does not
-/// give (say so). A blank row is never produced, because a blank is
-/// indistinguishable from a field pdfcer forgot to fill in — and this panel's
-/// whole value is that its silences are as legible as its numbers.
 #[must_use]
 pub fn property_rows(
     index: usize,

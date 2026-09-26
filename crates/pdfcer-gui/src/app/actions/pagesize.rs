@@ -15,13 +15,6 @@ use crate::text::page_size as t;
 /// **What the picked sheets are, and what is drawn on them** — everything the
 /// sheet-size window needs to answer *"what will this do to my drawing?"*
 /// before the operator commits.
-///
-/// Built once when the window opens, from state the application already holds:
-/// the flattened page vector (walked every frame anyway) and the object-model
-/// cache (built for the current page anyway). **Nothing here decomposes a page
-/// that was not already decomposed** — see [`Self::unread`] for the price that
-/// bounded cost is paid in, and why it is paid in honesty rather than in
-/// silence.
 #[derive(Debug, Clone, PartialEq)]
 pub struct SheetSurvey {
     /// The operand pages, 0-based, ascending and unique — whatever
@@ -63,13 +56,6 @@ pub struct SheetSurvey {
 
 impl SheetSurvey {
     /// The one size every operand already is, when they are all the same.
-    ///
-    /// `None` on a mixed pick — the ordinary state of a drawing set with a
-    /// detail sheet in it, which is why the window has a sentence for it.
-    /// Compared to [`pdfcer_core::paper::PaperSize::CLASSIFY_TOLERANCE`], for
-    /// the reason that constant exists: producers round A4 to 595.276, 595.28
-    /// and 595.32, and exact equality would call an obviously uniform set
-    /// mixed.
     #[must_use]
     pub fn uniform(&self) -> Option<Rect> {
         let first = *self.boxes.first()?;
@@ -85,10 +71,6 @@ impl SheetSurvey {
 
     /// How many distinct sizes the pick holds, to
     /// [`pdfcer_core::paper::PaperSize::CLASSIFY_TOLERANCE`].
-    ///
-    /// Reported rather than a bare "they differ" because *"9 sheets in 2
-    /// different sizes"* tells the operator he has one odd sheet and *"9 sheets
-    /// in 7 different sizes"* tells him he has picked the wrong thing.
     #[must_use]
     pub fn distinct_sizes(&self) -> usize {
         let tol = pdfcer_core::paper::PaperSize::CLASSIFY_TOLERANCE;
@@ -105,12 +87,6 @@ impl SheetSurvey {
 
     /// **How far the drawing runs past `target`**, per edge, in points:
     /// `(left, right, bottom, top)`, each clamped at zero.
-    ///
-    /// `None` when nothing could be measured — which is *not* the same as zero
-    /// and must not be collapsed into it. The caller words the two differently:
-    /// `Some((0,0,0,0))` is [`crate::text::page_size::fits`], a promise;
-    /// `None` is [`crate::text::page_size::overhang_unmeasurable`], a stated
-    /// boundary.
     #[must_use]
     pub fn overhang(&self, target: Rect) -> Option<(f64, f64, f64, f64)> {
         let drawn = self.drawn?;
@@ -123,27 +99,6 @@ impl SheetSurvey {
     }
 
     /// **The rectangle to write for a sheet of `w_pt` × `h_pt`.**
-    ///
-    /// # The lower-left corner is the operands' own, not the origin
-    ///
-    /// `PaperSize::rect_with` puts a named sheet at `(0, 0)`, and its own doc
-    /// comment calls that *"a choice, not a law"*: §7.7.3.3 does not require a
-    /// media box to start at the origin, and imposition output and cropped
-    /// scans really do carry offset ones. On such a page, writing an
-    /// origin-anchored sheet moves **the paper relative to the drawing** —
-    /// which is not what "change the sheet size" means and is invisible until a
-    /// print comes out shifted.
-    ///
-    /// So the new sheet keeps the corner the old sheets had, when they share
-    /// one. On the overwhelmingly common `(0, 0)` case this is byte-identical
-    /// to `rect_with`, which is what makes it safe unconditionally.
-    ///
-    /// When the operands do **not** share a corner, one rectangle cannot
-    /// preserve all of them — `set_media_boxes` takes one rectangle for the
-    /// whole selection, and that is the property that buys the single undo
-    /// entry. The fallback is the origin, and
-    /// [`crate::text::page_size::origin_differs`] is drawn in the window rather
-    /// than the choice being made quietly.
     #[must_use]
     pub fn target_rect(&self, w_pt: f64, h_pt: f64) -> Rect {
         let (llx, lly) = self.common_origin.unwrap_or((0.0, 0.0));
@@ -152,18 +107,6 @@ impl SheetSurvey {
 }
 
 /// Read the picked sheets and what is drawn on them.
-///
-/// `pages` is the operand list `crate::app::dispatch::pages` already resolved,
-/// so this function never re-decides which sheets are meant — one statement of
-/// the operand rule, which is the same argument
-/// `SelectionState::deletable_objects_on` makes.
-///
-/// # What it costs
-///
-/// One index into `doc.pages` per operand, plus **at most one** borrow of the
-/// object-model cache — `OpenDoc::page_objects` returns the decomposition for
-/// the page currently on screen, already built if the canvas has drawn it. No
-/// page is decomposed on this call's account. See [`SheetSurvey::unread`].
 #[must_use]
 pub fn survey(doc: &OpenDoc, pages: &[usize]) -> SheetSurvey {
     let boxes: Vec<Rect> = pages

@@ -179,12 +179,6 @@ fn control(trace: &Trace, ui_rect: &str, name: &str) -> Result<LRect> {
 }
 
 /// Click a band control and confirm the **shell** reported the invoke.
-///
-/// A SKIP rather than a failure when nothing was reported, on
-/// [`crate::checks::markup_rectangle`]'s rule: a check that could not deliver a
-/// click has learned nothing about the application, and naming a feature as the
-/// culprit when nothing was ever clicked at it is worse than no check at all.
-/// `pub(crate)` for [`crate::checks::text_edit`] — see [`click_tab`].
 pub(crate) fn click_command(
     session: &Session,
     driver: &Driver,

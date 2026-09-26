@@ -7,31 +7,6 @@ use pdfcer_core::object::ObjId;
 
 /// **Where the words go when Save is pressed** — the one thing that
 /// distinguishes writing a note from answering one.
-///
-/// # Why the destination lives on the draft rather than beside it
-///
-/// Because a reply *is* the note editor with a different destination, and
-/// building it as a second draft, a second `TextEdit`, a second Escape
-/// handler and a second stale-epoch rule would have been four places for the
-/// two to drift apart. `crate::panels::comments::editor` therefore draws one
-/// box and asks this enum which verb the commit raises, which means the
-/// **stale-draft rule, the Escape route and the seeding rule are written
-/// once** and cannot come to differ between the two.
-///
-/// And it is on the **stamp**, beside the annotation and the epoch, rather
-/// than a fourth loose field. Those three answer one question together —
-/// *what is open, on what, as of when* — and a destination that could be read
-/// while nothing was open is a destination that eventually is.
-///
-/// # Why an enum and not `is_reply: bool`
-///
-/// The two reach different engine verbs with different outcomes:
-/// `set_markup_note` edits a dictionary that exists, `add_reply` creates an
-/// annotation. `crate::app::actions::annot::AnnotAction::Reply` makes the same
-/// argument for keeping them apart on the action bus, and the argument is the
-/// same one rung down — a bool is a value a future `match` can forget to
-/// consider, and the outcome of forgetting here is a reviewer's answer written
-/// over the comment it was answering.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DraftTarget {
     /// The words become the annotation's own `/Contents` —
@@ -70,40 +45,18 @@ pub struct NoteDraft {
 impl NoteDraft {
     /// **Open the editor on one annotation**, seeded with whatever note it
     /// already carries.
-    ///
-    /// Seeded rather than blank, because *edit* is the commoner act than
-    /// *replace*: correcting a typo in a comment is the fourth of the four
-    /// rows `pdfcer-core`'s own reply lists as what a review IS, and it would be
-    /// retyping from scratch against an empty box.
     pub fn begin(&mut self, id: ObjId, epoch: u64, seed: &str) {
         self.stamp = Some((id, epoch, DraftTarget::Note));
         self.text = seed.to_owned();
     }
 
     /// **Open the editor to ANSWER one annotation**, empty.
-    ///
-    /// Empty, and that is the opposite of [`Self::begin`]'s rule rather
-    /// than an oversight in it. Seeding a note editor is right because *edit*
-    /// is commoner than *replace* and the operator is correcting words that
-    /// already exist. Seeding a **reply** with the parent's words would put
-    /// somebody else's sentence in the operator's mouth: `add_reply` writes a
-    /// new annotation with the operator's own `/T`, so anything left in the
-    /// box goes out signed by them.
-    ///
-    /// ⇒ Two entry points rather than one with a `seed` the caller passes
-    /// `""` to, because that spelling puts the rule at every call site instead
-    /// of in the type — and there would be exactly one call site until the day
-    /// there were two.
     pub fn begin_reply(&mut self, parent: ObjId, epoch: u64) {
         self.stamp = Some((parent, epoch, DraftTarget::Reply));
         self.text.clear();
     }
 
     /// Close the editor and abandon the words.
-    ///
-    /// Called from Cancel, from Escape, from a successful Save, and from
-    /// [`Self::sync`] when the document moves. **One way to close**, so a
-    /// future arm cannot leave the text behind while clearing the stamp.
     pub fn close(&mut self) {
         self.stamp = None;
         self.text.clear();
@@ -111,29 +64,12 @@ impl NoteDraft {
 
     /// Whether the editor is open on this annotation **at this epoch**, for
     /// either destination.
-    ///
-    /// The epoch is compared rather than ignored so that a caller cannot
-    /// accidentally draw a stale editor between the edit landing and the next
-    /// [`Self::sync`]; in practice `sync` runs first, and this is the belt to
-    /// its braces.
-    ///
-    /// The **destination is deliberately not compared**, and that is what
-    /// makes the row draw one editor rather than two: a row whose reply box is
-    /// open must not also offer *Add note* beside it, because two boxes on one
-    /// row is two drafts and this type holds one. Ask [`Self::target`] when the
-    /// answer matters.
     #[must_use]
     pub fn editing(&self, id: ObjId, epoch: u64) -> bool {
         matches!(self.stamp, Some((sid, sepoch, _)) if sid == id && sepoch == epoch)
     }
 
     /// **Where the open editor's words are going.** `None` when none is open.
-    ///
-    /// Asked by the row that is drawing the editor, so the labels, the hint,
-    /// the signature disclosure and the verb the commit raises all come from
-    /// one answer — the failure mode being a box captioned *Post reply* whose
-    /// Save writes `/Contents`, which is invisible until somebody reads the
-    /// file.
     #[must_use]
     pub fn target(&self) -> Option<DraftTarget> {
         self.stamp.map(|(_, _, target)| target)
@@ -151,13 +87,6 @@ impl NoteDraft {
     }
 
     /// **Drop the draft if the document has moved under it.**
-    ///
-    /// Called once per frame by the panel, before anything is drawn, with the
-    /// document's current edit epoch. See the module header: a draft stamped at
-    /// an older epoch describes a document that no longer exists, and the
-    /// moment to stop showing it is the moment it goes stale.
-    ///
-    /// A no-op when nothing is open, which is almost every frame.
     pub fn sync(&mut self, epoch: u64) {
         if let Some((_, stamped, _)) = self.stamp
             && stamped != epoch
@@ -168,17 +97,6 @@ impl NoteDraft {
 }
 
 /// **Everything the Comments panel remembers between frames.**
-///
-/// Two members, and the pairing is the point: both are *the operator's place in
-/// this panel* rather than anything about the document.
-///
-/// # Why a struct rather than two fields on `PanelsState`
-///
-/// Because `PanelsState` hands each panel **one** accessor, deliberately — a
-/// panel reaches its own state and cannot reach another's. Two loose fields
-/// would need two accessors and would let a future panel take one of them by
-/// accident. `crate::panels::pages::PagesUi`, `redact::RedactUi` and
-/// `bookmarks::BookmarksUi` are the same shape for the same reason.
 #[derive(Debug, Default)]
 pub struct CommentsUi {
     /// The note being typed. See [`NoteDraft`].

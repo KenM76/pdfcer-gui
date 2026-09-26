@@ -291,3 +291,41 @@ is the smallest thing that makes the claim checkable in-process.
 ⚠ It is a claim about this function only. That the *gallery* calls it,
 and that a real folder produces a real list, are separate claims and
 the driven check owes both.
+
+### `const REGION_ICON`
+
+Its own region rather than sharing [`REGION_BODY`], for the reason every
+other region in this shell is separate: a check that asserts *"the icon
+chooser is on screen"* against the window's own rectangle would pass on a
+window with no chooser in it at all.
+
+### `const REGION_CUSTOM_STAMPS`
+
+Separate from [`REGION_BODY`] and from [`REGION_STAMP_SIZE`] for the
+reason the latter's comment states and this case makes sharper still: this
+half of the gallery is **conditionally present**. It renders nothing at all
+on a machine with no stamps folder (R9), so a driven check keyed on the
+body region cannot tell *"his stamps are offered"* from *"this build draws
+a stamp window"* — the two are the same observation there and different
+observations here.
+
+### `fn open`
+
+`last` is the stamp the operator most recently committed **this
+session**, or `None` when he has not placed one yet -- O172's *"and it
+remembers the last one used"* clause. See
+[`crate::stamps::lastused`] for why the memory is a name that is
+re-resolved here rather than a stored stamp.
+
+It is a REQUIRED argument rather than one with a
+keep-the-old-behaviour default. A defaulted parameter silently declines
+the feature at every call site written before it existed, the compiler
+goes quiet about it, and the tests stay green -- this project has been
+bitten by exactly that. Every caller now has to say what it means.
+
+### `fn remembered`
+
+Takes the value rather than borrowing it: the host calls this exactly
+once, on the frame the window closes, and is about to drop the window.
+A borrow would invite a second read of a value that has already been
+stored somewhere else.

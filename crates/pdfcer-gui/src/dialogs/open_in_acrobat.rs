@@ -67,21 +67,9 @@ pub const REGION_BODY: &str = "dialog:open-in-acrobat"; // ui-text-exempt: trace
 
 /// The region the **proceed** button publishes — *Save and open* or *Close and
 /// open*, whichever this shape carries.
-///
-/// One name for both, deliberately, where [`crate::dialogs::unsaved`] gives
-/// its Save and its Save-in-place separate ones. There, the two buttons do
-/// different things to the file on disk and a check that could not tell them
-/// apart would pass on a build that swapped them. Here they do the *same*
-/// thing — hand the document over — and differ only in whether a save happens
-/// first, which [`REGION_SAVE_FIRST`] publishes on its own.
 pub const REGION_PROCEED: &str = "open-in-acrobat.proceed"; // ui-text-exempt: trace region name, never displayed
 
 /// Published **only on the frames the unsaved shape is drawn**.
-///
-/// Its absence is the assertion a driven check wants: a run over a clean
-/// document must show no such region at all, which is what tells "the
-/// operator was asked to save" apart from "the operator was asked to confirm"
-/// — two states with very similar screenshots.
 pub const REGION_SAVE_FIRST: &str = "open-in-acrobat.save_first"; // ui-text-exempt: trace region name, never displayed
 
 /// Published only on the frames the never-saved refusal is drawn.
@@ -91,23 +79,9 @@ pub const REGION_SAVE_FIRST: &str = "open-in-acrobat.save_first"; // ui-text-exe
 pub const REGION_NO_FILE: &str = "open-in-acrobat.no_file"; // ui-text-exempt: trace region name, never displayed
 
 /// The region the Cancel button publishes.
-///
-/// Published by the two shapes that HAVE a Cancel and by neither the third
-/// nor its dismiss button. The never-saved refusal offers no decision, so a
-/// check that found a cancel region there would be asserting a choice the
-/// operator was never given.
 pub const REGION_CANCEL: &str = "open-in-acrobat.cancel"; // ui-text-exempt: trace region name, never displayed
 
 /// What the operator chose.
-///
-/// One variant, because there is exactly one way forward. Cancel parks no
-/// outcome — see [`OpenInAcrobatDialog::was_cancelled`] — and the refusal
-/// shape has no way forward at all.
-///
-/// A one-variant enum rather than a `bool` or a bare `()`, and it earns its
-/// keep at the call site: `Some(Outcome::Proceed)` reads as an instruction,
-/// where `Some(true)` would read as an answer to a question the reader has to
-/// go and find.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Outcome {
     /// Save if there is anything to save, close the document, hand the file
@@ -162,38 +136,18 @@ impl OpenInAcrobatDialog {
     }
 
     /// **Did the operator answer Cancel?**
-    ///
-    /// Read by the owner for [`crate::dialogs::unsaved::UnsavedDialog::was_cancelled`]'s
-    /// reason: a Cancel parks no outcome, so a drain reports nothing, which is
-    /// indistinguishable from *"they have not answered yet"*.
     #[must_use]
     pub const fn was_cancelled(&self) -> bool {
         self.cancelled
     }
 
     /// **Whether an answer is parked here and has not been drained.**
-    ///
-    /// The twin of [`crate::dialogs::unsaved::UnsavedDialog::answered`],
-    /// and it is here because this window carries the **same latent defect**
-    /// its neighbours shipped: [`Self::show`] answers `false` on the very
-    /// frame a button is pressed, and an owner that read that `false` as
-    /// *"this dialog is finished"* would drop the dialog — with the outcome
-    /// still inside it — before the application could take it out. The symptom
-    /// would be a *Save and open in Acrobat* that closes the question and does
-    /// nothing else, which reads as the whole application ignoring the
-    /// operator.
-    ///
-    /// See [`crate::dialogs::retire`] for the rule all three now obey.
     #[must_use]
     pub const fn answered(&self) -> bool {
         self.outcome.is_some()
     }
 
     /// Take the operator's answer, with the viewer it was about.
-    ///
-    /// Returns both, because the owner needs both and holding them apart
-    /// would let a future edit drain one without the other — which would
-    /// launch a viewer the operator was not asked about.
     pub fn take_outcome(&mut self) -> Option<(Outcome, Viewer)> {
         let outcome = self.outcome.take()?;
         Some((outcome, self.viewer.clone()))

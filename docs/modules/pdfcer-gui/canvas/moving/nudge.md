@@ -139,3 +139,60 @@ a machine nobody can see reports from; the status row is what the operator
 reads. They carry the same fact in two registers, and neither substitutes for
 the other — `crate::canvas::deleting::decline` is the same shape and states
 the same reason.
+
+### `const STEP_PT`
+
+One point, which is Acrobat's and is also the unit PDF user space is defined
+in — so an operator who nudges four times has moved four points, and the
+number they would type into a properties box is the number of presses they
+made. A step defined in *pixels* would be zoom-dependent and would move a
+different distance on the page at every magnification, which is the property
+[`super::page_delta`]'s own header is at pains to avoid for the pointer.
+
+### `const FINE_STEP_PT`
+
+A quarter point — Acrobat's *smaller with a modifier*, given a value. A
+quarter rather than a tenth because a tenth of a point is below what any
+renderer will show as a difference at ordinary zoom, so it would read as a
+key that did nothing; a quarter is visible at 400 % and is the finest step
+that is honest.
+
+### `struct Frame`
+
+A struct for [`crate::canvas::keys::Keys`]' stated reason: the list reached
+five, three of them are `bool`-ish or reference-shaped, and transposing two
+would compile.
+
+### `fn keys`
+
+Returns the number of `AnnotAction::Move`s raised, which is zero on every
+frame that carries no arrow — the overwhelmingly common case, and it costs
+one modifier read and four event scans.
+
+# The guard, and it is the worst key in the application to get wrong
+
+`DEFECTS.md` D1 is *"I can't even click on an object and delete it by hitting
+the delete key"*, and its cause was a guard that asked **"is any widget
+focused?"** where it meant **"is a text field focused?"**. Its second
+instance cost the operator the space bar while typing on the canvas.
+
+An arrow key is the worst key on which to repeat that, because moving a caret
+is *what an arrow key is for*. There are two claimants and this module must
+yield to both:
+
+| claimant | seen by | where it is asked |
+|---|---|---|
+| a real `egui::TextEdit` — a form field, the page box, the Find bar | `Context::text_edit_focused` | [`crate::canvas::keys::canvas_keys`]'s first line, which returns before this is reached |
+| the **canvas caret**, which is deliberately not a widget | nothing egui offers | [`crate::canvas::textedit::composing`], asked here |
+
+⇒ So the predicate asked here is `composing`, the wide one — the single
+implementation `tools/gates/check-typing-guard.sh` exists to keep single —
+and **not** `text_edit_focused`, which would be the founding defect's
+spelling and would answer `false` for an operator who is visibly mid-word.
+
+It is asked here rather than relied on from the caller even though
+`canvas_keys` has already returned for the *widget* half. The two halves are
+different questions with different answers, the caller's guard is
+deliberately the narrow one so that Escape can still reach the draft-abandon
+rung, and a module that assumed otherwise would be reading a comment in
+another file as a contract.

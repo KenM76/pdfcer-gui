@@ -123,10 +123,6 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 /// A named set of application colour roles.
-///
-/// Ordered (`BTreeMap`) rather than hashed, so iteration is deterministic
-/// and a failure message lists roles in the same order on every machine.
-/// A diagnostic that reorders itself between runs is one nobody can diff.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Overlays {
     roles: BTreeMap<String, Color32>,
@@ -140,13 +136,6 @@ impl Overlays {
     }
 
     /// Define a role, replacing any previous definition.
-    ///
-    /// Silently replacing is deliberate: a preset is normally built by
-    /// spreading a base set and overriding a few entries, exactly as
-    /// `Theme::dark` does with `..quiet.palette`, and making the
-    /// override an error would forbid the idiom that makes presets
-    /// readable. The risk that idiom carries — two roles quietly becoming
-    /// one — is what [`Self::assert_distinct`] is for.
     pub fn set(&mut self, role: impl Into<String>, colour: Color32) {
         self.roles.insert(role.into(), colour);
     }
@@ -159,12 +148,6 @@ impl Overlays {
     }
 
     /// The colour for a role, or `None` if no such role is defined.
-    ///
-    /// `Option` rather than a fallback colour. A missing role is a
-    /// programming error — a typo, or a role the preset forgot — and
-    /// returning magenta or transparent would make it a *rendering*
-    /// question the reader has to notice, on the frame where it happens,
-    /// on the preset where it happens.
     #[must_use]
     pub fn get(&self, role: &str) -> Option<Color32> {
         self.roles.get(role).copied()
@@ -188,27 +171,6 @@ impl Overlays {
     }
 
     /// Assert that the named roles all resolve to different colours.
-    ///
-    /// This is the generic form of the salvage source's
-    /// `distinct_overlay_roles_stay_distinct_in_every_preset`. The
-    /// application supplies the list, because only the application knows
-    /// which of its roles answer different questions — two roles that
-    /// happen to share a colour because they are the *same* semantic in
-    /// two places are fine and must not be forced apart.
-    ///
-    /// # Errors
-    ///
-    /// [`RoleCollision::Merged`] when two of the named roles resolve to
-    /// the same colour, naming both. [`RoleCollision::Undefined`] when a
-    /// named role is not defined at all — because a test that passes
-    /// because both of its role names were misspelled is worse than no
-    /// test, and "unknown roles are trivially distinct" is exactly how
-    /// that happens.
-    ///
-    /// Reports the first collision rather than all of them: unlike the
-    /// contrast gate, one merged pair is almost always one edit, and the
-    /// pairwise product of a large role set makes an exhaustive report
-    /// noisier than it is useful.
     pub fn assert_distinct(&self, roles: &[&str]) -> Result<(), RoleCollision> {
         let mut resolved: Vec<(&str, Color32)> = Vec::with_capacity(roles.len());
         for &role in roles {
@@ -232,21 +194,11 @@ impl Overlays {
 
     /// Publish this set for the frame, where any painting code can reach
     /// it.
-    ///
-    /// Wrapped in an `Arc` on the way in, so [`Self::of`] is a refcount
-    /// bump rather than a map clone. This is called once per frame beside
-    /// [`super::Theme::apply`] and read by every painter, so the
-    /// asymmetry is the right way round.
     pub fn install(ctx: &egui::Context, overlays: Self) {
         ctx.data_mut(|d| d.insert_temp(egui::Id::new(Self::CTX_ID), Arc::new(overlays)));
     }
 
     /// The set published for this frame, or an empty set if none was.
-    ///
-    /// An empty set rather than a panic: a shell that aborts because an
-    /// application has not published overlays would be making an optional
-    /// extension point mandatory. Every [`Self::get`] then returns `None`,
-    /// which is the same signal a missing role gives.
     #[must_use]
     pub fn of(ctx: &egui::Context) -> Arc<Self> {
         ctx.data(|d| d.get_temp::<Arc<Self>>(egui::Id::new(Self::CTX_ID)))

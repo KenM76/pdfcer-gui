@@ -62,3 +62,27 @@ how far the operator may zoom.
 The downward half is unchanged: `MIN_ZOOM` is a floor with nothing
 below it, and 10 % of a page is not a number anybody has asked to go
 under.
+
+### `fn ladder_step_down`
+
+# Why the search is not simply reversed
+
+
+> *"clicking the negative button to zoom back snaps me back to 800% when I
+> am over 800%."*
+
+Exactly what a plain reverse search does. The ladder ends at 8.0, so from
+4,155 % the highest rung *below* is 8.00 — one press and a hundred-fold
+magnification is gone. [`ladder_step_up`] had already grown the doubling
+branch for the same reason on the way up; **only one half of the pair was
+given it**, which made the two buttons stop being inverses of each other
+exactly where the new range begins.
+
+That asymmetry is the defect, more than the snap itself. This module's
+own header promises *"zoom-in/zoom-out exactly reversible"*, and a pair of
+controls that disagree about what a step is breaks the one property an
+operator relies on to explore without losing their place.
+
+Halving mirrors the doubling above, so eleven presses out of a million
+percent is eleven presses back in, and the last halving hands over to the
+named rungs at the top of the ladder rather than jumping past them.

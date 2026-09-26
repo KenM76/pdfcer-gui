@@ -17,6 +17,8 @@
 //!   it, so a preset cannot ship an accent that vanishes into its own chrome.
 //! - Nothing here is on by default. An application that never asks for these
 //!   draws exactly what it drew before.
+//!
+//! Design and rationale: `docs/modules/egui-shell/theme/icon_accents.md`.
 
 use egui::Color32;
 
@@ -39,10 +41,6 @@ pub struct IconAccents {
 
 impl IconAccents {
     /// The accents for `preset`.
-    ///
-    /// The light presets share one set, darkened from the Office hues until
-    /// each clears the contrast floor on a near-white panel; the dark preset
-    /// lifts them by the same measure so they read on a dark one.
     #[must_use]
     pub fn for_preset(preset: Preset) -> Self {
         match preset {

@@ -12,10 +12,6 @@ pub const fn window_title() -> &'static str {
 }
 
 /// The opening sentence, above everything.
-///
-/// It states the **consequence** before the subject, because the subject
-/// ("objects outside the page box") is a thing an operator has no prior reason
-/// to care about, and the consequence is the whole reason they should.
 #[must_use]
 pub const fn intro() -> &'static str {
     "Anything drawn outside a page's boundary is still in the file. It does not \
@@ -45,36 +41,6 @@ pub fn summary(pages: usize, objects: usize) -> String {
 
 /// **Why a picture crossing the edge is still on this list after a
 /// clean** — the disclosure Rule 4 owes, added 2026-09-12.
-///
-/// # The fact, and it is the engine's, not this shell's
-///
-/// `pdfcer_core::offpage` says it outright: a `Partial` image **survives a
-/// clean by design, and this scan still reports it.** `redact_image` clears
-/// by snapping its cell grid **outward**, so it erases every sample that is
-/// off the sheet and no sample that is not. What clearing cannot do is move
-/// the placement — the picture's box still straddles the boundary — and this
-/// scan classifies by GEOMETRY. So the picture is counted again on the next
-/// run. The engine measured twelve such objects across seven of the
-/// operator's 174 drawings and its own summary is the sentence to keep:
-/// *the count is honest about the geometry and misleading about the ink.*
-///
-/// # Why this exists at all
-///
-/// Rule 4's surviving half — **an inference the operator cannot see still
-/// owes an off-canvas report.** Clean the sheet, reopen this window, and the
-/// picture is listed again. Without this sentence the only reading available
-/// to the operator is *the clean failed*; they would be wrong, and nothing on
-/// screen would say so.
-///
-/// ⚠ It marks nothing, tints nothing and flags nothing on the canvas. It is
-/// a line in a results window, which is exactly where Rule 4 puts disclosure.
-///
-/// **Pictures, never objects.** Line work and text do not behave this way —
-/// their clean removes the geometry itself — so a sentence that swept them in
-/// would be false about most of what this window reports. The caller counts
-/// `kind == "image" && how == Partial` and shows nothing when that is zero,
-/// because a paragraph explaining a residual this document does not have is
-/// the kind of nagging the operator has already asked this project to stop.
 #[must_use]
 pub fn partial_image_note(pictures: usize) -> String {
     if pictures == 1 {
@@ -108,10 +74,6 @@ pub fn page_heading(page_index: usize, fully: usize, partial: usize) -> String {
 }
 
 /// One object's row.
-///
-/// The recovered text comes FIRST when there is any, before the kind and
-/// before anything else. See the module header: the string is the disclosure and
-/// everything else is bookkeeping.
 #[must_use]
 pub fn object_row(kind: &str, how: OffPage, text: Option<&str>) -> String {
     let where_ = placement_word(how);
@@ -123,10 +85,6 @@ pub fn object_row(kind: &str, how: OffPage, text: Option<&str>) -> String {
 }
 
 /// How an object sits relative to its sheet, in words.
-///
-/// The wildcard arm is not laziness. [`OffPage`] is `#[non_exhaustive]`, so a
-/// third kind of overhang the engine adds tomorrow must neither stop this shell
-/// compiling nor be described as one of the two it is not.
 #[must_use]
 pub fn placement_word(how: OffPage) -> &'static str {
     match how {
@@ -137,11 +95,6 @@ pub fn placement_word(how: OffPage) -> &'static str {
 }
 
 /// The engine's stable object token turned into a word the operator uses.
-///
-/// A `match` rather than a capitalisation, so a token this shell has never met
-/// renders as itself rather than as a mangled English word. The engine documents
-/// `path`, `text` and `image`; anything else is new, and showing it verbatim
-/// means a report about it names the real token.
 #[must_use]
 pub fn kind_word(kind: &str) -> &str {
     // ui-text-exempt: the left-hand side is the engine's stable token, never displayed.
@@ -154,11 +107,6 @@ pub fn kind_word(kind: &str) -> &str {
 }
 
 /// The note under a page whose content could not be read.
-///
-/// *"No findings"* and *"I could not look"* must not print the same way —
-/// the engine says so in `scan_document`'s own doc comment and returns the two
-/// separately for exactly this reason. A page that will not decode is the one
-/// place this window must not imply a clean bill.
 #[must_use]
 pub fn unreadable_row(page_index: usize, why: &str) -> String {
     let page = page_index + 1;
@@ -166,33 +114,12 @@ pub fn unreadable_row(page_index: usize, why: &str) -> String {
 }
 
 /// The line shown while the scan is still walking the document.
-///
-/// This window is the one place in this shell that does real work **after**
-/// it has opened, one page per frame, because a whole-document decomposition of
-/// the operator's benchmark drawing measures 469 ms per sheet and a 36-sheet set
-/// would freeze the program for seventeen seconds. So the progress line is not
-/// decoration: without it the window would sit there listing nothing while the
-/// answer was still being computed, which reads exactly like "nothing found".
-///
-/// `done` is a count of pages already checked, so the page being worked on is
-/// `done + 1` — the number is a position in the walk, not an index.
 #[must_use]
 pub fn scanning(done: usize, total: usize) -> String {
     format!("Checking page {} of {total}\u{2026}", done + 1)
 }
 
 /// The second sentence after a multi-page mark, about what Undo will do.
-///
-/// Rule 4's surviving half. The engine records **one command per page**,
-/// because there is no verb that authors redaction marks across a page range —
-/// so one press of this window's button leaves the operator with N undo steps
-/// rather than one, and a single `Ctrl+Z` takes back one sheet's marks and
-/// leaves the rest. That is invisible: the marks all appeared at once, so
-/// nothing on screen suggests they will not leave at once.
-///
-/// Returned only for a multi-page mark. On one page the sentence would be true
-/// and useless, and a disclosure that fires when there is nothing to disclose is
-/// how an operator learns to stop reading them.
 #[must_use]
 pub fn marked_undo_note(pages: usize) -> String {
     format!("Undo takes these back one page at a time \u{2014} {pages} steps.")
@@ -225,11 +152,6 @@ pub const fn close_button() -> &'static str {
 }
 
 /// What the status line says after the marks land.
-///
-/// The count is of BANDS, not of objects, and the sentence says so. A page
-/// with six off-page objects in one corner gets one band over that corner, and
-/// an operator told "6 marks" who then counts four in the review list would be
-/// right to distrust the program.
 #[must_use]
 pub fn marked_disclosure(bands: usize, pages: usize) -> String {
     let marks = if bands == 1 { "mark" } else { "marks" };
@@ -241,10 +163,6 @@ pub fn marked_disclosure(bands: usize, pages: usize) -> String {
 }
 
 /// What pages the scan could not read contribute to the status line.
-///
-/// Second sentence, never instead of the first: the mark SUCCEEDED, and the
-/// residual belongs beside that rather than in place of it. Rule 4's ordering,
-/// the same as `crate::text::redact::mark_covers_image`'s.
 #[must_use]
 pub fn marked_skipped(pages: usize) -> String {
     let sheets = if pages == 1 { "page" } else { "pages" };
@@ -253,13 +171,6 @@ pub fn marked_skipped(pages: usize) -> String {
 }
 
 /// What pages the ENGINE refused contribute to the status line.
-///
-/// Distinct from [`marked_skipped`], which is about pages the **scan** could
-/// not read, and the two can both be true of one press. This one means the scan
-/// found off-page content on a sheet and `add_redaction` then declined to
-/// author the mark — a certified document, an encrypted one, a degenerate band.
-/// Collapsing them into one sentence would tell an operator to go and look at a
-/// page for the wrong reason.
 #[must_use]
 pub fn marked_refused(pages: usize) -> String {
     let sheets = if pages == 1 { "page" } else { "pages" };

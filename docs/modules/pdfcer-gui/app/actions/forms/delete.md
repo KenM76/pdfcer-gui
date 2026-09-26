@@ -218,3 +218,22 @@ reports it.
 And the selection IS cleared on the success path, which is the other
 half of [`clear_selection_if_edited`]: the box is gone, so a selection
 naming it describes nothing.
+
+### `fn field`
+
+The disclosure names the **widget count**, because that is the part the
+operator cannot see: a field drawn in three places disappears from three
+pages, and they are looking at one of them. A confirmation that said only
+"deleted" would be true and would leave two pages changed without mention.
+**The selection is cleared ON SUCCESS, never ahead of the call** — see
+[`clear_selection_if_edited`], which carries the whole argument.
+
+### `fn widget`
+
+The engine may report that the field went too, and the disclosure has to
+follow it rather than assume: removing the last widget of a field leaves a
+name nothing draws and nothing can fill, so `delete_widget` removes the
+field as well. That is the right behaviour and it is **not** what the
+operator pressed, so it is said out loud.
+**The selection is cleared ON SUCCESS, never ahead of the call** — see
+[`clear_selection_if_edited`], which carries the whole argument.

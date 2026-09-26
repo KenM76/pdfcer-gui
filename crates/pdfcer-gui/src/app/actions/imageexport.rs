@@ -6,11 +6,6 @@
 use std::path::{Path, PathBuf};
 
 /// Which of the four writers an export goes through.
-///
-/// Deliberately a shell enum rather than a string or an extension. The
-/// extension is *derived* from it ([`Self::extension`]) rather than being it —
-/// the reverse would mean a plan could hold `"jpg"` and `"jpeg"` as two
-/// different formats and the match arms would have to keep agreeing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ImageFormat {
     /// Every pixel as rendered, with an alpha channel and a `pHYs` resolution.
@@ -54,17 +49,6 @@ pub enum ImageFormat {
 
 impl ImageFormat {
     /// Every format, in the order the window offers them.
-    ///
-    /// PNG first because it is the answer that is right for a drawing and
-    /// wrong for nothing; JPEG second because it is the one an operator will
-    /// look for by name; SVG third because it is the one whose consequences
-    /// (text becomes outlines) need reading about first.
-    ///
-    /// **EMF last, and that is a statement rather than an afterthought.**
-    /// It is the specialist answer — the one to reach for when a named
-    /// program refused the SVG — and putting it above SVG would offer the
-    /// narrower format to an operator who has not yet discovered they need
-    /// it. Its hint says which programs, by name.
     pub const ALL: [Self; 4] = [Self::Png, Self::Jpeg, Self::Svg, Self::Emf];
 
     /// The file extension, lower case, without a dot.
@@ -88,33 +72,6 @@ impl ImageFormat {
     }
 
     /// Whether this format can carry transparency at all.
-    ///
-    /// The one function in the module that is a statement about the file
-    /// formats rather than about pdfcer. PNG has an alpha channel (ISO
-    /// 15948 §6.1); SVG is a document with a background nobody has to paint;
-    /// JPEG (ITU-T T.81) has neither and no version of it ever will.
-    ///
-    /// # EMF is `true`, and the reason is subtler than the other three
-    ///
-    /// A metafile is a **list of drawing commands**, not a surface, so there
-    /// is nothing to be transparent: where nothing was painted, nothing was
-    /// recorded, and whatever the metafile is played onto shows through. That
-    /// is what `EmfOptions::background: None` means — *do not record an
-    /// opening fill* — and it is the engine's own default.
-    ///
-    /// The engine's CLI states the same reading in the same words at the site
-    /// that uses it: *"`--transparent` is EMF's natural state (nothing is
-    /// drawn where nothing was painted) and `--background` an opaque first
-    /// fill."* Sourced there rather than inferred here, because "can this
-    /// format hold transparency" is a claim about somebody else's format and
-    /// getting it wrong in the optimistic direction ships a window that
-    /// promises a clear background and a file that has a white one.
-    ///
-    /// What EMF cannot do is **per-primitive** alpha — a half-opaque
-    /// rectangle. That is a different property, it is not what this predicate
-    /// asks, and it is disclosed by name after the export
-    /// (`crate::text::export_image::emf_fidelity`) because every such
-    /// primitive silently became a bitmap.
     #[must_use]
     pub const fn can_be_transparent(self) -> bool {
         match self {
@@ -124,22 +81,6 @@ impl ImageFormat {
     }
 
     /// Whether the output is geometry rather than pixels.
-    ///
-    /// Read by the window to decide whether to offer a JPEG quality control,
-    /// and by the resolution hint, which means a different thing for a vector
-    /// format and has to say so.
-    ///
-    /// EMF joins SVG here on the property that is actually being asked
-    /// about: the resolution is a **recording scale** rather than a pixel
-    /// count, so the hint has to say the second thing, and there is no
-    /// quality control because nothing is being compressed.
-    ///
-    /// It is deliberately **not** the predicate that chooses the writer.
-    /// `crate::app::actions::export::image` matches on the format itself, so
-    /// that adding a fifth format is a compile error there rather than a
-    /// silent routing into whichever branch this happens to select. Two
-    /// vector formats going through one `if` is exactly how the second one
-    /// gets written out as the first.
     #[must_use]
     pub const fn is_vector(self) -> bool {
         matches!(self, Self::Svg | Self::Emf)
@@ -147,10 +88,6 @@ impl ImageFormat {
 }
 
 /// Which pages the window is currently offering.
-///
-/// Lives here rather than in the dialog because [`resolve_pages`] is the
-/// function worth testing and it takes one, and because a test of "what does
-/// *All* mean on a three-page document" should not need a window.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PageScope {
     /// The page on screen when the window opened, and only that one.
@@ -162,10 +99,6 @@ pub enum PageScope {
 }
 
 /// A combination the operator can ask for and pdfcer will not perform.
-///
-/// See the module header. One variant today; the enum exists so that the
-/// sentence and the condition cannot drift apart, and so that a second one
-/// cannot silently borrow this one's wording.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Impossible {
     /// **A transparent JPEG.** The format has no alpha channel, and the
@@ -213,20 +146,6 @@ pub struct ImagePlan {
 impl ImagePlan {
     /// **The combination this plan asks for and pdfcer will not perform**,
     /// or `None`.
-    ///
-    /// The whole of the module header's argument lands here. It is checked in
-    /// **two** places and that is deliberate rather than redundant:
-    ///
-    /// 1. The window, which disables the control and draws
-    ///    `crate::text::export_image::jpeg_has_no_alpha` beside it, so the
-    ///    combination cannot ordinarily be requested at all.
-    /// 2. The writer, which refuses and writes nothing.
-    ///
-    /// Two mechanisms for one rule, because they fail differently. A window
-    /// can be bypassed — a keymap, a restored plan, a later build with a
-    /// different window — and the property that must survive all of those is
-    /// *pdfcer never flattens a page onto white without saying so*. A guard
-    /// only in the window would make that property a property of the window.
     #[must_use]
     pub const fn impossible(&self) -> Option<Impossible> {
         if self.transparent && !self.format.can_be_transparent() {
@@ -244,41 +163,6 @@ impl ImagePlan {
 }
 
 /// **What an EMF export had to give up, in a shape a test can build.**
-///
-/// # Why this exists at all, when `pdfcer_render::emf::EmfOutcome` already
-/// carries every one of these numbers
-///
-/// Because `EmfOutcome` **cannot be constructed from outside
-/// `pdfcer-render`.** It is `#[non_exhaustive]` and derives no `Default`, so
-/// a unit test in this crate has no way to make one — not even an empty one.
-///
-/// ⇒ That is not a complaint about the engine's API; `#[non_exhaustive]`
-/// without `Default` is the correct shape for a value only the engine should
-/// ever produce. But it means that if
-/// `crate::text::export_image::emf_fidelity` took an `&EmfOutcome`, **the
-/// mapping from counters to sentences would be untestable** — the one part of
-/// the whole EMF path that is pure, that has eleven branches, and that is
-/// therefore the part most worth testing.
-///
-/// The sibling `ExportTally` derives `Default`, which is exactly why
-/// `svg_fidelity` was able to take the engine's own type and be tested
-/// against it. The asymmetry in the engine's derives is the whole reason for
-/// the asymmetry here.
-///
-/// # The conversion is deliberately a dumb field copy
-///
-/// [`Self::from`] does nothing but move eleven numbers across. It has no
-/// branch, no arithmetic and no judgement, so the thing that could go wrong
-/// in it is a *transposition* — reading `blend_modes_dropped` into
-/// `gradients_rasterised` — and that is caught by reading eleven adjacent
-/// lines rather than by a test. Everything that requires judgement happens
-/// downstream of this struct, where a test can reach it.
-///
-/// A future field on `EmfOutcome` will NOT appear here and will NOT be
-/// disclosed. That is the standing cost of the copy, it is the reason the
-/// conversion lists the engine's field names verbatim, and it is what
-/// `emf_fidelity`'s "everything else was geometry" line would then quietly
-/// over-claim. If the engine adds a counter, add it here in the same commit.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct EmfCounts {
     /// Vector ops written as real GDI path records — the part that is exact.
@@ -333,19 +217,6 @@ impl From<&pdfcer_render::emf::EmfOutcome> for EmfCounts {
 
 impl EmfCounts {
     /// Whether the whole page went out as real geometry.
-    ///
-    /// **Not** `tally.is_exact()` on its own. The tally describes the
-    /// *recording*, which is shared with the SVG writer and knows nothing
-    /// about EMF's missing alpha; a page that recorded perfectly and then had
-    /// forty translucent rectangles turned into bitmaps has an exact tally
-    /// and an inexact metafile. Asking the tally alone is how a disclosure
-    /// comes to say "nothing had to be approximated" over a file that is half
-    /// pictures.
-    ///
-    /// `dashed_strokes_pre_applied` counts here for the reason
-    /// `svg_fidelity` counts it: the picture is right and the *editability*
-    /// is gone, which is a loss an operator who opens the file to change a
-    /// dash pattern meets and nothing else would have told them about.
     #[must_use]
     pub fn is_exact(&self) -> bool {
         self.rasters_embedded == 0
@@ -356,22 +227,6 @@ impl EmfCounts {
 }
 
 /// The raster scale a resolution asks for.
-///
-/// PDF user space is 72 units to the inch (ISO 32000-1 §8.3.2.3), so this is
-/// the definition rather than a convention — the engine's own SVG writer
-/// computes `raster_dpi / 72.0` in the same words.
-///
-/// It is a function rather than an inline division at three call sites
-/// because the three call sites are the raster render, the SVG options and the
-/// pixel-size preview the window draws, and a preview that disagreed with the
-/// render by a stray rounding would be a preview that lies about the file.
-///
-/// The division itself has moved one level further out, to
-/// [`crate::units::scale_from_dpi`]. The argument above is unchanged and is
-/// now a smaller version of the same one: three call sites in this module
-/// wanted one spelling, and three modules in this crate wanted one spelling.
-/// What stays here is the guard and the fallback, which are about a corrupted
-/// preference rather than about an inch.
 #[must_use]
 pub fn scale_for(dpi: f32) -> f32 {
     if dpi.is_finite() && dpi > 0.0 {
@@ -385,10 +240,6 @@ pub fn scale_for(dpi: f32) -> f32 {
 }
 
 /// The pixels a page of `width_pt` × `height_pt` occupies at `dpi`.
-///
-/// Rounded the way the renderer rounds — `ceil`, so a page never loses its
-/// last column — and returned as the pair the window shows and the guard
-/// checks.
 #[must_use]
 pub fn pixel_size(width_pt: f32, height_pt: f32, dpi: f32) -> (u32, u32) {
     let scale = scale_for(dpi);
@@ -407,19 +258,6 @@ pub fn pixel_size(width_pt: f32, height_pt: f32, dpi: f32) -> (u32, u32) {
 }
 
 /// Which pages a scope names, or `None` when a typed range names none.
-///
-/// The typed case delegates to `crate::dialogs::print::tabs::parse_page_range`
-/// — **the print dialog's parser, called rather than copied**. Three surfaces
-/// already do this (`dialogs::ocr`, `dialogs::insert_pages`, the print dialog
-/// itself), and that module's own doc gives the reason: a second range parser
-/// is a second set of answers to *"is `1,1` two exports of page one?"* and
-/// *"does `5-3` mean anything?"*, and an operator who learns the syntax in one
-/// window is entitled to it in the next.
-///
-/// `None` is *"you typed something that names no page"*, which is the window's
-/// signal to refuse the Export button and say so. An empty `Some` is not
-/// produced — the parser does not return one — but is treated as `None` by the
-/// caller anyway, on `dialogs::ocr`'s precedent.
 #[must_use]
 pub fn resolve_pages(
     scope: PageScope,
@@ -448,52 +286,6 @@ pub fn resolve_pages(
 }
 
 /// **What one page's file is called**, given the name the operator chose.
-///
-/// # The multi-file convention, and why it is not invented here
-///
-/// One page: the file is exactly what they typed. Several: the chosen name
-/// becomes a **stem**, and each page gets `-p<N>` before the extension, 1-based
-/// so it matches the page number in the window and on the status bar.
-///
-/// That is Acrobat's own behaviour for *Export ▸ Image* (it writes
-/// `Base_Page_1.png` from one save dialog), and `crate::text::tool`'s standing
-/// rule about conventions makes a reference application's answer the default
-/// rather than a shortcut. The alternative — a folder picker plus a separate
-/// name box — is two questions for one act, and it asks the second one before
-/// the operator has thought about the first.
-///
-/// The window states the pattern **before** the save dialog opens
-/// (`crate::text::export_image::multi_page_naming`), because a save dialog
-/// cannot say "the name you type is a stem" and an operator who did not expect
-/// it would go looking for a file that is not there.
-///
-/// # The extension comes from the FORMAT, not from what was typed
-///
-/// An operator who types `drawing.pdf` into a PNG export gets `drawing.png`.
-/// `export_form`'s opposite rule — the extension picks the format — is right
-/// there because four formats share one picker and the operator has no other
-/// way to choose. Here the format is already chosen, in a radio group, above
-/// the button they pressed; letting a stray extension override it would mean a
-/// window that shows one format and writes another.
-///
-/// # `set_file_name` with the extension already on it, NOT `set_extension`
-///
-/// This looks like the long way round and it is the only correct one, and the
-/// finding is worth keeping because a neighbouring module gets it wrong in a
-/// comment.
-///
-/// `Path::set_extension` is the obvious call here and it is the wrong one: it
-/// replaces everything after the LAST dot, so `plan.rev2` +
-/// `set_extension("png")` is `plan.png` — the revision silently deleted. The
-/// reasoning that makes it look safe — *"a document called `plan.rev2.pdf` has
-/// a stem of `plan.rev2`, so appending would produce `plan.rev2.png` either
-/// way"* — is true in its first clause and does not reach its conclusion.
-///
-/// ⇒ On a CAD desktop that is not a cosmetic difference. `plan.rev2.pdf` and
-/// `plan.rev3.pdf` both export to `plan.png`, and the second one **overwrites
-/// the first** in a save dialog that offers to do exactly that. So the name is
-/// assembled as one string and set once, and
-/// [`tests::a_dotted_document_name_keeps_its_revision`] is what holds it there.
 #[must_use]
 pub fn output_path(chosen: &Path, format: ImageFormat, page_index: usize, multi: bool) -> PathBuf {
     let mut path = chosen.to_path_buf();
@@ -518,14 +310,6 @@ pub fn output_path(chosen: &Path, format: ImageFormat, page_index: usize, multi:
 }
 
 /// Where the save dialog opens, and what it calls the file.
-///
-/// Beside the document and named after it, with the chosen format's extension
-/// — `super::export::suggested_path`'s rule and its reason: *"a picker that
-/// opens in the last-used directory of some other application is a picker that
-/// makes the operator navigate back to their own project every time."*
-///
-/// Assembled the same way [`output_path`] is, and for that function's stated
-/// reason: `set_extension` on a `plan.rev2` stem eats the revision.
 #[must_use]
 pub fn suggested_path(document: &Path, format: ImageFormat) -> PathBuf {
     let mut path = document.to_path_buf();

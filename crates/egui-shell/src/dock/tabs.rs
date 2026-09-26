@@ -120,10 +120,6 @@ pub(crate) struct TabBarOutcome {
 }
 
 /// Draw one stack's tab bar in `rect`, recording intents into `ctx`.
-///
-/// `rect` is the whole bar. The affordance's reservation is taken from
-/// its right edge; see the module header for why that subtraction comes
-/// first.
 pub(crate) fn tab_bar(
     ui: &mut egui::Ui,
     ctx: &mut Ctx<'_>,

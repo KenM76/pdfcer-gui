@@ -22,18 +22,6 @@ pub fn refusal_sentence(name: &str, origin: crate::pagetree::RefusalOrigin) -> S
 }
 
 /// **The save was refused because the document's page count is wrong.**
-///
-/// `declared` is what the file says it has (what Acrobat will list),
-/// `reachable` is how many pages are really there. `name` is the document's
-/// file name, not its path — the operator knows which document he is looking
-/// at and a full path would push the numbers off the end of the status bar.
-///
-/// # Why it names the document at all, then
-///
-/// Because this shell has document tabs, and a refusal arriving while he is
-/// looking at a different tab than the one he pressed `Ctrl+S` on is a real
-/// sequence. One short name is cheap insurance against a sentence that appears
-/// to be about the wrong file.
 #[must_use]
 pub fn save_refused_root(name: &str, declared: i64, reachable: usize) -> String {
     let blanks = declared - i64::try_from(reachable).unwrap_or(i64::MAX);
@@ -49,14 +37,6 @@ pub fn save_refused_root(name: &str, declared: i64, reachable: usize) -> String 
 
 /// **The save was refused because part of the page tree disagrees with itself,
 /// but the document's own page count is right.**
-///
-/// The interior case — see the module header for why it is a separate sentence
-/// and does not promise blank pages.
-///
-/// `nodes` is how many places disagree, and it is printed for one reason: it is
-/// the difference between *"one thing went wrong"* and *"the structure is
-/// broadly damaged"*, and an operator deciding whether to undo one step or to
-/// go back to his last saved file wants to know which.
 #[must_use]
 pub fn save_refused_interior(name: &str, nodes: usize) -> String {
     format!(
@@ -71,30 +51,6 @@ pub fn save_refused_interior(name: &str, nodes: usize) -> String {
 
 /// **The save was refused, and the document was ALREADY like this when it
 /// was opened.**
-///
-/// The third sentence, and it exists because the first two would otherwise give
-/// bad advice. Both of them end *"undo the page removal (Ctrl+Z)"*, which is the
-/// right remedy exactly when pdfcer caused the damage — and useless when the
-/// file arrived that way. An operator who presses Ctrl+Z until the undo stack is
-/// empty and still cannot save has been sent in a circle by his own tool.
-///
-/// # Why the save is still refused rather than merely disclosed
-///
-/// Because pdfcer would be putting its name on the output. An incremental save
-/// keeps the base revision verbatim (§7.5.6) and appends, so a base whose page
-/// count is wrong produces an output whose page count is wrong — and the file
-/// that lands on his disk is one **pdfcer wrote**, whatever was wrong with its
-/// input. Writing a file you know is damaged is not defensible on the grounds
-/// that somebody else damaged it first.
-///
-/// # What it costs him, and why the sentence says so plainly
-///
-/// It costs him the ability to save this document at all through pdfcer, and
-/// there is no remedy inside this program. That is a hard thing to be told and
-/// the sentence tells him rather than hedging, because the alternative is an
-/// operator pressing save repeatedly against a refusal he has been given no way
-/// to understand. He is told what is wrong with the file, that pdfcer did not
-/// do it, and that opening it in another tool and re-saving is what repairs it.
 #[must_use]
 pub fn save_refused_pre_existing(name: &str, declared: i64, reachable: usize) -> String {
     format!(

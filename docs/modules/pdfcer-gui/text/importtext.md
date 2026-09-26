@@ -38,3 +38,111 @@ The page count always shows, because it is the answer to *"did that work?"*.
 Everything else appears only when its count is non-zero. A receipt that
 listed six disclosures reading *"0 tabs collapsed"* would be a form, and by
 the third import nobody would read the line that mattered.
+
+## Item notes
+
+### `fn pages_created`
+
+It names **where** as well as how many, because the pages may have landed
+anywhere in the document — the window offers four positions — and *"11 pages
+added"* leaves an operator scrolling to find them. `pages_before` is read in
+the apply arm before the edit for exactly this sentence.
+
+*"sheets"* rather than *"pages"* in the operator's half of the sentence
+would be wrong here: these are PDF pages and he is looking at a page count
+in the sidebar. `pages` is the word the rest of the program uses.
+
+### `fn many_undo_steps`
+
+The engine's doc is explicit that the one-undo-entry fold is *checked,
+not assumed*: past `MAX_UNDO_DEPTH` — more than 255 non-blank pages — every
+page is still placed and they simply are not grouped.
+
+⇒ This is the **only** moment the fact is actionable. After the first
+`Ctrl+Z` the remaining 200 look like the program undoing things by itself,
+and an operator who presses it twice and sees two pages vanish will conclude
+something is broken. Said once, before he touches undo.
+
+### `fn tabs_collapsed`
+
+It says *"columns will not line up"* rather than *"tabs were collapsed"*,
+because the operator's word for what he loses is columns. The mechanism —
+PDF text showing has no tab stops — is true, is in the engine's own
+sentence, and is not something he can act on.
+
+It names the remedy, and the remedy is a control in the window he just
+used: a monospaced face keeps space-aligned columns lined up, which is the
+one case where the font choice changes whether the import is readable.
+`dialogs::import_text`'s `FACES` note is why Courier is in the list at all.
+
+### `fn page_breaks`
+
+Worth a sentence because it is the one disclosure where the operator may
+not know his own file contains the character. U+000C is invisible in every
+editor, and it is what `Export text` writes between pages — so a file that
+left pdfcer, was edited, and came back keeps its original pagination, which
+is **correct and surprising** in equal measure.
+
+### `fn overlong_words`
+
+The engine does not hyphenate and does not shrink, so such a word runs
+past the right margin. The remedy is the two controls that set the column:
+a smaller size or a narrower margin.
+
+### `fn control_chars`
+
+Reported rather than silent because they were *in his file*, and a
+character count that does not match is the kind of thing somebody notices a
+week later on a register they are reconciling.
+
+### `fn unmappable_dropped`
+
+⚠ Unreachable from this shell today: `dialogs::import_text` never sets
+`Unmappable::Drop`, so the engine refuses instead and [`unmappable_refused`]
+is what the operator sees. It is written and wired anyway, because the day a
+*"import anyway and tell me what was lost"* button is added, the sentence
+that reports the loss must already exist — and a disclosure written after
+its button is a disclosure somebody has to remember to write.
+
+### `fn overflowed`
+
+`box_overflow_lines` is documented as *"a self-check that must be 0"*.
+A non-zero value is a fault in the placer, not a judgement about the
+operator's file, and the sentence says so — because an operator who reads it
+alongside the six ordinary disclosures would otherwise file it under
+*"things imports do"* and never mention it.
+
+### `fn not_utf8`
+
+Its own sentence rather than folded into [`unreadable_file`], because it
+is the only one of the two with a remedy the operator can carry out, and the
+remedy is specific: re-save as UTF-8. A register exported from an older
+system in Windows-1252 is the realistic case and it is completely ordinary.
+
+### `fn no_column`
+
+Both this and [`page_too_short`] name **the two controls that fix it**
+rather than the geometry that caused it. They are the only refusals in this
+module answerable *before* the press, so their sentences are instructions
+for the window rather than reports about a failure.
+
+### `fn unmappable_refused`
+
+**The refusal a real text file is most likely to meet**, and the one
+this window's `face_note` warns about before the press.
+
+It carries the engine's own listing verbatim — `U+2014 '—' ×12, …` — because
+that is the part the operator needs and no rewording improves it: he has to
+find those characters in his file. What the shell adds is the two remedies,
+in the order of least work: try a different font, or edit the file.
+
+⚠ *"or ask for them to be dropped"* — the engine's third remedy — is
+deliberately **not** offered, because this window has no such control. A
+sentence naming a button that does not exist is worse than one remedy fewer.
+
+### `fn refused`
+
+The engine's message rather than a shrug — `annots::refusal_for`'s
+posture. What this adds is the guarantee, which is the half an operator
+needs before he starts looking for an undo: `place_text` plans before it
+writes, so a refusal means **nothing was created**.

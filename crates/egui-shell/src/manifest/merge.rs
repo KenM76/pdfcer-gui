@@ -109,12 +109,6 @@ mod report;
 pub use report::{Layer, MergeReport, Skip, SkipReason};
 
 /// The three layers to merge.
-///
-/// A struct rather than three positional arguments because two of them
-/// are `Option<&Shell>` of the same type, and a call site that swapped
-/// them would compile and would apply the operator's customization before
-/// the application's override — producing a shell that is wrong in a way
-/// no test of either file could find.
 #[derive(Debug, Clone, Copy)]
 pub struct MergeInput<'a> {
     /// Compiled into the binary. Required, and the reset target.
@@ -162,15 +156,6 @@ pub struct Merged {
 }
 
 /// Merge the three layers.
-///
-/// Never fails. Anything it cannot carry across becomes a [`Skip`] in
-/// [`Merged::report`]; see this module's header for why that is the right
-/// posture for inputs that come from outside the build.
-///
-/// The `catalog` is what makes a stale command id detectable. Pass
-/// [`super::AnyCommand`] only in tooling that has no registry — in an
-/// application it would disable the check that turns a stale reference
-/// into a disclosed skip instead of a control that does nothing.
 #[must_use]
 pub fn merge(input: MergeInput<'_>, catalog: &dyn CommandCatalog) -> Merged {
     let mut shell = input.built_in.clone();

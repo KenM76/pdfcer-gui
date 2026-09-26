@@ -201,3 +201,15 @@ three glyphs beside one bare `Close`, which is the shape every
 desktop menu has and is fine. A menu that fell below it would be
 asking for either art or an argument, and this test is where it
 would be asked.
+
+### `fn attach`
+
+**Executes nothing.** The returned tokens are *intent*; the caller
+dispatches them at the application's one choke point. See
+[`super::menus::MenuHost::attach_with`], which is the only caller and
+which owns the frame-ordering account for `conditions`.
+
+The `&mut` bindings are what the shell's builder asks for
+(`with_icon_painter(&'a mut (impl FnMut(..) + 'a))`), and they must
+live until `attach` returns — which is why they are locals here and not
+fields on anything.

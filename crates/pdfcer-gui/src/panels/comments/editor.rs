@@ -24,40 +24,6 @@ use crate::app::actions::annot::AnnotAction;
 use crate::text::panels::comments as t;
 
 /// **The note editor for one row, and the control that opens it.**
-///
-/// Three shapes, decided by what the annotation is rather than by what this
-/// build can do:
-///
-/// | the row | what is drawn |
-/// |---|---|
-/// | a **ce dimension** | a caption saying where its text actually comes from |
-/// | an annotation with **no object id** | a caption saying why pdfcer cannot address it |
-/// | anything else | *Add note* / *Edit note*, and the editor when it is open |
-///
-/// # R9: neither caption is a greyed button
-///
-/// *"An unavailable capability renders nothing, not a disabled stub. Greying is
-/// reserved for temporarily unavailable."* Neither of these is temporary: a ce
-/// dimension's `/Contents` is regenerated from its measurement by
-/// `author_dimension`, so a note written over it would be silently thrown away,
-/// and a direct-dictionary annotation is a **malformed file** (§12.5.2 Table 164
-/// requires the dictionary to be an indirect object) with nothing to name. A
-/// greyed *Edit note* would promise that some state of the program would let
-/// the operator press it, and none would.
-///
-/// # Why a `/Link` is offered the editor
-///
-/// `/Contents` is dual-purpose (§12.5.2): note text on a subtype that displays
-/// text, an accessibility description on one that does not — and
-/// [`t::comment_row_description_caption`] already says which this row is.
-/// `set_markup_note` accepts both, so withholding the editor would be
-/// withholding a capability the engine has, on a guess about the operator's
-/// intent. The caption is the honest half; the button is the useful half.
-///
-/// It is worth knowing what this costs: on a `/Link` with no `/Contents` at
-/// all the control still says *Add note*, because `Note::Absent` carries no
-/// subtype interpretation to distinguish "nobody wrote a comment" from "nobody
-/// wrote a description". Named here rather than left to be found.
 pub(super) fn note_controls(
     ui: &mut egui::Ui,
     comment: &CommentRow,
@@ -148,20 +114,6 @@ fn reply_control(
 
 /// **Whether there is anything to post** — the shell's own R83 guard, and
 /// the reason it cannot be delegated.
-///
-///
-/// ⇒ So the decision is this shell's, and it is *not* the one the note editor
-/// makes. An empty `/Contents` on a sticky note is ordinary — it is what the
-/// operator has just placed and is about to write in — and
-/// `AnnotAction::SetNote` permits it by name. An empty **reply** is a new
-/// annotation in somebody else's thread that says nothing, that this panel
-/// offers no later way to give words to, and that reads to the next reviewer
-/// as a defect rather than as a remark.
-///
-/// **Trimmed**, for [`keeps_author_name`]'s reason one screen down: a reply
-/// of `"   "` renders in every surface exactly as an empty one does, and a
-/// guard that let it through would be a guard that only stopped the operator
-/// who pressed Post with the cursor at position zero.
 #[must_use]
 pub(crate) fn reply_is_postable(text: &str) -> bool {
     !text.trim().is_empty()
@@ -169,62 +121,11 @@ pub(crate) fn reply_is_postable(text: &str) -> bool {
 
 /// **Whether this annotation already carries a byline that is not ours to
 /// move** — the one decision in this panel with a consequence in the file.
-///
-/// `true` means the `SetNote` action sends **no `/T` at all**, and
-/// `pdfcer-core` leaves an omitted key untouched. `false` means the operator's
-/// name from Settings > Comments is written, or nothing is if that name is
-/// blank, which is a supported choice meaning *comment anonymously*.
-///
-/// # Why this is a function rather than three words at its call site
-///
-/// Because it is the mistake the engine warned about **by name** when it
-/// shipped the verb, and it is invisible from every other angle:
-///
-/// > An implementation writing all three keys unconditionally would silently
-/// > strip the author and date on every correction, leaving a review comment
-/// > from nobody, dated never, looking exactly like a note somebody else had
-/// > mangled.
-///
-/// A `Ui` cannot be driven in a unit test in this crate, so an expression
-/// buried in [`editor`] would be reachable only by `tools/ui-verify` — and a
-/// driven check can assert that *a* note was written far more easily than it
-/// can assert that a `/T` was **not**. Pulled out, the rule has a name, a
-/// suite, and one caller that also feeds the sentence the operator reads.
-///
-/// # Whitespace counts as absent
-///
-/// A `/T` of `"  "` is a byline nobody wrote — the commonest way for one to
-/// exist is a producer writing an empty string — and preserving it would leave
-/// a comment credited to a space. Trimmed, so *"has an author"* means the same
-/// thing here as it does in the row's own byline, which is drawn by
-/// [`t::comment_row_byline`] under the same rule.
 pub(super) fn keeps_author(comment: &CommentRow) -> bool {
     keeps_author_name(comment.author.as_deref())
 }
 
 /// [`keeps_author`] over the name alone — **the one spelling of the rule**.
-///
-///
-/// Because there are now **two** editors for one note: this panel's, and the
-/// canvas pop-up's (`crate::canvas::notepopup`), which is the route that works
-/// in Read mode and the answer to the operator's report of that date.
-///
-/// Two editors writing the same key is exactly the shape in which the mistake
-/// `pdfcer-core` named by name gets made in one of them and not the other:
-///
-/// > An implementation writing all three keys unconditionally would silently
-/// > strip the author and date on every correction, leaving a review comment
-/// > from nobody, dated never, looking exactly like a note somebody else had
-/// > mangled.
-///
-/// The pop-up has no [`CommentRow`] — it works from
-/// `crate::canvas::notepopup::model::NoteView` — so the rule had to be
-/// expressible over the name by itself or it would have been re-derived at the
-/// second call site. Re-derived is how two surfaces come to disagree, and this
-/// one's disagreement would be invisible until somebody read a saved file.
-///
-/// [`tests::a_note_with_an_author_keeps_it`] and its two siblings are the
-/// suite, and they exercise this through [`keeps_author`].
 #[must_use]
 pub(crate) fn keeps_author_name(author: Option<&str>) -> bool {
     author.is_some_and(|author| !author.trim().is_empty())
@@ -240,38 +141,6 @@ fn note_text(note: &Note) -> &str {
 }
 
 /// **What Escape writes** — the draft, not nothing.
-///
-/// # The ruling, and it is about asymmetric cost rather than about convention
-///
-/// A note committed by mistake is one `Ctrl+Z`. A note discarded by mistake is
-/// however long it took to type, gone, with no recovery — a draft lives in this
-/// panel's own state and never reaches the undo stack. Escape is easy to press
-/// by accident; `Ctrl+Z` is not hard to press on purpose.
-///
-/// *Cancel* keeps its meaning and is the discard. It is drawn on both editors,
-/// so nothing is lost by taking the destructive reading off the key.
-///
-/// ⇒ `crate::canvas::notepopup::controls::save_draft` is the same rule on the
-/// same editor reached from a comment's own window. The two surfaces are the
-/// same editor and must not behave differently according to which one opened
-/// it.
-///
-/// # What is written depends on the destination, and both cases can write nothing
-///
-/// | | writes | writes nothing when |
-/// |---|---|---|
-/// | a note | `set_markup_note` | the draft equals [`note_text`] — an untouched editor raises no undo entry |
-/// | a reply | `add_reply` | [`reply_is_postable`] refuses it, exactly as *Post reply* is not drawn |
-///
-/// A blank reply is the one case where nothing can be lost by closing, because
-/// there is nothing there.
-///
-/// ⇒ Returns the verb rather than writing it, so that the `None` cases assign
-/// nothing: [`RowSink::verb`] is one slot for the whole panel, and a row that
-/// wrote `None` into it would erase a verb an earlier row had raised in the
-/// same frame. Being a function of its arguments is also what makes it
-/// testable without a `Ui` — [`super::tests::escape_on_an_edited_note_writes_it`]
-/// and its siblings are the suite.
 pub(super) fn escape_commits(
     comment: &CommentRow,
     id: ObjId,

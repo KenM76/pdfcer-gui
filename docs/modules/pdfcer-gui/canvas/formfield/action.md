@@ -90,3 +90,74 @@ somebody is still looking.
 
 What survives as an assertion is the half that is still true: `Nothing`
 clears, and every other kind writes.
+
+### `enum ButtonDoesKind`
+
+[`Self::ALL`] is the exhaustive list the picker is built from, so a new
+variant reaches the operator by existing. No count is stated here: the
+array's own length is the claim, and it is one the compiler checks.
+
+`Nothing` is first and is the default, because that is what
+`add_push_button` authors and this shell does not change a document's
+meaning by having a dialog open. Choosing anything else is a deliberate act.
+
+### `const ALL`
+
+Ordered by **reach**, not by the standard's section numbers: the four
+that cannot leave the document come first, then the two that write an
+address into the file. An operator scanning the list meets the safe ones
+first and the two that need a sentence of disclosure last, which is the
+order a chooser should be read in.
+
+### `fn reaches_outside`
+
+The predicate the dialog uses to decide whether a disclosure block is
+drawn. **Not** a predicate about danger — a `Uri` is inert until a human
+clicks it in a viewer — but about whether the file gains a statement
+pointing off the machine, which is the thing an operator cannot see by
+looking at the page.
+
+### `struct ButtonDoes`
+
+Every parameter for every kind, held at once. See the module header for why
+this is a struct with a discriminant rather than an enum with payloads: a
+dialog that lost the page number when the chooser moved to *Reset* and back
+would be punishing the operator for looking.
+
+### `enum PageViewChoice`
+
+A shell mirror of `pdfcer_core::edit::PageView`, for the same reason
+[`ButtonDoes`] mirrors `ButtonAction`: this one is `Default` and `Copy` and
+sits in a draft that is cloned every frame.
+
+### `enum ActionBlocker`
+
+Returned rather than rendered, so the caller decides where the sentence
+goes — the dialog puts it under the chooser and greys Add; a driven check
+reads the discriminant. A function that drew the message itself would make
+the condition untestable except by screenshot.
+
+### `fn blocker`
+
+Checks only what can be checked without the document. Everything that
+needs one — does that page exist, is that field name terminal, is it
+even a push button — is the engine's, and its refusals are reported when
+they arrive.
+
+### `fn target_names`
+
+The same treatment a choice field's options get, for the same reason: a
+text box has a trailing newline after the last line typed, and without
+discarding empties every button would carry a final target that is the
+empty string — which the engine would refuse as a field that does not
+exist, naming a name the operator never typed.
+
+### `fn to_core`
+
+# Returns `None` for two different reasons, and the caller must not care
+
+*Nothing* and *a draft that [`Self::blocker`] refuses* both answer
+`None`. That is safe **only** because the one caller checks `blocker`
+first and does not reach here otherwise — which the dialog enforces by
+greying Add. Stated here because a second caller written later would not
+know, and the failure would be a button silently authored inert.

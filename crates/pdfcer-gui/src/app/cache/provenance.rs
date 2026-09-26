@@ -13,17 +13,6 @@ use pdfcer_core::text_extract::PageText;
 use crate::app::state::OpenDoc;
 
 /// **A page's provenance-bearing extracted text, borrowed from the document.**
-///
-/// Dereferences to [`PageText`]. Cheap to clone in the sense that matters —
-/// producing one is a refcount bump, not an extraction — but it is *not*
-/// `Clone`, deliberately: a handle that could be cloned out of the function
-/// that made it would invite exactly the escape the lifetime is here to
-/// prevent.
-///
-/// See this module's header, §"Why the handle is `CachedText`", for the whole
-/// argument. In short: the `Rc` is so two pages can be in flight without a
-/// `RefCell` panic, and the `PhantomData` is so the compiler still forbids
-/// holding one across a mutation of the document.
 pub(crate) struct CachedText<'a> {
     /// The shared extraction. The `RefCell` borrow that produced this is
     /// already released by the time a caller can observe the handle.
@@ -44,16 +33,6 @@ impl std::ops::Deref for CachedText<'_> {
 }
 
 /// **The provenance-bearing text of one page**, keyed by `(page, edit epoch)`.
-///
-/// One page, not all of them: the shell edits the page in front of the
-/// operator, and holding every page's decoded text for a 200-sheet drawing set
-/// would be a memory profile nobody asked for. Paging away drops it; paging
-/// back rebuilds it, at the same cost as the first visit.
-///
-/// The two-field shape — key in a [`Cell`] outside, value in a [`RefCell`]
-/// inside — is the same one every cache in [`crate::app::cache`] uses, and its
-/// header carries the argument for why. The short version: the already-built
-/// path must not need `borrow_mut`.
 #[derive(Default)]
 pub(crate) struct ProvenanceTextCache {
     /// The `(page index, edit epoch)` the text below describes, or `None`

@@ -74,3 +74,57 @@ failing check turning into an argument about whether the grey is nice.
 
 For calibration: D2's headings measure around **1.1:1**. The threshold does
 not need to be finely tuned to catch that; it needs to exist.
+
+## Item notes
+
+### `const MIN_FOREGROUND_SHARE`
+
+0.5%: a 200×30 caption region is 6 000 pixels, so this is 30 pixels — about
+one glyph stroke, and far more than any stray edge pixel. Raising it makes
+the oracle blind to thin text; lowering it lets a scrollbar sliver vote.
+
+### `fn is_uniform`
+
+Two conditions, and both are needed. A gradient has many buckets and no
+dominant one; a flat fill with a single antialiased pixel has two
+buckets and a 99.99% dominant one. Only requiring "more than one
+bucket" would call the second varied.
+
+### `fn relative_luminance`
+
+The gamma expansion is not decoration. A naive `(r+g+b)/3` says mid-grey
+text on white has plenty of contrast; the perceptual curve says it does
+not, and the reader agrees with the curve.
+
+### `fn contrast_at`
+
+See the module docs for the algorithm and for why it is not min/max. A
+region with no pixels — off the edge of the image, or degenerate — reports
+black on black at 1.0 with `sampled: 0`, and callers are expected to look
+at `sampled` before reading the ratio as a verdict.
+
+### `fn mean_luminance`
+
+The companion to [`contrast_at`] for a different question. That one asks
+*is this ink readable* and answers with a ratio between two quantised
+buckets; this one asks *is this the same ink, weaker* and answers with the
+mean over every pixel.
+
+A translucent copy of a region composited over the same paper is lighter
+than the original at every ink pixel and identical at every paper pixel, so
+its mean rises - monotonely with the alpha, with no bucket boundary and no
+threshold able to sit between the two readings. That is the property a
+pre-commit affordance drawn as a tinted blit has to be measured on, and
+neither [`contrast_at`] nor [`ink_run_into`] has it: both quantise, and a
+tint small enough to leave every pixel in its own bucket moves neither.
+
+`None` for a region with no pixels. A mean over nothing is not zero, and a
+caller comparing two regions must be able to tell the empty case apart
+from a black one.
+
+### `fn is_text`
+
+Three pixels, because two adjacent antialiased pixels are reachable on a
+steep glyph edge and three are not — while the shortest thing an
+operator would call clipped text is a lower-case x-height, which at this
+project's smallest shipped size is seven.

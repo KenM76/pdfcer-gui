@@ -15,6 +15,8 @@
 //! So each option's note says what it *leaves behind* as well as what it takes,
 //! because a scale where every step reads as an improvement is a scale with the
 //! cost hidden at one end.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/text/settings/redaction.md`.
 
 /// Group 9 — the one setting that decides what a redaction destroys.
 #[must_use]
@@ -29,12 +31,6 @@ pub const fn reach_title() -> &'static str {
 }
 
 /// Residual sweep: what the standard leaves open.
-///
-/// It leaves it genuinely open, and this is one of the few settings in the
-/// window where naming the clause earns its place: §12.5.6.23 states the
-/// obligation as an *outcome* over all the content a document can hold, and
-/// says nothing about where that content may be. Two readings both satisfy it
-/// and they disagree about the operator's unmarked pages.
 #[must_use]
 pub const fn reach_silence() -> &'static str {
     "The standard says redacted text must not survive anywhere in the file, and \
@@ -62,11 +58,6 @@ pub const fn reach_label(reach: crate::app::prefs::RedactionReach) -> &'static s
 }
 
 /// One sweep setting's description.
-///
-/// Each says what it leaves behind, not only what it takes — see the module
-/// header. The middle one is also the only one carrying the reasoning behind
-/// the default, which is obligation 1: a default rests on an argument and the
-/// argument belongs where the default is.
 #[must_use]
 pub const fn reach_note(reach: crate::app::prefs::RedactionReach) -> &'static str {
     use crate::app::prefs::RedactionReach as S;

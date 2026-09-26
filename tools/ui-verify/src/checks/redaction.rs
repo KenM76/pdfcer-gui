@@ -18,12 +18,6 @@ use crate::report::CheckReport;
 use crate::trace::Trace;
 
 /// The mode whose ribbon carries `edit.redact`.
-///
-/// Edit, and it is not interchangeable with the `review` every other driving
-/// check uses: redaction is authoring, so `RIBBON_IA.md` puts it on the Edit
-/// tab and Read and Review are not shown that tab at all. A check that stayed
-/// in Review would find no control and SKIP, reporting a missing feature that
-/// is merely on a tab it did not open.
 pub(super) const MODE: &str = "edit";
 
 /// The Edit tab.
@@ -49,11 +43,6 @@ pub(super) const APPLY_REGION: &str = "redact-apply";
 pub(super) const ACK_REGION: &str = "redact-apply-ack";
 
 /// The dialog's confirm control.
-///
-/// Declared by the application **only while it is enabled**, which is what
-/// makes phase E possible at all: its absence from the trace is positive
-/// evidence that the gate is closed, rather than the absence of evidence a
-/// disabled-but-drawn control would leave.
 pub(super) const CONFIRM_REGION: &str = "redact-apply-confirm";
 
 /// The dialog's *replace the open file* destination choice.
@@ -67,10 +56,6 @@ const DESTINATION_INTO_DOCUMENT_REGION: &str = "redact-apply-destination-into-do
 const DESTINATION_INTO_DOCUMENT_NOW_REGION: &str = "redact-apply-destination-into-document-now";
 
 /// The dialog's *a new file* destination choice.
-///
-/// Also unconditional. Phase E2 **clicks** it, because the default no longer
-/// writes a file and phases F–I are entirely about a file — see E2's own note
-/// on why the check moves off the default deliberately and says so.
 pub(super) const DESTINATION_NEW_FILE_REGION: &str = "redact-apply-destination-new-file";
 
 /// The dialog's staging disclosure.
@@ -104,19 +89,9 @@ const COPY_DECLINED_EVENT: &str = "text-copy-declined";
 const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH";
 
 /// **The string the redaction must remove**, drawn on page 1.
-///
-/// Deliberately long, upper-case and unlike anything a PDF producer emits: a
-/// short token could be absent from an output file by luck, and a proof that
-/// can pass by luck proves nothing. It is also well over
-/// `redact::proof::MIN_VERIFIABLE_LEN`, so the raw-byte half of the
-/// application's own proof has something to say about it.
 pub(super) const SECRET: &str = "CONFIDENTIALWITNESSALPHA";
 
 /// **The string that must survive**, drawn on page 2.
-///
-/// The negative control, and the reason the fixture has two pages. Without it,
-/// a build that wrote an empty document would satisfy every absence assertion
-/// in this check.
 pub(super) const SURVIVOR: &str = "UNTOUCHEDWITNESSBETA";
 
 /// See the module documentation.
@@ -149,13 +124,6 @@ impl Check for RedactionRemovesAndProvesIt {
 // ---------------------------------------------------------------------------
 
 /// Whether `hay` contains `needle` as a byte subsequence.
-///
-/// The harness's **own** scan, deliberately not shared with the application's.
-/// `crate::redact::proof`'s local `contains` carries the same argument from the
-/// other side: *"an absence proof that shared its search routine with the code
-/// it is auditing would be a weaker proof."* Here the separation is stronger
-/// still — this one is in a different crate, in a different process, over bytes
-/// read back from the file system.
 pub(super) fn contains(hay: &[u8], needle: &[u8]) -> bool {
     if needle.is_empty() || needle.len() > hay.len() {
         return false;
@@ -174,27 +142,6 @@ fn digest(bytes: &[u8]) -> (usize, u64) {
 }
 
 /// **Build the two-page fixture.**
-///
-/// A classic single-revision PDF with a correct cross-reference table, one
-/// uncompressed content stream per page, and nothing else. Assembled here
-/// rather than committed so that every byte in it is one this check put there —
-/// which is what makes *"the secret is in the bytes"* and *"the secret is not
-/// in the bytes"* two readings of the same instrument rather than two
-/// assumptions about somebody's producer.
-///
-/// **Uncompressed on purpose.** The check's verdict is a byte scan, and a
-/// `/FlateDecode` content stream would hide the secret from it — which is a
-/// false pass. Phase H's survivor assertion is what would catch that if a
-/// future writer compressed the *output*; keeping the input uncompressed is
-/// what stops it arising in the first place.
-///
-/// `pub(super)` so `checks::signing` can arm a redaction on the same
-/// document rather than authoring a second one. That check needs a
-/// document whose whole-page redaction actually **verifies** — `four-pages.pdf`
-/// refuses with `VerificationFailed { survivors: ["SCALE", "REVISION"] }`, so a
-/// check that used it would sit in front of a refusal dialog with no
-/// destination to choose. Two fixtures for one property is two chances for one
-/// of them to stop having it.
 pub(super) fn fixture_bytes() -> Vec<u8> {
     let page_content = |text: &str| format!("BT /F1 18 Tf 40 120 Td ({text}) Tj ET");
     let stream = |text: &str| {
@@ -415,24 +362,6 @@ pub(super) fn click_command(
 }
 
 /// Click a region the application published that is **not** a ribbon control.
-///
-/// The panel's and the dialog's own controls, which produce no
-/// `ribbon-command-invoked` because they are not commands. There is therefore
-/// no input-channel confirmation available here, and that is why every caller
-/// asserts an application-side effect immediately afterwards: an unconfirmed
-/// click plus an unchanged application is reported as a SKIP by the caller
-/// rather than as a failure of the feature.
-///
-/// # It takes the NAME, and it must keep taking the name
-///
-/// A rectangle does not carry the viewport it was measured in, and this check
-/// drives two of them: the marking panel is in the application window, the
-/// apply dialog is a child viewport with its own client origin. Converting a
-/// dialog rect against the application window produces a *plausible* screen
-/// point several hundred points from the control — no error, no missed-click
-/// report, just an acknowledgement that never takes and a confirm control that
-/// is never offered. [`driving::frame_of`] answers with the right origin for
-/// either, and it can only be asked once the name is in hand.
 pub(super) fn click_region(
     session: &Session,
     driver: &Driver,

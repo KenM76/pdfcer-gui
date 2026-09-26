@@ -58,27 +58,6 @@ impl Check for BookmarkCanBeWritten {
 #[allow(clippy::too_many_lines)]
 /// **Read mode offers no way to change the outline** — the other half of the
 /// pair.
-///
-/// # The defect this detects
-///
-/// A title field, a parent line and an Add button, plus Rename, Remove, Copy,
-/// Cut and a drag hint, drawn in the mode whose entire promise is that it
-/// cannot change the document.
-///
-/// # Why this exists as well as its sibling, and not instead of it
-///
-/// `BookmarkCanBeWritten` proves the authoring row is REACHABLE in Review.
-/// This one proves it is ABSENT in Read. Either alone is
-/// satisfiable by a build that is simply wrong in the other direction: a panel
-/// that never draws the row passes an absence test perfectly, and a panel that
-/// draws it everywhere passes a presence test perfectly. **The pair is the
-/// assertion**; neither half is.
-///
-/// And it is what stops the sibling's choice of mode from being read as a
-/// decision when it was only ever the cheapest route. **A presence test
-/// standing alone turns whatever mode it happened to drive in into a
-/// specification**; the absence test beside it is what makes the pair say
-/// something the reader can check.
 pub struct ReadModeOffersNoBookmarkAuthoring;
 
 impl Check for ReadModeOffersNoBookmarkAuthoring {

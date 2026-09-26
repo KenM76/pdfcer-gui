@@ -142,3 +142,66 @@ rasterizer's wall at the same scale, and the engine's own measurement
 says two pages of one file differ by a factor of 28. A document-wide
 ceiling learned from the E-size sheet would cap the business card at
 3.5 % of where it can actually be drawn.
+
+### `struct RasterCeiling`
+
+Empty for every document that has never been zoomed past a rasterizer
+limit, which is every document the operator opens at a reading zoom. The
+map only ever gains the handful of pages he has driven to the wall.
+
+`BTreeMap` rather than `HashMap` so that iteration — which only diagnostics
+do — is in page order and a trace line is reproducible between runs.
+
+### `fn learn`
+
+Returns `Some(ceiling)` when this changed the page's ceiling, and `None`
+when it did not — either because the entry already stood at or below the
+new value, or because the inputs were not finite and positive.
+
+The return value is what the caller traces and what it decides to pull
+the zoom back on, so that **re-learning the same wall is not an event**.
+A refusal can be absorbed more than once for the same key (a repaint
+ordering the same render after a cache eviction, a strip page becoming
+current), and a caller that corrected the zoom on every absorption would
+fight the operator's own zoom-out.
+
+`epoch` is the page's epoch at the moment of the refusal. An observation
+from a different epoch replaces rather than joins: the older one was
+about content this page no longer has.
+
+### `fn for_page`
+
+`None` means *nothing is known*, which is the answer for every page of
+every document until a render is actually refused — and it must stay
+distinguishable from *no limit*, because a caller that read `None` as a
+number would have to invent one.
+
+# There is no `forget_all`, and that is a measurement rather than an
+omission
+
+Pages are identified by INDEX here, as they are in every other per-page
+cache in this shell, so inserting, deleting or reordering a page
+*renumbers* the observations — and a renumber is not an edit to the page
+that moved, so the obvious worry is that the epoch key cannot catch it.
+
+One was drafted for exactly that worry and then deleted, because the
+condition it guarded cannot arise.
+[`crate::app::state::pageepoch::PageEpochs::bump_all`] is called by
+`crate::app::actions::pages`' `resync` under its `renumbered` flag — and
+`renumbered` is computed as *the page-object identity sequence changed*,
+which is precisely insert, delete and reorder and precisely not a
+content edit or a rotation. `bump_all` moves the document-wide floor,
+and [`crate::app::state::pageepoch::PageEpochs::get`] maxes that floor
+into *every* page's number, so a renumber retires every learned ceiling
+through the same one mechanism an ordinary edit does. A second clearing
+path would have been a second rule to keep in step with the first, for
+no behaviour.
+
+**And if that ever stops being true, the failure is bounded and
+self-healing** — which is why it is safe to depend on. A stale entry can
+only cap one sheet's zoom at a number measured on a different sheet; the
+canvas still draws, nothing is lost, and the first refusal at the new
+number re-learns it correctly (`learn` ratchets *down* within an epoch
+and replaces outright across one). Compare the alternative failure, a
+ceiling that was cleared when it should not have been: the operator
+meets the wall again, which is the whole of what O186 asked us to stop.

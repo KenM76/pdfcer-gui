@@ -29,3 +29,38 @@ hold a band open for one extra frame. It cannot open one.
 Returns `false` when nothing has focus, when the focused widget has no
 recorded response yet (its first frame), and when auto-hide has never drawn
 an overlay — all three being "the keyboard is not in there".
+
+### `struct Ribbon`
+
+The plain entry point is [`Ribbon::show`]. The builder exists for the
+four optional capabilities an application may supply, each of which is
+a seam that keeps a domain concern out of the shell:
+
+| Builder method | Supplies | Why the shell cannot do it itself |
+|---|---|---|
+| [`Self::with_conditions`] | what is true this frame | The shell has no state to derive it from. |
+| [`Self::with_icon_painter`] | how to draw an icon key | An icon set is a licensing and rasterization decision. |
+| [`Self::with_custom_items`] | how to draw a non-button control | Otherwise the item vocabulary grows a variant per widget. |
+| [`Self::reporting_rects_to`] | where to publish drawn rects | Only the harness knows what it wants to assert. |
+
+All four are optional and all four default to "off", so the
+four-argument form is a complete, working ribbon.
+
+### `fn with_conditions`
+
+Without this every [`crate::commands::Enable::When`] command is
+disabled and every contextual tab is hidden — which is the correct
+answer for an empty condition set, and is why an application that
+forgets this sees a greyed-out ribbon rather than a wrong one.
+
+### `fn with_icon_painter`
+
+Without one, controls draw their labels and no glyphs. That is a
+working ribbon, which is the point: an application can bring the
+ribbon up before it has an icon set.
+
+### `fn show`
+
+The shell **executes nothing**: the returned tokens are intent, and
+the application dispatches them at its own choke point. See this
+module's header.

@@ -7,3 +7,9 @@
 Exists so the call sites read as prose rather than as three layers of
 wrapping, which is what encourages the specific messages this module asks
 for.
+
+### `fn fatal`
+
+See the [`Error::fatal`] field. Use it only where the harness has
+**observed** the program misbehave — a crash, an abort, a hang past a
+stated bound — never for something the harness could not set up.

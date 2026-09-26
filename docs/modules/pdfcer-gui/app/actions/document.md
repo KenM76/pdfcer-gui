@@ -121,3 +121,154 @@ precondition rather than the presence of the guard.
 Crude, and deliberately so — the same trade this project made for the
 settings-coverage gate. A crude check that fails when the guard is
 dropped beats an exact one that cannot run.
+
+### `fn apply_open`
+
+With nothing open this is the **ordinary** case: it is how an operator
+gets their first document after launching with no argument. That is why
+this arm is matched before `apply`'s document guard rather than being
+subject to it.
+
+**It asks nothing about unsaved edits, and that is deliberate.**
+
+`open_path` parks what was open and adds a tab. Nothing is discarded, so
+there is nothing to ask about — and asking anyway would be worse than
+useless, because the question *"Open another document? Your unsaved
+edits will be lost."* would be **false**.
+
+The reasoning a guard here would rest on is worth keeping in view,
+because it is the strongest case for one anywhere in the file: an
+operator who has marked up a drawing and then opens the next one
+destroys exactly as much work as one who pressed Close, and is far more
+likely to do it, because opening the next file is what you do all day
+whereas closing a document deliberately is something you do at the end
+of one. That case is answered where the loss actually happens, which is
+a close.
+
+The `save_pending` guard is absent for the same reason: it means
+*this document's bytes are mid-write*, and opening a different document
+does not touch them.
+
+### `fn apply_open_with_password`
+
+`OPERATOR_REQUESTS.md` O108. Raised only by
+[`crate::dialogs::password::PasswordDialog`], which is the only surface
+that can obtain a password.
+
+The password is **borrowed**, never cloned into a second place. It
+arrives inside the action, is handed to `Document::load_with_password`
+through `Secret::expose`, and the action is dropped with it. There is no
+step here that stores it.
+
+### `fn apply_new_sized`
+
+Beside the plain New and unguarded with it, for [`Self::apply_open`]'s
+reason. The two are kept adjacent and identical in shape so that a
+change to what either guard means cannot be applied to one New and
+missed on the other.
+
+### `fn apply_reread_with_duplicate_keys`
+
+The operator's own intervention in a parse decision:
+
+> *"We should be making pdfcer so that it opens pdfs that have errors,
+> and have a way that it manages those errors such that they aren't
+> fatal, and if the user can intervene in a decision that should always
+> be an option along with them not having to intervene."*
+
+Raised only by `crate::panels::docprops`, from beside the list of places
+the file contradicted itself — which is where it has to be raised from,
+because the disclosure is the only thing on screen that makes the offer
+mean anything. R8b rule 4 puts that disclosure **off-canvas** and this
+keeps its control there with it.
+
+# Why it carries both guards when nothing about it says *close*
+
+Because it destroys as much as a Close does and advertises none of it.
+The tab stays, the path stays, the pages look identical — and every edit
+since the file was opened is gone, because the engine's intervention is
+a re-load: *"the discarded one was never built into the document"*. An
+operator who has marked up a drawing and then presses *use the first
+value* out of curiosity has lost the afternoon.
+
+So: same two questions, same order, same reasons as
+[`Self::apply_close`]. This file's header carries the argument for the
+order and it transfers here without amendment.
+
+# The intent is `Reread`, not `Close`, and that is load-bearing
+
+[`PendingIntent::Reread`] carries the operator's chosen
+[`pdfcer_core::document::LoadOptions`] **across the dialog**. Resuming
+through `PendingIntent::Close` would close the tab and stop — the
+operator would answer a question about their edits and watch their
+document vanish instead of coming back read the way they asked. Every
+step of the chain has to hold the reading, and this is the step where it
+would be easiest to drop.
+
+# It does not validate `policy`, and one value must never reach it
+
+[`pdfcer_core::parser::DuplicateKeyPolicy::Refuse`] is representable in
+the action and is that enum's own `Default`. Sent to a loader it is the
+behaviour that **refuses a 46 KB drawing whole over one repeated
+`/PageMode`** — the failure this whole offer exists to end.
+The rule is enforced where the value is constructed, in
+`crate::panels::docprops`, which offers two of the three; this arm is
+the transport and cannot second-guess a policy the engine may extend.
+
+### `fn apply_close`
+
+With nothing open this is a no-op that must still not be reached through
+a path that assumes a document, which is the other half of why this
+family is matched before `apply`'s guard.
+
+### `fn apply_close_other_documents`
+
+**It has both guards by DELEGATION** rather than by carrying its own
+copies. Every close it performs goes through
+[`Self::apply_close_document`], which is where the guards live, so there
+is no second place for *"does this ask about unsaved edits?"* to be
+answered differently.
+
+It is also why [`tests::every_action_that_discards_a_document_asks_about_unsaved_edits`]
+holds without listing this arm: the body names a close verb only through
+its sibling, and the sibling is checked.
+
+# It closes from the RIGHT, and `keep` is adjusted as it goes
+
+Slots renumber every time one is removed, so the loop takes the
+**rightmost tab that is not `keep`** each pass — which is either the
+last one or, when the last one is the keeper, the one before it. Only
+when the victim was *below* `keep` does anything shift, and then by
+exactly one, which is the whole of the bookkeeping.
+
+The alternative — a `for` over a snapshot of the indices — is the
+obvious version and is wrong after the first close, because every index
+it holds names a different document from then on.
+
+# It survives the unsaved-edits question, which is what makes it
+usable
+
+A modified document brings itself to the front and asks, and answering
+takes a frame — so the loop cannot simply continue. It parks `keep` in
+[`PdfcerApp::closing_others`] and returns; [`PdfcerApp::resume_after_unsaved`]
+picks it up once the operator has answered and runs the rest.
+
+Without that, *"close others"* over four marked-up drawings would close
+one per press, and an operator would reasonably conclude the command was
+broken.
+
+# A cancelled answer stops the whole sequence
+
+Cancelling produces **no answer**, so `resume_after_unsaved` never runs
+and the parked `keep` is never picked up — the sequence simply ends.
+That is deliberate rather than incidental: *"close the others"* is a
+convenience, and somebody who cancels halfway has said something about
+the gesture, not about one document.
+
+`pub(crate)` rather than `pub(super)`, and the one arm in this file that
+is: `crate::app::lifecycle::resume_after_unsaved` continues the sequence
+once an answer arrives, and it lives in `app` rather than in
+`app::actions`. Routing the resume back through an `Action` was the
+alternative and would have re-entered the guard that has just been
+answered — the same loop `resume_after_unsaved`'s own header describes
+and refuses.

@@ -65,3 +65,21 @@ overflow is the dead control R9 forbids — and it is **never itself
 folded**: [`egui_shell::dock::rail::build`] appends it after the ladder has
 run. That is Inkscape failure mode #8 (past about six tabs the overflow
 button is the thing that gets hidden) refused by construction.
+
+### `fn region`
+
+The group is in the name because a command may legitimately appear in two
+groups one day, and because a check that failed on `rail.view.tool_hand`
+would not say which run of the strip lost it.
+
+### `fn show`
+
+Called from inside the dock's rail handler, so the `Ui` it is given is
+already `WIDTH_PTS` wide and already clipped to the strip.
+
+# Why the tokens come back rather than being dispatched here
+
+The same borrow rule the tab menu and the tool banner obey: this closure
+lives across `Dock::show`, which is holding `self.dock` mutably, so it
+cannot reach the dispatcher. Record and act after `show` returns — which is
+also what makes the press order well defined.

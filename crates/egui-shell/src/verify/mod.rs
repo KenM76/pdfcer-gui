@@ -167,37 +167,12 @@ static ON: OnceLock<bool> = OnceLock::new();
 static PREFIX: OnceLock<String> = OnceLock::new();
 
 /// Whether tracing was requested for this process.
-///
-/// Resolved once and cached: the check sits in a per-frame path, and
-/// re-reading the environment there would put a lock and an allocation in
-/// the frame loop to answer a question that cannot change after start-up.
-/// After the first call this is one relaxed atomic load, which is what
-/// makes leaving trace call sites in place permanently free.
 #[must_use]
 pub fn enabled() -> bool {
     *ON.get_or_init(|| std::env::var_os(ENV_VAR).is_some_and(|v| !v.is_empty()))
 }
 
 /// Set the per-application line prefix. Call once, at start-up.
-///
-/// Every traced line becomes `<prefix>-diag <message>`, so a stream that
-/// also carries the window manager's chatter and the graphics driver's
-/// warnings can be reduced to this application's trace with one `grep`.
-///
-/// # Return value
-///
-/// `true` if this call set the prefix, `false` if one was already set (in
-/// which case the existing prefix is kept). The boolean exists so an
-/// application can `debug_assert!` that its start-up path ran once — a
-/// second call is a symptom of two initialisation paths, which is worth
-/// knowing about even though it is harmless here.
-///
-/// # Why the prefix is not simply an argument to [`trace`]
-///
-/// Because then every call site would carry it, and a call site that
-/// carried the wrong one would produce lines that the harness's `grep`
-/// silently drops. One process, one prefix, set where the process is
-/// configured.
 pub fn set_prefix(prefix: impl Into<String>) -> bool {
     PREFIX.set(prefix.into()).is_ok()
 }
@@ -209,14 +184,6 @@ pub fn prefix() -> &'static str {
 }
 
 /// Emit one trace line, building the message only if tracing is on.
-///
-/// Takes a closure rather than a `String` so a disabled build path
-/// performs no formatting — real call sites interpolate rects, pointer
-/// positions and hit counts, and doing that work every frame to throw it
-/// away would be a real cost in the one loop that must not get slower.
-///
-/// The message should be `key=value` fields separated by spaces, led by
-/// an event name. [`event`] builds that shape without hand-formatting.
 pub fn trace(f: impl FnOnce() -> String) {
     if enabled() {
         eprintln!("{}-diag {}", prefix(), f());
@@ -224,16 +191,6 @@ pub fn trace(f: impl FnOnce() -> String) {
 }
 
 /// Begin a `key=value` trace line.
-///
-/// The builder form of [`trace`], for the common case where a line is an
-/// event name and some fields. Cheap when tracing is off: no buffer is
-/// allocated and every [`Line::kv`] is a no-op.
-///
-/// It is *not* free when off — the field values are still evaluated by
-/// the caller, since they are arguments rather than a closure. For a call
-/// site whose values are expensive to compute (a hit-test count, a
-/// formatted rect), prefer [`trace`] with a closure, which defers
-/// everything.
 #[must_use]
 pub fn event(name: &str) -> Line {
     if enabled() {
@@ -244,23 +201,11 @@ pub fn event(name: &str) -> Line {
 }
 
 /// A trace line under construction. See [`event`].
-///
-/// `None` means tracing is off and this line will never be emitted; every
-/// method is then a no-op. Holding the `Option` here rather than checking
-/// [`enabled`] in each method keeps the disabled path to one branch per
-/// field instead of one atomic load per field.
 #[derive(Debug)]
 pub struct Line(Option<String>);
 
 impl Line {
     /// Append a `key=value` field.
-    ///
-    /// The value is rendered with [`Display`], so pointer positions,
-    /// counts and booleans all work without the caller formatting them.
-    /// Neither key nor value is escaped: this is a diagnostic read by a
-    /// `grep`, and a quoting scheme would make the output harder to read
-    /// in exchange for a case a `key=value` diagnostic does not need to
-    /// handle. Keep values free of spaces.
     #[must_use]
     pub fn kv(mut self, key: &str, value: impl Display) -> Self {
         if let Some(buf) = self.0.as_mut() {
@@ -282,10 +227,6 @@ impl Line {
 
     /// The line as it would be emitted, without the prefix, or `None` if
     /// tracing is off.
-    ///
-    /// Exists for this module's own tests, and for an application that
-    /// wants to route a trace somewhere other than stderr. It does not
-    /// emit; [`Self::emit`] does.
     #[must_use]
     pub fn into_message(self) -> Option<String> {
         self.0

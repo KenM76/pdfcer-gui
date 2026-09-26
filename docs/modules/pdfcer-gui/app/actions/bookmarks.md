@@ -303,3 +303,40 @@ not compare equal to one addressed to `7 1 R`. This is cheap to assert
 and it pins the thing that would make the whole "address by id, never
 by position" argument in the module header hollow: an id that only
 half-identifies is a position with extra steps.
+
+### `enum BookmarkAction`
+
+See the module header for what makes them a family: every one of them names
+its operand by `ObjId`, because an outline is a tree that every edit to it
+renumbers.
+**`PartialEq` and not `Eq`**, and the bound cannot be restored.
+`pdfcer_core::outline::OutlineClip`, which [`BookmarkAction::Paste`]
+carries, is `PartialEq` only — a bookmark's colour is three `f64`s and
+floats have no total equality — and an enum holding one cannot be `Eq`.
+Nothing needs it: `Eq` over `PartialEq` buys a `HashMap` key, and no action
+is ever one.
+
+### `fn apply`
+
+The dispatch half of this module, reached from `PdfcerApp::apply`'s single
+[`super::action::Action::Bookmark`] arm. It is a free function taking
+`&mut OpenDoc` rather than a method, exactly like [`super::dimensions::apply`]
+and [`super::pages::apply`], because the caller is the one place that owns
+the borrow and the arm should be one line.
+
+**Every arm goes through [`super::apply::vector_edit`]** — the
+cancel–mutate–bump–invalidate protocol — and none of them may hand-roll it.
+Its doc comment carries the argument: four hand-written copies of a
+four-step protocol are four chances to omit a step, and the two steps most
+easily omitted (the epoch bump and the structural resync) fail *silently*,
+leaving an edit that happened in the document and did not happen on screen.
+
+The `page` argument passed to `vector_edit` is **`0` for all three**, and
+that is honest rather than lazy: an outline is document-level, no page is
+being edited, and the parameter exists only so the diagnostic trace can say
+which sheet a geometry edit touched. [`super::dimensions::apply`] passes `0`
+for its group verbs for the identical reason. The one exception is
+[`BookmarkAction::Add`], which passes the destination page — not because a
+page is being changed, but because the page is the operand that decides what
+the bookmark points at, and a trace that could not say which one would be
+unable to check the commonest thing to get wrong.

@@ -81,10 +81,6 @@ const OVERFLOW_TOLERANCE_PT: f32 = 0.05;
 /// Publish the side's allocated frame rect, and — on a frame where it
 /// crosses the parent's outer edge — every registered widget that crosses
 /// that edge too.
-///
-/// `parent` is the ui the side was shown in (its `max_rect` is the window's
-/// content rect, so its outer edge is the edge a right dock must not pass);
-/// `frame` is the response rect `Panel::show` returned.
 pub(super) fn publish(parent: &egui::Ui, ctx: &mut Ctx<'_>, side: DockSide, frame: Rect) {
     ctx.reporter
         .report(parent, frame, || format!("{}.frame", report::side(side)));

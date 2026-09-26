@@ -190,3 +190,26 @@ The [`RunFill`] distinction, asserted where it is consumed. Written as
 its own test because the failure it guards has no symptom: the control
 would open on red, and pressing nothing would change nothing, so only a
 deliberate check can see it.
+
+### `struct TextObjectDraft`
+
+The stamp is three parts and every one is load-bearing, exactly as
+[`super::text::TextStyleDraft`]'s is:
+
+* **page** — an object index means nothing without one;
+* **object** — the operator clicked a different shape;
+* **edit epoch** — the same shape, restyled, and the swatch must show the
+  new colour. Without this term the panel would show the pre-edit colour for
+  ever after the first change.
+
+### `fn section`
+
+Returns whether it drew, so [`super::body_sections`] knows the panel has
+said something about the selection.
+
+# The four gates, in the order they are cheapest
+
+An annotation is not page text; more than one object has no single subject
+(the rule [`super::geometry::section`] states and this shares); an object
+that is not text has nothing to say here; and only then is the expensive
+reading attempted. Every one of the first three is free.

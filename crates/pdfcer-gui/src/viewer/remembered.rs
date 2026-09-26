@@ -13,11 +13,6 @@ use pdfcer_core::settings;
 use super::display::PageDisplay;
 
 /// The file's name, inside the settings directory.
-///
-/// `.txt` because the format is one line per document and an operator who
-/// opens it should find exactly what they expect — the same argument
-/// `recent.txt` makes. `.ron` would promise a structure that is not there and
-/// a parser this crate does not have.
 pub const REMEMBERED_FILE: &str = "page-display.txt"; // ui-text-exempt: a file name, never displayed as copy
 
 /// The separator between a mode id and a path.
@@ -27,26 +22,10 @@ pub const REMEMBERED_FILE: &str = "page-display.txt"; // ui-text-exempt: a file 
 const SEPARATOR: char = '\t';
 
 /// How many documents are remembered.
-///
-/// Two hundred, and the number is about **disk** rather than about a menu:
-/// nothing draws this list, so the cap that governs [`crate::app::recent::CAP`]
-/// — "what fits in a File menu without becoming a scroll view" — does not
-/// apply. Two hundred lines is a few kilobytes, comfortably more documents
-/// than an operator revisits, and small enough that a read-modify-write costs
-/// nothing measurable.
-///
-/// A cap exists at all because the file is written on every mode change and an
-/// uncapped one would grow forever across the life of an installation.
 pub const CAP: usize = 200;
 
 /// The path this store reads and writes, or `None` when `pdfcer-core` found no
 /// writable location.
-///
-/// Derived from the same `pdfcer_core::settings::resolve_store()` call that
-/// decides where `settings.txt`, `layout.ron` and `recent.txt` go — never a
-/// directory computed here. `persistence.rs`'s header carries the three
-/// reasons in full; the short one is that a second resolution is how two of an
-/// application's files end up in different folders.
 #[must_use]
 pub fn default_path() -> Option<PathBuf> {
     settings::resolve_store()
@@ -55,50 +34,17 @@ pub fn default_path() -> Option<PathBuf> {
 }
 
 /// **The display mode remembered for `document`, if any.**
-///
-/// `None` means *"this document has no remembered choice"*, and the caller
-/// answers it with [`PageDisplay::default_for_mode`] — the per-mode default,
-/// which is where "Read opens continuous" lives. It deliberately does **not**
-/// mean "single page": collapsing the two would make a fresh document in Read
-/// mode open paged, which is the operator decision of 2026-08-13 inverted.
-///
-/// Never fails. A missing file, an unreadable one and a corrupt one all answer
-/// `None`, because every one of them means the same thing to the caller —
-/// there is no remembered choice to honour — and a preference is not worth an
-/// error path.
 #[must_use]
 pub fn recall(document: &Path) -> Option<PageDisplay> {
     recall_at(default_path().as_deref(), document)
 }
 
 /// **Remember that `document` is being shown in `display`.**
-///
-/// Read-modify-write of the whole file: the entry moves to the front, any
-/// previous entry for the same document is replaced rather than duplicated,
-/// and the list is truncated to [`CAP`]. Writes immediately rather than
-/// debouncing, for the same reason `recent.rs` does — a mode change is a rare
-/// discrete click, not a drag reporting sixty changes a second, so there is no
-/// gesture to settle and nothing to gain by deferring past a crash.
-///
-/// Writing the mode a document *already* has costs nothing: the entry is
-/// already at the front with the same value, and the function returns without
-/// touching the disk. That matters because the caller cannot easily know
-/// whether a click changed anything, and re-writing the file on every click of
-/// an already-selected radio button would be a file write per click for no
-/// change.
-///
-/// Failures are traced and otherwise ignored. There is no operator-facing
-/// consequence worth a dialog: the mode is applied to the open document either
-/// way, and the only loss is that it will not be there on the next open.
 pub fn remember(document: &Path, display: PageDisplay) {
     remember_at(default_path().as_deref(), document, display);
 }
 
 /// [`recall`], against an explicit file — the seam tests use.
-///
-/// The twin of `pdfcer_core::settings::store_in` and of
-/// `LayoutStore::load_in`, and it exists for the same two reasons: tests, and
-/// a future `--user-data-dir` override.
 #[must_use]
 pub fn recall_at(file: Option<&Path>, document: &Path) -> Option<PageDisplay> {
     let wanted = absolute(document);

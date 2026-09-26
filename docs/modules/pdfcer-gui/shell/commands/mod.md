@@ -143,3 +143,29 @@ Nothing here is compiled into `pdfcer-gui.exe`.
 Mostly commentary against a handful of assertions, which is the point rather
 than an accident: an integer records nothing, and what a reader needs when
 one of them fails is whether the change that moved it was supposed to.
+
+### `const FILE_RECENT`
+
+A constant rather than a literal because this id is used in four places
+that must agree and two of them are not obvious: the registration below,
+the `CUSTOM_BACKED` entry that records why it is on no tab, the registry
+lookup in [`crate::app::PdfcerApp::ribbon_band`] that turns the operator's
+menu choice back into this command's token, and the dispatch arm. A typo
+in any of them produces silence — a menu that draws and reports nothing —
+rather than an error.
+
+The other command ids stay literals at their (single) use sites, which is
+this file's existing convention; this one earns a name by being spelled in
+two modules.
+
+### `fn register`
+
+# Panics
+
+If two commands claim one id. That is a programming error in
+[`catalog::all`] and not a condition any input can produce, so it fails
+loudly at
+start-up rather than being swallowed: the registry refuses a duplicate
+precisely so that behaviour cannot come to depend on the order of
+start-up code, and catching the error here to ignore it would give back
+exactly the defect the refusal prevents.

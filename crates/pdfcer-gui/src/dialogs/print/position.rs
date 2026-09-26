@@ -30,11 +30,6 @@ const NUDGE_MM: f64 = 1.0;
 const NUDGE_COARSE_MM: f64 = 10.0;
 
 /// A displacement from the placement pdfcer chose, in paper points.
-///
-/// Positive is right and down: the sense of the device context the offsets are
-/// eventually handed to, and the sense of the preview on screen. It is the
-/// opposite of a PDF page's own Y axis, which is why [`t::position_frame`]
-/// states it rather than leaving it to be inferred.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub(crate) struct Offset {
     /// Rightward displacement in paper points.
@@ -55,13 +50,6 @@ pub(crate) enum Axes {
 }
 
 /// What the primary button took hold of when a preview drag began.
-///
-/// **Latched at `drag_started_by`, never re-derived mid-gesture.** The page
-/// rectangle moves under the pointer while the page is being dragged, so a
-/// per-frame hit test would classify the same gesture differently from one
-/// frame to the next: drag the page far enough and the pointer leaves it, the
-/// classification flips to `Paper`, and the rest of the stroke pans the view
-/// instead. Deciding once is the only stable reading.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) enum Grab {
     /// No primary drag is in progress.
@@ -193,34 +181,6 @@ impl Positions {
 
     /// **Centre the page on the printable area** — and this is not
     /// [`Self::reset`].
-    ///
-    /// # Why the two commands differ, which is the whole feature
-    ///
-    /// `pdfcer_print::place_page` centres a page that fits and then clamps:
-    /// `offset_x_pt: ((aw - w) / 2.0).max(0.0)`, *"clamped at zero so an
-    /// oversized page starts at the edge of the printable area rather than at a
-    /// negative offset"*. So for the sheets O208 is about — the ones losing
-    /// content — pdfcer's placement is flush to the top-left corner, and the
-    /// whole loss falls off the right and bottom.
-    ///
-    /// Reset returns to that corner. Centre moves to the middle, which crops
-    /// the drawing evenly on all four edges. Both are wanted, and an operator
-    /// choosing what to lose off a big drawing wants the second far more often.
-    ///
-    /// # The one primitive, stated once
-    ///
-    /// > new delta = old delta + (target − current)
-    ///
-    /// `current` is the placement as the preview is drawing it — already
-    /// displaced — so the undisplaced engine offset is never needed and
-    /// therefore can never be double-counted. The drag, the arrow keys and all
-    /// three centring commands are this one line, which is why there is no
-    /// second arithmetic path to keep level with the first.
-    ///
-    /// A page whose engine placement is already centred lands on a delta of
-    /// zero, which [`Self::set`] canonicalises to *unmoved* — so Centre on a
-    /// page that fits correctly leaves Reset greyed rather than claiming a move
-    /// that did nothing.
     pub(crate) fn centre(
         &mut self,
         page: usize,
@@ -243,23 +203,6 @@ impl Positions {
     }
 
     /// **Apply every displacement to a planned job.**
-    ///
-    /// Called once per frame on the value [`super::spooler::plan`] returned,
-    /// before any reader. Takes the job by value and hands it back so there is
-    /// no window in which a caller could hold the undisplaced one.
-    ///
-    /// # `clipped` is recomputed, but only for a page that moved
-    ///
-    /// The flag is a geometric verdict and a displacement changes the geometry,
-    /// so leaving it alone would leave the hatch, the caption and the commit
-    /// button's count describing the position the page used to be at.
-    ///
-    /// The guard is not an optimisation. `place_page` returns
-    /// `clipped: true, scale: 1.0, offsets: 0` for degenerate input — a
-    /// zero-size page or sheet — which no purely geometric formula can
-    /// reproduce, so recomputing unconditionally would *clear* a flag the
-    /// engine set deliberately. An unmoved page keeps the engine's answer; only
-    /// a page the operator displaced gets ours.
     pub(crate) fn displace(&self, mut job: Job, page_sizes: &[(f64, f64)]) -> Job {
         if self.moved.is_empty() {
             return job;
@@ -280,12 +223,6 @@ impl Positions {
 }
 
 /// Whether a placed page falls outside the printable area.
-///
-/// The verdict `pdfcer_print::place_page` computes, restated over an arbitrary
-/// offset rather than only over the centred-and-clamped one it produces. See
-/// [`EPS_PT`] for why the tolerance is the engine's and not one chosen here,
-/// and [`Positions::displace`] for the one case where the engine's own answer
-/// must be preferred to this.
 pub(crate) fn clips(placement: Placement, page_pt: (f64, f64), printable_pt: (f64, f64)) -> bool {
     let over = Cropped {
         left_pt: -placement.offset_x_pt,
@@ -300,12 +237,6 @@ pub(crate) fn clips(placement: Placement, page_pt: (f64, f64), printable_pt: (f6
 }
 
 /// How far the placed page extends past the printable area, edge by edge.
-///
-/// The per-edge half of O208's second clause. The hatch answers *where* on the
-/// picture; this answers *how much* as a number, which is the quantity the
-/// operator is steering. Each edge is clamped at zero, so a page inside the
-/// area on an edge reports nothing for it rather than a negative slack the
-/// sentence would have to explain.
 pub(crate) fn cropped(
     placement: Placement,
     page_pt: (f64, f64),
@@ -320,14 +251,6 @@ pub(crate) fn cropped(
 }
 
 /// An arrow-key nudge, in paper points, or `None` if no arrow was pressed.
-///
-/// The step lives here rather than at the call site because it is a fact about
-/// the unit the readouts are in, not about the preview — see [`NUDGE_MM`].
-/// Shift multiplies it, which is the convention every drawing program on this
-/// machine uses for the same gesture.
-///
-/// Keys are **consumed**, so an arrow that moved the page cannot also reach a
-/// sibling control on the same frame.
 pub(super) fn arrow_nudge(ui: &Ui) -> Option<(f64, f64)> {
     let step = units::points_from_mm(if ui.input(|i| i.modifiers.shift) {
         NUDGE_COARSE_MM
@@ -368,26 +291,6 @@ fn publish(ui: &Ui, name: &str, rect: egui::Rect) {
 }
 
 /// **The body of the Position tab.**
-///
-/// Draws nothing at all when there is no job, or when the stepper is on a sheet
-/// the job does not contain (`R9`: an unavailable capability renders nothing,
-/// and a position control with no page to act on is unavailable rather than
-/// temporarily disabled).
-///
-/// # Why a tab of its own, and not the preview strip
-///
-/// The strip under the preview already lays seven controls into a
-/// `horizontal_wrapped` row that measures wider than the column holding it.
-/// Four more would wrap it into a second row, and the strip's height is fixed
-/// for the feedback-loop reason `preview::STRIP_HEIGHT_PTS` documents — so they
-/// would be clipped, not merely cramped.
-///
-/// The remaining candidate was the foot of the Pages & Layout options column,
-/// beside the scale radios, which is where scale and position belong together
-/// conceptually. That was measured and does not fit; [`super::tabs::PrintTab`]
-/// carries the numbers. What makes the split cheap is that the preview is a
-/// separate column and is visible whichever tab is open, so the feedback these
-/// controls need is never hidden behind the tab that owns them.
 pub(super) fn group(
     ui: &mut Ui,
     dialog: &mut PrintDialog,

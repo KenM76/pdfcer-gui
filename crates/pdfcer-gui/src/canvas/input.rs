@@ -23,18 +23,6 @@ use crate::canvas::tool::CanvasTool;
 const GESTURE_MEMORY_KEY: &str = "pdfcer-canvas-gesture"; // ui-text-exempt: internal memory id, never displayed
 
 /// Ask the provider what is under a click, at every rung at once.
-///
-/// # Why the part and node queries are scoped to the ENTERED object
-///
-/// Because that is what makes the deeper rungs predictable. A node query
-/// against an object's whole flat anchor list is the hazard decision 028 found
-/// already shipped: one measured CAD object holds **6,681 anchors**, so "the
-/// nearest anchor to the press" can easily belong to a subpath the operator is
-/// not pointing at, with nothing drawn beforehand to say which.
-///
-/// When nothing is entered yet, the subject is the object under the pointer —
-/// which is what a double-click needs, since it descends into whatever it
-/// landed on.
 #[allow(
     clippy::too_many_arguments,
     reason = "eight independent facts about one click — the provider, the selection, the page, the point, the mapping, the filter, the cycling depth and the container scope. Grouping any subset would be grouping by arity rather than by meaning, and the resulting type would have no name that was true." // ui-text-exempt: a lint justification, never displayed
@@ -272,15 +260,6 @@ fn nth_allowed(
 
 /// **The frontmost object under a point**, after the pick filter — the plain
 /// answer, with no selection and no cycling depth involved.
-///
-/// [`probe`]'s narrow sibling, for the one caller that has neither: the
-/// press-time selection in [`crate::canvas::interact`] runs *before* anything
-/// has decided what the gesture is, so there is no depth to honour and no
-/// entered object to keep. It wants the top of the stack and nothing else.
-///
-/// Depth zero deliberately. `Alt`-cycling is a property of repeated **clicks**
-/// at one point (`canvas::clicking`'s `CycleCursor`), and a drag is not a click
-/// — an operator pressing to move something means the thing they can see.
 pub(super) fn topmost(
     targets: &dyn CanvasTargetProvider,
     page_index: usize,
@@ -301,11 +280,6 @@ pub(super) fn topmost(
 }
 
 /// How many objects the pointer is over, after the pick filter.
-///
-/// Read by the status bar so the operator can be told *"3 objects here"* rather
-/// than having to discover a stack by cycling into it. Deliberately a count and
-/// not the list: a caller that wanted the list would be re-deriving the
-/// selection, which is [`probe`]'s job.
 pub(super) fn candidate_count(
     targets: &dyn CanvasTargetProvider,
     page_index: usize,
@@ -331,24 +305,6 @@ pub(super) fn store_gesture(ctx: &egui::Context, gestures: GestureState) {
 
 /// **Abandon a gesture in flight without committing it**, reporting whether
 /// there was one.
-///
-/// The programmatic equivalent of the operator pressing Escape mid-drag, and it
-/// has exactly one caller: `PdfcerApp::on_mode_capabilities_changed`, honouring
-/// `MODES_AND_PANELS.md` rule 1 — *"If a mode change would hide a pending,
-/// uncommitted gesture … that gesture is committed or cancelled first."*
-///
-/// **Cancelled rather than committed**, which is the half of that sentence this
-/// function chooses. The operator asked for a mode; they did not ask for the
-/// half-drawn rectangle their pointer happens to be holding, and committing one
-/// on their behalf would author an annotation nobody typed. Discarding the
-/// state is all that is needed for that to be true — a markup is written only
-/// by `Action::CommitMarkup`, which none of this raises, and a move ghost is a
-/// preview that has changed nothing.
-///
-/// Written by *replacing* the stored state rather than by driving `update` with
-/// a `cancel` frame: there is no frame here to drive it with, and
-/// `GestureOutcome::Cancelled` exists to tell the key handler that Escape was
-/// spent — a fact with no meaning outside the frame that produced it.
 pub(crate) fn abandon_gesture(ctx: &egui::Context) -> bool {
     let had_one = load_gesture(ctx).active().is_some();
     if had_one {
@@ -359,15 +315,6 @@ pub(crate) fn abandon_gesture(ctx: &egui::Context) -> bool {
 
 /// The pointer movement of an in-progress pan over this canvas, or `None` when
 /// no pan is happening.
-///
-///
-/// Gated on the pointer being over the canvas so a drag that began on some
-/// other surface does not yank the page sideways.
-///
-/// **`ui` is the canvas's own child `Ui`**, whose `max_rect` is the region
-/// *inside* the ruler gutters — see [`super::rulers::Gutters::content_ui`].
-/// That is what stops a drag begun on a ruler from also panning the page: the
-/// gutter is outside this rect, so `over` is false there.
 pub(super) fn pan_delta(ui: &egui::Ui, tool: CanvasTool) -> Option<Vec2> {
     let rect = ui.max_rect();
     ui.input(|i| {

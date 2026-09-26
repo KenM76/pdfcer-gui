@@ -50,3 +50,28 @@ the engine's API rather than about dragging.
 The ghost is the cursor, which the rule permits by name. Nothing about the
 widget is tinted or badged, and a filled field renders exactly as it will
 after a save.
+
+## Item notes
+
+### `fn grab_box`
+
+It reads the **same** target list `canvas::forms` hit-tests and draws, and
+asks it for the selection's own `(field, widget)`. Three surfaces, one
+rectangle: what the operator can see, what they can grab, and what moves.
+`dimdrag::grab_box` and `annotdrag::grab_box` state the identical rule, and
+it exists because a grab box larger than the drawn outline is a press that
+works where nothing is shown, and one smaller is an operator missing
+something they can see.
+
+The list is cached on `(path, edit_epoch)` by `forms::placed`, so asking
+every frame costs a map lookup rather than a form walk.
+
+### `fn drag`
+
+Returns the ghost outline to draw, in **canvas space**, or `None` when there
+is nothing to draw — which covers both *"nothing draggable is selected"* and
+*"this is the frame that commits"*.
+No `PageMapping`, unlike [`grab_box`]. A grab box has to be projected to
+SCREEN space to be hit-tested against a pointer; a ghost is drawn in CANVAS
+space, which is what the target list already holds. Taking the mapping here
+would be a parameter used to convert a value into the space it started in.

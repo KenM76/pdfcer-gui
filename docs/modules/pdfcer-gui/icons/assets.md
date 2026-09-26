@@ -340,3 +340,126 @@ parses and rasterizes every asset. **A new or edited icon that uses
 `<g>`, `<defs>`, a `transform`, a gradient, CSS, or an unsupported
 `stroke-linecap` value will fail `cargo test`, not fail silently at
 runtime.**
+
+## Item notes
+
+### `const FIT_HEIGHT`
+
+The exact 90-degree sibling of [`FIT_WIDTH`]: the same corner-bracket
+family, rotated, so the ribbon's three fit glyphs read as one set and none
+of them is mistaken for another at a glance.
+
+### `const CURSOR`
+
+Authored for pdfcer in the header §3 style contract. The filled half of the
+black-arrow / white-arrow pair; its outline is byte-identical to
+[`CURSOR_NODE`]'s and that is the whole message.
+
+### `const SIGN`
+
+The SIGNING control's glyph, and deliberately a different asset from
+[`SIGNATURES`] even though the two subjects are one word apart. That one
+is a **panel toggle** — it opens a report about signatures that already
+exist — and this one **authors** a new one. Sharing a key would make
+`tools/compare-mockup-ribbon.py`'s item comparison unable to tell the
+File ▸ Security band from the View ▸ Panels row, and would put the same
+picture on a control that reads and one that writes.
+
+### `const PICK_TEXT`
+
+Authored for pdfcer in the header §3 style contract — three text lines with
+two square grips on the diagonal. Deliberately frameless, so it cannot be
+read as [`TEXT_FREETEXT`], and deliberately not an I-beam, so it cannot be
+read as [`TEXT_SELECT`] one row below it.
+
+### `const PICK_PATH`
+
+Authored for pdfcer in the header §3 style contract — one straight segment
+crossing one curve, with **no nodes anywhere**, which is the only thing
+separating it from [`EDIT_OBJECTS`] and [`SHOW_POINTS`].
+
+### `const PICK_PART`
+
+Authored for pdfcer in the header §3 style contract — a three-segment chain
+with a bracket under the middle segment only. The bracket's span is the
+message: under the whole chain it would mean the Object rung instead.
+
+### `const PICK_FORM_XOBJECT`
+
+Authored for pdfcer in the header §3 style contract — a frame holding three
+unlike marks. The heterogeneous contents are what separate it from
+[`TEXT_FREETEXT`]'s evenly spaced prose rules.
+
+### `const PICK_LINK`
+
+Authored for pdfcer in the header §3 style contract — the box-with-escaping
+-arrow every browser and office suite uses for "goes somewhere else".
+Explicitly **not** [`LINK`], which is a chain and belongs to Combine.
+
+### `const OFF_PAGE`
+
+Edit ▸ Check for content off the sheet (`edit.offpage`) — a page outline
+with line work running out past its left edge. **Stroke-only, deliberately**:
+its three redaction siblings all carry a solid bar and this command removes
+nothing, so joining the closed fill set would say "destroys content" in the
+one cue that survives downscaling. The asset's own header carries the rest.
+
+### `const COPY_AS_VECTOR`
+
+Copy the selection to the clipboard as vector geometry rather than as a
+picture of it — `edit.copy_as_vector`, token 408, drawn icon-only beside
+Cut / Copy / Paste on Edit ▸ Clipboard. See the asset for which glyph it
+must stay distinguishable from and by what cue.
+
+### `const EXPORT_IMAGE`
+
+Export the page as a raster image — `file.export_image`, which wore
+[`DOWNLOAD`] before this art existed. See the asset for the reversal and
+its reason.
+
+### `const OPEN_IN_ACROBAT`
+
+Hand this file to the system's PDF viewer. ⚠ The label names a vendor; the
+art carries nothing of that vendor's mark, and the asset's comment states
+that constraint before it states anything else.
+
+### `const PERMISSIONS`
+
+What the document permits — the engine's `set_permissions`. Worn by
+`file.permissions` (token 127) on File ▸ Security; `OPERATOR_REQUESTS.md`
+O119 is answered and closed.
+
+### `const SELECT_ALL`
+
+Select all — `edit.select_all`. ⇒ **A refusal argued by a build session is
+not the operator's ruling, however often it is re-quoted.** This glyph
+exists because that distinction was lost and he corrected it; the asset's
+own comment carries the account, including which half of the old argument
+is drawn into the glyph rather than discarded.
+
+### `const BOLD`
+
+`format.bold`'s glyph. It was registered with no icon because *"this build
+has no such art"* — a statement about SUPPLY, and the operator's standing
+ruling is that a missing glyph is **authored**. The asset's own comment
+carries the account, and the reason its stroke is 4 rather than the set's
+2.5.
+
+### `const ITALIC`
+
+[`BOLD`]'s sibling, on the same ruling and for the same reason. See the
+asset for why the slant is exaggerated and why the serifs are offset rather
+than centred.
+
+### `const LINE_WEIGHTS`
+
+`view.line_weights` (`OPERATOR_REQUESTS.md` O137), a control that exists
+only because the engine has `RenderOptions::stroke_display` behind it. The
+glyph was authored rather than borrowed, on the operator's standing ruling
+that a missing glyph is authored, not worked around.
+
+The **only** asset in this directory that does not stroke at a uniform
+2.5, and the asset's own comment carries why: the varying weight IS the
+subject, so a glyph drawn at one width would be a picture of the feature
+switched off. It also carries the 16 px measurement behind the thinnest
+bar's 1.6, and the two axes that keep it clear of `list.svg`.

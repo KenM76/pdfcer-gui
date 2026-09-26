@@ -206,3 +206,72 @@ What makes [`SheetSurvey::target_rect`]'s corner rule safe to apply
 unconditionally: on a page at `(0, 0)` — every CAD export in his corpus
 — it produces exactly what `PaperSize::rect_with` produces, so the
 offset case costs the common case nothing.
+
+### `struct SheetSurvey`
+
+Built once when the window opens, from state the application already holds:
+the flattened page vector (walked every frame anyway) and the object-model
+cache (built for the current page anyway). **Nothing here decomposes a page
+that was not already decomposed** — see [`Self::unread`] for the price that
+bounded cost is paid in, and why it is paid in honesty rather than in
+silence.
+
+### `fn uniform`
+
+`None` on a mixed pick — the ordinary state of a drawing set with a
+detail sheet in it, which is why the window has a sentence for it.
+Compared to [`pdfcer_core::paper::PaperSize::CLASSIFY_TOLERANCE`], for
+the reason that constant exists: producers round A4 to 595.276, 595.28
+and 595.32, and exact equality would call an obviously uniform set
+mixed.
+
+### `fn distinct_sizes`
+
+Reported rather than a bare "they differ" because *"9 sheets in 2
+different sizes"* tells the operator he has one odd sheet and *"9 sheets
+in 7 different sizes"* tells him he has picked the wrong thing.
+
+### `fn overhang`
+
+`None` when nothing could be measured — which is *not* the same as zero
+and must not be collapsed into it. The caller words the two differently:
+`Some((0,0,0,0))` is [`crate::text::page_size::fits`], a promise;
+`None` is [`crate::text::page_size::overhang_unmeasurable`], a stated
+boundary.
+
+### `fn target_rect`
+
+# The lower-left corner is the operands' own, not the origin
+
+`PaperSize::rect_with` puts a named sheet at `(0, 0)`, and its own doc
+comment calls that *"a choice, not a law"*: §7.7.3.3 does not require a
+media box to start at the origin, and imposition output and cropped
+scans really do carry offset ones. On such a page, writing an
+origin-anchored sheet moves **the paper relative to the drawing** —
+which is not what "change the sheet size" means and is invisible until a
+print comes out shifted.
+
+So the new sheet keeps the corner the old sheets had, when they share
+one. On the overwhelmingly common `(0, 0)` case this is byte-identical
+to `rect_with`, which is what makes it safe unconditionally.
+
+When the operands do **not** share a corner, one rectangle cannot
+preserve all of them — `set_media_boxes` takes one rectangle for the
+whole selection, and that is the property that buys the single undo
+entry. The fallback is the origin, and
+[`crate::text::page_size::origin_differs`] is drawn in the window rather
+than the choice being made quietly.
+
+### `fn survey`
+
+`pages` is the operand list `crate::app::dispatch::pages` already resolved,
+so this function never re-decides which sheets are meant — one statement of
+the operand rule, which is the same argument
+`SelectionState::deletable_objects_on` makes.
+
+# What it costs
+
+One index into `doc.pages` per operand, plus **at most one** borrow of the
+object-model cache — `OpenDoc::page_objects` returns the decomposition for
+the page currently on screen, already built if the canvas has drawn it. No
+page is decomposed on this call's account. See [`SheetSurvey::unread`].

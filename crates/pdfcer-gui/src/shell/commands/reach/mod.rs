@@ -11,20 +11,6 @@ mod guards;
 use std::collections::{BTreeMap, BTreeSet};
 
 /// The dispatcher's own source, embedded at **compile** time.
-///
-/// `include_str!` rather than a runtime `std::fs::read_to_string` of a path
-/// built from `CARGO_MANIFEST_DIR`, and the difference is the whole
-/// precondition story. A path that stops resolving is a *runtime* `Err` that
-/// somebody has to remember to treat as a failure; `run-all.sh`'s header is
-/// about exactly that ("SKIPPED is not PASSED"). A missing `include_str!`
-/// target is a **compile error**, so the state in which this module checks
-/// nothing and says so quietly does not exist.
-/// The register — every registered command with no dispatch arm, and why.
-///
-/// Split out at rule R2's ceiling, and the seam is a real one: this file is
-/// the **check** and that one is the **data**. See its header for
-/// why the data half is the one that grows, and why trimming a reason to fit is
-/// the worst available response.
 pub mod register;
 
 pub(crate) use register::{SCAFFOLDED, UNREACHED_ARMS};
@@ -60,10 +46,6 @@ const SUBJECT: &str = "id";
 
 /// What one `match` offers: the ids its literal arms name, and the guard
 /// functions its guard arms consult.
-///
-/// Both are sets rather than lists because the question asked of them is only
-/// ever membership, and because a duplicate arm is a `match` the compiler
-/// already warns about.
 #[derive(Debug, Default)]
 pub(super) struct Arms {
     /// Every id named by an arm pattern — a string literal, an alternation of
@@ -105,20 +87,6 @@ pub(super) struct Arms {
 }
 
 /// Read the routing table out of `src`.
-///
-/// `src` is a parameter rather than a reach for [`DISPATCH_SRC`] for the
-/// reason `crate::diag::record_if_changed` takes its map as an argument: the
-/// **rule** is the interesting part and it has to be testable against a
-/// fixture. A reader that can only be pointed at the real file cannot be shown
-/// to bite.
-///
-/// # Errors
-///
-/// Returns the reason as a string when the source does not parse, when no
-/// method named [`DISPATCHER`] holds a `match`, or when an arm pattern is a
-/// shape this reader does not classify. **All three fail closed**: an
-/// unreadable dispatcher reports *nothing* reachable rather than everything,
-/// which is the direction that makes a caller notice.
 pub(super) fn read_arms(src: &str, consts: &BTreeMap<String, String>) -> Result<Arms, String> {
     let file = syn::parse_file(src).map_err(|e| {
         // ui-text-exempt: a test failure message, never displayed to an operator.
@@ -322,10 +290,6 @@ fn guard_subject_fn(expr: &syn::Expr) -> Option<String> {
 }
 
 /// Every `&'static str` constant declared at the top level of `src`.
-///
-/// Only `const NAME: &str = "value";` is recognised, which is the one shape an
-/// arm pattern can name. A constant built from an expression is not a pattern
-/// Rust would accept either, so nothing is lost by not resolving one.
 pub(super) fn string_consts(src: &str) -> BTreeMap<String, String> {
     let Ok(file) = syn::parse_file(src) else {
         return BTreeMap::new();
@@ -355,12 +319,6 @@ pub(super) fn string_consts(src: &str) -> BTreeMap<String, String> {
 pub(super) use guards::{EVALUATED_GUARDS, guard_claiming};
 
 /// Whether `id` is routed by some arm of `arms`.
-///
-/// The guard half consults **both** sides: a guard function may claim the
-/// id, *and* the dispatcher must actually have an arm that consults that
-/// function. Checking only the first would keep vouching for a family whose
-/// guard arm had been deleted — the mapping would still answer and four ribbon
-/// buttons would silently stop working, which is precisely the shape
 pub(super) fn is_routed(id: &str, arms: &Arms) -> bool {
     arms.literals.contains(id)
         || guard_claiming(id).is_some_and(|guard| arms.guards.contains(guard))

@@ -14,14 +14,6 @@ pub const REGION_BODY: &str = "dialog:about"; // ui-text-exempt: trace region na
 
 /// The About dialog. Its existence is its "open" state — see
 /// [`super::DialogsState`]'s header for why there is no `open: bool`.
-///
-/// It holds **no configuration at all**, which is unusual for a dialog and is
-/// the honest shape here: everything it shows is a constant, so there is
-/// nothing for the operator to change and nothing for closing it to forget.
-/// It is still a struct rather than a bare `bool` so that it sits in
-/// [`super::DialogsState`] under the same idiom as every other dialog; a
-/// second, simpler mechanism for one surface is how two ways to do one thing
-/// get started.
 #[derive(Debug, Default)]
 pub struct AboutDialog {
     /// Set by the Close button, consumed by [`Self::show`].
@@ -34,11 +26,6 @@ pub struct AboutDialog {
 
 impl AboutDialog {
     /// Build the dialog.
-    ///
-    /// Takes nothing, because it shows nothing that varies. Kept as a
-    /// constructor rather than letting callers write `AboutDialog::default()`
-    /// so that the day it *does* need something — a build identity, a
-    /// packaged-build marker — the call sites do not have to change.
     #[must_use]
     pub(super) fn open() -> Self {
         Self::default()

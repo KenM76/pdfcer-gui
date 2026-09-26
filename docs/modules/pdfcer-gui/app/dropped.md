@@ -102,3 +102,31 @@ They are two lists in two files, and this is the test that stops them
 drifting — the day someone adds `webp` to the file dialog and an operator
 discovers that the format they can *choose* is one they cannot *drop*.
 The module's own comment says why they are not one constant.
+
+### `enum Dropped`
+
+Named rather than answered as a `bool` pair, because the four outcomes have
+four different sentences and a caller reading two booleans would have to
+re-derive which combination means what.
+
+### `fn classify`
+
+# Why the extension and not the bytes
+
+
+A `.pdf` that is not a PDF therefore produces the *parser's* error, which is
+the specific one, rather than "pdfcer does not accept this kind of file",
+which would be wrong.
+
+### `fn resolve`
+
+`has_document` decides whether an image can be placed at all; the caller
+knows it and this module does not need the whole `OpenDoc` to find out.
+
+Returns the image to insert, if one was dropped and can be — the caller owns
+the picker-and-dialog path and this module deliberately does not reach into
+it.
+
+It is handed the files rather than reading them. See the header: the
+position-aware half of the feature has to read the input first, and two
+readers of one `dropped_files` would each see it and each act.

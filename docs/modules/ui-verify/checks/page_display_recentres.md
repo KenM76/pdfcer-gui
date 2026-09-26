@@ -114,3 +114,10 @@ Both are read from the **same** trace snapshot: reading them from two
 snapshots is how a check comes to compare a strip from one frame against a
 viewport from another, which on a frame where a scroll bar appeared is a
 difference of fifteen points for no reason at all.
+
+### `fn enter_display`
+
+Shared with [`crate::checks::raster_wall`]. Kept here rather than moved to
+`driving` because it is specific to the View tab's display-mode group, and a
+helper in `driving` implies every check may reach for it; the two callers
+that legitimately may are both in this file's neighbourhood.

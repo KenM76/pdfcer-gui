@@ -9,21 +9,12 @@ use crate::app::PdfcerApp;
 use crate::app::state::Status;
 
 /// **Whether this module owns `id`.**
-///
-/// The same shape [`super::pages::handles`] uses, and for the same reason: the
-/// `match` in `super` stays a list a reader can scan, and the routing predicate
-/// lives beside the bodies it routes to — so a new verb here is one edit rather
-/// than two.
 #[must_use]
 pub fn handles(id: &str) -> bool {
     matches!(id, "file.copy_page_text" | "file.copy_document_text")
 }
 
 /// Act on one of [`handles`]' ids.
-///
-/// Takes the whole application rather than a `&Status`, because one of the two
-/// bodies records a decline and both read caches that live on the open
-/// document.
 pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str) {
     match id {
         // **The page's text comes from the per-page extraction cache**

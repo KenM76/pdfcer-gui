@@ -11,30 +11,12 @@ use crate::app::assoc::{self, Registration, Status};
 use crate::text::assoc as t;
 
 /// The state line's region.
-///
-/// Named for [`super::acrobat::REGION_RESOLVED`]'s reason exactly: the whole
-/// value of this line is that it is **on screen and legible**, and a driven
-/// check that read the trace instead would learn what pdfcer found and nothing
-/// about whether the operator can see it.
 pub const REGION_STATE: &str = "settings:defaultapp.state"; // ui-text-exempt: trace region name, never displayed
 
 /// The button's region.
 pub const REGION_ACTION: &str = "settings:defaultapp.action"; // ui-text-exempt: trace region name, never displayed
 
 /// What this group knows about the machine, for one opening of the window.
-///
-/// **The `Option` is the whole design.** Every field in [`Status`] costs a
-/// `reg.exe` process to obtain, and a Settings pane redraws on **every frame**
-/// — so probing from [`group`] unconditionally would spawn two processes sixty
-/// times a second. `super::acrobat`'s header states the identical rule for the
-/// identical reason. Filling it lazily on the first paint gives exactly one
-/// probe per opening of the window, and pressing the button clears it so the
-/// next frame reads the machine again.
-///
-/// ⇒ It is deliberately **not** filled in [`super::Draft::focused_on`]. Draft
-/// construction happens in unit tests that never paint, and a constructor that
-/// spawned subprocesses would make every one of them slower and one of them
-/// machine-dependent.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct State {
     /// What the machine said, read once per opening. See the type's own note.
@@ -49,27 +31,12 @@ pub struct State {
 
 impl State {
     /// Forget what was read, so the next paint reads the machine again.
-    ///
-    /// Called after the button acts, because the act changes two of the three
-    /// things the line reports. It does **not** clear [`Self::note`]: the note
-    /// says what pdfcer just did, the status says what Windows now thinks, and
-    /// conflating them is how a surface starts claiming an outcome it caused
-    /// only half of.
     pub fn forget(&mut self) {
         self.status = None;
     }
 }
 
 /// **What Windows currently opens PDFs with, and where pdfcer stands.**
-///
-/// Two facts, in that order, because they answer two different questions and an
-/// operator arrives with one of them: *"why did Edge open?"* is answered by the
-/// first, and *"did the button work?"* by the second.
-///
-/// The second is suppressed when pdfcer already **is** the default, because
-/// then it says nothing the first has not: being the chosen program implies
-/// being in the list, and a second sentence restating it would train the reader
-/// to skip the pair.
 #[must_use]
 pub fn state_line(status: &Status) -> String {
     let owner = if status.is_default() {

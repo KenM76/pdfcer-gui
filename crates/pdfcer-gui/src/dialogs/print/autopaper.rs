@@ -15,11 +15,6 @@ const FIT_TOLERANCE_PT: f64 = 2.0;
 
 /// **What auto selection decided**, in a form both the plan and the disclosure
 /// can read.
-///
-/// One value carries the outcome *and* the evidence for it, so the sentence
-/// under the combo can never describe a different decision from the one the
-/// job was planned with — the same pairing argument
-/// `crate::panels::docprops::offered_reading` makes for a label and a policy.
 #[derive(Debug, Clone, PartialEq)]
 pub(super) enum AutoPaper {
     /// Auto selection is not the operator's choice, so nothing was computed.
@@ -61,12 +56,6 @@ pub(super) struct Match {
 
 impl AutoPaper {
     /// The concrete paper choice this outcome resolves to.
-    ///
-    /// [`AutoPaper::NotChosen`] cannot legitimately be asked — the caller only
-    /// resolves when the operator picked auto — but it answers
-    /// [`PaperChoice::DeviceDefault`] rather than panicking, for the reason
-    /// [`choose`]'s unreachable arm gives: a print dialog that unwraps is a
-    /// print dialog that can take the application down mid-job.
     pub(super) fn resolved(&self) -> PaperChoice {
         match self {
             Self::Matched(m) | Self::TooBig(m) => PaperChoice::Form(m.id),
@@ -76,15 +65,6 @@ impl AutoPaper {
 }
 
 /// **A stable one-word token for what the operator chose**, for the trace.
-///
-/// # ⚠ Why this exists rather than `{:?}` on the enum
-///
-/// A machine reads it. This project has already shipped a driven check that
-/// reported the opposite of the truth because it was parsing a `Debug` tuple,
-/// and `PaperChoice::Form(9)` contains a space in no rendering but does carry
-/// punctuation a naive `key=value` split will mangle. These three tokens
-/// contain no whitespace, no punctuation and no numbers, and their spelling is
-/// pinned by a test.
 pub(super) fn pick_token(choice: PaperChoice) -> &'static str {
     match choice {
         // ui-text-exempt: a diagnostic token, never displayed in the UI.
@@ -97,10 +77,6 @@ pub(super) fn pick_token(choice: PaperChoice) -> &'static str {
 }
 
 /// **A stable one-word token for how the choice came out**, for the trace.
-///
-/// The companion to [`pick_token`], and the field that makes a driven check
-/// able to tell "auto matched A4" from "auto was chosen and found nothing".
-/// Both leave `pick=auto`; only this field separates them.
 pub(super) fn outcome_token(outcome: &AutoPaper) -> &'static str {
     match outcome {
         // ui-text-exempt: a diagnostic token, never displayed in the UI.
@@ -115,19 +91,6 @@ pub(super) fn outcome_token(outcome: &AutoPaper) -> &'static str {
 }
 
 /// **A point-pair as one whitespace-free token**, for the trace: `"595.28x841.89"`.
-///
-/// # ⚠ Why this exists rather than `{:?}` on the tuple
-///
-///
-/// Two decisions inside it:
-///
-/// - **Two decimal places, always.** Fixed rather than `{}` so the spelling is
-///   deterministic — `1190.4` and `1190.40` are the same number and two
-///   different tokens, and a check that string-compares a before and an after
-///   would see a change that did not happen. 0.01 pt is 3.5 micron, two orders
-///   below the 2 pt fit tolerance, so nothing is lost by rounding here.
-/// - **`none` for absent**, not `None`: lower-case, no punctuation, and it
-///   reads the same as the other absent-value tokens on the same line.
 pub(super) fn size_token(size: Option<(f64, f64)>) -> String {
     match size {
         // ui-text-exempt: a diagnostic token, never displayed in the UI.
@@ -137,21 +100,6 @@ pub(super) fn size_token(size: Option<(f64, f64)>) -> String {
 }
 
 /// **The largest page the auto decision measured**, as a [`size_token`].
-///
-/// This is the field that makes O167 checkable from outside the process,
-/// and it is worth saying why the other three are not enough. `pick=auto` says
-/// the operator chose the policy; `auto=matched` says the decision ran;
-/// `paper=Form(8)` says it was turned into a request. **None of them says the
-/// sheet has anything to do with this document.** A build that resolved auto
-/// to the first form in the driver's list would emit all three, correctly, and
-/// be completely wrong — and the operator's words were *"based on the page
-/// sizes in the pdf"*.
-///
-/// With this beside `sheet=`, a driven check can assert the actual invariant:
-/// `matched` means the largest page fits the chosen sheet either way round,
-/// and `toobig` means it does not. That is the rule the module header states,
-/// measured against a real driver's geometry rather than against the fixture
-/// list a unit test supplies.
 pub(super) fn largest_token(outcome: &AutoPaper) -> String {
     match outcome {
         AutoPaper::Matched(m) | AutoPaper::TooBig(m) => size_token(Some(m.largest_page_pt)),
@@ -160,11 +108,6 @@ pub(super) fn largest_token(outcome: &AutoPaper) -> String {
 }
 
 /// **Whether the job has more than one page size**, as a stable token.
-///
-/// `off` rather than `no` when auto was never chosen, because "this job is not
-/// mixed" and "nobody asked" are different answers and a check that read the
-/// first for the second would be asserting a property of a decision that never
-/// happened. The same three-state care as `outcome_token`, one field along.
 pub(super) fn mixed_token(outcome: &AutoPaper) -> &'static str {
     match outcome {
         // ui-text-exempt: a diagnostic token, never displayed in the UI.
@@ -193,15 +136,6 @@ fn area(sheet: (f64, f64)) -> f64 {
 }
 
 /// **The whole decision**: which sheet this job should be asked for.
-///
-/// `page_sizes` are the pages of the job at their **rotated** extents — the
-/// same measurement the preview and the canvas use, so all three agree by
-/// construction. Passing raw `/MediaBox` sizes here would choose portrait
-/// sheets for `/Rotate 90` landscape drawings.
-///
-/// Returns [`AutoPaper::NoBasis`] rather than an `Option`, so that every caller
-/// has to name what it does about the no-basis case rather than reaching for
-/// `unwrap_or_default`.
 pub(super) fn choose(forms: &[PaperForm], page_sizes: &[(f64, f64)]) -> AutoPaper {
     let Some(&first) = page_sizes.first() else {
         return AutoPaper::NoBasis;
@@ -279,14 +213,6 @@ pub(super) fn choose(forms: &[PaperForm], page_sizes: &[(f64, f64)]) -> AutoPape
 
 impl super::PrintDialog {
     /// **The disclosure sentence for auto paper selection**, for the paper tab.
-    ///
-    /// Keeping the four outcomes in one `match` is what stops a state from
-    /// silently having no sentence. A control with no line under it, where
-    /// every other state has one, reads as a control that failed.
-    ///
-    /// [`AutoPaper::NotChosen`] is unreachable from the caller — it only asks
-    /// when the operator picked auto — but it answers the no-basis sentence
-    /// rather than an empty string, for the same reason.
     pub(super) fn auto_paper_line(&self) -> String {
         match &self.auto_paper {
             AutoPaper::Matched(m) => t::paper_auto_matched(&m.name, m.sheet_pt, m.largest_page_pt),
@@ -296,11 +222,6 @@ impl super::PrintDialog {
     }
 
     /// Does this job have more than one page size?
-    ///
-    /// `false` unless auto selection actually ran and found one, so the extra
-    /// sentence cannot appear beside a hand-picked sheet — where it would be
-    /// true but pointless, the operator having already chosen the sheet
-    /// themselves.
     pub(super) fn auto_paper_is_mixed(&self) -> bool {
         match &self.auto_paper {
             AutoPaper::Matched(m) | AutoPaper::TooBig(m) => m.mixed,

@@ -192,3 +192,90 @@ it happened to sort beside, and the disclosure would then be attached to
 rows it is not true of. The enum is `Copy` and cheap; this asserts it is
 also actually compared somewhere, which is what a `derive(PartialEq)` on
 an unused field would not be.
+
+### `enum FaceOrigin`
+
+Two variants and not a `bool`, because the call sites read as prose this
+way and because a third origin is foreseeable: `Pass 142.0` would let pdfcer
+subset and embed a face from the operating system, which is a third act with
+a third set of consequences (a real font program in the file, and a face that
+then renders identically everywhere). A `bool` would have to be replaced on
+that day; this enum gains an arm and the compiler names every place that has
+to say something new about it.
+
+### `fn choices`
+
+# What each half is, and why the second half is not simply "the fourteen"
+
+**The page's own faces** come from `FontPreflight::accepted()` — every
+`/Font` resource on this page that `set_font` would accept for this run's
+characters, each carrying the selector that reaches *that* resource. A
+refused one is deliberately absent rather than greyed: the refusals are
+per-character encoding facts (*"'o' has no code in Times-Bold's encoding"*),
+and a list of twelve faces with nine greyed rows each carrying a sentence
+about a character is a control an operator cannot read. R9's
+absent-rather-than-greyed case: for THIS run those faces are not a capability
+that is temporarily unavailable, they are not applicable.
+
+**The addable faces** are `Std14::ALL` minus every standard-14 name the page
+already carries **in any form** — accepted or refused. That second word is
+the load-bearing one and it is not a courtesy:
+
+`plan_font` calls `resolve_target_resource` first and authors a face only
+when that misses. So a page carrying a `Helvetica` that this run's characters
+cannot be encoded into would resolve the selector `Helvetica` to **that**
+resource and refuse it — while a row labelled *"pdfcer can add Helvetica"* had
+promised the opposite. Filtering on `entries` rather than on `accepted()`
+keeps the row out of the list entirely, which is the same answer the page
+half gives for the same face.
+
+The name comparison strips the §9.6.4 subset tag ([`super::text::shorten`])
+before matching, because a page carrying `ABCDEF+Helvetica` is a page that
+carries Helvetica as far as `set_font`'s own `/BaseFont` match is concerned.
+
+# Ordering
+
+Page faces first, in the engine's dictionary order; then the fourteen in
+`Std14::ALL`'s order, which groups the families (Helvetica, Times, Courier,
+then the two symbolic faces) and is a spec-frozen constant the engine
+publishes for exactly this use. Nothing here re-types the fourteen names.
+
+# `None`
+
+An absent pre-flight means the run did not pin or the preview refused, and
+the answer is an **empty list** rather than the fourteen on their own. The
+standard-14 half is filtered *by* the pre-flight; without one, offering it
+would mean offering `Helvetica` on a page whose own `Helvetica` would take
+the click — the exact entry-that-cannot-work this function's second half is
+written to avoid.
+
+### `fn popup_body`
+
+`current` is the run's `/BaseFont` **already shortened** — the string a row's
+label is compared against to decide which row is the selected one. `prefix`
+is the region namespace this surface publishes under, so the panel's copy and
+the ribbon's copy are separately findable by a driven check.
+
+Returns `Some(selector)` on the frame a row is clicked, and `None` on every
+other frame — including the frames the operator spends reading the list,
+which is most of them.
+
+# Nothing is held between frames, because the document is the state
+
+`selectable_label`, never `selectable_value`. A press here is an **edit**,
+not a choice to be committed later, and a widget holding a pending value
+would be a second place the current face is recorded — which is how a control
+comes to disagree with the file it is about.
+
+# The disclosure is drawn once, visibly, and only when it is owed
+
+Not a hover, and not a hover repeated on fourteen rows. It is owed to every
+operator who opens this list — including the one who reads it and chooses
+nothing — and a hover is a sentence they would have to go looking for.
+Fourteen copies of it would be the nag the brief for this work explicitly
+rules out.
+
+It is drawn only when at least one addable row exists, so a page already
+carrying all fourteen never shows it. See
+[`crate::text::panels::face::face_addable_disclosure`] for what the sentence
+has to contain and why each clause is there.

@@ -48,3 +48,54 @@ rather than by remembering what pdfcer did.
   question's words.
 - **Ask again**, not *"show this again"*, in the checkbox — the thing being
   suppressed is a question, not a notification.
+
+## Item notes
+
+### `fn title`
+
+Deliberately identical. The dialog is the offer and the group is where the
+offer lives afterwards; an operator who ticks *"don't ask again"* and then
+changes their mind is looking for the words they dismissed, and finding a
+differently-named group is how a feature is concluded not to exist.
+
+### `fn body`
+
+Two sentences: what pdfcer does, then what is left for the operator. The
+second is not a caveat tucked underneath — it is half the act, and an
+operator who is not expecting a Windows dialog will read that dialog as
+something going wrong.
+
+### `fn later`
+
+*"Not now"* rather than *"Cancel"*: cancelling implies the offer is
+withdrawn, and it is not — it is in Settings, permanently, which is the
+whole point of the operator's *"then it should be in the top of our
+settings"*.
+
+### `fn state_other`
+
+The ProgID is shown raw. It is not a friendly name and there is no
+reliable way to turn one into a friendly name — `AppXd4nrz…` is what Windows
+stores for Edge — but it is *stable and searchable*, and an operator who
+wants to know what has the association can paste it somewhere. A prettier
+string that guessed would eventually name the wrong program.
+
+### `fn state_registered_elsewhere`
+
+⚠ The state worth calling out, because it is the one that looks like it
+works and does not: a portable build gets unzipped somewhere new, and the
+registration still names the old folder. Double-clicking then opens a build
+the operator thought they had replaced — or nothing, if the old folder is
+gone.
+
+### `fn no_exe_path`
+
+Rare enough to be surprising and real enough to need a sentence:
+`current_exe` is documented as able to fail. Saying so plainly beats a
+button that does nothing.
+
+### `fn settings_page_refused`
+
+⇒ The instruction is the fallback: this names the route through the Settings
+app, because an operator who cannot reach the page by link can still reach
+it by hand, and a refusal with no way forward is just an apology.

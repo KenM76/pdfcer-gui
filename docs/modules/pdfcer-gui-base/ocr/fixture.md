@@ -254,3 +254,78 @@ unless you have shown the thing that would have produced it was
 working* — applies just as much to a unit test. Without this, an
 extractor that returned nothing for **every** document would satisfy the
 assertion above perfectly.
+
+### `const LINES`
+
+The first version of this fixture was two words in 28 pt on an otherwise
+blank card, on the reasoning that a legible fixture is one that fails only
+for real reasons. **It failed for a real reason, and the reason is worth the
+paragraphs below**, because it is a fact about the engine pdfcer ships that
+nothing in either repository knew.
+
+### What happened
+
+`ocrs`'s detection model produced a *perfect* probability map -- four clean
+blobs, exactly over the four words. Measured, not assumed: the map was
+dumped and its connected components counted by hand, and there were four, at
+the right places and the right sizes. And `ocrs::detect_words` returned
+**three** rectangles, the first of which was the entire page.
+
+The cause is a threshold, and it is in the open.
+`TextDetectorParams::default()` sets `text_threshold: 0.2`, under the
+upstream comment *"Ideally the threshold would be 0.5 as a neutral value."*
+On this fixture the model's output over blank paper measured **0.148 to
+0.208** -- straddling that threshold. So the background itself binarised as
+text in patches, the patches connected, and one component swallowed the
+page. The recogniser was then handed the whole sheet squeezed into a
+127 x 64 line crop, and returned `"SE"`, `"1"`, `"P"`.
+
+### Why the FIXTURE changed and not the threshold
+
+Raising `text_threshold` would have been one line, and would have been
+**tuning the tool until the test passed** -- the flattering-fixture failure
+run in reverse. The
+threshold is upstream's, chosen empirically against upstream's training
+distribution, and this project has no evidence on which to overrule it.
+
+What was actually wrong was the fixture's *representativeness*. `ocrs` is
+trained on HierText -- photographs and dense document pages -- and a sheet
+that is 96 % blank paper is neither. **A page of text is.** So the fixture
+became one: fourteen lines at a realistic size and spacing, which is both
+what the feature will meet and what the model was trained against.
+
+### The finding stands regardless of this fixture
+
+**`ocrs` at its default threshold can fail catastrophically on a sparse,
+clean page** -- not degrade, fail: one whole-page "word" and three
+characters of output. A scanned drawing with a small title block on a large
+empty sheet is exactly that shape, and it is the shape this project's own
+documents come in. It is recorded here rather than as a comment on a passing
+test, and it is in the report to the operator.
+
+### Why these words
+
+### `const MUST_RECOGNISE`
+
+A subset of [`LINES`], and deliberately the ones a reader most often needs
+Find to reach on a real drawing -- a drawing number and a revision -- two of
+which carry digits, exercising a different part of the model's alphabet from
+the prose.
+
+### `const MULTIPAGE_PAGES`
+
+**Eight, and the number was measured rather than chosen.** One page of
+this fixture recognises in roughly a second in a release build, and a page
+of the operator's own scanned parts manual measured **2.6 s** through
+`pdfcer ocr`. Eight pages is therefore a run of eight to twenty seconds:
+
+* long enough that a driven check can watch `attempted` climb, press Stop
+  with pages still to go, and have the result be unambiguous — a Stop that
+  lands on the last page is indistinguishable from a run that finished;
+* short enough that three driven checks over it cost under a minute, which
+  is what keeps them in the ordinary sweep rather than in a "slow" tier
+  nobody runs.
+
+It is also **not** a round number by accident: it matches the eight pages
+extracted from the operator's manual for the real-material run, so the two
+reports are read side by side without arithmetic.

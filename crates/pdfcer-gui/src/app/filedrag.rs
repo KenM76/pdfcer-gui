@@ -11,11 +11,6 @@
 use std::path::PathBuf;
 
 /// A drop that has landed and has not yet been claimed.
-///
-/// Carries **every** path, not just the first. The claiming surface needs to
-/// know how many arrived so it can say so, and `dropped`'s
-/// "only the first" rule is that module's decision to make rather than this
-/// one's — this module's job ends at *where*.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Landed {
     /// The files, in the order the platform delivered them.
@@ -51,12 +46,6 @@ fn id(key: &str) -> egui::Id {
 
 /// **Read this frame's drops and keep a hovering drag alive.** Call once, at
 /// the top of the frame, before anything is drawn.
-///
-/// Records a [`Landed`] when files arrived, so that a surface drawn later in
-/// the same frame can claim it. Requests a repaint while a file is hovering,
-/// because otherwise there would not *be* a later frame: `egui` repaints on
-/// events, a hovering file produces exactly one (`HoveredFile`, on entry), and
-/// a caret that appeared once and then froze would be worse than no caret.
 pub fn poll(ctx: &egui::Context) {
     FIRST_FRAME.with(|c| {
         let _ = c.set(std::time::Instant::now());
@@ -99,10 +88,6 @@ pub fn poll(ctx: &egui::Context) {
 }
 
 /// Whether a file is being dragged over the window right now.
-///
-/// `hovered_files` is **cloned** rather than taken by `egui`'s `RawInput`, so
-/// it stands for as long as the drag does and this is a state rather than an
-/// edge — which is what makes a per-frame caret possible.
 #[must_use]
 pub fn hovering(ctx: &egui::Context) -> bool {
     ctx.input(|i| !i.raw.hovered_files.is_empty())
@@ -153,11 +138,6 @@ pub fn landed(ctx: &egui::Context) -> Option<Landed> {
 }
 
 /// **Take the drop**, because this surface has decided it is theirs.
-///
-/// A surface calls this only once it has resolved what the drop means on its
-/// own geometry — not merely because the point is inside its rectangle. A
-/// claim it cannot act on would be worse than no claim, because the fallback
-/// has already been skipped by then.
 pub fn claim(ctx: &egui::Context) -> Option<Landed> {
     ctx.data_mut(|d| {
         let taken = d.get_temp::<Landed>(id(LANDED_KEY));
@@ -169,21 +149,11 @@ pub fn claim(ctx: &egui::Context) -> Option<Landed> {
 }
 
 /// **Whatever no surface claimed**, for the end of the frame.
-///
-/// The same operation as [`claim`] and a different *name*, because the two
-/// call sites mean opposite things and a reader of `app::frame` should not
-/// have to work out which one a bare `claim()` is. There is exactly one caller
-/// of this, and it is the fallback.
 pub fn unclaimed(ctx: &egui::Context) -> Option<Landed> {
     claim(ctx)
 }
 
 /// **Plant a landing**, for the tests of a surface that claims one.
-///
-/// `#[cfg(test)]` rather than a public seam: a landing is written by exactly
-/// one function in the running program ([`poll`]), and a second writer would
-/// be a second answer to *"was a file dropped?"* that could disagree with the
-/// input it is supposed to be reporting.
 #[cfg(test)]
 pub fn test_land(ctx: &egui::Context, landing: Landed) {
     ctx.data_mut(|d| d.insert_temp(id(LANDED_KEY), landing));

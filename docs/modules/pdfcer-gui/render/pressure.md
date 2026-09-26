@@ -94,3 +94,69 @@ would hide it. Acting on it is `out_of_memory`'s job, at the call site.
 Pins the two halves together: a `record_*` that stashed under one id and
 a `take` that read another would silently report `NoUploads` forever,
 which is indistinguishable from a healthy session.
+
+### `enum Surface`
+
+Not derivable from the pixels: a page thumbnail and the canvas raster are
+built from the same [`RenderKey`] type, by the same function, and differ
+only in what they are *for*. Passed in at the call site so that adding a
+fourth surface is a compile error rather than a silent miscount.
+
+### `struct Raster`
+
+An icon has no page and no zoom; giving it a page number would be a right
+value in the wrong role, and the trace would read as though the operator
+were at scale 1.0 on page 0.
+
+### `enum Unattributed`
+
+Each variant is a distinct thing to learn from a trace, which is why this
+is not a `bool`: *"the failure had nothing to do with the canvas"* and
+*"the failure was one of four uploads and we cannot say which"* call for
+different next moves, and collapsing them would hide that.
+
+### `fn attribute`
+
+Split out from [`poll`] because the rule is the part that can be wrong and
+the GL call is the part that cannot be tested. A caller acting on a
+[`Attribution::Blamed`] is acting on this function alone.
+
+### `fn record_raster`
+
+Called from [`crate::render::raster::texture_from_pixels`], which both the
+canvas and the thumbnails go through — hence `surface`, which that function
+cannot work out for itself.
+
+### `fn record_other`
+
+The icon sheet and the print preview. Neither can be blamed for a
+zoom-dependent failure, and that is exactly why they are recorded: an
+unrecorded upload makes a two-upload frame look like a one-upload frame,
+and the one left standing is blamed for the other's failure.
+
+### `fn poll`
+
+`gl` is `None` when the backend is not glow or the context has gone away
+during shutdown; the previous frame's record is still cleared in that case,
+because a record kept across frames would be attributed to the wrong one
+the moment a context came back.
+
+**Traces only when something was drained.** A line per frame would be sixty
+a second of "nothing happened", which is how the one line that matters
+becomes unfindable.
+
+This does not change any ceiling. Per `DESIGNS.md`, the measurement with
+one, three and six documents open is owed before anything acts on it.
+
+### `fn trace_texture_limit`
+
+⚠ **Read every frame, never cached.** `egui` defaults
+`InputState::max_texture_side` to 2048 and only learns the true figure once
+the backend has supplied it through `RawInput` — so a value captured at
+startup is a plausible-looking number that belongs to no device. Reading it
+every frame costs one field access and cannot go stale.
+
+Trace-only. The whole-page tier's budget is an edge count that admits
+16383², which is over the limit on some devices and under it on others; the
+guard that uses this figure is a separate change, and on the operator's own
+card it is expected to be inert.

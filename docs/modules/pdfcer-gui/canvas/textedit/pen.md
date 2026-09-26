@@ -95,3 +95,53 @@ The count is the claim: `Std14` has fourteen members, and a list that
 quietly held thirteen would be a face an operator could never reach
 with no error anywhere. Asserted as a set as well as a length, so a
 duplicate cannot make up the number.
+
+### `struct TextPen`
+
+# Why the colour is `[u8; 3]` and not the engine's `NewTextColor`
+
+Because the engine's type has a `Black` variant *and* an `Rgb` variant, and
+`Rgb(0, 0, 0)` is a third spelling of the same ink. A control bound to it
+would let an operator reach black two ways and would then have to decide
+which one a colour picker produces — a distinction with no meaning on the
+page.
+
+So this holds the operator's answer in the one form a colour picker speaks,
+and [`Self::colour`] resolves it, **preferring `Black`** where it can:
+`0 g` is one operator and one byte where `0 0 0 rg` is four, and pdfcer's
+standing preference is the smaller edit where the two are equivalent.
+
+### `const MIN_SIZE_PT`
+
+Below about four points a Standard-14 face is unreadable at any zoom this
+shell allows, so a smaller value would be a number an operator could set and
+could not then find on the page.
+
+### `const MAX_SIZE_PT`
+
+A title block's largest text is rarely past 24 pt and a drawing title rarely
+past 48; 144 is two inches, which is beyond any use this operator's
+documents have and is a round number to stop at rather than a measured one.
+
+### `fn engine_face`
+
+Kept even though `apply` reaches for `AddTextRequest::with_font`,
+which takes a bare `Std14`. The two builders exist because
+`NewTextFace` has a second variant — `Embedded(Box<FontEmbedPlan>)` —
+and this is the accessor a donor-font surface will use when it lands.
+It is a **statement about the boundary**, and its test is what would
+notice if `Std14` stopped being expressible as a `NewTextFace`.
+
+### `fn size`
+
+Applied at **read** time rather than at write time, so a
+hand-edited or future value that falls outside the range is corrected
+where it is used rather than silently rewritten where it is stored —
+the same rule `app::prefs`' loader follows for a clamped setting.
+
+### `const FACES`
+
+Grouped by family and then by weight — Helvetica, Times, Courier, Symbol,
+ZapfDingbats — because that is how an operator looks for a face, and it is
+the order Acrobat's own font list uses. **Not** alphabetical, which would
+interleave the four Helveticas with the four Times.

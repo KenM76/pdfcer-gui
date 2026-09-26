@@ -25,11 +25,6 @@ mod absorb;
 
 /// How long a zoom must stop changing before it is committed to a real
 /// rasterization.
-///
-/// Long enough to swallow a whole wheel gesture, short enough that a
-/// deliberate single step does not feel laggy. 150 ms is the value the old
-/// shell settled on against real CAD sheets; it is a constant rather than a
-/// literal so the next person to tune it does so once, with a paper trail.
 pub const ZOOM_SETTLE: Duration = Duration::from_millis(150);
 
 /// The [`crate::diag::trace_changed`] slot for *"the page being looked at was
@@ -109,46 +104,6 @@ impl OpenDoc {
 
     /// **Can this strip page be ordered at all at this raster scale?** —
     /// O186, 2026-09-12.
-    ///
-    /// A strip page is always handed `region: None`: `OpenDoc::region_for`
-    /// refuses a region for any page but the current one, deliberately, because
-    /// a region is expressed in one page's own coordinate space and applying
-    /// page 4's rectangle to page 5 would rasterize the wrong part of the
-    /// neighbour with nothing reporting an error. So for a strip page the
-    /// renderer's whole-sheet pixmap ceiling is not a *tier boundary* — it is a
-    /// wall, and above it there is nothing to ask for.
-    ///
-    /// # Why this exists as one function rather than two conditions
-    ///
-    /// Three callers need the same answer and they must never disagree:
-    ///
-    /// * [`Self::fill_strip`] uses it to **not place an order** it knows cannot
-    ///   be filled — the fix for the operator's
-    ///   `requested raster size 50411508x32619210` (see
-    ///   [`crate::render::strategy::whole_page_raster_fits`] for the full
-    ///   measurement, including why the failing sheet was never the one he was
-    ///   looking at);
-    /// * [`Self::strip_page_state`] uses it to say the **true** thing about the
-    ///   resulting empty page. If only the first caller existed, the page would
-    ///   report itself as `Waiting` — *"not drawn yet"* — for a picture that is
-    ///   never coming at this zoom. That is the wrong-refusal-sentence class of
-    ///   defect: the sentence is read as an answered question and nobody
-    ///   investigates.
-    /// * `render::prefetch` applies it to every band candidate, so a sheet
-    ///   that cannot be ordered on arrival is not ordered ahead of time
-    ///   either. Without it render-ahead would spend its whole budget
-    ///   re-offering the same unorderable A1 every frame.
-    ///
-    /// # What it deliberately does NOT ask
-    ///
-    /// `strategy::for_page`. That is the union of this hard limit and the soft
-    /// ink one, and an ink page above the CMYK buffer ceiling answers `Region`
-    /// from it while its whole-page raster allocates perfectly well — so asking
-    /// the union here would leave a neighbour sheet blank at an ordinary zoom
-    /// to avoid a failure that was never going to happen.
-    ///
-    /// A page index past the end answers `false`: there is no sheet to order,
-    /// and [`Self::rasterize`] would discard the request anyway.
     #[must_use]
     pub fn strip_page_orderable(&self, page: usize, raster_scale: f32) -> bool {
         self.pages.get(page).is_some_and(|p| {
@@ -287,12 +242,6 @@ impl OpenDoc {
 
     /// What state a **strip** page is in, for
     /// [`crate::render::strip::draw_page_state`].
-    ///
-    /// `None` means "there is a current raster for it" — the caller draws the
-    /// texture. Asked by the canvas while drawing, which is why it takes the
-    /// key rather than deriving one: the canvas already knows this frame's
-    /// raster scale and deriving a second one here is how the drawn page and
-    /// the requested page come to disagree.
     #[must_use]
     pub fn strip_page_state(&self, page: usize, key: RenderKey) -> Option<PageState> {
         // Per-page (O74): a page whose own revision has not moved keeps its
@@ -340,11 +289,6 @@ impl OpenDoc {
 impl PdfcerApp {
     /// Decide whether the cached page textures are still valid and, if not,
     /// whether to re-rasterize now or wait for a zoom gesture to settle.
-    ///
-    /// See the module docs. Called once per frame, **after** the frame has
-    /// been laid out and its actions applied — which is what makes
-    /// `strip_visible` (published by the canvas during layout) available and
-    /// current.
     pub fn settle_and_rasterize(&mut self, ctx: &egui::Context, pixels_per_point: f32) {
         let Status::Open(doc) = &mut self.status else {
             return;

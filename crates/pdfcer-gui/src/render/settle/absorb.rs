@@ -17,13 +17,6 @@ use crate::render::worker::{RefusalKind, RenderKey, RenderOutcome};
 impl OpenDoc {
     /// Hand a page to the worker and, if it beats the in-frame budget, absorb
     /// the result immediately.
-    ///
-    /// `page_index` is passed rather than read from the view because this is
-    /// also how a **strip** page is requested, and a strip page is by
-    /// definition not the current one. Routing of the result is by the key's
-    /// own page — see [`OpenDoc::absorb_render`] — so a render that finishes
-    /// after the operator has scrolled lands wherever that page now belongs
-    /// rather than wherever it belonged when it started.
     pub(super) fn rasterize(&mut self, ctx: &egui::Context, page_index: usize, raster_scale: f32) {
         let Some(request) = self.render_request_for(page_index, raster_scale) else {
             // No such page. For the current page that means the index is past

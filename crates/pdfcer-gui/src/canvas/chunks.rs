@@ -19,12 +19,6 @@ use crate::canvas::target::{CanvasTargetProvider, TargetId};
 const ENABLED_KEY: &str = "pdfcer.text-chunks.enabled"; // ui-text-exempt: a memory key, never displayed
 
 /// The most chunk outlines drawn at once.
-///
-/// A backstop rather than the normal case. The largest text object measured on
-/// the operator's own `SW41177.pdf` holds 144 chunks; this is an order of
-/// magnitude above that, so a page that trips it is a page where the boxes would
-/// be a grey wash rather than an answer. When it trips, the count is disclosed
-/// off-canvas — an inference the operator cannot see still owes a report.
 pub const MAX_CHUNK_BOXES: usize = 2_000;
 
 /// The memory id for a key.
@@ -33,11 +27,6 @@ fn id(key: &str) -> egui::Id {
 }
 
 /// Are the chunk boxes switched on?
-///
-/// **`true` when nothing has been stored**, which is the same argument smart
-/// select makes: the switch exists so the boxes can be turned OFF, and an
-/// operator who has to find a checkbox before a feature he asked for appears has
-/// not been given the feature.
 #[must_use]
 pub fn enabled(ctx: &egui::Context) -> bool {
     ctx.data(|d| d.get_temp::<bool>(id(ENABLED_KEY)))
@@ -54,11 +43,6 @@ pub fn set_enabled(ctx: &egui::Context, on: bool) {
 }
 
 /// Mirror the persisted answer into the live one, once per frame.
-///
-/// The direction is strictly `Prefs` → memory, and the guard is not an
-/// optimisation: an unconditional write every frame would make the value
-/// impossible to change from anywhere else, which is how a mirror becomes an
-/// overwrite.
 pub fn sync(ctx: &egui::Context, on: bool) {
     if enabled(ctx) != on {
         ctx.data_mut(|d| d.insert_temp(id(ENABLED_KEY), on));
@@ -67,14 +51,6 @@ pub fn sync(ctx: &egui::Context, on: bool) {
 
 /// **Whether the boxes are drawn for `object`** — the switch is on and the
 /// object holds more than one chunk.
-///
-/// The gate on every gesture that narrows the selection to a chunk. Narrowing
-/// to a unit the operator cannot see is the unpredictability O215 ask 1
-/// reports, reached from the other side, so the rung is offered exactly where
-/// the boxes are and nowhere else. The second term is the same one [`outlines`]
-/// declines `single-chunk` on: a one-line object draws no box, so a click that
-/// descended into it would change the verb set with nothing on screen to say
-/// it had.
 #[must_use]
 pub fn boxed(ctx: &egui::Context, doc: &OpenDoc, object: TargetId) -> bool {
     enabled(ctx)
@@ -85,11 +61,6 @@ pub fn boxed(ctx: &egui::Context, doc: &OpenDoc, object: TargetId) -> bool {
 
 /// **The chunk of `object` under `point`**, in the same page space
 /// [`crate::canvas::input::probe`] asks its questions in.
-///
-/// The first hit, exactly as `probe` takes the first of `part_hits_of` — one
-/// rule, asked in two places, rather than two rules that agree today. `None`
-/// means the point is inside the block's box but not on any of its lines,
-/// which on a CAD note is most of the block.
 #[must_use]
 pub fn under(
     doc: &OpenDoc,
@@ -109,16 +80,6 @@ pub fn under(
 
 /// **Which chunks of `object` a released rubber-band takes**, ascending and
 /// unique, in the canvas space [`outlines`] draws in.
-///
-/// `crossing` is the band's own direction bit: a right-to-left drag takes
-/// anything it **touches**, a left-to-right one only what it **surrounds**.
-/// One rule at both rungs, because an operator who learns the direction on a
-/// page of objects and then finds it does not hold inside a text block has
-/// learned a rule with an exception in it.
-///
-/// Empty means the band reached no chunk, which is the caller's signal that
-/// this was not a chunk band at all — see [`crate::canvas::marquee::on_release`]
-/// for what it does with that.
 #[must_use]
 pub fn within(doc: &OpenDoc, object: TargetId, band: Rect, crossing: bool) -> Vec<usize> {
     let Some(provider) = doc.page_objects() else {
@@ -151,22 +112,6 @@ fn reaches(band: Rect, chunk: Rect, crossing: bool) -> bool {
 }
 
 /// Why no chunk outlines were drawn.
-///
-/// A fixed vocabulary rather than free text, for the reason
-/// `canvas::painting`'s `draw_anchors` states: the driven checks that read this
-/// trace all begin by asking whether the boxes appeared, and every one of them
-/// would otherwise have to guess whether the answer means *the program is
-/// broken*, *the aim is wrong* or *this is the normal case*.
-///
-/// | reason | what it means | what it is about |
-/// |---|---|---|
-/// | `switched-off` | the operator turned the boxes off | neither; normal |
-/// | `nothing-selected` | the boxes are on and nothing is selected | the driver: click a text block first |
-/// | `other-page` | everything selected is on a page this call is not painting | neither; continuous view |
-/// | `not-text` | the selection holds no text object | the driver, or the aim |
-/// | `single-chunk` | every selected text object holds one chunk | neither: a box on the whole block says nothing the selection outline does not |
-/// | `no-provider` | the page decomposition is not available this frame | the program, or a load still in flight |
-/// | `too-many-chunks` | past [`MAX_CHUNK_BOXES`]; the count is on the status bar | the document |
 pub type Declined = &'static str;
 
 /// Every reason [`outlines`] can decline with.
@@ -185,14 +130,6 @@ pub const DECLINED_REASONS: &[Declined] = &[
 
 /// **One canvas-space rectangle per chunk of every selected text object on
 /// `page_index`** — or the reason there are none.
-///
-/// Canvas space, not screen space: the projection is the painter's, and doing it
-/// here would bake this frame's scroll offset into a value the caller then
-/// projects again.
-///
-/// Callers hold the returned `Vec` rather than a `Ref` into the decomposition
-/// cache, deliberately. The borrow is taken and released inside this function,
-/// which is the discipline `app::cache::page_objects` asks of every reader.
 pub fn outlines(
     doc: &OpenDoc,
     selection: &SelectionState,

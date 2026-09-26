@@ -137,22 +137,9 @@ use egui::{Color32, Style};
 
 /// The luminance gap below which a rendered pair is considered
 /// unreadable.
-///
-/// 90 on a 0–255 crude luminance scale. The figure is inherited from the
-/// salvaged palette-level text test so that both gates agree about what
-/// "readable" means; a theme that satisfies one and not the other would
-/// produce two contradictory failures for one edit.
-///
-/// The shipped presets clear it comfortably. The tightest real pair is
-/// the Dark preset's focus ring — `accent` on `panel` — at 96.0.
 pub const READABLE_LUMA_GAP: f32 = 90.0;
 
 /// Which of `egui`'s five widget states a pair came from.
-///
-/// Mirrors `egui::style::Widgets`' fields. A local enum rather than a
-/// re-export because the point of it is to be *named in a failure
-/// message* — "the Active state's bg_fill" is the sentence that points at
-/// the line to change.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WidgetState {
     /// Not interactive at all: labels, separators, panel frames.
@@ -191,19 +178,6 @@ impl WidgetState {
 }
 
 /// Which of the two backgrounds a widget may paint with.
-///
-/// # Why both, and why this distinction is the whole defect
-///
-/// `egui` gives each widget state two background colours and lets each
-/// widget choose. `Button` and `SelectableLabel` paint `weak_bg_fill`;
-/// `CollapsingHeader` headers, `egui_tiles` tab buttons and several
-/// others paint `bg_fill`. A theme that assigns one and not the other has
-/// themed an arbitrary subset of its own widgets, and which subset is
-/// decided by `egui`'s internals rather than by the theme's author.
-///
-/// D2 is exactly that: `weak_bg_fill` was assigned the accent, `bg_fill`
-/// was not, and the widgets that lost were the ones nobody happened to
-/// look at.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FillKind {
     /// `WidgetVisuals::bg_fill` — used by `CollapsingHeader` headers,
@@ -235,20 +209,6 @@ impl FillKind {
 }
 
 /// A background that is **not** a widget's own fill.
-///
-/// # Why this exists at all
-///
-/// [`FillKind`] answers "which of a widget's two fills". This answers a
-/// different question — "what is behind a piece of text that is not
-/// inside a widget" — and the widget matrix has no way to express it,
-/// which is half of why ten pairs missed three defects.
-///
-/// The three grounds below are `egui`'s own, and each is reachable from a
-/// `Visuals` alone. They are not palette roles: a theme may point all
-/// three at one colour (this one points two of them at `Palette::panel`)
-/// and the gate must still name them separately, because a *later* theme
-/// may not, and because the failure message has to say which surface the
-/// reader should go and look at.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Ground {
     /// `visuals.panel_fill` — every `SidePanel`, `TopBottomPanel` and
@@ -298,15 +258,6 @@ impl Ground {
 
 /// A text colour `egui` resolves through a [`egui::Visuals`] accessor
 /// rather than storing in a `WidgetVisuals`.
-///
-/// # Why these are invisible to the widget matrix
-///
-/// Every one of them is computed at paint time from something other than
-/// the state's own `fg_stroke`. Reading the five `WidgetVisuals` back
-/// therefore cannot reach any of them — the same structural reason the
-/// selected pair was missed. Each variant's doc names the `egui` source
-/// line that renders it, because a role nobody can point at a renderer
-/// for should not be in this list.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TextRole {
     /// `visuals.text_color()` — `override_text_color` if set, else
@@ -422,21 +373,6 @@ impl TextRole {
 }
 
 /// Where a [`Pair`] comes from — the thing a failure message has to name.
-///
-/// # Why this replaced two plain fields
-///
-///
-/// The alternative — a parallel list of "other" pairs with their own
-/// failure type — was rejected because it splits the one thing this module
-/// is for. [`check`] returning *every* failure in one run is what makes a
-/// theme edit one rebuild rather than five, and two lists reintroduce the
-/// sequencing this module's `check` doc argues against.
-///
-/// So the origin became a sum type, and each variant answers the three
-/// questions a 2 a.m. reader has: **what colour**, **on what**, and
-/// **what renders it**. The widget variant's [`Self::fg_path`] and
-/// [`Self::bg_path`] reproduce the old message's wording exactly, so no
-/// existing failure text lost a word.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Origin {
     /// One of the original ten: a widget state's `fg_stroke` on one of
@@ -515,15 +451,6 @@ impl Origin {
     }
 
     /// **What actually renders this pair**, in one clause.
-    ///
-    /// # Why a failure carries this and not just the two field paths
-    ///
-    /// Because the field path says which line to edit and says nothing
-    /// about whether editing it is the right move. A reader who is told
-    /// `weak_text_color() on panel_fill` still has to go and find out
-    /// what draws with it before they can judge whether the theme is
-    /// wrong or the call site is. This is that sentence, written once,
-    /// beside the measurement.
     #[must_use]
     pub fn why(self) -> &'static str {
         match self {
@@ -595,10 +522,6 @@ pub struct Pair {
 }
 
 /// A pair that failed the gate.
-///
-/// Carries the whole [`Pair`] plus the threshold it was measured against,
-/// because a failure message that says "gap 41" without saying "needed
-/// 90" makes the reader go and find the threshold.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ContrastFailure {
     /// Where the failing pair came from.
@@ -751,15 +674,6 @@ pub fn exemption_for(origin: Origin) -> Option<&'static Exemption> {
 }
 
 /// Crude relative luminance of a colour, on a 0–255 scale.
-///
-/// The Rec. 709 coefficients applied directly to sRGB bytes, with no
-/// linearization. This is not photometrically correct and is not trying
-/// to be — see the module header on why a coarse measure is the right
-/// tool for the failure being guarded against, and on the one bias
-/// (saturated reds score low) that has actually changed a decision.
-///
-/// The alpha channel is ignored. Composite first with [`over`] if it
-/// matters; [`pairs`] does.
 #[must_use]
 pub fn luma(c: Color32) -> f32 {
     0.2126 * f32::from(c.r()) + 0.7152 * f32::from(c.g()) + 0.0722 * f32::from(c.b())
@@ -767,23 +681,6 @@ pub fn luma(c: Color32) -> f32 {
 
 /// Composite `fg` over `bg` using `fg`'s alpha, returning the opaque
 /// result.
-///
-/// # Why this is necessary rather than fussy
-///
-/// The colour at the heart of D2 was `rgba(250,250,250,220)` — a
-/// *translucent* near-white. Measuring its luminance as if it were opaque
-/// overstates its contrast against a dark background and understates it
-/// against a light one, and a plate colour used as a foreground is
-/// exactly the case where that error is largest. A gate that got this
-/// wrong would be wrong specifically about the defect it exists to catch.
-///
-/// The widening added two more translucent things to measure and it did
-/// not have to add any arithmetic for either: `weak_text_color()` is a
-/// premultiplied 60 % of the body colour, and `selection.bg_fill` may be a
-/// wash. Both go through this function.
-///
-/// `Color32` in `egui` is premultiplied, so the source channels are
-/// already scaled by alpha and the composite is `src + dst·(1−a)`.
 #[must_use]
 pub fn over(fg: Color32, bg: Color32) -> Color32 {
     let a = f32::from(fg.a()) / 255.0;
@@ -880,16 +777,6 @@ pub fn pairs(style: &Style) -> Vec<Pair> {
 }
 
 /// Measure every rendered pair in `style` against `threshold`.
-///
-/// Pairs covered by an [`Exemption`] are measured and then skipped; see
-/// [`EXEMPTIONS`] for why they are not simply absent from [`pairs`].
-///
-/// # Errors
-///
-/// Returns **every** failing pair rather than the first, so one run names
-/// the whole problem. A gate that reports one failure at a time turns a
-/// theme edit into a sequence of rebuilds, and the second failure is
-/// often the one that explains the first.
 pub fn check(style: &Style, threshold: f32) -> Result<(), Vec<ContrastFailure>> {
     let failures: Vec<ContrastFailure> = pairs(style)
         .into_iter()

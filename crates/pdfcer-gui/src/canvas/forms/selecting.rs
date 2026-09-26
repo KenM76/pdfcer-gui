@@ -44,10 +44,6 @@ use super::*;
 pub const DIAG_SELECT_FIELD: &str = "PDFCER_DIAG_SELECT_FIELD";
 
 /// Select the field [`DIAG_SELECT_FIELD`] names, once.
-///
-/// Called before [`select_click`] on the frames that one is called on, so a
-/// real click in the same frame wins: both raise `FieldAction::Select` and the
-/// queue applies them in order.
 pub(super) fn seeded_select(
     doc: &OpenDoc,
     targets: &[boxes::FieldTarget],
@@ -101,15 +97,6 @@ pub(super) fn seeded_select(
 
 /// A click in **Edit mode**: select the field under the pointer, or clear the
 /// selection.
-///
-/// A click on empty paper CLEARS, and that is deliberate rather than
-/// incidental. Every selection model the operator uses works that way, and
-/// without it the properties panel would go on describing a field long after
-/// they had moved on — a panel that will not let go is worse than one that is
-/// empty, because its contents look current.
-///
-/// Nothing is mutated here. The outcome leaves as an [`Action`], like every
-/// other thing this canvas decides.
 pub(super) fn select_click(
     ctx: &egui::Context,
     doc: &OpenDoc,
@@ -194,31 +181,6 @@ pub(super) fn select_click(
 }
 
 /// **Is a right-click at `point` about a form field?**
-///
-/// ## Why this exists instead of reading `doc.selected_field`
-///
-/// Because on the frame of the click that field is **not selected yet**.
-/// [`select_click`] does not mutate — it raises `FieldAction::Select`, which
-/// the queue applies at the end of the frame — so `doc.selected_field` still
-/// holds whatever was selected before, and a menu keyed on it would show the
-/// *previous* field's menu, or the view menu, on the first right-click.
-///
-/// ⇒ That is precisely the stale-snapshot hazard `shell::menus::MenuHost::with_conditions`
-/// exists for, met one layer further out: `egui`'s popup is opened **by** the
-/// secondary click, so there is no later frame on which the right answer could
-/// arrive. The first right-click on a field would silently show the wrong menu
-/// for ever.
-///
-/// It is the twin of [`crate::canvas::menus::right_clicked_object`], and it
-/// answers the same question the same way — by hit-testing the click's own
-/// position rather than by consulting state one frame behind it.
-///
-/// ## It reproduces the surface's own gates, and it must
-///
-/// `edit_content` and `annotations_visible`: a form field is only *selectable*
-/// in Edit mode with annotations shown, and a menu offered where selection is
-/// not is a menu whose Delete acts on nothing. Read from the same two places
-/// [`surface`] reads them, one frame later.
 #[must_use]
 pub fn right_click_hits_a_field(
     ctx: &egui::Context,
@@ -238,13 +200,6 @@ pub fn right_click_hits_a_field(
 }
 
 /// The pointer over a selectable widget in Edit mode.
-///
-/// `PointingHand`, the same cursor the fill surface uses, and deliberately
-/// **not** a bespoke one. It says *"there is something here"*, which is the
-/// only claim either surface needs to make; what differs is what a click does,
-/// and a cursor is a poor place to say that. `ui-conventions` has no row for
-/// this because it is not a convention question — both readings of the click
-/// are "act on the thing under the pointer".
 pub(super) fn select_cursor(
     ctx: &egui::Context,
     pages: &[PageView],
@@ -262,24 +217,6 @@ pub(super) fn select_cursor(
 }
 
 /// **Paint the selected form field: its outline and its eight grips.**
-///
-/// `OPERATOR_REQUESTS.md` **O53**: a selected field must be visibly distinct
-/// from an unselected one.
-///
-/// It is drawn **here** rather than in `canvas::overlay::draw_selection`,
-/// and the reason is that a form field is not in `SelectionState` at all:
-/// `canvas::selection::annot` excludes `/Widget` outright so the form surface
-/// owns those presses, and the selection lives on the document. The overlay
-/// draws what the selection state holds; this draws what this surface owns.
-///
-/// The rectangle is the **same one** `hit_target` matched and
-/// `widgetdrag::grab_box` projects — one rectangle for what the operator can
-/// see, what they can grab and what moves. That is rule H7, and the third use
-/// is the one that was missing.
-///
-/// Nothing is drawn when the selection names a widget the form no longer has
-/// — a field deleted while selected, or a page that has changed underneath.
-/// An outline around nothing is a claim about a field that is gone.
 pub(super) fn selection_overlay(
     ctx: &egui::Context,
     visuals: &egui::Visuals,

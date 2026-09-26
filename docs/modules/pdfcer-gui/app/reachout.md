@@ -77,3 +77,27 @@ carries calculate and format scripts, and a shell that warned about
 those would put a sentence on the status row of every real form an
 operator opens — which trains them to ignore the one that says their
 drawing is about to be posted to a web server.
+
+### `struct ReachOut`
+
+A struct rather than the engine's whole `FormJavaScript`, because this
+shell's question is narrower than the engine's: it asks *"does anything here
+leave the document?"*, and most of that type's fields answer a different one
+— how much of the document is click-activated, which triggers fired, how many
+field-level hooks there are. `FormJavaScript` is `#[non_exhaustive]` and
+grows; this projection is what keeps that growth from widening the
+disclosure by accident.
+
+### `fn scan`
+
+# Cost, because this runs on every open
+
+One graph walk, bounded by the engine's own `actions_scanned` ceiling — the
+`scan_truncated` flag exists because that ceiling is real. It is the same
+order of work as reading the outline, which this shell already does on open,
+and it happens once rather than per frame.
+
+⇒ Measured rather than assumed is the standing rule here, and this one has
+**not** been measured on the benchmark drawing. It is bounded by
+construction and it runs once; if a 129,758-object sheet ever opens visibly
+slower after this, the scan is the first thing to time.

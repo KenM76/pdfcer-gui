@@ -44,3 +44,48 @@ file plausibly wants: two serif, two sans, one monospace.
 **A preview.** It would mean running the whole import to draw a window that
 offers to run the import, and the report afterwards answers the same
 questions with real numbers rather than provisional ones.
+
+## Item notes
+
+### `fn window_title`
+
+*"as pages"* in the title as well as on the command, because a window that
+has been open for a minute is the only thing on screen and its title is the
+last statement of what is about to happen.
+
+### `fn margin_label`
+
+**One margin, not four.** `PageTemplate` carries four and this window
+offers one, which is a deliberate narrowing: an operator importing a text
+file wants a readable page, and four spinners is a form to fill in rather
+than a decision to make. The engine's four are still set — all to this
+number — so nothing is lost that a later ask could not add.
+
+### `fn face_note`
+
+The one warning in the window, and it earns its place: `place_text`
+embeds nothing (R79), so a file containing a character none of the Standard
+14 can write is **refused entirely** rather than imported with gaps. That is
+the correct behaviour and it is also the one an operator will not predict,
+because every other program on his machine would have substituted a font.
+
+### `fn face_name`
+
+The engine's `/BaseFont` name with its hyphen opened out — `Times-Roman`
+becomes *Times Roman* — and nothing else. These are the names printed in
+every PDF reader's font panel and written into the `/BaseFont` key, so an
+operator checking what a page uses meets the same word pdfcer wrote.
+`new_document::size_name` makes the same choice about sheet names.
+
+⚠ **The `_` arm answers Helvetica, and that is a real hazard rather than a
+tidy default**: a face added to `dialogs::import_text`'s `FACES` without an
+arm here would silently show *Helvetica* in the chooser beside the real
+Helvetica. `dialogs::import_text::tests::every_offered_face_has_its_own_label`
+is what notices — it asserts the labels are distinct rather than that they
+are correct, which is the property a test can actually hold.
+
+### `fn window_title_for`
+
+The file's name after an em dash, which is this program's title
+convention — the window says what it does first, because that is what an
+operator alt-tabbing back to it needs, and names the subject second.

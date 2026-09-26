@@ -125,3 +125,96 @@ reported as not working at all.
 The last assertion is the one that matters most: a caret index taken
 before the text was replaced can legitimately be past the end, and the
 answer is to clamp rather than to panic. See the module header.
+
+### `fn insert`
+
+A free function over `&mut String` rather than a method, because it is the
+single point both the keyboard and the diagnostic seam pass through and a
+method would invite a second caller that skipped it. Control characters are
+dropped: `egui` delivers Enter and Escape as `Key` events, so a control
+character arriving in a `Text` event is something this shell has no meaning
+for, and putting it in a PDF show string would be authoring a byte the
+operator cannot see.
+
+### `fn newline`
+
+# Why this is its own function rather than `insert(text, caret, "\n")`
+
+Because [`insert`] **drops control characters**, and it is right to. Its own
+doc says why: *"`egui` delivers Enter and Escape as `Key` events, so a
+control character arriving in a `Text` event is something this shell has no
+meaning for, and putting it in a PDF show string would be authoring a byte
+the operator cannot see."* That is still true of typed text.
+
+It stopped being true of the whole draft on 2026-08-21, when a box gained a
+paragraph break — and the guard silently ate it. **The Enter arrived, the
+branch was right, `insert` was called, and the newline was filtered out one
+call deeper.** The driven check reported *"the paragraph was authored as 1
+line"*; the trace showed the key arriving and the length not moving; and the
+answer was a filter written for a different question.
+
+So the filter stays and the newline gets a door of its own. Relaxing
+`insert` to permit `\n` would have permitted every other control character
+with it — a stray `\t` or `\r` from a paste would land in a show string —
+and it would have made *"can a control character be in a draft?"* a question
+with two answers depending on which caller you asked.
+
+**This is the fifth guard in two days to expire the week it was written**,
+and the shape is always the same: a well-argued restriction reads as
+permanent precisely because it is well argued. See
+`C:\personal_rag\claude_code\lesson_20260820_a_refusal_is_a_claim_with_a_date_on_it.md`.
+
+### `fn backspace`
+
+By `char` and not by byte: a draft holding `é` must lose one keystroke's
+worth of text per Backspace, and truncating a byte would leave an invalid
+`String` — which in Rust is a panic rather than mojibake.
+
+### `fn delete_forward`
+
+The caret does not move, which is what makes Delete different from
+Backspace rather than a mirror of it: the text to the left of the caret is
+untouched, so the operator's position in the word is preserved while what
+follows is eaten.
+
+### `fn range`
+
+An empty range answers `None` rather than `Some((n, n))`: a mark sitting
+exactly on the caret is *not a selection*, it is the state after
+Shift+Right followed by Shift+Left, and every caller would otherwise need
+its own emptiness check before deciding whether Backspace deletes a
+selection or a character.
+
+### `fn delete_range`
+
+Character indices, clamped, like everything else in this module. A caller
+that passes a reversed pair gets nothing removed rather than a panic —
+[`range`] is the intended source and never produces one, and a panic here
+would be a crash in the middle of typing.
+
+### `fn moved`
+
+The single statement of rule 4. `was` is the mark before the movement and
+`from` is the caret before it.
+
+- **Shift held, no mark yet** — the mark is planted where the caret *was*,
+  which is what makes the first Shift+Right select one character rather
+  than none.
+- **Shift held, mark already set** — it stays, so the selection grows and
+  shrinks from the same fixed end.
+- **No Shift** — dropped.
+
+### `fn word_left`
+
+Skips any run of spaces immediately behind the caret, then the run of
+non-spaces behind that. This is the behaviour of every text field the
+operator uses, and the reason it is here rather than deferred is that a
+caret which can only move one character at a time is a caret nobody uses
+twice on a line of any length.
+
+### `fn word_right`
+
+The mirror of [`word_left`], and deliberately not symmetric in its order:
+it skips the non-spaces first and then the spaces, so one press lands the
+caret at the start of the next word rather than at the end of this one.
+That is what the same key does everywhere else.

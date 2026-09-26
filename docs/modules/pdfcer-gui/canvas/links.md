@@ -110,3 +110,57 @@ operator is 1-based, and the engine's own reply flagged this as the
 conversion it nearly got wrong in its CLI. A sentence naming "page 0"
 would be wrong in a way the operator cannot check without opening the
 other file.
+
+### `struct Hit`
+
+**Owned, not borrowed.** `OpenDoc::page_links` hands back a `Ref`, and a
+caller holding one cannot then take `&mut OpenDoc` — which every consumer
+here eventually needs, directly or through the action funnel. One
+`Destination` clone per hit is a handful of bytes on a gesture the operator
+made deliberately; the borrow it avoids is a whole class of runtime panic.
+
+### `fn navigable`
+
+The predicate the cursor is decided by, and deliberately narrow: only
+`Destination::Page` is navigable. See the module header on why a hand
+over the other four would be advertising a capability that is not there.
+
+### `fn under_pointer`
+
+`point` is in **canvas/page coordinates**, the same space
+`PageMapping::to_page` produces and the same space every other hit test on
+this surface takes.
+
+## Last match wins
+
+`/Annots` is painted in array order, so a later entry is drawn over an
+earlier one and is the one under the pointer where two overlap. Overlapping
+links are rare and are exactly the case a first-match scan gets backwards —
+and a first-match scan looks correct on every document that does not have
+them, which is almost all of them.
+
+## A link with no `/Rect` is skipped, and that is not a filter
+
+§12.5.2 makes `/Rect` required, so a link without one has a destination it
+can never be clicked to reach. The engine keeps it in the list rather than
+dropping it — so a repair tool can see it — and a hit test must skip it,
+because there is no box to be inside.
+
+### `fn follow`
+
+Navigates when it can and says why when it cannot. Every branch does exactly
+one of those two things and there is no silent arm — see the module header
+on the four non-navigating variants.
+
+### `fn cursor`
+
+The whole of the discovery affordance, and the only thing this module puts
+on screen. Called once per frame from `canvas::present`, after
+`canvas::forms`' own cursor pass and before `canvas::interact` runs — so
+`canvas::tool::cursor_for` still has the last word, which is right: a
+cursor it has an opinion about is one describing a gesture already under
+way, and that outranks a hover.
+
+Does nothing in a mode that edits content, matching [`follow`]'s own gate.
+A hand promising navigation in a mode where the click selects instead would
+be a lie told sixty times a second.

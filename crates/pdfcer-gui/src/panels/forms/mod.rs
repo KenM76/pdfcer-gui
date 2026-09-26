@@ -48,26 +48,9 @@ use self::edit::FormEdit;
 use self::rows::RowContext;
 
 /// The ribbon command that opens this panel.
-///
-/// Named here as well as on `crate::panels::Panel` so this module's own
-/// reachability test can assert it without going through the enum. See
-/// [`tests::the_forms_command_is_reachable_from_the_ribbon`] for what that test
-/// defends against: a panel with a body, a rail entry and no control an operator
-/// can click is a panel that passes every harness step and ships unreachable.
 pub const COMMAND_ID: &str = "view.panel_forms";
 
 /// Draw the Forms panel.
-///
-/// The one entry point. Shape and signature match every other panel body — see
-/// [`crate::panels::Panel::show`] — so wiring it is `Self::Forms =>
-/// forms::body(ui, doc, state, actions)` and nothing else.
-///
-/// `state` is unused: this panel's only inter-frame state is the set of text
-/// drafts, and that lives in [`FormsUi`] rather than on
-/// [`crate::panels::PanelsState`]. The reason is boundary rather than
-/// preference — `PanelsState` is defined in `crate::panels`' own `mod.rs`,
-/// which this work may not extend — and [`FormsUi`]'s own header sets out both
-/// why the chosen home is *sound* and what the better home would be.
 pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, _state: &mut PanelsState, actions: &mut Vec<Action>) {
     // Read the SESSION, not the file on disk. An operator who has already
     // filled three fields must see those three values; `EditSession::view` is
@@ -611,50 +594,6 @@ fn raise(actions: &mut Vec<Action>, edit: FormEdit) {
 }
 
 /// The Forms panel's own inter-frame state: one text draft per field.
-///
-/// # This is not on `crate::panels::PanelsState`, and the preferred shape is
-///
-/// A `forms: FormsUi` field beside `tree: ObjectTreeUi`, dropped by
-/// `PanelsState::forget_document` exactly as everything else there is. Written
-/// down so the current home is read as a position rather than a preference.
-///
-/// # Why egui's memory is nonetheless a sound home, and not a smuggled mutation
-///
-/// The actions-not-mutations invariant is about **the document**. This is not
-/// document state and it is not derived from the document: it is what the
-/// operator has typed and not yet committed, which is the same category as the
-/// caret position `TextEdit` already keeps in exactly this store. Nothing here
-/// can change a pixel of the page; only [`FormEdit`] can, and only through the
-/// funnel.
-///
-/// # The key is `(path, edit_epoch)`, which is what makes UNDO correct
-///
-/// This is [`crate::panels::PanelsState::sync`]'s discipline applied to a
-/// different kind of state, and the epoch half is the interesting one.
-///
-/// Without it: the operator types "Anna", tabs away (committed), presses
-/// Ctrl+Z. The document reverts to empty and the draft still says "Anna", so
-/// the panel shows a filled box over an empty field — it disagrees with the
-/// document it is describing, and the next thing the operator does re-commits
-/// the value they just undid.
-///
-/// With it, every draft is dropped the moment anything about the document
-/// changes and re-seeded from the stored value on the next frame. **Nothing is
-/// lost by that**, and the argument is worth writing down because it looks
-/// lossy: a draft that differs from the stored value belongs to a field that
-/// still has focus, and every gesture that can bump the epoch — clicking
-/// another field, a check box, a button — takes focus away first, which
-/// commits that field in the same frame. So by the time the epoch moves, every
-/// other draft already equals what the document holds.
-///
-/// The path half handles the plainer case: a different document makes every
-/// field name here meaningless.
-///
-/// # Cost
-///
-/// One clone of the map per frame, in and out of the store. A few hundred
-/// short strings, against a panel that is already laying out a few hundred
-/// egui widgets. Measure before trading it for an `Arc<Mutex<_>>`.
 #[derive(Clone, Default)]
 pub struct FormsUi {
     /// The `(document path, edit epoch)` [`Self::drafts`] describes.

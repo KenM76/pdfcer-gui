@@ -44,12 +44,6 @@ pub const BORDER_COLOR_REGION: &str = "properties.widget_edit.border_color";
 pub const ROTATION_REGION: &str = "properties.widget_edit.rotation";
 
 /// The two rotation buttons, EACH named.
-///
-/// One region per button rather than one for the row, because a driven check
-/// that aimed at a fraction of a shared row is doing coordinate arithmetic the
-/// harness has a `declared_center` for — and the first version did exactly
-/// that, computed 78 % across, and landed outside the window. A named control
-/// is aimed at by name.
 pub const ROTATE_LEFT_REGION: &str = "properties.widget_edit.rotate_left";
 /// See [`ROTATE_LEFT_REGION`].
 pub const ROTATE_RIGHT_REGION: &str = "properties.widget_edit.rotate_right";
@@ -64,11 +58,6 @@ pub const APPLY_REGION: &str = "properties.widget_edit.apply";
 const SPEED: f64 = 0.25;
 
 /// Draw the selected widget's own properties, or nothing.
-///
-/// Returns whether it drew. `false` when the selection names a widget the
-/// field no longer has — reachable through undo, which does not clear a
-/// selection, and the right answer is silence rather than a pane describing a
-/// box that is not there.
 pub fn section(
     ui: &mut Ui,
     field: &Field,

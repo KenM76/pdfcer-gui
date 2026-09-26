@@ -104,16 +104,6 @@ pub mod cutgate;
 /// **Which delete verb the rung the operator is on reaches** — the twin of
 /// [`moving`]'s `eligible`, and the answer to a Delete that traced
 /// `no-verb-for-rung` and did nothing at all for the whole life of this shell.
-///
-/// Three engine verbs — `delete_subpath`, `delete_text_run`, `delete_node` —
-/// had their MOVE twins wired and themselves called by nothing, so on a CAD
-/// export a line could be entered, selected and dragged and could not be
-/// removed. Its header carries the whole argument, including why one refusal is
-/// pre-empted (R83) and the rest are left to the engine.
-///
-/// Pure — no egui, no pointer, no document — because both the Delete key and
-/// the ribbon's `format.delete` ask it, and a destructive rule stated twice is
-/// a rule that drifts.
 pub mod deleting;
 /// Arriving where a bookmark points, once the viewport is known. Split from
 /// `interact` under R2: landing on a destination is its own subject.
@@ -203,34 +193,14 @@ pub mod ocrlayer;
 pub mod overlay;
 /// The application's own colour ROLES — `preview` and `dimension_selected` —
 /// built from the resolved theme's palette and published per frame.
-///
-/// `egui_shell::theme::Overlays` is a generic role map because **R7** forbids
-/// the shell learning what a ce dimension is; the roles are pdfcer's, exactly as
-/// the ribbon manifest's command ids are. Its header carries the mapping
-/// argument and the distinctness test the shell says the application owes.
 pub mod overlays;
 
 /// **Dropping pages onto the page view** — the caret between two sheets, and
 /// the release that inserts or reorders there.
-///
-/// The operator's request of 2026-08-19: *"…or onto the canvas to add pages
-/// and insert them in between the pages we've dragged to"*. The drag itself
-/// lives in [`crate::pagedrag`], which is what lets a gesture that began in a
-/// panel — possibly in another document — end here.
 pub mod pagedrop;
 
 /// **Reading a comment where the comment is** — the pop-up window a click
 /// on a note opens, and the tooltip a hover shows.
-///
-/// The operator, 2026-09-05: *"I could add a yellow sticky note but even in
-/// read mode I don't think I could figure out how to read it."* He was right,
-/// and the measurement was worse than the report: the only route to a comment
-/// was the Comments panel, on the `markup` tab, which Read is not shown.
-///
-/// It lives on the **canvas** rather than on the ribbon precisely so that it
-/// is mode-independent by construction — no future edit to a tab list can take
-/// reading away from Read mode again. Its header carries the whole argument,
-/// including why the pop-up is chrome rather than content under rule 4.
 pub mod notepopup;
 // The wheel as a page turn, under a one-page-at-a-time display mode -- O30.
 mod paging;
@@ -240,17 +210,6 @@ mod paging;
 mod escape;
 /// **Reaching an object that is off the page** — which of the canvas's
 /// two interactive rectangles owns this frame's gesture.
-///
-/// O23's second half. The operator, 2026-09-10: *"how do I view and edit
-/// objects that are off of the page? we added this feature but I didn't see
-/// how to enable it."* There was nothing to enable: the pasteboard — the
-/// viewport of scrollable slack [`geometry::content_extent`] puts on every side
-/// of the strip — sensed hover and refused clicks, so a press out there never
-/// became a gesture and an object dragged past the sheet edge was unreachable.
-///
-/// Its header carries the whole argument, including why this is a choice
-/// between two responses rather than one widened page rect, and the two
-/// clauses about a drag that crosses the sheet edge mid-gesture.
 pub mod pasteboard;
 
 /// The page is a keyboard focus owner — `OPERATOR_REQUESTS.md` O204
@@ -263,17 +222,6 @@ mod pagefocus;
 mod painting;
 /// **What a click is ALLOWED to land on** — the operator's selection
 /// filter, and the eleven classes it switches.
-///
-/// `OPERATOR_REQUESTS.md` O17. This is the replacement for Edit ▸ Content's
-/// declare-your-intention-then-point model, and its header carries the whole
-/// argument: why a filter belongs on the status bar rather than the ribbon,
-/// why it is **subtractive only** (so `default()` reproduces today's behaviour
-/// and R6 holds by construction), and why it composes with
-/// [`crate::app::modes::capability::Capabilities`] as an `AND` rather than an
-/// override.
-///
-/// Pure: no egui, no pointer, no document. Which is exactly why the popup that
-/// drives it still has to be driven before any of it counts — R1.
 pub mod pick;
 pub mod resizing;
 pub mod rightclick;
@@ -325,18 +273,6 @@ pub mod smart;
 // gates, the Tab cycle, the two-click confirm, and the indicator glyph.
 /// **The shape itself, following your hand** — the live geometry preview
 /// (`OPERATOR_REQUESTS.md` O63).
-///
-/// Its header carries the convention it **reverses** by operator ruling —
-/// `handledrag.rs`'s *"a preview shows the cursor, the render shows the
-/// document"* — and the measurement that makes it possible: a rasterised
-/// preview is a second away on a CAD sheet, and this never touches the
-/// rasteriser.
-/// The fourteen **pre-commit** slots one frame of the canvas might fill — the
-/// marquee, the ghosts, the shape preview, the snap marker, the ink trail.
-///
-/// Extracted from [`interact`] under R2; its header carries the one argument
-/// they all share (why each is its own value and not a variant of another) and
-/// the Rule 4 reading that makes every one of them permitted.
 pub mod previews;
 pub mod shapes;
 pub mod snap;

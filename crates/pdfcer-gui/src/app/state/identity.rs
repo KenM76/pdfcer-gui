@@ -4,18 +4,10 @@
 //! none. [`SelectedField`] says which form field, and which of its boxes, the
 //! operator clicked. Both are plain data with no behaviour; neither touches the
 //! large document record in [`super`].
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/app/state/identity.md`.
 
 /// **Whether an open document has a file behind it.**
-///
-/// Two variants rather than an `Option<PathBuf>` on [`OpenDoc::path`], and the
-/// choice is deliberate. Every document — created or opened — needs a
-/// *identity* that is path-shaped: the forms cache keys on it, the Pages panel
-/// captions from it, the trace names it, and a save suggestion would be built
-/// from it. Making the path optional would push an `unwrap_or_default()` into
-/// each of those, and `""` is the identity every unnamed document would then
-/// share. What actually varies is one much narrower fact — *is there a file
-/// there* — so that is what is stored, and [`OpenDoc::stored_under`] is the
-/// only place it is asked.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Origin {
     /// Loaded from [`OpenDoc::path`], which names a file that existed.
@@ -29,15 +21,6 @@ pub enum Origin {
 }
 
 /// Which form field the operator clicked, and which of its widgets.
-///
-/// Both halves are needed and neither is redundant. The **name** is what
-/// every field verb takes — `rename_field`, `delete_field` — because a field is
-/// identified by name and not by object id. The **widget index** is what
-/// `delete_widget` takes, and is the only way to say *"the box on page 3"* when
-/// one field is drawn in two places.
-///
-/// The page is carried so the properties panel can say where the clicked box is
-/// without re-walking the form to find out.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SelectedField {
     /// The field's fully-qualified name.

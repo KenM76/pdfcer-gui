@@ -11,42 +11,6 @@ use crate::text::pick as t_pick;
 
 /// The **Select** button and the popup behind it: what a click on the page is
 /// allowed to land on.
-///
-/// `OPERATOR_REQUESTS.md` O17. This is the replacement for Edit > Content's two
-/// ribbon buttons, and the placement is the point rather than a detail — see
-/// [`crate::canvas::pick`]'s header for why a filter belongs on a surface that
-/// is visible *while you aim* instead of two levels into a ribbon you left
-/// thirty seconds ago.
-///
-/// # Why this mutates rather than raising an [`Action`]
-///
-/// The bar's standing rule is *raise actions and mutate nothing*, and this is
-/// the second deliberate exception beside [`super::find_group`]. The rule exists so
-/// that a command's one implementation stays in the dispatcher, where undo,
-/// tracing and mode gating are applied uniformly. None of those apply here: a
-/// selection filter is not undoable (it is not a change to the document), it is
-/// not gated by mode (it composes with the mode as an `AND`, and switching a
-/// class off is legal in every mode), and it has no other invocation site to
-/// stay consistent with. An `Action` round-trip would add a dispatcher arm
-/// whose entire body is one assignment.
-///
-/// # The caller is what persists it
-///
-/// This function does not write to disk, and that is not laziness. *"Did the
-/// operator change the filter"* is one comparison of a `Copy` value at the call
-/// site, which is both cheaper and more obvious than a dirty flag threaded
-/// through the bar. See [`crate::app::frame`]'s status-bar block.
-///
-/// # Returns
-///
-/// The **button's** response, not the popup's. Two callers want it: a test
-/// asserting the popup opens needs `Popup::default_response_id` of exactly
-/// this response, and there is no other way to name the flag the popup's open
-/// state lives under — `Memory::any_popup_open` is `pub(crate)` to egui.
-///
-/// The status bar ignores it. That is not a wasted return: the alternative was
-/// a test that could only assert the button exists, which is precisely the
-/// claim that was TRUE throughout the day this control did nothing.
 pub(super) fn show(ui: &mut egui::Ui, filter: &mut PickFilter) -> egui::Response {
     let response = ui
         .button(t_pick::filter_button())
@@ -179,14 +143,6 @@ const fn class_icon(class: PickClass) -> crate::icons::Icon {
 }
 
 /// The standing line shown when the filter has left **nothing** selectable.
-///
-/// See [`crate::text::pick::nothing_selectable`] for why this exists: the state
-/// is legitimate and its symptom — a canvas that ignores every click — is
-/// indistinguishable from a fault. Drawn on the left, with the narration,
-/// because it is a statement about the session rather than a control.
-///
-/// Deliberately **not** a mark on the page. Rule 4: disclosure lives
-/// off-canvas.
 pub(super) fn empty_note(ui: &mut egui::Ui, filter: PickFilter) {
     if !filter.is_none() {
         return;

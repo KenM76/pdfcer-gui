@@ -28,33 +28,6 @@ use super::{PrintDialog, US_LETTER_PORTRAIT_PT, autopaper, verdicts};
 impl PrintDialog {
     /// **What a finished commit owes the operator, and whether the window is
     /// done** — as a pure function, so it can be tested without a printer.
-    ///
-    /// Returns `Some(notes)` when the job went to the spooler: the sentences to
-    /// put on the application's disclosure row, in reading order. The caller
-    /// records them and closes the dialog. Returns `None` on failure, which
-    /// means *"say nothing here and leave the window open"* — the footer draws
-    /// the driver's own words and the operator picks another printer.
-    ///
-    /// # Why this is extracted rather than left inline
-    ///
-    /// Because the behaviour it decides is the operator's 2026-09-03 report —
-    /// *"it doesn't close after I hit the print button [...] there was a dozen
-    /// jobs there"* — and the only way to drive the inline version is to
-    /// actually print. Spooling a real job to his printer to prove a window
-    /// closes is not a test, it is the defect.
-    ///
-    /// So the decision is separated from the act. `ui-verify` cannot reach it
-    /// (no headless route ends in a real spool), and this project's rule is
-    /// that a unit test is the floor rather than the ceiling — so what is
-    /// asserted here is deliberately the part that is **pure logic**: which
-    /// outcome closes, and which sentences travel. The act of printing is
-    /// `Self::commit`'s, and is covered by `print_dialog_reaches_the_spooler`.
-    ///
-    /// Stated plainly because it is a real gap: *"the window closes after a
-    /// successful print"* is asserted as a decision, not as an observed
-    /// window disappearing. Closing that gap needs a driven check that prints
-    /// to a file device — `Microsoft Print to PDF` is on this machine — and it
-    /// is worth building; it is not built.
     pub(super) fn commit_notes(outcome: Result<&SpoolReport, &String>) -> Option<Vec<String>> {
         let report = outcome.ok()?;
         let mut notes = vec![t::sent(report.pages)];
@@ -72,25 +45,6 @@ impl PrintDialog {
         Some(notes)
     }
     /// Render every planned sheet and hand them to the spooler.
-    ///
-    /// # The one place in the GUI that starts a print job
-    ///
-    /// Reached only from the commit button, via [`Self::commit_requested`].
-    /// Nothing here runs as a side effect of opening, previewing, saving or
-    /// rendering — which is the shell's half of `pdfcer-print`'s own contract
-    /// that *"`spool` is the only function that reaches `StartDoc`, and it is
-    /// reached only from a control an operator deliberately clicked."*
-    ///
-    /// # Why the whole job is rasterised inline
-    ///
-    /// It blocks the UI thread for as long as the job takes. That is the
-    /// honest behaviour for now and it is not an oversight: a print that
-    /// proceeds in the background needs a cancel affordance, a progress
-    /// surface and an answer to "what happens if the document is edited
-    /// mid-job", and shipping the render off-thread without those three would
-    /// replace a visible wait with an invisible race. The single-slot render
-    /// worker next door is for *display*, where a cancelled render costs
-    /// nothing; a cancelled print costs paper.
     pub(super) fn commit(
         &self,
         printer: &str,
@@ -171,18 +125,6 @@ impl PrintDialog {
     }
 
     /// One trace line describing the job the dialog is currently showing.
-    ///
-    /// `scale=` is on this line beside `orientation=` because they are the
-    /// pair that exposes the orientation defect: a radio that changes
-    /// `orientation=` and not `scale=` on a landscape page is that regression,
-    /// restated. A harness can assert the relationship; a screenshot cannot.
-    ///
-    /// `clipped=` and `claim=` are on this line TOGETHER, and the pairing is
-    /// the assertion — operator request O113. `clipped=` is the unchanged
-    /// geometric count; `claim=` is what the button says, as `<state>:<count>`.
-    /// A driven check asserts the *correction* between them, which no capture
-    /// can supply: a button reading "Print" and a button reading "Print"
-    /// because the cache silently never matched are the same photograph.
     pub(super) fn trace_plan(
         &self,
         printer: Option<&str>,

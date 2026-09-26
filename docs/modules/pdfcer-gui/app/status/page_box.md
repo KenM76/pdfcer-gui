@@ -280,3 +280,17 @@ Asserted through the action type rather than by clicking, which would
 need synthesized pointer input at a rect this test has to predict.
 What is worth pinning is that the variants exist and are the ones
 `keyboard::collect` produces.
+
+### `fn group`
+
+Omitted entirely for a document with no pages (`/Count 0` is legal PDF):
+every input to a page box over such a document is out of range, and a
+control whose every answer is "no" is not a control.
+
+### `struct PageBox`
+
+Kept in `egui`'s per-id store beside the `TextEditState` it belongs with.
+[`crate::app::status`]'s module docs carry the argument for why that is
+right for a text-editing draft and wrong for a canvas selection: this
+value is discarded on focus loss, always, so it cannot outlive a document
+and there is no identity to key on.

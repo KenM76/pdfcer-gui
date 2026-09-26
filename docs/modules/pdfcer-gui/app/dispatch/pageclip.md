@@ -99,3 +99,9 @@ The negative half is the half that matters. `dispatch::pages` owns
 `pages.delete` and this module raises `PageAction::DeletePages`, so a
 prefix rule here would claim the very command the cut delegates to and
 route it back into this module — a loop that compiles.
+
+### `fn handles`
+
+Listed rather than prefix-matched, for `dispatch::clipboard::handles`'
+reason: the `pages.` prefix also covers the verbs [`super::pages`] owns and
+the two that stay in [`super`], none of which belong here.

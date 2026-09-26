@@ -61,3 +61,18 @@ box per selected object, for two reasons that point the same way:
    of the operation.
 2. It is what the operator can see. The selection outline *is* the box, so
    the mark lands exactly where the preview said it would.
+
+## Item notes
+
+### `fn mark_selection`
+
+One `/Redact` annotation per selected object, all in **one undo entry** —
+`vector_edit` wraps the whole loop, so an operator who marks six things and
+presses `Ctrl+Z` gets back the state before they started rather than five
+marks and a headache.
+
+# What it does when nothing is selected
+
+Nothing, silently. The command is gated on `selection.any`, so a pointer
+cannot reach it in that state — and a keyboard route does not exist for this
+verb. A sentence here would be describing a state the operator cannot be in.

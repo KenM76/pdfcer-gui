@@ -17,10 +17,6 @@ use super::{Icon, IconWeight};
 const CACHE_CAPACITY: usize = 1024;
 
 /// What uniquely identifies a raster.
-///
-/// The tint is absent for a plain glyph — see this module's header. A
-/// coloured glyph has two colours and a mask can carry only one, so its
-/// colours are baked into the pixels and are part of the key.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct CacheKey {
     /// Which glyph.
@@ -60,24 +56,6 @@ pub struct IconCache {
 impl IconCache {
     /// Fetch (or build) the texture for one icon at one physical size and
     /// weight.
-    ///
-    /// # What happens when the asset is broken
-    ///
-    /// It degrades to a 1×1 transparent texture and a one-line stderr
-    /// complaint rather than panicking. The assets are compiled-in
-    /// constants, so a failure here means the *build* shipped a broken one —
-    /// a condition `super::tests::every_icon_parses` is designed to catch
-    /// first — and taking down an editor holding the operator's unsaved
-    /// edits over a missing 16 px glyph would be a far worse outcome than a
-    /// blank slot with an intact tooltip and accessible name.
-    ///
-    /// Note the asymmetry with an **unknown key**, which is a different
-    /// failure with a different answer: see [`super::paint_ribbon_icon`].
-    /// A broken asset is a build defect that the test gate catches before an
-    /// operator ever sees it, and the stderr line is addressed to the
-    /// developer who broke it. An unknown key can reach a real operator
-    /// (a command naming an icon the set does not have), so it is drawn
-    /// visibly instead of silently.
     pub fn texture(
         &mut self,
         ctx: &egui::Context,
@@ -195,10 +173,6 @@ thread_local! {
 }
 
 /// Run `f` with the shared cache.
-///
-/// Kept private so no caller can hold the `RefMut` across a re-entrant call
-/// (which would panic); every entry point in [`super`] borrows, does one
-/// lookup, and releases before it draws anything.
 pub(super) fn with_cache<R>(f: impl FnOnce(&mut IconCache) -> R) -> R {
     CACHE.with(|c| f(&mut c.borrow_mut()))
 }

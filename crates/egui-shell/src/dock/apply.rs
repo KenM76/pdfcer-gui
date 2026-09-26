@@ -21,6 +21,8 @@
 //! are separate functions because they run at two different points in the
 //! frame and act on disjoint intent sets, not because the discipline
 //! differs.
+//!
+//! Design and rationale: `docs/modules/egui-shell/dock/apply.md`.
 
 use super::DockFrameReport;
 use super::ctx::Intent;
@@ -28,15 +30,6 @@ use super::model::{DockLayout, DockSide};
 use super::plan;
 
 /// Apply one frame's intents to the layout.
-///
-/// The **only** function in this module that takes `&mut DockLayout`.
-/// Returns whether anything changed, which the application uses to decide
-/// whether the layout is worth persisting.
-///
-/// Splitter drags are applied by resolving the *current* spans, moving
-/// one boundary with [`plan::drag_boundary`], and converting back — which
-/// is the one place [`plan::spans_to_shares`] may be called, and its
-/// documentation says why.
 pub(super) fn apply(
     layout: &mut DockLayout,
     intents: &[Intent],

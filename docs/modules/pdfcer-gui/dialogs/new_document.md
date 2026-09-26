@@ -165,3 +165,15 @@ The two commands sit beside each other in one ribbon group, and the
 difference between them must be "one asks" and nothing else. A default
 that drifted to A3 here would make the sibling controls quietly
 disagree about what a new document is.
+
+### `fn open`
+
+**A4 portrait and not something cleverer.** It is what `file.new`
+makes, and the two commands sit next to each other in the same ribbon
+group: an operator who opens this window to check what it offers should
+see the state the plain command would have produced, so the difference
+between the two controls is *"one asks"* and nothing else.
+
+`crate::app::blank`'s §3 is where A4 is argued — two of the three
+reference applications ship it, and the operator's own corpus is
+A-series.

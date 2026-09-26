@@ -261,3 +261,45 @@ two surfaces and the operator would have to learn which one they were
 talking to. This asserts they are the same parser rather than merely
 similar: the expectations below are `parse_page_range`'s own, taken
 from its behaviour rather than restated.
+
+### `enum Scope`
+
+Four options is what the surveyed tools converge on — Acrobat, ABBYY, Foxit
+and PDF-XChange all offer all / current / a range in some wording — and the
+order below is theirs: the broadest first, because it is both the default
+and the one most runs want.
+
+### `fn pages`
+
+`None` when the scope cannot be resolved — an unparseable or empty range
+— which the dialog renders as a disabled Recognise button rather than as
+an error, because a half-typed range is a normal state of a text field
+and not a mistake to be reported.
+
+### `fn open`
+
+Nothing is recognised yet: opening the dialog is free, and the several
+seconds of work start on a press the operator makes after reading what
+the operation does. A dialog that started recognising on open would
+spend that time before the operator had decided they wanted it.
+
+### `fn suggested_path`
+
+**Never the file that was opened.** The suffix is what makes the default
+answer a new document, so an operator who accepts the suggestion without
+reading it cannot overwrite their scan. That is the standing rule expressed
+as a default rather than as a warning — a warning is something to click
+past.
+
+The extension is forced to `.pdf` rather than preserved: the bytes are a
+PDF whatever the source was called, and a recognised copy of `scan.PDF`
+landing as `scan-recognised.PDF` would be correct but is one more way for a
+tool downstream to disagree about case.
+
+### `fn open_for`
+
+The dispatch target for `file.ocr`. Lives here rather than in
+[`super::DialogsState`] only because it needs [`OcrDialog::open`]'s private
+constructor; the guard it applies is the one `open_print` documents — the
+ribbon control is gated on `doc.pages`, a chord bound to the same id is not,
+and both are fixed by refusing here at the one place the dialog is built.

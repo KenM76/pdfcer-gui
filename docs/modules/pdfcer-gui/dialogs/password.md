@@ -89,3 +89,38 @@ file on the first `{:?}`.
 A wrong password left in the box is one an operator re-submits by
 reflex; and without the count, a second rejection is indistinguishable
 from a press that did not register.
+
+### `enum Rejection`
+
+Two variants, not one, because `pdfcer-core` reports two errors and its own
+doc comment says why: `PasswordRequiresNormalisation` exists *"so that
+failure does not masquerade as `PasswordRequired`'s 'you typed it wrong',
+which would send the operator to re-check a password that was correct."*
+Collapsing them here would undo that on the last step.
+
+### `struct PasswordDialog`
+
+`password` is a plain `String` here rather than a [`Secret`] because that is
+what `egui::TextEdit` binds to; it becomes a `Secret` at the moment it leaves
+this struct, which is the boundary that matters — the value never enters an
+`Action`, a queue or a trace unwrapped.
+
+### `fn reject`
+
+Called by the application when its retry comes back refused. Clears the
+field, because a wrong password left in the box is one an operator
+re-submits by reflex, and increments the attempt count so the message can
+say which try this was — without that, a second rejection produces a
+dialog identical to the first and the operator cannot tell whether their
+press registered.
+
+### `fn show`
+
+Returns `false` when the dialog should close — cancelled, or dismissed by
+the window's own ✕.
+
+The ✕ is a **Cancel**. The window's close control must mean the
+non-destructive answer, which is the rule `dialogs::unsaved` states: it is
+the control an operator presses reflexively to make a surprise go away.
+Here nothing is destroyed either way, and the tab stays in the document
+list saying why it did not open.

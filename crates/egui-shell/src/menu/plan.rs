@@ -96,15 +96,6 @@ use crate::ribbon::selected_condition;
 use super::shortcut::Shortcuts;
 
 /// One resolved menu row: what the renderer will actually draw.
-///
-/// Borrows from the registry and the [`Shortcuts`] index rather than
-/// copying, because this is built once per menu open and dropped at the
-/// end of the frame.
-///
-/// `PartialEq` is deliberately **not** derived: a `Slot` borrows a
-/// [`Command`], and `Command` holds an `Enable` that may be a closure,
-/// which has no meaningful equality. Tests match on shape instead, which
-/// is what they actually want to assert.
 #[derive(Debug, Clone)]
 pub enum Slot<'a> {
     /// A command that exists in this build.
@@ -155,13 +146,6 @@ impl Slot<'_> {
 
 /// Resolve a menu's items against the registry, the conditions and the
 /// keymap, then collapse the punctuation.
-///
-/// `context` is used only to name the menu in a disclosure, so a log line
-/// says *which* menu referred to a command that is not there.
-///
-/// See rule 1 in the module header for the unregistered-versus-disabled
-/// distinction, which is the whole reason this function exists rather than
-/// the renderer walking `items` directly.
 #[must_use]
 pub fn resolve<'a>(
     items: &'a [Item],
@@ -210,11 +194,6 @@ pub fn resolve<'a>(
 }
 
 /// Drop leading and trailing separators and collapse runs of them.
-///
-/// Rule 4 in the module header. Separate from [`resolve`] so it can be
-/// asserted on hand-built input, including the shapes a real document
-/// would have to be perverse to produce but a *stale* one produces
-/// routinely.
 #[must_use]
 pub fn collapse(slots: Vec<Slot<'_>>) -> Vec<Slot<'_>> {
     let mut out: Vec<Slot<'_>> = Vec::with_capacity(slots.len());
@@ -238,10 +217,6 @@ pub fn collapse(slots: Vec<Slot<'_>>) -> Vec<Slot<'_>> {
 }
 
 /// **Whether this menu should open at all.**
-///
-/// Rule 2 in the module header. `true` iff at least one row is something
-/// the operator could act on: an enabled command, or a custom item the
-/// application owns.
 #[must_use]
 pub fn offers_anything(slots: &[Slot<'_>]) -> bool {
     slots.iter().any(Slot::is_actionable)
@@ -252,10 +227,6 @@ pub fn offers_anything(slots: &[Slot<'_>]) -> bool {
 // ---------------------------------------------------------------------
 
 /// What one command row does with its icon slot.
-///
-/// Three states rather than two, because "this row has no icon" is not one
-/// answer — it is two, and they differ by **what the row beside it is
-/// doing**. See [`icon_slot`] for the rule and the argument.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IconSlot {
     /// No slot is laid out at all: the row is `[label] [grow] [chord]` and
@@ -281,11 +252,6 @@ pub enum IconSlot {
 impl IconSlot {
     /// Whether a slot is laid out at all — i.e. whether this row spends
     /// the width.
-    ///
-    /// [`Self::Blank`] and [`Self::Glyph`] cost exactly the same width;
-    /// that is the entire point of `Blank`, and it is why measurement and
-    /// drawing must both ask this question rather than each asking
-    /// "does the command have an icon?".
     #[must_use]
     pub fn is_reserved(self) -> bool {
         !matches!(self, Self::Absent)
@@ -299,40 +265,6 @@ impl IconSlot {
 }
 
 /// **Whether this menu reserves an icon column.**
-///
-/// `true` iff at least one command row that survived [`resolve`] names an
-/// icon key. Separators and [`Slot::Custom`] rows never decide it: a
-/// separator has no columns, and a custom row is drawn by the application,
-/// which is the only party that knows whether its widget has a glyph.
-///
-/// # Why the decision is per-menu and not per-row
-///
-/// A menu is a list of words and reads as one. The eye scans the left edge
-/// of the labels, and the single thing that makes that scan cheap is that
-/// the edge is *straight*. Deciding the slot per row breaks it: the rows
-/// with icons indent and the rows without do not, so the label column
-/// zig-zags and the reader loses the one alignment they were using.
-///
-/// The opposite extreme is worse still. Forcing a glyph onto every row —
-/// inventing art for `Reflow block`, reusing something approximate for
-/// `Close other documents` — buys a straight edge with a column of
-/// pictures that do not mean anything, and a picture that does not mean
-/// anything is read as one that does and then mis-read. That is the
-/// wrong-picture refusal this project records at each command's own
-/// registration, and it is not weakened by the column wanting to be full.
-///
-/// So: the **column** is a property of the menu, the **glyph** is a
-/// property of the command, and a row whose command has no icon spends the
-/// width and paints nothing ([`IconSlot::Blank`]). An indent is not a
-/// hole — it is the same left margin every other row has.
-///
-/// # Why the empty menu is the common case and must stay free
-///
-/// A menu where *no* command has an icon reserves nothing
-/// ([`IconSlot::Absent`] everywhere): no slot, no indent, no extra width.
-/// That matters more than it sounds — it means the column rule cannot make
-/// a plain menu wider or move a single pixel of it. Only a menu that has
-/// something to show pays for the column.
 #[must_use]
 pub fn reserves_icon_column(slots: &[Slot<'_>]) -> bool {
     slots.iter().any(|slot| match slot {
@@ -342,18 +274,6 @@ pub fn reserves_icon_column(slots: &[Slot<'_>]) -> bool {
 }
 
 /// What one row does with its icon slot, given the menu-wide decision.
-///
-/// `reserved` is [`reserves_icon_column`] for the whole menu; `has_key` is
-/// whether *this* command names an icon. The pair is the entire rule, and
-/// it is a free function over two `bool`s so it can be swept exhaustively
-/// by a test rather than inspected inside a draw call.
-///
-/// | `reserved` | `has_key` | Result | Why |
-/// |---|---|---|---|
-/// | `false` | `false` | [`IconSlot::Absent`] | No row in this menu has a glyph; there is no column. |
-/// | `false` | `true` | [`IconSlot::Absent`] | **Unreachable** — a row with a key is what makes `reserved` true. Answered rather than asserted: a panic here would turn a caller's bookkeeping slip into a crash in a popup, and `Absent` degrades to the pre-column layout, which is the safe direction. |
-/// | `true` | `false` | [`IconSlot::Blank`] | A sibling has a glyph; indent to keep the label column straight, and paint nothing. |
-/// | `true` | `true` | [`IconSlot::Glyph`] | Draw it. |
 #[must_use]
 pub fn icon_slot(reserved: bool, has_key: bool) -> IconSlot {
     match (reserved, has_key) {
@@ -368,52 +288,15 @@ pub fn icon_slot(reserved: bool, has_key: bool) -> IconSlot {
 // ---------------------------------------------------------------------
 
 /// **The minimum gap between the label column and the chord column.**
-///
-/// # Why this number exists at all, and why `egui` will not supply it
-///
-/// A menu row is drawn as an `egui::Button` whose atoms are
-/// `[icon?] [label] [grow] [chord]`. The `grow` atom absorbs whatever
-/// width is left over, which is what right-aligns the chord — and on the
-/// **widest** row there is nothing left over, so the label and the chord
-/// end up separated by one atom gap (4 pt) and read as a single run of
-/// text: `Save a copy…Ctrl+Shift+S`.
-///
-/// `egui` cannot fix this for us because it sizes each button
-/// independently; the fact that these buttons form two columns is a fact
-/// about the menu, not about any one row. So the menu computes its own
-/// width, adds this gap to the widest row, and every row — including that
-/// one — then has at least this much clear space between the two columns.
-///
-/// 24 pt is roughly two capital widths at the body size: enough that the
-/// eye reads two columns rather than one sentence, and not so much that a
-/// three-item menu becomes a banner.
 pub const COLUMN_GAP: f32 = 24.0;
 
 /// The narrowest a menu body may be.
-///
-/// A menu narrower than this reads as a tooltip that happens to be
-/// clickable. It also gives the pointer somewhere to be that is not
-/// on top of a row, which matters for dismissing without invoking.
 pub const MIN_BODY_WIDTH: f32 = 96.0;
 
 /// The widest a menu body may be before labels start truncating.
-///
-/// A menu is a list of verbs, and past roughly this width it stops being
-/// scannable and starts covering the thing that was right-clicked — which
-/// for a canvas selection is the one piece of context the operator needs
-/// while choosing. Beyond it the **label** gives way rather than the
-/// position, for the same reason the ribbon's overflow affordance
-/// truncates rather than moves: spending the shortfall on characters is
-/// recoverable (the tooltip carries the full text), spending it on
-/// position is not.
 pub const MAX_BODY_WIDTH: f32 = 420.0;
 
 /// The measured pieces of one command row.
-///
-/// Pure numbers, supplied by the renderer, which is the only party that
-/// can ask `egui` how wide a string is. Keeping the *arithmetic* here
-/// means it can be swept across hundreds of inputs by a unit test while
-/// the measurement stays in one place next to the drawing.
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct RowWidths {
     /// The icon slot, or `0.0` if this row lays none out.
@@ -451,31 +334,12 @@ impl RowWidths {
     }
 
     /// How many `egui` atoms the row is built from.
-    ///
-    /// Always the label; plus the icon slot if there is one; plus **two**
-    /// if there is a chord, because the chord is preceded by the zero-size
-    /// `grow` atom that does the right-aligning.
-    ///
-    /// This matters because `AtomLayout` charges `gap × (atoms − 1)`
-    /// unconditionally — a zero-size atom still buys its gap
-    /// (`egui-0.35.0/src/atomics/atom_layout.rs`) — so a width estimate
-    /// that ignored the `grow` atom would under-estimate by one gap on
-    /// every row that has a chord. Under-estimating is the dangerous
-    /// direction: it is the one where the chord column runs off the right
-    /// edge of the menu.
     #[must_use]
     pub fn atom_count(&self) -> usize {
         1 + usize::from(self.has_icon()) + if self.has_shortcut() { 2 } else { 0 }
     }
 
     /// The full width this row wants, gaps and padding included.
-    ///
-    /// `atom_gap` is `egui`'s `spacing().icon_spacing`, which is what
-    /// `AtomLayout` puts between atoms; `padding` is the button's
-    /// horizontal padding, both sides. Both come from the live style
-    /// rather than from constants here, because both are theme-dependent
-    /// and an estimate that disagreed with the toolkit would be wrong in a
-    /// way no test of this module could see.
     #[must_use]
     pub fn total(&self, atom_gap: f32, padding: f32) -> f32 {
         let gaps = atom_gap * (self.atom_count().saturating_sub(1)) as f32;
@@ -502,15 +366,6 @@ pub struct BodyWidth {
 
 /// The width a menu body should be laid out at, given what every row
 /// wants.
-///
-/// The **widest** row decides, because the rows form two columns and a
-/// column is as wide as its widest member. Then the result is clamped:
-/// never thinner than [`MIN_BODY_WIDTH`], never wider than
-/// [`MAX_BODY_WIDTH`].
-///
-/// An empty menu yields [`MIN_BODY_WIDTH`] rather than zero. It should
-/// never be drawn at all (see [`offers_anything`]), and a zero-width popup
-/// is a much worse thing to fall back to than a small one.
 #[must_use]
 pub fn body_width(row_totals: &[f32]) -> BodyWidth {
     let widest = row_totals.iter().copied().fold(0.0_f32, f32::max);

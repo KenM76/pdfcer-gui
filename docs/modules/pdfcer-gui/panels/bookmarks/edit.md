@@ -161,3 +161,16 @@ An outline is a document-level structure reached from the catalogue's
 *reaching* a page. It is worth saying beside a control that takes several
 things at once, because the operator's reasonable fear at that moment is
 that the pages are what is going.
+
+### `fn show`
+
+`selected` is the item the operator last clicked, already resolved against
+the outline **as it stands this frame** by the caller. Resolving it there
+rather than here is what lets the whole block be skipped when nothing is
+selected — R9, one call site up — and it means this function never has to
+consider an id that no longer names anything, which is the ordinary state
+one frame after an undo.
+
+Nothing is mutated except `ui_state`'s own draft. Both verbs leave through
+`actions`: no code path runs from a widget to a document, which is what
+keeps one gesture equal to one undo entry. See `app::actions`' `OVERVIEW.md`.

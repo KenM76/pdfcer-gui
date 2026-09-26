@@ -132,3 +132,21 @@ renders whatever provenance it is given: if `unit` ever did report
 `Factory`, the row would show *"using pdfcer's default"* for a property
 whose group always has a value — a sentence the engine calls *"a lie an
 operator could act on"*.
+
+### `const REGION_TEXT_HEIGHT`
+
+The same reasoning `dialogs::dimension_groups::style` records: a colour
+picker's popup publishes no regions, so any block containing one needs a
+driveable non-popup neighbour or a harness can prove nothing about it.
+
+### `fn show`
+
+`group` is the ce dimension's own group, needed for two things: the
+provenance query, and the **resolved** style that seeds a checkbox the
+operator has just ticked. Seeding from the resolved value rather than from
+the factory is what makes ticking a box a no-op until something is dragged —
+the value on screen does not jump the moment it becomes editable.
+
+Returns `false` if any row is currently invalid, in which case the caller
+must not raise an action. Only the tolerance can be invalid; see
+[`super::tolerance`].

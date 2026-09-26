@@ -34,17 +34,6 @@ use crate::canvas::mapping::{self, PageMapping};
 const GHOST_PX: f32 = 1.5;
 
 /// The `/Rect` a single click at `at` would give a field of `kind`.
-///
-/// `at` is **canvas** space, as the click handler receives it; the answer is
-/// PDF user space, because that is what goes into the file.
-///
-/// The click point is the **lower-left** corner rather than the centre, which
-/// matches what the drag does — the press is one corner and the control grows
-/// from it — so the two gestures agree about what the pointer meant.
-///
-/// `None` for a page whose device transform cannot be inverted, which is the
-/// same refusal [`crate::canvas::markup::band::endpoints`] makes and for the
-/// same reason.
 #[must_use]
 pub(in crate::canvas) fn click_rect(kind: FormFieldKind, at: Pos2, page: &Page) -> Option<PdfRect> {
     let (corner, _) = crate::canvas::markup::band::endpoints(at, at, page)?;
@@ -58,22 +47,6 @@ pub(in crate::canvas) fn click_rect(kind: FormFieldKind, at: Pos2, page: &Page) 
 }
 
 /// Draw the outline a click would produce, following the pointer.
-///
-/// `pointer` is canvas space and `None` when the pointer has left the widget,
-/// in which case nothing is drawn — honestly, because there is no click to
-/// describe.
-///
-/// # Why the projection goes the long way round
-///
-/// The rect is computed in **PDF** space and projected back out through
-/// [`mapping::annot_canvas_rect`], which is the same function that places an
-/// existing widget's outline on the canvas. A ghost drawn as a screen-space box
-/// hung off the pointer would need width and height in pixels, which means
-/// deriving the page scale and the page rotation here — a second copy of the
-/// projection, agreeing with the first on an unrotated page and disagreeing on
-/// every `/Rotate 90` sheet. Going through PDF space costs one inversion per
-/// frame and makes the ghost and the placed box the same geometry by
-/// construction.
 pub(in crate::canvas) fn preview(
     ui: &Ui,
     page: Option<&Page>,

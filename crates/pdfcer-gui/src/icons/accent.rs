@@ -19,6 +19,8 @@
 //! - The switch reaches painters through the `egui::Context` ([`sync`],
 //!   [`enabled`]), because the ribbon's painter is handed a `Painter` and
 //!   nothing else.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/icons/accent.md`.
 
 use egui_shell::theme::IconAccents;
 
@@ -53,10 +55,6 @@ impl Hue {
 
 /// The accent of `icon`: its hue role and the indices, in the asset's paint
 /// order, of the shapes drawn in it. `None` for an icon that stays one colour.
-///
-/// Indices are into [`super::IconArt`]'s shapes; the test below holds every
-/// one in range, so an edited asset that loses a shape fails `cargo test`
-/// rather than silently dropping its accent.
 #[must_use]
 pub const fn accent(icon: Icon) -> Option<(Hue, &'static [usize])> {
     Some(match icon {

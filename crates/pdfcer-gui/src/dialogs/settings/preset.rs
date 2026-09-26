@@ -14,14 +14,6 @@ use pdfcer_core::settings::presets::{Evidence, PresetKey, RenderPreset, RenderSt
 use super::Draft;
 
 /// One thing the operator can choose from the presets row.
-///
-/// Two kinds, and the distinction is the whole model:
-///
-/// * [`Choice::Recommended`] — pdfcer's own shipped answers. **We** are the
-///   authority, so it can say what it does without qualification.
-/// * [`Choice::Standard`] — a published standard's answers, from
-///   `pdfcer_core::settings::presets`. **We are not the authority**, so every
-///   value carries the engine's own evidence grade and the row shows it.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Choice {
     /// Restore what pdfcer ships with.
@@ -65,12 +57,6 @@ impl Choice {
 }
 
 /// **Everything the presets row offers**, in display order.
-///
-/// pdfcer's own answers first, then every standard the engine knows about.
-/// The list is *derived* from `RenderStandard::all()` rather than restated, so
-/// a standard the engine adds appears here with no change at all — R8's
-/// registration rule, reached through the crate boundary instead of through a
-/// command registry.
 #[must_use]
 pub fn choices() -> Vec<Choice> {
     std::iter::once(Choice::Recommended)
@@ -85,14 +71,6 @@ fn apply_pdfcer(s: &mut Settings) {
 
 /// **The `&'static str` a stored id names**, or `None` if this build has no
 /// such choice.
-///
-/// The seam between `Prefs`'s owned `String` and the `&'static str` every other
-/// reader here compares against. Resolving through [`choices`] rather than
-/// leaking the string is what keeps an unknown id — hand-edited, or written by
-/// a newer pdfcer that knows a standard this one does not — from travelling any
-/// further than this function. It is not an error: the window simply falls back
-/// to the derived reading, which is the honest answer for a choice this build
-/// cannot offer.
 #[must_use]
 pub fn resolve_id(stored: Option<&str>) -> Option<&'static str> {
     let stored = stored?;
@@ -115,14 +93,6 @@ fn live_choice(draft: &Draft) -> Option<&'static str> {
 
 /// **Whether the draft's chosen standard still describes its working
 /// settings** — the question `commit` asks before writing the choice to disk.
-///
-/// [`live_choice`]'s own filter, exposed so the display rule and the stored
-/// value cannot drift apart. Without one function answering for both, the
-/// window would stop showing a standard while the preferences file went on
-/// naming it, and the next session would open claiming a choice the values
-/// contradict.
-///
-/// `true` when nothing is chosen: there is no claim to retire.
 #[must_use]
 pub fn still_chosen(draft: &Draft) -> bool {
     draft
@@ -160,12 +130,6 @@ fn identical_siblings(id: &str) -> usize {
 }
 
 /// Which preset the given settings currently match, if any.
-///
-/// Returns `None` for "none of them", which is the **normal** state once an
-/// operator has adjusted anything, and is not a fault. The control shows no
-/// selection rather than pretending the nearest one is chosen — a radio that
-/// claimed "pdfcer recommended" over settings that are not pdfcer's recommended
-/// answers would be lying about the thing it exists to report.
 #[must_use]
 pub fn matching(settings: &Settings) -> Option<&'static str> {
     choices().into_iter().find_map(|c| {
@@ -186,31 +150,6 @@ fn same(a: &Settings, b: &Settings) -> bool {
 }
 
 /// **Draw the presets row.**
-///
-/// Above the groups rather than inside one, because it acts on all of them —
-/// `widgets::group`'s convention is that a group holds settings sharing a
-/// *subject*, and a preset shares a *purpose*.
-///
-/// ## What is shown BESIDE the choice, and why it is not decoration
-///
-/// The engine's reply that supplied these values spent most of its length on
-/// one point: *"the interesting column is not the value, it is how much weight
-/// the value can bear."* Only one of PDF/X-4's six answers is a claim about the
-/// standard at all, and that one is `implied` rather than `sourced`. A row that
-/// showed the name and hid the grading would be exactly the over-claim the
-/// whole request was careful to avoid.
-///
-/// So a selected standard shows:
-///
-/// * **its disclosures**, verbatim from the engine. These are not advisory —
-///   `cmyk_intent` has no conformant value at all, so choosing a PDF/X preset
-///   means a colour transform did *not* happen, and rule 4 requires saying so
-///   because nothing on screen would reveal it.
-/// * **what it leaves alone**, named. Roughly a third of the grid is axes a
-///   standard does not reach — no PDF/X part contains a shading clause, so none
-///   of them says anything about mesh padding. Showing those as blank would
-///   read as missing data; showing them as values would assert a requirement
-///   that does not exist.
 pub fn row(ui: &mut egui::Ui, draft: &mut Draft) {
     let rect = ui
         .scope(|ui| {

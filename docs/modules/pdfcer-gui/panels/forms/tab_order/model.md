@@ -369,3 +369,45 @@ The page index is fed straight to
 would be a navigation to nowhere. It cannot happen — the index is the
 enumeration of `slots` — and it is pinned anyway, because this is the
 one number that leaves the view.
+
+### `fn pages_with_derived_order`
+
+A page under `/Tabs /R`, `/C` or `/S` has an order a viewer *derives*
+rather than one the file stores, so the `/Annots` sequence on screen is
+not it. Counted so the trace can prove the disclosure fired.
+
+### `struct Unclaimed`
+
+# Why this is a struct and not the bare `ObjId`
+
+Because two independent things are true of it and both are needed at the
+same moment: it is a **thing to register** (the id, which
+`EditSession::adopt_widget` takes) and it is a **place in the tab
+sequence** (the position, which is how an operator finds the box on the
+page — they tab to it and watch the focus ring land).
+
+The position cannot be recovered from the id afterwards without walking
+`/Annots` again, and a second walk is a second answer to a question this
+module exists to answer once.
+
+### `struct TabRow`
+
+Owned strings rather than borrows. The `AcroForm` is parsed fresh inside the
+panel body and dropped when the frame ends, so borrowing would tie the
+listing's lifetime to a temporary; and the whole listing is a few hundred
+short strings at most.
+
+### `fn collect`
+
+`graph` must be the **session view**, not the loaded file — see this
+module's header. `slots` is `EditSession::page_slots()`, whose index is the
+page index every row carries and whose `ancestors` [`page_tabs`] reads.
+`form` is the parsed `/AcroForm` the panel body already has.
+
+# Cost
+
+One `/Annots` walk per page, bounded by
+`pdfcer_core::annot::MAX_ANNOTS_PER_PAGE`, plus one `HashMap` of widget ids
+built once for the whole document rather than once per page. That is the
+Comments panel's cost exactly, and its header's measurement applies:
+negligible beside a raster on anything this project measures against.

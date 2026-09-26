@@ -283,3 +283,13 @@ A keyboard route to reordering is an accessibility gap this view has,
 and if it is filled the right way — a keymap command, not a pair of
 buttons per row — this test is what should be revisited, with its
 reasoning, rather than deleted quietly.
+
+### `fn section`
+
+Called from [`super::body`] with the `/AcroForm` it has already parsed and
+the `DocumentView` it already holds — neither is re-derived here, because two
+parses of one form per frame is a cost with no benefit and because a second
+`parse_acroform` could in principle disagree with the first one the panel is
+drawing from.
+
+`actions` is pushed at most once, with [`Action::GoToPage`].

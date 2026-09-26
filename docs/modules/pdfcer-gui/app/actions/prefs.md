@@ -66,3 +66,15 @@ Nowhere near here, deliberately. The read-back happens **once, at
 construction**, in `crate::app::PdfcerApp::new`, which seeds the live
 owners from the file. A preference that were re-read per frame would let
 the file win an argument the operator had already had with the control.
+
+## Item notes
+
+### `fn apply`
+
+Takes `&mut Prefs` rather than `&mut PdfcerApp` on purpose: the whole
+point of the family is that none of it can touch a document, and a
+signature that could would make that a convention rather than a fact.
+A future member that genuinely needed more than `Prefs` would be
+telling you it is not a member.
+
+The save failure is swallowed — property 4 in the module header.

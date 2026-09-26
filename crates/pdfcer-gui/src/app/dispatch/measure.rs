@@ -9,11 +9,6 @@ use crate::app::PdfcerApp;
 use crate::app::actions::Action;
 
 /// The ids this module owns.
-///
-/// A predicate rather than a `match` in `super`, so the routing arm cannot
-/// drift from the arms it routes to. `measure_for_command` already answers for
-/// the tool-arming ids; the named ones are the `measure.*` commands that are
-/// **not** tools, each for a reason its own arm records.
 #[must_use]
 pub(super) fn handles(id: &str) -> bool {
     matches!(

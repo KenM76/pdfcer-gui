@@ -88,3 +88,23 @@ defect even when both answers are defensible.
 The set is §"Naming Files, Paths, and Namespaces"'s reserved list. A
 category name is free text an operator typed and `Approved / Rejected` is
 an entirely reasonable thing to type.
+
+### `fn user_stamps_dir`
+
+Returns the folder whether or not it exists — an operator who has never
+made a stamp in Acrobat has no `Stamps` directory, and suggesting the path
+it *would* have is more useful than suggesting nothing. The caller's
+picker creates it if he accepts.
+
+### `fn suggested_file_name`
+
+Acrobat writes an opaque key here and reads the category from `/Info`
+`/Title`, so the filename is ours to choose and a readable one is strictly
+better for anyone who ever opens that folder.
+
+**`set_file_name`, never `set_extension`** is the rule at the picker; the
+same hazard applies to building the string. A category of `Rev. 2` would
+have `set_extension` replace `2` and produce `Rev..pdf`, so the extension
+is concatenated, never substituted. The finding is
+`app/actions/export.rs`'s and is repeated here because the next person to
+write a suggested filename will not have read that one.

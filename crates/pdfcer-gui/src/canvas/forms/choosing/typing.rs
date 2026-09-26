@@ -16,17 +16,6 @@ use crate::canvas::tabnav;
 use crate::panels::forms::edit::FormEdit;
 
 /// The drop button's width, from a rectangle in whichever space it is in.
-///
-/// Taken from the **height**, so the button is the square Acrobat draws and
-/// scales with the field rather than with the zoom. Capped at half the width
-/// so a wide-and-short field does not end up all button; floored at one unit
-/// so the arithmetic below never produces an inverted rectangle.
-///
-/// Called on the **page** rectangle to decide what a click meant and on the
-/// **screen** rectangle to decide where to draw. Those two disagree slightly
-/// for a widget small enough that [`crate::canvas::forms::boxes::editor_rect`]
-/// grew it to the legible minimum, and that is accepted: the alternative is a
-/// hit region derived from a rectangle the operator cannot see.
 pub(super) fn arrow_strip(rect: Rect) -> f32 {
     rect.height().min(rect.width() * 0.5).max(1.0)
 }
@@ -322,10 +311,6 @@ fn chevron(ui: &Ui, rect: Rect, open: bool) {
 }
 
 /// The list state an arriving click should leave behind.
-///
-/// Called by [`super::focus_choice`] so the decision lives beside the
-/// arithmetic that defines the button, rather than being re-derived at the
-/// focus site.
 pub(super) fn arrival(rect: Rect, point: egui::Pos2, hl: usize) -> ListState {
     ListState {
         open: hit_arrow(rect, point),

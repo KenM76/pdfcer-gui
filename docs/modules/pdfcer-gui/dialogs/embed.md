@@ -181,3 +181,10 @@ a unit test at all.
 Asserted rather than left to the comment, because "unreachable by
 construction" is a claim about a construction that somebody will change.
 The safe direction is the operator's own fonts; see [`chosen`].
+
+### `fn open`
+
+`None` for a document with no missing fonts is deliberate: opening a
+window to say *"there is nothing to do"* is a modal an operator has to
+dismiss to learn they did not need it. The disclosure line says it
+instead — see [`open_for`]'s caller.

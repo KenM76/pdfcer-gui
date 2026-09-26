@@ -33,49 +33,24 @@ impl Quitting {
     }
 
     /// **Abandon the quit.** The program stays open.
-    ///
-    /// Called on Cancel, and it is the answer with the honest caveat: any
-    /// document the operator already chose to *discard* in this cycle is
-    /// already closed, and cancelling does not bring it back. That matches
-    /// every editor in the class — a discard is an answer, not a step — but it
-    /// is worth saying out loud rather than leaving somebody to discover it.
     pub const fn stand_down(&mut self) {
         self.running = false;
     }
 }
 
 /// **The first slot with unsaved work**, or `None` when everything is clean.
-///
-/// The whole of the cycle's ordering: lowest tab position first, which is
-/// left-to-right in the strip and is the order an operator reads them in.
-///
-/// Takes a **predicate** rather than `&PdfcerApp`, so it can be tested without
-/// an application — and a predicate rather than the `Status` itself because
-/// `Status` is deliberately not `Clone` (it owns an `EditSession`). What this
-/// needs to know is *"is slot n dirty"*, which is one bool.
 #[must_use]
 pub fn first_dirty(count: usize, dirty: impl Fn(usize) -> bool) -> Option<usize> {
     (0..count).find(|&n| dirty(n))
 }
 
 /// **How many slots have unsaved work.**
-///
-/// Read for one decision only: whether to offer *Save all*. A cycle of one does
-/// not need it, and a button that does the same as the one beside it is a
-/// button an operator has to think about.
 #[must_use]
 pub fn dirty_count(count: usize, dirty: impl Fn(usize) -> bool) -> usize {
     (0..count).filter(|&n| dirty(n)).count()
 }
 
 /// Whether one slot has work that would be lost.
-///
-/// Delegates to `save::has_unsaved_edits`, which is the **one** expression
-/// of this question — the same one `dialogs::unsaved::ask_for` consults before
-/// deciding whether to ask at all. A second expression of *"is this document
-/// dirty"* anywhere in the crate is a defect by construction: the two eventually
-/// disagree, and the shape of the disagreement is a modal that does not appear
-/// or one that appears over a clean file.
 pub fn is_dirty(status: &Status) -> bool {
     match status {
         Status::Open(doc) => crate::app::save::has_unsaved_edits(doc),
@@ -86,31 +61,6 @@ pub fn is_dirty(status: &Status) -> bool {
 /// The cycle's verbs, on the application that runs them.
 impl crate::app::PdfcerApp {
     /// **One frame of the quit cycle** — `OPERATOR_REQUESTS.md` O102.
-    ///
-    /// Called once per frame, after both dialog drains. See
-    /// [`crate::app::quitting`] for why the cycle is derived from the document
-    /// set rather than remembered as a queue.
-    ///
-    /// # The states, and the order they are checked in
-    ///
-    /// 1. **Cancelled** — the operator answered Cancel, so stand down and stay
-    ///    open. Checked first, because every state below would otherwise act on
-    ///    a cycle that has just been abandoned.
-    /// 2. **A close was requested and nothing is dirty** — let it through. No
-    ///    dialog, no cancelled close, no flicker.
-    /// 3. **A close was requested and something is dirty** — cancel the close
-    ///    and begin the cycle.
-    /// 4. **The cycle is running and something is dirty** — activate that
-    ///    document and ask about it.
-    /// 5. **The cycle is running and nothing is dirty** — close, for real.
-    ///
-    /// # Why the close is cancelled rather than pre-empted
-    ///
-    /// `egui` reports the request and closes at the end of the frame unless
-    /// something says otherwise. There is no "ask first" hook, so the sequence
-    /// has to be *let it be requested, cancel it, then re-request it when the
-    /// questions are answered*. `ViewportCommand::CancelClose` is that, and it
-    /// must be sent on **the same frame** the request is read.
     pub(crate) fn step_quit_cycle(&mut self, ctx: &egui::Context) {
         // 1 — an answered Cancel abandons the whole quit, not one question.
         if self.dialogs.unsaved_cancelled() && self.quitting.running() {
@@ -183,10 +133,6 @@ impl crate::app::PdfcerApp {
 
     /// Raise the unsaved question for the active document, told how many are
     /// dirty so the *Save all* button knows whether to draw itself.
-    ///
-    /// A thin wrapper rather than a parameter on `DialogsState::ask_unsaved`,
-    /// because every other caller is about **one** document and should keep
-    /// saying so without being edited.
     pub(crate) fn ask_unsaved_for_quit(&mut self, dirty: usize) {
         self.dialogs.ask_unsaved_in_cycle(
             &self.status,
@@ -196,32 +142,6 @@ impl crate::app::PdfcerApp {
     }
 
     /// **Write every dirty document that has a file, in place.**
-    ///
-    /// `OPERATOR_REQUESTS.md` O102's fourth requirement — *"a save all button
-    /// that saves all changed documents"* — and the thing that makes the quit
-    /// cycle bearable: without it, somebody with six dirty documents answers six
-    /// questions.
-    ///
-    /// # Returns
-    ///
-    /// `false` if any attempted write failed, so the caller can abandon the
-    /// resume. A document with **no file is not attempted and is not a
-    /// failure**: it needs a destination, which is a question only the operator
-    /// can answer, and the cycle asks about those individually afterwards.
-    ///
-    /// # Why it activates each slot before writing it
-    ///
-    /// Because `save::save_in_place` takes the **active** document, and the
-    /// application's own invariant is that `status` is the active one with the
-    /// rest parked. Reaching into a parked slot to write it would be a second
-    /// way to save, and the two would eventually disagree about what a save
-    /// does — the signature question, the receipt, the epoch. Activating first
-    /// means every document in the batch is saved by exactly the path a single
-    /// save uses.
-    ///
-    /// The originally-active slot is restored at the end, so an operator who
-    /// cancels the rest of the cycle is looking at the document they were
-    /// looking at when they pressed the button.
     pub(super) fn save_every_dirty_document(&mut self) -> bool {
         let started_on = self.active_slot;
         let count = self.document_count();

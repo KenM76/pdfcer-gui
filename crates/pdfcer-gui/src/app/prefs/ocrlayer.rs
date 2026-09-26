@@ -29,16 +29,6 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/app/prefs/ocrlayer.md`.
 
 /// Read a colour out of the preferences file.
-///
-/// Accepts `#RRGGBB` and `RRGGBB`, and the three-digit shorthand `#RGB` where
-/// each digit is doubled — the notation a CSS-literate operator will reach for
-/// first. Case does not matter. Anything else is `None`, which
-/// [`super::file`] turns into a `BadValue` note.
-///
-/// The leading `#` is optional on the way **in** and always written on the
-/// way **out**. A parser that insisted on it would reject the value a
-/// spreadsheet or a colour picker hands out, and a writer that omitted it
-/// would leave the file looking like it held a number.
 #[must_use]
 pub fn parse(value: &str) -> Option<[u8; 3]> {
     let digits = value.trim().trim_start_matches('#');

@@ -14,47 +14,6 @@ const RESIZE_FLOOR_PT: f32 = 0.5;
 
 /// **Where the view should go, AND which layout unit that offset is
 /// relative to** — `OPERATOR_REQUESTS.md` O177, second half.
-///
-/// The operator:
-///
-/// > *"fit page when in 2 pages side by side views should fit the two side by
-/// > side pages onto the canvas - right now it snaps to fitting one."*
-///
-/// ## Why a returned offset now has to say what it is measured against
-///
-/// The fit's **scale** has been row-aware since facing modes shipped —
-/// [`crate::viewer::strip::Strip::row_extent`] says so in its own doc,
-/// *"fitting one page of a spread would leave the other half off screen"*. The
-/// fit's **placement** was not: the offset came back as a *page*-local number
-/// and `canvas::offset` converted it through the acting page's rect. So a
-/// spread was scaled to fit two pages and then positioned as though it were
-/// one, and half of it sat off the canvas.
-///
-/// The general lesson, which is the part worth carrying to the next feature:
-/// **when a rule about SCALE learns about a new layout unit and the matching
-/// rule about PLACEMENT does not, the symptom presents as the scale being
-/// wrong.** The operator reported a fit that "snaps to fitting one page"; the
-/// scale was already correct.
-///
-/// ## Why an enum rather than always returning row-local
-///
-/// Because the two arms below genuinely want different units, and collapsing
-/// them would be a silent behaviour change on the arm that is not about O177:
-///
-/// * [`Self::Row`] — a **pressed fit** and a **page-display recentre**. Both
-///   are the operator saying *"put the thing I am looking at in the middle"*,
-///   and under a facing mode the thing they are looking at is the spread.
-/// * [`Self::Page`] — the **resize** arm, which preserves whatever was in the
-///   middle across a viewport change. It must stay page-based, and that is a
-///   theorem rather than a preference: when the unit fits the viewport at both
-///   ends, `margin = (v - d)/2`, so [`geometry::centred_frac`] reduces to
-///   `u = off/d + 0.5` and [`geometry::offset_holding_anchor_at`] to
-///   `off' = off*d'/d`. The gap between the row's centre and the page's centre
-///   scales with the zoom by exactly the same factor, so row-centring is
-///   preserved **exactly** by the page-based rule. Teaching this arm about rows
-///   would buy nothing and would cost `CanvasFrame` a row field it has no other
-///   use for — its reason to exist is the zoom anchor, which genuinely wants
-///   the page.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(super) enum Placed {
     /// Relative to the acting **page**'s rect within the strip.
@@ -68,17 +27,6 @@ pub(super) enum Placed {
 /// **Spend a pending fit request and return where the view should go**, as an
 /// offset plus the unit it is measured against, or `None` on the overwhelming
 /// majority of frames where nothing is pending.
-///
-/// The request is **taken** whatever happens — including on a frame at the
-/// deep-zoom tier, and on one where something else wins the scroll offset. A
-/// request left pending would fire on whatever frame the caller's chain next
-/// reached it, which the operator experiences as the view jumping for a button
-/// they pressed some seconds ago. That is the failure mode `zoom::consume_anchor`'s
-/// own `Drop` step exists to prevent, and it is prevented here the same way.
-///
-/// # Arguments
-///
-///
 pub(super) fn placement(
     doc: &mut OpenDoc,
     current_display: (f32, f32),

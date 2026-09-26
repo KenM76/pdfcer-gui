@@ -40,19 +40,6 @@ use crate::canvas::overlay::FindHighlight;
 // ===========================================================================
 
 /// What the operator has asked a search to mean.
-///
-/// A shell-side struct rather than [`TextSearchOptions`] itself, and the
-/// difference is deliberate in three places:
-///
-/// 1. **`case_sensitive`, not `case_insensitive`.** The control on the bar
-///    says *Match case* — the thing the operator switches **on** — and a
-///    field whose polarity is the inverse of its checkbox is how a `!` gets
-///    dropped. The inversion happens once, in [`Self::to_core`], with a test.
-/// 2. **`TextSearchOptions` is `#[non_exhaustive]`**, so it cannot be
-///    written as a struct expression from this crate and cannot be exhaustively
-///    matched. Owning a plain struct keeps the bar's state a plain value that
-///    `PartialEq` and `Default` work on.
-/// 3. **The default differs, on purpose.** See [`Self::default`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FindOptions {
     /// Whether `total` should stop finding `TOTAL`. The *Match case* control.
@@ -85,12 +72,6 @@ impl Default for FindOptions {
 
 impl FindOptions {
     /// Turn the operator's choices into the engine's request.
-    ///
-    /// **The one place the case polarity is inverted**, and the one place
-    /// `wildcards` is stated at all — which is what makes the trap
-    /// checkable rather than a promise: there is exactly one construction of
-    /// a [`TextSearchOptions`] in this crate, it is this function, and
-    /// `tests::the_default_search_is_literal` reads it.
     #[must_use]
     pub fn to_core(self) -> TextSearchOptions {
         TextSearchOptions::default()
@@ -101,18 +82,6 @@ impl FindOptions {
     }
 
     /// The three whole-word rules, in the order the chooser offers them.
-    ///
-    /// Narrowest-word-first: `Alphanumeric` splits at the most characters,
-    /// `NonSpace` at the fewest. A chooser whose entries are in an arbitrary
-    /// order makes the operator read all three every time.
-    ///
-    /// A `const` list rather than a `match` over the enum because
-    /// [`WordBoundary`] is `#[non_exhaustive]` — a fourth variant (core names
-    /// UAX #29 as a candidate) cannot be matched exhaustively here, and a
-    /// wildcard arm would silently drop it from the chooser instead of
-    /// failing to compile. This list is the one that has to be extended, and
-    /// `tests::every_word_rule_the_chooser_offers_has_a_label` is what says
-    /// so out loud.
     pub const WORD_RULES: &'static [WordBoundary] = &[
         WordBoundary::Alphanumeric,
         WordBoundary::NonSpace,
@@ -125,16 +94,6 @@ impl FindOptions {
 // ===========================================================================
 
 /// One occurrence, as this shell needs it.
-///
-/// Not [`pdfcer_core::edit::TextMatch`] itself, for two reasons that both
-/// matter:
-///
-/// - `TextMatch` is `#[non_exhaustive]`, so a test in this crate cannot
-///   construct one — which would leave every rule in this module
-///   (stepping, wrapping, the readout, staleness) testable only through a
-///   real document and a real search;
-/// - the **canvas-space rectangle is computed once, here, at search time**
-///   rather than per frame. See [`Self::canvas`].
 #[derive(Debug, Clone, PartialEq)]
 pub struct Hit {
     /// Zero-based page index, in the session's page space.
@@ -171,13 +130,6 @@ pub struct Hit {
 }
 
 /// One completed search, and what it was a search for.
-///
-/// The three fields above `hits` are the **currency key**: results describe a
-/// query, under options, against a revision, and any of the three moving
-/// makes them something other than an answer to the question now being
-/// asked. Storing the key with the answer is what lets
-/// [`FindState::readout`] be a pure function of state rather than a flag
-/// somebody has to remember to clear.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Results {
     /// The exact needle that was searched for.
@@ -219,13 +171,6 @@ pub struct Results {
 }
 
 /// What the bar's readout should say.
-///
-/// A four-way enum rather than an `Option<(usize, usize)>` because the four
-/// states have four different sentences and an operator has to be able to
-/// tell them apart: *I have not searched yet* is not *I searched and there
-/// is nothing*, and neither is *the answer I gave you is no longer true*.
-/// Collapsing any pair of them produces a readout that is silent exactly
-/// when the operator most needs a word.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Readout {
     /// No search has been run for the query and options now in the bar.
@@ -356,24 +301,12 @@ impl FindState {
     }
 
     /// Open the bar and ask for keyboard focus.
-    ///
-    /// Idempotent about the *open* half and deliberately **not** about the
-    /// focus half: `Ctrl+F` pressed while the bar is already open is a
-    /// request to type in it, which is what every browser and editor does
-    /// with that chord, and it is the recovery an operator reaches for after
-    /// clicking on the page.
     pub fn open(&mut self) {
         self.open = true;
         self.focus_wanted = true;
     }
 
     /// Close the bar.
-    ///
-    /// **The results go with it**, which is what makes the highlights
-    /// disappear: the overlay reads [`Self::current_hit`] and the hit list,
-    /// and a closed bar with live hits would leave marks on the page with no
-    /// surface saying what they are or how to get rid of them. The query and
-    /// the options survive — see [`Self::query`].
     pub fn close(&mut self) {
         self.open = false;
         self.focus_wanted = false;
@@ -423,11 +356,6 @@ impl FindState {
     }
 
     /// Replace the search options.
-    ///
-    /// Does **not** clear the results, and does not need to: [`Self::readout`]
-    /// compares the options the results were computed under against the ones
-    /// now set, so changing an option makes the results non-current by the
-    /// same rule that a changed query does. One currency test, three inputs.
     pub fn set_options(&mut self, options: FindOptions) {
         self.options = options;
     }
@@ -440,18 +368,6 @@ impl FindState {
     }
 
     /// Set the *Zoom* control.
-    ///
-    /// **Does not touch the results, and must not.** The three
-    /// [`FindOptions`] controls make the standing hit list wrong, which is why
-    /// changing one re-runs the search; this one does not change which glyphs
-    /// matched. Clearing the results here would throw away a correct answer
-    /// and make the operator search again to get the same list back.
-    ///
-    /// Two callers: `PdfcerApp::new`, mirroring the persisted preference in at
-    /// startup, and the [`PrefAction::FindZoom`](crate::app::actions::prefs::PrefAction::FindZoom)
-    /// arm, carrying the operator's
-    /// click. Both go through here rather than writing the field so there is
-    /// one place to read when the value is wrong.
     pub fn set_zoom_on_jump(&mut self, on: bool) {
         self.zoom_on_jump = on;
     }
@@ -464,16 +380,6 @@ impl FindState {
     }
 
     /// Set the trim preference.
-    ///
-    /// **Clears the results, unlike [`Self::set_zoom_on_jump`]**, and the
-    /// asymmetry is the point: this preference changes which text matches,
-    /// so a stored hit list computed under the old value is wrong rather
-    /// than merely stale. Leaving it standing would let the operator step
-    /// through hits for a needle the setting says is no longer the needle.
-    ///
-    /// Two callers, the same two [`Self::set_zoom_on_jump`] has:
-    /// `PdfcerApp::new` mirroring the persisted value in at startup, and the
-    /// `Action::SetFindTrim` arm carrying the operator's tick.
     pub fn set_trim_query(&mut self, on: bool) {
         if self.trim_query == on {
             return;
@@ -484,29 +390,12 @@ impl FindState {
 
     /// Forget everything that describes a *document*, keeping everything that
     /// describes the *operator*.
-    ///
-    /// Called from `PdfcerApp::open_path` and `PdfcerApp::close_document`, the
-    /// same two sites `crate::panels::PanelsState::forget_document` is called
-    /// from and for the same reason: page indices and page-space rectangles
-    /// are positions in one file, and carrying them into another one is not
-    /// staleness but nonsense. The bar stays open if it was open — the
-    /// operator did not ask for it to close — with an empty readout and the
-    /// query they last typed, ready for Enter.
     pub fn forget_document(&mut self) {
         self.results = None;
     }
 
     /// **Whether the bar is currently showing an answer to what is in it** —
     /// the *document-independent* half of the currency test.
-    ///
-    /// True when a search has been run for exactly this query under exactly
-    /// these options, whatever has happened to the document since. That is
-    /// deliberately weaker than [`Self::readout`] returning [`Readout::At`],
-    /// and it is the right test for its one caller: [`bar`] asks it before
-    /// changing an option, to decide whether the change should re-run the
-    /// search. An edit having intervened is not a reason to *skip* the
-    /// re-run — the operator has just asked for a different hit list — and
-    /// the epoch is not reachable from that call site anyway.
     #[must_use]
     pub fn answered(&self) -> bool {
         self.results
@@ -528,12 +417,6 @@ impl FindState {
     #[must_use]
     /// **How many fonts made this document partly unsearchable**, for the
     /// query the bar currently holds — or `0` when there is nothing to say.
-    ///
-    /// Returns `0` unless the last search is the one the bar is showing, so a
-    /// stale or edited-away result cannot leave a sentence on screen about a
-    /// query the operator has moved on from. Same staleness rules as
-    /// [`Self::readout`], deliberately: two surfaces describing one search must
-    /// not disagree about which search it is.
     pub fn unsearchable_fonts(&self, epoch: u64) -> u64 {
         let Some(results) = &self.results else {
             return 0;
@@ -568,10 +451,6 @@ impl FindState {
     }
 
     /// The hit the view is on, or `None` when there is not one.
-    ///
-    /// `None` covers every non-[`Readout::At`] state, staleness included —
-    /// which is the mechanism by which an edit stops the highlights: the
-    /// overlay asks this, and a stale result answers no.
     #[must_use]
     pub fn current_hit(&self, epoch: u64) -> Option<&Hit> {
         if !matches!(self.readout(epoch), Readout::At { .. }) {
@@ -582,15 +461,6 @@ impl FindState {
     }
 
     /// Every hit on `page`, paired with whether it is the current one.
-    ///
-    /// The overlay's input. Empty — not merely all-`false` — whenever the
-    /// results are not current, so a stale or superseded search paints
-    /// nothing at all rather than painting hits without a highlighted one.
-    ///
-    /// Returns [`FindHighlight`]s, which carry a canvas-space rect and a
-    /// flag and nothing else: `crate::canvas::overlay` is not told what a
-    /// page index or a quad is, and this module is not told what a `Painter`
-    /// is.
     pub fn page_highlights(
         &self,
         page: usize,
@@ -629,13 +499,6 @@ pub enum Step {
 
 /// One thing the operator asked Find to do, carried by
 /// [`crate::app::actions::Action::Find`].
-///
-/// Two variants and no more. In particular there is **no** `Open`/`Close`
-/// variant: opening the bar changes no document state and needs no frame
-/// boundary, so it happens in the `edit.find` dispatch arm directly, exactly
-/// as `file.properties` mounts a panel there. What has to go through the
-/// funnel is what needs the *document* — and both of these do, one because
-/// it borrows the session mutably and one because it navigates.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FindRequest {
     /// Run the search now, for whatever is in the bar.
@@ -645,10 +508,6 @@ pub enum FindRequest {
 }
 
 /// Apply one [`FindRequest`].
-///
-/// Called from `PdfcerApp::apply`, **after** the frame that raised it, which
-/// is the only place the two borrows this needs can be had at once: the state
-/// and the open document are separate fields of `PdfcerApp`.
 pub fn apply(state: &mut FindState, doc: &mut OpenDoc, request: FindRequest) {
     match request {
         FindRequest::Search => search(state, doc),

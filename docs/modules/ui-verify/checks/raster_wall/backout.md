@@ -111,3 +111,14 @@ went up"* a sentence worth reading in the report.
 A notch is a multiplicative step, so any real response clears this by orders
 of magnitude; the tolerance exists only so a float that came back
 bit-identical is not read as a fall.
+
+### `fn part_c`
+
+Returns `Some(failure)` when the gesture is dead or the canvas never comes
+back. A state part B could not reach is `Ok(None)` **with a note** — see the
+module header on why this part never produces a SKIP.
+
+# Errors
+
+Only from the driver and the trace reader; every diagnosis this part can
+reach is expressed as a failure string or a note.

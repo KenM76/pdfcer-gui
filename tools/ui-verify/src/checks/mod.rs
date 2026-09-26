@@ -12,18 +12,6 @@ pub mod annot_delete_gate;
 
 /// **The ninth handle on an ANNOTATION** — draw a shape, grab the rotate
 /// handle, and it turns.
-///
-/// The sibling of [`rotate`], which drives the same handle over page content.
-/// It is a separate check rather than a parameter on that one because the two
-/// exercise different verbs behind an identical gesture — `rotate_annotation`
-/// here, `transform_objects` there — and the whole risk this check exists for
-/// is a build that reaches the *other* one. It asserts which trace line
-/// appeared **and** that the other's did not.
-///
-/// It also asserts the affordance BEFORE pressing, through the
-/// `canvas.rotate-handle` region, which [`rotate`] could not: a build with no
-/// ninth handle and a build with a mis-routed one produce the same silence
-/// otherwise.
 pub mod annot_rotate;
 
 pub mod blend_space;
@@ -147,12 +135,6 @@ pub mod export_image_emf;
 /// suite to run: it opens all three Export windows through
 /// `PDFCER_DIAG_INVOKE` in one launch and reads three trace lines, so it
 /// moves no pointer, presses no key, and runs under `--no-input`.
-///
-/// Two launches: a CONTROL over a reset preferences file, to MEASURE this
-/// build's shipped export defaults, then a seeded one. Any seeded value
-/// that turns out to equal its measured default is reported as a SKIP
-/// naming it, because that field would read back correctly whether the
-/// file was consulted or ignored.
 pub mod export_remembered;
 
 /// The fourth export on File ▸ Export, and the one whose interesting assertion
@@ -164,13 +146,6 @@ pub mod export_remembered;
 pub mod export_text;
 
 /// The same defect one `/Subtype` along: a certified document's FORM FIELDS.
-///
-/// [`annot_delete_gate`]'s fix closed one surface of three and left the
-/// form-field door a no-op by construction — the condition's guard was false
-/// whenever a field was selected, the `canvas.field` menu carried no
-/// `visible_when` at all, and the Delete key's field rung asked nothing. This
-/// aims at the merged signature widget in the SAME fixture pair that check
-/// steers away from, and asserts the branch it avoids.
 pub mod field_delete_gate;
 
 /// **The first driven context menu in this project.** Its header records the
@@ -199,11 +174,6 @@ pub mod form_ghost;
 /// control in the program could name, and **the structural refusal queries**,
 /// which nothing consulted — so Rename and both Delete buttons were drawn live
 /// on documents that refuse them.
-///
-/// The second is the shape a unit test cannot see: the correct behaviour is an
-/// **absence**, and a test asserting "the query returns Some" passes on a build
-/// where nothing calls the query. That is the state the audit found, under
-/// 2,538 passing tests. Its header carries both fixtures' arguments.
 pub mod form_groups;
 
 pub mod form_leaf_descend;
@@ -212,14 +182,6 @@ pub mod form_leaf_move;
 
 /// **Where to click so that a form-field selection CHANGES**, shared by the
 /// three checks that author a field and then try to select it.
-///
-/// Its header carries the rule in full: authoring a field leaves it
-/// SELECTED (`OPERATOR_REQUESTS.md` O53) and `canvas::forms::select_click`
-/// traces only on a CHANGE, so clicking the field just placed asks the program
-/// to announce a selection that has not moved — a silence that looks exactly
-/// like a broken hit test and is not one. Every such check clears the
-/// selection on blank paper first, which also makes it assert both halves of
-/// `select_click`'s own table rather than one.
 pub mod formaim;
 
 /// **The dial in front of the blank page** — the only consumer of
@@ -352,10 +314,6 @@ pub mod markup_node_edit;
 
 /// Markup ▸ Style — a ribbon group whose one item the manifest declared at S2
 /// and no renderer ever drew, so it shipped as a caption over an empty band.
-///
-/// A **third** shape of invisible wiring, and the quietest: the manifest test
-/// asserted the item was *declared* and passed correctly, and the reachability
-/// check could not see it at all because a `Custom` item carries no command id.
 pub mod markup_style;
 
 pub mod measure_calibrate;
@@ -379,15 +337,6 @@ pub mod menu_icons;
 
 /// **Arming another tool writes the text draft** — `OPERATOR_REQUESTS.md`
 /// O222.
-///
-/// The operator reported typed text not showing until he clicked the page
-/// again, which is not a rendering fault: the draft had never been committed,
-/// and the sheet was correctly drawing a document that did not contain it. Its
-/// oracle is the engine's own commit line, because the broken build produces
-/// the tool change and no commit at all.
-///
-/// ⚠ It types at the real keyboard, so it cannot share the desktop with
-/// anyone: a driven run needs the machine to itself.
 pub mod navigate_commits_text;
 
 /// File ▸ New — the first command that makes a document out of **compiled-in
@@ -473,14 +422,6 @@ pub mod off_page_zoom;
 /// `canvas::present` returns above every input handler when nothing was drawn,
 /// Ctrl suppresses the only wheel the deep pan route reads, and a plain wheel
 /// moves the f64 anchor by `delta / zoom` — about 0.09 pt a notch at zoom 540.
-///
-/// Its header carries the sign flip that made the measured anchor `(1199.50,
-/// −0.54)` look like it was on the page when it was half a point off the top of
-/// it, why the initial aim's magnitude is deliberately not load-bearing, and
-/// why `DESIGNS.md`'s own obligation to *"confirm a page-flip gesture does
-/// nothing"* is wrong — that gesture is gated on a non-default preference, so it
-/// does nothing on any build and would have been recorded as evidence about the
-/// clamp.
 pub mod off_sheet;
 
 /// The **Pages tab**, all of which did nothing: six verbs registered, drawn,
@@ -494,11 +435,6 @@ pub mod off_sheet;
 /// A page pdfcer has already drawn is not drawn again — the operator's
 /// *"they constantly redraw with larger files"*, measured by scrolling a real
 /// drawing set away and back.
-///
-/// Its header carries why the oracle is the REQUEST STREAM and not the cache's
-/// size: a build that held a gigabyte and still re-requested would pass a size
-/// assertion and fail the operator, and a screenshot cannot help at all,
-/// because a re-rendered page and a remembered one are the same picture.
 pub mod os_fonts_setting;
 
 pub mod page_cache;
@@ -547,11 +483,6 @@ pub mod page_size;
 /// `/Kids`-walking reader sees a healthy document and Acrobat, which reads the
 /// root `/Count`, shows the removed pages as blanks. The shell refuses the
 /// write.
-///
-/// Its header carries the two things a reader has to know before touching it:
-/// the fixture is **pinned** and nested, because on a flat page tree the defect
-/// cannot occur and this check would pass against a build carrying it in full;
-/// and it has ⬜ **NOT BEEN RUN**.
 pub mod pagetree_guard;
 
 /// The capability the security audit found missing: an encrypted PDF could not
@@ -580,27 +511,6 @@ pub mod tab_navigation;
 /// The **two** driven checks of *"give this page its own copy"*:
 /// `the_context_menu_gives_this_page_its_own_copy_of_a_shared_form` and
 /// `the_unshare_declines_when_nothing_else_draws_the_form`.
-///
-/// Two things no other check in this file can claim. It **presses a
-/// context-menu row**, which is possible only because pdfcer's menus publish a
-/// `ui_rect` per row — without one there is no coordinate to aim at and the
-/// whole "does the row do the thing" question cannot be asked. And its subject
-/// is a
-/// command whose SUCCESS is invisible: the copy `unshare_form` makes is
-/// byte-identical to the original, so a page that was unshared renders
-/// pixel-for-pixel as one that was not, and *"nothing appeared to happen"* is
-/// what a pass and every possible failure look like alike.
-///
-/// **A pair rather than one check, and the pairing is the point.** The
-/// command's two outcomes are decided by a property of the *file* — is this
-/// form drawn on any other page — so each case needs its own fixture, and a
-/// single check could only ever exercise one of them. ⚠ A check named for the
-/// shared case but pinned to a document with exactly one invocation asserts
-/// that "every other invocation site" is byte-identical about an EMPTY set,
-/// and passes for that reason; each fixture is pinned so that cannot recur.
-/// It measured nothing and passed. Whenever a behaviour is selected by the
-/// input document rather than by the gesture, the fixture IS the test, and one
-/// fixture is half of it.
 pub mod unshare_form;
 
 pub mod display_two_rows;
@@ -628,16 +538,6 @@ pub mod layers_membership;
 /// `file.print` — the dialog that told every operator this build could not
 /// print, on a machine with twelve printers, in a build that had the printing
 /// crate linked into it.
-///
-/// A new shape of the founding failure and the reason this module exists: the
-/// adapter's own unit test asserted that all four of its calls **refused**,
-/// which was correct while `pdfcer-print` was unlinked and became a lock
-/// holding the defect in place the moment the manifest line landed. A green
-/// suite defended the absence of the feature. See the module header.
-/// Drag a page thumbnail to a new position, and see where it will land
-/// before letting go.
-/// **The Layers panel's search field is on screen and reachable** — O126.
-/// Its header carries why the check refuses to pass on an absence.
 pub mod layers_search;
 
 pub mod pages_drag;
@@ -724,15 +624,6 @@ pub mod bezier_handle;
 
 /// **The one assertion no unit test in this workspace can make** — what is
 /// actually on the operating system's clipboard after Ctrl+C.
-///
-/// Defect O18 shipped under 1,628 passing tests because the failure is not in
-/// any function's return value: it is in WHICH OF TWO HANDLERS reached the OS
-/// last. A trace cannot see that either — `text-copy source=selection` can be
-/// emitted truthfully by a frame whose clipboard is then overwritten.
-/// **The annotation clipboard** — a sticky note, a stamp, a text box, a
-/// link or a file attachment carried to another drawing with its baked
-/// appearance intact. ⬜ **NOT RUN**; its module header says so in its own
-/// words rather than leaving an absent result to imply it.
 pub mod clipboard_annotation;
 
 pub mod clipboard_mode;
@@ -741,20 +632,10 @@ pub mod clipboard_text;
 
 /// **O89's object route** — the colour control on the text you CLICKED,
 /// where `font_group` asserts only the sentence telling you to sweep.
-///
-/// ⚠ The swatch it aims at sits below the fold of a Properties panel whose
-/// first section is three always-on switches, so the check must scroll before
-/// it can click. Its falsification table is unexercised: driven-and-green
-/// is not the same as known-to-notice.
 pub mod colour_clicked_text;
 
 /// **The operator's own MAX_PIXMAP_EDGE failure, driven** — zoom past the
 /// ceiling and assert the page still renders.
-///
-/// Every piece of the region tier had unit tests before he hit this, and all of
-/// them passed while the feature did not exist, because nothing called the
-/// strategy. A complete unreachable mechanism is indistinguishable from a
-/// working one from inside a test suite.
 pub mod deep_pan;
 
 pub mod deep_zoom;
@@ -776,14 +657,6 @@ pub mod enter_newline;
 
 /// **Escape on a text draft WRITES it, and `Ctrl+Z` takes it back** —
 /// `OPERATOR_REQUESTS.md` O223.
-///
-/// Both halves are the assertion. The operator's case for committing is that
-/// the mistake it can cause is the cheap one, so a build that committed and
-/// could not undo would have swapped an unrecoverable loss for an
-/// unrecoverable gain.
-///
-/// ⚠ It types at the real keyboard, so it cannot share the desktop with
-/// anyone: a driven run needs the machine to itself.
 pub mod escape_commits_text;
 
 /// **Zero clicks.** The only check in this suite that drives no gesture: it
@@ -810,19 +683,6 @@ pub mod font_group;
 
 /// **The same two surfaces as `font_group`, on the document the operator
 /// names** — his SolidWorks drawing rather than a committed fixture.
-///
-/// The twin above pins `fixtures/paragraph.pdf` on purpose, because its subject
-/// is a discoverability route and a route has to be asserted on a page whose
-/// contents are known. This one honours `--pdf` and `--doc-point` and has no
-/// fallback, because its subject is the opposite question: does the route
-/// survive a 36-sheet export whose faces are subset, whose labels are 5 pt and
-/// whose first page carries 5,899 paths against 4 text objects.
-///
-/// Read as a PAIR. Green here and red there is a fixture problem; red here
-/// and green there is something about real drawings; both red is a regression.
-/// That diagnosis is why there are two checks rather than one parameterised
-/// one — `OPERATOR_REQUESTS.md` O198 is an operator reporting a feature that
-/// was green on a fixture and unusable on his file.
 pub mod font_group_real;
 
 /// **Redaction** — the one operation in this program that cannot be undone,
@@ -842,11 +702,6 @@ pub mod geometry_fields;
 
 /// **The zoom readout is a button now, and buttons must be proved to do
 /// something** — O24.
-///
-/// A double toggle makes a button inert while every unit test and every
-/// smoke launch stays green, because all of them observe the button's
-/// PRESENCE — which was never the broken part. This check observes the
-/// readout the press is supposed to move.
 pub mod max_zoom;
 
 /// **A drag on one line of text MOVES it, and where it cannot the operator
@@ -882,11 +737,6 @@ pub mod pan_refresh;
 /// read named a sheet he was not looking at. Then the wall itself: once the
 /// rasterizer refuses, the zoom must stop and the bottom bar must say why,
 /// rather than leaving an error across the drawing.
-///
-/// Runs immediately after [`deep_zoom`] in the roster and is deliberately NOT
-/// folded into it. That one asserts the ACTING page still renders past the
-/// ceiling; this one asserts nothing is ordered for the pages AROUND it. One
-/// check red for two causes would have said much less about either.
 pub mod raster_wall;
 
 pub mod reach_out;
@@ -895,24 +745,11 @@ pub mod reach_out;
 /// and a line in the shortcuts reference, and **no dispatch arm** for the whole
 /// life of the project. Its whole behaviour is one `if` in the frame
 /// composition, which every unit test in the workspace is blind to.
-///
-/// Named `read_mode_chrome` rather than `read_mode` because that name is
-/// already taken by the check one line up, and the two are about genuinely
-/// different things: that one is `mode.read`'s **capability** gate (a click in
-/// Read must not select), this one is `view.read_mode`'s **chrome** toggle (the
-/// ribbon and the docks stop being drawn). `app::window` §1 carries the
-/// argument for why those are two commands rather than a duplicate.
 pub mod read_mode_chrome;
 
 /// **The way back OUT of read mode**, which the check above deliberately
 /// does not cover: its own header says *"the return trip is not driven here"*,
 /// because the exit is a chord and it drives the mouse only.
-///
-/// The operator fell through exactly that gap — *"I didn't see a
-/// way to get back out of read mode"* — and the answer is a statement on the
-/// window title and on the status bar naming the chord the **keymap** holds.
-/// This reads that statement from a trace: no pointer, no keystroke, so unlike
-/// its neighbour it can run beside somebody working.
 pub mod read_mode_exit;
 
 /// **What the removal will destroy, in words.** `redaction` below proves
@@ -991,13 +828,6 @@ pub mod scale_sweep;
 /// by a window that takes no OS input at all. Zoom in, zoom out and paging
 /// have no registered command id, so `PDFCER_DIAG_INVOKE` cannot ring them and
 /// an off-desktop window has no other way to be driven.
-///
-/// Its header carries why it never counts `spelled=yes` lines: the seam runs
-/// before the collector and emitted one for a rung whose effect was overwritten
-/// later in the same frame — and the broken run and the sound one finish at the
-/// same zoom, so an end-state assertion passes on both. One entry in its chord
-/// list is deliberately unspellable, which is what shows `spelled=` to vary and
-/// doubles as the negative control for the zoom reading.
 pub mod scripted_keys;
 
 /// **The preview is the cursor, and a cursor does not grow with the
@@ -1010,19 +840,6 @@ pub mod preview_width;
 
 /// **The chooser offers a face the document does not contain** —
 /// `pdfcer-core` v0.15.0's standard-14 authoring, reached from a font list.
-///
-/// The engine shipped the capability and the shell could not reach it: the
-/// chooser built its list from `preview_font_resources`, which enumerates the
-/// *page's own* `/Font` resources, so the one thing the release note is about
-/// was absent from every surface in the program. Its header carries the six
-/// links and names the fourth as the one worth writing the check for on its own
-/// — pdfcer embeds nothing, so the text is drawn with the READER'S copy of the
-/// face, and a disclosure that is catalogued, unit-tested and never painted has
-/// discharged nothing.
-/// **A refused character offers the face that can type it** — the engine
-/// refuses by name when a run's font carries no code for a character, and
-/// until O141 nothing joined that refusal to the chooser sitting one panel
-/// away that already offers faces which do carry it.
 pub mod refused_character_face;
 
 // The band's PROPORTIONS against `mockups/pdfcer-shell.html`, and the two
@@ -1075,19 +892,10 @@ pub mod save_copy;
 pub mod save_in_place;
 
 /// **Does scrolling a long way cost the canvas its pointer input?**
-///
-/// The experiment that decides whether O23's pasteboard failure is a feature
-/// problem or a defect the operator already meets. It reproduces from an
-/// ordinary wheel scroll with no pasteboard in the build, or it does not.
 pub mod scroll_input;
 
 /// **The selection filter is load-bearing, not decorative** — switching a
 /// class off changes what the next click on the same pixel selects.
-///
-/// Deliberately NOT "the popup opens", which is a unit test and is also the
-/// one claim that stays true of an INERT control: a double toggle leaves the
-/// button drawing, hit-testing and reporting its rect while doing nothing, and
-/// every observation of the button's presence passes against it.
 pub mod select_filter;
 
 pub mod settings_headings;
@@ -1130,11 +938,6 @@ pub mod document_tabs;
 
 /// **A page dragged out of one open document and into another**, through a
 /// spring-loaded tab — the operator's request, end to end.
-///
-/// Two registrations, one implementation: the unmodified drag must **copy** and
-/// the Shift-held drag must **move**. Running only one would pass against a
-/// build that always did the same thing, which is exactly what a modifier read
-/// at the wrong moment produces.
 pub mod page_drag_between_documents;
 
 /// **Dragging a document tab along the strip moves it**, and does not change
@@ -1189,11 +992,6 @@ pub mod bookmark_edit;
 /// `move_outline_item` and `set_outline_open`, and this drives both through the
 /// row list: a bookmark is dragged onto the middle of another and nests, then
 /// the branch is folded away with its triangle.
-///
-/// Its header carries the two oracles no unit test can reach: the moved row's
-/// **level**, which a reorder cannot produce however wrong it is, and the
-/// **disagreement** between the panel's item count and the number of rows it
-/// draws after a collapse — which is the whole of *"the sign is honoured"*.
 pub mod bookmark_move;
 
 pub mod button_action;
@@ -1337,13 +1135,6 @@ pub mod theme_page;
 
 /// **A refusal an operator can read** — `OPERATOR_REQUESTS.md` O140, driven
 /// on the file he reported it on.
-///
-/// The only check in the suite that takes its **negative control through the
-/// same instrument in the same process**: it commits an edit the engine refuses
-/// and asserts the `⊗` slot drew, then commits one that succeeds and asserts it
-/// did **not**. Its header carries why a one-sided reading of that region is not
-/// a verdict, and why the tempting `Identity-H` forecast is falsified by
-/// `pdfcer-core`'s own fixture.
 pub mod typo_refusal;
 
 /// `edit.undo` and `edit.redo` — the pair that was registered, drawn on the

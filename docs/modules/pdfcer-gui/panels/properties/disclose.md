@@ -68,3 +68,9 @@ it, which would waste the one surface a disclosure has.
 Worth a test because a driven check sweeping for a region name that
 nothing publishes finds nothing and SKIPs — and a SKIP is not red, so a
 region renamed out from under a check costs no build and all coverage.
+
+### `const REGION`
+
+Published only on the frames it draws, so its **absence** is the evidence
+that there is no disclosure — which is the distinction a driven check about
+a refusal is actually asking about.

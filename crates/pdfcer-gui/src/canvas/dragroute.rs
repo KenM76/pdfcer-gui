@@ -17,11 +17,6 @@ use crate::canvas::selection::SelectionState;
 use crate::canvas::{annotdrag, dimdrag, moving};
 
 /// The previews one move frame produced — at most one is `Some`.
-///
-/// Three fields rather than an `enum`, matching the seven preview slots
-/// `interact` already carries and for their stated reason: the painter reads
-/// each one independently, and folding them together would put a branch in the
-/// paint loop for a value that is `None` on every frame nobody is dragging.
 #[derive(Default)]
 pub struct Previews {
     /// A content move's canvas-space displacement.
@@ -54,12 +49,6 @@ pub struct Previews {
 }
 
 /// Everything one move frame needs that is not the delta.
-///
-/// A struct because the argument list reached nine and clippy is right that
-/// nine positional parameters is a call nobody can read — five of the six here
-/// are borrows of similar-looking things, and transposing two would compile.
-/// `dimdrag::Frame` and `annotdrag::Frame` take the same shape for the same
-/// reason, so this is the local convention rather than an accommodation.
 pub struct Frame<'a> {
     /// The egui context, for the Shift filter.
     pub ctx: &'a egui::Context,

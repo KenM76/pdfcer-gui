@@ -38,53 +38,6 @@ use pdfcer_render::tiny_skia::{Point as SkPoint, Transform};
 
 /// One selectable thing on a page, addressed opaquely — and **which of the
 /// two index spaces it lives in**.
-///
-/// # WHY THIS IS AN ENUM AND NOT A NUMBER
-///
-/// A page has two lists of objects, not one, and they index **different
-/// content streams**:
-///
-/// * [`PageObjects::objects`] — what the *page's own* content stream paints.
-///   A paint-order index here is the number `pdfcer object-list` prints as
-///   `index=` and `object-move` / `object-delete` / `node-move` take as an
-///   operand, and it is the number every `EditSession` paint-order verb
-///   resolves against the page's buffer.
-/// * [`PageObjects::leaves`] — what a *form XObject invoked by the page*
-///   paints, geometry already mapped into page space by
-///   [`pdfcer_core::vector::decompose_page`]. A leaf's token range indexes
-///   **the form's** buffer.
-///
-/// The engine keeps those two lists apart deliberately, and its own reason is
-/// the one that governs here (`FormLeaf`'s header): *"eleven call sites in
-/// `edit.rs` resolve a paint-order index and apply surgery to the page's
-/// content stream. Put leaves in `PageObjects::objects` and every one of
-/// those verbs would happily apply a form-relative token range to the page and
-/// corrupt it — silently, because the range is in bounds."*
-///
-/// **In range and wrong is the dangerous combination**, and it is exactly the
-/// combination a single `u64` would produce here. So this type carries the
-/// list with the index, and the only way to obtain a number an edit verb will
-/// accept is [`TargetId::page_object_index`], which answers `None` for a leaf.
-/// A site that wants to edit therefore has to say what it does about a leaf,
-/// at the point where it can still say something useful to the operator,
-/// rather than silently addressing the wrong buffer.
-///
-/// # Why not two types
-///
-/// Because one *selection* holds both, and the whole point of the form work is
-/// that an object inside a form is a first-class selection stop. A selection
-/// set generic over which kind it holds would push the distinction into every
-/// container in `canvas/`; an enum keeps it at the leaves of the call graph,
-/// where the decision actually differs.
-///
-/// # `Ord`, and what its order means
-///
-/// Derived, so every `Object` sorts before every `Leaf`. That is an arbitrary
-/// but stable total order, which is all the selection set needs it for
-/// (de-duplication and a non-flickering outline paint order). It is **not** a
-/// paint order and nothing may read it as one — leaves and page objects
-/// interleave on [`pdfcer_core::vector::FormLeaf::paint_order`], and the one
-/// place that ordering matters is the hit test, which the engine performs.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum TargetId {
     /// An index into [`PageObjects::objects`] — the page's own paint order.
@@ -113,12 +66,6 @@ pub enum TargetId {
 impl TargetId {
     /// The index an [`pdfcer_core::edit::EditSession`] paint-order verb will
     /// accept — `None` for a leaf.
-    ///
-    /// **This is the only supported way to turn a `TargetId` into an edit
-    /// operand**, and its `None` is the guard that makes the two index spaces
-    /// impossible to confuse. Do not pattern-match `Object(i)` and cast at a
-    /// call site that is about to edit: the match compiles just as well when
-    /// somebody later adds a third variant, and this method does not.
     #[must_use]
     pub fn page_object_index(self) -> Option<usize> {
         match self {
@@ -143,12 +90,6 @@ impl TargetId {
     }
 
     /// The raw number, **for a trace line or a label and nothing else**.
-    ///
-    /// Deliberately loses which list it came from, so it is useless as an edit
-    /// operand and cannot be mistaken for one — every caller of this method is
-    /// building a string. Pair it with [`Self::is_leaf`] when the string is
-    /// shown to the operator, because "object 7" and "leaf 7" are different
-    /// things and a trace that says only `7` is a trace that cannot be read.
     #[must_use]
     pub const fn raw(self) -> u64 {
         match self {
@@ -161,19 +102,6 @@ impl TargetId {
 /// used ONLY when the caller cannot supply a live zoom (a non-finite or
 /// non-positive zoom makes a screen-to-page tolerance conversion return
 /// `0.0`, which would make selection impossible rather than merely fussy).
-///
-/// Canvas space is the page's device space at zoom 1.0, where one unit is
-/// one PDF point (the `page_device_geometry` scale-1.0 map is
-/// distance-preserving — a pure rotation + Y-flip + translation), so this is
-/// also, in effect, a ~3 pt page-space tolerance.
-///
-/// ⚠ **It is a fallback and must never become the tolerance.** The pointer is
-/// divided by `zoom` before it reaches [`ObjectModelProvider::hit_test`], so a
-/// constant canvas-space tolerance is a *shrinking* on-screen catch radius —
-/// 1.5 px at 50 % zoom, 0.75 px at 25 %, i.e. objects that stop being
-/// clickable exactly when the operator zooms out to see a whole drawing. The
-/// live tolerance arrives as a parameter, derived at the call site from a
-/// screen-pixel constant divided by the zoom.
 pub const FALLBACK_SELECT_TOLERANCE: f64 = 3.0;
 
 /// The object-model-backed provider for one page (module docs).
@@ -203,34 +131,6 @@ pub struct ObjectModelProvider {
 }
 
 /// Which KIND of part the "Part" rung is standing on for a given object.
-///
-/// The rung is shared between path SUBPATHS and text RUNS, and almost
-/// everything about it is identical — nearest-first hit order, an outline to
-/// draw, Escape to ascend, Delete to remove. What differs is the **verb
-/// set**, and that is exactly what this tells a caller:
-///
-/// | | `Subpath` | `Run` |
-/// |---|---|---|
-/// | Delete | `delete_subpath` | `delete_text_run` |
-/// | Drag to move | `move_subpath` | `move_text_run` — **but conditionally**, see [`RunMoveBlock`] |
-/// | Descend to Point | yes | no (a run has no anchors) |
-///
-/// Note the word **conditionally**. A subpath can always be moved; a run
-/// can be moved only when
-/// the file gave it a position of its own. That asymmetry does not go away
-/// with a verb — it is a property of ISO 32000-1 sub-clause 9.4.2, where a
-/// show operator may take its origin from the previous one's advance — so
-/// the shell still has a refusal to word, and [`RunMoveBlock`] is what it
-/// words it from.
-///
-/// The Point-rung row needs no guard anywhere:
-/// [`ObjectModelProvider::nearest_node`] reaches
-/// [`ObjectModelProvider::subpath_node_points`], which matches
-/// `VectorObject::Path` only, so a text entry can never produce a node hit.
-/// The ladder caps itself at two rungs for text by construction rather than
-/// by a check — which is also why the Objects panel's tree can nest a text
-/// object one level and a path object two, with no special case in the row
-/// builder.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PartKind {
     /// A subpath of a path object.
@@ -243,45 +143,6 @@ pub enum PartKind {
 
 /// **Why moving one line of a text object would be refused**, asked before the
 /// gesture rather than after it.
-///
-/// # This is the ENGINE's guard, re-spelled, not a second opinion
-///
-/// [`ObjectModelProvider::text_run_move_refusal_of`] calls
-/// [`pdfcer_core::vector::edit::text_run_move_refusal`], which is *the same
-/// function* `plan_move_text_run` runs first — not a description of it, not a
-/// re-implementation of its rule. The engine exported it for exactly this
-/// purpose and said so: *"a front end that pre-checks against a second
-/// implementation of the same rule is a front end that will one day enable a
-/// control the engine refuses, or grey out one it would have allowed"*
-/// (`R221`, `R243`).
-///
-/// **Contrast [`ObjectModelProvider::text_run_delete_would_move_next`]
-/// three functions below**, which IS a hand-rolled copy of the delete-side
-/// rule, written before the engine exported anything. It reads the same
-/// `positioned_by` flag and reaches the same answer today. It is a standing
-/// hazard of precisely the kind this type exists to avoid, and it is recorded
-/// here rather than silently tolerated: the delete-side guard has no exported
-/// twin yet, so there is nothing to call. When one ships, that function
-/// becomes a one-line delegation and this paragraph goes with it.
-///
-/// # What each variant means for the operator
-///
-/// | variant | the file says | what the operator can still do |
-/// |---|---|---|
-/// | [`Self::NoPositionOfItsOwn`] | this line carries on from the line above it, so it has no coordinate of its own | select the whole block and drag that |
-/// | [`Self::WouldMoveNextRun`] | the line AFTER this one carries on from it, so moving this one drags that one too | select the whole block and drag that |
-/// | [`Self::NotThere`] | the index is not a run of this object | nothing — a stale selection, not worded |
-///
-/// The first two are ISO 32000-1 sub-clause 9.4.2 showing through, and
-/// they are common on real CAD exports: a producer that writes `(A) Tj (B) Tj`
-/// with no positioning operator between them has made B's origin a function of
-/// A's advance, and no amount of engine work can separate them without
-/// rewriting the file's shape.
-///
-/// `NotThere` exists because a selection can outlive the edit that
-/// removed what it named. It is a refusal, so the drag does nothing, but it
-/// earns no sentence — the operator has not done anything wrong and there is
-/// nothing for them to do differently.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RunMoveBlock {
     /// The run takes its origin from the previous run's advance (9.4.2), so
@@ -297,61 +158,12 @@ pub enum RunMoveBlock {
 
 impl ObjectModelProvider {
     /// Build a provider for `page` (at `page_index`) from `view`.
-    ///
-    /// Returns `None` only if the page's content cannot be decoded/tokenized
-    /// (the same failure the renderer would hit). A caller then says so in
-    /// words rather than showing an empty list — a failure state must never
-    /// be visually indistinguishable from a success state that happens to
-    /// have no content.
-    ///
-    /// # Pass a SESSION view, not the base document
-    ///
-    /// Callers pass `&session.view()`. Passing `&session.document().view()`
-    /// decomposes the *base revision*, so hit-testing, marquee selection and
-    /// the measure tools' snapping all address geometry the operator can no
-    /// longer see and miss geometry they can. The raster and this provider
-    /// must be built from the *same* view, or the canvas shows one document
-    /// and responds as another.
-    ///
-    /// The Objects panel is where that bites hardest: it would list the
-    /// pre-edit object set while the canvas draws the post-edit page, and the
-    /// panel exists precisely to answer "what am I looking at".
     #[must_use]
     pub fn build(view: &DocumentView<'_>, page: &Page, page_index: usize) -> Option<Self> {
         Self::build_or_reason(view, page, page_index).ok()
     }
 
     /// [`Self::build`], keeping the reason the page would not decompose.
-    ///
-    /// # Why the reason is worth a second constructor
-    ///
-    /// [`Self::build`] throws the `ContentError` away, which is right for a
-    /// *panel*: an operator is told the page's content could not be read, in
-    /// the catalog's words, and a tokenizer's error text is not a sentence
-    /// anybody outside this project can act on.
-    ///
-    /// It is wrong for the **diagnostic channel**.
-    /// `crate::app::state::OpenDoc::trace_object_count` emits
-    /// `objects-unavailable page=… reason=decompose-failed detail=…`, and the
-    /// `detail=` is the whole value of the line: without it a harness learns
-    /// that a page did not decompose and nothing about why, which is a
-    /// question it then has to answer by hand.
-    ///
-    /// ⇒ The alternative — letting the trace run **its own** `decompose_page`
-    /// to recover the reason — is a second decomposition of the same page, and
-    /// two decompositions of one page quietly diverge. This constructor is what
-    /// makes that unnecessary: one decomposition, and the failure reason
-    /// survives it.
-    ///
-    /// The error is stringified here rather than propagated as a
-    /// `ContentError` so the cache that stores it does not have to name a
-    /// `pdfcer-core` error type in its own signature — the only consumer wants
-    /// a line of trace text, and `ContentError` is `#[non_exhaustive]`.
-    ///
-    /// # Errors
-    ///
-    /// The page's `/Contents` could not be resolved, inflated or tokenized —
-    /// the same failure the renderer would hit on the same page.
     pub fn build_or_reason(
         view: &DocumentView<'_>,
         page: &Page,
@@ -431,29 +243,12 @@ impl ObjectModelProvider {
     }
 
     /// Which page this provider answers for.
-    ///
-    /// Read by the caller that decides whether to rebuild after a page step.
-    /// Exposed rather than re-derived because "is my provider still about
-    /// the page I am looking at?" must have exactly one answer.
     #[must_use]
     pub fn page_index(&self) -> usize {
         self.page_index
     }
 
     /// The current page's decomposed vector objects.
-    ///
-    /// The **shared escape hatch** every consumer reads the already-
-    /// decomposed objects through — the Objects panel's row list today, the
-    /// snap engine and the Taubin best-fit circle later — so each reuses the
-    /// ONE decomposition this provider built rather than running a second
-    /// `decompose_page` per frame — because two decompositions of one page
-    /// quietly diverge.
-    ///
-    /// Everything in [`PageObjects`] is in **PDF user / page space** — the
-    /// frame the model stores — so a caller with a canvas-space point
-    /// converts it first, either with [`Self::canvas_to_pdf`]'s public
-    /// sibling [`crate::viewer::canvas_to_pdf_space`] or through this
-    /// provider's own queries.
     #[must_use]
     pub fn page_objects(&self) -> &PageObjects {
         &self.objects
@@ -461,16 +256,6 @@ impl ObjectModelProvider {
 
     /// Which subpath of `object` a canvas-space click lands on — the second
     /// selection level, for objects that hold a whole drawing.
-    ///
-    /// A thin adapter over [`pdfcer_core::vector::hit_test_subpaths`], exactly
-    /// like [`Self::hit_test_all`] is over the per-object query: convert
-    /// canvas space to PDF user space, apply the same degenerate-tolerance
-    /// fallback, and let the core own the geometry. Sharing that fallback
-    /// matters — without it a click could select an object and then find none
-    /// of its subpaths, which reads as "the second level is broken" rather
-    /// than "the tolerance was zero".
-    ///
-    /// Nearest first. Empty for a non-path object or an out-of-range index.
     #[must_use]
     pub fn subpath_hits(&self, object: usize, point: Pos2, tolerance: f64) -> Vec<usize> {
         let Some(pdf) = self.canvas_to_pdf(point) else {
@@ -492,11 +277,6 @@ impl ObjectModelProvider {
 
     /// Which part of `object` a canvas-space click lands on — **whichever
     /// kind of part that object has**.
-    ///
-    /// ONE dispatcher rather than a kind match at each call site. The
-    /// alternative is duplicated-predicate drift: two places deciding "which
-    /// part is under the pointer" go out of step invisibly, and the operator
-    /// finds that descending works for a drawing and not for a label.
     #[must_use]
     pub fn part_hits(&self, object: usize, point: Pos2, tolerance: f64) -> Vec<usize> {
         match self.part_kind(object) {
@@ -535,19 +315,6 @@ impl ObjectModelProvider {
     /// Which **run** (show operator) of the text object at `object` a
     /// canvas-space click lands on — the text-side twin of
     /// [`Self::subpath_hits`].
-    ///
-    /// A thin adapter over [`pdfcer_core::vector::hit_test_text_runs`], with
-    /// the same canvas→PDF conversion and the same degenerate-tolerance
-    /// fallback its sibling uses. Sharing that fallback matters for the same
-    /// reason: without it a click could select a text object and then find
-    /// none of its runs, which reads as "the second level is broken" rather
-    /// than "the tolerance was zero".
-    ///
-    /// Nearest first. **Empty for a non-text object, an out-of-range index,
-    /// or a text object whose runs could not be laid out** — the core query
-    /// deliberately does not fall back to the object's enclosing box there,
-    /// because naming run 0 for an object whose runs were never measured
-    /// would hand a caller a deletable target that is the wrong one.
     #[must_use]
     pub fn text_run_hits(&self, object: usize, point: Pos2, tolerance: f64) -> Vec<usize> {
         let Some(pdf) = self.canvas_to_pdf(point) else {
@@ -569,12 +336,6 @@ impl ObjectModelProvider {
     }
 
     /// A text run's bounds in **canvas** space, for drawing its outline.
-    ///
-    /// Same argument as [`Self::subpath_bounds_canvas`]: the object's own
-    /// bounds would draw a rectangle around every label on the sheet and
-    /// tell the operator they had selected the whole thing again — which is
-    /// the misunderstanding entering the object exists to resolve. On the
-    /// measured CAD export that rectangle spans the entire drawing.
     #[must_use]
     pub fn text_run_bounds_canvas(&self, object: usize, run: usize) -> Option<Rect> {
         let Some(VectorObject::Text(t)) = self.objects.objects.get(object) else {
@@ -585,15 +346,6 @@ impl ObjectModelProvider {
 
     /// Whether deleting run `run` of text object `object` would be refused
     /// because the run AFTER it has no position of its own (§9.4.2).
-    ///
-    /// A pure query the shell asks **before** offering the control (R83),
-    /// answered from the same `positioned_by` flag
-    /// [`pdfcer_core::edit::EditSession::delete_text_run`] refuses on — so a
-    /// disabled affordance and the verb cannot disagree about which runs are
-    /// deletable.
-    ///
-    /// `false` for a non-text object or an out-of-range index: there is no
-    /// deletion to refuse.
     #[must_use]
     pub fn text_run_delete_would_move_next(&self, object: usize, run: usize) -> bool {
         let Some(VectorObject::Text(t)) = self.objects.objects.get(object) else {
@@ -609,10 +361,6 @@ impl ObjectModelProvider {
     }
 
     /// A subpath's bounds in **canvas** space, for drawing its outline.
-    ///
-    /// The object's own bounds would draw a rectangle around the entire
-    /// drawing and tell the operator they had selected the whole thing again
-    /// — which is the misunderstanding entering the object exists to resolve.
     #[must_use]
     pub fn subpath_bounds_canvas(&self, object: usize, subpath: usize) -> Option<Rect> {
         let b = pdfcer_core::vector::subpath_bounds(&self.objects, object, subpath)?;
@@ -621,14 +369,6 @@ impl ObjectModelProvider {
 
     /// The page-space anchor sample points of the object at paint-order
     /// `index` — the circular best-fit tool's fit input.
-    ///
-    /// A path object contributes every anchor of every subpath, in **PDF
-    /// user / page space** (the frame [`Self::page_objects`] stores and
-    /// [`fit_circle_taubin`](pdfcer_core::dimension::fit_circle_taubin)
-    /// consumes); a text/image/form object (or an out-of-range index)
-    /// contributes nothing — they carry no snap/fit node geometry, the same
-    /// exclusion the snap engine applies. Reuses the ONE decomposition this
-    /// provider already built, never a second `decompose_page`.
     #[must_use]
     pub fn object_sample_points(&self, index: usize) -> Vec<Point> {
         match self.objects.objects.get(index) {
@@ -643,12 +383,6 @@ impl ObjectModelProvider {
 
     /// How many parts (subpaths) the path object at paint-order `index` has,
     /// or `0` for a non-path object.
-    ///
-    /// Exists so a caller can iterate an object's parts without reaching
-    /// into `objects.objects` and re-doing the `VectorObject::Path` match at
-    /// a call site whose job is drawing rows. `0` for a non-path is the
-    /// honest answer rather than an `Option`: a text run has no subpaths, and
-    /// a loop over none of them is exactly the right amount of work.
     #[must_use]
     pub fn subpath_count(&self, index: usize) -> usize {
         match self.objects.objects.get(index) {
@@ -668,70 +402,6 @@ impl ObjectModelProvider {
 
     /// Every target under the pointer, **front-most first**, *including what
     /// is painted inside form XObjects*.
-    ///
-    /// A thin adapter, as the module docs promise: convert canvas space to
-    /// PDF user space, resolve the tolerance, and hand both to
-    /// [`pdfcer_core::vector::hit_test_point_deep`], which owns the geometry
-    /// and the ordering.
-    ///
-    /// The list is what click-through cycling steps through. Without it, an
-    /// object completely covered by another is unselectable by any click.
-    ///
-    /// # THE DEEP QUERY, AND WHY A FORM IS NOT IN THE ANSWER
-    ///
-    /// The operator: *"when I click on one of the objects all I get is the page
-    /// selected."*
-    ///
-    /// He was clicking a real object inside a form XObject.
-    /// `pdfcer_core::vector::hit_test_point_all` — the shallow query, which
-    /// this method must **not** use — sees a form as **one opaque object
-    /// bounded by its `/BBox`**. A form
-    /// declaring the whole `MediaBox` and drawing one small line is legal and
-    /// common - 8.10.1 makes `/BBox` a *clipping* extent, a statement about
-    /// where painting is allowed, not about where ink is. So a page-sized form
-    /// sat in paint order above everything drawn before it and won every click
-    /// at every point, and the outline it produced hugged the page edge, which
-    /// looks exactly like a state this program does not have.
-    ///
-    /// `hit_test_point_deep` answers with what is **inside** the form and
-    /// **excludes the form itself outright**. Measured on the fixtures this
-    /// project uses:
-    ///
-    /// | page | page objects | forms | leaves |
-    /// |---|---:|---:|---:|
-    /// | the industry print-conformance suite's composite page 1 | 28 | 4 | **242** |
-    /// | `ncored-benchmark-cad-drawing` p1 | 129,758 | 1 | **10,256** |
-    /// | `SW41177` p1 | 5,903 | 0 | 0 |
-    ///
-    /// On the first two, almost everything the operator can see was outside
-    /// the object model this method reported. On the third nothing changes at
-    /// all, which is the shape of the fix: it costs nothing on a page with no
-    /// forms.
-    ///
-    /// # There is deliberately NO fallback to the shallow query
-    ///
-    /// It is tempting to fall back to `hit_test_point_all` when the deep query
-    /// comes back empty, so a click on a form with no reachable interior still
-    /// selects *something*. **That reinstates the defect.** The commonest empty
-    /// answer by far is a click on blank paper *inside* a page-sized form -
-    /// and a fallback would answer it with the form, which is the operator's
-    /// original complaint, verbatim, restored for the case that produces it
-    /// most often.
-    ///
-    /// A form is still reachable, by two deliberate acts rather than by
-    /// default: the canvas context menu's *"select the containing form"* on
-    /// any object inside it (see [`Self::containing_form`]), and its row in
-    /// the Objects panel, which lists `PageObjects::objects` and therefore
-    /// lists every form. Reachable-on-purpose is the whole point; winning by
-    /// default is what was wrong.
-    ///
-    /// # What this costs
-    ///
-    /// One extra scan of `PageObjects::leaves` per query, and a sort of the
-    /// hits. The engine bounds the candidate list, and in practice a point is
-    /// under one to three things. `canvas::clicking` asks twice per selecting
-    /// click - once for the pick and once for the *"1 of 5 here"* count - and
-    /// that was already true.
     #[must_use]
     pub fn hit_test_all(&self, page_index: usize, point: Pos2, tolerance: f64) -> Vec<TargetId> {
         if page_index != self.page_index {
@@ -751,39 +421,6 @@ impl ObjectModelProvider {
 
     /// The page paint-order index of the **outermost form** enclosing a
     /// form-interior target - the *"select the container"* act.
-    ///
-    /// # Why the container has to be offered somewhere
-    ///
-    /// Because [`Self::hit_test_all`] no longer answers with a form, ever, and
-    /// a form is a perfectly legitimate thing to want: it is one page object,
-    /// it has a paint-order index, and `object-move` / `object-delete` address
-    /// it exactly like any other. Moving a title block or deleting a stamp is
-    /// *the form*, not the 240 objects inside it.
-    ///
-    /// So the reach gained inside forms must not cost the reach to the form.
-    /// The engine's own note on `hit_test_point_deep` says the same: *"the
-    /// form itself is still reachable - `containment` names every enclosing
-    /// form, so a shell can offer 'select the container' as a deliberate
-    /// second act, which is a different thing from having it win by default."*
-    ///
-    /// # Why `paint_order` and not `containment`
-    ///
-    /// [`pdfcer_core::vector::FormLeaf::containment`] holds `ObjId`s, and an
-    /// `ObjId` is not addressable by any paint-order verb - resolving one back
-    /// to an index would mean a search, and a search that can find the *wrong*
-    /// invocation when a page draws the same form twice.
-    /// [`pdfcer_core::vector::FormLeaf::paint_order`] is *"the index, in
-    /// `PageObjects::objects`, of the outermost form this object is inside"* -
-    /// already the number this needs, already unambiguous about which
-    /// invocation, and the same number the engine interleaves the two lists
-    /// on.
-    ///
-    /// # Returns
-    ///
-    /// `None` for a page object (it has no container), for a stale leaf index,
-    /// and for a query about another page. The **outermost** form, not the
-    /// immediate parent: one act, one meaning, and it is the one whose index
-    /// an edit verb can take.
     #[must_use]
     pub fn containing_form(&self, page_index: usize, target: TargetId) -> Option<TargetId> {
         if page_index != self.page_index {
@@ -796,59 +433,6 @@ impl ObjectModelProvider {
     /// The **object id** of the outermost form enclosing a form-interior
     /// target — the operand half of the same question
     /// [`Self::containing_form`] answers in paint order.
-    ///
-    /// # Why there have to be two of these, and it is not an oversight
-    ///
-    /// [`Self::containing_form`]'s own doc comment argues at length for
-    /// answering in `paint_order` rather than in `containment`, and every word
-    /// of it is still true **for the act it serves**. Selecting the container
-    /// is a *selection*, and this shell's selection vocabulary is paint-order
-    /// indices: `TargetId::Object(n)` is what `object-move`, `object-delete`
-    /// and the outline renderer all take. An `ObjId` would have to be searched
-    /// back into an index, and a search can find the wrong invocation when a
-    /// page draws one form twice.
-    ///
-    /// `EditSession::unshare_form` inverts that. Its signature is
-    /// `(page_index: usize, form: ObjId)` — it addresses the **stream object**,
-    /// not a position in any paint order — and it is explicit that the unit of
-    /// the operation is the PAGE rather than the invocation:
-    ///
-    /// > *"If this page invokes the form under several names, **all of them**
-    /// > are re-pointed at the one copy."*
-    ///
-    /// ⇒ So the ambiguity `containing_form` refuses to resolve is one this verb
-    /// **does not have**. "Which of the two invocations did you mean?" has no
-    /// answer here, because the engine's answer is *both, always*. The two
-    /// methods are therefore not two spellings of one fact; they are the two
-    /// different facts two different verbs need, and offering only one of them
-    /// leaves `unshare_form` unreachable from this shell.
-    ///
-    /// # Why `containment[0]` and not `parent()`
-    ///
-    /// [`pdfcer_core::vector::FormLeaf::containment`] is documented as *"the
-    /// chain of enclosing form XObjects, **outermost first**, ending with the
-    /// form this object is directly inside"*, and is never empty for a leaf.
-    /// `FormLeaf::parent()` returns the **last** entry — the innermost form —
-    /// and that is precisely the operand `unshare_form` refuses:
-    /// `EditError::FormNestedInAnotherForm` fires when a form is reached only
-    /// from inside another form, because re-binding a nested invocation means
-    /// editing the parent, whose own blast radius depends on the document's
-    /// nesting structure.
-    ///
-    /// ⇒ Passing `parent()` would therefore produce a **worded refusal on every
-    /// nested drawing** where the outermost form is the one the operator wants
-    /// and the one the engine can privatise. Taking position 0 is not a
-    /// preference; it is the only element of the chain the verb accepts, and
-    /// it is the same element `containing_form` reports the paint order of, so
-    /// "select the form" and "unshare the form" cannot come to disagree about
-    /// which form they mean.
-    ///
-    /// # Returns
-    ///
-    /// `None` for a page object (it is not inside anything), for a stale leaf
-    /// index, for a query about another page, and — defensively — for a leaf
-    /// with an empty containment chain, which the engine documents as
-    /// impossible but which is cheaper to tolerate than to trust.
     #[must_use]
     pub fn containing_form_object(
         &self,
@@ -863,11 +447,6 @@ impl ObjectModelProvider {
     }
 
     /// The **topmost** object under the pointer, or `None`.
-    ///
-    /// Defined as the head of [`Self::hit_test_all`] rather than as a second
-    /// query, so "what does a plain click select?" and "what does cycling
-    /// start from?" cannot come to different answers. A second independent
-    /// implementation of "topmost" is the one way those two can disagree.
     #[must_use]
     pub fn hit_test(&self, page_index: usize, point: Pos2, tolerance: f64) -> Option<TargetId> {
         self.hit_test_all(page_index, point, tolerance)
@@ -877,78 +456,6 @@ impl ObjectModelProvider {
 
     /// Every object a canvas-space marquee rect takes, under `mode` and
     /// `forms`.
-    ///
-    /// # Why `mode` is a parameter — `OPERATOR_REQUESTS.md` O88
-    ///
-    /// [`MarqueeMode::Enclosed`] is the **default**, and the reasoning for it
-    /// holds: a marquee that grabs everything it grazes is unusable on a dense
-    /// drawing, which is the document class pdfcer is for. What it may not be
-    /// is the **only** answer.
-    ///
-    /// The operator's report: *"I can't box select the tables in the left or
-    /// right top corners … it only picks up the lines of each table."* Both
-    /// tables sit hard against the sheet edge, so a band that surrounds one has
-    /// to start **outside the page** — and at fit zoom there is barely a pixel
-    /// of margin to start in. The only band that can actually be drawn is one
-    /// *inside* the table, which surrounds a few short rules and nothing else.
-    ///
-    /// ⇒ *"It only picks up the lines"* is what an enclosing band returns when
-    /// it cannot be drawn big enough. It was never a hit test that excluded
-    /// text.
-    ///
-    /// The caller chooses from the drag's **direction** — see
-    /// `crate::canvas::gesture::GestureOutcome::Marquee::crossing`. Left to
-    /// right encloses; right to left touches. That is AutoCAD's window /
-    /// crossing-window rule, which SolidWorks drawings use too, and it is the
-    /// convention rather than an invention: no modifier key, nothing new to
-    /// learn, and the behaviour a drawing-office hand already has.
-    ///
-    /// **Select All still passes `Enclosed` explicitly**
-    /// (`app::actions::apply`), and must: it hands an infinite rect, under
-    /// which the two modes agree, and stating the mode keeps the call readable
-    /// rather than resting on that coincidence.
-    ///
-    /// # The ENGINE answers this, and this shell states no enclosure rule
-    ///
-    /// The body below is one call to [`hit_test_rect_deep`]. It must stay one
-    /// call: a hand-written loop over `objects.leaves` applying `contained_by`
-    /// / `intersects` here would be a second statement of the enclosure rule in
-    /// another crate, and it would drift the day `MarqueeMode` grows a third
-    /// mode or the day `Enclosed` stops meaning `contained_by` — **silently**,
-    /// because a local copy keeps compiling and keeps returning something
-    /// plausible.
-    ///
-    /// **What the engine's version does that a local loop cannot**: it interleaves
-    /// the two lists on [`pdfcer_core::vector::FormLeaf::paint_order`] instead
-    /// of appending every leaf after every object, so a marquee's result and a
-    /// click's result order the same objects the same way. Front-most **last**,
-    /// deliberately — a point query answers *"which one?"* and wants the winner
-    /// first; a marquee answers *"which ones?"* and a caller drawing handles or
-    /// re-emitting them wants paint order.
-    ///
-    /// # `forms` is the caller's, and this shell's answer is not the
-    /// engine's default
-    ///
-    /// [`FormMarquee::Exclude`] is the engine's default and the one that makes
-    /// a marquee agree with a click. **This shell's callers pass
-    /// [`FormMarquee::Include`] anyway**, and the reason is a property of this
-    /// shell rather than a disagreement with the engine:
-    ///
-    /// A leaf here is **not an edit operand**. `canvas::moving` refuses it by
-    /// name — `Refusal::InsideForm` — because a leaf's geometry lives in the
-    /// form's own content stream. The container **is** an operand: one page
-    /// object, addressable by `object-move` and `object-delete`. So a band over
-    /// a title block that returned leaves alone would hand the operator a
-    /// selection that every edit verb refuses, which is precisely the trap the
-    /// engine's `Exclude` default exists to prevent — with the roles the other
-    /// way round, because in the engine's shell the form is the unreachable
-    /// thing and here it is the reachable one.
-    ///
-    /// And the case that would make `Include` obnoxious is already handled
-    /// **downstream**, not here: a page-sized wrapper touched by every crossing
-    /// band is dropped by `canvas::marquee::without_page_wrappers`, which reuses
-    /// `container_is_worth_selecting` — the click ladder's own rule. That is why
-    /// `Include` is safe in this shell and would not be in one without it.
     #[must_use]
     pub fn hit_test_rect(
         &self,
@@ -979,11 +486,6 @@ impl ObjectModelProvider {
     }
 
     /// One object's canvas-space bounding rect, or `None` for a stale id.
-    ///
-    /// A stale id resolving to `None` rather than panicking is the contract:
-    /// a selection set can outlive an edit that removed what it named, and
-    /// the correct response is to drop it silently, not to crash the frame
-    /// that is trying to draw.
     #[must_use]
     pub fn bounds(&self, page_index: usize, target: TargetId) -> Option<Rect> {
         if page_index != self.page_index {

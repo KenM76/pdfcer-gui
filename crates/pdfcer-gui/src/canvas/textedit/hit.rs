@@ -42,16 +42,6 @@ pub struct Layout {
 impl Layout {
     /// **Which character index is under `screen`**, as a character offset into
     /// the draft's text.
-    ///
-    /// Clamped by the galley: a position above or left of the text answers 0, a
-    /// position past the end answers the length. That is what every text field
-    /// does and it is what makes a drag that runs off the end select to the
-    /// end rather than stopping.
-    ///
-    /// `CCursor::index` is a **character** index, which is the unit
-    /// `super::Draft::caret` is documented in. `Galley` also speaks in rows and
-    /// byte offsets; taking either would compile and would put the caret inside
-    /// a multi-byte character on the first document with an accent in it.
     #[must_use]
     pub fn index_at(&self, screen: Pos2) -> usize {
         self.galley
@@ -67,14 +57,6 @@ pub fn publish(ctx: &egui::Context, layout: Layout) {
 }
 
 /// The editor box as of the last frame that drew one, if any.
-///
-/// # Why nothing clears this
-///
-/// Because every caller asks *"is the pointer inside the box"* and a stale
-/// rectangle from a draft that has ended answers that question wrongly only if
-/// the pointer is inside a box that is no longer drawn — and the callers all
-/// gate on a **live draft** first, which is the fact that actually ended. A
-/// clear step would be a second place to forget.
 #[must_use]
 pub fn read(ctx: &egui::Context) -> Option<Layout> {
     ctx.data(|d| d.get_temp::<Layout>(egui::Id::new(KEY)))

@@ -115,3 +115,100 @@ scan*.
 The property the atlas argument rests on, asserted over a walk rather
 than at two chosen points: a rounding that worked at 12.3 and failed
 near the clamps would pass the test above.
+
+### `const MIN_FONT_PX`
+
+Below it a run is drawn as a filled box instead — see the header. The value
+is where a proportional face stops resolving into distinguishable letters
+on a 96 dpi display; under it the glyphs are a smudge that costs a layout
+and reads as noise, and a solid bar reads as *text, too small*, which is
+what is true.
+
+### `const MAX_FONT_PX`
+
+⚠ A ceiling on the **font atlas**, not on the design. A run's box grows
+without bound as the operator zooms, and egui rasterizes a glyph per
+(face, size): asking for a 4,000 pt face once is a multi-megabyte atlas
+upload in the middle of a zoom gesture.
+
+The visible consequence is that past roughly this size the overlay text
+stops growing with the page while the scan under it keeps growing. That is
+a real divergence and it is stated here rather than hidden: it begins at a
+zoom where one run fills the window, which is far past any zoom at which
+two layers are being compared.
+
+### `const FONT_SIZE_QUANTUM_PX`
+
+Not cosmetic. Every distinct size is a separate set of rasterized glyphs
+in egui's atlas, and a page of OCR runs has as many distinct box heights as
+it has runs. Rounding collapses a sheet's worth of near-identical sizes
+onto a few dozen shared ones, so the atlas holds a face-sized set rather
+than a page-sized one, and a zoom re-uses what the last frame uploaded.
+
+### `const DEFAULT_COLOUR`
+
+Chosen to be a colour a **scan is unlikely to contain**. The overlay's
+whole job is to be told apart from the marks under it, and a scanned
+drawing is black, grey and — on a CAD sheet — often blue or red. Magenta is
+in none of those families, so the default works before anybody has thought
+about it, which is what a default is for.
+
+### `fn sync`
+
+The guard is not an optimisation. An unconditional write every frame would
+make the value impossible to change from anywhere else, which is how a
+mirror becomes an overwrite — `canvas::chunks::sync` carries the same note.
+
+### `fn is_ocr_run`
+
+`ExtractedGlyph::invisible` is the whole selector: the engine sets it for
+text rendering modes 3 and 7, which is what an OCR producer writes and what
+a page's own lettering never is.
+
+`any`, not `all`, and the difference is a silent omission. A producer
+that flips the rendering mode mid-run leaves a run with both kinds of
+glyph. Taking it draws some already-visible letters a second time, which
+the operator can see and dismiss. Refusing it hides recognised text with
+nothing on screen to say so — and *nothing on screen* is the failure mode
+this whole feature exists to end.
+
+### `fn painted_fraction`
+
+A **non-finite input paints nothing**, where
+[`crate::viewer::normalise_ocr_overlay`] answers the same corruption with
+the default position. The two are not inconsistent: that one answers *where
+did the operator leave the slider*, and a lost preference should land
+somewhere useful; this one answers *how opaque is this stroke*, and a
+number nobody can account for must not end up drawn over the document.
+
+Which is exactly why this is public and `app::status::ocrlayer` reads
+it rather than the raw field. A disclosure that quoted the other normaliser
+would report 65 % on the one input where the painter draws nothing — a
+sentence describing a blend that is not on screen, produced by two
+functions that each behave correctly.
+
+### `fn text_alpha`
+
+Equal to [`veil_alpha`] by construction rather than by coincidence: the two
+halves of one slider are one number, and the left stop has to draw *no*
+text rather than faint text for the same reason the right stop has to blank
+the scan.
+
+### `fn draw_veil`
+
+Called before the grid: this is about the sheet, and everything drawn on
+the sheet has to win.
+
+Only over pages that actually have a raster this frame, and only over
+[`PageView::paint_rect`] — the rectangle the texture is a picture of. A
+page still waiting on its pixmap is left alone rather than veiled, because
+veiling nothing would put a white rectangle over whatever the strip is
+showing in its place.
+
+### `fn draw_text`
+
+`clip` culls: a run whose screen rectangle misses it is never laid out.
+
+The colour is read from the painter's own context rather than passed in, so
+the `NOT A THEME COLOUR:` argument stays beside the value it is about and
+`painting` does not have to carry a colour it makes no decision on.

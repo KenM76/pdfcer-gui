@@ -187,3 +187,9 @@ groups. That read walks `/OCProperties` and its `/OCGs` array — a handful
 of dictionary lookups, no content stream — and it is behind the
 `targets.first()` guard above, so it costs nothing on a frame with nothing
 selected. The Layers panel makes the same call every frame it is open.
+
+### `fn show`
+
+Takes `&OpenDoc` and the context: the selection is on the document, and the
+**depth** of the click that made it is in `egui::Memory` — see
+[`crate::canvas::depth`] for why those two live apart.

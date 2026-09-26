@@ -8,13 +8,6 @@ use crate::canvas::placing::PlaceKind;
 use crate::text::placing as t;
 
 /// A dialog's offer to step aside, and its one piece of state.
-///
-/// One field, and it is the **request** rather than the hiding. The request
-/// is a genuine edge — the operator pressed a button on this frame and
-/// `app::frame` has not seen it yet — so it has to be stored somewhere and
-/// read-and-cleared. Being hidden is not an edge; it is a standing
-/// consequence of a record that lives elsewhere, so it is asked rather than
-/// kept.
 #[derive(Default)]
 pub struct PlaceHandoff {
     /// Set by [`Self::button`], drained by [`Self::take_request`].
@@ -31,16 +24,6 @@ impl std::fmt::Debug for PlaceHandoff {
 
 impl PlaceHandoff {
     /// Draw the offer: a button, its tooltip, and the note under it.
-    ///
-    /// A plain button, never a greyed one. R9 reserves greying for the
-    /// *temporarily* unavailable, and this is not unavailable at all — it is
-    /// the second of two live routes to the same answer, which is the argument
-    /// `dialogs::scale`'s own "Measure it on the drawing…" button already
-    /// makes.
-    ///
-    /// `region` is the dialog's own published rect name, passed in rather than
-    /// derived, because a region name is part of the application's published
-    /// vocabulary and belongs with the surface that owns it.
     pub fn button(&mut self, ui: &mut egui::Ui, region: &'static str) {
         let button = ui
             .button(t::place_button())
@@ -53,10 +36,6 @@ impl PlaceHandoff {
     }
 
     /// Take the operator's request, if they made one this frame.
-    ///
-    /// Read-and-clear. A request left set would re-arm the placement on the
-    /// frame after the window came back, which the operator would experience as
-    /// a dialog that will not stay open.
     pub fn take_request(&mut self) -> bool {
         std::mem::take(&mut self.requested)
     }

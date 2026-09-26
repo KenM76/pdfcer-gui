@@ -44,3 +44,29 @@ The second half is the load-bearing one: the group key is a string
 matched against `widgets::group_focused`'s `key` in the dialog, so a typo
 produces a window that opens at the top with no error anywhere — the
 exact failure the landing exists to prevent, restored silently.
+
+### `fn handles`
+
+`pub(crate)` for [`super::routes::handles`]' reason: `shell::commands::reach`'s
+reachability checker must be able to evaluate every guard arm it finds, and a
+guard it cannot evaluate is a place commands could hide from the check that
+exists to find them.
+
+### `fn dispatch`
+
+**Application-scoped**, like About: these are choices about pdfcer, and an
+operator who has just launched the program and wants a dark window should not
+have to open a document first.
+
+Two things a reader will ask, both answered on [`Draft`] rather than repeated
+here. **The draft opens on the LIVE configuration** — the session's
+`Settings`, not a re-read of the file — because a session honouring a choice
+the disk does not have must show what pdfcer is *doing* rather than what it
+wished it had written. **Re-opening does not reset a draft in progress**,
+which is `DialogsState::open_print`'s guard and matters more here, because
+some of these settings change saved bytes and the window's whole promise is
+that nothing takes effect until Save.
+
+The guard is also what makes the landing safe to re-fire: pressing Tools ▸
+Font folders while the window is already open does **nothing**, rather than
+scrolling a window the operator has since scrolled somewhere else.

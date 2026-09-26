@@ -9,11 +9,6 @@
 
 /// **Which of the canvas's two interactive rectangles owns this frame's
 /// gesture.**
-///
-/// Deliberately a two-variant enum rather than a `bool`, because the two
-/// answers are not "yes/no" about one thing — they are two different surfaces
-/// with two different meanings, and a `bool` at the call site would read
-/// `if on_page { … }` with no hint that the other branch is the pasteboard.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Surface {
     /// The acting page's own rectangle — the sheet.
@@ -23,30 +18,6 @@ pub enum Surface {
 }
 
 /// **Decide which response `interact` should be handed this frame.**
-///
-/// See the module header for the table this implements and the argument for
-/// each row. The parameters are taken as plain booleans, read off the two
-/// `egui::Response`s at the one call site, so that every row of that table is
-/// reachable from a unit test.
-///
-/// * `pointer_on_page` — the pointer is inside the acting page's rect
-///   (`Response::contains_pointer`).
-/// * `page_has_gesture` — egui considers the page's widget to be the one being
-///   dragged or clicked right now, including after the pointer has left it
-///   (`dragged() || drag_stopped() || clicked()`).
-/// * `pasteboard_has_gesture` — the same, for the content rectangle.
-/// * `page_owns_open_popup` — a popup anchored to the page's own response
-///   is open right now (`Popup::is_id_open(ctx, Popup::default_response_id(
-///   &image_response))`). This is the canvas context menu, and without this
-///   clause the menu destroys itself the moment the pointer touches it. The
-///   module header carries the measurement and the general rule.
-/// * `pointer_in_content` — the pointer is inside the scroll content at all.
-///   ⚠ Read but not currently able to change the answer: it is here because the
-///   only case it would change is a pointer outside the scroll area entirely,
-///   and in that case **neither** response reports a gesture and the answer is
-///   arbitrary. Kept as a parameter, with this note, rather than dropped —
-///   a later reader deciding whether a third `Surface` is needed will want to
-///   know the question was asked.
 #[must_use]
 pub const fn surface(
     pointer_on_page: bool,

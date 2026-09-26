@@ -310,3 +310,18 @@ The second half is the one worth testing. Without the epsilon the
 button would be live the moment the pane opened on any widget whose box
 is not exactly hundredths — which reads as unsaved changes the operator
 never made, on most real documents.
+
+### `const ROTATE_LEFT_REGION`
+
+One region per button rather than one for the row, because a driven check
+that aimed at a fraction of a shared row is doing coordinate arithmetic the
+harness has a `declared_center` for — and the first version did exactly
+that, computed 78 % across, and landed outside the window. A named control
+is aimed at by name.
+
+### `fn section`
+
+Returns whether it drew. `false` when the selection names a widget the
+field no longer has — reachable through undo, which does not clear a
+selection, and the right answer is silence rather than a pane describing a
+box that is not there.

@@ -13,21 +13,10 @@ use pdfcer_core::settings;
 use crate::canvas::pick::PickFilter;
 
 /// The file the filter is written to, beside `settings.txt` and `layout.ron`.
-///
-/// A plain text file rather than RON, because the whole content is a single
-/// line of space-separated words. RON would add a schema wrapper, a parser
-/// dependency and a version field to serialise eleven booleans that already
-/// have a stable textual form — and would make the file unreadable by the one
-/// tool most likely to be pointed at it, which is a person with a text editor
-/// trying to work out why their canvas stopped selecting things.
 pub const FILTER_FILE: &str = "select-filter.txt"; // ui-text-exempt: a file name, never displayed as copy
 
 /// Where the filter file would live, or `None` if this install has nowhere to
 /// put one.
-///
-/// `None` is not an error: `pdfcer-core` reports it for a build with no
-/// writable profile location at all, and the correct behaviour then is to run
-/// with defaults and save nothing.
 #[must_use]
 pub fn path() -> Option<PathBuf> {
     settings::resolve_store()
@@ -55,11 +44,6 @@ pub fn load() -> PickFilter {
 
 /// Read from an explicit path. The twin of [`load`], for tests and for a
 /// future `--user-data-dir` override.
-///
-/// The `Err` arm and the `Ok` arm are deliberately **not** merged. They mean
-/// different things — "you have never set this" against "these are your
-/// settings" — and only the former may be answered with the default. See the
-/// module header's table.
 #[must_use]
 pub fn load_from(path: &Path) -> PickFilter {
     match std::fs::read_to_string(path) {
@@ -90,14 +74,6 @@ pub fn load_from(path: &Path) -> PickFilter {
 }
 
 /// Write the operator's filter.
-///
-/// Returns `Ok(false)` when this install has nowhere to write — which is a
-/// successful no-op rather than a failure, and is distinguished from
-/// `Ok(true)` so a caller can tell "saved" from "there is no profile".
-///
-/// Creates the directory if it is missing, because on a fresh portable install
-/// the first thing that wants to persist anything is whatever the operator
-/// touches first, and that may well be this.
 pub fn save(filter: PickFilter) -> std::io::Result<bool> {
     let Some(path) = path() else {
         return Ok(false);

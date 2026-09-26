@@ -12,11 +12,6 @@ use egui::Id;
 const KEY: &str = "pdfcer-forms-panel-spotlight"; // ui-text-exempt: internal memory id, never displayed
 
 /// **The field the Forms panel is pointing at.**
-///
-/// Named by its fully-qualified name rather than by an index, for the reason
-/// [`crate::panels::forms::rows`] names everything that way: an index into a
-/// walk of the form is only valid for the revision it was taken from, and this
-/// value crosses a frame boundary.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Spotlight {
     /// The field's fully-qualified name (§12.7.3.2).
@@ -24,10 +19,6 @@ pub struct Spotlight {
 }
 
 /// **Point the spotlight at `field`.**
-///
-/// Called by a row that was clicked or whose value box holds focus. Writing the
-/// same value twice is free and is the common case — a focused box writes every
-/// frame it is focused, which is what keeps the spotlight alive without a timer.
 pub fn set(ctx: &egui::Context, field: &str) {
     ctx.data_mut(|d| {
         d.insert_temp(
@@ -40,11 +31,6 @@ pub fn set(ctx: &egui::Context, field: &str) {
 }
 
 /// **Put it out.**
-///
-/// Called by the panel when nothing in it is focused — *not* by the canvas.
-/// The writer owns the lifetime, because a reader that cleared what it read
-/// would race any other reader and would put the spotlight out on the first
-/// frame it was drawn.
 pub fn clear(ctx: &egui::Context) {
     ctx.data_mut(|d| d.remove::<Spotlight>(Id::new(KEY)));
 }

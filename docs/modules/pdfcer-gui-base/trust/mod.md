@@ -176,3 +176,122 @@ Not an operator string and not in the catalog: it is a diagnostic word a
 driven check matches on. `ui-verify` asserts on `anchors=off` /
 `anchors=none` / `anchors=used:N`, and a check that matched translated prose
 would break the day the prose improved.
+
+### `fn candidate_paths`
+
+**Platform-neutral by construction, with no `cfg(windows)`.** `%APPDATA%` is
+a Windows variable, so on any other target `env::var` simply returns `Err`
+and this returns an empty list — which every caller already handles, because
+"no store on this machine" is a real state on Windows too. The CLI takes the
+identical approach and states the identical reason.
+
+It reports **candidates**, not findings: nothing here touches the disk.
+[`locate`] is what asks whether any of them exists, and keeping the two
+apart is what lets [`Located::None`] report *what was looked at*, which is
+the only actionable half of "nothing was found".
+
+### `enum Located`
+
+Five states rather than `Option<PathBuf>`, and every extra one exists
+because it is a different sentence to an operator. In particular
+[`Self::ConfiguredMissing`] must never be rendered as [`Self::None`]: a
+person who typed a path and got *"no trust store was found"* is being told
+their machine has no store, when what actually happened is that they made a
+typo — and the field they would fix is the one they are looking at.
+
+### `fn named`
+
+Distinct from [`Self::usable`] on purpose: a missing configured path is
+still the path the operator needs to see printed back, and a control
+that showed nothing there would be answering a typo with silence.
+
+### `fn locate`
+
+`configured` is `pdfcer-gui`'s `app::prefs::Prefs::acrobat_trust_store_path` as
+typed. It is trimmed here as well as on the way in, because this file is not
+the only route a value takes — the same argument `prefs` makes about
+`acrobat_path`, and the same reason: a trailing space is a path that does
+not exist and the failure presents as *"the setting does nothing"*.
+
+**An empty field means "ask this machine", not "no store".** Clearing a text
+box is how a person un-sets it, and reading a cleared box as a positive
+choice would suppress the feature with no way back except editing a file by
+hand.
+
+### `struct Store`
+
+[`Self::modified`] is carried in the same struct as the anchors rather
+than fetched where it is displayed. That is deliberate: the count and the
+date are one fact — *"1,780 anchors, as Adobe last downloaded them on this
+date"* — and a surface that could obtain one without the other would
+eventually show the count alone. The whole argument for reading the store
+live rather than snapshotting it is that its age stays visible.
+
+### `fn load`
+
+# Errors
+
+Returns the engine's own error text. It is not re-worded here: the engine
+names its refusals precisely (`NotAnAddressBook` explains that
+`directories.acrodata` and `security-policy.acrodata` carry no anchors), and
+a shell that paraphrased would produce a second, vaguer vocabulary for the
+same faults.
+
+### `fn evaluated`
+
+Used only to decide which sentence to draw, **never** to decide what a
+verdict means. The verdict is the engine's; this predicate says which
+explanation of `NotChecked` belongs beside it.
+
+### `struct Report`
+
+Deliberately a value with no methods that judge. It carries the engine's
+verdicts verbatim and the provenance of the anchors, and every reading of it
+happens in `pdfcer-gui`'s `text::trust` where the words live.
+
+### `fn examine`
+
+# Why this takes bytes AND a graph
+
+Because `/ByteRange` is a claim about **bytes**, and the object model cannot
+check a claim about bytes against itself — the engine's own reason for
+`byte_range_coverage` taking a length rather than deriving one. Verification
+needs the real file, digested; the graph is only how the signature
+dictionaries are found.
+
+⚠ The bytes must be **the file on disk**, not the session's rendering of it.
+A signature covers what was written, and an unsaved edit is not in the file.
+[`examine_path`] is the route that guarantees this; this function is split
+out so the whole decision table is testable without a filesystem.
+
+### `fn examine_path`
+
+# Errors
+
+The `std::io::Error` text, when the file cannot be read. There is no
+verdict in that case and none is invented: a document whose file pdfcer
+cannot read is not a document whose signatures failed.
+
+### `fn modified_date`
+
+Date only, no clock time. The question an operator is answering is *"is
+this anchor set current?"*, which is a question about weeks and months —
+AATL refreshes are not a daily event — and a timestamp to the second would
+invite the reading that the number is precise about something it is not.
+
+Returns `None` for a time the filesystem could not give, or one before the
+Unix epoch, rather than substituting today. A store with no readable date is
+a store whose staleness is unknown, and saying so is the whole point.
+
+### `fn cached_report`
+
+Returns `Err` with the reason the file could not be read — which is a
+different statement from any verdict and must not be rendered as one.
+
+**It computes on the first frame it is called on, without being asked.**
+The alternative considered was a *Check signatures* button. It was refused:
+an operator who has opened a panel called Signatures has already asked, and
+a button would leave the panel's default state showing coverage numbers with
+no integrity beside them — which is the state this whole feature exists to
+end. The cost is one verification the first time the panel is drawn for a
+given file; the cache above is what stops it being sixty.

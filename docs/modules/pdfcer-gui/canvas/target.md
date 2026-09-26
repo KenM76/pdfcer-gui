@@ -284,3 +284,52 @@ parameter and never reads it, which is precisely the shape a hurried
 threading of this change would have — the same trap
 [`the_stub_marquee_requires_full_enclosure`] names for `mode`, one
 argument later.
+
+### `trait CanvasTargetProvider`
+
+Implemented today by [`ObjectModelProvider`] — the page's decomposed
+vector objects. It will grow implementations for annotations and for
+placed ce dimensions; those are separate object spaces with separate index
+conventions, and the [`TargetId`] newtype is what keeps them from being
+confused with each other.
+
+## "This page has no object model" is `None`, not a no-op provider
+
+The old shell shipped an `EmptyTargetProvider` that hit nothing, enclosed
+nothing and had no bounds. It is deliberately **not** carried across:
+every consumer here takes `Option<&dyn CanvasTargetProvider>`, so the
+absence is already representable, and two ways to say one thing is one way
+too many. The `Option` is also the one that cannot be misread — a no-op
+provider is indistinguishable from a page that decoded to nothing, and
+[`crate::canvas::selection::SelectionState::resolve`] has to tell those
+apart: the first must keep the selection and draw no outlines, the second
+must drop entries that no longer exist.
+
+### `struct StubTargets`
+
+# Why the selection tests do not use the real provider
+
+Because they are not about decomposition. *"Zooming out three rungs does
+not clear the selection"* is a property of the selection layer's state
+machine; proving it against a real PDF would mean a fixture, a
+`Document`, a page tree and a content-stream walk, all to establish that
+one `Vec` was not emptied. The real provider's geometry is already proven
+in its own module, against real content streams, and duplicating that
+coverage here would test `pdfcer-core` twice and the invariant once.
+
+Objects are listed **back to front** (paint order, the same convention as
+`PageObjects::objects`), so `hit_test_all`'s front-most-first contract is
+this type reversing the scan — which is a real behaviour worth having in
+the stub rather than a simplification that would let a caller depending on
+the order pass here and fail live.
+
+### `fn with_leaves`
+
+A leaf is hit *before* every page object at the same point, which
+models the common real case this whole change exists for: the page
+object at that point is the page-sized **form**, the engine excludes
+forms from a deep hit test outright, and what is left is what is inside
+it. The stub does not model paint-order interleaving — the live
+provider gets that from
+[`pdfcer_core::vector::hit_test_point_deep`], which is where the
+ordering rule belongs and where it is tested.

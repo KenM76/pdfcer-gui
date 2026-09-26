@@ -41,13 +41,6 @@
 use egui::{Pos2, Vec2};
 
 /// Which of the two page axes a constrained translation is locked to.
-///
-/// Named for what the operator sees on screen, not for a vector component:
-/// `Horizontal` means the object slides left and right. The canvas is Y-down
-/// and PDF user space is Y-up, and a name like `X` would invite a reader to
-/// guess which of those this is about. It is about neither — a lock is a lock
-/// in every space, which is why this type can be computed in canvas space and
-/// remain true after `canvas::mapping` has done its one conversion.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Axis {
     /// Left and right; vertical travel is discarded.
@@ -57,12 +50,6 @@ pub enum Axis {
 }
 
 /// What a live constraint is doing, for the announcement.
-///
-/// Two variants rather than a `bool`, because the sentence differs and because
-/// a future third constraint (centre-scaling on Alt, a 45° lock) is a variant
-/// here and a compile error in [`crate::text::constrain`] — which is the same
-/// exhaustive-match discipline `canvas::resizing::Refusal` uses to guarantee
-/// every refusal has words.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Lock {
     /// A translation pinned to one axis.
@@ -80,11 +67,6 @@ pub enum Lock {
 }
 
 /// The axis a delta has travelled furthest along.
-///
-/// Ties — a delta at exactly 45° — resolve to [`Axis::Horizontal`]. Arbitrary,
-/// deterministic, and documented so it is a decision: the alternative is a lock
-/// that flickers between axes while the pointer sits on the diagonal, which is
-/// visibly worse than picking one.
 #[must_use]
 pub fn dominant(delta: Vec2) -> Axis {
     if delta.x.abs() >= delta.y.abs() {
@@ -95,11 +77,6 @@ pub fn dominant(delta: Vec2) -> Axis {
 }
 
 /// **Lock a displacement to one axis.**
-///
-/// The other component is set to exactly zero — not damped, not scaled. A
-/// constrained drag that still creeps by a pixel on the locked axis is a
-/// constraint the operator cannot trust, and trust is the entire point of
-/// holding the key.
 #[must_use]
 pub fn axis(delta: Vec2) -> Vec2 {
     match dominant(delta) {
@@ -134,15 +111,6 @@ pub fn toward(from: Pos2, at: Pos2) -> Pos2 {
 }
 
 /// **Lock a pair of scale factors to a common ratio.**
-///
-/// Keeps the factor further from unity and applies it to both axes. See the
-/// module header for why that metric *is* relative pointer travel, and for why
-/// the mid-edge grips need no special case.
-///
-/// Non-finite input is returned untouched: judging which of two `NaN`s is
-/// "further from unity" is meaningless, and [`crate::canvas::resizing::is_usable`]
-/// is the one place that decides a degenerate resize is refused. Two places
-/// deciding that would be two chances to disagree.
 #[must_use]
 pub fn aspect(sx: f32, sy: f32) -> (f32, f32) {
     if !sx.is_finite() || !sy.is_finite() {
@@ -190,11 +158,6 @@ pub fn translate(ctx: &egui::Context, active: bool, delta: Vec2) -> Vec2 {
 }
 
 /// **A constrained absolute move**: where the thing goes, announced.
-///
-/// For the drags whose outcome is a position — a perimeter vertex, measured
-/// from the press, and a Bézier handle, measured from its anchor. See
-/// [`toward`] for why the two reference points differ and why filtering the
-/// displacement rather than the position is what preserves the grab.
 #[must_use]
 pub fn reposition(ctx: &egui::Context, active: bool, from: Pos2, at: Pos2) -> Pos2 {
     if !active {
@@ -205,15 +168,6 @@ pub fn reposition(ctx: &egui::Context, active: bool, from: Pos2, at: Pos2) -> Po
 }
 
 /// **A constrained resize**: announced here, applied inside the drag.
-///
-/// The odd one out, and deliberately so. A resize's factors are derived inside
-/// [`crate::canvas::resizing::drag`] from a grip and a box, and the ghost it
-/// returns must be the same pair it commits — so the lock has to be applied
-/// *there*, between the derivation and the branch. What the caller can do is
-/// announce, and hand the flag on.
-///
-/// Returns `active` unchanged so the call reads as one expression at the call
-/// site, which is what stops a caller announcing one thing and passing another.
 #[must_use]
 pub fn resize(ctx: &egui::Context, active: bool) -> bool {
     if active {
@@ -233,11 +187,6 @@ fn slot() -> egui::Id {
 
 /// **Record that a constraint is active this frame**, for the status row to
 /// read on the next one.
-///
-/// Called by the drag that applied the constraint, not by the modifier check —
-/// so a Shift held over an *unconstrainable* drag (a marquee, where Shift means
-/// "extend the selection") announces nothing, which is correct: nothing was
-/// constrained.
 pub fn announce(ctx: &egui::Context, lock: Lock) {
     let frame = ctx.cumulative_pass_nr();
     // Traced ONCE per lock change, not once per frame.
@@ -269,12 +218,6 @@ pub fn announce(ctx: &egui::Context, lock: Lock) {
 }
 
 /// **The sentence for a constraint that is live right now**, or `None`.
-///
-/// Self-retiring: the stamp must be this frame's or the one before it. One
-/// frame of slack because the status bar is composed before the canvas that
-/// writes the slot, so on any given frame the freshest value available *is* the
-/// previous frame's. Two frames would leave the sentence on screen after the
-/// key came up; zero would show it never.
 #[must_use]
 pub fn caption(ctx: &egui::Context) -> Option<&'static str> {
     let (frame, lock): (u64, Lock) = ctx.data(|d| d.get_temp(slot()))?;

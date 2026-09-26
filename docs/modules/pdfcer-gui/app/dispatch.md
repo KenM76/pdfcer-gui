@@ -83,3 +83,64 @@ reaches any command from any state.
 Ascending, de-duplicated and in range — which is what
 `EditSession::delete_pages` and `rotate_pages` need in order to succeed
 rather than refuse the whole batch over one bad index.
+
+### `mod images`
+
+A module rather than a match arm because it is a **sequence**, not a verb,
+and a ninety-line sequence buried in a `match` reads as neither. Its header
+carries the two decisions worth questioning: why the import happens before
+the window, and why the refusal is passed through in the engine's own
+words.
+
+### `mod textcopy`
+
+A module rather than two arms because their bodies are longer than most
+whole tabs and their subject is its own — the same seam [`images`] and
+[`pages`] sit on. Its header carries why both read the **same** extraction
+a canvas selection reads, and why neither raises an `Action`.
+
+### `mod zoom`
+
+A module rather than six arms because the family carries the most
+reasoning per arm in the whole match — O29's third fit mode among them. Its
+header carries the seam and what deliberately stays behind.
+
+### `fn dispatch_token`
+
+Resolved token → id → [`Self::dispatch_command`], rather than matching
+on the raw token number. The numbers are assigned in per-tab blocks in
+`crate::shell::commands` and are meaningful only there; duplicating
+them here would create a second place to keep in step, and a silent
+mis-dispatch is the failure that would result.
+
+**The id is cloned rather than borrowed**, and it is not an
+oversight: the arms below need `&mut self` — a panel to activate, a
+dock to reset, a mode to select — and a `&str` borrowed out of
+`self.commands` would hold `self` shared for the whole match. One
+short allocation per *invoked command* (an operator click, not a
+frame) is the right price for arms that can act on the application.
+`pub(super)` rather than private: this method moved out of
+`app/mod.rs` and its callers stayed. It is deliberately NOT `pub` —
+nothing outside `app` may dispatch a command, because the choke
+point's whole value is that there is exactly one way in.
+
+### `fn dispatch_command`
+
+**The one dispatcher.** A ribbon click, a QAT click, a context-menu
+click and a keyboard chord all arrive here, which is what makes it
+impossible for a chord and a button that share a command to do
+different things — the defect `crate::app::keyboard`'s header is
+about, closed structurally rather than by agreement.
+
+**A command with no arm is not an error.** At S2 most of the ribbon is
+scaffolding for behaviour that lands at S3 and later, and the
+honest thing is to say so once per invocation in the trace rather
+than to pretend the click did something. Where a command is *known*
+not to be implementable yet, its arm says why in the trace rather
+than falling through to the generic line — a reader of a trace from a
+machine they cannot see should not have to guess which kind of
+nothing happened.
+`pub(super)` rather than private: this method moved out of
+`app/mod.rs` and its callers stayed. It is deliberately NOT `pub` —
+nothing outside `app` may dispatch a command, because the choke
+point's whole value is that there is exactly one way in.

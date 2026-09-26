@@ -6,63 +6,6 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/app/prefs/pastechords.md`.
 
 /// **Which chord pastes a form field as a NEW field, and which as a DUPLICATE.**
-///
-/// `OPERATOR_REQUESTS.md` **O58**. Ken, 2026-08-29: *"let's make it an option to
-/// have it swap to match Acrobat or work the way we have it now."*
-///
-/// # Why this is a setting rather than a decision
-///
-/// Copying a form field has two legitimate meanings: **a new, independent
-/// field**, and **another box for the same field** that fills in step with the
-/// original. `pdfcer-core` refuses to guess between them, and this shell offers
-/// both on two chords rather than asking in a dialog.
-///
-/// **Acrobat assigns them the other way round.** Its plain Copy/Paste is the
-/// *linked* one — paste a field, leave its name alone, and you get a second
-/// widget of the same field — and it has **no paste-as-independent chord at
-/// all**: independence comes only from its bulk commands (Place Multiple
-/// Fields, Create Multiple Copies), which auto-name and so produce separate
-/// fields. Sourced, not assumed:
-/// `Acrobat_Features/forms__field_copy_paste_and_duplication.md`.
-///
-/// Both orders have a real argument, which is exactly what makes it a setting:
-///
-/// - **[`PdfcerOrder`](Self::PdfcerOrder)** puts the *common intent* on the
-///   *common chord*. Copying a title-block field down a column almost always
-///   wants independent fields — and Acrobat's own linking default is a
-///   documented, unresolved point of user friction, with a standing request for
-///   an *"option to unlink form fields when copying"* and no remedy but
-///   renaming each duplicate by hand.
-/// - **[`AcrobatOrder`](Self::AcrobatOrder)** matches muscle memory. An operator
-///   who spends the day in Acrobat and reaches for `Ctrl+V` expecting a linked
-///   field gets one, and does not have to hold a second rule in their head for
-///   one program.
-///
-/// # It swaps the CHORDS, never what a command means
-///
-/// The two commands keep their meanings and their labels for ever: `edit.paste`
-/// is always *"paste as a new field"*, `edit.paste_duplicate` is always *"paste
-/// as another box for the same field"*. Only the keys move.
-///
-/// The alternative — swapping what the *commands do* — was rejected because it
-/// makes the labels lie. A ribbon button reading **Paste as duplicate** would
-/// paste a new field, and no tooltip rescues a control whose name is wrong.
-/// Moving the binding instead means the ribbon, the context menu, the shortcuts
-/// dialog and the keyboard agree **by construction**, because every one of them
-/// reads the same keymap.
-///
-/// ⇒ Applied by [`crate::shell::manifest::apply_paste_chords`], which rewrites
-/// two entries of the shell's keymap. That is the mechanism the framework
-/// already has: `SHELL_FRAMEWORK.md`'s central claim is that the keymap is a
-/// **manifest**, not code — so an operator preference about keys is a data edit
-/// rather than a branch anywhere in the dispatcher.
-///
-/// # Both chords always exist, whichever way round they are
-///
-/// This never takes a capability away — it exchanges two keys. Both commands
-/// stay on the ribbon and in the context menu under their own names, so an
-/// operator who cannot remember which order they chose can always read it off
-/// the Edit tab rather than discovering it by pasting.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum PasteChords {
     /// `Ctrl+V` pastes a **new** field; `Ctrl+Shift+V` pastes a **duplicate**.
@@ -78,42 +21,9 @@ pub enum PasteChords {
 
 impl PasteChords {
     /// Both, in the order the settings pane offers them.
-    ///
-    /// pdfcer's own first, because it is the default and because a radio group
-    /// whose first entry is not the default reads as though the default were a
-    /// fallback.
     pub const ALL: &'static [Self] = &[Self::PdfcerOrder, Self::AcrobatOrder];
 
     /// **A harness override, read from the environment.**
-    ///
-    /// `PDFCER_DIAG_PASTE_CHORDS=acrobat` (or `new_field_first`) forces the
-    /// order for one run, ahead of whatever is in the preferences file.
-    ///
-    /// # Why a test seam exists here at all
-    ///
-    /// Because the alternative is worse in two directions, and one of them is
-    /// destructive.
-    ///
-    /// A driven check has to prove that changing this setting changes what
-    /// `Ctrl+V` **does** — that is the whole claim, and a unit test cannot
-    /// reach it: the keymap, the chord translation and the dispatcher all sit
-    /// between the preference and the keystroke. To change the setting a
-    /// harness could either **write the preferences file**, which is the
-    /// operator's own and would rewrite his choices on his own machine, or
-    /// **drive the Settings window**, which makes a check about pasting depend
-    /// on a dialog's layout and would fail for reasons that have nothing to do
-    /// with its subject.
-    ///
-    /// ⇒ So the seam is deliberate and is the same shape as
-    /// `PDFCER_DIAG_FORM_ACCEPT`: it changes no behaviour a keyless run can
-    /// observe, it is read exactly once at start-up, and it never writes
-    /// anything. `D:/dev/rag/egui/` carries the lesson this avoids needing —
-    /// `a_driven_check_that_mutates_persisted_state_must_normalise_at_the_start`.
-    ///
-    /// An unrecognised value is ignored rather than refused. The variable is
-    /// a harness affordance, and a typo in it should degrade to "the operator's
-    /// own setting" rather than to a start-up failure on a machine where
-    /// somebody exported it once and forgot.
     #[must_use]
     pub fn from_environment() -> Option<Self> {
         // ui-text-exempt: an environment variable name, never displayed.
@@ -123,11 +33,6 @@ impl PasteChords {
     }
 
     /// The token this is written under in the preferences file.
-    ///
-    /// Named for the **behaviour** rather than for the keys, deliberately. A
-    /// token of `ctrl_v_is_new` would be a file format that has to change if a
-    /// future operator rebinds either chord to something else entirely, and the
-    /// preference is about *which paste is the plain one*, not about `V`.
     #[must_use]
     pub const fn key(self) -> &'static str {
         match self {

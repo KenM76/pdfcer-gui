@@ -38,14 +38,6 @@
 //!   respect and others silently ignore is worse than none.
 
 /// **Insert `s` at the end of the draft.** The one mutation typing performs.
-///
-/// A free function over `&mut String` rather than a method, because it is the
-/// single point both the keyboard and the diagnostic seam pass through and a
-/// method would invite a second caller that skipped it. Control characters are
-/// dropped: `egui` delivers Enter and Escape as `Key` events, so a control
-/// character arriving in a `Text` event is something this shell has no meaning
-/// for, and putting it in a PDF show string would be authoring a byte the
-/// operator cannot see.
 pub fn insert(text: &mut String, caret: usize, s: &str) -> usize {
     let typed: Vec<char> = s.chars().filter(|c| !c.is_control()).collect();
     if typed.is_empty() {
@@ -56,32 +48,6 @@ pub fn insert(text: &mut String, caret: usize, s: &str) -> usize {
 
 /// **Insert a line break**, and the only way to get a control character into a
 /// draft.
-///
-/// # Why this is its own function rather than `insert(text, caret, "\n")`
-///
-/// Because [`insert`] **drops control characters**, and it is right to. Its own
-/// doc says why: *"`egui` delivers Enter and Escape as `Key` events, so a
-/// control character arriving in a `Text` event is something this shell has no
-/// meaning for, and putting it in a PDF show string would be authoring a byte
-/// the operator cannot see."* That is still true of typed text.
-///
-/// It stopped being true of the whole draft on 2026-08-21, when a box gained a
-/// paragraph break — and the guard silently ate it. **The Enter arrived, the
-/// branch was right, `insert` was called, and the newline was filtered out one
-/// call deeper.** The driven check reported *"the paragraph was authored as 1
-/// line"*; the trace showed the key arriving and the length not moving; and the
-/// answer was a filter written for a different question.
-///
-/// So the filter stays and the newline gets a door of its own. Relaxing
-/// `insert` to permit `\n` would have permitted every other control character
-/// with it — a stray `\t` or `\r` from a paste would land in a show string —
-/// and it would have made *"can a control character be in a draft?"* a question
-/// with two answers depending on which caller you asked.
-///
-/// **This is the fifth guard in two days to expire the week it was written**,
-/// and the shape is always the same: a well-argued restriction reads as
-/// permanent precisely because it is well argued. See
-/// `C:\personal_rag\claude_code\lesson_20260820_a_refusal_is_a_claim_with_a_date_on_it.md`.
 pub fn newline(text: &mut String, caret: usize) -> usize {
     splice(text, caret, vec!['\n'])
 }
@@ -97,10 +63,6 @@ fn splice(text: &mut String, caret: usize, chars_to_add: Vec<char>) -> usize {
 }
 
 /// **Remove the last character.** Backspace, and the whole of it.
-///
-/// By `char` and not by byte: a draft holding `é` must lose one keystroke's
-/// worth of text per Backspace, and truncating a byte would leave an invalid
-/// `String` — which in Rust is a panic rather than mojibake.
 pub fn backspace(text: &mut String, caret: usize) -> usize {
     let mut chars: Vec<char> = text.chars().collect();
     let at = caret.min(chars.len());
@@ -116,11 +78,6 @@ pub fn backspace(text: &mut String, caret: usize) -> usize {
 }
 
 /// **Remove the character AFTER the caret.** The Delete key.
-///
-/// The caret does not move, which is what makes Delete different from
-/// Backspace rather than a mirror of it: the text to the left of the caret is
-/// untouched, so the operator's position in the word is preserved while what
-/// follows is eaten.
 pub fn delete_forward(text: &mut String, caret: usize) -> usize {
     let mut chars: Vec<char> = text.chars().collect();
     let at = caret.min(chars.len());
@@ -154,12 +111,6 @@ pub fn delete_forward(text: &mut String, caret: usize) -> usize {
 
 /// **The selected range**, as normalised character indices, or `None` when
 /// nothing is selected.
-///
-/// An empty range answers `None` rather than `Some((n, n))`: a mark sitting
-/// exactly on the caret is *not a selection*, it is the state after
-/// Shift+Right followed by Shift+Left, and every caller would otherwise need
-/// its own emptiness check before deciding whether Backspace deletes a
-/// selection or a character.
 #[must_use]
 pub fn range(mark: Option<usize>, caret: usize) -> Option<(usize, usize)> {
     let mark = mark?;
@@ -171,11 +122,6 @@ pub fn range(mark: Option<usize>, caret: usize) -> Option<(usize, usize)> {
 
 /// **Remove `from..to`** and answer the caret, which lands where the removed
 /// text began.
-///
-/// Character indices, clamped, like everything else in this module. A caller
-/// that passes a reversed pair gets nothing removed rather than a panic —
-/// [`range`] is the intended source and never produces one, and a panic here
-/// would be a crash in the middle of typing.
 pub fn delete_range(text: &mut String, from: usize, to: usize) -> usize {
     let mut chars: Vec<char> = text.chars().collect();
     let from = from.min(chars.len());
@@ -235,16 +181,6 @@ pub fn shifted(event: bool, frame: bool) -> bool {
 }
 
 /// **What the mark becomes after a movement**, given whether Shift was held.
-///
-/// The single statement of rule 4. `was` is the mark before the movement and
-/// `from` is the caret before it.
-///
-/// - **Shift held, no mark yet** — the mark is planted where the caret *was*,
-///   which is what makes the first Shift+Right select one character rather
-///   than none.
-/// - **Shift held, mark already set** — it stays, so the selection grows and
-///   shrinks from the same fixed end.
-/// - **No Shift** — dropped.
 #[must_use]
 pub fn moved(was: Option<usize>, from: usize, shift: bool) -> Option<usize> {
     if shift {
@@ -255,12 +191,6 @@ pub fn moved(was: Option<usize>, from: usize, shift: bool) -> Option<usize> {
 }
 
 /// The caret one **word** to the left of `caret` - `Ctrl+Left`.
-///
-/// Skips any run of spaces immediately behind the caret, then the run of
-/// non-spaces behind that. This is the behaviour of every text field the
-/// operator uses, and the reason it is here rather than deferred is that a
-/// caret which can only move one character at a time is a caret nobody uses
-/// twice on a line of any length.
 #[must_use]
 pub fn word_left(text: &str, caret: usize) -> usize {
     let chars: Vec<char> = text.chars().collect();
@@ -275,11 +205,6 @@ pub fn word_left(text: &str, caret: usize) -> usize {
 }
 
 /// The caret one **word** to the right of `caret` - `Ctrl+Right`.
-///
-/// The mirror of [`word_left`], and deliberately not symmetric in its order:
-/// it skips the non-spaces first and then the spaces, so one press lands the
-/// caret at the start of the next word rather than at the end of this one.
-/// That is what the same key does everywhere else.
 #[must_use]
 pub fn word_right(text: &str, caret: usize) -> usize {
     let chars: Vec<char> = text.chars().collect();

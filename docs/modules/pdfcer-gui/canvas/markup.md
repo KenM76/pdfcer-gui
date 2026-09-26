@@ -264,3 +264,253 @@ identical points is what a press-and-hold with no movement produces once the
 duplicate filter is off, and it authors an annotation with a zero-area
 `/Rect` that `pdfcer-core`'s `bounds_of` then pads to the pen's half-width —
 a 1-point blob nobody chose.
+
+### `mod palette`
+
+The data half of the operator's ask of 2026-09-06: *"make sure you've used
+the same default colours and style look for these things as Adobe."* Every
+number in it was read out of Acrobat DC's own tool-defaults registry rather
+than chosen here; the module header carries the reading and the evidence.
+
+### `enum MarkupKind`
+
+Carried **by** [`crate::canvas::tool::CanvasTool::Markup`] rather than
+becoming one tool variant per shape. See that variant's own docs for the
+argument; the short form is that these are mutually exclusive states of one
+mode, and a type that can express "the markup tool and the ellipse tool at
+once" is the wrong shape for a thing that is exactly one of them.
+
+**Seven variants in three gesture families** — see the module header's table
+and the boundary that admits them. [`Self::is_band`], [`Self::is_vertex`] and
+[`Self::is_freehand`] are the three predicates that name the families, and
+they partition the enum: [`tests::the_three_families_partition_every_kind`]
+is what says so, because a kind belonging to two families would be reached by
+two gestures and a kind belonging to none would be armed by a control that
+then does nothing at all.
+
+### `const ALL`
+
+Exists for the reason [`crate::app::actions::ViewChrome::ALL`] does, and
+is the same shape deliberately: it is what lets the *registry side* map
+a command id to a kind and back through one pair of total functions
+(`chrome_command` / `chrome_for_command` is the precedent), so an eighth
+kind added here fails a both-directions test rather than silently
+arriving with no command — or, worse, with a command that arms nothing.
+
+The order is the **ribbon's**, which is why Highlight is last: it sits in
+the Text markup band and the other six sit in Shapes.
+
+The mapping itself deliberately does **not** live here: command ids are
+`shell::commands`' vocabulary, and `shell/` is a single-writer resource.
+
+### `fn is_rect`
+
+Salvaged from the old shell's `MarkupKind::is_rect`, and it earns its
+place for the same reason it did there: two separate decisions ask this
+one question — what shape the preview is, and whether the drag is
+normalised into a rect before it becomes a spec — and asking it as
+*"is this a rect kind?"* rather than *"is this Arrow?"* is what keeps
+both correct when a fifth kind arrives.
+
+### `fn is_band`
+
+The predicate `canvas::interact` branches on to decide which of the three
+gesture modules takes a `GestureOutcome::Markup`, and the one [`band`]
+guards its own entry point with. Written as a question about the family
+rather than as `matches!(kind, Rectangle | Ellipse | Arrow | Highlight)`
+spelled at three call sites, for the reason [`Self::is_rect`] gives.
+
+### `fn is_vertex`
+
+Read by [`crate::canvas::gesture::press_kind`], which gives these two a
+live click and **no drag at all**, and by `canvas::interact`, which routes
+that click to [`vertex::click`] instead of to the selection. The two
+readers are the reason this is a method rather than a `matches!` in each:
+a press whose *meaning* and whose *routing* disagreed would be a click
+that placed a vertex and replaced the selection.
+
+### `fn is_freehand`
+
+A `bool` rather than a one-variant `Option` because there is nothing to
+carry: [`ink`] handles exactly one kind, and a second freehand kind would
+be a second `/InkList` subtype, of which the specification has none.
+
+### `const PEN_WIDTH_PTS`
+
+That consumer is deliberately NOT re-pointed at the live pen, and the reason
+is worth stating because the opposite looks obviously right. The tolerance
+decides how much of a freehand trail is *thrown away*, so tying it to the
+pen would mean the same gesture produced a different number of points
+depending on a colour-and-width control the operator set for appearance —
+and a 12 pt pen would discard six times as much of what they drew. The
+simplification is about the fidelity of the recorded path; the pen is about
+how that path is painted. Coupling them would make an appearance choice
+silently destructive.
+
+2 points is the width a comment shape reads at on a dense CAD export
+without dominating it — a hairline vanishes among the drawing's own 0.25 pt
+linework, which is the specific failure a markup on an engineering drawing
+has to avoid. It is [`pen::Pen::default`]'s width for the same reason.
+
+### `enum Geometry`
+
+# Why one enum rather than three `Action` variants
+
+Because [`spec`] is *"the single place a gesture becomes a `MarkupSpec`"*,
+and that claim is what the whole equivalence argument rests on: a
+canvas-authored annotation has to be byte-identical to the one
+`pdfcer markup-add` writes, and the cheapest way to keep two things
+identical is for there to be one of them. Three actions would be three apply
+arms, each free to build its own spec, and the day one of them acquired a
+normalisation the others did not is the day the claim quietly stopped being
+true — with nothing to notice it, because every variant would still author a
+perfectly valid annotation.
+
+So the *kind* travels on [`Action::CommitMarkup`] exactly as it always did,
+and what changed is that its geometry is no longer assumed to be two points.
+
+Contrast [`Action::CommitTextMarkup`], which **is** a separate action and
+stays one: its operand is not a gesture at all — it is a text selection that
+already exists on the document — so it shares no rule with anything here. The
+line this enum draws is *"produced by the pointer, on the canvas, now"*.
+
+# Every variant is in PDF user space, and that is not a convention
+
+It is the only frame in which an annotation has a place. Canvas-space
+geometry stored here would be silently zoom-dependent — the class of defect
+[`crate::canvas::mapping`]'s header exists to make unavailable — and the
+conversion happens at exactly two places in this module tree, both named in
+obligation 1 of the module header.
+
+### `enum Refusal`
+
+Reported rather than silently absorbed, and reported with enough detail to
+act on, because *"nothing happened"* has several causes with opposite
+responses — the same argument [`crate::canvas::moving::Refusal`] makes.
+
+### `fn spec`
+
+**The single place a gesture becomes a `MarkupSpec`** — the property the
+equivalence with `pdfcer markup-add` rests on, and the reason [`Geometry`]
+is one enum rather than three actions. Pure, and unit-tested, which is the
+reason it is here rather than inline in the apply arm: the arm is a routing
+line, and the decisions below are rules that deserve a test each.
+
+Returns `None` for a kind/geometry pair no gesture constructs — see
+[`Refusal::Mismatched`], which is where the apply arm's refusal is named.
+
+# An arrow keeps its RAW endpoints; a rectangle kind is normalised
+
+Carried across from the old shell's `commit_markup`,
+which states it in one sentence: *"the direction the operator dragged is the
+direction the line points, and its arrowheads make that visible.
+Normalising here would silently flip half of all drawn arrows."*
+
+It is sharper in this shell than it was there, because this shell's arrow
+has **one** head rather than two. The old shell authored
+`(OpenArrow, OpenArrow)` — a double-headed line, for which a reversal is
+invisible. `text/commands.rs` already promises the operator *"drag from the
+tail to the head"*, so the head belongs at the **end** of the drag, and with
+a single head a normalised rect would put it on the wrong end of half of all
+arrows drawn — up-and-left and up-and-right ones — with nothing in the
+document to say the shell had reversed them.
+
+The rectangle kinds go the other way and *must* be normalised: `Rect` with
+`llx > urx` is not a rectangle any reader will draw, and the operator may
+drag in any of the four directions.
+
+# A vertex run is never re-ordered, and neither is an ink stroke
+
+The same rule as the arrow's, one dimension up. `/Vertices` and `/InkList`
+are **sequences**, and their order is the order the operator drew: a
+polyline's segments join consecutive entries, so sorting or normalising the
+list would author a different figure from the one that was previewed. There
+is nothing here that could tempt a tidy-up in the way `Rect::from_corners`
+does, which is precisely why it is written down.
+
+# Neither vertex kind is filled
+
+`/Polygon` accepts an `/IC` interior and this authors `None`, for the reason
+the Square and Circle arms already give: a filled comment shape hides the
+drawing it is a comment about, which on a CAD sheet is the whole content
+under it. A fill is a Style property (`markup.fill`, still in `PLANNED`) and
+belongs to the surface that will set the pen colour too.
+
+### `fn spec_default_pen`
+
+Not a convenience. It exists so a test that is about *geometry* — a
+placement, a normalisation, a refusal — does not have to state a colour it
+does not care about, and so the one place that reads it in non-test code
+(`apply`'s D9 falsifier, which re-authors a known rectangle to compare
+against) is visibly not the operator's pen.
+
+Production paths take the pen from the action they are applying. That is
+checked by there being no other caller.
+
+### `fn action`
+
+Pure, and the only place the degenerate-input rules are applied. Deliberately
+says nothing about *which* page is current or what the pen is: those are the
+caller's and [`spec`]'s respectively, so this function is a statement about
+the gesture alone and can be tested as one.
+
+# The three degeneracy rules, and why each has to be here rather than in
+# `pdfcer-core`
+
+| rule | refused as | what it prevents |
+|---|---|---|
+| any coordinate non-finite | [`Refusal::NotFinite`] | a NaN in an annotation's `/Rect` |
+| a band with identical endpoints, or a vertex/ink run with no extent at all | [`Refusal::NoExtent`] | a 1-point mark nobody can see, holding a slot on the undo stack |
+| a run too short for its kind | [`Refusal::TooFewVertices`] | a two-vertex "polygon" that renders as a line |
+
+The engine refuses the *empty* cases and only those. Everything above is
+about a gesture the operator could actually produce, and refusing it here is
+what keeps `EditError::EmptyGeometry` off their screen: the shell never
+sends geometry that draws nothing, so the engine never has to explain one.
+
+# Why the geometry travels un-normalised
+
+Because normalising here would destroy the arrow's direction before anything
+downstream could ask about it, and would re-order a vertex run into a figure
+nobody drew. Normalisation happens in [`spec`], per kind, at the moment the
+`Rect` is built — the last point at which the raw data is still available.
+
+### `fn decline`
+
+One trace shape for every refusal, so a harness reads `markup-declined` and
+finds the cause on the same line rather than inferring it from an absence —
+the contract `canvas-move-declined` and `canvas-delete-declined` already
+honour. Shared by all three gesture modules, so the channel carries one line
+shape whichever family declined.
+
+### `fn trace_commit`
+
+**Traced with numbers, not a success flag.** The old shell's own note says
+why, and it is the sharpest sentence in that file: *"the whole defect this
+Pass fixes was a shape landing somewhere the operator did not choose, and a
+trace saying only 'committed' would have been equally true before and after
+the fix."*
+
+What each family puts on the line is what can be *wrong* about it: the band
+kinds print their raw endpoints in drag order, so a harness can prove the
+arrow's head is at the end the operator dragged to; the vertex kinds print
+the vertex count and the first and last vertex, so a run that lost its ends
+or gained a duplicate closing point is visible; ink prints the raw and kept
+point counts, which is the only place the simplification's effect is
+observable from outside the process.
+
+### `fn pen_px`
+
+Derived by measuring the mapping rather than by asking it for a zoom:
+[`PageMapping`] has no `zoom()` accessor, deliberately, because everything
+that divided by one was a place a second division could hide (see that
+module's header). Projecting a one-unit page-space step and measuring what
+arrives is the same answer with no number to divide by, and it keeps the
+preview's thickness equal to the stroke that will actually land.
+
+Floored at one point so the band is never invisible at low zoom — a preview
+the operator cannot see is a preview they cannot aim.
+
+Shared by all three gesture modules: the pen is a property of the *markup*,
+not of the gesture that draws it, so a second copy here would be a second
+place the preview could stop matching the annotation.

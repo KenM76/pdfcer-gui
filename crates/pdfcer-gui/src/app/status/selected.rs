@@ -19,10 +19,6 @@ pub const REGION: &str = "status-group:selected"; // ui-text-exempt: trace regio
 const RUNG_SLOT: &str = "status-rung"; // ui-text-exempt: trace slot name, never displayed
 
 /// Draw the selection readout, or nothing.
-///
-/// Takes `&OpenDoc` and the context: the selection is on the document, and the
-/// **depth** of the click that made it is in `egui::Memory` — see
-/// [`crate::canvas::depth`] for why those two live apart.
 pub(super) fn show(ui: &mut Ui, doc: &OpenDoc) {
     let page = doc.view.page_index;
     // `targets_on`, NOT `object_indices_on`.

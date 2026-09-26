@@ -135,11 +135,6 @@ use super::tabs;
 use super::trailing;
 
 /// What the tab-strip row did on one frame.
-///
-/// Returned to [`super::render`] rather than written into
-/// [`super::RibbonState`] here, for the reason that module's header gives:
-/// a tab click or a mode change lands on the **next** frame, so nothing
-/// drawn this frame can already be reacting to it.
 #[derive(Debug, Clone, Default)]
 pub(crate) struct StripOutcome {
     /// The tab the operator clicked, in the strip or in the menu.
@@ -165,20 +160,6 @@ pub(crate) struct StripOutcome {
 }
 
 /// Draw the whole tab-strip row.
-///
-/// `entitled` is the rectangle the application handed
-/// [`super::Ribbon::render`], read **before** anything was drawn into it.
-/// It is a parameter rather than something this function derives for the
-/// reason [`super::band::entitled_bounds`] gives at length: by the time a
-/// row is being drawn, the `Ui` it is given may already have been widened
-/// by a sibling that overflowed, and a `Ui` that reports a width the
-/// window does not have is how a reserved control ends up off screen.
-///
-/// The tab-strip row is the *first* thing the ribbon draws, so in practice
-/// nothing has had a chance to inflate anything yet. It is intersected
-/// anyway, because "in practice nothing has yet" is a statement about the
-/// current call order and not about this function, and the call order is
-/// exactly the kind of thing a later edit reorders without noticing.
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn render(
     ui: &mut egui::Ui,

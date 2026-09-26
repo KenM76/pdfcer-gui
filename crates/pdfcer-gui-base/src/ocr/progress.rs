@@ -7,12 +7,6 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU8, Ordering};
 
 /// What the operator has asked the running job to do.
-///
-/// One atomic rather than two booleans, because the states are **ordered** and
-/// mutually exclusive: a job cannot be both cancelled and stopped, and a Cancel
-/// arriving after a Stop must win. An enum in a `u8` makes that a single
-/// compare-and-set instead of two loads whose order a reader has to reason
-/// about.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum Wish {
@@ -47,22 +41,12 @@ impl Control {
     }
 
     /// What the worker should do now.
-    ///
-    /// `Relaxed` is correct and deliberate. There is no other memory being
-    /// published alongside this flag — the results travel by channel, which
-    /// carries its own ordering — so the only requirement is that the value
-    /// eventually arrives, and a page of OCR is several orders of magnitude
-    /// longer than any plausible propagation delay.
     #[must_use]
     pub fn wish(&self) -> Wish {
         Wish::from_u8(self.0.load(Ordering::Relaxed))
     }
 
     /// **Finish the page in hand and keep everything.**
-    ///
-    /// Refuses to downgrade a Cancel. An operator who cancelled and then hit
-    /// Stop — two clicks in the same second on adjacent buttons — must not have
-    /// the abandonment quietly turned into a partial write.
     pub fn stop(&self) {
         let _ = self.0.compare_exchange(
             Wish::Continue as u8,
@@ -73,21 +57,12 @@ impl Control {
     }
 
     /// **Abandon everything**, including the page in hand.
-    ///
-    /// Unconditional: Cancel outranks Stop, because it is the one that cannot
-    /// be undone by waiting and because it is what an operator reaches for when
-    /// they have realised the whole run was a mistake.
     pub fn cancel(&self) {
         self.0.store(Wish::Cancel as u8, Ordering::Relaxed);
     }
 }
 
 /// One message from the worker.
-///
-/// `Page` is sent **after** the page is recognised, carrying that page's own
-/// counts. The dialog accumulates; the worker does not send running totals,
-/// because a message that is a total rather than an event cannot be dropped
-/// safely and this channel is allowed to be drained in batches.
 #[derive(Debug)]
 pub enum Update {
     /// A page finished.
@@ -117,12 +92,6 @@ pub struct PageDone {
 }
 
 /// How a run ended.
-///
-/// `Stopped` is a distinct outcome and NOT a successful run with fewer
-/// pages. The disclosure has to say the run ended early, or an operator who
-/// stopped at page 40 of 200 is left believing the whole document was
-/// recognised — which they will discover months later, searching for a word
-/// that is on page 150 and is not in the layer.
 #[derive(Debug)]
 pub enum Outcome {
     /// Every requested page was attempted.

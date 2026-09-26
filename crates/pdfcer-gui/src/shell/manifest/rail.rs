@@ -9,11 +9,6 @@ use egui_shell::manifest::{Item, RailFold, RailGroup};
 use crate::text::ribbon as t;
 
 /// The rail's groups, top to bottom.
-///
-/// Consumed by [`super::build`] through `Shell::with_rail`, so this list is
-/// **manifest data**: it merges, it validates, it serializes, and an operator
-/// overlay can reorder it. `SHELL_FRAMEWORK.md`'s reason, in one line — *"a
-/// rail that only `pdfcer-gui` knows about breaks it quietly."*
 #[must_use]
 pub fn groups() -> Vec<RailGroup> {
     vec![

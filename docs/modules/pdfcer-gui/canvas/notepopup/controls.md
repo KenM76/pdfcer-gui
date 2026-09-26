@@ -130,3 +130,61 @@ are handled above by the same rule.
 §3.4 says so: the real call can still refuse. That is why the funnel's
 worded decline stays the answer of record and this is only a filter on the
 affordance.
+
+### `fn controls`
+
+# Four states, and each is a fact about the document or the mode rather
+than about what this build can do
+
+| state | what is drawn |
+|---|---|
+| **Read mode** | one sentence naming the mode that can edit. R9's *temporarily* unavailable case — see the module header |
+| **the file locks it** (§12.5.3 bit 8) | one sentence saying so. R83: the controls are omitted, not offered and refused |
+| **a ce dimension** | one sentence saying where its text comes from. Rule 15; a note typed over it is regenerated away |
+| anything else | *Add note* / *Edit note*, the editor when it is open, and *Delete comment* |
+
+None of the three sentences is a greyed button, and none is temporary in a
+way the operator cannot see: the first names its own remedy, and the other
+two are properties of the file.
+
+### `fn save_draft`
+
+# Escape saves here, and the labelled buttons still mean what they say
+
+The operator's rule: *"for adding and editing text when using any tool that
+has text escape should also save changes to the text. The user can always
+undo if they want, but it is easy to accidentally press escape and lose a
+lot of text that has been entered."* The cost is asymmetric — a commit the
+operator did not want costs one `Ctrl+Z`, and a discard they did not want
+costs everything they typed, with nothing to undo — so both this function
+and the Escape arm in [`super::body`] call it.
+
+⇒ *Cancel* and the window's ✕ are untouched and still discard. A keystroke
+is what gets pressed by accident; a labelled button under the pointer is
+not, and removing the only deliberate way to throw a draft away in order to
+protect against the accidental one would be a worse trade than the one it
+fixes.
+
+# A draft identical to the note is not a write
+
+`SetNote` with the stored text would be an undo entry whose entire content
+is *"changed nothing"*, which is the same objection [`open_default`] makes
+to writing `/Open` on every glance. Escape makes that case common — press it
+on an editor you opened and did not type in — so the guard is here rather
+than at either caller.
+
+# Why the authority test is repeated rather than inherited
+
+The three early returns in [`controls`] are a **disclosure** ladder: each
+names a different reason and draws a different sentence. This is the
+**authority** test, and it has one outcome. [`super::body`]'s Escape arm is
+outside that ladder, so a note whose editor was opened before the document
+was signed — or whose annotation was locked under the operator's hand —
+must not be written by a keypress the ladder never saw.
+
+`keep_author` comes from the same function the Comments panel uses.
+`pdfcer-core` named this mistake when it shipped the verb: *"an
+implementation writing all three keys unconditionally would silently strip
+the author and date on every correction, leaving a review comment from
+nobody, dated never."* Two editors for one note, two spellings of the rule,
+and one of them eventually gets it wrong.

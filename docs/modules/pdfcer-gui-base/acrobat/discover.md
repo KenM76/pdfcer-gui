@@ -43,3 +43,54 @@ The single most likely place Acrobat is installed contains a space, so
 the naive `split_whitespace().next()` yields `C:\Program`. That failure
 presents as "discovery does not work on any normal machine", which is
 exactly the kind of thing a test is for.
+
+### `fn edition_of`
+
+Matched on the **file name only**, case-insensitively, because the
+directory is exactly the part that varies: `C:\Program Files\Adobe\…`,
+`D:\Apps\…`, a network install, a per-user install under `AppData`. The
+file name is fixed by Adobe and is what `App Paths` is keyed on.
+
+A path with no file name — `C:\`, or an empty string — is `None` rather
+than a panic. This runs over values a person may have typed.
+
+### `fn executable_from_registration`
+
+The value is *supposed* to be a bare path, and usually is. It is
+nonetheless unquoted and trimmed here, because:
+
+- some installers quote it anyway, and a `PathBuf` built from
+  `"C:\…\Acrobat.exe"` **with the quote characters in it** is a path that
+  will never exist, so the button would silently never appear;
+- `reg query` output carries whatever trailing whitespace the value had,
+  and a `REG_SZ` written by a careless installer can carry an embedded NUL
+  that survives into the string.
+
+Returns `None` for a value that is empty once cleaned, because an empty
+path is not a location and `Path::new("").exists()` is `false` on every
+platform — a distinction worth making here rather than discovering as a
+mysterious absence three functions away.
+
+### `fn executable_from_command`
+
+# Why this is not `raw.split_whitespace().next()`
+
+Because the overwhelmingly common installation directory is
+`C:\Program Files\…`, which contains a space. Splitting on whitespace
+yields `C:\Program`, which exists on no machine, and the failure presents
+as *"discovery does not work"* rather than as a parsing bug.
+
+Two shapes are handled, in this order:
+
+1. **Quoted** — `"C:\…\Acrobat.exe" "%1"`. Everything between the first
+   pair of double quotes is the path. This is what every modern installer
+   writes and what Windows itself requires for a path with a space.
+2. **Unquoted** — `C:\…\Acrobat.exe %1`. Split immediately after the first
+   case-insensitive `.exe`, which is the only reliable boundary available:
+   the extension is the last thing before the arguments begin, and a
+   directory named `…exe…` does not end a component with `.exe`.
+
+Anything else — a command with no `.exe` at all, an empty string, a bare
+argument template — is `None`. A wrong guess here is worse than no answer,
+because [`super::resolve`] would carry it forward to a `Viewer` and the
+operator would press a button that starts nothing.

@@ -14,19 +14,6 @@ use crate::acrobat::{Edition, Source, Viewer};
 // ---------------------------------------------------------------------------
 
 /// `file.open_in_acrobat` — the control beside the mode selector.
-///
-/// **No ellipsis**, deliberately, and it is a close call. This crate's
-/// convention is that an ellipsis means *"activating this opens a dialog
-/// rather than acting"*, and this control always raises a dialog. But the
-/// dialog is a **confirmation of the thing the label names**, not a request
-/// for information the label left out — the difference between *Settings…*,
-/// which cannot act until you tell it what to change, and a Close button that
-/// asks whether you meant it. An ellipsis here would suggest there is more to
-/// decide than *yes* or *no*.
-///
-/// The tooltip states the closing up front rather than at the end. It is
-/// the surprising half, and a hover sentence is read from the left until it
-/// stops being interesting.
 #[must_use]
 pub const fn file_open_in_acrobat() -> CommandText {
     CommandText::new(
@@ -39,10 +26,6 @@ pub const fn file_open_in_acrobat() -> CommandText {
 }
 
 /// The tooltip when the control is there but not usable — no document open.
-///
-/// R9's second half: *greying is reserved for temporarily unavailable and is
-/// **always explained on hover***. "No document" is exactly that, and this is
-/// the explanation.
 #[must_use]
 pub fn no_document_tooltip() -> String {
     "There is no document open to send to Acrobat.".to_owned()
@@ -53,11 +36,6 @@ pub fn no_document_tooltip() -> String {
 // ---------------------------------------------------------------------------
 
 /// The window title, shared by all three.
-///
-/// One title rather than three. The window is the same window answering the
-/// same request; changing its name according to which sentence is inside it
-/// would make a taskbar entry that renames itself while the operator is
-/// looking away.
 #[must_use]
 pub fn title() -> String {
     "Open in Acrobat".to_owned()
@@ -70,12 +48,6 @@ pub fn confirm_close_heading() -> String {
 }
 
 /// The body of the clean case.
-///
-/// It says **why**, in one clause, and the why is the part that makes the
-/// behaviour reasonable rather than officious. An operator told only *"it will
-/// be closed"* reads a program being awkward; told *"because two programs
-/// editing one file is how work gets lost"*, they read a program looking after
-/// their drawing.
 #[must_use]
 pub fn confirm_close_body(viewer: &Viewer) -> String {
     format!(
@@ -94,12 +66,6 @@ pub fn save_first_heading() -> String {
 }
 
 /// The body of the unsaved case.
-///
-/// It names the number of edits and it names the **file**, because those
-/// are the two things that make the choice concrete. And it closes on the
-/// consequence of *not* saving, phrased as a fact rather than as an option:
-/// there is no button for that outcome and the sentence must not read as if
-/// there were.
 #[must_use]
 pub fn save_first_body(edits: u64, file: &str, viewer: &Viewer) -> String {
     let changes = if edits == 1 {
@@ -116,22 +82,12 @@ pub fn save_first_body(edits: u64, file: &str, viewer: &Viewer) -> String {
 }
 
 /// The heading of the never-saved refusal.
-///
-/// A statement, not a question. There is nothing to decide: this is the one
-/// of the three that offers no way forward, and a heading shaped like a
-/// question would promise one.
 #[must_use]
 pub fn no_file_heading() -> String {
     "This document has never been saved.".to_owned()
 }
 
 /// The body of the never-saved refusal.
-///
-/// It says what to do — *save it somewhere first* — because a refusal that
-/// only refuses leaves the operator to guess, and the guess most people make
-/// is that the button is broken. And it is careful **not** to say Acrobat is
-/// missing: that is a different refusal with a different remedy, and confusing
-/// the two sends somebody looking for an installer they already have.
 #[must_use]
 pub fn no_file_body() -> String {
     "Acrobat opens files on disk, and there is no file yet — this document exists only inside \
@@ -140,23 +96,12 @@ pub fn no_file_body() -> String {
 }
 
 /// The button that saves and then hands over.
-///
-/// Named for **what it does**, never *Yes* or *OK*, which is this crate's
-/// standing rule for a button whose press has consequences: an operator who
-/// reads only the buttons — which is most operators, most of the time — must
-/// still get it right.
 #[must_use]
 pub fn save_and_open_button() -> String {
     "Save and open in Acrobat".to_owned()
 }
 
 /// The button that goes ahead with a clean document.
-///
-/// Also named for what it does, and *not* "OK" — even though the operator's
-/// own words were *"with and ok button to continue"*. What he asked for is a
-/// confirm-and-proceed control, which this is; what "OK" would cost is the
-/// sentence that says the document is closing being the only place that fact
-/// appears, and a dismissed dialog is one nobody read.
 #[must_use]
 pub fn close_and_open_button() -> String {
     "Close and open in Acrobat".to_owned()
@@ -184,10 +129,6 @@ pub fn handed_over(viewer: &Viewer) -> String {
 }
 
 /// The status line when the launch failed **after** the save succeeded.
-///
-/// A real state and the one worth wording most carefully: the operator's work
-/// is safe on disk, and the only thing that did not happen is the handover.
-/// Saying that plainly is the difference between a nuisance and a panic.
 #[must_use]
 pub fn launch_failed(detail: &str) -> String {
     format!(
@@ -197,10 +138,6 @@ pub fn launch_failed(detail: &str) -> String {
 }
 
 /// The decline when the save the operator asked for did not happen.
-///
-/// Nothing else follows a failed save. The document is not closed and
-/// Acrobat is not started, because the whole point of the question was that
-/// the edits must survive the handover.
 #[must_use]
 pub fn save_failed() -> String {
     "Your changes were not saved, so the document has not been closed or sent to Acrobat."
@@ -243,13 +180,6 @@ pub fn path_label() -> String {
 }
 
 /// The note under the field, which is the escape hatch's instructions.
-///
-/// This is the string O122's decision hangs on: *"the path control lives in
-/// Settings and is visible there whether or not discovery succeeded, so a
-/// non-standard install is fixable without the button ever having appeared."*
-/// A person whose Acrobat is somewhere unusual arrives at this field having
-/// seen **no button at all**, so the note has to explain a control they have
-/// never met.
 #[must_use]
 pub fn path_note() -> String {
     "Leave this blank and pdfcer asks Windows where Acrobat is, preferring Pro over Reader. Fill \
@@ -285,12 +215,6 @@ pub fn path_filter_name() -> String {
 }
 
 /// **What discovery actually resolved**, shown under the field.
-///
-/// The half of the escape hatch that makes it usable rather than merely
-/// present. Without this line a person who typed a path with a letter missing
-/// sees exactly what a person who typed it correctly sees — a filled-in field
-/// and no button — and has no way to tell the two apart. With it, the mistake
-/// is visible at the place it was made.
 #[must_use]
 pub fn resolved_note(viewer: Option<&Viewer>) -> String {
     match viewer {
@@ -311,12 +235,6 @@ pub fn resolved_note(viewer: Option<&Viewer>) -> String {
 }
 
 /// The product name for an edition, as it appears in prose.
-///
-/// Not `Debug`, and not a bare "Acrobat": which of the two is installed is a
-/// thing the operator knows about their own machine, and naming it is how they
-/// confirm that pdfcer found the one they meant. Somebody with both installed
-/// who sees *Acrobat Reader* here has been told about a misconfiguration they
-/// could not otherwise have detected.
 #[must_use]
 pub const fn edition_name(edition: Edition) -> &'static str {
     match edition {

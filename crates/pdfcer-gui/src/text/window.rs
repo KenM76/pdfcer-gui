@@ -10,74 +10,24 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/text/window.md`.
 
 /// **The window title's read-mode prefix**, when a chord turns the mode off.
-///
-/// It goes at the **front** of the title, and that is the same decision
-/// `crate::text::doctabs`' header makes about the unsaved marker, for the same
-/// measured reason:
-///
-/// > *A tab is truncated from the right with an ellipsis when the strip is
-/// > crowded … A trailing marker is the first thing the ellipsis eats.*
-///
-/// A taskbar button holding `SW41177.pdf — pdfcer — 2026-…` has already eaten
-/// everything after the file name. A hint at the end of the title would be
-/// legible only on a window whose title bar has room, which is not the window
-/// of somebody who has just hidden all their chrome.
-///
-/// It also leaves the **build stamp last**, which
-/// `tools/ui-verify`'s `the_title_bar_carries_the_build_time` parses by
-/// splitting from the right. Prefixing was free there; appending would have
-/// silently re-aimed that check at this sentence.
-///
-/// Terse — *exit*, not a full sentence — because it shares the strip with four
-/// other facts and is read at a glance.
 #[must_use]
 pub fn title_read_mode(chord: &str) -> String {
     format!("Read mode — {chord} to exit")
 }
 
 /// The window title's read-mode prefix when **nothing is bound**.
-///
-/// It names the surface that does have a way out rather than a key that does
-/// not. The status bar is the one piece of chrome read mode keeps, so this is a
-/// direction the operator can follow rather than a shrug.
 #[must_use]
 pub const fn title_read_mode_unbound() -> &'static str {
     "Read mode — see the bar at the bottom"
 }
 
 /// **The status bar's read-mode line**, when a chord turns the mode off.
-///
-/// It says what comes **back**, not what is hidden. An operator reading this
-/// bar is looking at a window with no ribbon and no panels and is trying to
-/// work out whether that is a mode or a fault; *"the ribbon and the panels"*
-/// names the two things they have noticed missing and attaches them to a key.
-/// A sentence that said only *"press this to leave read mode"* would require
-/// them to have already worked out that read mode is what they are in.
-///
-/// Named in the same two words the command's own promise uses
-/// ([`crate::text::commands::view_read_mode`]: *"Hide the ribbon and the panels
-/// …"*), so the sentence that turns it off is the sentence that turned it on,
-/// read backwards.
 #[must_use]
 pub fn status_read_mode(chord: &str) -> String {
     format!("Read mode — press {chord} to bring the ribbon and the panels back.")
 }
 
 /// The status bar's line when read mode and **full screen** are both on.
-///
-/// This is the one state in which `view.fullscreen` is also a trap, and the
-/// reason is compositional rather than intrinsic: full screen hides no chrome
-/// of pdfcer's own, so its ribbon control is normally right there — but read
-/// mode has taken the ribbon away, and with it that control. Two hidden
-/// controls, two chords, one line.
-///
-/// It is deliberately **not** shown for full screen alone. See
-/// `crate::app::window`'s header: an always-on `F11` hint would be furniture,
-/// and it would be wrong the moment the mode is off.
-///
-/// Read mode leads because it is the mode that removed the chrome; full screen
-/// merely removed the title bar, which is why this sentence cannot live in the
-/// title.
 #[must_use]
 pub fn status_read_mode_and_fullscreen(read_chord: &str, fullscreen_chord: &str) -> String {
     format!(
@@ -87,31 +37,12 @@ pub fn status_read_mode_and_fullscreen(read_chord: &str, fullscreen_chord: &str)
 }
 
 /// The status bar's line when read mode is on and **nothing is bound to it**.
-///
-/// Paired with [`leave_read_mode_button`], which follows it on the bar. It
-/// states the fact that makes a button necessary rather than leaving the
-/// operator to infer it, because *"there is a button here"* and *"there is a
-/// button here because your build has no key for this"* are different amounts
-/// of information and the second one is free.
 #[must_use]
 pub const fn status_read_mode_unbound() -> &'static str {
     "Read mode — no key in this build turns it off."
 }
 
 /// **The escape hatch**, drawn only when no chord is bound.
-///
-/// A control rather than a sentence, and this is the one place in the
-/// feature where that is right. R9 forbids drawing a control that cannot work
-/// and forbids placeholders; it does not forbid the only working route to a
-/// capability. With a chord bound, a statement is the better surface — it
-/// teaches the keyboard and leaves the bar a readout. With **no** chord bound,
-/// a statement has nothing true to say, and the alternative to a button is an
-/// application whose ribbon and panels cannot be recovered without restarting
-/// it.
-///
-/// A label, not a glyph: this button appears on a bar the operator has never
-/// seen it on, in a state they did not mean to be in, and an unfamiliar icon
-/// there is a puzzle rather than a route.
 #[must_use]
 pub const fn leave_read_mode_button() -> &'static str {
     "Bring the ribbon and the panels back"

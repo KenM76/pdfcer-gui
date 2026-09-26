@@ -8,14 +8,6 @@ use pdfcer_core::annot_author::StampName;
 
 /// **The stamp the operator placed most recently**, in a form that survives
 /// his stamp folder changing underneath it.
-///
-/// One of the two things a stamp gallery can be showing: a standard ISO 32000-2
-/// Table 181 face, which pdfcer writes as a real named `/Stamp` annotation, or
-/// one of his own, which is artwork imported out of a collection file.
-///
-/// Deliberately NOT `Copy` and deliberately holding owned `String`s: the
-/// alternative is borrowing from a [`Library`] that is re-scanned on every
-/// dialog opening, and the whole point of this type is to outlive one.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LastStamp {
     /// A standard face, by name. These cannot go missing — the vocabulary is
@@ -37,12 +29,6 @@ pub enum LastStamp {
 
 impl LastStamp {
     /// Build the memory from what a dialog actually committed.
-    ///
-    /// Takes the same pair the dialog holds — the standard selection, which is
-    /// always populated, and the custom selection, which shadows it when
-    /// `Some`. That mirrors `TextAnnotDialog`'s own rule (`custom.is_none()`
-    /// is what makes a standard radio read as selected), so the memory cannot
-    /// disagree with the window it was taken from.
     #[must_use]
     pub fn taken(standard: StampName, custom: Option<&CustomStamp>) -> Self {
         custom.map_or(Self::Standard(standard), |c| Self::Custom {
@@ -52,26 +38,6 @@ impl LastStamp {
     }
 
     /// **Resolve the memory against a library scanned just now.**
-    ///
-    /// Returns the selection a freshly opened gallery should show:
-    ///
-    /// - `(standard, None)` for [`Self::Standard`], or for a custom stamp that
-    ///   is no longer in the folder.
-    /// - `(standard, Some(stamp))` when the remembered pair is still there,
-    ///   with the *current* `file` and `page_index` — which is the entire
-    ///   reason this is a resolve and not a clone.
-    ///
-    /// The `fallback` argument is the gallery's own default
-    /// ([`crate::canvas::textannot::DEFAULT_STAMP`]); it is passed rather than
-    /// read here so this module does not acquire an opinion about what the
-    /// default should be.
-    ///
-    /// A custom memory that fails to resolve deliberately produces **no
-    /// disclosure**. It is indistinguishable, to the operator, from the first
-    /// stamp of a session — and a sentence explaining that a stamp he deleted
-    /// is not being pre-selected would be noise attached to a window he opened
-    /// to do something else. The trace records it so the harness can tell the
-    /// two apart; the operator has nothing to be told.
     #[must_use]
     pub fn resolve(
         &self,
@@ -92,12 +58,6 @@ impl LastStamp {
     }
 
     /// A short, stable token for the diagnostic trace. Never displayed.
-    ///
-    ///
-    /// It is also not the gallery's operator copy: that is allowed to be
-    /// reworded on a Tuesday and is translatable in principle. Same rule and
-    /// same reason as `StampSize::trace_token` and
-    /// [`crate::canvas::stampfit::trace_token`].
     #[must_use]
     pub fn token(&self) -> String {
         match self {

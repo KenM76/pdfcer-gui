@@ -22,10 +22,6 @@ impl PdfcerApp {
     }
 
     /// The document in tab position `slot`, or `None` past the end.
-    ///
-    /// The read half of the encoding described in §1. Written out rather than
-    /// routed through [`Self::take_slots`] because it must not move anything:
-    /// the tab strip calls it once per tab per frame.
     #[must_use]
     pub fn slot(&self, slot: usize) -> Option<&Status> {
         if self.document_count() == 0 {
@@ -82,17 +78,6 @@ impl PdfcerApp {
 
     /// **Park the active document and make `incoming` the active one**, as a
     /// new tab at the end of the strip.
-    ///
-    /// The one entry point for "a document has just been produced" — an open,
-    /// a create, a failed open. It does **not** run `PdfcerApp::adopt`; the
-    /// caller does, because `adopt` is also what seeds a new document's view
-    /// from the opening preferences and only the caller knows whether this is
-    /// a new document or a returning one.
-    ///
-    /// A new tab goes at the **end**, which is where every tabbed application
-    /// puts one. Inserting beside the active tab was considered and rejected:
-    /// browsers that do that do it for tabs *spawned by* the current page, and
-    /// an Open is not that.
     pub fn park_and_adopt(&mut self, incoming: Status) {
         if self.document_count() == 0 {
             self.status = incoming;
@@ -108,13 +93,6 @@ impl PdfcerApp {
     }
 
     /// **Show the document in tab position `slot`.**
-    ///
-    /// A no-op if it is already active or the slot does not exist, which is
-    /// what lets the tab strip call it unconditionally on a click.
-    ///
-    /// Forgets what §4 says it must and nothing more. In particular it does
-    /// not touch the incoming document's view, its rasters or its selection —
-    /// those are the state that makes coming back to a tab worth doing.
     pub fn activate_slot(&mut self, slot: usize) {
         if slot >= self.document_count() || slot == self.active_slot {
             return;
@@ -133,14 +111,6 @@ impl PdfcerApp {
     }
 
     /// **Close the document in tab position `slot`.**
-    ///
-    /// §5's rule for what becomes active afterwards. Closing the last one
-    /// leaves [`Status::Empty`].
-    ///
-    /// The unsaved-edits question belongs to the caller. This is reached
-    /// from [`PdfcerApp::close_document`] (which is behind both guards) and
-    /// from the tab strip's ✕ (which raises an action that goes through the
-    /// same guards). Nothing may call it directly from a click.
     pub fn close_slot(&mut self, slot: usize) {
         if slot >= self.document_count() {
             return;
@@ -180,34 +150,6 @@ impl PdfcerApp {
 
     /// **Move the tab at `from` to the boundary `gap`**, keeping the same
     /// document on screen.
-    ///
-    /// `gap` is a **boundary**, not a destination index: `0` is before the
-    /// first tab and `document_count()` is after the last, which is the same
-    /// vocabulary the insertion caret is drawn in and the same one a page drop
-    /// uses. `egui_shell::tabstrip::TabIntent::Reorder` carries the argument
-    /// for why it is not "the index it ends up at" — the two differ by one
-    /// whenever a tab moves rightward, because it is removed before it is
-    /// re-inserted, and a caller with the wrong convention is off by one in one
-    /// direction only.
-    ///
-    /// # The document on screen does not change, and that is arithmetic
-    ///
-    /// Reordering tabs is not navigation. An operator dragging tab 5 to the
-    /// front has not asked to *look* at it, so the active document has to
-    /// follow its own tab through the permutation rather than staying at an
-    /// index. Getting that wrong would switch document as a side effect of
-    /// tidying the strip, which no application does.
-    ///
-    /// Three cases, and the third is the one that needs the `+1`:
-    ///
-    /// | the active tab | where it goes |
-    /// |---|---|
-    /// | **is** the one being moved | wherever it lands |
-    /// | was to the **right** of `from` | one place left, because a tab was removed in front of it |
-    /// | ends up at or after the insertion point | one place right, because a tab was inserted in front of it |
-    ///
-    /// The two adjustments compose — a tab can be both — which is why they are
-    /// applied in sequence rather than as a `match`.
     pub fn move_slot(&mut self, from: usize, gap: usize) {
         let count = self.document_count();
         if from >= count {
@@ -255,10 +197,6 @@ impl PdfcerApp {
     }
 
     /// **Move to the next or previous tab**, wrapping.
-    ///
-    /// Wrapping because Ctrl+Tab wraps in every application that has it, and
-    /// an operator with two documents open would otherwise find the chord dead
-    /// half the time.
     pub fn cycle_document(&mut self, forward: bool) {
         let count = self.document_count();
         if count < 2 {

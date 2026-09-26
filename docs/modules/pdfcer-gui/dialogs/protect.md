@@ -298,3 +298,12 @@ The name rather than the whole path, for `crate::dialogs::redact`'s reason:
 every sentence that needs one is read in a window about 700 pt wide and a
 Windows path is routinely longer than that. The full destination is on the
 trace line [`crate::protect::Prepared::write_to`] emits.
+
+### `fn open_for`
+
+The dispatch target for `file.encrypt` and `file.permissions`. Lives here
+rather than in [`super::DialogsState`] only because it needs
+[`ProtectDialog::open`]'s private constructor; the guard it applies is the
+one `open_print` documents — the ribbon control is gated on `doc.open`, a
+chord bound to the same id is not, and both are fixed by refusing here at the
+one place the dialog is built.

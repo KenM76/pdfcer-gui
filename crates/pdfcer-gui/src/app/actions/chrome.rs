@@ -22,15 +22,11 @@
 //! make the shell's id map reach into the canvas to name a value, which is a
 //! dependency in the wrong direction for a type that is about *what the
 //! operator asked for* rather than about *what draws it*.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/app/actions/chrome.md`.
 
 /// Which piece of View ▸ Display chrome a [`Action::ToggleViewChrome`] is
 /// about.
-///
-/// An enum rather than one action variant per toggle — see that variant's own
-/// docs — and it lives here rather than in `canvas` because it is the *operand
-/// of an
-/// action*, and `shell::commands` (which maps ids to it) must not have to
-/// reach into the canvas to name one.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ViewChrome {
     /// `view.rulers` — the gutters along the canvas edges.
@@ -132,12 +128,6 @@ pub enum ViewChrome {
 
 impl ViewChrome {
     /// Every variant, in the order View ▸ Display lists them.
-    ///
-    /// Iterated by the tests that assert each has a command and each command
-    /// has a `selected:` condition — the same both-directions check
-    /// `PageDisplay::ALL` exists for, and for the same reason: a toggle added
-    /// to the enum with no registration would draw nothing, and nothing else
-    /// in the suite would notice.
     pub const ALL: &'static [ViewChrome] = &[
         ViewChrome::Rulers,
         ViewChrome::Grid,
@@ -167,10 +157,6 @@ impl ViewChrome {
     }
 
     /// Write this toggle into a view state.
-    ///
-    /// The pair with [`Self::read`], so the enum's mapping onto
-    /// [`crate::viewer::ViewState`]'s own fields is stated exactly twice, in
-    /// adjacent functions, instead of once per consumer.
     pub fn write(self, view: &mut crate::viewer::ViewState, on: bool) {
         match self {
             ViewChrome::Rulers => view.rulers = on,

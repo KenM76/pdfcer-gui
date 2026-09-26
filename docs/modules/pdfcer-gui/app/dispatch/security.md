@@ -95,3 +95,24 @@ asserting a decision that is otherwise only reachable through a
 test above proves are registered — so the two cannot drift about *which*
 commands exist, only about what they map to, and that mapping is short
 enough to hold both spellings in view.
+
+### `fn claims`
+
+Paired with [`PdfcerApp::dispatch_security`] over the same list, and the
+two are pinned together by a test — [`super::panels::claims`]' arrangement
+and its reason: a guard and a dispatcher that disagree turn a registered
+command into one that traces `command-unimplemented`, which looks from the
+outside exactly like a command nobody wired.
+
+### `fn dispatch_security`
+
+The two commands differ in exactly one value — the [`Task`] — and
+everything else about them is one implementation, which is the whole
+argument `crate::protect::Task`'s own doc makes: two windows would put
+the password fields, the destination choice, the disclosures and the
+atomic write in two files, and the second copy is where a disclosure
+goes missing.
+
+The already-open guard lives in
+[`crate::dialogs::DialogsState::open_protect`] rather than here, so a
+chord and a ribbon click are gated by one expression.

@@ -92,11 +92,6 @@ fn shown<'a>(trailing: Option<&'a Trailing>, ctx: &Ctx<'_>) -> Vec<(&'a str, Com
 }
 
 /// The width this region asks for.
-///
-/// `0.0` when there is nothing to draw — no trailing list, an empty one, or
-/// one whose every item is hidden or names a command that is not registered.
-/// A zero width is what makes the region **disappear** rather than leave a
-/// gap, which is R9 in the layout rather than in the painting.
 pub(crate) fn measure(ui: &egui::Ui, ctx: &Ctx<'_>, trailing: Option<&Trailing>) -> f32 {
     let shown = shown(trailing, ctx);
     if shown.is_empty() {
@@ -114,11 +109,6 @@ pub(crate) fn measure(ui: &egui::Ui, ctx: &Ctx<'_>, trailing: Option<&Trailing>)
 }
 
 /// The narrowest this region can be and still be worth drawing.
-///
-/// The first control's own floor, exactly as [`super::qat::min_width`]
-/// computes it — see [`super::plan::row`]'s header on why a region granted
-/// less than a control's floor gets a control drawn *outside* its rectangle
-/// rather than a smaller one.
 pub(crate) fn min_width(ui: &egui::Ui, ctx: &Ctx<'_>, trailing: Option<&Trailing>) -> f32 {
     let shown = shown(trailing, ctx);
     shown
@@ -127,11 +117,6 @@ pub(crate) fn min_width(ui: &egui::Ui, ctx: &Ctx<'_>, trailing: Option<&Trailing
 }
 
 /// Draw the trailing controls.
-///
-/// Dropping rule, disclosure and containment check are [`super::qat::render`]'s
-/// verbatim, and the reasoning there applies here unchanged: a control below
-/// its floor is drawn outside the rectangle it was given, so the loop stops
-/// rather than truncating, and what it dropped is announced.
 pub(crate) fn render(ui: &mut egui::Ui, ctx: &mut Ctx<'_>, trailing: Option<&Trailing>) {
     let shown = shown(trailing, ctx);
     if shown.is_empty() {

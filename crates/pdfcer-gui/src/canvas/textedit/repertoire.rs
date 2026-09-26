@@ -27,18 +27,6 @@ struct Held {
 }
 
 /// **The repertoire for `run` on `page`, measured at most once per revision.**
-///
-/// `None` means *not measured* — the run could not be pinned, or the engine
-/// refused the query — and every caller must treat it as permission to proceed
-/// rather than as a refusal. See the module header.
-///
-/// # The cost, and when it is paid
-///
-/// Once per `(page, run, edit_epoch)`. The first call walks the page's content
-/// stream inside the engine; every call after it reads an `egui` memory slot
-/// and clones an [`Arc`]. The caret's own click already pays for a
-/// provenance-carrying extraction (`app::cache::provenance`, shared since the
-/// same day), so the pin below is free by the time this runs.
 #[must_use]
 pub(crate) fn of_run(
     ctx: &egui::Context,
@@ -72,24 +60,6 @@ pub(crate) fn of_run(
 
 /// **What one keystroke's text survives as** — the characters the run will
 /// take, and the first one it will not.
-///
-/// # Why the refused character comes back rather than being reported here
-///
-/// Because this module is inside `canvas::`, and `app::status::decline` is
-/// `pub(super)` inside `crate::app` for a reason its own header states: *"a
-/// decline is written by the one dispatcher and read by the one bar."* The
-/// keystroke handler raises an `Action` instead, exactly as
-/// `TextAction::EnterCannotSplit` already does, and this struct is what it
-/// needs in hand to raise it.
-///
-/// # Why only the FIRST refused character
-///
-/// Because there is one status bar and one sentence in it. A text event
-/// carrying three unspellable characters has one thing to say, and saying it
-/// three times would overwrite the slot twice for no gain. The rest are dropped
-/// silently from the *insertion* — but not from the operator's knowledge, since
-/// the sentence tells him the run's font cannot be typed in and points at the
-/// face chooser, which is the same remedy for all of them.
 pub(crate) struct Sieved {
     /// The typed characters the run will take, in the order they were typed.
     ///
@@ -106,19 +76,6 @@ pub(crate) struct Sieved {
 }
 
 /// **Split a keystroke's text into what this run can take and what it cannot.**
-///
-/// The whole pre-commit gate, in one function, so the keystroke handler holds no
-/// policy and the policy is testable without an event loop.
-///
-/// An unmeasured run keeps everything. See the module header:
-/// `None` is *not measured*, never *nothing is allowed*.
-///
-/// Characters are sieved **individually** rather than the event being
-/// refused whole. An `egui::Event::Text` usually carries one character, but an
-/// IME commit or a compose sequence can carry several, and refusing the batch
-/// would make the outcome depend on how the platform happened to group the
-/// keys — the same word typed two ways would behave two ways. Per character,
-/// the result is identical either way.
 #[must_use]
 pub(crate) fn sieve(
     ctx: &egui::Context,
@@ -146,11 +103,6 @@ pub(crate) fn sieve(
 }
 
 /// Drop the held measurement.
-///
-/// Called when a draft is abandoned. Not strictly required — [`of_run`]'s key
-/// check already rejects a measurement taken for another run — but a slot that
-/// outlives its subject is a fossil a later reader will trust, and this project
-/// has spent a session on exactly that shape in a dock panel.
 pub(crate) fn forget(ctx: &egui::Context) {
     ctx.data_mut(|d| d.remove::<Held>(egui::Id::new(MEMORY_KEY)));
 }

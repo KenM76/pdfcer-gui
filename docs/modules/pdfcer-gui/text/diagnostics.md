@@ -95,3 +95,125 @@ that named it in none.
 The failure this pins is the one-word readout - `CMYK` / `RGB` - which
 looks tidy in a report and is unreadable next to a duration, because
 nothing on the line says what the acronym is a property OF.
+
+### `fn title`
+
+The command's own label, so an operator who pressed *Render diagnostics*
+arrives at a window called *Render diagnostics*. A title that paraphrases
+its command is a title that makes the operator wonder whether they opened
+the right thing.
+
+### `fn subject`
+
+Says **which** render is being described, because it is not the document
+and not "the last thing that happened" — it is the raster currently on the
+canvas. An operator who has scrolled since would otherwise read these
+numbers as being about the page they are looking at.
+
+### `fn took`
+
+Milliseconds, whole. Sub-millisecond precision would be false confidence:
+the measurement is one wall-clock read around a call that competes with
+whatever else the machine is doing, and the useful distinction on these
+documents is between *tens* and *thousands*.
+
+### `fn raster`
+
+Both, on one line, for the reason this module's header gives: a duration
+with no scale beside it invites the operator to zoom out and expect it to
+get cheaper.
+
+The scale is **device pixels per PDF user-space unit** — the zoom already
+multiplied by the display's density — which is why it is not the percentage
+the status bar shows, and why the word is "scale" rather than "zoom".
+
+### `fn blended_in`
+
+# Why an operator is owed this at all
+
+It is the fact that explains the line above it. A page that composites in
+four colorant planes costs more to draw than the same geometry composited in
+three, and a CAD sheet exported for print routinely does - so a duration
+that looks wrong on one sheet and fine on the next is very often this, and
+nothing else in this shell says so.
+
+It is also the precondition of `max_cmyk_buffer_bytes` meaning anything: the
+operator can raise that ceiling in Settings > Colour and see no change
+whatever, because the page never asked for ink in the first place.
+
+# Why it names CMYK rather than "subtractive"
+
+The engine's own vocabulary is *subtractive*, which is correct and is the
+word its documentation uses. The operator's vocabulary is CMYK, and this is
+the surface where his word wins - the same ruling the markup and text colour
+disclosures already took.
+
+### `fn blend_space_from`
+
+# The three cases, and why the middle one is not a failure
+
+* [`BlendSpaceFrom::PageGroup`] - the page's own `/Group` dictionary named a
+  space (ISO 32000-1 Table 147). The file said so; nothing was inferred, and
+  no setting in this shell can change the answer.
+* [`BlendSpaceFrom::DeviceNative`] - the page group named nothing, so the
+  output device's own space stands, which for pdfcer is sRGB. This is the
+  ordinary case for almost every PDF ever made and reads as a non-event; it
+  is stated anyway, because an operator comparing two sheets needs to see
+  which of them declared something and which did not.
+* [`BlendSpaceFrom::OutputIntent`] - the page group named nothing AND the
+  document carries an `/OutputIntents` entry pdfcer could resolve, so the
+  intent's own colorant count decided it. **This is the only case
+  `page_blend_space_source` governs**, and naming it is how an operator
+  learns which setting would change this page.
+
+# Why the sentence names the setting in the third case only
+
+R9's rule applied to prose rather than to a widget: pointing at a control
+that cannot change the answer is the same defect as drawing a disabled one.
+The first two cases say what happened and stop.
+
+### `fn clean`
+
+The same positive statement the status bar's disclosure makes, and
+deliberately the same words: an operator who opened the disclosure and then
+opened this dialog must not be told two different things about one raster.
+Delegated rather than copied, so improving one improves both.
+
+### `fn nothing_drawn`
+
+Reachable, and not only in theory: the dialog is gated on `doc.open`, and
+a document can be open with nothing yet drawn — before the first render, and
+after a render failure, which is the state `page_texture` is `None` in. A
+window that opened empty would read as the command being broken, so it says
+which of the two nothings this is.
+
+### `fn absorbed`
+
+[`crate::app::status::notes`]' editorial rule excludes `tolerated` and
+`compat_skipped` from the one-line summary because both count divergences
+that leave the picture correct: listing them there would put two numbers
+meaning *"nothing is wrong"* among the ones that mean something is.
+
+The dialog is the surface that argument does **not** apply to. It has room,
+it is a place an operator goes deliberately when something looks wrong, and
+the numbers are exactly what someone diagnosing a file wants. So they are
+shown here and nowhere else — with a sentence saying why they are not
+faults, because a bare count of "tolerated" oddities beside a list of real
+findings inflates the apparent number of problems.
+
+**Written out in full for each count rather than with `(s)`.** Every
+`diagnostics_*` entry in [`crate::text::status`] spells the singular and
+the plural, and this line keeps that convention: a slash or a
+parenthesised `s` is a catalog telling the operator that nobody read the
+sentence they are reading.
+
+The **both-zero** case gets a sentence of its own for the same reason
+[`crate::text::status::diagnostics_clean`] exists: "0 and 0" is a true
+answer that reads as an unfilled template.
+
+### `fn close`
+
+Its own function rather than borrowing [`crate::text::about::close`]: two
+surfaces sharing a word is not the same as two surfaces sharing a *string*,
+and a catalog that reaches sideways for a label is a catalog whose entries
+cannot be changed independently.

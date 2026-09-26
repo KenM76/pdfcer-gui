@@ -40,3 +40,20 @@ Nothing here marks the canvas. The document is not changed at all — this is a
 **save**, and the open session is untouched by it, which is why it needs none
 of `app::actions`' four-step protocol and why `app::save`'s header applies
 unchanged.
+
+## Item notes
+
+### `fn open_for`
+
+`Err` carries a sentence rather than a flag, because the one thing that
+can go wrong here is the engine refusing by name — a hybrid file whose
+`/XRefStm` does not parse, or one whose object numbering is too sparse for
+§7.5.4's single-section table. Both are facts about the operator's file
+that they can act on, and collapsing them to *"could not"* would waste the
+only useful thing the refusal carries.
+
+The first of those read *"a hybrid-reference file"* until 2026-09-11.
+`Pass 281.0` narrowed the engine's refusal to the unparseable case, so
+compacting an ordinary hybrid now succeeds where this comment said it
+could not. The sentence the operator reads is the engine's own and was
+never wrong; only the account of it here was.

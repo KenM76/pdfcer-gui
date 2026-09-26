@@ -65,3 +65,33 @@ The self-test of the harness. Everything in
 [`super::super::width_tests`] is worthless if this is not true, and
 "worthless" here means "passing" — which is why it is asserted
 rather than assumed.
+
+### `fn definitions`
+
+Built from [`egui::FontDefinitions::empty`] rather than `default()`,
+and that is the load-bearing choice: `default()` is *itself* the thing
+that varies with the `default_fonts` feature, so a test built on it
+would go on measuring different text in the two build configurations —
+which is the defect, not the fix. `empty()` plus one known face is the
+same font set in every build.
+
+### `fn install`
+
+The proof is not ceremony. A font that failed to load leaves `egui`
+measuring every string as zero — the precise condition this module
+exists to eliminate — and every width assertion downstream would then
+pass, silently, for the wrong reason. So three things are checked, and
+a failure here is a failure of the test suite rather than a warning in
+a log:
+
+1. A sample string has a positive width.
+2. A longer string is wider than a shorter one.
+3. Two strings of the **same length** but different characters have
+   **different** widths — i.e. the face really is proportional, and a
+   test that depends on real metrics cannot be satisfied by a
+   fixed-pitch stand-in.
+
+`egui` parses fonts eagerly on the frame after `set_fonts`, and a
+malformed one panics inside `epaint` with `"Error parsing … TTF/OTF
+font file"`, so a broken synthetic font can never be mistaken for a
+missing one.

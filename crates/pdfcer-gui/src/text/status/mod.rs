@@ -42,15 +42,6 @@ mod resize;
 pub use resize::{resize_fixed_size_marker, resize_not_rebuildable};
 
 /// Re-exported rather than moved-and-repathed.
-///
-/// A catalog area is keyed by the **consumer** it serves, not by the file it
-/// happens to live in, and `crate::app::status::selected` is the one consumer
-/// of every one of these. `t::selection_one` therefore resolves from this
-/// module whatever file the sentence lives in: no call site in this crate
-/// should have to move when a catalog area is reorganised internally.
-/// **Sentences about the program being busy** — a different species from
-/// everything else in this catalog: a STATE rather than an event, with no
-/// retirement rule. Its header carries the distinction.
 pub mod waiting;
 pub use waiting::{line_weights_no_effect, line_weights_off, page_catching_up};
 
@@ -124,57 +115,6 @@ pub use selection::{
 // ---------------------------------------------------------------------------
 
 /// One line for the disclosures the last vector edit returned.
-///
-/// `notes` are `pdfcer-core`'s own sentences, in the order the planner pushed
-/// them, unmodified. This function contributes three things and nothing else:
-///
-/// 1. **A mark**, `⚑` (U+2691). The status bar's other left-hand line is
-///    *narration* — a census of what a raster contained — and this one is a
-///    fact about the operator's own document that they cannot see by looking
-///    at it. A mark is what tells them apart at a glance.
-///
-///    **It is deliberately NOT `⚠`, and that is a measurement rather than
-///    a preference.** `⚠` (U+26A0) is what
-///    [`crate::text::forms::forms_fill_autosize_note`] and twelve other
-///    forms sentences carry, and **egui's bundled font set cannot draw it**
-///    — Ubuntu-Light + NotoEmoji + emoji-icon-font, which is the whole set,
-///    because nothing in this workspace installs a font of its own. Every
-///    one of those sentences renders `□` today, on the panel and in this
-///    bar. That is defect D2's shape and it is
-///    [`crate::app::status::tests::every_glyph_the_status_bar_draws_has_a_glyph`]
-///    that caught it, on its third sighting of the same hazard.
-///
-///    The forms catalog is not corrected here because the convention is
-///    thirteen sentences wide and one of its assertions lives in
-///    `crate::panels::forms::tab_order`, outside this change's territory —
-///    it is **reported**, which is what a boundary finding gets. What is in
-///    this project's gift is not to add a fourteenth undrawable mark, and
-///    `⚑` is the closest drawable neighbour: measured present in the same
-///    bundled set, alongside `✱ ☆ ! ○ ■ • · † ‡ ⊗ ◊ №`. It is also the
-///    mark this file would recommend for the other thirteen, so a future
-///    correction converges rather than adding a third spelling.
-/// 2. **A lead-in naming the gesture**, because the sentence outlives the
-///    gesture: it stands until the next edit or an undo retires it (see
-///    [`crate::app::actions::last_edit_disclosure`]), and core's sentences
-///    open with *"This shape…"* / *"This point…"* — deictic words that are
-///    unambiguous at the moment of the drag and unanchored a minute later.
-/// 3. **A single space between sentences**, matching the way
-///    [`crate::app::status`] joins the two form-fill notes into its one row.
-///    Not [`diagnostics_join`]'s `·`: that separator exists because the
-///    render notes are independent *fragments*, and these are whole
-///    sentences with their own full stops.
-///
-/// # Why the lead-in does not say what changed
-///
-/// The obvious wording — *"that edit changed how the page is written"* —
-/// would be a claim, and it is **false of at least one note core can
-/// return**: the clipping-region disclosure fires on a move that rewrote
-/// operands in place and rewrote nothing's form, and says instead that the
-/// shape controls what other content is visible elsewhere. A lead-in that
-/// asserted a rewrite would be contradicted by the sentence immediately
-/// after it. "About your last edit" is true of every note in the list,
-/// which is the property a frame has to have when it does not know which
-/// note it is framing.
 #[must_use]
 pub fn edit_disclosure_line(notes: &[String]) -> String {
     format!("⚑ About your last edit: {}", notes.join(" "))
@@ -232,121 +172,24 @@ pub fn edit_disclosure_line(notes: &[String]) -> String {
 // ---------------------------------------------------------------------------
 
 /// Shown when zoom-to-selection was invoked with nothing it could frame.
-///
-/// # The three causes, and why they get one sentence
-///
-/// `crate::canvas::zoom::zoom_to_selection` raises
-/// `ZoomOutcome::NoBounds` in three situations — nothing is selected, the
-/// selection is on another page, or it does not resolve against the current
-/// decomposition after an edit. That function's own docs rule that from the
-/// operator's side those are **one** situation: *"there is nothing on screen
-/// for this command to act on."* Three sentences would ask the operator to
-/// care about a distinction that has one remedy.
-///
-/// # Why it describes the state and does not instruct
-///
-/// `view.zoom_selection` is greyed on `selection.bounds`, so this is *mostly*
-/// unreachable from the ribbon. The two ways it is reached are both cases in
-/// which blaming the operator would be wrong:
-///
-/// 1. **By chord.** A keymap reaches any command from any state, and the
-///    manifest binds this one; nobody who presses a chord has clicked a
-///    control that promised anything.
-/// 2. **In the race.** The condition is evaluated on the frame that *draws*
-///    the control and the verb runs on the frame that *applies* it, so a
-///    selection that evaporates in between — a mode change that clears it, an
-///    edit that dissolves what it named — leaves the operator having clicked
-///    an enabled control and been declined. That is the case an operator finds
-///    most confusing, and a sentence reading *"select something first"* would
-///    tell them to do the thing they just did.
-///
-/// So it reports the state, at the moment the command ran: *nothing on this
-/// page is selected right now*. "Right now" is doing work — it dates the
-/// claim to the gesture rather than asserting a standing fact about an
-/// operator who may already have fixed it.
 #[must_use]
 pub fn zoom_declined_no_selection() -> &'static str {
     "⊗ Nothing to zoom to — nothing on this page is selected right now"
 }
 
 /// Shown when a framing zoom was invoked before the canvas had drawn a page.
-///
-/// `ZoomOutcome::NoCanvas`: there is no viewport, no page rect and no scroll
-/// offset yet, so there is nothing to frame *into*. Kept separate from
-/// [`zoom_declined_no_selection`] because the remedy is different and the
-/// operator has to do nothing at all to reach it — it resolves itself on the
-/// next raster, which is what "yet" and "has not finished" promise.
-///
-/// Reachable in practice only by a chord fired at a document that has just
-/// opened, or on a very slow first raster of a dense CAD sheet, where ~99 % of
-/// the render cost is resolution-independent and the first frame can take
-/// most of a second.
 #[must_use]
 pub fn zoom_declined_not_drawn() -> &'static str {
     "⊗ Nothing to zoom to yet — the page has not finished drawing"
 }
 
 /// Shown when `file.save_copy` asked where to write, was told, and could not.
-///
-/// # Why a decline needs wording here more than anywhere else on this bar
-///
-/// The other two sentences beside it describe a command that was refused
-/// *before* the operator invested anything. This one arrives after they opened
-/// a dialog, chose a folder and typed a name — and the only other evidence they
-/// would get is a file that is not there. Silence would make a save that failed
-/// indistinguishable from a save that never ran, which is precisely the "the
-/// button does nothing" state this project exists to remove.
-///
-/// # Why it does not carry the engine's reason
-///
-/// `crate::app::save::SaveError`'s `Display` output goes to the trace, and
-/// `check-ui-strings.sh`'s exclusion 3 states in as many words that a `Display`
-/// impl "is not permission to route UI text through an error type". A
-/// cross-reference form that could not express an entry is a true sentence and
-/// not one an operator can act on.
-///
-/// # Why it names the two things they CAN act on
-///
-/// The folder and the permission, because between them they are almost every
-/// real instance: a path typed into the dialog whose parent does not exist, a
-/// network share that went away, a read-only volume, a file open in another
-/// program. It reports the check to make rather than blaming the operator —
-/// [`zoom_declined_no_selection`]'s rule, which
-/// [`tests::the_decline_reports_the_state_rather_than_instructing_the_operator`]
-/// enforces for that sentence — because the commonest cause is not something
-/// they did.
 #[must_use]
 pub fn save_copy_failed() -> &'static str {
     "⊗ The copy was not written — check that the folder exists and can be written to"
 }
 
 /// Shown when the Settings window's Save reached no disk.
-///
-/// # Why this is not [`save_copy_failed`]'s sentence, though both are writes
-///
-/// Because the two have to say **opposite things about the operator's work**,
-/// and getting that backwards costs them either their trust or their time.
-///
-/// A failed save-a-copy produced no file: nothing happened, and the operator
-/// should try again. A failed settings save is the reverse — pdfcer **adopted
-/// the configuration anyway**, deliberately, because a disk that refuses should
-/// not cost somebody a choice they deliberately made. So what is true is *"this
-/// is in force now, and it will be gone when you restart"*, and the sentence
-/// has to carry both halves or it is misleading in one direction or the other:
-///
-/// - Say only "settings were not saved" and the operator makes the choice
-///   again, or concludes the setting does not work.
-/// - Say only "settings applied" and they restart and lose it silently, which
-///   is the failure the whole store exists to prevent.
-///
-/// # Why the reason is not in the sentence
-///
-/// The store's `SaveError` has a `Display` — *"no writable location"*, *"could
-/// not write settings to {path}: {reason}"* — and it is a developer's sentence,
-/// not an operator's. It goes to the trace beside the store kind, from
-/// `crate::app::settings_window`. The operator's actionable half is *the
-/// folder*, and the settings window itself states which folder that is, on a
-/// line it draws every time it opens.
 #[must_use]
 pub fn settings_not_saved() -> &'static str {
     "⊗ Your choices are in use now but could not be written down — they will be \
@@ -354,52 +197,12 @@ pub fn settings_not_saved() -> &'static str {
 }
 
 /// Shown when `edit.undo` was invoked and the command log was empty.
-///
-/// # Why this sentence exists at all, when the control is greyed
-///
-/// Because the route that reaches it is **the keyboard**, and the keyboard is
-/// the one route on which the greyed control explains nothing. `edit.undo` is
-/// gated on `undo.available`, so its quick-access button is un-pressable with an
-/// empty log — but it is also bound to `Ctrl+Z`, and
-/// `app::modes::capability::offers_command` lets it through in every mode
-/// because it sits on no tab. An operator who presses `Ctrl+Z` is looking at the
-/// page, not at an 18 pt icon in the title bar, and silence there is
-/// indistinguishable from a chord that never arrived. **A gesture that is
-/// refused must say so on the route it was made on.**
-///
-/// It is the same argument [`save_copy_failed`] makes about *its* route, one
-/// step earlier: that one arrives after the operator invested a dialog, this one
-/// after they invested the single most reflexive keystroke in any editor.
-///
-/// # Why it says *this document* rather than *nothing*
-///
-/// The log is per-[`EditSession`](pdfcer_core::edit::EditSession), which is
-/// per-document: closing a document and opening another empties it. "Nothing to
-/// undo" alone would read as a claim about the application, and an operator who
-/// had just undone six things in the file they closed would read it as a defect.
-///
-/// # Why it does not name the remedy
-///
-/// There is none — nothing has been changed, so there is nothing to take back,
-/// and the sentence is a complete report of the state. It reports rather than
-/// instructs, which is [`zoom_declined_no_selection`]'s rule and the one
-/// [`tests::the_decline_reports_the_state_rather_than_instructing_the_operator`]
-/// pins for that sentence.
 #[must_use]
 pub fn undo_declined_empty() -> &'static str {
     "⊗ Nothing to undo — this document has no changes to take back"
 }
 
 /// Shown when `edit.redo` was invoked and the redo stack was empty.
-///
-/// Kept separate from [`undo_declined_empty`] because the two states are
-/// reached differently and a reader has one line to tell them apart. An empty
-/// **undo** log means nothing has been changed; an empty **redo** stack is the
-/// ordinary state of a document that has been edited and never undone — and it
-/// is also what a *new edit after an undo* produces, because the engine clears
-/// the redo stack when a fresh command is recorded. One sentence for both would
-/// tell an operator who just pressed `Ctrl+Y` after ten edits that their
-/// document has no changes, which is false.
 #[must_use]
 pub fn redo_declined_empty() -> &'static str {
     "⊗ Nothing to redo — nothing has been undone, or a new change replaced it"
@@ -437,13 +240,6 @@ pub fn zoom_in_tooltip() -> &'static str {
 }
 
 /// The current zoom, as a whole percentage.
-///
-/// A **readout**, not a control: this build has no way to set an arbitrary
-/// zoom by typing, so an editable box here would be an affordance for
-/// something that cannot happen. The page number beside it *is* editable
-/// because `Action::GoToPage` exists; there is no `Action` that sets a zoom
-/// to a named value, and inventing a text box in front of one would be the
-/// placeholder the project's invariants forbid.
 #[must_use]
 pub fn zoom_percent(percent: f64) -> String {
     // `{:.0}` rather than an integer cast — O24j. The value now spans 10 % to
@@ -455,11 +251,6 @@ pub fn zoom_percent(percent: f64) -> String {
 }
 
 /// Hover text for the zoom readout.
-///
-/// Explains the ladder, because "why did 137% become 150%?" is the question
-/// the readout provokes and the answer is a deliberate design choice
-/// (`crate::viewer`'s module docs: a fixed ladder makes zoom-in-then-out
-/// exactly reversible).
 #[must_use]
 pub fn zoom_percent_tooltip() -> &'static str {
     "The current zoom. The − and + buttons step a fixed ladder of familiar \
@@ -472,29 +263,12 @@ pub fn zoom_percent_tooltip() -> &'static str {
 // ---------------------------------------------------------------------------
 
 /// The Actual size button's label.
-///
-/// **Identical to `crate::text::commands::view_zoom_actual`'s label**, on
-/// purpose — see this module's header for why a mirror repeats rather than
-/// paraphrases, and [`crate::app::status`]'s section for why the claim it
-/// makes is not yet true.
 #[must_use]
 pub fn fit_actual_size() -> &'static str {
     "Actual size"
 }
 
 /// Hover text for Actual size.
-///
-/// **It names `Ctrl+0` again, and that sentence is now true.** The chord
-/// had two owners — the manifest keymap bound it to `view.zoom_actual` while
-/// `crate::app::keyboard` bound it to Fit page and reached it first — so this
-/// tooltip had to advertise no chord at all, with a test pinning the
-/// omission. `crate::app::keyboard`'s section has the whole account; the
-/// outcome is that the manifest is the only place a chord is bound, and it
-/// binds this one here.
-///
-/// Word for word `crate::text::commands::view_zoom_actual`'s tooltip,
-/// including the chord — see this module's header on why a mirror repeats
-/// rather than paraphrases.
 #[must_use]
 pub fn fit_actual_size_tooltip() -> &'static str {
     "Show the page at actual size — one PDF point per screen point (Ctrl+0)."
@@ -507,19 +281,6 @@ pub fn fit_width() -> &'static str {
 }
 
 /// Hover text for Fit width.
-///
-/// Says "and keep it fitted", because a fit is a **mode** here rather than a
-/// one-shot: resizing the window re-fits. A viewer that stopped fitting on
-/// the first resize would be conspicuously wrong, and the tooltip is where
-/// the operator learns which of the two this is.
-///
-/// **It names no chord.** `Ctrl+2` belongs to `mode.review`
-/// (`MODES_AND_PANELS.md` Part 1 §6, and `crate::text::commands::mode_review`
-/// names it), and naming it here would claim half of a chord with another
-/// owner. Fit width is reached from this button, from its View ▸ Zoom control
-/// and from its `canvas.empty` context-menu entry; what it does not have is a
-/// chord, and the rule in this module's header is to say so by omission
-/// rather than to name one that does something else.
 #[must_use]
 pub fn fit_width_tooltip() -> &'static str {
     "Scale the page so its full width is visible, and keep it fitted as the \
@@ -533,15 +294,6 @@ pub fn fit_page() -> &'static str {
 }
 
 /// Hover text for Fit page.
-///
-/// **It names no chord.** See [`fit_actual_size_tooltip`]: `Ctrl+0` has one
-/// owner, the manifest keymap, and the manifest binds it to actual size. Fit
-/// page is reached from this button, from View ▸ Zoom and from the
-/// `canvas.empty` context menu.
-///
-/// Word for word `crate::text::commands::view_zoom_fit_page`'s tooltip, which
-/// names no chord either — two mirrors of one command saying exactly the same
-/// thing, which is what the header requires of them.
 #[must_use]
 pub fn fit_page_tooltip() -> &'static str {
     "Scale the page so all of it is visible, and keep it fitted as the \
@@ -555,16 +307,6 @@ pub fn fit_height() -> &'static str {
 }
 
 /// Hover text for Fit height.
-///
-/// Word for word `crate::text::commands::view_zoom_fit_height`'s tooltip, as
-/// this module's header requires of every status-bar mirror of a ribbon
-/// command — and, like its two siblings, it names no chord, because it has
-/// none.
-///
-/// It says nothing about the page overflowing sideways, deliberately. That
-/// is what *"its full height is visible"* already means on a sheet wider than
-/// the window, and a tooltip that warned about it would be describing the
-/// operator's own document back at them.
 #[must_use]
 pub fn fit_height_tooltip() -> &'static str {
     "Scale the page so its full height is visible, and keep it fitted as the window resizes."
@@ -575,37 +317,18 @@ pub fn fit_height_tooltip() -> &'static str {
 // ---------------------------------------------------------------------------
 
 /// The wheel-paging toggle's label — `OPERATOR_REQUESTS.md` O30.
-///
-/// Two words, because it shares a 24-point bar with the page buttons, the zoom
-/// readout and three fit controls. It names the state the control **turns on**
-/// rather than the state it is in, which is what a pressed/unpressed toggle
-/// already reports: *Flip pages*, lit, means the wheel flips pages.
 #[must_use]
 pub fn wheel_flip_pages() -> &'static str {
     "Flip pages"
 }
 
 /// Hover text for the wheel-paging toggle.
-///
-/// It states **both** answers, because the label can only state one and the
-/// operator needs to know what turning it off gives them back.
-///
-/// And it names the two things the setting does **not** touch. Ctrl+wheel
-/// always zooms, and a continuous display always scrolls — an operator who
-/// tried the toggle in a continuous mode and saw no difference would
-/// reasonably conclude it was broken, which is why the control is not drawn
-/// there at all and why this sentence says so.
 #[must_use]
 pub fn wheel_flip_pages_tooltip() -> &'static str {
     "Turn the mouse wheel into a page turn: one notch, one sheet. Switch it off and the wheel scrolls within the page instead. Ctrl+wheel always zooms, and a continuous page display always scrolls."
 }
 
 /// The previous-page button's label — `⏴` (U+23F4).
-///
-/// **Not `◀` (U+25C0)**, which `RIBBON_IA.md` §6 spells the control with and
-/// which egui's bundled fonts cannot draw — see [`diagnostics_toggle`] for
-/// the measurement and the test that caught it. `⏴`/`⏵` are the same shape
-/// at a slightly smaller optical size, and they are what this font set has.
 #[must_use]
 pub fn prev_page() -> &'static str {
     "⏴"
@@ -630,31 +353,18 @@ pub fn next_page_tooltip() -> &'static str {
 }
 
 /// The page number, as the editable box shows it.
-///
-/// **1-based.** `crate::viewer::ViewState::page_index` is 0-based and the
-/// conversion happens here, once, exactly as that module's own docs
-/// prescribe: *"The UI displays it 1-based; the conversion happens once, in
-/// the string catalog."*
 #[must_use]
 pub fn page_number(page_1_based: usize) -> String {
     format!("{page_1_based}")
 }
 
 /// The total, shown to the right of the editable box.
-///
-/// `/ 42` rather than `of 42`: `RIBBON_IA.md` §6 spells the control
-/// `page ◀ n/N ▶`, and the slash is narrower — which matters on a control
-/// that sits between two buttons in a fixed-height bar.
 #[must_use]
 pub fn page_of_total(total: usize) -> String {
     format!("/ {total}")
 }
 
 /// Hover text for the editable page box.
-///
-/// States the commit rule, because it is the one thing about this control
-/// that is not visible: nothing happens per keystroke, so an operator typing
-/// `42` must be able to trust that passing through `4` did not move them.
 #[must_use]
 pub fn page_box_tooltip() -> &'static str {
     "Type a page number and press Enter. Nothing moves while you type, and \
@@ -663,26 +373,12 @@ pub fn page_box_tooltip() -> &'static str {
 }
 
 /// Shown beside the box when a committed number was outside the document.
-///
-/// **The point of this string is that the clamp is not silent.** Typing
-/// `99` into a 42-page document and landing on 42 with no explanation is
-/// indistinguishable from the box ignoring what was typed — and an operator
-/// who cannot tell those apart stops trusting the control. Naming the number
-/// that does not exist, and the page they got instead, makes the clamp a
-/// *report* rather than a shrug.
-///
-/// `asked` is the 1-based number typed; `landed` and `total` are 1-based
-/// page numbers.
 #[must_use]
 pub fn page_clamped_note(asked: usize, landed: usize, total: usize) -> String {
     format!("No page {asked} — went to {landed} of {total}")
 }
 
 /// Shown beside the box when the committed text was not a page number.
-///
-/// The operator's text is deliberately **left in the box** when this
-/// appears, so the note explains something still visible rather than
-/// describing a value that has already been thrown away.
 #[must_use]
 pub fn page_rejected_note() -> &'static str {
     "Not a page number — type digits, then Enter"
@@ -691,20 +387,6 @@ pub fn page_rejected_note() -> &'static str {
 // --- Registering an unclaimed form control ---------------------------------
 
 /// `adopt_widget` refused: the name is already another field's.
-///
-/// # Why the sentence explains the standard rather than just refusing
-///
-/// Because the refusal looks arbitrary otherwise. Every other program the
-/// operator uses will happily hold two things with one name in one file, and
-/// "that name is taken" reads as pdfcer being fussy about a namespace it made
-/// up.
-///
-/// It is not pdfcer's namespace. ISO 32000-2 SS12.7.3.1 makes the fully
-/// qualified name the field's **identity**: two top-level fields called
-/// `Address` are one field with two boxes, and filling either fills both. So
-/// the second half of the sentence is the part that does the work — it says
-/// what would happen if pdfcer allowed it, which is the only thing that makes
-/// the refusal obviously right rather than obviously annoying.
 #[must_use]
 pub const fn adopt_declined_name_taken() -> &'static str {
     "Another field in this document already uses that name. In a PDF, two fields with the same \
@@ -713,23 +395,6 @@ pub const fn adopt_declined_name_taken() -> &'static str {
 }
 
 /// `adopt_widget` refused: the widget carries no name and none was typed.
-///
-/// # The word this sentence must not use is "restore"
-///
-/// The operator's mental model at this moment is *"something was lost, and I
-/// am putting it back"*, and for the common case that is exactly right — a
-/// merged field-widget carries its own name, type and value, and registering
-/// it recovers the field as it was.
-///
-/// This is the other case, and it is not that. The box was a **bare kid**: its
-/// name, its field type, its radio flags and its value all lived in a field
-/// dictionary that is not in this document. Naming it here **creates a new
-/// field** with no type and no value. That is a legitimate thing to want, and
-/// it is not a recovery — an operator told they had restored a radio button
-/// would go looking for its group, and there is no group.
-///
-/// So the sentence offers the name box and says what naming it will produce,
-/// and it names the only route that gets the original back.
 #[must_use]
 pub const fn adopt_declined_no_name() -> &'static str {
     "This box carries no name of its own, so pdfcer has nothing to register it under. Type a name \
@@ -738,22 +403,6 @@ pub const fn adopt_declined_no_name() -> &'static str {
 }
 
 /// The disclosure after a widget was registered.
-///
-/// # Three facts, each conditional, and none of them is "done"
-///
-/// `AdoptOutcome` carries three things the operator cannot see and would not
-/// guess, and each is dropped when it is not true rather than being reported as
-/// a negative:
-///
-/// - **the name it went in under** — always said, because for a blank box it is
-///   the name the file already carried, which the operator has never seen;
-/// - **`field_type: None`** — legal (`/FT` is inheritable) and useless, because
-///   a top-level field has nothing left to inherit from. No viewer knows how to
-///   render or fill it. This is the fuzzy-never-sneaky half that would
-///   otherwise be invisible: the registration **succeeded** and the box is
-///   still not fillable;
-/// - **`acroform_created`** — the document had no interactive form at all and
-///   now has one, which changes what other software does with the file.
 #[must_use]
 pub fn adopted(name: &str, typed: bool, acroform_created: bool) -> String {
     let mut line = format!("Registered as \u{201c}{name}\u{201d}.");
@@ -770,33 +419,6 @@ pub fn adopted(name: &str, typed: bool, acroform_created: bool) -> String {
 }
 /// **`edit.form_flatten` was invoked on a document whose certification forbids
 /// it.**
-///
-/// # Why the ribbon control is live at all, when the panel's is greyed
-///
-/// The Forms panel asks `EditSession::flatten_refusal` every frame and greys
-/// its own Flatten with the reason on hover, because it is already reading the
-/// session to draw the field list. A **ribbon** `enabled_when` is a condition
-/// name evaluated against a published set, and publishing this one would mean
-/// a certification query per frame for a control that is almost never pressed.
-///
-/// So the ribbon control is `enabled_when("doc.pages")` and the arm declines in
-/// words. That is this project's standing division and `app::dispatch::forms`'
-/// own header states it: *greying is a hint; the worded decline is the answer.*
-///
-/// # What the sentence has to carry
-///
-/// **Which gate refused**, because flatten and fill take *different* ones and
-/// an operator who has just successfully typed into the form will otherwise
-/// conclude the button is broken. On the ordinary real-world shape — a
-/// certified fillable form at `/P 2` — filling is permitted and flattening is
-/// refused, by design and by the standard.
-///
-/// **What it would cost**, because "the signature would be broken" is the fact
-/// that makes the refusal reasonable rather than arbitrary.
-///
-/// It does **not** offer a way round. There is one — remove the signature —
-/// and pdfcer will not suggest defeating a certification as a workaround for a
-/// convenience.
 #[must_use]
 pub const fn flatten_declined_certified() -> &'static str {
     "This document is certified, and flattening its fields would break the signature. Filling \
@@ -806,28 +428,6 @@ pub const fn flatten_declined_certified() -> &'static str {
 /// Shown when the renderer reports `cmyk_buffer_refused` — the page's raster
 /// grew past the size the engine will composite in subtractive CMYK, so
 /// blending fell back to sRGB and the colours moved.
-///
-/// # Every word of this was chosen against a specific misreading
-///
-/// **"at this zoom"**, not "on this page". The operator's report was
-/// *"different results depending on Zoom level"*, and the thing that must land
-/// is that the page has not changed — the view has. A sentence blaming the
-/// document would send him looking at the file.
-///
-/// **"zoom out"** rather than "reduce the zoom", because it is the instruction,
-/// and it is the opposite of what somebody chasing a colour difference tries.
-/// Measured on an A4 page the boundary is 534 %; naming a number here would be
-/// worse than useless, because it depends on the page size and on the display
-/// density, and would be wrong on the next document.
-///
-/// **"approximate"**, not "wrong". The fallback is a known, counted
-/// approximation that pdfcer has shipped for its whole life and that most pages
-/// never reach; calling it wrong would overstate it and invite a bug report
-/// about a page that is fine.
-///
-/// It does not apologise and does not promise a fix. What it owes the
-/// operator is the fact and the remedy, and it gives both in one line that fits
-/// a status bar.
 #[must_use]
 pub fn blend_space_status_line() -> String {
     "Colours are approximate at this zoom \u{2014} the page is too large to blend in print \
@@ -836,17 +436,6 @@ pub fn blend_space_status_line() -> String {
 }
 
 /// The status-bar line for a document whose index pdfcer had to rebuild.
-///
-/// One sentence, stating the fact and where to look, and stopping. It does
-/// not warn, does not instruct, and carries no counters — the numbers live in
-/// Properties, and a status line long enough to hold three of them would push
-/// the zoom and page controls off a narrow window.
-///
-/// It says **"rebuilt"** rather than "repaired" or "fixed". Repaired implies
-/// the file is now correct; rebuilt says what actually happened — pdfcer
-/// reconstructed the index by scanning, which is a best reading of damaged
-/// bytes and may or may not be the one the author intended. The operator's
-/// trust in the page should follow the weaker word.
 #[must_use]
 pub const fn recovered_status_line() -> &'static str {
     "This file's index was damaged — pdfcer rebuilt it to open the document. The Properties panel says what was recovered."
@@ -854,50 +443,6 @@ pub const fn recovered_status_line() -> &'static str {
 
 /// **Why zooming in stopped**, on the bottom bar — `OPERATOR_REQUESTS.md`
 /// O186's fourth clause, in the operator's own words:
-///
-/// > *"If this error is caused by some other limitation that will always happen,
-/// > zoom should stop at the limit and not end up showing an error - the canvas
-/// > will just stop zooming in and can still function. the error can still be
-/// > shown on the bottom bar so the user has some idea as to why zooming stopped
-/// > short of 1 trillion percent."*
-///
-/// That sentence is a complete specification and it has two halves. The first —
-/// *stop, do not show an error* — is
-/// [`crate::viewer::zoom_ceiling`]'s learned clause and
-/// `crate::render::settle`'s pull-back. This is the second: without it the `+`
-/// button and Ctrl+wheel would simply stop responding with nothing anywhere
-/// saying why, which is the silently-inert control the project has already been
-/// corrected about twice.
-///
-/// # What it does NOT say, and why each omission is deliberate
-///
-/// **It does not name the percentage.** The zoom readout is three controls to
-/// the right on the same bar, showing exactly the number the zoom stopped at,
-/// and `app::status::decline`'s header makes this same ruling for the
-/// raster-ceiling-clamped region zoom: the framing verb carries the *clamped*
-/// scale, so the readout states the truth on the same frame. A number repeated
-/// in a sentence beside the control that already shows it is a number that can
-/// disagree with it.
-///
-/// **It does not say "error", "failed" or "could not".** The whole of O186 is
-/// that this state is *not* an error — the page is drawn, the canvas works, the
-/// operator can pan and select and edit. Ken's complaint was an error sentence
-/// painted across his drawing where a limit had been reached; wording the limit
-/// as a failure would move the same mistake to a smaller surface.
-///
-/// **It does not offer a remedy.** There is nothing the operator can do: this is
-/// the rasterizer's own wall on this page's geometry, not a setting. A line that
-/// said "try zooming out" would be advice about the thing they were already
-/// doing when it stopped.
-///
-/// # Why it says the limit was measured on *this sheet*
-///
-/// Because the number is genuinely per-page and the operator will otherwise read
-/// it as a property of pdfcer. Measured: an E-size sheet gave out at raster
-/// scale 284,964 where a business-card page reached 8,053,069 — a 28× spread in
-/// one build. So *"other pages may go further"* is not hedging; it is the single
-/// most surprising true thing about this limit, and the clause that stops the
-/// operator concluding the application has a maximum zoom it does not have.
 #[must_use]
 pub const fn raster_stop_status_line() -> &'static str {
     "Zoom stopped here — this page cannot be drawn any larger. The limit was measured on this sheet; other pages may go further."
@@ -905,31 +450,6 @@ pub const fn raster_stop_status_line() -> &'static str {
 
 /// **Show points was switched on and the object has more anchors than the
 /// canvas will draw.**
-///
-/// # The state this exists for, and why silence was the wrong answer
-///
-/// `overlay::MAX_UNSELECTED_ANCHORS` is 400, and the cap is right: five
-/// thousand hollow squares over a CAD path is noise rather than an answer, and
-/// the cap's own note argues that at length.
-///
-/// But it means `view.show_points` **does nothing visible on exactly the
-/// drawings this program is for**. A 5,000-node path toggled on and off looks
-/// identical, and the operator's report would be *"Show points is broken"* —
-/// which is what the toggle was wired to stop happening in the first place,
-/// arriving through a different door.
-///
-/// Rule 4's half that survives: *an inference the operator cannot see still
-/// owes an off-canvas report.* The canvas is not marked — nothing is drawn on
-/// the page to indicate suppression — and the status bar carries the number.
-///
-/// It names **both** numbers. The count alone would not say the cap is the
-/// reason; the cap alone would not say how far past it they are. An operator
-/// who sees *"5,903 … 400"* knows immediately that no setting is going to help
-/// and that the answer is to enter a part.
-///
-/// It also names the remedy, and the remedy is real: descending into a
-/// subpath narrows the anchor list to that subpath, which is nearly always
-/// under the cap. That is the route the Points tool takes and it is one click.
 #[must_use]
 pub fn too_many_anchors(count: usize, cap: usize) -> String {
     format!(
@@ -940,12 +460,6 @@ pub fn too_many_anchors(count: usize, cap: usize) -> String {
 
 /// **The chunk boxes were asked for and none were drawn** — `OPERATOR_REQUESTS.md`
 /// O215, and [`crate::canvas::chunks::MAX_CHUNK_BOXES`]'s disclosure.
-///
-/// Its sibling above carries the argument in full and it applies unchanged: the
-/// canvas is not marked, the status bar carries the number, and it names both
-/// numbers because the count alone would not say the cap is the reason. The
-/// remedy differs — there is no rung below a chunk to descend into, so the way
-/// to see fewer at once is to select less.
 #[must_use]
 pub fn too_many_text_chunks(count: usize, cap: usize) -> String {
     format!(
@@ -955,20 +469,6 @@ pub fn too_many_text_chunks(count: usize, cap: usize) -> String {
 }
 
 /// **The OCR text layer is switched on** — `OPERATOR_REQUESTS.md` O226.
-///
-/// Said only while the mode is on, and it carries two facts a look at the
-/// canvas cannot supply:
-///
-/// * **Where the slider is.** The blend is a continuum and the canvas shows a
-///   position in it, not the position — an operator who has half-faded a pale
-///   scan cannot tell 30 % from 45 % by looking.
-/// * **Whether there is anything to draw.** A page with no recognised text
-///   draws nothing, and *nothing* is indistinguishable from a broken mode.
-///   That is R8b's second guard exactly: an inference the operator cannot see
-///   — here, *this page was never OCR'd* — owes an off-canvas report.
-///
-/// The count is in the operator's own word from O226, *"block of text"*,
-/// rather than the engine's *run*.
 #[must_use]
 pub fn ocr_layer_line(percent: u32, blocks: usize) -> String {
     if blocks == 0 {

@@ -163,3 +163,25 @@ asserts the `None` arms are exactly the two documented ones — a
 placement, and the scale kind that is armed from inside a window — so a
 tool silently losing its name shows up as a red test rather than as a
 strip that renders a sentence with no subject.
+
+### `const BANNER_HEIGHT_PTS`
+
+One row of text plus the padding a button needs around it.
+[`egui_shell::dock::banner::resolve_height`] clamps this, so a window too
+short to afford it gets no strip rather than a sliver — see that function's
+section.
+
+### `const REGION`
+
+Distinct from `egui-shell`'s own `dock.right.banner`, which reports the
+**compartment**. This one reports the **content**, and the two answer
+different questions: the dock's says *the strip is on screen*, this one says
+*the application put something in it*. A check that asserted only the former
+would pass against a build whose handler drew nothing at all.
+
+### `fn banner`
+
+Draws **nothing at all** with no document open: the whole line is about a
+gesture on a page, and a strip that named a tool with nothing to use it on
+would be the placeholder R9 forbids, sitting in permanent chrome where it
+could never be dismissed.

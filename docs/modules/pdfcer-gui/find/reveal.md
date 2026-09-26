@@ -204,3 +204,68 @@ behaviour of everyone who has no preference file yet.
 Asserted as the *outcome* — where the point ends up on screen —
 through `geometry::anchor_screen_pos`, rather than as an offset, so
 this checks the framing and not that the code agrees with itself.
+
+### `struct Reveal`
+
+Lives on [`OpenDoc`] beside `zoom_anchor`, and for the identical reason:
+**it has to span two frames.** The request is made during the apply phase,
+which is after the canvas has drawn; the page change it carries is applied
+in the same phase; so the earliest frame on which the target page's real
+drawn size is known is the next one. Recording the intent and solving it
+later is the same handshake `ZoomAnchor` documents, minus the zoom.
+
+### `fn reveal_current`
+
+Two halves, and both are needed. `go_to_page` is called directly rather
+than raised as [`crate::app::actions::Action::GoToPage`] because this
+**is** the apply phase — the funnel's rule is that no widget mutates a
+document, not that the apply phase may not — and it is the same method
+that action's arm calls, so the clamp has one owner either way.
+
+### `fn take_reveal_offset`
+
+Called from [`crate::canvas::offset`]'s scroll-priority chain, once per
+frame while a reveal is pending: below the fit and the zoom anchor, which
+are explicit instructions about the view, and above the plain page-change
+scroll, which would otherwise satisfy the page change without centring the
+hit.
+
+# It reuses the anchoring solve rather than writing a second one
+
+[`crate::canvas::geometry::offset_holding_anchor_at`] is the function
+`canvas::zoom::place_centred` uses to express *"put this page point at
+this screen position"*, and it is the single owner of that arithmetic.
+Asking it for `target = viewport centre` is exactly what a framing zoom
+asks for; the only difference is that this one does not change the zoom,
+so it cannot ride `ZoomAnchor`'s handshake — that handshake is gated on
+the page's **drawn size changing**, which is precisely what a scroll does
+not do. Hence a separate pending value and a separate gate, and a shared
+solve.
+
+# Why the gate is the page index rather than a frame count alone
+
+The reveal is spent on the first frame that is *showing the hit's page*.
+Spending it earlier would scroll the outgoing page to a fraction that
+means nothing on it; spending it on a frame count would be a guess about
+how long a page change takes. The frame count is the *abandon* rule, not
+the spend rule — see [`REVEAL_GRACE_FRAMES`].
+
+### `fn quad_to_canvas`
+
+All four corners are mapped and bounded, rather than mapping two: the page
+transform may rotate (`/Rotate 90` is ordinary on a landscape drawing
+sheet), and a rotation sends the quad's `ul`/`lr` pair to two corners that
+are no longer the extremes. Bounding all four is correct under every
+rotation and costs three extra multiplications.
+
+`None` when the page's device transform will not invert, which is
+[`crate::viewer::pdf_space_to_canvas`]'s own decline for a degenerate
+page. The hit is still counted and still navigable — see [`Hit::canvas`].
+
+`pub(crate)` rather than `pub(super)` so that canvas text selection can
+project its line boxes through **this** function rather than mapping two
+corners of its own. That is a correctness requirement rather than
+tidiness: a selected word and the same word *found* are two washes over
+the same glyphs, and on a `/Rotate 90` sheet a two-corner projection puts
+one of them somewhere else. One projection, two surfaces — the same discipline
+`canvas::mapping` applies to the screen⟷canvas hop.

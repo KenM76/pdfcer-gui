@@ -170,3 +170,189 @@ evidence the day somebody threaded a context through "for the trace".
 ⇒ So what is pinned here is the signature. If this stops compiling
 because `duplicate` grew a `ctx` parameter, that is the review this note
 is asking for, not a test to update.
+
+### `struct Selected`
+
+The `index` is the position in `pdfcer_core::annot::page_annotations`'
+output for the page — which is `/Annots` in document order, and is the
+numbering `EditSession::copy_annotations` documents itself as addressing.
+The `id` travels beside it because the **cut** half needs it: a delete is
+raised by `ObjId` through the funnel, and re-deriving one from an index
+after the clip was taken would be a second walk that could disagree with
+the first.
+
+### `fn selected`
+
+Empty when nothing is selected or the selection is page content. At most
+one entry today, and the plural is not aspirational padding — see the note
+below, which is the finding a reader of this signature most needs.
+
+# Why this returns a `Vec` when the selection can hold exactly one
+
+`canvas::selection::SelectionState` makes content and annotations
+**mutually exclusive by construction**: `select_annot` clears the content
+entries, the content paths clear `annot`, and the field itself is an
+`Option<AnnotSelection>` rather than a list. Its own doc says so — *"One
+canvas, one selection."*
+
+⇒ **So a marquee that catches a line AND a revision cloud is not a state
+this shell can be in**, and the mixed copy the engine's `copy_selection`
+exists for cannot be exercised from the canvas today. That is a fact about
+the *selection model*, which is a different subject and a different file,
+and it is recorded here rather than in a commit message because this is
+where a reader will ask.
+
+What this module does about it is the one thing it can: the copy is written
+as **one call with both lists**, so the day the selection model gains a
+mixed set, the clipboard needs no change and cannot silently take half.
+Writing it as two calls — one for content, one for annotations — would have
+produced two clips, two pastes and two undo entries, and would have had to
+be unpicked later.
+
+# Errors
+
+[`Refusal::Unreadable`] when the selected id is not among the page's
+annotations — a selection outliving the annotation it names, which is
+reachable after an undo or an external reload.
+
+### `fn of`
+
+The wildcard arm is required — `ClipAnnotation` is
+`#[non_exhaustive]` — and it counts toward [`Self::whole`] rather than
+toward [`Self::thin`] or [`Self::refused`], which is the safe direction
+on all three counts: a carrier this build has not heard of is one the
+engine added *because* it carries something the old ones could not, so
+treating it as whole neither refuses a paste that would work nor
+disclosing a loss that is not happening. The alternative — counting it
+as `thin` — would put a false warning on the status row for every
+annotation of a kind a newer engine handles better.
+
+**When an engine bump makes an arm here stop compiling, the compile
+error is a notification, not a chore.** The tempting repair — widening
+the pattern to swallow the new field and keep the old count — compiles,
+and leaves this shell warning the operator about a loss that is no
+longer happening. Re-check what the carrier now carries, then decide
+which count it belongs in.
+
+### `fn nothing_to_carry`
+
+An empty clipboard that reports success is the worst outcome available
+here: the operator presses `Ctrl+C`, sees nothing said, presses
+`Ctrl+V`, and gets *"nothing has been copied yet"* — a sentence about a
+keystroke they made two seconds ago and which appeared to work.
+
+### `fn rect_centre_of`
+
+`None` for a dictionary with no readable `/Rect`, which falls the paste
+back to the offset rule rather than guessing. That direction is deliberate:
+an unrecognised annotation pasting at the old offset is a mild surprise, and
+one pasting at `(0, 0)` — the bottom-left corner of the sheet — reads as
+data loss.
+
+Read from the raw dictionary rather than from a `MarkupSpec`: a spec is a
+*translation* of the annotation, and every kind translates its geometry
+differently — an ink stroke into a point list, a line into two ends, a
+square into corners. `/Rect` is the one place every annotation states its
+extent in the same terms (§12.5.2), so reading it needs no per-kind match
+and therefore cannot silently omit a kind.
+
+Not used by the clip route, which anchors on the clip's own
+`ObjectClip::bbox` — unioned by the engine over both content items and
+annotation rects. One number from the payload rather than a second reading
+of the document is what makes a clip pasted after the source document was
+closed still land where the operator pointed.
+
+### `fn duplicate`
+
+# Why this is a verb and not "copy then paste"
+
+Because the two are different acts and the difference is the clipboard.
+
+Reaching a second revision cloud through `Ctrl+C` then `Ctrl+V` works, and
+**destroys whatever the operator had copied**. An operator laying out a row
+of identical revision marks is very often carrying something else on the
+clipboard (a title-block string, a part number, a cell from a spreadsheet),
+and every duplicate would cost them that. Every application in this class
+separates the two for exactly that reason, and Acrobat has had `Ctrl+D` on a
+comment for as long as it has had comments.
+
+`mockups/app.html`'s approved canvas context menu already draws
+*"Duplicate — Ctrl+D"*; this is the verb behind that line.
+
+# Why it is NOT an extension of `edit.paste_duplicate`, which was checked
+first
+
+`app::dispatch::clipboard`'s header names `edit.paste_duplicate` as *"the
+second sense of a form-field paste"* — `Ctrl+V` plants a copied field as a
+**new** field, `Ctrl+Shift+V` plants it as **another widget of the same
+field**. Its own header records what it does over a markup: *"falls through
+to the ordinary paste … a markup has no second sense to duplicate into"*.
+
+So it does already route by selection kind, and the route it takes for a
+markup is *the plain paste*. Making it duplicate the **selection** instead
+would be a paste verb that acts when the clipboard is empty and ignores the
+clipboard when it is not — two unrelated behaviours behind one id, reachable
+by a chord named for the one it would stop doing. This is a sibling command
+instead, which is what a shell that registers, binds, places and mode-gates
+per id can express and a modifier read inside a handler cannot (R8).
+
+# The route is decided by the ENGINE, exactly as the copy's is
+
+This runs the same `copy_selection` the copy runs and asks [`Plan::of`]
+which carrier each annotation landed on, so a refusal is disclosed by name
+exactly as a copy's is. It does **not** re-implement the classification,
+and it does not hard-code a subtype list.
+
+⇒ That is the whole reason this function lives in this module rather than
+beside the dispatcher. The module header's rule — which carrier an
+annotation lands on is the engine's answer to read, never this shell's to
+predict — applies to a duplicate identically. A duplicate written the
+obvious way, straight onto `paste_objects` with a translate matrix, is one
+engine change away from an **anonymous, undated, opaque** copy of a signed
+revision cloud, silently, and it would look right on the page.
+
+# The clip is assembled before the refusal check, and that is the point
+
+`copy_selection` takes `&self` and commits nothing, so the cost is one walk
+and one allocation. Asking the engine first is deliberate: the alternative
+is this shell deciding which carrier an annotation *would* land on, which is
+the hard-coded subtype list the module header spends a section refusing.
+
+# The offset
+
+[`crate::canvas::clipboard::PASTE_OFFSET_PT`] down and to the right — the
+**same** constant and the same signs a same-page paste uses, because a
+duplicate is a same-page paste in everything but where the payload came
+from. Down the page is **negative** in PDF user space; getting it
+backwards produces a copy that goes up-and-right, which looks deliberate
+and is the kind of thing nobody reports as a defect.
+
+There is deliberately **no cursor rule** here, where a paste has one
+(`OPERATOR_REQUESTS.md` O73). A paste is invoked with the pointer over the
+place the operator wants the thing; a duplicate is invoked from a chord, a
+menu row or a ribbon button while they are looking at the original, and
+dropping the copy under a pointer that is resting on a ribbon icon would
+put it wherever the mouse happened to be. The offset is the whole rule, and
+it is what makes `Ctrl+D Ctrl+D Ctrl+D` walk a diagonal row of marks —
+which is the gesture the feature exists for.
+
+# One undo entry
+
+Whichever route it takes, exactly one action is raised, and each of the two
+goes through `app::actions::apply::vector_edit` as a single `EditSession`
+command. `Ctrl+Z` after a duplicate takes back the duplicate.
+
+# Errors
+
+* [`Refusal::NothingSelected`] — no annotation is selected. Page content is
+  *also* nothing to this verb today: the selection model makes the two
+  mutually exclusive, and a content duplicate is a different feature with a
+  different name for what "the same place" means.
+* [`Refusal::Unreadable`] — the selection names an annotation that is no
+  longer on its page, or whose dictionary will not read. Reachable after an
+  undo.
+* [`Refusal::EngineRefused`] — `copy_selection` would not assemble a clip.
+* [`Refusal::CannotCarry`] — `/Widget`, `/Popup` or `/Redact`, refused by
+  the engine **by name** and by this verb for the same three reasons the
+  copy refuses them. A redaction in particular: duplicating one arms a
+  second destructive operation nobody reviewed.

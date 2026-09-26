@@ -16,16 +16,14 @@
 //! drawn extent and the scroll offset. None of those exists here, so this
 //! records the request and `canvas::destination` drains it on the next frame —
 //! `OpenDoc::fit_placement`'s own pattern, for its own reason.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/app/actions/view.md`.
 
 use crate::app::state::OpenDoc;
 
 use super::Action;
 
 /// Apply one view verb.
-///
-/// The caller has already matched the variant set; the `_` arm is unreachable
-/// and says so rather than silently doing nothing — the same rule
-/// `app::dispatch::format` states for its own guarded fall-through.
 pub(super) fn apply(doc: &mut OpenDoc, action: Action, page_count: usize, max_zoom: f32) {
     match action {
         // A fit sets the scale AND asks for the view to be placed --

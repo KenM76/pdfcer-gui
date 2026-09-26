@@ -70,13 +70,6 @@ pub struct Image {
 
 impl Image {
     /// Wrap a BGRA buffer.
-    ///
-    /// # Errors
-    ///
-    /// If the buffer is not exactly `width * height * 4` bytes. Checked rather
-    /// than trusted because every later index derives from these numbers, and
-    /// a mismatch would read a neighbouring row — producing an image that is
-    /// subtly sheared rather than obviously broken.
     pub fn from_bgra(width: u32, height: u32, bgra: Vec<u8>) -> Result<Self> {
         let expected = (width as usize) * (height as usize) * 4;
         if bgra.len() != expected {
@@ -105,11 +98,6 @@ impl Image {
     }
 
     /// The pixel at `(x, y)`, or `None` outside the image.
-    ///
-    /// `None` rather than a clamp or a panic: a region that runs off the edge
-    /// is a calibration error, and the oracles report how many pixels they
-    /// actually sampled so that error is visible in the output instead of
-    /// being papered over by edge pixels repeated a thousand times.
     #[must_use]
     pub fn pixel(&self, x: u32, y: u32) -> Option<Rgb> {
         if x >= self.width || y >= self.height {
@@ -203,12 +191,6 @@ impl Image {
     }
 
     /// Parse an uncompressed 24- or 32-bit BMP.
-    ///
-    /// Handles only what the converter above emits, and says so when handed
-    /// anything else rather than guessing. BMP rows are **bottom-up** unless
-    /// the height is negative, which is the one detail worth reading twice:
-    /// getting it wrong mirrors the image vertically, and a mirrored
-    /// screenshot still looks like a screenshot.
     pub fn from_bmp(bytes: &[u8]) -> Result<Self> {
         if bytes.len() < 54 || &bytes[..2] != b"BM" {
             return Err(Error::new("not a BMP (bad signature)"));

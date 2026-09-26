@@ -10,33 +10,12 @@ use pdfcer_render::AnnotationScope;
 use crate::dialogs::print::spooler::{Duplex, Orientation, PageSubset, PaperChoice, ScaleMode};
 
 /// The lowest resolution ceiling the file will accept, in DPI.
-///
-/// **36, because that is the floor of the dialog's own `DragValue`.** The
-/// numbers here are deliberately the control's numbers rather than a
-/// separately-reasoned pair: a file that refused a value the operator could
-/// produce by dragging the box would silently discard a setting they had just
-/// made, and a file that accepted one the box could not reach would put the
-/// control out of range of its own stored value.
-///
-/// A hand-edited `print_max_dpi = 5` is a typo, and it is clamped to this
-/// rather than rejected — see `parse_key`'s note on why out-of-range and
-/// unreadable are different answers.
 pub const MIN_PRINT_DPI: u32 = 36;
 
 /// The highest resolution ceiling the file will accept, in DPI.
-///
-/// The dialog's own `DragValue` ceiling, for [`MIN_PRINT_DPI`]'s reason.
-///
-/// The bound exists to limit **memory**, not quality: the dialog's disclosure
-/// reports the uncapped megabytes a page would take, and a job at 2400 DPI on
-/// an A0 sheet is measured in gigabytes per page.
 pub const MAX_PRINT_DPI: u32 = 2400;
 
 /// The most copies the file will accept.
-///
-/// Matches the dialog's own `DragValue` range. A driver may refuse fewer; the
-/// dialog reads the device's `max_copies` and clamps against it separately,
-/// because that limit belongs to a device and this one belongs to the file.
 pub const MAX_PRINT_COPIES: u16 = 999;
 
 /// **How this operator prints**, carried between sittings.
@@ -255,12 +234,6 @@ pub(crate) fn duplex_from_key(token: &str) -> Option<Duplex> {
 }
 
 /// The file token for a paper **policy**.
-///
-/// ⚠ [`PaperChoice::Form`] writes `device`, not its id. That is not a lossy
-/// accident — it is the rule the module header argues: a `dmPaperSize` above
-/// `DMPAPER_USER` means whatever one driver says, and a preferences file
-/// outlives printers. There is deliberately no token that could parse back into
-/// a `Form`, so no hand-edited file can reintroduce the problem either.
 #[must_use]
 pub(crate) const fn paper_key(value: PaperChoice) -> &'static str {
     match value {
@@ -302,11 +275,6 @@ pub(crate) const fn scale_key(value: ScaleMode) -> &'static str {
 }
 
 /// A scale mode from its file token, or `None` if unrecognised.
-///
-/// `custom` parses to `ScaleMode::Custom(1.0)` — a placeholder payload, because
-/// the real one is derived from the separately stored percentage the moment the
-/// dialog plans a job. Any other payload here would be a second copy of a number
-/// that already exists, and the two would eventually disagree.
 #[must_use]
 pub(crate) fn scale_from_key(token: &str) -> Option<ScaleMode> {
     match token.trim() {
@@ -350,27 +318,6 @@ pub(crate) fn subset_from_key(token: &str) -> Option<PageSubset> {
 }
 
 /// The file token for which classes of annotation print.
-///
-/// `AnnotationScope::ContentOnly` has a token even though the dialog does not
-/// offer it. It is a legal value of the type, a hand-edited file may name it,
-/// and the round-trip test below covers every variant this build can name — so
-/// it must have one. Omitting it would make the writer capable of emitting a
-/// token nobody could parse the day the dialog grows a fifth radio.
-///
-/// # ⚠ The `_` arm is the engine's, not a shortcut
-///
-/// `pdfcer_render::AnnotationScope` is `#[non_exhaustive]`, so this crate is
-/// *forbidden* from matching it exhaustively — a newer engine may put a scope
-/// here that this build has never heard of, and the compiler will not point at
-/// this function when it does. The arm returns the token for
-/// [`AnnotationScope::Document`], which is what an unknown scope is written as.
-///
-/// That is a deliberate, disclosed loss rather than a silent one: the operator
-/// cannot select an unknown scope from this dialog in the first place (the four
-/// radios name the four this build knows), so the arm is unreachable from the
-/// UI, and the only way to reach it is a build whose engine moved underneath
-/// its shell — in which case "print the document without review markup" is the
-/// answer that cannot put a comment on paper unasked.
 #[must_use]
 pub(crate) const fn scope_key(value: AnnotationScope) -> &'static str {
     match value {
@@ -414,14 +361,6 @@ pub(crate) fn scope_from_key(token: &str) -> Option<AnnotationScope> {
 // ---------------------------------------------------------------------------
 
 /// What [`parse_key`] did with a line.
-///
-/// Three outcomes rather than an `Option<bool>` because the caller has to tell
-/// *three* things apart and a boolean can only carry two: **not one of ours**
-/// must fall through to the next family and eventually to `UnknownKey`, while
-/// **ours but unreadable** must be reported as `BadValue` against this build's
-/// own key. Collapsing those two would report every mistyped print value as an
-/// unknown key, which tells the operator to check their spelling of a key they
-/// spelled correctly.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum KeyOutcome {
     /// Not a key this group owns. The caller must keep looking.
@@ -435,31 +374,6 @@ pub(super) enum KeyOutcome {
 }
 
 /// Read one `key = value` line into [`PrintPrefs`], if it belongs to this group.
-///
-/// # Why the parser for this group lives HERE and not in `prefs::file`
-///
-/// `prefs::file`'s header states the rule this obeys: *"adding a preference is
-/// one edit to one file"*, because the parser and the writer are two spellings
-/// of one vocabulary and a two-file change is how a writer comes to emit a key
-/// its own parser rejects. That rule is about **the pair staying together**,
-/// not about the pair being in `file.rs` specifically.
-///
-/// This group is thirteen keys — more than the rest of the file has between
-/// them — and every one of them is about printing. Inlining them would put a
-/// third of `file.rs` under one subject and hand the *commonest* future edit
-/// (a new print preference) a 900-line file to find its place in. So the pair
-/// moves together, into the file that already owns this group's type, its
-/// defaults and its token vocabulary: adding a print preference is still one
-/// edit to one file, and it is now **this** file.
-///
-/// `file.rs` keeps one arm that delegates here and one call that delegates to
-/// [`write_block`], so the round-trip tests over the whole of
-/// [`Prefs`](super::Prefs) cover this group unchanged.
-///
-/// # The contract
-///
-/// `value` arrives already trimmed, as `file.rs` trims both halves before it
-/// dispatches. Returns [`KeyOutcome`]; see its variants.
 pub(super) fn parse_key(prefs: &mut PrintPrefs, key: &str, value: &str) -> KeyOutcome {
     /// Store a parsed value, or report the line — the shape every arm below
     /// shares, written once so thirteen arms cannot drift from each other.
@@ -604,11 +518,6 @@ pub(super) fn parse_key(prefs: &mut PrintPrefs, key: &str, value: &str) -> KeyOu
 }
 
 /// Write this group's commented block into the file.
-///
-/// Called once by `Prefs::write_to_string`. The comments are as long as they
-/// are because the file is meant to be opened in a text editor, and
-/// `print_paper = match-pages` tells an operator nothing about what else they
-/// could write there.
 pub(super) fn write_block(prefs: &PrintPrefs, out: &mut String) {
     out.push_str(
         "\n\

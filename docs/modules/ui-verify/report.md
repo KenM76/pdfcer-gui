@@ -47,3 +47,33 @@ vocabulary — it simply never gets there, because the key is suppressed. So
 the absence of that event, *after* the harness has established that the
 click landed and something was selected, is a postcondition failure and not
 a missing feature.
+
+## Item notes
+
+### `fn from_error`
+
+The one line every check's `run` uses for its `Err` arm, so that
+classification lives in one place instead of in 152 identical match
+arms.
+
+# Why this is not just `skip`
+
+
+The guard that catches it is in `Session::trace`, and it has to be able
+to produce a **red** result. Routing it through `skip` would have made a
+crashed program report as "did not run" — and this project's own record
+is that *a SKIP is not red, so a check can stop running unnoticed*.
+
+So the `Error` carries the distinction ([`crate::error::Error::fatal`])
+and this method reads it. Everything that was a precondition failure
+still skips; only what the harness positively observed the subject doing
+fails.
+
+### `fn exit_code`
+
+* `0` — everything that ran passed, and at least one thing ran.
+* `1` — something failed.
+* `3` — nothing failed, but something did not run. Non-zero on purpose:
+  CI must not go green on a suite that did not execute. The distinct
+  code lets a caller tell "incomplete" from "broken" without parsing
+  the text.

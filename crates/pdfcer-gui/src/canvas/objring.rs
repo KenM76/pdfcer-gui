@@ -79,10 +79,6 @@ pub fn stops(
 }
 
 /// **Spend this frame's Tab press**, if one was claimed for the object ring.
-///
-/// Does nothing on the overwhelming majority of frames: `tabnav::take` answers
-/// `None` unless the hook claimed a press, which it does only while a canvas
-/// surface holds egui's keyboard focus.
 pub(super) fn advance(
     ctx: &egui::Context,
     page_index: usize,

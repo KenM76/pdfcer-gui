@@ -205,3 +205,90 @@ Spelling, and it is not a formality: these strings are matched literally
 against the application's `ui-rect` declarations, so a rename on either
 side silently un-aims every click this check makes and the check reports
 a missing feature that is merely spelled differently.
+
+### `const MODE`
+
+Edit, and it is not interchangeable with the `review` every other driving
+check uses: redaction is authoring, so `RIBBON_IA.md` puts it on the Edit
+tab and Read and Review are not shown that tab at all. A check that stayed
+in Review would find no control and SKIP, reporting a missing feature that
+is merely on a tab it did not open.
+
+### `const CONFIRM_REGION`
+
+Declared by the application **only while it is enabled**, which is what
+makes phase E possible at all: its absence from the trace is positive
+evidence that the gate is closed, rather than the absence of evidence a
+disabled-but-drawn control would leave.
+
+### `const DESTINATION_NEW_FILE_REGION`
+
+Also unconditional. Phase E2 **clicks** it, because the default no longer
+writes a file and phases F–I are entirely about a file — see E2's own note
+on why the check moves off the default deliberately and says so.
+
+### `const SECRET`
+
+Deliberately long, upper-case and unlike anything a PDF producer emits: a
+short token could be absent from an output file by luck, and a proof that
+can pass by luck proves nothing. It is also well over
+`redact::proof::MIN_VERIFIABLE_LEN`, so the raw-byte half of the
+application's own proof has something to say about it.
+
+### `const SURVIVOR`
+
+The negative control, and the reason the fixture has two pages. Without it,
+a build that wrote an empty document would satisfy every absence assertion
+in this check.
+
+### `fn contains`
+
+The harness's **own** scan, deliberately not shared with the application's.
+`crate::redact::proof`'s local `contains` carries the same argument from the
+other side: *"an absence proof that shared its search routine with the code
+it is auditing would be a weaker proof."* Here the separation is stronger
+still — this one is in a different crate, in a different process, over bytes
+read back from the file system.
+
+### `fn fixture_bytes`
+
+A classic single-revision PDF with a correct cross-reference table, one
+uncompressed content stream per page, and nothing else. Assembled here
+rather than committed so that every byte in it is one this check put there —
+which is what makes *"the secret is in the bytes"* and *"the secret is not
+in the bytes"* two readings of the same instrument rather than two
+assumptions about somebody's producer.
+
+**Uncompressed on purpose.** The check's verdict is a byte scan, and a
+`/FlateDecode` content stream would hide the secret from it — which is a
+false pass. Phase H's survivor assertion is what would catch that if a
+future writer compressed the *output*; keeping the input uncompressed is
+what stops it arising in the first place.
+
+`pub(super)` so `checks::signing` can arm a redaction on the same
+document rather than authoring a second one. That check needs a
+document whose whole-page redaction actually **verifies** — `four-pages.pdf`
+refuses with `VerificationFailed { survivors: ["SCALE", "REVISION"] }`, so a
+check that used it would sit in front of a refusal dialog with no
+destination to choose. Two fixtures for one property is two chances for one
+of them to stop having it.
+
+### `fn click_region`
+
+The panel's and the dialog's own controls, which produce no
+`ribbon-command-invoked` because they are not commands. There is therefore
+no input-channel confirmation available here, and that is why every caller
+asserts an application-side effect immediately afterwards: an unconfirmed
+click plus an unchanged application is reported as a SKIP by the caller
+rather than as a failure of the feature.
+
+# It takes the NAME, and it must keep taking the name
+
+A rectangle does not carry the viewport it was measured in, and this check
+drives two of them: the marking panel is in the application window, the
+apply dialog is a child viewport with its own client origin. Converting a
+dialog rect against the application window produces a *plausible* screen
+point several hundred points from the control — no error, no missed-click
+report, just an acknowledgement that never takes and a confirm control that
+is never offered. [`driving::frame_of`] answers with the right origin for
+either, and it can only be asked once the name is in hand.

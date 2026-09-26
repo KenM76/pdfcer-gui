@@ -18,15 +18,6 @@ pub const REGION_PROCEED: &str = "signature.proceed"; // ui-text-exempt: trace r
 pub const REGION_CANCEL: &str = "signature.cancel"; // ui-text-exempt: trace region name, never displayed
 
 /// **Which save is waiting on the answer.**
-///
-/// Two variants because this shell has two writers that append a revision, and
-/// they differ in the one way that matters to somebody deciding: whether the
-/// file they already have is the one being written over.
-///
-/// It carries no operand. A save has nothing to re-derive after the frame —
-/// unlike `crate::dialogs::unsaved::PendingIntent::Open`, which carries the
-/// picked path because that path *is* the operand — so the variant is the whole
-/// of what has to survive until the answer comes back.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PendingSave {
     /// `Action::Save` — [`crate::app::save::save_in_place`]. Writes over the
@@ -40,10 +31,6 @@ pub enum PendingSave {
 impl PendingSave {
     /// The sentence saying what this save does to the file the signature is
     /// in.
-    ///
-    /// `name` is the document's own file name, used only by
-    /// [`Self::InPlace`]; a copy has no name to give yet, because the picker
-    /// has not opened.
     #[must_use]
     pub fn target_sentence(self, name: &str) -> String {
         match self {
@@ -54,14 +41,6 @@ impl PendingSave {
 }
 
 /// **What surface an impact earns.**
-///
-/// The type [`disclosure_for`] returns, and the reason that function can be
-/// unit-tested without a `Ui`, a `Context`, an `OpenDoc` or an `EditSession`.
-///
-/// Three variants and not an `Option`, because *"say nothing"* and *"say it
-/// afterwards"* are different answers that a two-state type would collapse —
-/// and the collapse would go in the dangerous direction, since the cheapest
-/// way to make an `Option<Dialog>` compile is to return `None` for both.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Disclosure {
     /// Nothing is said and nothing is drawn. The engine's instruction for
@@ -76,26 +55,6 @@ pub enum Disclosure {
 
 /// **Which surface a given impact earns — the whole decision, as a pure
 /// function.**
-///
-/// Takes the two engine enums rather than a session or a census, so that every
-/// row of §2's table is asserted headlessly. That is not merely convenient: the
-/// alternative is a decision made inline inside a `show` method, where the only
-/// way to exercise it is to drive a window, and where a fourth case added to
-/// the engine would be absorbed by a `_ =>` arm nobody re-read.
-///
-/// `basis` is ignored for every variant but `Invalidated`, and is *supplied*
-/// for all of them because `SignatureImpact::documentation_basis` is total —
-/// it answers `ImpactBasis::NotApplicable` for `None`. Requiring the caller to
-/// compute it unconditionally keeps the one call to the engine in one place.
-///
-/// # Both enums are `#[non_exhaustive]`
-///
-/// So the wildcard arms are mandatory rather than lazy, and their answers are
-/// chosen rather than defaulted: an impact this build does not recognise is
-/// **not silent**. It gets the note, which discloses that something was said
-/// about the signature without asserting what — the honest answer for a verdict
-/// this shell cannot read. Choosing `Silent` there would let a future engine
-/// variant, added precisely because it mattered, ship as nothing at all.
 #[must_use]
 pub fn disclosure_for(impact: SignatureImpact, basis: ImpactBasis) -> Disclosure {
     match impact {
@@ -111,24 +70,6 @@ pub fn disclosure_for(impact: SignatureImpact, basis: ImpactBasis) -> Disclosure
 }
 
 /// **Ask the engine what this save would do, and decide what to show.**
-///
-/// The one place `EditSession::signature_impact_of_save` is called, and the
-/// one place `SignatureImpact::documentation_basis` is. Returns the surface
-/// together with the census's signature count, because every sentence in
-/// [`crate::text::signature`] that is not a button label needs the count and
-/// re-taking a census to get it would be a second walk of the field tree for a
-/// number the first walk already had.
-///
-/// `SaveMode::Incremental` is not a parameter, and that is a statement about
-/// this shell rather than a simplification. `crate::app::save`'s §1 records
-/// that the save mode was *"decided by a shipped promise rather than by this
-/// module"* — `file.save_copy`'s tooltip has promised an appended update since
-/// the day the command was registered — and that the honest response to an
-/// input where incremental is impossible is **to refuse and say so**, never to
-/// fall back to a rewrite. So there is no route through this function on which
-/// a full rewrite could arrive, and accepting a mode would invite one.
-/// `file.save_compacted`, which genuinely rewrites, does not come through here
-/// at all; see the header's §5.
 #[must_use]
 pub fn impact_of_saving(doc: &crate::app::state::OpenDoc) -> (Disclosure, usize) {
     let census = doc.session.signature_census();
@@ -138,12 +79,6 @@ pub fn impact_of_saving(doc: &crate::app::state::OpenDoc) -> (Disclosure, usize)
 }
 
 /// The window's live state.
-///
-/// Existence is the "open" state, as everywhere in [`super`]. Everything it
-/// needs was computed when the question was raised: the footing, the count and
-/// the file name are all facts about the moment the operator was asked, which
-/// is what a confirmation's text is for — `crate::dialogs::unsaved::UnsavedDialog`
-/// captures its edit count at open time for the same reason and says so.
 pub struct SignatureDialog {
     /// Which save is waiting.
     pending: PendingSave,
@@ -184,14 +119,6 @@ impl SignatureDialog {
     }
 
     /// Take the operator's answer, if they have given one.
-    ///
-    /// Returns the pending save **with** the confirmation, for
-    /// `crate::dialogs::unsaved::UnsavedDialog::take_outcome`'s reason: the
-    /// owner needs both, and holding them apart would let a future edit drain
-    /// one without the other and resume the wrong save.
-    ///
-    /// One-shot. The second call answers `None`, which is what stops the owner
-    /// performing the save on every frame after one press.
     pub fn take_confirmation(&mut self) -> Option<PendingSave> {
         if std::mem::take(&mut self.confirmed) {
             Some(self.pending)
@@ -312,23 +239,6 @@ impl SignatureDialog {
 }
 
 /// **Raise the question if this save would invalidate a signature.**
-///
-/// Returns `None` when there is nothing to ask about, and the caller then
-/// proceeds unchanged. That shape is `crate::dialogs::unsaved::ask_for`'s
-/// deliberately: the guard is **one call at the top of an arm** whose `None`
-/// answer is the unchanged path, so adding it to a third save route later is
-/// one line rather than a new rule.
-///
-/// `None` covers three genuinely different situations and it is worth naming
-/// them, because a future reader will want to split them and there is no
-/// caller that could use the distinction:
-///
-/// * **no document** — there is nothing to save, and the arms that reach here
-///   trace their own decline;
-/// * **no signature** — `SignatureImpact::None`, the overwhelmingly common
-///   case, and the one the engine says must cost the operator nothing;
-/// * **`ByteRangePreserved`** — real, disclosed, and disclosed *after* the
-///   write by [`crate::app::save`], because there is no decision to make.
 #[must_use]
 pub fn ask_for(status: &Status, pending: PendingSave) -> Option<SignatureDialog> {
     let Status::Open(doc) = status else {

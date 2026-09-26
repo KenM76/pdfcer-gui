@@ -28,74 +28,15 @@ pub const REGION_ADD: &str = "dimension-groups.add"; // ui-text-exempt: trace re
 pub const REGION_NEW_NAME: &str = "dimension-groups.new_name"; // ui-text-exempt: trace region name, never displayed
 /// The prefix of the per-row *Draw into* radio regions; the group's numeric id
 /// is appended.
-///
-/// Indexed by the **`GroupId`**, not by the row's position in the list. A row
-/// index would change under a check the moment a group was added, which is
-/// exactly what a check that adds a group is doing.
 pub const REGION_DRAW_INTO_PREFIX: &str = "dimension-groups.draw_into."; // ui-text-exempt: trace region name, never displayed
 /// The prefix of the per-row name regions — what a check clicks to make a group
 /// the one the lower half of the window is configuring.
-///
-/// Distinct from [`REGION_DRAW_INTO_PREFIX`] beside it, and the distinction is
-/// the window's own: the radio chooses where the **next dimension** goes, the
-/// name chooses which group's **settings are on screen**. Collapsing them would
-/// make inspecting a group silently redirect the next dimension drawn.
 pub const REGION_ROW_PREFIX: &str = "dimension-groups.row."; // ui-text-exempt: trace region name, never displayed
 
 /// The Manage-dimension-groups window's live state.
-///
-/// Existence is the "open" state, as everywhere in [`super`] — there is no
-/// `open: bool` that could disagree with whether the state exists.
-///
-/// **Almost nothing is held here**, and that is the design. The groups, their
-/// scales, standards, styles and member counts are all read from
-/// `EditSession::dimension_model()` on every frame. A local copy would be a
-/// second source of truth for a model that this very window edits through an
-/// action queue applied *after* the frame — so the copy would be stale for
-/// exactly one frame after every change the operator made, which is the frame
-/// they are looking at.
-///
-/// What is held is the four things the *document* does not know: which row the
-/// operator is configuring, what they have typed into the new-group fields, and
-/// the two one-shot requests that have to survive past the window closure.
-/// The region a fold heading publishes; the section's stable key is appended.
-///
-/// The key is deliberately **not** derived from the caption, for the reason
-/// [`crate::dialogs::settings::widgets::group`] records: a caption is operator
-/// copy and may be reworded, and a check aimed at a region named after it would
-/// then report a heading that is not there rather than a heading that is
-/// illegible. Those are different verdicts and only one of them is true.
 pub const REGION_HEADING_PREFIX: &str = "dimension-groups.heading."; // ui-text-exempt: trace region name, never displayed
 
 /// The Manage-dimension-groups panel's live state.
-///
-/// **Almost nothing is held here**, and that is the design. The groups, their
-/// scales, standards, styles and member counts are all read from
-/// `EditSession::dimension_model()` on every frame. A local copy would be a
-/// second source of truth for a model that this very panel edits through an
-/// action queue applied *after* the frame — so the copy would be stale for
-/// exactly one frame after every change the operator made, which is the frame
-/// they are looking at.
-///
-/// What is held is the four things the *document* does not know: which row the
-/// operator is configuring, what they have typed into the new-group fields, and
-/// the one-shot request that has to survive past the frame that raised it.
-///
-/// # Why `Default` rather than a constructor taking the authoring group
-///
-/// As a window this was built by `open(active)` and seeded its selection with
-/// the group the operator was drawing into — *"an operator who opens this while
-/// working has a group in mind and it is the one they are drawing into."* That
-/// reasoning is still right and is still honoured, but it cannot live in a
-/// constructor any more: a panel is not constructed when it is shown. It lives
-/// on [`crate::panels::PanelsState`] for the life of the document and is reset
-/// by `forget_document`, exactly like the Redact panel's query and the
-/// Bookmarks panel's draft.
-///
-/// So [`Self::selected`] is an `Option` and the seeding happens on the first
-/// frame that draws — see [`Self::show`]. `None` means *"whatever the operator
-/// is drawing into"*, which is a better default than any `GroupId` because it
-/// keeps following them until they say otherwise.
 pub struct DimensionGroupsUi {
     /// **How far the last frame's content ran past the dock column**, in
     /// points. Zero or negative is the healthy state.
@@ -180,10 +121,6 @@ impl Default for DimensionGroupsUi {
 
 impl DimensionGroupsUi {
     /// Take the pending *Set scale…* request, if the operator pressed it.
-    ///
-    /// Called by `PdfcerApp::docks` immediately after the dock draws. Returning
-    /// it rather than acting on it is what keeps this module free of any
-    /// knowledge of the dialog layer.
     pub fn take_scale_request(&mut self) -> Option<GroupId> {
         self.scale_requested.take()
     }
@@ -609,10 +546,6 @@ fn section(
 }
 
 /// Draw the panel.
-///
-/// The entry point [`crate::panels::Panel::show`] calls, in the shape every
-/// panel body has: the empty-document case never arrives here, because it is
-/// answered once for all panels rather than eleven times.
 pub fn body(
     ui: &mut Ui,
     doc: &OpenDoc,

@@ -579,3 +579,38 @@ swatch is an sRGB picker, so what the operator chose *is* an RGB triple; a
 mark silently written as `DeviceGray` because its channels happened to match
 would be pdfcer inferring a colour space the operator did not ask for, which
 is Rule 4's whole subject.
+
+### `enum MarkupEdit`
+
+The type is the enforcement of this module's central rule. Each variant
+carries exactly one field of `MarkupStyle`, so there is no expressible value
+that restates a property the operator did not touch — which is what
+`MarkupStyle`'s own doc requires and what a `MarkupStyle` parked directly
+would have made merely a matter of care.
+
+It is this module's own type rather than a reuse of `MarkupStyle`, and
+that is worth one sentence: `MarkupStyle` is an **input struct** the engine
+deliberately left non-`#[non_exhaustive]` so callers can build it, and it is
+perfectly buildable here. What it cannot express is *"exactly one field, and
+the caller chose which"*, which is the invariant the dispatcher relies on.
+
+### `fn into_style`
+
+Every arm sets **one** field and leaves the rest at `Default` — which is
+`None`, which is *"do not touch this property"*. That is the whole
+contract, and it is asserted from the outside by
+`only_one_field_is_ever_set` below rather than trusted.
+
+### `fn draw`
+
+Returns the command's handler token when the operator changed something, in
+which case `parked` holds the change and `target` holds the annotation it is
+about. `None` means *nothing was invoked*, which is what the shell expects
+for a frame in which the operator merely looked at the control.
+
+# `kind` is matched, not asserted
+
+An unrecognised kind returns `None` and draws nothing, exactly as
+`PdfcerApp::ribbon_band`'s renderer does for one it does not know. A
+manifest is data; the honest response to a kind nobody implements is a gap,
+not a panic in the paint loop.

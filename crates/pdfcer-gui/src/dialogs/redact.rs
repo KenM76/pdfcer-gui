@@ -985,17 +985,6 @@ fn residual_lines(prepared: &PreparedRedaction) -> Vec<String> {
 }
 
 /// **The name to suggest for the redacted copy.**
-///
-/// **Never the file that was opened.** The suffix is what makes the default
-/// answer a new document, so an operator who accepts the suggestion without
-/// reading it cannot overwrite the one file that still contains the content
-/// they are removing. That is the standing rule expressed as a default rather
-/// than as a warning — a warning is something to click past.
-///
-/// The same shape and the same argument as `crate::app::save::suggested_path`
-/// and `crate::dialogs::ocr::suggested_path`, with a different suffix, and the
-/// extension is forced to `.pdf` for their reason: the bytes are a PDF whatever
-/// the source was called.
 #[must_use]
 pub fn suggested_path(source: &Path) -> PathBuf {
     let stem = source.file_stem().map_or_else(
@@ -1011,13 +1000,6 @@ pub fn suggested_path(source: &Path) -> PathBuf {
 }
 
 /// Open the dialog for the document in `status`, if there is one.
-///
-/// The dispatch target for `edit.redact_apply`. Lives here rather than in
-/// [`super::DialogsState`] only because it needs [`RedactDialog::open`]'s
-/// private constructor; the guard it applies is the one `open_print` documents
-/// — the ribbon control is gated on `doc.pages`, a chord bound to the same id is
-/// not, and both are fixed by refusing here at the one place the dialog is
-/// built.
 pub(super) fn open_for(status: &Status, reach: RedactionReach) -> Option<RedactDialog> {
     let Status::Open(doc) = status else {
         return None;

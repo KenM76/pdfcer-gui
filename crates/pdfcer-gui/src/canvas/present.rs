@@ -35,37 +35,9 @@ use crate::viewer;
 
 /// Padding, in points, left around the page inside the canvas so the page
 /// does not sit flush against the panel edges under a fit mode.
-///
-/// Subtracted from the viewport *before* the fit scale is derived rather
-/// than added as a layout margin afterwards, so "fit page" really does fit
-/// with the gap visible instead of fitting exactly and then being clipped
-/// by the gap.
-///
-/// `pub` because [`zoom::zoom_to_rect`] fits a *region* by the identical rule
-/// and must leave the identical gap — a framing command that pressed the
-/// region flush against the panel edges while "Fit page" left 16 points would
-/// read as two different ideas of what fitting means.
 pub const CANVAS_MARGIN: f32 = 16.0;
 
 /// **The three values the canvas samples once per frame**, bundled.
-///
-///
-/// > `tool` is *what* the operator armed, `caps` is *whether* the mode
-/// > permits it, and `pen` is *what it will look like*. All three are
-/// > sampled once per frame and for the same reason — a gesture means what
-/// > it meant when it started.
-///
-/// `tool` is not here because the canvas reads it from `egui::Memory`
-/// itself; these three are the ones the application owns and must hand over.
-///
-/// # Why sampling matters more than tidiness
-///
-/// Every field is `Copy` and every one is read at the top of the frame, so
-/// the canvas sees a **consistent** snapshot for the whole frame. A canvas
-/// that re-read any of them mid-frame could start a drag under one mode and
-/// finish it under another, which is the class of defect
-/// `app::gating::on_mode_capabilities_changed` exists to prevent from the
-/// other end.
 #[derive(Debug, Clone, Copy)]
 pub struct Sampled {
     /// **What the active mode lets this frame do to the document.**
@@ -85,38 +57,6 @@ pub struct Sampled {
 
 /// Draw the page, read the canvas gestures, and attach the canvas context
 /// menus.
-///
-/// Operator intent leaves by two routes, and the split is not arbitrary:
-///
-/// * **`actions`** carries what the canvas itself decides — a zoom step, a
-///   fit, a Delete raised by the Delete key. These are already `Action`s
-///   because the canvas knows what they mean.
-/// * **the return value** carries `egui_shell::HandlerToken`s: the commands
-///   the operator chose from a context menu. The canvas must *not* translate
-///   those, because translating them is what `PdfcerApp::dispatch_token`
-///   does for the ribbon, and a second translation is how the two surfaces
-///   start disagreeing about what `format.delete` means. Handing the token
-///   on unchanged is what makes `RIBBON_IA.md` §5.8's *"carries the same
-///   commands again"* literally true.
-///
-/// `host` is `None` when the application has no validated shell — see
-/// [`MenuHost`] — in which case no menu is attached and a right-click does
-/// nothing, which is the correct behaviour for a build with no menu
-/// document rather than a disabled feature.
-///
-/// Beyond those two, everything this function decides lands in the three
-/// documented bookkeeping fields (see the module docs). The document itself
-/// is never touched.
-///
-/// # The rulers wrap this, and the wrapping is three statements
-///
-/// [`rulers::reserve`] takes a **constant** bite out of `ui` before anything
-/// measures the viewport (rule R128 — see that module's header §3), the whole
-/// of the canvas is then drawn into a child `Ui` covering what is left, and
-/// the gutters are painted afterwards from the geometry [`show_in`] hands
-/// back. Painting them *after* is what puts a guide preview over the page
-/// rather than under it, and what lets the ruler mark the page's own edges —
-/// neither of which is knowable until the scroll area has settled.
 #[must_use]
 pub fn show(
     ui: &mut egui::Ui,

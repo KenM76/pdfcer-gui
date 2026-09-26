@@ -76,3 +76,86 @@ an untouched window undid nothing (`!changed`). One boolean would have
 to pick one of those, and whichever it picked the other caller would be
 reporting the opposite of the truth — in a trace line, where nobody
 would see it, because a well-formed field reads as a measured one.
+
+### `fn habits`
+
+The membership rule and the argument for every inclusion and every
+omission live on [`crate::app::prefs::PrintPrefs`], which is the type
+this returns; this function is only the projection. It is written as one
+struct literal with no `..Default::default()` so that a field added to
+`PrintPrefs` is a **compile error here** rather than a preference that
+is written to disk as its default and never actually remembered.
+
+⚠ [`Self::device`] is read rather than [`Self::effective_device`]. The
+operator's *choice* is what is remembered — "match the pages" — never
+the sheet O167's arithmetic resolved it to on this one document. See
+`effective_device`'s own note on why those two are kept apart.
+
+### `fn remember`
+
+Returns whether the preferences **now hold** those settings — which is
+`true` both when they were written and when they already matched, and
+`false` only when a write was attempted and the disk refused it. See
+[`Self::store`] for why this is the right question for *this* direction
+and the wrong one for the other.
+
+# The failure is swallowed, and that matches every other preference
+
+[`crate::app::actions::prefs`] states the rule this follows, as the
+fourth of the four properties every preference verb shares: *"one discrete
+operator decision is one write, and losing a preference across a restart
+does not justify a modal in front of somebody who is"* — here — *about
+to print*. A read-only `userdata` folder must not turn a print into an
+error dialog; the job is the operator's actual errand and it proceeds
+unchanged.
+
+The swallowed failure is nevertheless **reported**, off-canvas, by the
+trace this returns into and by `print-dismissed saved=` at the window's
+single return. Rule 4 is *fuzzy, never sneaky*: not raising a modal is a
+decision about interruption, not a licence to be silent.
+
+# Nothing is written when nothing changed
+
+Reprinting the same job with the same answers is the commonest print
+there is, and rewriting the whole preferences file on each one buys
+nothing. The comparison is a plain `!=` on
+[`crate::app::prefs::PrintPrefs`], which is why that type derives
+`PartialEq`.
+
+### `fn restore`
+
+# It returns both facts, because Cancel's disclosure needs both
+
+[`Written::changed`] answers the operator's question — *were my changes
+undone?* — and is `false` for a Cancel on a window nobody touched, which
+is the commonest Cancel there is. Reporting `reverted=true` for that one
+would leave the trace unable to tell the two apart.
+
+[`Written::stored`] answers the other question, which is whether the disk
+took it, and it is what `print-dismissed saved=` reports. ⚠ The two are
+independent and neither implies the other: a revert that put the settings
+back in memory and could not write them is `changed = true, stored =
+false`, and that pair is the honest account — the operator's *session*
+genuinely has been reverted, and the next launch will not agree.
+
+# Why this is not a `bool`, said here because it was one for an hour
+
+The single boolean was `changed`. That left [`super::dismissal`]'s Revert
+arm with nothing to report `saved=` from, so it passed a hard-coded
+`false` — while **this doc comment claimed, in the same commit, that a
+disk failure "is disclosed by the `saved=` field of the same trace
+line"**. It was not. That field read `false` on every revert, one that
+wrote successfully and one that could not write at all, and the line was
+well-formed either way.
+
+A comment promising a disclosure the code does not make is the defect this
+project has corrected more often than any other, and this instance is worth
+the paragraph because of *how* it survived: the comment reads as a
+description of the arm, the arm reads as an implementation of the comment,
+and neither reading opens the other file.
+
+### `struct Written`
+
+Two independent facts that a single `bool` kept conflating. See `store`'s
+own table for which caller reads which, and why picking one would make the
+other caller's disclosure a quiet lie.

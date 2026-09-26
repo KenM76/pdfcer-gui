@@ -332,3 +332,133 @@ operator changes on frame *N* appears here on frame *N+1*. The panel
 repaints continuously, so a filter that is on is reported as on within a
 frame; what the lag rules out is reading a single frame's line as evidence
 about a filter set in that same frame, which nothing does.
+
+### `mod reviewstate`
+
+Its header carries the two facts everything in it follows from: a status is
+**appended, not set** — the file holds a log rather than a field — and the
+engine reads both keys **verbatim without interpreting them**, so the
+vocabulary is this shell's to present and an unrecognised value is shown
+rather than normalised.
+
+### `const COMMAND_ID`
+
+Named here as well as on [`crate::panels::Panel::command_id`] so this
+module's own reachability test can assert it, exactly as
+`crate::panels::forms` does.
+
+# Why `markup.comments` and not a `view.panel_*` id
+
+`RIBBON_IA.md` names Comments **twice** and the two placements cannot both
+be honoured, because P1 gives a command one tab:
+
+- **§5.2** lists `Comments` among View ▸ Panels, beside Pages, Objects,
+  Bookmarks, Layers, Signatures and Forms.
+- **§5.5** gives the Markup tab its own `Comments` group, with `Comments
+  panel` in it.
+- **§7's migration map** then settles it explicitly, naming the source and
+  the destination: `Review ▸ Comments ▸ Comments` → `Markup ▸ Comments`.
+
+The migration map is the more specific statement — §5.2's row is a list of
+panel names, while §7 is a per-control ruling on this control — so Markup ▸
+Comments it is. `crate::shell::manifest::markup` already reached the same
+conclusion in the same words when the tab was built, and the command is
+already registered and already on the ribbon; only the panel behind it was
+missing.
+
+**The mode taxonomy agrees, which is what makes this safe.** The Forms
+panel had to move *off* the Edit tab because Read is shown `file` and
+`view` alone and Read mounts Forms. Comments is mounted by **Review and
+Edit only** (`crate::app::modes::defaults`), and both of those are shown
+the `markup` tab. So no mode can mount this panel without also being able
+to reopen it — which is the failure the Forms move existed to prevent.
+
+### `const REGION_EDIT`
+
+# Why only the first, when every row draws the control
+
+A region name is a key. Publishing the same name from thirty rows would
+leave the harness clicking whichever one happened to be drawn last, which is
+a coordinate nobody chose and which moves when a row above it grows a
+caption. The first row is the one deterministic choice available without
+inventing a per-row naming scheme that nothing would consume.
+
+⇒ **A control with no published rect is a control R1 cannot reach**, and
+the gap leaves no failing test behind — the harness simply never presses it,
+and nothing goes red to say so. Publishing this one is what keeps the
+panel's writing controls drivable.
+
+### `const REGION_POST`
+
+A **separate** name from [`REGION_SAVE`], deliberately. The two controls
+occupy the same place on the row and reach different engine verbs, so one
+shared name would leave a driven check unable to tell *"the note editor is
+open"* from *"the reply editor is open"* — which is precisely the pair a
+harness must distinguish, because one of them writes over the comment the
+other one answers.
+
+### `fn body`
+
+The one entry point. Shape and signature match every other panel body — see
+[`crate::panels::Panel::show`].
+
+## `state` carries one thing, and it is not a selection
+
+It holds a [`note::NoteDraft`] — one annotation's `/Contents` while the
+operator is typing it — and **nothing else**. It is emphatically not a
+"selected comment": the draft names one annotation by `ObjId` for the
+duration of one edit, and it decides nothing about what the canvas outlines,
+what the Format tab describes or what Delete acts on. That distinction is
+the one [`crate::panels::ObjectTreeUi::focus`]' docs refuse to blur, and it
+is what stops this panel growing a second, weaker selection that the canvas
+would then have to be kept in step with.
+
+# THREADING DEPTH: the file nests, the panel does not
+
+`EditSession::add_reply` permits a reply to a reply — its scope note 2 wants
+one and does no cycle checking beyond the obvious — so **does a reply to a
+reply draw indented under it, or flat?**
+
+## The answer, in each of the three places it shows
+
+| | |
+|---|---|
+| **in the file** | the true parent, always. `AnnotAction::Reply` carries the **row's own** `/IRT` and never rewrites it to the thread root |
+| **in this panel** | flat. Every annotation is one row in document order, and a reply is marked by its caption ([`t::comment_row_is_reply`]) rather than by an indent |
+| **in the canvas pop-up** | flat, one level under the root — `canvas::notepopup::model::replies_to` gathers the whole transitive thread and lists it |
+| **when the two differ** | the operator is told, on the row, at the moment they are about to answer an answer — [`t::comment_row_reply_to_a_reply`] |
+
+## Why flat, and what the alternative would have cost
+
+Three reasons, in the order they decided it:
+
+1. **The canvas pop-up is flat**, for the reason `replies_to` records:
+   every reader in this class draws a comment thread as a flat chronological
+   list under its root rather than as a nested tree, and a tree drawn in a
+   260 pt window would be four indents of two words each. Nesting the panel
+   while the pop-up stayed flat would give one document two shapes in one
+   program, which is worse than either shape.
+2. **This panel is a work list, not a conversation.** Its rows are headed by
+   subtype and page because a reviewer scanning forty of them is looking for
+   *the cloud on sheet three*, and its filter strip narrows by author and
+   subtype. An indent tree fights both: a filtered tree either hides parents
+   whose children matched or shows rows the filter excluded, and there is no
+   third option.
+3. **An indent has to be computed from something that can be malformed.**
+   §7.3.10 makes a dangling `/IRT` not an error and says nothing about a
+   circular one, and `pdfcer-core` models both rather than repairing them.
+   A depth column therefore needs a cycle bound, a rule for a parent that is
+   not in the list, and a rule for a parent that was filtered out — three
+   decisions in service of a visual that the surface it would appear on does
+   not want.
+
+**The cost is named rather than hidden**: a reader of this list cannot
+tell, from the list alone, which comment a given reply answers. That is
+what [`t::comment_row_is_reply`] admits by saying *"a reply to another
+annotation on this document"* rather than naming one, and it is why *Go to*
+resolves through [`model::thread_root`] — the canvas window is where the
+conversation is legible, and this panel's job is to get the operator there.
+
+⇒ If an operator asks to see who answered whom without opening each
+comment, that is a surface-level decision and belongs in
+`MODES_AND_PANELS.md` rather than here.

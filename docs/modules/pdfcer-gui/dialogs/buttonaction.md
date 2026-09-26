@@ -78,3 +78,9 @@ Two blocks, and the second is conditional:
 
 Both are off-canvas by construction: they are in a dialog, and the button
 they describe is drawn on the page exactly as the saved file will draw it.
+
+### `fn rows`
+
+Returns nothing: the draft is the output, and the dialog reads
+[`ButtonDoes::blocker`] itself when it decides whether Add may be pressed.
+A `bool` return would be a second opinion about the same question.

@@ -60,15 +60,6 @@ fn standing(trace: &Trace) -> Option<Standing> {
 
 /// Part C. The operator's O220 clause: Ctrl+wheel still zooms **out** from
 /// the state the wall put him in.
-///
-/// Returns `Some(failure)` when the gesture is dead or the canvas never comes
-/// back. A state part B could not reach is `Ok(None)` **with a note** — see the
-/// module header on why this part never produces a SKIP.
-///
-/// # Errors
-///
-/// Only from the driver and the trace reader; every diagnosis this part can
-/// reach is expressed as a failure string or a note.
 pub(super) fn part_c(
     session: &Session,
     driver: &Driver,

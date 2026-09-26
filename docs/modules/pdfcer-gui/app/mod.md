@@ -165,3 +165,141 @@ oracle is the off-screen launch above.
 Falsified by replacing the body with `current.or(restored)`, which is
 the ten-day-old behaviour: this goes red and the two below stay green,
 which is why all three exist rather than only this one.
+
+### `mod filedrag`
+
+The position half of drag-and-drop: `winit` throws the OLE drop point away
+and no mouse-move arrives during a drag, so the point is asked of the
+operating system. Lets a surface CLAIM a drop that landed on it — the Pages
+panel claims a document dropped onto its thumbnails — with an
+unconditional fallback to [`dropped`] for everything else.
+
+### `mod markupband`
+
+`pub`, unlike [`fontband`] beside it, and for one mechanical reason:
+[`PdfcerApp::markup_change`] parks a `markupband::MarkupEdit` on a public
+struct, and a public field of a type nothing outside the module can name is
+a private interface the compiler refuses under `-D warnings`. `fontband`
+needs no such thing because its operand type lives in `app::actions`, which
+is already public.
+
+### `mod pickstore`
+
+The difference is the whole of the module: a splitter drag reports a change
+on every frame of the gesture, while a filter can only change on a discrete
+click, so one decision already equals one write. Its header also carries the
+three on-disk states and why *an empty file* must never be collapsed into
+*no file* — that would silently overrule a deliberate choice every restart.
+
+### `mod reachout`
+
+A separate store from `pdfcer_core::settings` on purpose: that one exists
+because a **standard declines to have an opinion**, and every entry cites
+the clause that is silent. How sharply a page is rasterised cites nothing.
+Its header also records which five of the seven commissioned View ▸ Render
+settings turned out to have nothing behind them, and why.
+**Does this document reach outside itself?** — a submit button, a
+launch action, a script that runs on open. Asked once when a document opens,
+answered on the status row. Its header carries the engine's own account of
+why a scan that under-reports reads as a clean bill of health.
+
+### `mod settings`
+
+Not a struct-holder. Of the thirteen settings the old shell persisted,
+**nine were never read by anything** — they were saved, loaded, shown,
+edited, and then discarded at every call site that wrote
+`ExtractOptions::default()` or `RenderOptions::default()` or
+`SaveOptions::identity()`. This module owns the three replacements and a
+`syn` check that no other file may bypass them.
+
+### `mod textoperand`
+
+`OPERATOR_REQUESTS.md` O198. The five Format ▸ Font controls and the
+Properties font editor were each gated on a swept text range, which the
+only mode that shows them cannot produce. This module widens the operand
+to include *the single selected text object*, by the byte-span join the
+object colour swatch has used since O89 - so an object selection and a
+sweep become the same gesture with the same operand. See its header for
+the deadlock, and for why the cheap half is a separate function.
+
+### `mod toolstatus`
+
+The strip the right dock reserves above its columns, naming what is armed
+and offering to put it down. It is the surviving half of the Tool panel;
+that panel's live controls moved to `crate::panels::properties::tool` and
+its disclosure block to `crate::panels::properties::disclose`. The module
+header tabulates every piece and where it went.
+
+### `struct PdfcerApp`
+
+It derived one until the settings store arrived, and nothing in the
+workspace ever called it — checked, not assumed. Removing it is the right
+answer rather than a workaround for `StoreLocation` having no `Default`:
+
+A defaulted `PdfcerApp` would have **no shell manifest, no command registry,
+no panel registry and no settings store** — a state [`PdfcerApp::new`] can
+never produce and every method here assumes away. Deriving a constructor
+for an unreachable state is how a test ends up asserting something about a
+program that cannot exist, and this crate has a standing preference for
+making such states unrepresentable rather than merely unused.
+
+`new()` is the constructor. It is the only one.
+
+### `mod es`
+
+**A mode is a named workspace** (`MODES_AND_PANELS.md` Part 2): Read,
+Review and Edit are three defaults the operator then adjusts, and
+leaving Edit and coming back restores the arrangement rather than a
+default. That is why the mode selector and the dock are not two
+independent features — the selector is how you reach a workspace.
+
+### `fn window_handle`
+
+Called once, from `crate::run`, with the `eframe::CreationContext`. See
+[`PdfcerApp::window`] for what it is for and why it is captured there.
+
+`None` for every non-Win32 handle and for a platform that reports none.
+That is not an error and is not disclosed: the only caller passes it
+straight to `pdfcer-print`, whose contract already says a null owner is
+legal.
+
+### `fn new`
+
+The shell is assembled **once**, here, and not per frame: merging
+and validating a manifest walks every tab, group and item, and doing
+that sixty times a second to produce a value that cannot have
+changed would be a per-frame cost with no per-frame cause.
+
+Order is load-bearing. Commands are registered **before** the
+manifest is merged, because the merge resolves every item against
+the registry — that resolution is what makes a capability that is
+not compiled in disappear from the ribbon rather than render as a
+dead control (`R8`, `SHELL_FRAMEWORK.md` §5b).
+
+### `fn refresh_acrobat`
+
+Called on exactly one event — the operator saving Settings — because
+that is the only thing inside pdfcer that can change the answer. See
+[`Self::acrobat`] for why this is not asked per frame, and for the one
+change it deliberately does not notice.
+
+It reads [`Self::prefs`], so it must run **after** the draft has been
+adopted. `crate::app::settings_window::save_settings` calls it there,
+and the ordering is the thing to preserve if that function is ever
+rearranged: run first and the button would appear one Settings visit
+late, which is exactly the "typed a path and nothing happened" failure
+the setting exists to fix.
+
+### `fn configure_context`
+
+Only one setting so far, and it is not optional: egui's
+`zoom_with_keyboard` makes Ctrl+Plus/Minus/0 rescale the entire user
+interface. In a document viewer those chords mean *page* zoom — that is
+what they do in every browser, in Acrobat, and in every other PDF
+reader — so egui's handler is switched off and [`keyboard`] handles
+them. Without this the chords would silently do the wrong thing and any
+tooltip advertising them would be telling a lie.
+
+Note that Ctrl+**scroll** is unaffected: egui converts that to a
+`zoom_delta` in the input state but does not act on it itself, so the
+canvas is free to interpret it.

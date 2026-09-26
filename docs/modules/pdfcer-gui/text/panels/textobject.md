@@ -51,3 +51,54 @@ marks the canvas, tints a run, or renders a recoloured object differently
 from the way the saved file will render it. What was skipped and why is
 disclosed **off-canvas**, here and in the status bar, which is where Rule 4
 puts it.
+
+## Item notes
+
+### `fn heading`
+
+The same word the swept-text section uses (`super::properties`'s
+`text_heading`) and deliberately so: an operator who reaches the colour by
+clicking and an operator who reaches it by sweeping must not think they
+found two different features. The two sections are mutually exclusive, so
+the heading never appears twice.
+
+### `fn covers`
+
+The count is the disclosure that makes this control safe to press, and
+it is not decoration. A `BT`…`ET` on a CAD export is free to hold every
+label on the sheet: `pdfcer_core::vector::TextObject::runs`' own docs record
+a measured SolidWorks export where **one** text object's bounds ran
+`23,14 → 1564,1216` — the whole drawing. Recolouring that is a legitimate
+thing to ask for and a terrible thing to do by accident, so the number of
+runs is on screen **before** the swatch, not in a report afterwards.
+
+"runs" is the program's own word for the unit, and it is the unit the
+operator will meet again in the status line after the press
+(`super::properties`'s `text_covers`). Two different nouns for one thing
+across two adjacent surfaces is how a disclosure stops being read.
+
+### `fn ink_present`
+
+The same guard `crate::text::paint::undecoded` states for a path, with the
+one difference the module header argues: the ink **cannot be named** here,
+so this sentence does not pretend to name it.
+
+It says *"some of"* whenever more than one run is involved, because a
+single object can be part CMYK and part RGB and a sentence claiming all of
+it would be false half the time. The absent swatch is per **object**, not
+per run, and that is deliberate: this control's operand is the whole object,
+so a partial refusal is a refusal of the gesture the operator would make.
+
+### `fn mixed_hint`
+
+Not an error and not a refusal: the control still applies. This is the
+indeterminate state every editor in the class shows — Illustrator,
+Inkscape, Figma, Word — and its meaning is *"there is no one colour to open
+on; pick one and they all become it."*
+
+The marker itself is `super::properties`' `text_value_absent` — the em
+dash — because that string's own doc comment already made this exact
+argument for the size field: *"every property grid in this class shows a
+blank or a dash for no value and for mixed values, which are the same state
+as far as a single field is concerned."* One spelling of *no single value*
+across the whole program.

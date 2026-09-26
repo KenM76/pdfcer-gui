@@ -115,3 +115,13 @@ true in general, and it was written as though it were. What is true, and
 what the operator actually needs, is that the ruler's labelled step is a
 whole number of grid *minors*; this asserts that, and that the grid is
 the finer of the two.
+
+### `fn draw`
+
+One call from `super::interact`'s draw step, so the "which space"
+decision this module exists to enact is made in exactly one place rather
+than being spread across the canvas's page loop.
+
+`clip` is the scroll viewport: the grid is confined to the intersection of
+it with each page, which is both correct (there is no paper outside a page)
+and what bounds the cost — see [`MIN_GRID_PITCH_PTS`].

@@ -69,3 +69,55 @@ pixels, so a position could not survive this round trip at all.
 The tolerance is in **page points**, scaled by the zoom — a tenth of a
 screen pixel at whatever magnification is under test. A fixed page-space
 tolerance would get easier as the zoom rises, which is backwards.
+
+### `struct DeepAnchor`
+
+# The invariant, stated first because everything here serves it
+
+**The page point [`Self::page`] is drawn at the window point
+[`Self::screen`].** Panning moves `page`; zooming leaves `page` and
+`screen` alone and changes only the scale applied between them. That is why
+a zoom about the cursor is expressible without any large intermediate: the
+anchor is *already* the thing being held still.
+
+# Why `f64` for the page and `f32` for the screen
+
+They are different magnitudes doing different jobs. A page coordinate at
+deep zoom is the value that needs precision — it is what a scroll offset was
+failing to carry. A **screen** coordinate is bounded by the window, a few
+thousand at most, where `f32` is exact to a small fraction of a pixel and
+always will be.
+
+Mixing them is deliberate rather than sloppy: making the screen point
+`f64` too would imply the window can be large enough to need it, which is
+the kind of false suggestion a type makes silently.
+
+### `fn to_screen`
+
+The forward half of the pair. Every large magnitude is subtracted
+**inside `f64`** before the result is narrowed, which is the whole
+technique: `point - self.page` is small even when both are billions, so
+the product with `zoom` is small, and nothing large ever reaches `f32`.
+
+### `fn to_page`
+
+The exact inverse of [`Self::to_screen`], and the two are tested as
+inverses rather than each against a hand-computed number — a pair that
+round-trips is the property the canvas actually depends on.
+
+### `fn panned`
+
+The sign is the same convention [`crate::canvas::geometry::pan_offset`]
+uses and for the same reason — dragging right moves the page right,
+which means the page point under the cursor moves *left* in page space.
+Getting this backwards produces a canvas that works and feels wrong,
+which is harder to notice than one that is broken.
+
+### `fn zoomed_about`
+
+**This is the operation the whole module exists for.** In the scroll
+-offset model, zooming about the cursor means solving for a new offset —
+which is where the large magnitudes and their lost precision came from.
+Here it is a re-statement: read which page point is under the cursor,
+then declare that *that* point is now anchored there. No large number is
+formed, so nothing is lost, at any zoom.

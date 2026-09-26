@@ -9,36 +9,6 @@ use egui_shell::manifest::{Item, Tab};
 
 /// The condition, published by the application each frame, under which the
 /// Format tab appears.
-///
-///
-///
-/// That argument was sound for a tab with one group. It stops being sound the
-/// moment the tab carries controls for a **second kind of selection**, and it
-/// does now: the Selection group acts on a page object, addressed by
-/// paint-order index, and the Font group acts on a swept text range, addressed
-/// by run. Those are unrelated index spaces (`panels::properties::text`'s
-/// header argues why nothing maps between them), and neither one of them is
-/// the tab's question.
-///
-/// The tab's question is *"is there anything for me to be about?"*, and
-/// `selection.formattable` is that question's name. `app::conditions`
-/// publishes it as the union, so:
-///
-/// | state | tab | Selection group | Font group |
-/// |---|---|---|---|
-/// | nothing selected | absent | — | — |
-/// | an object selected | **shown** | enabled | greyed, and explains itself |
-/// | text swept | **shown** | greyed | enabled |
-/// | both | shown | enabled | enabled |
-///
-/// The old note's fear — a tab that appears holding a greyed control — is
-/// therefore now the *designed* middle two rows rather than a defect, and R9
-/// is what makes that legitimate: the capability is present and the **operand**
-/// is missing, which is the textbook temporarily-unavailable case, greyed and
-/// explained on hover. It is also, deliberately, the surface that answers
-/// O37's admission that nothing on screen tells an operator to press `T`
-/// before sweeping — see the Font group below.
-///
 pub(super) const VISIBLE_WHEN: &str = "selection.formattable"; // ui-text-exempt: a condition name, never displayed
 
 /// The condition under which a mode may change page content, and therefore

@@ -10,11 +10,6 @@ use crate::app::actions::Action;
 use crate::app::state::{Origin, Status};
 
 /// **How long the pointer must rest on a tab before it springs open.**
-///
-/// 600 ms. Windows' own spring-loaded folder delay is roughly this; browsers
-/// sit between 400 and 800 ms. Short enough not to feel stuck, long enough
-/// that sweeping the pointer across the strip on the way to the far tab does
-/// not open three documents in passing.
 pub const SPRING_DWELL: f64 = 0.6;
 
 /// Named region: the strip as a whole.

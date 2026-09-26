@@ -78,3 +78,47 @@ because it is the more dangerous of the two. Three settings change what
 an extraction produces and one of them can make a whole run vanish, so
 a stale extraction is not differently spaced, it can be missing content
 that a find or a redaction-by-pattern would then fail to see.
+
+### `fn settings_window`
+
+# The ✕ is a Cancel, and that is a contract rather than a convenience
+
+`egui::Window::open` gives the title bar a close button that this code
+does not otherwise see. If closing by ✕ did anything different from
+closing by Cancel — kept the draft, half-applied it, saved it — the
+window would have two exits with two meanings and no way to tell which
+one an operator took. Both paths drop the draft.
+
+### `fn adopt_settings`
+
+One function, two acts, and they are together on purpose. This is the
+only place in the application that writes `OpenDoc::settings`, and it is
+also the only place that clears the caches keyed to it — so there is no
+state in which a page texture, a strip entry or a page-text cache
+disagrees with the snapshot beside them.
+
+Splitting them is the obvious mistake and would be invisible: update the
+snapshot without clearing, and the operator changes how black is drawn,
+presses Save, and **nothing on screen moves** until something else
+happens to dirty the cache — which reads as the setting not working.
+Clear without updating, and every cache immediately refills under the
+old configuration, which reads the same way and is harder to find.
+
+# Called from a settings Save, and from the one place a document opens
+
+The first is obvious. The second is the one that is easy to forget:
+`OpenDoc::assemble` starts every document on the *shipped defaults* — it
+cannot reach `PdfcerApp` — so a document opened by an operator who has
+configured anything would otherwise render under pdfcer's answers rather
+than theirs.
+
+`opening_a_document_adopts_the_operators_settings` is the test that
+stops another open path being added without this call.
+
+# Why the caches are cleared wholesale
+
+Working out which cached sheets a given setting change affects would be
+a second statement of what each setting does, in a function that has no
+business knowing. They refill from the visible set on the next frame —
+the same argument `app::actions::pages` makes when a page permutation
+invalidates the strip.

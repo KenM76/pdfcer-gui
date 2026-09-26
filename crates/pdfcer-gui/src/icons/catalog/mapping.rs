@@ -13,18 +13,14 @@
 //!
 //! The doc comments — the rulings about what a glyph may not look like — stay
 //! with the enum, because that is where somebody choosing a glyph reads.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/icons/catalog/mapping.md`.
 
 use super::super::assets;
 use super::Icon;
 
 impl Icon {
     /// Every icon, in catalogue order.
-    ///
-    /// This is the list the catalogue-wide tests walk, and it is what makes
-    /// "every shipped asset is valid" an enforced property rather than a
-    /// hope — so a new [`Icon`] variant MUST be added here or it ships
-    /// unverified. `all_is_exhaustive` guards the omission that would
-    /// otherwise be invisible.
     pub const ALL: &'static [Icon] = &[
         Icon::Open,
         Icon::Save,
@@ -192,13 +188,6 @@ impl Icon {
     ];
 
     /// The asset's SVG source.
-    ///
-    /// `include_str!` at compile time rather than a runtime file read,
-    /// because pdfcer ships single-folder portable: the executable must not
-    /// depend on an `assets/` directory travelling beside it, and an icon
-    /// that fails to load at startup is not a failure mode worth having when
-    /// the whole set is ~79 KB of text. See [`super::assets`] for why the
-    /// `.svg` files live inside `src/icons/`.
     #[must_use]
     pub const fn source(self) -> &'static str {
         match self {
@@ -347,21 +336,6 @@ impl Icon {
     }
 
     /// The stable key this icon answers to.
-    ///
-    /// Two jobs, and they are the same string on purpose:
-    ///
-    /// 1. **It is the application's icon key**, the thing a command names
-    ///    with `.with_icon("…")` and the thing `egui-shell` hands back in
-    ///    `IconRequest::key`. The shell never interprets it — an icon set is
-    ///    a licensing and rasterization decision, which is the application's
-    ///    business — so this is the only place the vocabulary is defined.
-    /// 2. **It is the texture's debug name.** egui keys textures by handle,
-    ///    not by name, so that part is purely for debuggers and texture
-    ///    inspectors — but a texture list full of "icon" tells you nothing,
-    ///    and one full of `icon:rotate-ccw@32:Bold` tells you everything.
-    ///
-    /// Kebab-case throughout, matching the command ids and the asset
-    /// filenames it was salvaged from.
     #[must_use]
     pub const fn name(self) -> &'static str {
         match self {
@@ -524,23 +498,6 @@ impl Icon {
     }
 
     /// Resolve an application icon key back to an [`Icon`].
-    ///
-    /// This is the lookup [`super::paint_ribbon_icon`] performs on every
-    /// icon-bearing ribbon control, every frame.
-    ///
-    /// # Why a linear scan and not a `match` or a `HashMap`
-    ///
-    /// A reverse `match` would be a second copy of the key vocabulary, and
-    /// two copies of a mapping is exactly how a rename lands in one of them.
-    /// [`Icon::name`] stays the single source of truth and this walks it.
-    ///
-    /// The cost is one pointer-length comparison per catalogue entry
-    /// ([`Icon::ALL`]`.len()`) with an early exit, for the
-    /// handful of icons a ribbon draws per frame — comfortably under a
-    /// microsecond, against a frame budget of 16 ms. A `HashMap` would need
-    /// a lazily-initialised static, would hash the key anyway, and would buy
-    /// nothing measurable. If the set ever reaches the hundreds, revisit;
-    /// `every_name_round_trips_through_from_key` makes the swap safe.
     #[must_use]
     pub fn from_key(key: &str) -> Option<Self> {
         Self::ALL.iter().copied().find(|icon| icon.name() == key)

@@ -18,59 +18,6 @@ use crate::canvas::selection::SelectionState;
 use crate::canvas::zoom;
 
 /// Escape and Delete, for the canvas selection.
-///
-/// # `DEFECTS.md` D1, from the other end
-///
-/// D1 is *"I can't even click on an object and delete it by hitting the
-/// delete key."* Its cause was `ctx.egui_wants_keyboard_input()` — which means
-/// *any* widget has focus, not *a text field has focus* — combined with a
-/// canvas that takes focus on click. `app::keyboard` already carries the fix
-/// (`ctx.text_edit_focused()`) and the regression test for it. This is the
-/// **verb** the fixed key now reaches: without it, D1 would be fixed and
-/// Delete would still do nothing, because there was no selection to delete
-/// and nothing to delete it with.
-///
-/// The same guard is applied here rather than inherited, because this reads
-/// the key itself. It has to: `app::keyboard::collect` runs before any widget
-/// is built, and although the selection now lives on `OpenDoc` and is
-/// therefore *reachable* from there (module docs, seam 1), moving these two
-/// bindings into the keymap is a change to `app::keyboard`'s key table and its
-/// tests — a separate change with its own argument about chord precedence,
-/// not a consequence of this one. What the move already bought is the ribbon's
-/// Delete: `PdfcerApp::dispatch_token` can now read the selection, so
-/// `format.delete` raises the same action this does, from the same rule
-/// ([`crate::canvas::deleting::subject`]).
-///
-/// Backspace is bound alongside Delete because a laptop keyboard without a
-/// dedicated Delete key is the common case, and every editor accepts both.
-///
-/// # `escape_consumed`, and why the gesture gets first refusal on the key
-///
-/// A drag in flight may be abandoned with Escape ([`gesture::GestureOutcome::Cancelled`]),
-/// and that is the *same press* the ladder would otherwise read. One press must
-/// have one effect — decision 025's L1, which is why Escape ascends exactly one
-/// rung rather than collapsing the ladder — so when the gesture machine has
-/// already spent the key, this is told and leaves it alone. The flag travels as
-/// an argument rather than being re-derived here because the machine is the only
-/// thing that knows whether there *was* a drag under the press; an Escape with an
-/// idle pointer arrives here untouched and ascends, as it always did.
-///
-/// # `text_selection` — rung 5's other occupant
-///
-/// Passed as `&mut Option<_>` rather than being read back off the document,
-/// because `canvas::interact` has taken it out by value for the duration of the
-/// frame (the same move it makes for the object selection, and for the same
-/// borrow reason). Clearing it needs nothing but the field: the *making* of a
-/// text selection needs the page's extraction, which is why Ctrl+A and Ctrl+C
-/// live in `canvas::textsel::keys` and only Escape lives here. See this module's
-/// header on why it shares a rung with the ladder instead of taking a sixth.
-/// Everything the key rungs need that is not the keyboard.
-///
-/// A struct because the list reached eight when the form-field Delete landed
-/// (`OPERATOR_REQUESTS.md` **O53**), and eight positional parameters is a call
-/// nobody can read — three of them are `bool`-ish and transposing two would
-/// compile. `gesture::Press`, `resizing::Frame` and `dragroute::Frame` all took
-/// the same shape for the same reason, so this is the local convention.
 pub(super) struct Keys<'a> {
     /// The egui context.
     pub ctx: &'a egui::Context,
@@ -225,21 +172,6 @@ pub(super) struct Keys<'a> {
     /// **Whether this frame ASKED for the decomposition** — the tripwire
     /// half of [`Self::targets`], and it exists because those two facts are
     /// different and were for one commit indistinguishable.
-    ///
-    /// `targets: None` has two causes and only one of them is honest:
-    ///
-    /// | cause | `model_attempted` | what it means |
-    /// |---|---|---|
-    /// | the page would not decompose | `true` | a real limit; `Refusal::NoObjectModel` is the correct answer and the operator is owed a sentence |
-    /// | **nobody asked for it** | `false` | a working verb reachable by nothing, and a key that silently does nothing |
-    ///
-    /// Carried so the second can be made **loud** rather than being reported
-    /// in the first's words. See the `debug_assert` at the decline site below,
-    /// and `canvas::modelneed` for why a frame might not have asked.
-    ///
-    /// A plain `bool`, so the unit tests below pass `false` and still exercise
-    /// every rung of the ladder — they never reach the assert, because they
-    /// never supply a selection at a deeper rung without a provider.
     pub model_attempted: bool,
     /// **The page on screen**, for the arrow-key nudge and for nothing else.
     ///

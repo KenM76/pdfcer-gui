@@ -242,3 +242,102 @@ The case a `!draft.is_empty()` guard would silently swallow: emptying a
 field the document has a value for is exactly as much an edit as typing
 into an empty one, and it is the gesture an operator makes to correct a
 mistake.
+
+### `struct RowContext`
+
+A struct rather than three parameters, because the row functions below
+would otherwise take seven arguments each and because the grouping says
+what these are: **facts about the document that are identical for every
+row**, computed once per frame by [`super::body`].
+
+### `fn row`
+
+`index` is the field's position in `AcroForm::fields` and is used **only**
+for widget id salts. It is not a substitute for the field's name: several
+terminal fields may legitimately share a fully-qualified name
+(`AcroForm::fields_named` exists for exactly that), and a fill applies to
+all of them — so the *edit* is keyed by name while the *widget* is keyed by
+position, and conflating the two would either collapse two rows into one
+egui id or fill the wrong field.
+
+### `fn block_reason`
+
+`None` means the row may offer a live control.
+
+# The order is deliberate
+
+A read-only signature field is both, and being read-only is the more
+actionable fact — it is the flag an operator or another tool set, whereas
+"this is a signature" is what the field permanently is. Reporting the less
+specific reason first would be less useful.
+
+# The rich-text check is NOT here, and must not move here
+
+A rich-text field gets a row of its own ([`rich_text_row`]) rather than a
+refusal, because there **is** something an operator can do with it: convert
+it, disclosed and deliberately. Folding it in here would replace an offer
+with a shrug.
+
+# `FieldFlags::RICH_TEXT` shares its bit with `RADIOS_IN_UNISON`
+
+Bit 26 is the only overloaded position in the whole `/Ff` family, and
+`field.flags.has(FieldFlags::RICH_TEXT)` **compiles and is wrong on every
+radio group**. Everything in this module asks `Field::is_rich_text()`,
+which gates on the resolved `/FT` first. Stated here as well as at the use
+site because this is the function someone extends when a new refusal is
+added.
+
+# `pub(crate)`, because a second surface asks it rather than restating it
+
+[`crate::canvas::forms::classify`] decides whether a field may be clicked
+**on the page**, and the first thing it must decide is whether the field may
+be filled at all. That is this question, and it now has exactly one answer
+for both surfaces. Re-deriving it in `canvas/` would be a second statement
+of one rule, whose failure is silent and specific: an operator clicking a
+field on the page that the panel beside it says is read-only.
+
+### `fn commit`
+
+Two conditions, and each prevents a distinct defect:
+
+1. **`ended`** — `lost_focus()`, not `changed()`. `TextEdit` reports
+   `changed()` on every keystroke and `EditSession::fill_text_field` pushes
+   one undo entry per call, so committing on `changed` would make one typed
+   word a dozen undo steps and a dozen appearance regenerations.
+2. **The draft differs from what the document already holds** — otherwise
+   tabbing THROUGH a field without typing writes a command whose only
+   effect is an undo entry the operator did not earn. This bites harder on
+   a form than anywhere else: tabbing through a form is how people read
+   one.
+
+A pure function, so both conditions are tested without an egui context.
+They are the sort of thing that stays correct for months and then gets
+"simplified" into `if response.changed()`.
+
+# `pub(crate)`, because the canvas commits by the identical rule
+
+[`crate::canvas::forms`] fills the same fields from the page, and both of
+the conditions above bind there for exactly the reasons they bind here —
+one word must not be a dozen undo entries, and moving the caret through a
+field without typing must not write a command. So it **calls this** rather
+than restating it, and the three tests below are the tests for both
+surfaces.
+
+### `fn choice_options`
+
+Crate-visible because [`crate::canvas::forms::boxes::classify`] needs the
+same list to build a canvas box from, and two decoders for one array is how
+the panel and the page come to offer different options for one field. Order
+is never touched — §12.7.4.4 makes `/Opt` order a conformance requirement.
+
+### `fn choice_selections`
+
+Accepts both shapes `/V` legally takes: an array for a `MultiSelect` field
+and a bare string for a single-select one. A reader that handled only the
+array form would show every ordinary combo box as unanswered.
+
+Crate-visible for [`choice_options`]'s reason. Note what it does **not**
+do: it does not check the values against `/Opt`. A `/V` naming no option is
+a real state both surfaces have to see, and one neither may carry into
+`set_choice_value`, which refuses it. Both therefore rebuild the selection
+from `/Opt` — [`multi_choice_ticks`] here — and disclose the drop in words.

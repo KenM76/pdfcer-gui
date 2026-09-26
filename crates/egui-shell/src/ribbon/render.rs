@@ -93,20 +93,6 @@ use super::report::{RectSink, Reporter};
 use super::{FrameReport, RibbonState, band, strip, tabs};
 
 /// Draws a [`Shell`]. See this module's header for the seam it sits on.
-///
-/// The plain entry point is [`Ribbon::show`]. The builder exists for the
-/// four optional capabilities an application may supply, each of which is
-/// a seam that keeps a domain concern out of the shell:
-///
-/// | Builder method | Supplies | Why the shell cannot do it itself |
-/// |---|---|---|
-/// | [`Self::with_conditions`] | what is true this frame | The shell has no state to derive it from. |
-/// | [`Self::with_icon_painter`] | how to draw an icon key | An icon set is a licensing and rasterization decision. |
-/// | [`Self::with_custom_items`] | how to draw a non-button control | Otherwise the item vocabulary grows a variant per widget. |
-/// | [`Self::reporting_rects_to`] | where to publish drawn rects | Only the harness knows what it wants to assert. |
-///
-/// All four are optional and all four default to "off", so the
-/// four-argument form is a complete, working ribbon.
 #[derive(Default)]
 pub struct Ribbon<'a> {
     conditions: Option<&'a ConditionSet>,
@@ -124,11 +110,6 @@ impl<'a> Ribbon<'a> {
 
     /// Publish what is true this frame, for enable predicates, contextual
     /// tab visibility and toggle state.
-    ///
-    /// Without this every [`crate::commands::Enable::When`] command is
-    /// disabled and every contextual tab is hidden — which is the correct
-    /// answer for an empty condition set, and is why an application that
-    /// forgets this sees a greyed-out ribbon rather than a wrong one.
     #[must_use]
     pub fn with_conditions(mut self, conditions: &'a ConditionSet) -> Self {
         self.conditions = Some(conditions);
@@ -144,10 +125,6 @@ impl<'a> Ribbon<'a> {
     }
 
     /// Supply the painter for [`crate::commands::Command::icon`] keys.
-    ///
-    /// Without one, controls draw their labels and no glyphs. That is a
-    /// working ribbon, which is the point: an application can bring the
-    /// ribbon up before it has an icon set.
     #[must_use]
     pub fn with_icon_painter(
         mut self,
@@ -169,10 +146,6 @@ impl<'a> Ribbon<'a> {
 
     /// Draw a ribbon with no optional capabilities and report the commands
     /// the operator invoked.
-    ///
-    /// The shell **executes nothing**: the returned tokens are intent, and
-    /// the application dispatches them at its own choke point. See this
-    /// module's header.
     pub fn show(
         ui: &mut egui::Ui,
         shell: &Shell,

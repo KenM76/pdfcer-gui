@@ -70,3 +70,78 @@ is precisely why the empty case needed a number of its own.
 The common case, and the one that must stay free: an application that
 has never floated a panel calls `show_floating` on every frame
 forever, and it must return immediately.
+
+### `fn floating_panels`
+
+The second of the dock's two per-frame calls. It takes an
+`&egui::Context` rather than a `&mut Ui` because it opens child
+viewports, and a child viewport must be opened from the top of the
+frame rather than from inside a half-composed side panel — see
+`egui_shell::dock::floatwin`'s header, and `crate::dialogs::host`,
+which is called from the same place for the same reason.
+
+# The body closure is the SAME ONE `docks` uses
+
+Not a similar one — the same expression, resolving the same
+`PanelId` through the same `Panel::from_command_id` and calling the
+same `Panel::show`. That is the property `MODES_AND_PANELS.md`
+identified as the thing that makes tear-out cheap here:
+`show_viewport_immediate` takes `FnMut` with **no** `Send + Sync +
+'static` bound, so a torn-out panel keeps the docked signature and
+there is no second rendering path to keep in step.
+
+A previous float-or-dock dual mode is on record as costing *"two
+code paths for the same content, each duplicating open-state,
+position/size and focus handling"*. This has one.
+
+# Every rect is tagged with its own viewport
+
+A child viewport's coordinates start at **its** origin, so an
+untagged `ui-rect` from a float window reads to a harness as a
+position in the application window — plausible numbers naming a
+different place on the desktop, which
+`D:/dev/rag/egui/a_child_viewports_ui_rects_are_relative_to_ITS_origin…`
+records as a harness aiming hundreds of points away. The shell has
+no diagnostic channel of its own, so the scope is entered here,
+inside the body, from the very id the shell used — recovered
+through `floatwin::viewport_id`, which is public for this.
+
+# The draw-order invariant, and why it HOLDS
+
+`D:/dev/rag/egui/moving_a_surface_into_a_child_viewport_breaks_the_draw_order_invariant_containment_gave_it_free.md`
+records the hazard this change is the exact shape of: *"containment
+silently provides a draw order, and moving a surface into a sibling
+viewport turns that invariant into the order of your two call
+sites."* A panel that writes into shared state while it draws, and
+something drawn **after** it that reads that state, is ordered for
+free while both are inside one window and by nothing at all once one
+of them is a child viewport.
+
+It is checked here rather than assumed, and the answer is that
+**tear-out cannot change any reader's side of the fence**, because
+every parent reader is ordered before *both* halves of the dock:
+
+| `PdfcerApp::ui` line | what it does |
+|---:|---|
+| 132 | the ribbon's Font group takes `panels.text_style_mut()` |
+| 668 | the ribbon band draws |
+| 691 | `dimension_groups.take_scale_request()` |
+| **831** | **`docks` — the DOCKED panel bodies** |
+| 938 | the dialogs (which read no panel state) |
+| **970** | **`floating_panels` — the FLOATED panel bodies** |
+
+A panel that moves from 831 to 970 is still after 132, 668 and 691,
+so a reader that saw last frame's write when the panel was docked
+sees last frame's write when it is floating. The one-frame lag is
+pre-existing, identical in both states, and not this capability's.
+
+**That is a fact about the current call order, not a guarantee.**
+Move any reader of panel-written state to between `docks` and here
+and the two states diverge — the docked panel would be read this
+frame and the floated one next frame, which presents as a control
+that is correct until you tear its panel out. The status bar's layer
+clause is deliberately NOT such a reader:
+`app::status::selected::with_layer` recomputes through
+`panels::layers::highlight::resolve(doc)`, a pure function of the
+document, rather than reading anything the Layers panel cached while
+drawing.

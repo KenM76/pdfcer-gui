@@ -112,3 +112,9 @@ Observed through `egui`'s own output events: a clicked widget emits
 published, which is the same value that fills an accesskit node.
 The name is the panel's **purpose** — its tooltip — per
 `crate::ribbon::a11y`'s convention and this module's header.
+
+### `fn tab_bar`
+
+`rect` is the whole bar. The affordance's reservation is taken from
+its right edge; see the module header for why that subtraction comes
+first.

@@ -15,6 +15,8 @@
 //! it crosses the crate boundary: an application matches on [`SkipReason`]
 //! to decide what to tell its operator, where [`super::merge`] itself is an
 //! implementation the application never names.
+//!
+//! Design and rationale: `docs/modules/egui-shell/manifest/merge/report.md`.
 
 use crate::manifest::validate::Site;
 
@@ -82,14 +84,6 @@ pub enum SkipReason {
 }
 
 /// One thing the merge could not carry across.
-///
-/// A structured value rather than a message, deliberately. The shell has
-/// no business deciding how another application words a note to its
-/// operator, and an application that wants to offer "remove this stale
-/// entry from your file" needs the id, not a sentence containing it.
-///
-/// [`std::fmt::Display`] is provided for diagnostics — a log line, a
-/// failing test, `tools/ui-verify` — and is **not** operator-visible copy.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Skip {
     /// Which layer the dropped item came from.
@@ -135,10 +129,6 @@ impl std::fmt::Display for Skip {
 }
 
 /// Everything a merge had to skip.
-///
-/// Returned by value so the caller must deal with it: returning the rejects
-/// alongside the result makes them a value that has to be handled rather
-/// than a side effect that can be forgotten.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct MergeReport {
     skips: Vec<Skip>,

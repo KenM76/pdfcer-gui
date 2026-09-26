@@ -13,11 +13,6 @@ use pdfcer_core::page_tree::Rect as PdfRect;
 
 /// **Which band a glyph's cell joins**, and therefore which frame it is
 /// measured in.
-///
-/// One enum rather than two parallel maps because the whole point is that a
-/// glyph belongs to exactly one of these: a rotated line, an engine line, or
-/// neither. Two maps would admit the state where a glyph is in both, and the
-/// box drawn from it would be whichever [`super::resolve`] happened to read first.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum Band {
     /// A line [`writing`] recovered — measured in that line's own axes. §8.
@@ -31,22 +26,12 @@ pub(super) enum Band {
 
 impl Band {
     /// Whether other glyphs may join this band.
-    ///
-    /// False only for [`Band::Loose`], which is per-glyph by construction: a
-    /// shared "unclaimed" key would merge every orphan on the page into one
-    /// box spanning the sheet, which is the failure the previous `usize::MAX`
-    /// sentinel guarded against by hand.
     pub(super) const fn merges(self) -> bool {
         !matches!(self, Self::Loose(..))
     }
 }
 
 /// A band's accumulated extent, in whichever frame its [`Band`] chose.
-///
-/// Two variants rather than one general parallelogram because the page-axis
-/// case is the overwhelming majority and reducing it to a degenerate rotated
-/// frame would put every ordinary selection through trigonometry to produce the
-/// number it already had.
 #[derive(Debug, Clone, Copy)]
 pub(super) enum Accum {
     /// Page axes: the union of glyph cells as an axis-aligned rectangle.
@@ -67,12 +52,6 @@ pub(super) enum Accum {
 
 impl Accum {
     /// Grow this band to include `other`.
-    ///
-    /// The two are always the same variant, because [`Band`] decides the
-    /// variant and only equal bands are merged. A mismatch is therefore
-    /// impossible rather than merely unexpected, and is left as a no-op rather
-    /// than a panic: a selection that silently drew one box short is a far
-    /// smaller failure than a drag that killed the application.
     pub(super) fn absorb(&mut self, other: &Self) {
         match (self, other) {
             (Self::Page(a), Self::Page(b)) => {
@@ -116,13 +95,6 @@ impl Accum {
     }
 
     /// The band as four PDF-user-space corners.
-    ///
-    /// The corner naming is `/QuadPoints`' (§12.5.6.10) and is relative to
-    /// **the text's own baseline**, not to the page: `ul`/`ur` are the ascender
-    /// side and `ll`/`lr` the descender side, `ll`/`ul` the start of the text
-    /// and `lr`/`ur` its end. For `dir = (1, 0)` that is exactly
-    /// [`Quad::from_rect`]'s assignment, which is the check that the rotated
-    /// construction below generalises rather than replaces it.
     pub(super) fn quad(self) -> Quad {
         match self {
             Self::Page(rect) => Quad::from_rect(rect),

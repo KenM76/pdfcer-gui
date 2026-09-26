@@ -21,27 +21,12 @@ fn pending(ctx: &egui::Context) -> Option<MeasureState> {
 
 /// **Is there a circle fit waiting to be committed?** — the application state
 /// behind the `measure.finishable` condition.
-///
-/// Published by `crate::app::PdfcerApp::conditions` and read by
-/// `measure.finish`'s `enabled_when`. See [`pending`] for what the three
-/// conditions are and why each one is needed.
 #[must_use]
 pub fn finishable(ctx: &egui::Context) -> bool {
     pending(ctx).is_some()
 }
 
 /// **End the gesture: author the dimension and empty the pick set.**
-///
-/// **The one commit path**, reached by both endings — see the module header
-/// for the argument, which is the reason this function exists rather than two
-/// arms that each build a `DimensionKind`.
-///
-/// Pure over the state and the action list — no `egui`, no context, no memory —
-/// which is what makes both endings assertable without a window.
-///
-/// Returns `false` and raises nothing when the fit is degenerate. That is the
-/// same refusal [`super::pick::CircularPick::author`] states: an inference
-/// pdfcer cannot make is not made silently on the operator's behalf.
 pub(super) fn commit(st: &mut MeasureState, page_index: usize, actions: &mut Vec<Action>) -> bool {
     let Some(kind) = st.circular.author() else {
         return false;
@@ -65,18 +50,6 @@ pub(super) fn commit(st: &mut MeasureState, page_index: usize, actions: &mut Vec
 
 /// **The `measure.finish` command's whole effect**, reporting whether it did
 /// anything.
-///
-/// The second entrance to [`commit`], and the only thing it adds is the trip
-/// through `egui::Memory`: read the state, run the one commit path, write it
-/// back. The page comes from the **state**, not from the current view, because
-/// the pick was made on that page and a state whose page has been left behind
-/// is cleared by `super::load` on the next frame anyway — reading
-/// `doc.view.page_index` here would be a second source of truth for a fact the
-/// state already carries.
-///
-/// Returns `false` when there is nothing to finish, so the dispatcher can say
-/// which kind of nothing happened rather than tracing a success it did not
-/// have.
 pub fn finish(ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
     let Some(mut st) = pending(ctx) else {
         return false;
@@ -98,18 +71,6 @@ pub fn finish(ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
 }
 
 /// **End the gesture on a double-click.**
-///
-/// The canvas half of the two endings — the other is `measure.finish` on the
-/// ribbon, and both reach [`commit`] and nothing else. Traces which ending
-/// asked, because a screenshot cannot distinguish them and neither can the
-/// engine.
-///
-/// **The first click of the pair has already picked a point**, and that is
-/// deliberate rather than an accident of how `egui` reports a double-click.
-/// Swallowing the pair would make the operator's last point need a separate
-/// click *and* a double-click somewhere harmless. It is also what
-/// `SelectionState::click` does with the same flag: the second click gets its
-/// own meaning rather than repeating the first's.
 pub(super) fn double_click(st: &mut MeasureState, page_index: usize, actions: &mut Vec<Action>) {
     if !commit(st, page_index, actions) {
         crate::diag::trace(|| {
@@ -125,30 +86,6 @@ pub(super) fn double_click(st: &mut MeasureState, page_index: usize, actions: &m
 }
 
 /// **Take one point for the radius/diameter tool** — add it, or take it out.
-///
-/// `at` is the point [`super::click`]'s snap machinery resolved: the anchor
-/// under the pointer, or the raw pointer position when nothing was within the
-/// catch radius. `candidate` is what produced it, `None` meaning the raw
-/// position.
-///
-///
-///
-/// Now that a pick **is** a point, every part of that machinery is exactly what
-/// this tool wants:
-///
-/// * the **snap** puts the point on the drawing's own geometry, so three clicks
-///   round a hole give the hole rather than three approximations of it;
-/// * the **raw fallback** is what makes a bitmap measurable at all (O106) —
-///   `resolve::snapped` returns the pointer unchanged when nothing is near, and
-///   the operator's judgement is then the measurement;
-/// * the **derived-candidate two-click confirm** is rule 4 doing its job. A
-///   centerline pdfcer inferred is not committed by the click that finds it.
-///   Under the object pick that confirm was a cost with no benefit; under a
-///   point pick it is the difference between fuzzy and sneaky.
-///
-/// # Returns
-///
-/// `true` when the set grew, `false` when the click took a point back out.
 pub(super) fn take_point(
     st: &mut MeasureState,
     at: pdfcer_core::vector::Point,
@@ -190,19 +127,6 @@ pub(super) fn take_point(
 }
 
 /// **Remove the point at `index`** — the Tool panel's route into the same set.
-///
-/// Two routes to one capability, and the panel's is the one that cannot be
-/// substituted. A pick set on a dense CAD sheet is invisible: the operator
-/// cannot tell four picked points from five, and cannot tell *which* four. See
-/// `OPERATOR_REQUESTS.md` O107.
-///
-/// Reads, mutates and writes back through [`super::read`]/[`super::store`],
-/// which is the same trip `finish` makes, so a panel removal and a canvas click
-/// are the same act on the same state.
-///
-/// Returns `false` when there is no such point — an out-of-range index is an
-/// ordinary race between a panel row drawn from last frame and a canvas click
-/// taken in this one, not a bug to crash on.
 pub fn remove_point(ctx: &egui::Context, index: usize) -> bool {
     let Some(mut st) = read(ctx) else {
         return false;
@@ -240,28 +164,6 @@ fn origin_tag(origin: PickOrigin) -> &'static str {
 }
 
 /// Plant a pick set in memory, for tests in sibling modules.
-///
-/// Two test modules need one and neither can build it the honest way, so the
-/// visibility widens rather than the helper being written twice —
-/// `crate::app::state::open_fixture`'s own note makes the identical argument.
-/// `canvas::keys` owns Escape's precedence and has to assert that a circular
-/// pick set is abandoned one press *before* the tool is put down;
-/// `app::conditions` has to assert that a finishable set is still not offered
-/// with no document open. Neither can assemble one the real way — that needs a
-/// laid-out page, a decomposition and a click inside a drawn object — so the
-/// state they must react to is planted directly, exactly as
-/// `crate::canvas::guides::plant_drag_for_test` plants a guide drag for the
-/// same Escape test.
-///
-/// `#[cfg(test)]` so it cannot become a second way for production code to build
-/// a pick set. The real one is [`take_point`], and a second entry point is how two
-/// code paths come to disagree about what a pick is.
-///
-/// The four points are a square inscribed in a circle of radius 10 centred at
-/// (30, 40) — a **non-degenerate** set, so the planted state is one
-/// [`finishable`] answers `true` for. A collinear or too-small set would make
-/// every Escape test pass for the wrong reason, since the fit would be `None`
-/// and nothing downstream would ever be offered.
 #[cfg(test)]
 pub(crate) fn plant_pick_for_test(ctx: &egui::Context, page_index: usize) {
     let mut st = MeasureState::for_kind(page_index, MeasureKind::Circular);

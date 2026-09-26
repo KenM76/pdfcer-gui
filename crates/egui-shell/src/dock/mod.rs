@@ -322,10 +322,6 @@ pub struct Dock<'a> {
 
 impl<'a> Dock<'a> {
     /// A dock with no registry and no rect sink.
-    ///
-    /// Usable as-is: with no registry every tab is labelled with its own
-    /// id, which is ugly and truthful. See `ctx::Ctx::describe` on why the
-    /// fallback is a fallback rather than a skip.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
@@ -526,11 +522,6 @@ impl<'a> Dock<'a> {
     }
 
     /// Distinguish this dock from another in the same window.
-    ///
-    /// Only needed by an application hosting two independent docks — a
-    /// document window and a preview window, say. Without it every
-    /// interactive element in both would share ids, and `egui` would
-    /// treat a click on one as a click on the other.
     #[must_use]
     pub fn with_id_salt(mut self, salt: impl std::hash::Hash + std::fmt::Debug) -> Self {
         self.id_salt = Some(egui::Id::new(salt));
@@ -538,20 +529,6 @@ impl<'a> Dock<'a> {
     }
 
     /// Draw both docks and call `body` once per visible panel.
-    ///
-    /// # The order of the three phases, and why it is that order
-    ///
-    /// 1. **Snapshot.** The layout is cloned. Everything drawn this frame
-    ///    is drawn from the snapshot, so one frame shows one truth.
-    /// 2. **Draw**, recording `Intent`s. No `&mut` to the layout exists
-    ///    anywhere in this phase, which is what makes it structurally
-    ///    impossible for a resize pass to write a *computed* span back
-    ///    into a stored share — failure mode #6, closed by construction
-    ///    rather than by care. See `ctx`'s header for the full argument.
-    /// 3. **Apply.** The intents are applied, in order, in one place.
-    ///
-    /// The cost is one frame of latency on a splitter drag, during a
-    /// gesture `egui` is already repainting continuously for.
     pub fn show(
         &mut self,
         ui: &mut egui::Ui,

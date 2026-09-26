@@ -348,3 +348,87 @@ that is still *reproducible* and no longer *about* anything.
 
 The two are separate on purpose (the constant names a value, the method
 derives one), so this is what stops them being separate in effect.
+
+### `const SIMPLIFY_TOLERANCE_PTS`
+
+**0.5 pt, derived from the pen rather than chosen.** See §3.2: it is half of
+[`super::PEN_WIDTH_PTS`]'s half-width, so the simplified centreline stays
+strictly inside the body of the stroke the raw trail would have drawn.
+
+# ⚠ This is NOT what the running code reads
+
+[`drag`] calls [`super::pen::Pen::simplify_tolerance_pts`], which derives
+the same quarter-width from the pen the operator actually set. This constant
+exists as **the value the shipped pen implies**: it is what §3.3's
+measurement table is measured at and what the tests below sweep around, and
+the measurements are meaningless without a named value to attach them to.
+
+**A `const` cannot follow a control.** A constant derived from another value
+is safe exactly as long as that value is also a constant; the moment the
+input becomes settable, the derivation is silently pinned to its old input
+and nothing about it looks wrong, because the expression still names the
+right thing. [`tests::the_shipped_constant_matches_the_shipped_pen`] welds
+this one to the pen it claims to describe, so it cannot drift away from the
+default it is named for.
+
+Measured retention at this value is in §3.3 and is asserted, with the RDP
+deviation bound, by [`tests::the_measured_retention_at_the_shipped_tolerance`].
+
+### `fn sync`
+
+Called once per frame from `canvas::interact` with
+[`crate::canvas::gesture::GestureState::active`]'s answer. Every way a drag can
+end — released, Escaped, interrupted by focus loss, interrupted by the space
+bar borrowing the hand — makes that answer `None`, so all four are handled by
+this one comparison and none of them needs a hook of its own.
+
+The early return is what makes it free: on every frame nobody is drawing on,
+`read` finds nothing and the function does nothing.
+
+### `struct Stroke`
+
+A struct rather than seven parameters, and not merely to satisfy a lint —
+[`crate::canvas::measure::Pick`] is the precedent and its own docs carry the
+argument, which applies here word for word: the fields that describe *where
+this frame's pointer is* are only meaningful together, and a call site that
+had six of them and reached for the seventh from somewhere else would be
+resolving a stroke against a page it did not come from — the class of defect
+[`crate::canvas::mapping`]'s header exists to make unavailable.
+
+The `ctx` is in here for a reason of its own: it is where the trail lives
+(§2), so a caller that supplied a *different* context from the one the
+gesture machine's `active()` was read against would be syncing one trail and
+extending another.
+
+### `fn drag`
+
+[`super::band::drag`]'s twin, and deliberately the same shape — one function
+that touches the frame, returning the preview while the pointer is down and
+pushing exactly one [`Action::CommitMarkup`] on release.
+
+What differs is what it returns: a **polyline** rather than a band, already
+[`simplify`]-ed, because the simplified trail is what the release will author
+and rule 4 says the affordance has to describe that rather than the raw input.
+
+# Why `from` is appended and not merely used as an anchor
+
+[`crate::canvas::gesture::PointerFrame::press_origin`] exists because
+`drag_started` fires only once the pointer has travelled far enough for `egui`
+to call the interaction a drag — **measured at 94 page points on an A1 sheet
+at 0.21× zoom**. For a band that offset moved a corner; for a stroke it would
+remove the beginning of it. So the origin is seeded as the trail's first point,
+which is the same fix the band gets from the same field.
+
+### `fn draw_preview`
+
+The **simplified** trail, in the pen's own colour and width, which is the
+whole of rule 4's requirement here: what is drawn is the polyline that is about
+to be written into `/InkList`, point for point, rather than the raw input it
+was derived from. A preview of the raw trail would be a promise the file does
+not keep — at any zoom where the difference is visible, the mark would
+visibly *change* on release, which is the one thing a pre-commit affordance
+must not do.
+
+Round joins and caps, matching `pdfcer-core`'s `ink()` builder, which sets
+`LineCap::Round` and `LineJoin::Round` — so a corner of the preview and a
+corner of the annotation are the same corner.

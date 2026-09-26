@@ -322,3 +322,239 @@ Trims first. A field holding one space is an untouched field as far as
 anybody looking at the screen is concerned, and writing `/Reason ( )` into a
 legal document because of a stray keystroke is the kind of thing nobody ever
 finds.
+
+### `struct Standing`
+
+[`crate::protect::Standing`]'s twin, and it exists for that type's stated
+reason applied to this surface: a form that opened offering to sign a
+document the engine will refuse has told the operator a falsehood before
+they touched anything.
+
+Read **once**, when the window opens, and never re-read per frame. The
+sentence under the heading must describe the document the operator chose to
+act on; a value re-read every frame could change out from under the choices
+seeded from it.
+
+### `struct SigField`
+
+`Pass 10.13`. Everything on this type is read out of the document and
+nothing is inferred; see [`read_empty_signature_fields`] for where each
+value comes from and for the two keys the engine models and
+`pdfcer_core::forms::Field` does not.
+
+### `const rained`
+
+A boolean rather than the parsed constraints, deliberately. `/SV` is
+seven `/Ff` bits over five entry families and the engine evaluates all of
+them; re-deriving that here would be a **second** answer to a question
+with one answer, and the two would disagree the first time either
+changed. What this shell owes the operator before the press is *"the
+sender attached conditions to this box"*; what the conditions ARE is the
+engine's sentence, arriving by name if one is unmet.
+
+### `fn read_empty_signature_fields`
+
+`Pass 10.13`'s input. Signed fields are excluded — the engine refuses to
+re-sign one (`SignApplyError::FieldAlreadySigned`) and offering it would be
+an option whose only outcome is a refusal — and so is anything that is not a
+signature field, which is a different refusal
+(`SignApplyError::FieldNotSignature`) and equally not worth offering.
+
+# Two of the five values are read from the raw dictionary, and that is
+not a shortcut
+
+`pdfcer_core::forms::Field` models `/FT`, `/T`, `/V`, `/Kids` and the
+widgets' rectangles, and it models **neither `/Lock` nor `/SV`** — the engine
+reads both directly off the field dictionary inside its own signing path
+(`EditSession::reusable_sig_field`), where they are consumed rather than
+projected. So there is no projection to read them from, and this function
+asks the object graph the same question the engine asks.
+
+It asks only whether they are **present**, never what they say. Parsing
+`/SV`'s seven `/Ff` bits here would be a second implementation of a rule the
+engine enforces in full — see [`SigField::constrained`].
+
+`pages` is the flattened page vector, passed rather than re-walked, so a
+widget's `/P` can be turned into the page number an operator counts.
+
+### `fn read`
+
+`pages` is passed rather than re-derived, because `OpenDoc::pages` is
+*"the flattened page vector, resolved once at open"* and re-walking the
+tree here would be a second answer to a question the document already
+has one answer to.
+
+### `fn may_certify`
+
+Pure, so both arms are asserted headlessly. §2d: both of the engine's
+certification refusals are states of the **document**, knowable when the
+window opens, so the option is absent with a sentence rather than offered
+and then refused.
+
+The order is the engine's own guard order — `AlreadyCertified` is
+checked before `CertificationNotFirst` — so a document that is both
+gets the same sentence here that it would get from the engine. Two
+surfaces disagreeing about which of two true things to say is how an
+operator learns to distrust both.
+
+### `fn refusal`
+
+Pure, so every arm is asserted headlessly rather than by driving a
+window. See §4 of this module's header for the table and for the one
+refusal that is this shell's rather than the engine's.
+
+# Order
+
+The order is *how early the operator can act on it*, not severity.
+A pending redaction is one press away from being applied or cancelled,
+so it is named first even though encryption is the harder wall: telling
+somebody about the wall when the gate beside it is merely latched wastes
+the one sentence they will read.
+
+### `enum Refusal`
+
+A closed set with one sentence each in [`crate::text::sign`]. Every variant
+but [`Self::NotOnDisk`] mirrors a `SignApplyError` the engine would raise;
+stating them here means the operator meets the refusal **instead of** a
+form, rather than after filling one in.
+
+### `enum CertifyBar`
+
+Distinct from [`Refusal`] and it must stay distinct: every [`Refusal`]
+closes the window, and each of these closes exactly one option on a window
+that still works. Flattening them would turn *"you cannot be the author of
+this document, but you can approve it"* into *"this document cannot be
+signed"*, which is false and is the more expensive direction to be wrong in.
+
+### `struct Identity`
+
+⚠ **No `Debug`, derived or hand-written, and that is the point.** The
+engine's [`Pkcs12Signer`] has a careful hand-written one that prints the
+report and never the key, so a derive here would in fact be safe today. It
+is still absent, because the thing that protects `crate::secret::Secret` is
+that *the value cannot be formatted* — a property that survives somebody
+adding a field. A `Debug` on the container is one refactor away from
+printing whatever is put next to the signer.
+
+Use [`Self::report`] for anything a human or a trace needs.
+
+### `enum Placement`
+
+THE DEFAULT IS INVISIBLE, AND IT IS A DECISION RATHER THAN A COPY OF
+THE ENGINE'S.
+
+`SignRequest::visible`'s own documentation says invisible *"is the default
+for batch/CLI signing"*, which is an argument about batches. The argument
+here is about what would be drawn on a CAD sheet the operator is about to
+send out: **a box is applied content**, it renders exactly as the saved file
+renders, and there is nothing provisional about it. So the default draws
+nothing, the box is offered, and the copy on the control says what will be
+inside it before it is chosen.
+
+**What is inside it changed under this shell on 2026-09-06.** At the old
+pin the appearance was *"a thin frame only — no text"*, and this type's
+documentation and [`crate::text::sign::placement_note`] both said so. Engine
+`Pass 10.14` (`187fa09`, in the pin since `d6b998f`) **composes** the signer
+CN, the date, and the reason and location when given, in Helvetica, shrunk to
+fit, and refuses a rectangle too small for them by name
+(`SignApplyError::AppearanceOverflow`) before anything is staged. See §2b.
+
+⇒ The default is still invisible, and the argument for that survives the
+correction intact but is now a **different** argument: not *"the box would be
+empty and read as a defect"* but *"a signature the reader shows in its own
+panel does not need a stamp on the drawing, and a stamp is content the
+operator did not draw."* An operator who wants the box now gets a box with
+his name in it.
+
+**The third arm is not a placement at all, and that is the point.**
+[`Self::ExistingField`] names a box **somebody else already placed**; its own
+`/Rect` and page decide where the appearance goes, and the engine refuses a
+`visible` rectangle beside it by name. Modelling all three as one enum makes
+the refused combination unrepresentable rather than reachable-and-explained.
+
+⚠ **Not `Copy`**, because [`Self::ExistingField`] owns the field's name. The
+name is carried rather than an index into [`Standing::empty_fields`] for the
+reason every stale-index bug has: the vector is read once when the window
+opens and the request is built later, and an index that survives into a list
+that changed points at the wrong field silently, while a name that no longer
+exists is refused by the engine, by name.
+
+### `fn default_rect`
+
+Every number here is stated rather than tuned, because this is content
+written into the operator's file and *"about a third of the way up"* is not
+a specification anyone can check. 36 pt is a half-inch margin — the same
+inset a title block leaves and the value ISO 32000-1's own examples use;
+180 × 60 is the box Acrobat's own signature appearance defaults to at 100 %,
+which is the size an operator's eye already expects.
+
+Bottom-**right** rather than bottom-left because a CAD sheet's title block
+is bottom-right and a signature belongs beside it — and because the
+alternative, bottom-left, is where every drawing frame in this operator's
+own files puts its revision table.
+
+⚠ It is clamped to the page: on a page smaller than 252 × 132 pt the box
+would otherwise be placed partly or wholly outside the media box, which the
+engine would accept and no reader would draw. The clamp is
+[`Self`]-contained arithmetic on `media` rather than a refusal, because a
+small page is not an error and a signature on it is still wanted.
+
+### `struct Authored`
+
+Everything on this struct is the operator's own words or the operator's own
+choice. pdfcer infers nothing into a signature dictionary — the engine's
+rule-4 note says the reason: *"the signing time, name, reason, location and
+contact are the caller's words, written verbatim."*
+
+### `fn write_to`
+
+Temp file, then rename — `crate::protect::Prepared::write_to`'s
+mechanism, taken deliberately. The destination may be the file the
+operator has open, and a torn write there leaves them with neither the
+signed document nor the one they started with.
+
+# Errors
+
+[`WriteFailure`] — the file system refused.
+
+### `enum Outcome`
+
+The handler produces this and hands it back through
+[`crate::dialogs::DialogsState::sign_outcome`]. A single type with two
+variants rather than a `Result`, because the *failure* side here is already
+a finished operator-facing sentence — every producer of one has more context
+than the dialog does about which of five things went wrong — and a `Result`
+whose error is a `String` invites a caller to add its own wording on top,
+which is how one event comes to be described twice.
+
+### `fn prepare`
+
+The one place `EditSession::sign` is called. See §3 for why it is the open
+session and not a throwaway, and why nothing is undone afterwards.
+
+# The reservation is the engine's default and is not offered as a control
+
+`SignRequest::reserve` defaults to 12 KiB, which the engine's own note says
+*"fits a SHA-256/RSA-4096 CAdES signature with a three-certificate chain
+about three times over"*. It is not a question an operator can answer — the
+number is a property of their certificate chain, which pdfcer has just read
+and they have not — so asking would be handing them arithmetic. If it is
+ever too small the engine refuses by name with **both** numbers, and
+[`crate::text::sign::reservation_too_small`] states that the reservation is
+fixed, so the refusal is a fact rather than an instruction the operator
+cannot follow.
+
+⚠ The alternative considered and rejected was **retrying automatically at a
+larger reserve**. It would work, and it would mean the size of the hole in
+the operator's file depended on a retry they were never told about. R8b
+Rule 4: what is written is disclosed.
+
+# Errors
+
+[`PrepareFailure`] — the document is out of scope, or the engine refused.
+
+### `fn signer_ref`
+
+Private-in-spirit: it is `pub(crate)` rather than `pub` so that the key
+operation is reachable from [`prepare`] and from nowhere a future module
+might casually put it.

@@ -58,3 +58,9 @@ An untitled bookmark is **legal** - `OutlineItem::title`'s own doc says
 a file may carry one - so `bookmark_add_under` must never be handed an
 empty string. That is [`display_title`]'s job, and this pins the pairing
 at the call site's own spelling.
+
+### `fn show`
+
+`items` is the outline as it currently stands, used for two things and
+neither of them a count: naming the chosen parent, and reading whether it is
+**collapsed**.

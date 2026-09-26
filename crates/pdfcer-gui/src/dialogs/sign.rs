@@ -38,11 +38,6 @@ pub(super) const REGION_IDENTITY: &str = "sign-identity"; // ui-text-exempt: tra
 pub(super) const REGION_CHOOSE_CERTIFICATE: &str = "sign-choose-certificate"; // ui-text-exempt: trace region name, never displayed
 
 /// The passphrase field.
-///
-/// Its RECTANGLE, which carries nothing about what is typed into it — a
-/// region name is a position, and `crate::diag::ui_rect` publishes a rect and a
-/// name and never a value. A driven check needs somewhere to click before it
-/// types, and this is it.
 pub(super) const REGION_PASSPHRASE: &str = "sign-passphrase"; // ui-text-exempt: trace region name, never displayed
 
 /// The control that opens the chosen certificate.
@@ -57,45 +52,16 @@ pub(super) const REGION_CONFIRM: &str = "sign-confirm"; // ui-text-exempt: trace
 pub(super) const REGION_EXISTING: &str = "sign-existing-field"; // ui-text-exempt: trace region name, never displayed
 
 /// **The scrolling body's own viewport**, declared every frame it is drawn.
-///
-/// NOT [`REGION_DIALOG`], and the difference cost a driven run. The window
-/// region is `ui.max_rect()` for the whole host and includes the separator and
-/// the button row **below** the scroll area. A control scrolled to just above
-/// that footer is inside the window rectangle and **clipped out of the scroll
-/// area**, so egui reports its position and refuses the click — which reads to
-/// a harness as *"the control is there and pressing it does nothing"*.
-///
-/// ⇒ A check that wants to press something in this form must compare against
-/// THIS rectangle. It is `ui.clip_rect()` taken inside the scroll closure,
-/// which is the viewport egui itself interacts within.
 pub(super) const REGION_BODY: &str = "sign-body"; // ui-text-exempt: trace region name, never displayed
 
 /// The radio that chooses *draw a signature box on the page*.
-///
-/// Declared unconditionally, unlike its two neighbours: it is always an
-/// option, so its presence carries no evidence and its only job is to give a
-/// driven check somewhere to press. [`REGION_EXISTING`] and
-/// [`REGION_BOX_WHERE`] are the ones whose presence is a measurement.
 pub(super) const REGION_PLACE_BOX: &str = "sign-place-box"; // ui-text-exempt: trace region name, never displayed
 
 /// The line stating where a box this shell places will go, declared **only
 /// while that is the choice**.
-///
-/// Its whole job is to make *retirement* measurable on a ONE-PAGE document.
-/// [`REGION_PAGE`] is the obvious probe and it is not drawn on a single-page
-/// document at all — a chooser with one possible value is a label pretending to
-/// be a choice — so a check aimed at it could not tell *"the page control
-/// retired because a pre-placed box was chosen"* from *"there was never a page
-/// control"*. This region is declared for `Place::Box` and for nothing else, on
-/// a document of any length, so its presence and its absence are both evidence.
 pub(super) const REGION_BOX_WHERE: &str = "sign-box-where"; // ui-text-exempt: trace region name, never displayed
 
 /// The page chooser, declared only while a box is being placed by the operator.
-///
-/// Named so that its **absence** is measurable. `--visible`/`--page` are
-/// refused by the engine alongside a field name, so this control retires when a
-/// pre-placed box is chosen; a driven check can only prove *"retired"* rather
-/// than *"greyed"* if the region has a name to be missing under.
 pub(super) const REGION_PAGE: &str = "sign-page"; // ui-text-exempt: trace region name, never displayed
 
 /// The radio that makes this a **certifying** signature (`Pass 10.12`),
@@ -103,12 +69,6 @@ pub(super) const REGION_PAGE: &str = "sign-page"; // ui-text-exempt: trace regio
 pub(super) const REGION_CERTIFY: &str = "sign-certify"; // ui-text-exempt: trace region name, never displayed
 
 /// One row in the list of pre-placed signature fields, by index.
-///
-/// A function rather than a constant because there is one per field and a
-/// check has to aim at a particular one. The index is the position in
-/// [`crate::sign::Standing::empty_fields`], which is the order the engine's own
-/// form projection returns — stable for a given document, which is all a check
-/// needs.
 pub(super) fn field_region(index: usize) -> String {
     // ui-text-exempt: trace region name, never displayed.
     format!("sign-field-{index}")
@@ -162,12 +122,6 @@ enum Phase {
 }
 
 /// **The placement radio group's value.**
-///
-/// A three-way choice on screen, matching [`Placement`]'s three arms — but a
-/// `Copy` enum of its own rather than `Placement` itself, because
-/// `egui::Ui::radio_value` compares and assigns its value and `Placement`'s
-/// third arm owns a `String`. The two are converted once, at
-/// [`SignDialog::commit`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum Place {
     /// Nothing is drawn on any page. The default — [`Placement`]'s header
@@ -180,10 +134,6 @@ pub(super) enum Place {
 }
 
 /// **Where the signed document goes.**
-///
-/// [`crate::dialogs::protect::Destination`]'s twin; §6 of [`crate::sign`]'s
-/// header is the argument, including why replacing is more defensible here
-/// than for a redaction and still not the default.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum Destination {
     /// A new file, chosen in the save picker. The default.
@@ -432,10 +382,6 @@ impl SignDialog {
     }
 
     /// **Take the outcome the handler produced.**
-    ///
-    /// Called by [`super::DialogsState::sign_outcome`]. A method rather than a
-    /// public field so the only transition out of [`Phase::Signing`] is this
-    /// one.
     pub(super) fn outcome(&mut self, outcome: crate::sign::Outcome) {
         self.phase = match outcome {
             crate::sign::Outcome::Written {
@@ -784,10 +730,6 @@ pub(super) fn file_name_of(path: &Path) -> String {
 }
 
 /// Build the window for `doc`, or nothing when there is no document.
-///
-/// The already-open and no-document guards live in
-/// [`super::DialogsState::open_sign`], so a chord and a ribbon click are gated
-/// by one expression.
 pub(super) fn open_for(status: &crate::app::state::Status) -> Option<SignDialog> {
     let crate::app::state::Status::Open(doc) = status else {
         return None;

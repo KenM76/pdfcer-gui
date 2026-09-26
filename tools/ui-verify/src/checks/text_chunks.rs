@@ -29,10 +29,6 @@ pub(crate) const PAGE_REGION: &str = "page"; // ui-text-exempt: a trace region n
 pub(crate) const DRAWN_EVENT: &str = "canvas-chunks"; // ui-text-exempt: a trace event name, never displayed
 
 /// `canvas-chunks-declined reason=…` — written when none were.
-///
-/// A distinct first token, deliberately: `tools/gates/check-trace-names.py`
-/// compares first tokens, and a shared one would make the two events
-/// indistinguishable to `Trace::events`.
 pub(crate) const DECLINED_EVENT: &str = "canvas-chunks-declined"; // ui-text-exempt: a trace event name, never displayed
 
 /// `text-chunks enabled=…` — written by `canvas::chunks::set_enabled`, whose
@@ -78,10 +74,6 @@ impl std::fmt::Display for Verdict {
 }
 
 /// The newest of the two lines after `after`, or `None` if neither was written.
-///
-/// Both are read and the later one wins, rather than one being preferred:
-/// they are two spellings of one state, and asking only for the one a step
-/// expects would turn *the opposite happened* into *nothing happened*.
 pub(crate) fn verdict(trace: &Trace, after: usize) -> Option<Verdict> {
     let drawn = trace.last_after(DRAWN_EVENT, after);
     let declined = trace.last_after(DECLINED_EVENT, after);
@@ -139,11 +131,6 @@ pub(crate) fn toggle_invokes(session: &Session) -> Result<usize> {
 
 /// Press the ribbon toggle once, and answer whether two of the three
 /// subsystems agree it was pressed. `Ok(Some(_))` is a failure message.
-///
-/// `want` is the state the press must produce, asserted against the
-/// application's own `text-chunks enabled=` line — the middle link of the
-/// chain. The painter's answer is the caller's to check, because only the
-/// caller knows what should then be on the page.
 pub(crate) fn press_the_toggle(
     session: &Session,
     driver: &Driver,

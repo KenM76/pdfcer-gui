@@ -120,3 +120,67 @@ every anonymous row in the document.
 Stated as a test because the obvious implementation of `is_narrowing`
 is *"the filter is not `Default`"*, which would put a "some comments
 are hidden" notice above a list that is hiding nothing.
+
+### `enum Sort`
+
+An enum rather than a pair of booleans for the reason
+`crate::canvas::selection::annot::AnnotKind` is one: exactly one ordering
+is in force, and a type that could say *by author* and *by type* at once is
+a type whose illegal states are prevented by discipline instead of by
+construction.
+
+### `struct Filter`
+
+`Default` is **everything**, which is the state the panel has always been
+in — so a fresh profile behaves exactly as this panel did before the filter
+existed, and nothing is hidden from an operator who never touches it.
+
+### `fn is_narrowing`
+
+The predicate the disclosure hangs off — see the module header. Note
+that [`Self::sort`] is **not** part of it: reordering a list omits
+nothing, and a "you have sorted this" notice would be noise attached to
+a change the operator can see.
+[`Self::status`] counts, even though [`Self::keeps`] cannot evaluate
+it — see that field. This predicate answers *"is the operator being
+shown less than the document holds"*, and where the answer is computed
+has no bearing on it.
+
+### `fn keeps`
+
+Split out from [`apply`] so the rule can be asserted against a single
+row without building a list — and so the three clauses are visible
+together rather than spread through an iterator chain.
+
+⚠ **It does not evaluate [`Self::status`]**, and cannot — a review
+status is on other annotations, not on this row. See that field;
+[`super::reviewstate::narrow`] is the second half of the pipeline.
+
+### `fn apply`
+
+Takes and returns owned rows rather than borrowing, because the caller
+draws from the result and a borrow would keep the whole `Listing` alive
+across the draw for no benefit — the rows are a handful of `String`s each
+and a document with enough comments for that to matter has a layout cost
+two orders of magnitude larger (see `crate::panels::comments`' cost note).
+
+**Stable**, so an ordering by author or by kind preserves document order
+within each group. See the module header.
+
+### `fn authors`
+
+# Sorted and de-duplicated, and blank names dropped
+
+A chooser is a list of *people*, so it is alphabetical rather than in
+document order — the operator is looking up a name, not walking the sheet.
+A `/T` of `"  "` is a byline nobody wrote (the commonest way for one to
+exist is a producer writing an empty string) and offering it would put a
+blank row in the menu that filters to comments credited to a space. The
+same trimming rule `crate::panels::comments::keeps_author_name` applies,
+which is what keeps *"has an author"* meaning one thing across the surface.
+
+### `fn subtypes`
+
+The **file's own spelling**, never a friendly relabelling: `Square` is the
+word every other surface in this shell uses for that annotation, and a
+chooser offering "Rectangle" would be a fourth name for one thing.

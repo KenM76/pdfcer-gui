@@ -10,12 +10,6 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/app/prefs/wheel.md`.
 
 /// **What a plain wheel does under a one-page-at-a-time display mode.**
-///
-/// A two-value enum rather than a `bool` for the reason
-/// [`super::OpeningFit`] is one: the file token is then a *word* the operator
-/// can read and correct, the settings window can give each answer its own
-/// sentence, and a third answer (flip only once the page's edge is reached,
-/// say) is an added variant rather than a changed type.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum WheelPaging {
     /// The wheel scrolls within the current page. **Today's behaviour, and
@@ -57,11 +51,6 @@ impl WheelPaging {
     }
 
     /// Whether the wheel should turn pages rather than scroll.
-    ///
-    /// The single predicate the canvas asks. It exists so that the canvas
-    /// never matches on this enum: a second `match` would be a second place to
-    /// forget a variant, and the canvas's question is genuinely a yes/no even
-    /// though the setting is not.
     #[must_use]
     pub fn flips(self) -> bool {
         matches!(self, Self::FlipPages)

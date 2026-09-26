@@ -25,6 +25,8 @@
 //! them *Item* and *Export Value*; "export value" is a word for a thing the
 //! operator has never exported, and "item" does not say it is the visible half
 //! of a pair.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/text/panels/choiceopts.md`.
 
 /// The section heading.
 #[must_use]
@@ -51,10 +53,6 @@ pub const fn column_sent() -> &'static str {
 }
 
 /// See [`column_sent`].
-///
-/// It says the two are **usually the same** because that is the state the
-/// operator is looking at, and an editor showing two identical columns with no
-/// explanation reads as a mistake rather than as a capability.
 #[must_use]
 pub const fn column_sent_hover() -> &'static str {
     "What this answer is worth when the form is submitted or exported. Usually the same as \
@@ -62,14 +60,6 @@ pub const fn column_sent_hover() -> &'static str {
 }
 
 /// The move-up button.
-///
-/// `\u{23f6}`, not `\u{25b2}` BLACK UP-POINTING
-/// TRIANGLE, and the reason is
-/// [`super::bookmarks::bookmark_collapsed_glyph`]'s: U+25B2 is in
-/// `icons::glyphs`'s genuinely-absent row, so it would draw as a
-/// substitution box in front of the operator. The U+23F4-U+23F7 block is
-/// supplied by `emoji-icon-font`, and taking both halves of the pair from
-/// one face is what stops a missing glyph reading as a direction.
 #[must_use]
 pub const fn row_up() -> &'static str {
     "\u{23f6}"
@@ -95,22 +85,12 @@ pub const fn row_down_hover() -> &'static str {
 }
 
 /// The remove button.
-///
-/// `\u{00d7}` MULTIPLICATION SIGN, for
-/// [`crate::text::find::close`]'s reason rather than a new one:
-/// `\u{2715}` MULTIPLICATION X is in `icons::glyphs`'s absent
-/// row, and U+00D7 is supplied by `Ubuntu-Light`.
 #[must_use]
 pub const fn row_remove() -> &'static str {
     "\u{00d7}"
 }
 
 /// See [`row_remove`].
-///
-/// It says what removing an option does to an answer already given, because
-/// that is the consequence the button's appearance cannot carry and pdfcer
-/// deliberately does not repair: re-pointing a selection would be inventing an
-/// answer the operator never gave.
 #[must_use]
 pub const fn row_remove_hover() -> &'static str {
     "Take this option off the list. If the field is already set to it, the field keeps that \
@@ -136,22 +116,12 @@ pub const fn add_button_hover() -> &'static str {
 }
 
 /// What the section says in place of an empty table.
-///
-/// Not *"No options."* — the fact worth stating is the **consequence**, which
-/// is that the field cannot be filled in at all. `EditSession` allows a
-/// zero-option choice field and discloses it, for the same reason.
 #[must_use]
 pub const fn no_options_yet() -> &'static str {
     "No options yet — a drop-down with an empty list cannot be filled in."
 }
 
 /// `/Ff` bit 20.
-///
-/// **"Keep sorted", not "Sorted"**, because the control does both halves: it
-/// puts the list in order now and keeps a new option in order as it arrives.
-/// The flag on its own sorts nothing — Table 230 makes it *"intended for use by
-/// writers, not by readers"* — so a label naming only the flag would describe a
-/// checkbox that appears to do nothing.
 #[must_use]
 pub const fn flag_sort() -> &'static str {
     "Keep sorted"
@@ -168,11 +138,6 @@ pub const fn flag_sort_hover() -> &'static str {
 }
 
 /// Why the move-up button is greyed on the first option.
-///
-/// R9 wants every greyed control explained, and this one is
-/// self-explanatory only to someone who has already noticed which row
-/// they are on. It names the state rather than the rule, because the
-/// state is the whole reason.
 #[must_use]
 pub const fn already_first_hover() -> &'static str {
     "This is already the first option."
@@ -226,11 +191,6 @@ pub const fn flag_editable_hover() -> &'static str {
 }
 
 /// Why [`flag_editable`] is greyed on a list box.
-///
-/// Table 230 makes bit 19 *"shall be used only if"* bit 18 is set, so the
-/// engine refuses the press by name. Greyed rather than absent because this is
-/// R9's **temporary** unavailability — one checkbox above makes it available —
-/// and the hover names that checkbox.
 #[must_use]
 pub const fn flag_editable_needs_combo_hover() -> &'static str {
     "Turn on Drop-down first. The PDF standard only allows typing in a drop-down, not in a \
@@ -239,10 +199,6 @@ pub const fn flag_editable_needs_combo_hover() -> &'static str {
 
 /// The hover when the FILE already breaks Table 230 — typing allowed on
 /// something that is not a drop-down.
-///
-/// The control stays live in this state, which is the whole point: clearing the
-/// flag is the only way to make the field conform, and greying it would leave
-/// the operator looking at a defect they cannot fix.
 #[must_use]
 pub const fn flag_editable_without_combo_hover() -> &'static str {
     "This file allows typing on a field that is not a drop-down, which the PDF standard does \
@@ -250,21 +206,12 @@ pub const fn flag_editable_without_combo_hover() -> &'static str {
 }
 
 /// `/Ff` bit 23, written as the positive the operator expects.
-///
-/// The flag is `DoNotSpellCheck`, so the checkbox shows its **inverse**. Worth
-/// the inversion: *"Check spelling"* is what Acrobat's field properties says and
-/// what every other application says, and a checkbox labelled "Do not check
-/// spelling" is read wrongly by roughly half of everybody.
 #[must_use]
 pub const fn flag_spell_check() -> &'static str {
     "Check spelling"
 }
 
 /// See [`flag_spell_check`].
-///
-/// It says **pdfcer does not spell-check**, because the setting otherwise reads
-/// as a promise this program makes. It is a note in the file for whichever
-/// reader fills the form in.
 #[must_use]
 pub const fn flag_spell_check_hover() -> &'static str {
     "Records in the file that what is typed here should be spell-checked. pdfcer does not \
@@ -285,14 +232,6 @@ pub const fn flag_commit_now_hover() -> &'static str {
 }
 
 /// The shell's worded refusal: two options cannot send the same value.
-///
-/// # This sentence exists because the engine's refusal names nothing
-///
-/// Both `add_choice_field` and `edit_field` refuse a repeated export, so the
-/// document is safe either way. What the engine's refusal cannot do is reach
-/// the operator as anything but the funnel's un-categorised line — *"That
-/// change was refused"* — and a person looking at a thirty-row drop-down needs
-/// the value, not the verdict. The panel asks first and says which one.
 #[must_use]
 pub fn note_duplicate_sent(value: &str) -> String {
     format!(

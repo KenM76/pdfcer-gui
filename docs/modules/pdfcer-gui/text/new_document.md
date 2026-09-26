@@ -133,3 +133,115 @@ should read `"ANSI D"`. So the property asserted is that **no name
 contains a hyphen** — which holds for every size today, fails for any
 multi-word size the engine adds, and says something true rather than
 something merely checkable.
+
+### `fn intro`
+
+It states what the command produces — **one blank page** — because the
+name "New from template" (`RIBBON_IA.md` §5.1) leads a reader to expect a
+template gallery, and this dialog offers page sizes. Saying what it does
+in its first line is the cheapest available correction for a label this
+project may not change on its own authority.
+
+### `fn size_custom`
+
+Listed **last**, after the sixteen standard sizes, rather than first. A
+custom size is the rarer case and putting it at the top would make the
+common case scroll.
+
+### `fn size_name`
+
+# Why this is here and not in the engine
+
+`pdfcer_core::paper::PaperSize::id` is `"a1"`, `"ansi-d"`, `"letter"` —
+ASCII, lowercase, hyphenated, and explicitly *"what a CLI flag value and a
+settings file spell"*. It is an identifier, not a label, and the engine is
+right not to carry operator copy. This crate's `text` module is where a
+presentable name lives, for this and for everything else.
+
+# The fallback, and why it is not a compile error
+
+`PaperSize` is `#[non_exhaustive]` and the engine says the table will grow
+— ARCH sizes, JIS B and the ISO B/C envelope series are all named as
+plausible additions. A `match` with no wildcard would fail to compile the
+day one lands, which sounds like the right failure until you notice what it
+would be blocking: a size this shell could otherwise offer immediately and
+correctly, under its identifier.
+
+So an unrecognised size renders its `id()` **uppercased** and is listed.
+That is a slightly ugly label for a real size, which beats a missing size
+or a broken build. `tests` pins that every size in `PaperSize::ALL` today
+has a proper name, so the fallback cannot quietly become the normal path.
+
+### `fn orientation_landscape`
+
+**The normal orientation for a drawing sheet** — a CAD sheet called "A1"
+is A1 landscape in every practical case, which is `pdfcer_core::paper`'s own
+observation. It is not made the default here: `file.new`'s A4 portrait is
+the shipped default and this dialog opens on it, so the operator's first
+sight of the window matches the command beside it rather than second-
+guessing them.
+
+### `fn sheet_summary`
+
+**Both units, since 2026-08-20**, and points after them. The list above
+shows each sheet in the unit it is *defined* in, which makes it findable;
+this line is the one place an operator checks what they are about to get, so
+it says the size in millimetres AND in inches whatever was picked. An
+imperial shop choosing A3 and a metric one choosing ANSI B are both
+answered, and neither has to convert.
+
+### `fn custom_refused`
+
+# The refusal is the shell's, and it is made BEFORE the engine's
+
+
+So the dialog checks first and simply does not offer Create. The engine's
+guard stays where it is — a shell-side check that replaced it would be the
+second implementation this project keeps warning about — and this sentence
+exists so the missing button is not a mystery.
+
+# Why the ceiling is stated rather than clamped
+
+A sheet larger than the ceiling is refused, not silently reduced. A
+silently shortened sheet is a wrong document that looks like a pdfcer
+scaling bug — the same reasoning `pdfcer-print` gives for refusing rather
+than clamping a custom `DEVMODE` sheet, arrived at independently on the
+other side of the application.
+
+# Where the ceiling comes from, and the caveat on it
+
+**14,400 default user space units = 200 inches = 5,080 mm**, from
+ISO 32000-1 Annex C.2: *"The minimum page size should be 3 by 3 units in
+default user space; the maximum should be 14,400 by 14,400 units."*
+
+That is a **`should`, not a `shall`**, and the caveat matters enough to
+write down: ISO 32000-2:2020 retitles Annex C *"Advice on maximising
+portability"*, makes it informative, and **drops every numeric limit in
+it** — the page-size range included. So this is 1.7-era portability advice
+with no 2.0 successor, and pdfcer is choosing to honour it.
+
+
+Sourced from `D:\Dev\Rag-Specialized\PDF_Spec\iso32000\iso32000__annex__c.md`,
+which carries both the 1.7 text and the measured 2.0 delta. It is written
+down here because a number in a validity check with no provenance is
+indistinguishable from a number somebody guessed.
+
+### `fn create`
+
+Its own label rather than "OK", on the same rule the print dialog's commit
+button follows: a button that *does the thing* should say the thing. "OK"
+on a dialog with a size list reads as "keep this setting", and this one
+makes a document and replaces what is open.
+
+### `fn create_tooltip`
+
+**It replaces what is open**, which is `file.new`'s behaviour and is stated
+in that command's tooltip too. Repeated here rather than referenced,
+because an operator who reached this window from the ribbon has not
+necessarily read the other control's tooltip — and the consequence is the
+one thing about this dialog that is not undoable.
+
+A document with unsaved edits is not replaced: the action is declined at
+`crate::app::actions::apply`, exactly as `file.new` is. That is not stated
+here, because a tooltip is not the place to describe a guard the operator
+will only meet if it saves them.

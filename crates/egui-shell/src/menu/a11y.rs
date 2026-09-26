@@ -99,10 +99,6 @@ use crate::commands::Command;
 use crate::ribbon::a11y::accessible_name;
 
 /// The name an assistive technology should announce for a menu row.
-///
-/// The visible label (with the ribbon's fallback chain behind it) plus the
-/// chord, if there is one. See the module header for why the chord is here
-/// rather than in a field of its own.
 #[must_use]
 pub fn menu_item_name(command: &Command, shortcut: Option<&str>) -> String {
     // `shows_label = true`: a menu row always draws its text, so the label
@@ -116,13 +112,6 @@ pub fn menu_item_name(command: &Command, shortcut: Option<&str>) -> String {
 }
 
 /// Publish a menu row's accessibility information.
-///
-/// Called for **every** row, not only ones with a chord: `widget_info` is
-/// also what feeds `egui`'s own output events, and a row that skipped it
-/// would fall back to `egui`'s default — the button's atoms flattened into
-/// text, with no enabled state.
-///
-/// [`WidgetType::Button`] rather than a menu-item role; see ceiling 1.
 pub(crate) fn describe_item(
     response: &Response,
     command: &Command,

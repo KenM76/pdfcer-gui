@@ -62,3 +62,44 @@ The state that looks like success from the inside — the key exists and
 names pdfcer — and opens a build the operator thought they had replaced.
 A line that folded it into *"pdfcer is in the list"* would be true and
 useless.
+
+### `const REGION_STATE`
+
+Named for [`super::acrobat::REGION_RESOLVED`]'s reason exactly: the whole
+value of this line is that it is **on screen and legible**, and a driven
+check that read the trace instead would learn what pdfcer found and nothing
+about whether the operator can see it.
+
+### `struct State`
+
+**The `Option` is the whole design.** Every field in [`Status`] costs a
+`reg.exe` process to obtain, and a Settings pane redraws on **every frame**
+— so probing from [`group`] unconditionally would spawn two processes sixty
+times a second. `super::acrobat`'s header states the identical rule for the
+identical reason. Filling it lazily on the first paint gives exactly one
+probe per opening of the window, and pressing the button clears it so the
+next frame reads the machine again.
+
+⇒ It is deliberately **not** filled in [`super::Draft::focused_on`]. Draft
+construction happens in unit tests that never paint, and a constructor that
+spawned subprocesses would make every one of them slower and one of them
+machine-dependent.
+
+### `fn forget`
+
+Called after the button acts, because the act changes two of the three
+things the line reports. It does **not** clear [`Self::note`]: the note
+says what pdfcer just did, the status says what Windows now thinks, and
+conflating them is how a surface starts claiming an outcome it caused
+only half of.
+
+### `fn state_line`
+
+Two facts, in that order, because they answer two different questions and an
+operator arrives with one of them: *"why did Edge open?"* is answered by the
+first, and *"did the button work?"* by the second.
+
+The second is suppressed when pdfcer already **is** the default, because
+then it says nothing the first has not: being the chosen program implies
+being in the list, and a second sentence restating it would train the reader
+to skip the pair.

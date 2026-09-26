@@ -167,3 +167,9 @@ Line 4 is clear of the band by 5.2 pt below and 5.6 pt above.
 The ghost is drawn on the frames a move is in flight, so the gesture has to
 spend frames in flight. A press-and-release with no dwell relies on the
 walk's intermediate steps landing on repaints, which is scheduler luck.
+
+### `type Step`
+
+The outer `Result` is this harness's: its `Err` is a SKIP, *the check could
+not run*. The inner one separates *the assertion did not hold* from *here is
+the number it read*.

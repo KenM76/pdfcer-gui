@@ -173,3 +173,132 @@ to the classifiers that already exist. Every claim in this header is
 therefore assertable in a unit test rather than hoped for in a running
 window — which, per R1, is the *floor*, not the ceiling: the popup that
 drives this has to be driven before any of it counts as working.
+
+## Item notes
+
+### `enum PickClass`
+
+The list is closed and every variant is something the hit test can already
+tell apart — see this module's header for the derivation table and for why
+two of these are selection *rungs* rather than object kinds.
+
+# Ordering
+
+The declaration order is the **display order** of the popup, grouped the
+way a person reads a drawing rather than the way the decomposer emits
+objects: the marks on the page first (text, lines, pictures), then the
+finer rungs inside them, then the things pdfcer or another program added on
+top (markup, dimensions, fields, links), then the character sweep, which is
+a different gesture wearing the same pointer.
+
+Persisting relies on [`PickClass::token`], never on this order, so the
+order may be changed for display reasons without invalidating a saved
+filter.
+
+### `fn token`
+
+Not a label — see `crate::text::pick` for what the operator reads.
+Persisting by name rather than by bit position is what lets the display
+order above be rearranged, and lets a new class be inserted anywhere,
+without silently re-interpreting a saved file as a different set of
+choices.
+
+### `fn on_by_default`
+
+**This function is the R6 guarantee.** It must answer `true` for every
+class the shell can pick today and `false` for every class it cannot,
+so that a fresh install behaves exactly as the shell behaved before the
+filter existed. Changing an answer here is changing default behaviour,
+and is a decision rather than a tidy-up.
+
+### `fn of_object`
+
+Takes an [`ObjectKind`] rather than a `VectorObject`, so that
+`panels::objects::summary::object_kind` stays **the** classifier. That
+module's header is explicit that a second kind classifier is the exact
+divergence it exists to prevent, and this is where a second one would
+otherwise have been written.
+
+### `fn of_annot`
+
+Only covers the two kinds [`AnnotKind`] distinguishes. `/Widget` and
+`/Link` never reach an `AnnotKind` — `annot::selectable_on` drops them
+before one is built — which is why [`PickClass::FormField`] and
+[`PickClass::Link`] have no arm here and are consulted at their own call
+sites instead.
+
+### `struct PickFilter`
+
+`Copy`, eleven booleans wide, cheap enough to pass by value into every hit
+test on every frame — which is the point. A filter that had to be borrowed
+or looked up would grow call sites that skip it, and a hit test that skips
+the filter is precisely the *"visible control, silently inert"* failure
+convention C7 names.
+
+# The array, rather than a bitmask
+
+A `u16` of flags would be smaller and would persist as one number. It would
+also make every read a shift-and-mask whose correctness depends on a
+constant matching a variant, and it would tempt a future reader into
+serialising the raw integer — which is the one representation that cannot
+survive inserting a class in the middle. Eleven `bool`s cost eleven bytes
+and are read by name.
+
+### `fn all`
+
+Deliberately **not** the same as [`PickFilter::default`], and the
+difference is the honest one: `default()` describes what the shell can
+do, `all()` describes what the popup can express. `Link` is on here and
+off there. Switching it on still picks nothing until link picking
+exists, which is a truth about the shell rather than about this type.
+
+### `fn none`
+
+A legitimate state, not a degenerate one: it is how an operator says
+*"I am panning and reading, do not let me grab anything by accident"*,
+which on a dense drawing is a real request. The popup must therefore
+**not** guard against it — but it must make it obvious, because a
+canvas that has stopped responding to clicks is otherwise
+indistinguishable from a broken one.
+
+### `fn is_none`
+
+Exposed so the status bar can *say so*. An operator who has switched
+everything off and forgotten will otherwise report the canvas as
+broken, and they will be right to.
+
+### `fn to_tokens`
+
+# Why the enabled set and not a full assignment
+
+A `text=1 path=0 …` form would round-trip more obviously and would also
+force a decision this format gets to avoid: what a *missing* key means
+after a new class is added. Recording only what is on makes the answer
+structural — a class the file does not mention was not on when the file
+was written — and see [`PickFilter::from_tokens`] for why that is still
+not quite the whole answer.
+
+### `fn from_tokens`
+
+# The three decisions in this function, none of them obvious
+
+**1. An unrecognised token is skipped, not rejected.** A file written by
+a newer build naming a class this one has never heard of is not corrupt;
+it is from the future. Rejecting the file would discard ten good choices
+because of one unknown eleventh, and would do it silently at startup,
+which is the worst possible moment.
+
+**2. A class the file does not mention is OFF, not defaulted.** This is
+the opposite of decision 1 and it is deliberate. Once a file exists it is
+a complete statement of what the operator switched on; falling back to
+the default for an unmentioned class would resurrect classes the operator
+had explicitly turned off, every restart, which is the exact *"a
+rearrangeable thing that forgets is worse than a fixed one"* failure
+`crate::app::persistence` was written to avoid.
+
+**3. Empty input yields [`PickFilter::none`], not
+[`PickFilter::default`].** It follows from decision 2 and is called out
+because it looks like a bug and is not: an operator who switched every
+class off and quit gets their canvas back exactly as they left it. **The
+caller decides what "no file at all" means** — that is a different
+condition from "an empty file", and only the caller can tell them apart.

@@ -177,3 +177,83 @@ command registry rather than against a comment. A group whose ribbon
 home was renamed or deleted would fail here — loudly, in a unit test —
 rather than quietly becoming unreachable at a UI scale nobody on this
 project runs at.
+
+### `enum Group`
+
+A plain enum rather than the region-name strings, so a caller cannot ask
+about a group that does not exist and the exhaustiveness of [`SHED_ORDER`] is
+the compiler's problem rather than a reviewer's.
+
+### `fn region`
+
+Deliberately the **published** name rather than a private key: the width
+is remembered from the rect the harness reads, so one name for both
+makes it impossible for the two to describe different widgets.
+
+### `const SHED_ORDER`
+
+Ordered by *what dropping it buys against what it costs* — the fit group is
+298 points, nearly half the bar at the width that found the defect, and its
+four buttons are all View ▸ Zoom commands; Find is 39 points and is a
+keystroke away. Everything not in this list is undroppable, and the module
+header's table says why for each.
+
+The second field is a command id and it is **checked against the real
+registry** by [`tests::nothing_sheddable_loses_its_last_route`], which is
+what stopped the first version of this list shedding a control that has no
+other home anywhere in the program.
+
+### `struct Widths`
+
+A `BTreeMap` over five keys rather than a struct of five `f32`s: the map is
+**partial**, and that is the point. A group that has never been drawn — no
+document open, or the first frame after start-up — has no entry, and
+[`affordable`] treats an unknown width as *"show it and find out"*, which is
+exactly right for a bar that has not yet been measured.
+
+### `fn record`
+
+Non-finite and negative widths are dropped rather than stored: egui can
+report a degenerate rect for a widget laid out in a zero-width parent,
+and a `NaN` in here would poison every comparison in [`affordable`] into
+answering `false` — which would shed the whole cluster permanently, from
+one bad frame.
+
+### `fn affordable`
+
+Returns them in [`Group::ORDER`] — the order `status::bar` must add them —
+with the undroppable ones always present and the droppable ones removed, in
+[`SHED_ORDER`], until the rest fits.
+
+# It can return more than fits, and that is deliberate
+
+If every droppable group is gone and the remainder still overflows, the
+remainder is returned anyway. There is nothing left this function is allowed
+to drop — each of the three is the operator's only route to what it says —
+and a window that narrow is past what any shedding rule can rescue. A bar
+that overflows by a little is a better outcome than one that has thrown away
+the page number, and the alternative is to start making a capability
+unreachable, which is the defect this module exists to prevent.
+
+### `fn still_reachable_at`
+
+The read side of [`SHED_ORDER`], used by [`trace_shed`] so a diagnostic
+naming a dropped control also names where it went. `None` for a group that
+is never shed.
+
+### `fn trace_shed`
+
+Emitted on change only, from `status::bar`, once the decision is made.
+
+# Why this is traced when nothing else about the bar's layout is
+
+Because **absence is not evidence**, and a driven check has nothing else to
+read. A shed group publishes no `ui_rect` — but neither does a group that is
+merely scrolled out of view, nor one whose widget failed to build, nor one
+the mode does not offer. Four causes, one symptom, and a harness reading
+only the region list cannot tell them apart.
+
+So the bar states its own decision. `status-shed groups=none` is the
+ordinary case and says the window is wide enough; anything else names what
+went and where an operator can still reach it, which is the fact the
+shedding rule's legitimacy rests on.

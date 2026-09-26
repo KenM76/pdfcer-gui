@@ -57,3 +57,35 @@ Each lands on a different object, or on the same object on a different
 page, and either way the record stops matching. That is the whole
 mechanism: no `forget()` to call, so no fifth route to forget to add it
 to.
+
+### `struct Depth`
+
+The third field is what makes this self-invalidating — see [`taken`].
+**No `Default`, deliberately.** A defaulted `Depth` would have to name
+some target, and every number in `TargetId`'s two index spaces is a real,
+addressable object — so the default would be a claim about `objects[0]`
+rather than an absence. `taken` already answers `None` for "nothing to
+say", which is the honest shape and the only one any caller uses.
+
+### `fn taken`
+
+# Why it validates rather than trusting a caller to forget
+
+A depth describes a *gesture*, and the selection can change by four routes
+that are not a click: an edit re-resolving it, Escape, a row click in the
+Objects panel, and a placement selecting what it just made. Attributing
+*"1 of 5 here"* to any of those describes a click that did not happen — a
+small lie, told confidently, on the surface the operator is now relying on
+to explain the program to them.
+
+The first design had a `forget()` for callers to call. That is the shape of
+a guard that is correct until somebody adds a fifth route — and this module
+exists **because** a value with no owner drifted from the thing it described.
+Repeating that mistake one file later would have been hard to defend.
+
+So the record carries what it is about, and answering compares. A selection
+this depth was not measured for gets `None` without anyone having to
+remember anything.
+
+Also `None` when fewer than two candidates were under the pointer: there is
+no stack, and *"1 of 1"* is noise on a bar that has to earn every character.

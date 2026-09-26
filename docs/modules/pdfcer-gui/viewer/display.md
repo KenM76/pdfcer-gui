@@ -79,3 +79,61 @@ The spread rule, stated as the mapping a reader can check by eye
 against a physical document. Getting the parity backwards puts page 3
 on the right of a spread it should open, which on a drawing set with a
 title sheet is visibly wrong.
+
+### `enum PageDisplay`
+
+The four positions of View ▸ Page display. Exactly one is active at a time
+— it is a radio, not four toggles — which is why this is an enum on
+[`crate::viewer::ViewState`] rather than a pair of booleans. Two booleans
+would admit a fifth state ("facing, but also single") that means nothing,
+and the ribbon would have to reconstruct which of them is "on".
+
+### `const ALL`
+
+The order is the ribbon's and it is not arbitrary: it runs from fewest
+pages on screen to most, so the group reads as a scale rather than as a
+list. Exhaustive by construction — [`tests::all_lists_every_variant`]
+fails if a variant is added and not listed, which is what makes the
+round-trip and command-id tests below complete rather than merely
+passing.
+
+### `fn is_continuous`
+
+The single predicate the rest of the build asks. It is what decides
+whether the strip holds every page or only the current row, whether the
+current page is derived from the scroll offset or set by navigation,
+and whether more than one page can need a raster at once.
+
+### `fn id`
+
+Lowercase, hyphenated, and **never** the enum's `Debug` spelling: a
+`Debug` impl is a developer convenience that a `derive` may change,
+and a persistence format that changed with it would silently reset
+every operator's remembered choice. See
+[`crate::viewer::remembered`] for the file these ids appear in.
+
+### `fn from_id`
+
+`None` rather than a default, deliberately: the caller is reading a
+file that may have been written by a newer build or edited by hand, and
+*"this line names a mode I do not have"* is a different fact from
+*"this document has no remembered mode"*. The store treats the first as
+a line to drop and the second as a document to give the mode default
+to; collapsing them would make an unrecognised entry look like a
+deliberate choice of `Single`.
+
+### `fn default_for_mode`
+
+**The one place `MODES_AND_PANELS.md`'s per-mode rule is written
+down.** Read is continuous; everything else — including an id this
+build does not know — is single page. See the module header for the
+operator decision behind it and for why an unknown id falls back to
+`Single` rather than refusing.
+
+### `fn row_count`
+
+`Single` and `Facing` still report the document's full row count even
+though they show one row at a time: the number is what a *strip* would
+hold, and the two non-scrolling modes are the same strip with one row
+selected. Keeping one definition means a page step and a scroll step
+cannot disagree about how many rows there are.

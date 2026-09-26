@@ -16,12 +16,6 @@ use crate::app::actions::textstyle::StyleChange;
 use crate::app::state::Status;
 
 /// Whether this file owns `id`.
-///
-/// `pub(crate)` rather than `pub(super)`, for the reason `dispatch::pages`
-/// gives: `shell::commands::reach`'s `guard_claiming` calls it, because the
-/// reachability checker must be able to EVALUATE every guard arm it finds — a
-/// guard it cannot evaluate is a place commands could hide from the check that
-/// exists to find them.
 #[must_use]
 pub(crate) fn handles(id: &str) -> bool {
     matches!(
@@ -82,10 +76,6 @@ pub(crate) fn handles(id: &str) -> bool {
 }
 
 /// Turn one Format command into an intent.
-///
-/// `id` is guaranteed to be one [`handles`] claims — the caller's arm is
-/// guarded on it — so the fall-through is unreachable and says so rather than
-/// silently doing nothing.
 pub(crate) fn dispatch(
     app: &mut PdfcerApp,
     ctx: &egui::Context,

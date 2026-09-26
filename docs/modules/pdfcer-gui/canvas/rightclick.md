@@ -64,3 +64,18 @@ when the pointer is a few points outside the box of the field the
 operator selected a moment ago — the same forgiveness
 [`menus::select_under_right_click`]'s rule 3 gives an object selection,
 where a mis-aimed right-click must not destroy work.
+
+### `struct Click`
+
+A struct rather than eleven arguments, and it crossed clippy's threshold
+on its way here — the same conversion `Press`, `Keys`, `Frame`, `Drag` and
+`Swept` all made in this crate. What it buys beyond satisfying a lint is
+that each field can carry its own note, which eleven positional arguments
+cannot.
+
+### `fn attach`
+
+**Nothing is executed here.** The returned tokens are *intent*; the
+application dispatches them at the one choke point a ribbon click and a
+keyboard chord also reach, which is what makes it impossible for a menu item
+and a button that share a command to do different things.

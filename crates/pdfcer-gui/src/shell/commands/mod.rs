@@ -28,31 +28,9 @@ pub use mapping::{
 use egui_shell::CommandRegistry;
 
 /// **Open a document from the recent list.**
-///
-/// A constant rather than a literal because this id is used in four places
-/// that must agree and two of them are not obvious: the registration below,
-/// the `CUSTOM_BACKED` entry that records why it is on no tab, the registry
-/// lookup in [`crate::app::PdfcerApp::ribbon_band`] that turns the operator's
-/// menu choice back into this command's token, and the dispatch arm. A typo
-/// in any of them produces silence — a menu that draws and reports nothing —
-/// rather than an error.
-///
-/// The other command ids stay literals at their (single) use sites, which is
-/// this file's existing convention; this one earns a name by being spelled in
-/// two modules.
 pub const FILE_RECENT: &str = "file.recent"; // ui-text-exempt: a command id, never displayed
 
 /// **Register every command the built-in manifest names.**
-///
-/// # Panics
-///
-/// If two commands claim one id. That is a programming error in
-/// [`catalog::all`] and not a condition any input can produce, so it fails
-/// loudly at
-/// start-up rather than being swallowed: the registry refuses a duplicate
-/// precisely so that behaviour cannot come to depend on the order of
-/// start-up code, and catching the error here to ignore it would give back
-/// exactly the defect the refusal prevents.
 pub fn register(reg: &mut CommandRegistry) {
     reg.register_all(catalog::all())
         // ui-text-exempt: a panic message, read by whoever is looking at

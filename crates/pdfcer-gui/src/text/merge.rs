@@ -20,17 +20,6 @@
 use std::path::Path;
 
 /// **It worked**, with the two numbers that say whether it worked *correctly*.
-///
-/// Both counts, and the pair is the point. A combine that silently dropped
-/// a source writes a perfectly good PDF; the only thing on screen that would
-/// differ is the number of files it says it read. An operator who chose three
-/// and is told "2 files" has been told about a defect in the one sentence they
-/// were going to read anyway.
-///
-/// The page count is the engine's own `AssembleReport::pages` rather than a
-/// sum this module computed, so it reports what was **written** rather than
-/// what was intended — which is the whole difference between a report and a
-/// restatement of the request.
 #[must_use]
 pub fn merged(sources: usize, pages: usize) -> String {
     format!(
@@ -41,12 +30,6 @@ pub fn merged(sources: usize, pages: usize) -> String {
 }
 
 /// **A source could not be read**, naming which one.
-///
-/// The name and not the whole path: the sentence appears on a one-line status
-/// row, a Windows path is routinely eighty characters, and the operator chose
-/// these files a moment ago and knows where they are. If the stem is
-/// unreadable the full path is used, because a sentence that names nothing is
-/// worse than a long one.
 #[must_use]
 pub fn failed_source(path: &Path) -> String {
     let name = path.file_name().map_or_else(
@@ -57,17 +40,6 @@ pub fn failed_source(path: &Path) -> String {
 }
 
 /// **It did not work**, and pdfcer is not pretending to know why in one line.
-///
-/// The engine's own error text is deliberately **not** carried. It goes to
-/// the trace, where a reader diagnosing a machine they cannot see will find it,
-/// and it is not operator copy — the same split `crate::text::status`'s
-/// `save_copy_failed` makes, for the same reason: a `Display` impl is written
-/// for a programmer.
-///
-/// What the sentence does say is the part the operator needs and could not
-/// otherwise be sure of: **nothing was written**. A failed combine that left a
-/// half-written file behind would be the frightening outcome, and this says it
-/// did not happen.
 #[must_use]
 pub fn failed() -> &'static str {
     "The files could not be combined. Nothing was written."

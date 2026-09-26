@@ -16,11 +16,6 @@ use super::Plan;
 use crate::app::settings::SettingsExt;
 
 /// Everything that happened on the way to the bytes.
-///
-/// Returned rather than logged because the operator is entitled to all of it
-/// **before** the file lands somewhere Acrobat will read it — a stamp
-/// collection that silently dropped one stamp is a picker with a hole in it,
-/// discovered weeks later in the middle of signing something.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Written {
     /// The file's bytes, ready for `std::fs::write`.
@@ -48,10 +43,6 @@ pub struct Written {
 }
 
 /// Why a collection could not be written.
-///
-/// One variant per stage, because each stage fails for a different reason and
-/// there is a different sentence to say about each. Collapsing them would hand
-/// the operator the shrug this project's text conventions forbid.
 #[derive(Debug, Clone)]
 pub enum WriteFailure {
     /// `pageops::extract` refused. His document's pages could not be carried.
@@ -75,12 +66,6 @@ pub enum WriteFailure {
 
 impl WriteFailure {
     /// The engine's own words for what went wrong.
-    ///
-    /// Returned rather than re-worded. `crate::text` owns the *frame* —
-    /// which of the four things failed — and the engine owns the detail, for
-    /// the same reason `app::save`'s refusals quote rather than paraphrase: a
-    /// sentence this shell invents about a failure it did not diagnose is a
-    /// sentence that will eventually be wrong.
     #[must_use]
     pub fn detail(&self) -> &str {
         match self {
@@ -183,16 +168,6 @@ pub fn build(
 }
 
 /// Build the collection and put it on disk, reporting on the trace.
-///
-/// Kept separate from [`build`] on `app::actions::extract`'s rule: the half
-/// that touches the filesystem and the half that does the work are separable in
-/// the reading as well as in the testing, and only one of them needs a
-/// temporary directory to exercise.
-///
-/// # Errors
-///
-/// [`WriteFailure`] from [`build`]. A failed `std::fs::write` is traced and
-/// reported through the return value's `Ok(None)`-shaped absence — see below.
 pub fn build_and_write(
     view: &pdfcer_core::view::DocumentView<'_>,
     plan: &Plan,

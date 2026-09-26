@@ -8,66 +8,18 @@
 // ---------------------------------------------------------------------------
 
 /// The glyph on a row whose children are **hidden** — press to reveal them.
-///
-/// A right-pointing triangle, which is the disclosure control every tree in
-/// every operating system uses: Explorer's navigation pane, Finder's sidebar,
-/// every IDE's project tree, Acrobat's own Bookmarks panel. The operator's
-/// standing tie-breaker is *"make it work the way other programs do"*, and
-/// there is no second answer to what a collapsed branch looks like.
-///
-/// It is in the catalog rather than inline because it is **drawn on screen**
-/// and R1 admits no size threshold — a one-character label is still a label,
-/// and the day somebody wants `+`/`−` instead there must be one place to
-/// change it.
-///
-/// # It is U+23F5, not U+25B6, and that was measured rather than chosen
-///
-/// The obvious pair is `▶` U+25B6 / `▼` U+25BC — the Geometric Shapes
-/// triangles every style guide names. **The bundled font stack cannot draw
-/// U+25BC.** [`crate::icons::glyphs`]' coverage gate reads the four `.ttf`
-/// charmaps `epaint 0.35` ships, and it caught this the first time this module
-/// compiled, with the sentence that gate exists to produce: *"each renders as a
-/// substitution box in front of the operator."*
-///
-/// U+25B6 happens to draw and U+25BC does not, which is the worst possible
-/// arrangement: a collapsed row would show a triangle and an expanded one a
-/// hollow box, so the missing glyph would read as a *state* rather than as a
-/// defect. Nothing in the source would say so, and nothing but the running
-/// window would show it.
-///
-/// ⇒ Both halves therefore come from the **same** face — `emoji-icon-font`'s
-/// `⏴⏵⏶⏷` U+23F4–U+23F7 block, which that module's coverage table records as
-/// supplied. The rule generalises past this pair: **two glyphs that mean two
-/// states of one control must come from one face**, or a substitution box and a
-/// state are indistinguishable.
 #[must_use]
 pub const fn bookmark_collapsed_glyph() -> &'static str {
     "\u{23f5}"
 }
 
 /// The glyph on a row whose children are **showing** — press to hide them.
-///
-/// The same triangle turned down, from the same face. See
-/// [`bookmark_collapsed_glyph`] for why the face matters more than the
-/// codepoint.
 #[must_use]
 pub const fn bookmark_expanded_glyph() -> &'static str {
     "\u{23f7}"
 }
 
 /// Hover text on the triangle of a **collapsed** row.
-///
-/// It says the change is **saved into the document**, and that is the
-/// non-obvious half. Every other outline panel an operator has used —
-/// Explorer's tree, an IDE's file list, a spreadsheet's grouping — treats
-/// expand and collapse as a view setting that belongs to the window. Here it
-/// is a property of the file: §12.3.3 Table 153 carries open-or-closed as the
-/// **sign** on `/Count` and defines no other key for it, so there is nowhere
-/// to put a "just for me" answer. `EditSession::set_outline_open` writes it,
-/// one undo entry, and the document is then modified.
-///
-/// Saying so costs one line of hover text and buys the operator the reason
-/// their document went dirty from a gesture that looks like scrolling.
 #[must_use]
 pub const fn bookmark_expand_tooltip() -> &'static str {
     "Show the bookmarks filed under this one. Whether a bookmark is open or \
@@ -75,12 +27,6 @@ pub const fn bookmark_expand_tooltip() -> &'static str {
 }
 
 /// Hover text on the triangle of an **expanded** row.
-///
-/// It names the consequence the operator is about to create for themselves:
-/// the rows go out of sight, and everything else in this panel that talks
-/// about a collapsed bookmark — the add row's disclosure, the move's — is
-/// about the state this button produces. See [`bookmark_expand_tooltip`] for
-/// why both mention the document.
 #[must_use]
 pub const fn bookmark_collapse_tooltip() -> &'static str {
     "Hide the bookmarks filed under this one. They stay in the document; the \
@@ -93,17 +39,6 @@ pub const fn bookmark_collapse_tooltip() -> &'static str {
 // ---------------------------------------------------------------------------
 
 /// The standing hint that says the rows can be dragged.
-///
-/// Drawn once, above the list, beside the sentence that explains what
-/// clicking a row does. R83 forbids offering a control that cannot work, and
-/// its quieter twin is that a gesture nobody is told about is a capability the
-/// program does not have. A drag has no widget to look at, which is exactly
-/// why it is the one gesture in this panel that has to be **written down**.
-///
-/// It names all three landings, because the three-band split is the only part
-/// of the gesture an operator cannot discover by trying it once — dropping on
-/// the middle of a row and dropping on its edge look identical until you have
-/// seen the caret move.
 #[must_use]
 pub const fn bookmark_drag_hint() -> &'static str {
     "Drag a bookmark to move it. Dropping on the top or bottom edge of another \
@@ -112,32 +47,6 @@ pub const fn bookmark_drag_hint() -> &'static str {
 }
 
 /// **What the move did**, said after the press from the engine's own report.
-///
-/// # The number is `OutlineMove::visible_items`, and it is not a subtree size
-///
-/// `move_outline_item` returns the count *"the item plus its **visible**
-/// descendants"*, which is the quantity `/Count` propagation actually moved
-/// between the two branches. Its own doc comment is explicit that a shell must
-/// not recompute it:
-///
-/// > *"A shell can say 'moved 1 bookmark (7 nested)' only if the core tells
-/// > it; recomputing it shell-side would be a second implementation of the
-/// > sign convention."*
-///
-/// ⇒ So this sentence quotes it and nothing else. What it deliberately does
-/// **not** do is dress `1` up as *"and the 0 bookmarks under it"*: a collapsed
-/// chapter reports `1` however large it is, and a sentence claiming nothing
-/// travelled would be flatly false on exactly the branch the operator can
-/// least see. That case has its own sentence — [`bookmark_move_took_hidden`] —
-/// which the panel adds when it knows the item was collapsed.
-///
-/// # `reparented` chooses the verb, and it comes from the engine too
-///
-/// `OutlineMove::reparented` is carried *"separately from comparing the two
-/// ids because it is the fact a disclosure sentence turns on — 'moved' versus
-/// 'nested under' — and a shell deriving it independently is a second place
-/// for the two to disagree."* This is that sentence, and it turns on exactly
-/// that field.
 #[must_use]
 pub fn bookmark_moved(visible_items: usize, reparented: bool) -> String {
     match (visible_items, reparented) {
@@ -156,29 +65,6 @@ pub fn bookmark_moved(visible_items: usize, reparented: bool) -> String {
 
 /// **The subtree that travelled and was never counted**, because it was
 /// collapsed.
-///
-/// # Why the engine's number cannot say this
-///
-/// `OutlineMove::visible_items` counts *visible* descendants, per §12.3.3
-/// Table 153's sign convention: a **closed** bookmark reports `1` however many
-/// items are filed under it. So a chapter with forty sections, collapsed,
-/// moves forty-one bookmarks and reports one.
-///
-/// The engine's own doc says the count is the shell's to *report*, never to
-/// recompute — and this sentence does not recompute it. It reports a
-/// **different quantity**: the size of the subtree, from the tree the panel
-/// already drew, which is the same number
-/// [`super::bookmark_delete_takes_subtree`] quotes before a delete and the same
-/// walk (`crate::panels::bookmarks::tree::descendants`) produces it.
-///
-/// ⇒ Two numbers, two sources, two questions — *how many rows moved on screen*
-/// and *how many bookmarks are in the branch* — and the operator is given the
-/// second only when it differs from the first, which is exactly when the item
-/// was collapsed.
-///
-/// It is worded as a fact about the branch, not as a warning: the move
-/// worked, everything went, and the only thing the operator could not see is
-/// how much.
 #[must_use]
 pub fn bookmark_move_took_hidden(descendants: usize) -> String {
     if descendants == 1 {
@@ -190,35 +76,6 @@ pub fn bookmark_move_took_hidden(descendants: usize) -> String {
 
 /// **The bookmark landed somewhere it cannot be seen**, and the panel is
 /// right to show it that way.
-///
-/// # The trap this closes, in the operator's own terms
-///
-/// It is [`super::bookmark_add_under_collapsed`]'s trap for the other verb, and
-/// that string's doc comment states the shape once for both:
-///
-/// > *"Getting the count right is the low bar. The operator's actual problem is
-/// > that they will add a bookmark, look at the panel, and not see it — and the
-/// > panel will be correct."*
-///
-/// A move into a collapsed parent is worse than an add into one, because the
-/// operator watched the row leave. It vanished from where it was and did not
-/// appear where they put it, and every reading available to them —
-/// *"the drag missed"*, *"pdfcer deleted it"* — is wrong.
-///
-/// # Why it is said AFTER the press rather than before
-///
-/// The add row says its version *before*, and the difference is measured
-/// rather than preferred. A sentence that appears while a drag is in flight
-/// changes the height of the surface the operator is aiming at:
-/// `crate::panels::pages`'s own header records the trace — a wrapping caption
-/// above the grid moved the target tile 49 points, then 34, then back, because
-/// its wording (and so its line count) changed as the pointer crossed gaps.
-/// The rule it yields is more general than the caption that produced it:
-/// **a surface may not change size in response to a gesture aimed at it.**
-///
-/// So the disclosure goes where every other after-the-fact disclosure goes —
-/// the status bar, which has a fixed height by construction — and the remedy
-/// is one click away, on the triangle the sentence names.
 #[must_use]
 pub const fn bookmark_move_into_collapsed() -> &'static str {
     "Its new parent is collapsed, so the bookmark will not show in the list \
@@ -227,22 +84,6 @@ pub const fn bookmark_move_into_collapsed() -> &'static str {
 
 /// **The move was asked for and changed nothing**, because the bookmark was
 /// already there.
-///
-/// # Why this is a disclosure and not a silence
-///
-/// `OutlineMove::moved` is `false` for a placement the bookmark already
-/// occupies, and the engine is explicit that this is *"a legitimate request
-/// with a legitimate answer — nothing"*: no objects are written and **no undo
-/// entry is created**.
-///
-/// The panel dims its caret over a landing it can see is a no-op, so an
-/// operator who reads the caret never reaches this sentence. Reaching it means
-/// the shell's forecast and the engine's answer **disagreed** — the panel drew
-/// a live caret and nothing happened — and that is a fact worth one line
-/// rather than a shrug. It is the same posture
-/// [`super::bookmark_deleted`] takes about its own two numbers being allowed to
-/// differ: when the shell's read of the tree and the engine's read of the file
-/// part company, say so.
 #[must_use]
 pub const fn bookmark_move_no_change() -> &'static str {
     "That bookmark was already in that place, so nothing changed and there is \
@@ -251,34 +92,6 @@ pub const fn bookmark_move_no_change() -> &'static str {
 
 /// **A bookmark cannot be filed inside itself** — the decline for a drop that
 /// landed on the dragged row or somewhere in its own subtree.
-///
-/// # Why this is a sentence and not a dimmed caret alone
-///
-/// The caret **is** dimmed over such a landing, before the press, which is the
-/// disclosure this panel prefers. But the operator can release anyway, and
-/// what they have then done is *ask*. R83's rule is not *gate the control*, it
-/// is **a refusal must be a sentence, never a silence** — and the two things a
-/// silence would be confused with are both wrong: *"the drag did not
-/// register"* and *"pdfcer moved it somewhere I cannot see"*, the second of
-/// which is a real state this very feature can produce (see
-/// [`bookmark_move_into_collapsed`]).
-///
-/// # Why the shell refuses it rather than letting the engine
-///
-/// `EditError::OutlineMoveIntoOwnSubtree` exists and would refuse the call,
-/// *"refused unconditionally; the Acrobat reference could not source what
-/// Acrobat does here, and a cycle is a defect whatever Acrobat does."* The
-/// shell answers first because it is a question about the tree it has already
-/// drawn and can answer exactly — and because answering it here is what lets
-/// the caret be dimmed **during** the drag, which is worth more than the
-/// sentence.
-///
-/// ⇒ The engine's guard stays the authority; this is a forecast of it, in the
-/// same relationship `panels::properties::formfield::refuses_delete` has with
-/// `EditSession::deletion_refusal`. If the two ever disagree, the engine wins
-/// and [`bookmark_move_declined_engine`] is what the operator reads.
-///
-/// The bookmark is **not named**, deliberately. See the module header.
 #[must_use]
 pub const fn bookmark_move_declined_own_subtree() -> &'static str {
     "A bookmark cannot be filed inside itself, or inside anything filed under \
@@ -287,33 +100,6 @@ pub const fn bookmark_move_declined_own_subtree() -> &'static str {
 
 /// **The engine refused the move** — the residue the shell's own forecast
 /// cannot cover.
-///
-/// # What is actually left after the forecast
-///
-/// `crate::panels::bookmarks::reorder` refuses a drop into the dragged item's
-/// own subtree before raising anything, so `OutlineMoveIntoOwnSubtree` should
-/// not arrive here. What can:
-///
-/// | `EditError` | when |
-/// |---|---|
-/// | `DocumentEncrypted` | the file carries `/Encrypt` — every editing verb refuses |
-/// | the certification gate | a signature forbids the change |
-/// | `OutlineItemNotFound` | the id stopped resolving between the frame and the apply — the ordinary state after an undo |
-/// | `NotADictionary` | the same, one step further gone |
-/// | `OutlineRootIsNotAnItem` | unreachable from this surface: `read_outline` reports the root's *children* as its top-level items, so no id the panel can hold is the root's |
-///
-/// None of those is guessable from the canvas: a certified drawing looks
-/// exactly like an uncertified one, and an encrypted one opens and renders
-/// normally. That is the same argument
-/// [`crate::text::status::field_delete_declined_structural`] makes for its own
-/// verb, and it is why a catch-all sentence is honest here — the operator can
-/// act on none of them, so splitting them would be detail without a remedy.
-///
-/// The engine's own `Display` prose is **not** printed. It is written for a
-/// log, it reaches the trace through `vector_edit`, and the operator gets a
-/// sentence that says what happened and what state the document is in.
-///
-/// The bookmark is **not named**. See the module header.
 #[must_use]
 pub const fn bookmark_move_declined_engine() -> &'static str {
     "That bookmark was not moved \u{2014} pdfcer declined the change, and the \

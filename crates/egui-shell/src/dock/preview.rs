@@ -81,12 +81,6 @@ fn walk(shares: &[f32], extent: f32, min: f32, place: impl Fn(f32, f32) -> Rect)
 impl DockLayout {
     /// **The compartment `panel` would occupy if it were released at
     /// `target`**, in the coordinates `geometry` was recorded in.
-    ///
-    /// `None` when the panel is nowhere to be found, when the geometry has no
-    /// rect for the side it would land on, or when the layout is empty. A
-    /// *declined* move is not one of those: a target naming where the panel
-    /// already is returns that compartment, so the overlay shows the honest
-    /// no-op rather than blinking out.
     #[must_use]
     pub fn preview_drop(
         &self,
@@ -117,17 +111,6 @@ impl DockLayout {
     }
 
     /// **Whether releasing `panel` at `target` would change this layout.**
-    ///
-    /// The overlay knocks its highlight back where the answer is `false` — the
-    /// releases that are legal and permute nothing, which are common: a panel
-    /// dropped back into the middle of the group it already leads, or against
-    /// the edge of a column it is already alone in.
-    ///
-    /// Asked by applying the same verb the release will apply, to a clone, so
-    /// the dimming cannot disagree with the outcome. A predicate written out by
-    /// hand would be a second description of the drop grammar, and the
-    /// grammar's exceptions — a reorder inside one stack, an insertion into a
-    /// column the take has just emptied — are exactly what it would get wrong.
     #[must_use]
     pub fn drop_lands(&self, panel: &PanelId, target: DropTarget) -> bool {
         self.clone().move_panel(panel, target)

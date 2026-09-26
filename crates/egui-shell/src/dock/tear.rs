@@ -59,10 +59,6 @@ use super::model::{DockSide, PanelId};
 use super::{drag, float, overlay, plan, report};
 
 /// **A drag held outside the dock, and the window a release would open.**
-///
-/// Published on [`super::DockFrameReport`] for [`super::overlay::DropPreview`]'s
-/// reason: the visible form of the affordance is an outline, which is precise
-/// to look at and nothing a harness can assert on.
 #[derive(Clone, Debug, PartialEq)]
 pub struct TearPreview {
     /// The panel being dragged.
@@ -80,26 +76,6 @@ pub struct TearPreview {
 }
 
 /// **Offer the tear, and publish what a release would do.**
-///
-/// Runs from [`super::Dock::show`] after [`super::overlay::draw`] and before
-/// [`super::drag::settle`], so that the two affordances it defers to have
-/// already had their say and the settlement reads one decision.
-///
-/// ## The stand-down is redundant today, and is kept anyway
-///
-/// Both of the other two affordances require the pointer to be *inside* a
-/// compartment — a caret needs the strip it is inserting into, a compass needs
-/// the body it divides — so [`outside_the_dock`] already excludes every frame
-/// on which either of them published. The guard below therefore cannot be
-/// reached by any input, which means no test can falsify it: planting a defect
-/// in it leaves the suite green.
-///
-/// It stays because the implication is a property of a predicate that is
-/// expected to move — the module header names the case that will tighten it —
-/// and a release build where it no longer holds should draw one affordance
-/// rather than two. What measures the implication is the assertion in
-/// [`super::drag::settle`], which runs on every debug frame and fails by name
-/// the moment two of the three answer one drag.
 pub(super) fn draw(ui: &egui::Ui, ctx: &mut Ctx<'_>) {
     if ctx.tab_drag.is_some() || ctx.drop_preview.is_some() {
         return;

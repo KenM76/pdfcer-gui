@@ -7,11 +7,6 @@
 use egui::Id;
 
 /// Which ring a request is for.
-///
-/// Carried so the two canvas rings can share one seam without either acting on
-/// the other's press: a form field and a selected page object are focused by
-/// different code and move by different rules (O204 decision 3 — the field ring
-/// crosses pages, the object ring wraps within one).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Scope {
     /// A form field being filled on the page.
@@ -43,24 +38,11 @@ const OWNER_KEY: &str = "pdfcer-canvas-tabnav-owner"; // ui-text-exempt: interna
 const REQUEST_KEY: &str = "pdfcer-canvas-tabnav-request"; // ui-text-exempt: internal data key, never displayed
 
 /// **Declare that `id` is the canvas widget holding keyboard focus.**
-///
-/// Called every pass the widget is drawn. Cheap by construction: one
-/// `ctx.data_mut` insert of a `Copy` value, which is the same cost as the
-/// focus-tracking every other surface in this shell does.
 pub fn publish(ctx: &egui::Context, scope: Scope, id: Id) {
     ctx.data_mut(|d| d.insert_temp(Id::new(OWNER_KEY), Owner { scope, id }));
 }
 
 /// **Give up ownership**, so no further press is claimed for it.
-///
-/// Published ownership is otherwise dropped by egui itself: a widget that
-/// stops being drawn stops being focused, and [`owner`]'s identity test then
-/// rejects the stale entry. This exists for the case that test cannot see —
-/// a surface that is still drawn, still focused, and has handed the key to
-/// somebody else. The measure tools are that case: Tab cycles the snap mode
-/// while one is armed, and the owner is the same page id either way, so
-/// merely declining to re-publish would leave the hook swallowing a press
-/// with nothing to spend it on.
 pub fn release(ctx: &egui::Context) {
     ctx.data_mut(|d| d.remove::<Owner>(Id::new(OWNER_KEY)));
 }
@@ -72,39 +54,12 @@ fn owner(ctx: &egui::Context) -> Option<Owner> {
 }
 
 /// **Whether `scope`'s canvas ring currently holds the keyboard.**
-///
-/// For the one place outside this module that must ask: the space bar is the
-/// canvas's hand-tool modifier, and a focused form button reads Space as
-/// *toggle me*. Without this the bar pans the paper and a checkbox cannot be
-/// ticked from the keyboard at all — the same shape as the operator's
-/// *"it doesn't accept spaces"* about the text caret.
-///
-/// Not a second spelling of the typing guard
-/// (`crate::canvas::textedit::composing`): that one answers *is the operator
-/// composing text*, this one answers *does this canvas ring own the keyboard*,
-/// and a focused push button is the case where those differ.
-///
-/// # Why it takes a scope rather than answering for the canvas as a whole
-///
-/// A focused PAGE owns Tab and nothing else — the space bar is still the hand
-/// tool, which is the gesture the operator uses most on a drawing. Asking the
-/// unscoped question would hand Space to the object ring, which has no use for
-/// it, and stop the paper panning the moment a page was clicked.
 #[must_use]
 pub fn owns_focus(ctx: &egui::Context, scope: Scope) -> bool {
     owner(ctx).is_some_and(|owner| owner.scope == scope)
 }
 
 /// **Take the Tab press, if the canvas owns it.**
-///
-/// Called from `eframe::App::raw_input_hook` — see the module header for why
-/// that and only that. Removes every `Key::Tab` event from `raw_input` when it
-/// claims, so egui never sees one and `Focus::begin_pass` never latches a
-/// direction.
-///
-/// Ctrl+Tab and every other modified Tab are left alone: they belong to the
-/// dock, and a ring that swallowed them would take a chord it was never asked
-/// for.
 pub fn claim(ctx: &egui::Context, raw_input: &mut egui::RawInput) {
     let Some(owner) = owner(ctx) else {
         return;
@@ -166,12 +121,6 @@ pub fn claim(ctx: &egui::Context, raw_input: &mut egui::RawInput) {
 }
 
 /// **Take this pass's claimed press, if it is for `scope`.**
-///
-/// Consumes unconditionally when the scope matches. A request is parked at the
-/// start of a frame by [`claim`], which only claims when the owning surface is
-/// drawn and focused — so the surface that could take it is guaranteed to run
-/// in that frame, and a request that outlives the frame would be a bug rather
-/// than a press to replay.
 pub fn take(ctx: &egui::Context, scope: Scope) -> Option<Request> {
     let id = Id::new(REQUEST_KEY);
     let request = ctx.data(|d| d.get_temp::<Request>(id))?;
@@ -183,29 +132,11 @@ pub fn take(ctx: &egui::Context, scope: Scope) -> Option<Request> {
 }
 
 /// Drop any claimed press without acting on it.
-///
-/// For the surface that took ownership and then found it had nothing to move
-/// to — an empty ring, a field that vanished under an undo. Leaving the request
-/// parked would let the *next* frame's surface act on a press aimed at this
-/// one.
 pub fn discard(ctx: &egui::Context) {
     ctx.data_mut(|d| d.remove::<Request>(Id::new(REQUEST_KEY)));
 }
 
 /// **Where a Tab press lands, given per-page rings.**
-///
-/// `rings` is `(page index, number of stops on that page)`, sorted ascending by
-/// page, with no empty entries. `at` is `(page, index within that page's
-/// ring)`. `cross` is O204 decision 3: `true` walks off the end of one page's
-/// ring onto the next page's, `false` wraps within the page.
-///
-/// Returns `None` only when `at` names a page that has no ring — a focus that
-/// has gone, which the caller settles rather than moves.
-///
-/// Wrapping is unconditional in both modes: the last stop leads to the first.
-/// A ring that stopped at its end would make the operator's recovery from an
-/// over-press a mouse gesture, and the convention across every program that
-/// tabs through fields is that it does not.
 #[must_use]
 pub fn step(
     rings: &[(usize, usize)],

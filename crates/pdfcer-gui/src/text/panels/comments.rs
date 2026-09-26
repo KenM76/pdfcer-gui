@@ -8,25 +8,12 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/text/panels/comments.md`.
 
 /// The count line, above the list.
-///
-/// Salvaged verbatim. `note(s) and markup item(s)` rather than "comments":
-/// the list contains a `/Link`, a `/Stamp` and a ce dimension as readily as it
-/// contains somebody's sticky note, and calling all of those "comments" is
-/// wrong on the rows where the distinction matters most.
 #[must_use]
 pub fn comments_count(total: usize) -> String {
     format!("{total} note(s) and markup item(s).")
 }
 
 /// Shown when the document carries no listable annotation.
-///
-/// Salvaged verbatim. Names what is EXCLUDED, because a document full of form
-/// fields would otherwise show an empty comment list and look broken. Form
-/// fields and pop-up windows are deliberately not comments.
-///
-/// [`comments_excluded`] follows it with the actual numbers when there are
-/// any, so this sentence answers *"is this panel broken?"* and that one
-/// answers *"then where did my annotations go?"*.
 #[must_use]
 pub fn comments_none() -> &'static str {
     "No notes or markup on this document. Form fields and pop-up windows are not listed here — form fields have their own panel."
@@ -34,32 +21,6 @@ pub fn comments_none() -> &'static str {
 
 /// **What this panel filtered out, in numbers** — `None` when it filtered
 /// nothing.
-///
-/// # Why the counts are stated rather than the rule
-///
-/// `crate::panels::comments`' filter is settled and argued in that module's
-/// header, but an operator reading a list of six rows on a drawing they know
-/// carries forty annotations needs the arithmetic, not the doctrine. The old
-/// shell stated the rule ([`comments_none`]) and only on the empty case; this
-/// states the numbers, on every case where there are any.
-///
-/// It is a **disclosure**, in rule 4's sense: the panel made a decision about
-/// what to show, and the decision lives off-canvas in the panel that made it.
-///
-/// # `Option` rather than an empty string
-///
-/// So the caller cannot accidentally draw a blank line. A panel that renders
-/// an empty label still reserves its height, which on a narrow dock reads as
-/// a rendering fault. `None` means *draw nothing*, which is also the
-/// no-placeholders rule applied to prose.
-///
-/// # The three clauses are built by hand rather than by a list joiner
-///
-/// Because each one has to name *where the thing went*, and the destinations
-/// differ: form fields have another panel, pop-ups belong to the annotation
-/// they hang off, and a `/TrapNet` is prepress output state that no reviewer
-/// wrote and nobody can answer. A generic "N items were excluded" would be
-/// the count without the fact that makes it actionable.
 #[must_use]
 pub fn comments_excluded(widgets: usize, popups: usize, trap_nets: usize) -> Option<String> {
     let mut clauses: Vec<String> = Vec::new();
@@ -85,83 +46,24 @@ pub fn comments_excluded(widgets: usize, popups: usize, trap_nets: usize) -> Opt
 }
 
 /// Shown when EVERY listed annotation lacks `/Contents`.
-///
-/// Salvaged verbatim, and it is **mandatory copy** rather than a nicety —
-/// `docs/core-api/03-capabilities.md` §3.4 requires it in these words, and
-/// records why: pdfcer's own markup tools cannot attach a note to a shape
-/// (`pdfcer_core::annot_author::MarkupSpec` has no text-bearing variant, on
-/// purpose), so a document whose annotations pdfcer authored shows a column
-/// of identical "no note" captions. Said once at the top rather than left to
-/// be inferred from the repetition.
-///
-/// **Note-text authoring for geometric markup is a filed request against
-/// the engine** (`ENGINE_BACKLOG.md`). ⚠ The sentence is therefore worded as a
-/// fact about THE SHAPES — which stays true for everything already drawn —
-/// rather than as a claim about what pdfcer can never do, which would go false
-/// the day the verb lands.
 #[must_use]
 pub fn comments_all_without_notes() -> &'static str {
     "None of these carry note text. Shapes drawn in pdfcer do not have a note attached to them yet, so this is expected rather than missing data."
 }
 
 /// One row's heading — what it is and which page it is on.
-///
-/// Salvaged verbatim. `subtype` is
-/// `pdfcer_core::annot::Annotation::subtype_label`, which is the `/Subtype`
-/// name decoded lossily or `(no Subtype)` when the key is absent — a
-/// malformed annotation, surfaced rather than repaired.
 #[must_use]
 pub fn comment_row_heading(subtype: &str, page_number: usize) -> String {
     format!("{subtype} — p. {page_number}")
 }
 
 /// A **ce dimension**'s row heading, which names it as one.
-///
-/// # Why this is a second function and not a substituted label
-///
-/// Project rule 15: a **ce dimension** is the thing pdfcer authors — a `/Line`
-/// annotation carrying `/IT /LineDimension`, a baked `/AP` and a `/PieceInfo`
-/// sidecar record — and a **pdf dimension** is CAD-exported page content. They
-/// have opposite properties. A row that showed a ce dimension as plain "Line"
-/// would be true about the file and useless to the operator, who has a Measure
-/// tab full of verbs for exactly this object.
-///
-/// The subtype is kept **in brackets rather than replaced**, and that is the
-/// whole reason this reads the way it does. The old shell's exclusion argument
-/// (`comments_panel`'s own doc) turns on ce dimensions being ordinary `/Line`
-/// annotations — that is why they cannot be filtered out by subtype without
-/// also hiding a genuine `/Line` markup somebody drew. A heading that hid the
-/// `/Line` would quietly contradict the argument that put the row here.
 #[must_use]
 pub fn comment_row_ce_dimension_heading(subtype: &str, page_number: usize) -> String {
     format!("ce dimension ({subtype}) — p. {page_number}")
 }
 
 /// A row's byline — its author and its modification date, when it has them.
-///
-/// `None` when it has neither, so the caller draws nothing rather than an
-/// empty line. See [`comments_excluded`] on why absence is an `Option` here.
-///
-/// # Both halves are legitimately absent, and neither absence is a fault
-///
-/// `/T` is a **Table 170 markup key**, so it is legitimately absent on a
-/// `/Link` or a `/PrinterMark`, where `None` means *"this subtype has no such
-/// concept"* rather than *"anonymous"* (`Annotation::title`). Printing an
-/// "(unknown author)" placeholder would turn a correct fact about a subtype
-/// into a claim about a person.
-///
-/// `/M` is optional on everything.
-///
-/// # The date is passed through verbatim, and that is not laziness
-///
-/// §12.5.2 gives `/M`'s type as *"date **or** text string"* and requires a
-/// conforming reader to *"accept and display a string in any format"*, so
-/// `pdfcer-core` stores it raw and its own docs say *"do not assume it
-/// parses"*. Formatting it here would mean writing a §7.9.4 parser whose
-/// failure mode is either rejecting a value the standard requires be accepted
-/// or silently mangling it. The word "modified" carries the meaning; the value
-/// carries whatever the file said. [`comment_row_modified_tooltip`] is where
-/// the operator finds that out.
 #[must_use]
 pub fn comment_row_byline(author: Option<&str>, modified: Option<&str>) -> Option<String> {
     match (author, modified) {
@@ -173,150 +75,54 @@ pub fn comment_row_byline(author: Option<&str>, modified: Option<&str>) -> Optio
 }
 
 /// Why a modification date can look like machine output.
-///
-/// On hover rather than on the row, because it is the answer to a question
-/// most operators will never ask: the ordinary case is `D:20240117093000Z`,
-/// which is legible enough to compare two rows by, and the sentence below is
-/// only wanted by whoever wonders why pdfcer did not tidy it.
 #[must_use]
 pub fn comment_row_modified_tooltip() -> &'static str {
     "Shown exactly as the file wrote it. The standard lets this be a date or any text at all, and requires a reader to accept whatever is there, so pdfcer does not reformat it."
 }
 
 /// A row's note body.
-///
-/// Salvaged verbatim, and it is a passthrough on purpose: the operator is
-/// reading somebody else's words, and a catalog entry that decorated them
-/// would be putting pdfcer's voice inside a quotation.
 #[must_use]
 pub fn comment_row_body(text: &str) -> String {
     text.to_owned()
 }
 
 /// A row's caption when the annotation has no `/Contents`.
-///
-/// Salvaged verbatim. "No note text" rather than blank space: an empty row is
-/// indistinguishable from a rendering failure, and this is a real, expected
-/// state — see [`comments_all_without_notes`] for the reason it is *usually*
-/// this state on a document pdfcer drew on.
-///
-/// **Worded as a fact about the document, not as an error.** There is no
-/// "missing", no "(none)", no empty-set glyph and no warning colour. The
-/// annotation is exactly as its author left it; a panel that dressed that up
-/// as absent data would send an operator looking for damage in an ordinary
-/// file — the same defect `crate::panels::bookmarks`' three-state row
-/// distinction exists to avoid.
 #[must_use]
 pub fn comment_row_no_note() -> &'static str {
     "No note text on this markup."
 }
 
 /// A **ce dimension**'s caption when it has no `/Contents`.
-///
-/// A ce dimension never has note text, and for a different reason from the
-/// shapes [`comments_all_without_notes`] covers: its measurement is baked into
-/// its own appearance stream by `author_dimension`, so the number the operator
-/// reads is *on the page*, not in a note. "No note text on this markup" would
-/// be true and would read as a shortcoming; this says where the text actually
-/// is.
 #[must_use]
 pub fn comment_row_ce_dimension_no_note() -> &'static str {
     "No note text. A ce dimension carries its measurement in its own appearance on the page rather than as a note."
 }
 
 /// The caption under `/Contents` on a subtype that does not display text.
-///
-/// # The trap this closes
-///
-/// `docs/core-api/03-capabilities.md:1113` states it as a trap in so many
-/// words: *"`/Contents` is dual-purpose — a UI labelling this 'comment' is
-/// right for markup and wrong for a Link."* §12.5.2 defines the key as *"text
-/// displayed for the annotation, **or** (if the type does not display text) an
-/// alternate human-readable description"* for accessibility (§14.9.3), and
-/// which of the two it is depends entirely on the subtype.
-///
-/// So on a `/Link`, a `/Movie` or a `/PrinterMark` the string above this
-/// caption is not something a reviewer wrote — it is the document's
-/// description of a control, addressed to a screen reader. Showing it in a
-/// list headed "Comments" without saying so invites an operator to reply to
-/// nobody.
 #[must_use]
 pub fn comment_row_description_caption() -> &'static str {
     "This is the annotation's accessibility description, not a note somebody wrote — this kind of annotation displays no text of its own."
 }
 
 /// A row whose annotation the file says not to show on screen.
-///
-/// # Listed and marked, never omitted
-///
-/// `docs/core-api/03-capabilities.md:1100` is explicit: *"an annotation the
-/// file says not to show. A Comments panel that silently omits it is hiding
-/// document content; list it and mark it hidden."*
-///
-/// The predicate is `AnnotFlags::suppressed_on_screen`, which is `/F` bit 2
-/// (Hidden) or bit 6 (NoView) — §12.5.3 Table 165. The wording says *"you will
-/// not find this on the page"* rather than *"this is hidden"* because the
-/// operator's next act is to click Go to and look for it.
 #[must_use]
 pub fn comment_row_hidden() -> &'static str {
     "The document marks this one as not shown on screen, so it will not be on the page when you get there."
 }
 
 /// A row whose appearance state pdfcer could not resolve.
-///
-/// # Why this is here at all, and why rule 4 makes it mandatory
-///
-/// `docs/core-api/03-capabilities.md:1093`: `Appearance::StateUnresolved`
-/// means pdfcer *"displays nothing and does not guess a first / `On` / `Off`
-/// key"*, and *"a blank annotation with no explanation looks like a rendering
-/// bug."*
-///
-/// The governing setting is `MissingAppearanceState`, whose default
-/// (`PaintNothing`) is documented in core as **evidence tier (d), a reasoned
-/// guess**. That makes the blank page an *inference of pdfcer's*, and rule 4
-/// says an inference the operator cannot see still owes an off-canvas report:
-/// *"Render normally; report separately. Both."* A panel is the right home for
-/// it, and nothing may be drawn on the page to mark it.
 #[must_use]
 pub fn comment_row_appearance_unresolved() -> &'static str {
     "pdfcer could not work out which appearance this annotation should use, so it draws nothing for it. That is pdfcer declining to guess, not a fault in the page."
 }
 
 /// A row that is a **reply** to another annotation (`/IRT` with `/RT /R`).
-///
-/// Flat rather than indented under its target, and that is a scope decision
-/// worth stating: threading the list would need the panel to resolve every
-/// `/IRT` into a row, decide what to do about a dangling one, and pick a depth
-/// for a cycle. This says the same fact in one line and leaves the ordering —
-/// page order, then `/Annots` order — meaning exactly what it says.
-///
-/// Table 170 makes `/RT` default to `R` when absent, which is the ordinary
-/// case for a threaded comment; the panel asks
-/// `Annotation::effective_reply_type` rather than reading `/RT` itself, for
-/// the reason core's docs give: *"a call site that treats an absent `/RT` as
-/// 'not a reply' is wrong in the ordinary case."*
 #[must_use]
 pub fn comment_row_is_reply() -> &'static str {
     "A reply to another annotation on this document."
 }
 
 /// A row that is a `/RT /Group` **subordinate**.
-///
-/// # The one row in this panel where pdfcer and another reader will disagree
-///
-/// §12.5.6.2 says a group subordinate's own `Contents`, `M`, `C`, `T`,
-/// `Popup`, `CreationDate`, `Subj` and `Open` *"shall be ignored"* in favour
-/// of the group primary's. `pdfcer-core` **deliberately does not apply that
-/// rule** — `Annotation::contents` is the raw dictionary value, because
-/// *"silently substituting a primary's `/Contents` for a subordinate's would
-/// make the model disagree with the file, which is the one thing
-/// `pdfcer-core`'s read half must never do"* — `Annotation::contents`'s own doc.
-///
-/// Both halves of that are right, and together they mean the note text on this
-/// row is text the standard instructs a conforming reader **not** to display.
-/// Saying so is rule 4's *"pdfcer inferred something, and another reader may
-/// compute different values"* in its purest form: nothing here is wrong, and
-/// an operator who does not know it will be surprised by another viewer.
 #[must_use]
 pub fn comment_row_is_group_member() -> &'static str {
     "Part of a group. The standard says a reader should show the group's main annotation's note here instead; pdfcer shows what this one actually says, so another viewer may show something different."
@@ -339,20 +145,6 @@ pub fn comment_row_goto_tooltip(page_number: usize) -> String {
 }
 
 /// **The control that opens the note editor on a row that has no note.**
-///
-/// Two labels rather than one, because *add* and *edit* are different acts to
-/// the operator and the difference is legible from the row: a row showing
-/// somebody's words offers to change them, a row saying "No note text" offers
-/// to write some. A single "Note…" would make the operator read the row above
-/// the button to find out what pressing it does.
-///
-/// # Why two labels can exist at all
-///
-/// Setting `/Contents` on an annotation that **already exists** is an engine
-/// verb, and while it was missing every shape this shell drew was permanently
-/// wordless and this panel was a viewer. It exists now — which is why
-/// [`comments_all_without_notes`] is worded as a fact about shapes pdfcer drew
-/// rather than as a denial of the capability.
 #[must_use]
 pub fn comment_row_add_note() -> &'static str {
     "Add note"
@@ -365,11 +157,6 @@ pub fn comment_row_edit_note() -> &'static str {
 }
 
 /// The editor's Save.
-///
-/// **An explicit commit, not a live binding**, for the reason
-/// `crate::panels::properties::geometry` states about its own Apply: one
-/// keystroke per undo entry would make `Ctrl+Z` walk backwards through a
-/// sentence one letter at a time. One press is one `CommandKind::SetMarkupNote`.
 #[must_use]
 pub fn comment_row_note_save() -> &'static str {
     "Save note"
@@ -382,11 +169,6 @@ pub fn comment_row_note_cancel() -> &'static str {
 }
 
 /// **Remove the note entirely**, leaving the shape on the page.
-///
-/// A separate control from Save-with-empty-text because `pdfcer-core` models
-/// them as separate verbs and says why: *"an empty comment is a comment, and a
-/// reviewer deleting their remark is not the same as leaving a blank one."*
-/// `clear_markup_note` removes `/Contents`, `/T` and `/M` together.
 #[must_use]
 pub fn comment_row_note_remove() -> &'static str {
     "Remove note"
@@ -400,39 +182,12 @@ pub fn comment_row_note_remove_tooltip() -> &'static str {
 }
 
 /// The hint under the editor while it is open.
-///
-/// Names what is NOT obvious in a multi-line box, and one thing that is not
-/// obvious anywhere: Enter inserts a line rather than saving, so the operator
-/// needs telling how to save — and Escape **writes** rather than abandoning,
-/// which is the opposite of what the key usually means, so the sentence has to
-/// say it and has to name the control that does abandon. See
-/// `crate::panels::comments::editor::escape_commits` for the ruling.
 #[must_use]
 pub fn comment_row_note_hint() -> &'static str {
     "Enter starts a new line. Save note and Escape both write it. Cancel leaves the note as it was."
 }
 
 /// **What the editor will write into `/T`, disclosed before it is written.**
-///
-/// Rule 4's surviving half: the author name is invisible on the page — a
-/// sticky's byline lives in a pop-up window this shell does not draw, and a
-/// shape's lives nowhere at all — so an operator who has never opened Settings
-/// has no way to discover what name their comments carry, or that they carry
-/// none.
-///
-/// # Why it names the setting rather than the value
-///
-/// A panel body is handed `&OpenDoc` and `&mut PanelsState` and **nothing
-/// else** — no preferences — so this string cannot quote the configured name
-/// without threading prefs through every panel signature in the crate for one
-/// sentence. Naming the place answers the operator's real question (*where do
-/// I change what my comments say?*), and the value itself becomes visible the
-/// moment the note is saved, as the row's own byline.
-///
-/// Shown only when the row has **no** author, because on a row that has one
-/// nothing is written to `/T` at all: `pdfcer-core` leaves an omitted key
-/// untouched, which is what stops correcting a typo from un-signing somebody
-/// else's comment.
 #[must_use]
 pub fn comment_row_note_signature() -> &'static str {
     "Saving signs this with the name in Settings > Comments, and dates it. Leave that name blank to comment anonymously."
@@ -440,10 +195,6 @@ pub fn comment_row_note_signature() -> &'static str {
 
 /// The same disclosure on a row that **already has an author** — what is
 /// preserved, rather than what is written.
-///
-/// The operator is about to change somebody's words, and the thing they cannot
-/// see is that the byline will not move with them. Saying so is what stops the
-/// panel looking as though it silently re-attributed a comment.
 #[must_use]
 pub fn comment_row_note_signature_kept(author: &str) -> String {
     format!("This note stays credited to {author}. Saving updates its date.")
@@ -451,12 +202,6 @@ pub fn comment_row_note_signature_kept(author: &str) -> String {
 
 /// The caption on a row whose note cannot be edited here, and where its text
 /// actually lives.
-///
-/// A **ce dimension** is refused by `pdfcer-core` **by name** — its `/Contents`
-/// is generated from the measurement by `author_dimension`, so a note written
-/// over it would be silently regenerated away. Saying where the text comes from
-/// is more use than a greyed button, and R9 forbids the greyed button anyway:
-/// this is not *temporarily* unavailable.
 #[must_use]
 pub fn comment_row_note_not_editable_ce_dimension() -> &'static str {
     "A ce dimension's text comes from its measurement. Use the Measure tools to change it."
@@ -464,35 +209,12 @@ pub fn comment_row_note_not_editable_ce_dimension() -> &'static str {
 
 /// The caption on a row whose annotation is written as a **direct dictionary**
 /// and therefore has no object id to name.
-///
-/// §12.5.2 Table 164 requires an annotation dictionary to be an indirect
-/// object, so this is a malformed file rather than a shortcoming of pdfcer, and
-/// the row says which. Nothing that needs a handle may be offered for it.
 #[must_use]
 pub fn comment_row_note_no_handle() -> &'static str {
     "This annotation is written into the page rather than as its own object, so pdfcer cannot address it."
 }
 
 /// **The heading of the row whose annotation is selected on the canvas.**
-///
-/// # A word, not a colour
-///
-/// `DEFECTS.md` **D2** is this project's record of a theme making text
-/// invisible against its own background — near-white on light grey, shipped,
-/// with two theme tests sitting next to it that measured no
-/// foreground/background pair. Every list in this shell that marks a row marks
-/// it with a **shape or a word**: the Pages panel changes a tile's outline
-/// *and* writes a count, and the Objects tree indents.
-///
-/// A reviewer scanning forty rows for the cloud they just drew needs that mark
-/// to survive a theme nobody has measured yet.
-///
-/// # Why it wraps the heading rather than sitting on its own line
-///
-/// Because the row is already between two and seven lines tall and a separate
-/// line would put the mark a variable distance from the thing it marks. The
-/// arrow leads, so a column of headings scanned down the left edge shows it
-/// without reading a word.
 #[must_use]
 pub fn comment_row_selected_heading(heading: &str) -> String {
     format!("> {heading} — selected on the page")
@@ -503,37 +225,18 @@ pub fn comment_row_selected_heading(heading: &str) -> String {
 // ---------------------------------------------------------------------------
 
 /// **The disclosure a filtered list owes**, above the rows.
-///
-/// This panel's founding discipline is that *"nothing is silently omitted"* —
-/// [`comments_excluded`] already states the arithmetic for widgets, pop-ups
-/// and `/TrapNet`. A filter is a fourth kind of omission and the only one the
-/// operator caused, which makes it **more** important to state rather than
-/// less: an exclusion is a property of the document a reviewer can learn once,
-/// while a filter is a switch they set an hour ago and have since forgotten.
-///
-/// A reviewer who reads six rows off a drawing they know carries forty and
-/// concludes the other thirty-four are gone has been misled by this surface.
 #[must_use]
 pub fn comments_filtered(shown: usize, total: usize) -> String {
     format!("Showing {shown} of {total}. A filter is hiding the rest.")
 }
 
 /// The control that puts every row back.
-///
-/// One press rather than three menus reset one at a time, because the state a
-/// reviewer wants back is *"all of them"* and reaching it by undoing each
-/// choice is three chances to leave one set.
 #[must_use]
 pub fn comment_filter_clear() -> &'static str {
     "Show all"
 }
 
 /// The author chooser's label.
-///
-/// *Author*, not *Reviewer*: `/T` is §12.5.6.4 Table 170's *"name of the
-/// person who created the annotation"*, and this panel lists `/Link`s and
-/// stamps as readily as review comments. Calling the column Reviewer would
-/// name a role the file does not record.
 #[must_use]
 pub fn comment_filter_author() -> &'static str {
     "Author"
@@ -554,12 +257,6 @@ pub fn comment_filter_all() -> &'static str {
 }
 
 /// The switch that hides rows carrying no note text.
-///
-/// It exists because of a property of pdfcer rather than of PDF:
-/// `MarkupSpec` has no contents field on any variant, so **every shape this
-/// program draws arrives with no `/Contents`**. On a drawing marked up here
-/// the list is mostly rows with nothing to read, and this is the switch that
-/// leaves the remarks somebody actually wrote.
 #[must_use]
 pub fn comment_filter_with_note() -> &'static str {
     "With text only"
@@ -594,18 +291,6 @@ pub fn comment_sort_subtype() -> &'static str {
 
 /// **Delete this comment** — the control this panel spent its whole life
 /// without.
-///
-/// # Why it is worth a doc comment of its own
-///
-/// This control was once forbidden by a written, correct reason — that no
-/// `Action` variant could carry the intent — and the reason expired silently.
-/// `AnnotAction::Delete` reaches `EditSession::delete_annotation`, the canvas
-/// Delete key and the Format tab both use it, and this panel — **the
-/// reviewer's own work list** — was the last surface that could not do the
-/// thing a reviewer most obviously does.
-///
-/// ⇒ **A prohibition needs a tripwire in the same way a shim does.** The one
-/// here is `crate::panels::comments::tests::the_delete_control_reaches_the_engine`.
 #[must_use]
 pub fn comment_row_delete() -> &'static str {
     "Delete comment"
@@ -613,12 +298,6 @@ pub fn comment_row_delete() -> &'static str {
 
 /// Its tooltip, carrying the three things `docs/core-api/03-capabilities.md`
 /// §3.4 requires a delete to disclose.
-///
-/// What goes, that **delete is not redaction**, and — implied by the second —
-/// that the words may still be in the file. The collateral (a pop-up removed,
-/// replies orphaned, group members promoted) is reported *after* the call by
-/// [`crate::text::markup::deleted_collateral`], because only the engine knows
-/// what it actually took.
 #[must_use]
 pub fn comment_row_delete_tooltip() -> &'static str {
     "Remove this markup and its note from the page. This is not redaction: saving without rewriting the whole file leaves the previous revision in place."
@@ -641,11 +320,6 @@ pub fn comment_row_delete_tooltip() -> &'static str {
 // changed and nothing to notice.
 
 /// The control that opens the reply editor on a row.
-///
-/// A verb, not *"Reply…"* with an ellipsis: the ellipsis convention in this
-/// shell means *this opens a dialog*, and this opens an editor **in the row**,
-/// three pixels below the button. The same reasoning
-/// [`comment_row_add_note`] follows.
 #[must_use]
 pub fn comment_row_reply() -> &'static str {
     "Reply"
@@ -653,58 +327,24 @@ pub fn comment_row_reply() -> &'static str {
 
 /// What Reply does, on hover — and the one fact about it an operator cannot
 /// see.
-///
-/// It names **a new comment**, deliberately. The visible result of pressing
-/// Post reply is a new row in this list and a few words inside the parent's
-/// pop-up, which looks exactly like a note having been edited. It is not: it
-/// is a `/Text` annotation of its own, with its own object number, its own
-/// byline and its own date, and *"answers"* is the shortest true word for
-/// that.
 #[must_use]
 pub fn comment_row_reply_tooltip() -> &'static str {
     "Write a new comment that answers this one. The comment you are answering is not changed."
 }
 
 /// The reply editor's commit.
-///
-/// *Post*, not *Save*, and the difference is not decoration: [`comment_row_note_save`]
-/// writes words onto an annotation that already exists, and this **creates
-/// one**. Two controls that read alike would leave the operator with no way to
-/// tell, at the moment of pressing, which of the two things is about to happen
-/// — and one of them cannot be told apart from the other afterwards either,
-/// because a corrected note and a new reply both just show new words on screen.
 #[must_use]
 pub fn comment_row_reply_save() -> &'static str {
     "Post reply"
 }
 
 /// The hint under the reply editor.
-///
-/// Says what [`comment_row_note_hint`] says, naming *this* editor's commit
-/// rather than that one's — an operator with two editors in one panel needs
-/// the hint to say which button it is talking about.
 #[must_use]
 pub fn comment_row_reply_hint() -> &'static str {
     "Enter starts a new line. Post reply and Escape both send it. Cancel discards it."
 }
 
 /// **What the reply will be signed with**, disclosed before it is written.
-///
-/// # Why this is a different sentence from [`comment_row_note_signature`]
-///
-/// Because the *rule* is different, not because the wording drifted. Saving a
-/// note over an existing comment may leave somebody else's `/T` untouched —
-/// that is what `keep_author` decides, and that panel's disclosure has two
-/// forms because the outcome has two shapes. A reply is a **new annotation**
-/// and there is no prior byline anywhere in the question: it carries the
-/// operator's name or it carries none, always, and one sentence covers it.
-///
-/// It names the *setting* rather than quoting the configured value, for
-/// [`comment_row_note_signature`]'s stated reason: a panel body is handed
-/// `&OpenDoc` and `&mut PanelsState` and no preferences at all, so quoting the
-/// name would mean threading prefs through every panel signature in the crate
-/// for one sentence. Naming the place answers the operator's real question —
-/// *where do I change what my comments say?*
 #[must_use]
 pub fn comment_row_reply_signature() -> &'static str {
     "Your reply is signed with the name in Settings > Comments and dated now. Leave that name blank to reply anonymously."
@@ -712,19 +352,6 @@ pub fn comment_row_reply_signature() -> &'static str {
 
 /// **Shown when the row being answered is itself a reply** — the
 /// threading-depth decision, said out loud where it is made.
-///
-/// §12.5.6.2 permits a reply to a reply and `add_reply` allows it (it refuses
-/// only a reply to *itself*, which is not a thread). This panel and the canvas
-/// pop-up both draw a thread **flat**, so an answer to an answer appears in
-/// the same list as everything else under the root rather than indented under
-/// the thing it answers.
-///
-/// ⇒ That is a real difference between what the file records and what the
-/// screen shows, and rule 4 makes saying so mandatory. The `/IRT` written is
-/// the row's own annotation — the file keeps the true depth — and this
-/// sentence is what stops an operator concluding from a flat list that pdfcer
-/// flattened their thread. `crate::panels::comments`' threading paragraph
-/// carries the full argument.
 #[must_use]
 pub fn comment_row_reply_to_a_reply() -> &'static str {
     "You are answering a reply. Your answer joins the same conversation and is listed with it, rather than nested under it."
@@ -732,26 +359,6 @@ pub fn comment_row_reply_to_a_reply() -> &'static str {
 
 /// **What the engine did that no surface in this program shows** — the
 /// disclosure after a reply lands.
-///
-/// # The fact being disclosed
-///
-/// `add_reply` gives the reply a `/Popup` of its own (§12.5.6.14), and
-/// `ReplyAdded::reply_has_popup` reports it because this shell asked to be
-/// told: *"a reply that quietly acquired a second window at a second location
-/// is something we would rather be told about than discover on a screenshot."*
-///
-/// pdfcer does **not** draw that window —
-/// `crate::canvas::notepopup::model::notes_on` excludes replies, so an answer
-/// is shown inside the thread of the comment it answers and never as a second
-/// bubble on top of it. Another reader may draw it, and an operator who has
-/// only ever seen this program has no way to know the window is in their file.
-///
-/// # `None` when there is no window
-///
-/// The engine reports the fact rather than guaranteeing it, so the sentence is
-/// conditional on the engine's own answer rather than on this shell's
-/// expectation. A disclosure that fired unconditionally would be a claim about
-/// the file that pdfcer had not checked.
 #[must_use]
 pub fn reply_posted(has_popup: bool) -> Option<&'static str> {
     has_popup.then_some(

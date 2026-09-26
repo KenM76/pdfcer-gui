@@ -299,3 +299,66 @@ prefix passed in at the call site, and a prefix copied from
 `properties::text` would make this block's popup indistinguishable from
 the *This text* section's in a trace — so a driven check would read the
 wrong control's rectangle and click it.
+
+### `const REGION`
+
+Published only when it draws, so its **absence** is the evidence that no
+character was refused — which is the distinction a driven check about this
+feature is actually asking about, and the one a region declared
+unconditionally could never provide.
+
+### `const DISCLOSURE_REGION`
+
+Its own region rather than a clause of [`REGION`], because *"the sentence
+reached a rectangle"* is the one thing about this feature that no unit test
+in the workspace can observe: the string is catalogued and asserted, and a
+build that drew it off the bottom of the panel would pass every one of those
+assertions.
+
+### `fn record`
+
+# Why the caller reads a field off `EditError` and this is not a second
+taxonomy
+
+`crate::app::status::decline::textedit`'s header forbids two shortcuts:
+matching on `EditError`'s variants to *derive the operator's reason*, and
+grepping its `Display` prose. Neither happens. The category still comes from
+`RefusalKind`, which the engine made non-`#[non_exhaustive]` so a front end
+can match it and have the compiler prove the sentences complete; what is read
+here is **one datum that the coarse kind structurally cannot carry**, on the
+identical licence `one_operator` already has.
+
+### `fn forget_document`
+
+`PanelsState::forget_document` resets that struct whole, which clears
+[`RefusedCharUi`] — and [`PENDING`] lives outside it, so without this a
+refusal recorded on the frame a document was closed would be adopted by the
+**next** document's first panel draw. `(page, run)` names different text
+there, and the offer would aim a face swap at a run nobody asked about. The
+same hazard `PanelsState::bookmarks`' own note records for an `ObjId`,
+arriving through the one field that reset does not reach.
+
+### `struct RefusedCharUi`
+
+Held on `PanelsState` for that struct's own stated rule — a panel body is
+handed `&OpenDoc`, shared, and this is the operator's state rather than a
+derived cache of the document's. It is reset with the document by
+`PanelsState::forget_document`, which matters here for the reason a bookmark
+parent does: a `(page, run)` pair names different text in a different file,
+so an offer carried across would restyle a run nobody asked about.
+
+### `fn section`
+
+Returns `false` on every frame where no character has been refused, which is
+nearly all of them — and it renders **nothing at all** in that case, heading
+included, on [`super::disclose`]'s rule: *"a heading present on every frame
+trains an operator to stop reading the region under it, which would waste the
+one surface a disclosure has."*
+
+Its answer is deliberately **not** folded into `body_sections`'
+`something_drew`. That predicate is O75's and asks whether a
+**selection**-scoped section has spoken; a refusal from the last edit is not
+a description of the current selection, and letting it collapse the object
+section would make the panel change shape for a reason unconnected to what is
+picked. [`super::disclose`]'s call site records the identical exclusion for
+the identical reason.

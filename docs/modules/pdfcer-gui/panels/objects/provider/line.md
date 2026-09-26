@@ -119,3 +119,43 @@ PDF user space, y-up, straight off the engine's decomposition. No
 canvas transform is involved: `AIMS` is in page coordinates and the
 harness maps it at drive time, so converting here would introduce the
 one step this is meant to hold still.
+
+### `fn text_line_runs_of`
+
+`None` for a non-text object or a line index the object does not have —
+which is a stale selection, and the caller's cue to say nothing rather
+than to name line 0.
+
+### `fn text_line_hits`
+
+Order comes from [`pdfcer_core::vector::hit_test_text_runs`], which
+answers nearest-first in run indices; several runs of one line under the
+pointer collapse to that line's first sighting, so the caller's
+`first()` is still the nearest thing to the pointer.
+
+Page objects only. A text object painted from inside a form XObject has
+no hit test at any granularity — [`Self::text_run_hits`] indexes the
+page's own list, so answering a leaf from it would return another
+object's runs entirely — and this inherits that hole rather than
+papering over it. `canvas::target`'s `part_hits_of` records it in the
+same terms.
+
+### `fn text_line_bounds_canvas_of`
+
+The union of its fragments' boxes. Drawing one fragment's box instead is
+the visible half of O214: the operator clicks the middle of a phrase,
+gets a rectangle round nineteen points of it, and concludes the
+selection is broken.
+
+### `fn text_line_delete_would_move_next_of`
+
+Asks about the run *after the line*, not about the run after the one the
+operator clicked. Deleting a line removes every fragment of it, so the
+only run whose origin can be orphaned is the first one left standing.
+
+`false` when the line is the whole object: deleting every run deletes
+the text object, which the engine allows unconditionally.
+
+This one reads `positioned_by` directly, because the delete-side guard
+has no exported twin to call — the standing hazard
+[`ObjectModelProvider::text_run_delete_would_move_next`] records.

@@ -20,17 +20,6 @@ const MIN_SCALE: f32 = 1.0;
 
 /// **Render a copied selection and put it on the operating system's
 /// clipboard**, alongside `text`.
-///
-/// Returns the picture's size in pixels when it reached the clipboard, and
-/// `None` when it did not — a caller should treat `None` as *"the internal
-/// clip is there, the picture is not"* and say nothing to the operator about
-/// it, because the copy they asked for did happen.
-///
-/// `text` is not decoration. `egui-winit` only produces a paste event when
-/// the OS clipboard holds non-empty text, so writing a picture alone would stop
-/// `Ctrl+V` arriving in this application at all. The two travel together, in
-/// one clipboard transaction, and `native_window::clipboard`'s header carries
-/// the measurement.
 pub fn publish(clip: &ObjectClip, text: &str) -> Option<(u32, u32)> {
     let pdf = clip.to_pdf();
     let doc = pdfcer_core::document::Document::from_bytes(pdf.bytes).ok()?;

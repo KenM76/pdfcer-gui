@@ -14,12 +14,6 @@ use crate::app::state::OpenDoc;
 use crate::canvas::zoom;
 
 /// **A place on a page a bookmark asked the view to arrive at.**
-///
-/// Two shapes, because §12.3.2.2's five destination views reduce to exactly two
-/// things a viewport can do: put a point at the top-left, or frame a rectangle.
-/// The fits — `/Fit`, `/FitH`, `/FitV` — travel as an ordinary `Action::Fit`
-/// beside one of these rather than as more variants here, so this type stays
-/// about POSITION and the shell's fit vocabulary stays in one place.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PendingDestination {
     /// Put this PDF-space point at the view's top-left.
@@ -178,12 +172,6 @@ pub fn arrive_step(
 }
 
 /// Drain a parked destination, if there is one, and land on it.
-///
-/// A ONE-SHOT — consumed on the frame it is acted on, never left standing.
-/// A destination that survived its frame would fight every subsequent pan, and
-/// the operator would find the view springing back to a bookmark they clicked a
-/// minute ago. The one exception is [`ArriveStep::Hold`], which is bounded by
-/// [`MAX_WAIT_FRAMES`] precisely so that it cannot become that.
 pub(crate) fn arrive(
     ctx: &Context,
     doc: &mut OpenDoc,

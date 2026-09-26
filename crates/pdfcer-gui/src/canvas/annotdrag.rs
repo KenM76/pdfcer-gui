@@ -45,18 +45,6 @@ fn eligible(selection: &SelectionState) -> Option<(pdfcer_core::object::ObjId, R
 }
 
 /// The screen-space box a press must land in to mean *move this markup*.
-///
-/// The annotation's own `/Rect`, projected — the same rectangle
-/// `overlay::draw_selection` strokes when a markup is selected, and the same
-/// one [`drag`] translates into a ghost. @@ Three uses of one rectangle, on
-/// purpose: **what the operator can see, what they can grab, and what moves
-/// must be one number.** `dimdrag::grab_box` states the identical rule one
-/// module along, and it exists because a grab box larger than the drawn outline
-/// is a press that works where nothing is shown, and one smaller is an operator
-/// missing something they can see.
-///
-/// `None` for anything [`eligible`] refuses, so no gesture is ever started that
-/// could not commit.
 #[must_use]
 pub fn grab_box(
     map: &crate::canvas::mapping::PageMapping,
@@ -77,14 +65,6 @@ pub fn grab_box(
 }
 
 /// Drive one frame of the drag.
-///
-/// Returns the ghost outline to draw, in **canvas space**, or `None` when there
-/// is nothing to draw — which covers both *"this selection is not draggable"*
-/// and *"this is the frame that commits"*.
-///
-/// Nothing is previewed on the committing frame, for `dimdrag`'s stated
-/// reason: the annotation is about to be redrawn where it landed, and a ghost
-/// left over it would be a second copy of the same artwork, one frame stale.
 pub fn drag(
     frame: &Frame,
     page: Option<&Page>,

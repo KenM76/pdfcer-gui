@@ -258,3 +258,104 @@ accessor returned the shell's wanted region — or if the builder
 mutated in place and both keys ended up agreeing — the placement would
 silently follow the request instead of the pixels, which is the exact
 shape of the defect this pair exists to prevent.
+
+### `struct RenderedPixels`
+
+The worker produces pixels; it does not touch egui. Texture upload
+needs an `egui::Context` and belongs on the UI thread, which is also
+what keeps this module free of any GUI type beyond the ones the
+shell hands back.
+
+### `struct RenderRefusal`
+
+# Why a refusal is typed and not a bare `String` — `OPERATOR_REQUESTS.md` O186
+
+The operator:
+
+> *"If this error is caused by some other limitation that will always
+> happen, zoom should stop at the limit and not end up showing an error —
+> the canvas will just stop zooming in and can still function."*
+
+That ruling is only executable if the shell can tell **this page cannot be
+rasterized any further** apart from **this page is broken**. Both arrive
+here as an `Err`, and a sentence is exactly the wrong thing to branch on:
+never substring-match another crate's prose, because a narrowing upstream
+leaves the words in place and shrinks the condition underneath them.
+
+So the category travels beside the sentence, typed, set in exactly the two
+arms of [`render_on_worker`]'s `match` that know it.
+
+## The sentence is still the operator's, not the engine's
+
+`message` is always one of [`crate::text`]'s strings. It is built here, on
+the worker side, because this is the one place that can see which
+`RenderError` variant arrived; it is never `RenderError::to_string()` for
+the two refusals below, and for everything else the pass-through arm's own
+comment explains why repeating the engine is the honest answer.
+
+### `struct RenderWorker`
+
+Deliberately single-slot: the canvas shows one page at one scale, so
+a second concurrent render is always a superseded first one. Keeping
+a queue would mean deciding which of several stale results to paint,
+which is a question with no good answer.
+
+### `struct RenderRequest`
+
+`DocumentView<'a>` borrows its graph, so the worker cannot be handed
+one — it is handed the `Arc<EditSession>` and calls `view()` on the
+far side, where the borrow stays local to the closure. That is the
+whole reason the open document's session is an `Arc`, and the reason
+`ObjectGraph` had to gain `Send + Sync` in the engine.
+
+### `fn spawn`
+
+Returns `Some` when the render finished inside
+[`IN_FRAME_BUDGET`] — the fast path, which behaves exactly as
+the previous synchronous code did. Returns `None` when it is
+still running, in which case the shell should keep drawing the
+previous texture and call [`Self::poll`] on later frames.
+
+Cancels the previous render *before* spawning rather than after:
+two rasterizations of a CAD page competing for cores make both
+slower, and the old one's output is already known to be unwanted.
+
+### `fn in_flight_since`
+
+The shell uses this to decide whether the canvas has been stale
+long enough to say so. Returning the duration rather than a
+boolean keeps the threshold — a presentation decision — out of
+this module.
+
+### `fn rendering_key`
+
+Two callers need it:
+
+* a page that is being drawn *now* says so
+  ([`crate::render::strip::PageState::Drawing`]) rather than saying it
+  is waiting, because those are different promises to the operator;
+* a **failure** arrives from the worker as a bare message with no key
+  of its own, so the page it is about has to be read from the slot
+  before [`Self::poll`] takes it. Without that, a strip page that would
+  not draw would be attributed to the current page and blank the whole
+  canvas.
+
+Returns the whole key rather than the page index because the second
+caller files the failure under it, and a key rebuilt at that call site
+could disagree with the one the render actually ran from.
+
+### `fn cancel_and_wait`
+
+**This is the choke point that makes `Arc<EditSession>`
+workable.** A worker holds a clone of the session for as long as
+it renders, so `Arc::get_mut` fails while one is running. Every
+mutation must go through a path that calls this first — so by the
+time any edit touches the session, the render holding the other
+reference has exited.
+
+The alternative rulings were rejected with numbers: blocking the
+edit until the render finishes costs up to 58 s, which is the
+freeze this whole module exists to remove; snapshotting the
+session would need a public deep-copy impl on `EditSession`
+(which is not `Clone`) and would copy the document per edit.
+Cancel-then-mutate costs the measured **28.9 ms** of teardown.

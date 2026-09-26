@@ -86,3 +86,35 @@ not a helpfully-restored default. If this ever fails, the shell has
 started overruling a deliberate choice once per restart, and the
 operator's report will be "my filter keeps resetting" with no way for
 them to see why.
+
+### `const FILTER_FILE`
+
+A plain text file rather than RON, because the whole content is a single
+line of space-separated words. RON would add a schema wrapper, a parser
+dependency and a version field to serialise eleven booleans that already
+have a stable textual form — and would make the file unreadable by the one
+tool most likely to be pointed at it, which is a person with a text editor
+trying to work out why their canvas stopped selecting things.
+
+### `fn path`
+
+`None` is not an error: `pdfcer-core` reports it for a build with no
+writable profile location at all, and the correct behaviour then is to run
+with defaults and save nothing.
+
+### `fn load_from`
+
+The `Err` arm and the `Ok` arm are deliberately **not** merged. They mean
+different things — "you have never set this" against "these are your
+settings" — and only the former may be answered with the default. See the
+module header's table.
+
+### `fn save`
+
+Returns `Ok(false)` when this install has nowhere to write — which is a
+successful no-op rather than a failure, and is distinguished from
+`Ok(true)` so a caller can tell "saved" from "there is no profile".
+
+Creates the directory if it is missing, because on a fresh portable install
+the first thing that wants to persist anything is whatever the operator
+touches first, and that may well be this.

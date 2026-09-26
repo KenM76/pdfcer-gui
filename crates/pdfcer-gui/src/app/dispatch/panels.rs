@@ -8,20 +8,6 @@ use egui_shell::dock::PanelId;
 use crate::app::PdfcerApp;
 
 /// The command ids this module claims.
-///
-/// A **free function** taking `id`, and that shape is required rather
-/// than preferred. `shell::commands::reach` parses `dispatch.rs`'s syntax
-/// tree to work out which commands each guard arm claims, and it can only
-/// read a guard that calls a named function with `id` — a method call on
-/// `self` is *"an expression that calls nothing with `id`"* to it, and the
-/// arm becomes invisible to the reachability register. An arm the register
-/// cannot see is an arm that stops proving anything, which is the whole
-/// point of the register.
-///
-/// ⇒ So the guard is this, and the body calls the method. The pair is
-/// pinned by [`tests::the_guard_and_the_dispatcher_claim_the_same_ids`], so
-/// a verb added to one and not the other fails a named test rather than
-/// becoming a control that traces `command-unimplemented`.
 #[must_use]
 pub(crate) fn claims(id: &str) -> bool {
     matches!(
@@ -50,11 +36,6 @@ impl PdfcerApp {
     }
 
     /// Dispatch one of the panel-layout commands.
-    ///
-    /// Returns `false` when `id` is not one of them, so
-    /// [`super::PdfcerApp::dispatch_command`] can fall through to its
-    /// other arms — the shape a guard arm needs when the set it claims is
-    /// a fixed list of literals rather than a predicate.
     pub(in crate::app) fn dispatch_panel_layout(&mut self, id: &str) -> bool {
         match id {
             // **Float** — tear the right-clicked panel out into a

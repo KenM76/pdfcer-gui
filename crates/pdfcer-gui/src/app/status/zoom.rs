@@ -31,12 +31,6 @@ fn readout_width(ui: &egui::Ui, max_zoom_percent: f32) -> f32 {
     (galley.size().x + 2.0).max(ZOOM_READOUT_WIDTH_PTS)
 }
 /// `−  ⟨percent⟩  +`.
-///
-/// The readout is a label rather than a field: there is no action that sets
-/// a zoom to a named value (see [`crate::text::status::zoom_percent`]), and
-/// a text box in front of nothing is a placeholder. It is given a fixed
-/// width so that stepping from `100%` to `75%` does not move the − button
-/// out from under the operator's pointer.
 pub(super) fn group(
     ui: &mut egui::Ui,
     doc: &OpenDoc,

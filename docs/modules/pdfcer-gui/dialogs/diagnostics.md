@@ -79,3 +79,18 @@ that could alias.
 Its own function because both bodies above need it and the early return
 for "nothing drawn" must not be a window with no way out but the title
 bar's cross.
+
+### `struct DiagnosticsDialog`
+
+It holds **no configuration**, exactly as [`super::about::AboutDialog`]
+does, and for the same reason: everything it shows is read from the open
+document's current texture on the frame it is drawn, so there is nothing for
+the operator to change and nothing for closing it to forget.
+
+Reading live rather than snapshotting on open is a decision. A snapshot
+would freeze the report of whichever raster happened to be current when the
+command was pressed, and the operator's very next act while diagnosing is to
+change the zoom or the page — at which point a frozen window would be
+describing a picture that is no longer on the canvas while looking exactly
+like one that is. The title says *the picture currently on the canvas*, and
+this is what makes that true.

@@ -13,30 +13,6 @@ use crate::canvas::formfield::action::{
 };
 
 /// **What an EXISTING button currently does**, one sentence per state.
-///
-/// # The four states, and why there are four
-///
-/// `EditSession::button_action` answers with `ButtonActionState`, and this
-/// shell asked for **three** — `None`, `Known`, `Foreign`. `pdfcer-core` shipped
-/// four and explained why, and the explanation is worth carrying because the
-/// distinction is entirely about what a control may OFFER:
-///
-/// | state | what it means | what this row offers |
-/// |---|---|---|
-/// | `None` | no `/A` at all | "Nothing" — set one |
-/// | `Known` | modelled; writable back unchanged | show it, change it |
-/// | `Unmodelled` | pdfcer **authors** this subtype and did not decode this instance | name it, offer to **replace**, never claim to show it |
-/// | `Foreign` | pdfcer recognises it and **will not author** it | name it, offer nothing |
-///
-/// `Unmodelled` and `Foreign` differ in exactly one thing — whether
-/// replacing is offered — and that is the decision the operator is actually
-/// being asked to make. A three-state enum would have forced a wrong answer in
-/// one direction or the other: `Foreign("SubmitForm")` on a submit pdfcer writes
-/// happily would grey a row that should have been live.
-///
-/// Today `GoTo` and `SubmitForm` answer `Unmodelled` — authored, not yet
-/// decoded. That will widen, and widening is additive: a state that becomes
-/// `Known` gains a value to show and loses nothing.
 #[must_use]
 pub fn current_none() -> String {
     "Does nothing when pressed.".to_owned()
@@ -49,10 +25,6 @@ pub fn current_known(kind: ButtonDoesKind) -> String {
 }
 
 /// A subtype pdfcer writes but did not decode **this instance** of.
-///
-/// The sentence must do two things at once and neither may be dropped: say the
-/// button **does** something, and refuse to say what. Claiming to show it would
-/// be the sneaky half of rule 4; claiming it does nothing would be worse.
 #[must_use]
 pub fn current_unmodelled(subtype: &str) -> String {
     let named = if subtype.is_empty() {
@@ -66,11 +38,6 @@ pub fn current_unmodelled(subtype: &str) -> String {
 }
 
 /// A subtype pdfcer recognises and will not author.
-///
-/// The variant the request argued for by name. `None` and `Known` could both be
-/// synthesised by a shell that guessed; this one cannot, and it is what lets
-/// the row say *"this button runs a script"* instead of silently offering to
-/// replace one with "Nothing".
 #[must_use]
 pub fn current_foreign(subtype: &str) -> String {
     let named = if subtype.is_empty() {
@@ -106,11 +73,6 @@ pub fn apply_button() -> String {
 }
 
 /// The status line after an existing button's action is changed.
-///
-/// `replaced` is what the engine says was destroyed, **including a script**.
-/// `ButtonActionChange::replaced` carries it as a `String` rather than an
-/// `Option<ButtonAction>` precisely so a removed script is expressible — a form
-/// editor overwriting another tool's work should know it did.
 #[must_use]
 pub fn changed(name: &str, replaced: Option<&str>) -> String {
     match replaced {
@@ -122,22 +84,12 @@ pub fn changed(name: &str, replaced: Option<&str>) -> String {
 }
 
 /// The label above the chooser.
-///
-/// Phrased as a question about the button rather than as *"Action"*, which is
-/// the format's word and not the operator's. Acrobat's tab is called *Actions*
-/// and this project's standing rule is to use the conventional interaction —
-/// but the conventional *interaction* is a chooser of behaviours, and the label
-/// on it may be the plainer one.
 #[must_use]
 pub fn does_label() -> String {
     "What pressing it does".to_owned()
 }
 
 /// Each choice, as it appears in the drop-down.
-///
-/// Verb-first and in the operator's terms, never the `/S` subtype name. A
-/// chooser reading *ResetForm / GoToPage / SubmitForm* would be pdfcer showing
-/// its own internals to somebody who wants a button that clears the form.
 #[must_use]
 pub fn does_choice(kind: ButtonDoesKind) -> String {
     match kind {
@@ -153,12 +105,6 @@ pub fn does_choice(kind: ButtonDoesKind) -> String {
 }
 
 /// The one-line explanation under the chooser, per choice.
-///
-/// Every one of the seven says what the action **reaches**, because that is
-/// the property none of them shows on screen and the property they differ on.
-/// The four that reach nothing say so in as many words, so that the two that do
-/// are not the only ones carrying a sentence — a disclosure that appears only
-/// on the dangerous choice teaches an operator to skip reading it.
 #[must_use]
 pub fn does_note(kind: ButtonDoesKind) -> String {
     match kind {
@@ -230,13 +176,6 @@ pub fn targets_label() -> String {
 }
 
 /// What a show/hide target may be.
-///
-/// The terminal-name requirement, said before the engine refuses it. Table
-/// 210 states nothing about descendant expansion — the phrase *"all descendants
-/// of the specified fields"* occurs twice per edition of ISO 32000 and never on
-/// this row — so a grouping name is a button that hides a subtree in one reader
-/// and nothing in another. `pdfcer-core` refuses one by name; this says why
-/// while the box that holds the mistake is still on screen.
 #[must_use]
 pub fn targets_note() -> String {
     "Name the fields themselves, not a group they belong to. The standard does not say what a \
@@ -264,25 +203,6 @@ pub fn url_label() -> String {
 
 /// **The submit disclosure** — the six facts §12.7.5.2 makes true and
 /// nobody can guess.
-///
-/// Shown whole, before the button exists, and every clause is sourced:
-///
-/// 1. **Hidden fields are sent.** `Hidden` is an *annotation* flag; every
-///    submit selector addresses *field* dictionaries. The only field-level
-///    withhold flag that exists is `NoExport`. Different objects.
-/// 2. **Masked fields are sent as plain text.** `Password`'s NOTE constrains
-///    storage, not transmission.
-/// 3. **A file-select field sends the contents of the local file it names.**
-/// 4. **The baseline payload already carries this document's own file path and
-///    its trailer `/ID`** — with nothing configured, `/Flags 0`.
-/// 5. Not stated here because pdfcer writes the baseline: `IncludeAppendSaves`
-///    would turn a submit into a save. Named in the module header so that a
-///    later option to set it arrives with its sentence already written.
-/// 6. Not stated here for the same reason: `SubmitPDF` ignores field selection
-///    entirely.
-///
-/// It does not say "are you sure". It is a statement of what the file will
-/// declare, positioned where the operator is deciding whether to declare it.
 #[must_use]
 pub fn submit_disclosure() -> String {
     "What that declaration would cover, if a reader program acts on it: every field's value, \
@@ -295,21 +215,12 @@ pub fn submit_disclosure() -> String {
 
 /// Said when the address is not `https:` — a **statement**, never a
 /// refusal.
-///
-/// The standard states no TLS rule; `https` appears zero times in ISO 32000-1.
-/// pdfcer does not invent one, so this is the whole of the response: say it, and
-/// let the operator decide. Refusing would be pdfcer enforcing a rule nobody
-/// wrote, and doing so silently would be worse.
 #[must_use]
 pub fn submit_unencrypted() -> String {
     "This address is not encrypted, so anything sent to it could be read in transit.".to_owned()
 }
 
 /// Why the dialog will not accept the draft yet.
-///
-/// One sentence per blocker, each naming **the box to fix** rather than the
-/// rule that was broken. An operator reading *"the destination is not
-/// absolute"* has to work out which of four boxes that refers to.
 #[must_use]
 pub fn blocker(reason: ActionBlocker) -> String {
     match reason {
@@ -328,10 +239,6 @@ pub fn blocker(reason: ActionBlocker) -> String {
 }
 
 /// The status line after a button is placed with an action.
-///
-/// Names the action in the operator's words, not the `/S` subtype, and is
-/// the off-canvas half of rule 4: the button on the page is drawn exactly as
-/// the saved file will draw it, and what it now *does* is said here.
 #[must_use]
 pub fn placed_with_action(name: &str, kind: ButtonDoesKind) -> String {
     if matches!(kind, ButtonDoesKind::Nothing) {
@@ -346,31 +253,12 @@ pub fn placed_with_action(name: &str, kind: ButtonDoesKind) -> String {
 
 /// Said when the button and its action could not be folded into one undo
 /// entry.
-///
-/// `EditSession::coalesce_last` answers `false` when the undo stack was shorter
-/// than the count asked for — every change is applied and only the **grouping**
-/// failed. So the button exists and does what it was asked to do; the only
-/// thing wrong is that taking it back needs two presses.
-///
-/// Worth a sentence rather than a shrug: an operator who presses Ctrl+Z once,
-/// sees a button still sitting there, and is told nothing will conclude that
-/// undo is broken — which is a far worse belief than the truth.
 #[must_use]
 pub fn two_undo_entries(name: &str) -> String {
     format!("Placed {name}. Undoing it takes two presses rather than one.")
 }
 
 /// Said when the action could not be written although the button was placed.
-///
-/// **Two commands, and the second one can fail on its own.** `pdfcer-core`
-/// authors the button and sets the action as separate verbs, so a refusal on
-/// the second leaves a correctly placed button with no behaviour. Silence there
-/// would be the exact defect this whole feature exists to remove — a button
-/// that looks right and does nothing — arriving by a different door.
-///
-/// The engine's own words are appended, because they name the specific
-/// condition: a page past the end, a field that is not there, a target that is
-/// a group.
 #[must_use]
 pub fn action_refused(name: &str, why: &str) -> String {
     format!("{name} was placed, and could not be given anything to do: {why}")

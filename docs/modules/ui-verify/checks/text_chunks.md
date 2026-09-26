@@ -147,3 +147,24 @@ one oracle, which is a rendered screenshot.
 6. **Require the `[FAIL]` line**, not the exit code — a SKIP exits the way a
    PASS does.
 7. **Restore from the byte copy**, rebuild, confirm the PASS returns.
+
+## Item notes
+
+### `const DECLINED_EVENT`
+
+A distinct first token, deliberately: `tools/gates/check-trace-names.py`
+compares first tokens, and a shared one would make the two events
+indistinguishable to `Trace::events`.
+
+### `fn verdict`
+
+Both are read and the later one wins, rather than one being preferred:
+they are two spellings of one state, and asking only for the one a step
+expects would turn *the opposite happened* into *nothing happened*.
+
+### `fn press_the_toggle`
+
+`want` is the state the press must produce, asserted against the
+application's own `text-chunks enabled=` line — the middle link of the
+chain. The painter's answer is the caller's to check, because only the
+caller knows what should then be on the page.

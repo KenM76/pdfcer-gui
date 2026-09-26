@@ -100,3 +100,97 @@ weaker way to achieve the same thing"* — applies with equal force to a
 second struct literal. Two constructors that each listed thirty fields
 would drift the moment one of them gained a field, and the drift would
 be invisible: the compiler is satisfied by both.
+
+### `fn policy_token`
+
+# Why this exists rather than `{:?}` on the engine's enum
+
+Because a `Debug` rendering belongs to `pdfcer-core`, and a driven check
+keyed on one is asserting a formatting detail of somebody else's crate. This
+project has already shipped a machine-read field that inverted its meaning
+when an upstream `Debug` impl changed shape, and the check kept quoting the
+truth while reporting the opposite of it.
+
+So: two tokens, owned here, changed only deliberately. They are **not**
+operator copy and never reach a surface — `crate::text::anomalies` owns the
+sentences a person reads.
+
+⚠ The `_` arm is not laziness. [`pdfcer_core::parser::DuplicateKeyPolicy`]
+is `#[non_exhaustive]`, and `Refuse` — which this shell must never send to a
+loader, see `crate::panels::docprops` — is a third variant today.
+
+### `fn new`
+
+Everything starts fresh, deliberately: opening a document
+constructs a whole new `OpenDoc`, so a cached texture or a page
+index can never refer to a page from a previous file. A `reset()`
+method would be a second, weaker way to achieve the same thing and
+an invitation to reuse an `OpenDoc` across documents — which is
+exactly the stale-state bug that constructing fresh state prevents
+by design.
+
+`pub(crate)` rather than private so a panel's own test can build the
+document state its body reads, through the **same** constructor
+[`PdfcerApp::open_path`] uses. A test-only alternative constructor
+would be a second way to assemble an `OpenDoc`, which is precisely
+what this function's own argument says not to have.
+
+### `fn created`
+
+`name` is what the document is called, not where it is —
+`crate::text::files::untitled`. See [`Origin::Created`].
+
+A sibling of [`Self::new`] rather than a flag on it, because the two
+read differently at the call site and one of them is rare: `open_path`
+and `new_document` each say which they mean, and neither passes a
+boolean whose meaning a reader has to look up.
+
+### `fn stored_under`
+
+The single predicate that separates [`Origin::Opened`] from
+[`Origin::Created`] at every site that cares, and it is deliberately
+shaped as *"give me the path if there is one"* rather than as
+`is_created()`: the three call sites all want the path, so a boolean
+would leave each of them reaching for `self.path` afterwards and one of
+them eventually forgetting the test.
+
+Its three readers, and what each would do wrong without it:
+
+| site | without this |
+|---|---|
+| `PdfcerApp::open_path` → `RecentFiles::remember` | the Recent menu gains a row for a file that does not exist, whose whole promise is *"this worked before"* |
+| `viewer::remembered` (read at open, written by `SetPageDisplay`) | a page-display choice stored against a fabricated path, and inherited by the next document that happens to be called the same thing |
+| `canvas::guides` (read in [`Self::assemble`], written by `SetGuides`) | the same, for guide positions |
+
+It is **not** consulted by the forms cache key, the Pages panel caption
+or the trace, and that is correct rather than an omission: those want an
+identity or a label, and a name is both.
+
+### `fn current_extent`
+
+Falls back to a US Letter shape for a document with no pages, so the
+fit arithmetic has something finite to divide by. Nothing is drawn
+in that state — the canvas shows [`crate::text::canvas_no_pages`] —
+so the value is never seen; it exists so the arithmetic upstream of
+the check does not have to special-case an empty document as well.
+
+### `fn set_annotations_visible`
+
+A staleness key, so changing it makes the cached texture stale and the
+page re-rasterizes on the next frame — see [`RenderKey`]. That is the
+whole difference between this being a control and being a bool nobody
+can see.
+
+**Deliberately does NOT bump [`Self::edit_epoch`]**: nothing about the
+document has changed, only what is drawn of it. Bumping would throw
+away the decomposition and the font inventory to no purpose, and would
+make an `objects n=` line re-trace as though an edit had happened.
+
+### `fn strip`
+
+Built from the page vector and the view state, so it cannot disagree
+with either. The convenience over calling
+[`crate::viewer::strip::Strip::new`] at each site is not brevity: it is
+that the three arguments after `pages` are all view state, and a call
+site that passed its own idea of the display mode or the zoom would be
+laying out a strip the rest of the frame does not agree with.

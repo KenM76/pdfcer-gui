@@ -81,3 +81,9 @@ to press: its question is *"is this panel open?"*, so it falls through
 is guarded by *"only if the section is not already on screen"* — pressing it
 with the panel up would close the thing under test. The guard predates the
 move and was written for the same hazard.
+
+### `fn open_document_properties`
+
+`file.document_properties`, on **File ▸ Document** — the band `RIBBON_IA.md`
+§5.1 heads *"inspection of what is inside the file"*, which is where Fonts
+and Properties already sit. A document's title is inside the file.

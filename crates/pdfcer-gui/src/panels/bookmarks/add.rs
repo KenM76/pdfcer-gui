@@ -19,10 +19,6 @@ pub const REGION_TITLE: &str = "bookmarks.new_title"; // ui-text-exempt: trace r
 pub const REGION_ADD: &str = "bookmarks.add"; // ui-text-exempt: trace region name, never displayed
 
 /// Draw the add-a-bookmark row.
-///
-/// `items` is the outline as it currently stands, used for two things and
-/// neither of them a count: naming the chosen parent, and reading whether it is
-/// **collapsed**.
 pub fn show(ui: &mut Ui, doc: &OpenDoc, ui_state: &mut BookmarksUi, actions: &mut Vec<Action>) {
     let page = doc.view.page_index;
     let outline = pdfcer_core::outline::read_outline(&doc.session.view());

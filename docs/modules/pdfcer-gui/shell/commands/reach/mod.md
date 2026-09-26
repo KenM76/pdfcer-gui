@@ -420,3 +420,55 @@ Every entry marked `P3` in its reason is a control this module's
 author believes should not be drawn yet; removing one is a taxonomy
 decision and is the operator's. The count moving *down* is the project
 working.
+
+### `mod register`
+
+`include_str!` rather than a runtime `std::fs::read_to_string` of a path
+built from `CARGO_MANIFEST_DIR`, and the difference is the whole
+precondition story. A path that stops resolving is a *runtime* `Err` that
+somebody has to remember to treat as a failure; `run-all.sh`'s header is
+about exactly that ("SKIPPED is not PASSED"). A missing `include_str!`
+target is a **compile error**, so the state in which this module checks
+nothing and says so quietly does not exist.
+The register — every registered command with no dispatch arm, and why.
+
+Split out at rule R2's ceiling, and the seam is a real one: this file is
+the **check** and that one is the **data**. See its header for
+why the data half is the one that grows, and why trimming a reason to fit is
+the worst available response.
+
+### `struct Arms`
+
+Both are sets rather than lists because the question asked of them is only
+ever membership, and because a duplicate arm is a `match` the compiler
+already warns about.
+
+### `fn read_arms`
+
+`src` is a parameter rather than a reach for [`DISPATCH_SRC`] for the
+reason `crate::diag::record_if_changed` takes its map as an argument: the
+**rule** is the interesting part and it has to be testable against a
+fixture. A reader that can only be pointed at the real file cannot be shown
+to bite.
+
+# Errors
+
+Returns the reason as a string when the source does not parse, when no
+method named [`DISPATCHER`] holds a `match`, or when an arm pattern is a
+shape this reader does not classify. **All three fail closed**: an
+unreadable dispatcher reports *nothing* reachable rather than everything,
+which is the direction that makes a caller notice.
+
+### `fn string_consts`
+
+Only `const NAME: &str = "value";` is recognised, which is the one shape an
+arm pattern can name. A constant built from an expression is not a pattern
+Rust would accept either, so nothing is lost by not resolving one.
+
+### `fn is_routed`
+
+The guard half consults **both** sides: a guard function may claim the
+id, *and* the dispatcher must actually have an arm that consults that
+function. Checking only the first would keep vouching for a family whose
+guard arm had been deleted — the mapping would still answer and four ribbon
+buttons would silently stop working, which is precisely the shape

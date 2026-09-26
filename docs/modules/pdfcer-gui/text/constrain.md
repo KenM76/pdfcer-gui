@@ -37,3 +37,10 @@ happening now, not statements about something that happened.
 The sharing case is the one worth guarding: a copy-paste that left both
 axes saying "left and right" would be invisible in review and would tell
 the operator the exact opposite of the truth half the time.
+
+### `fn caption`
+
+One function over the enum rather than one per variant, for the reason
+[`crate::text::resizing::refusal`] gives for the same shape: a variant added
+to [`Lock`] becomes a compile error here instead of a constraint that
+silently announces nothing.

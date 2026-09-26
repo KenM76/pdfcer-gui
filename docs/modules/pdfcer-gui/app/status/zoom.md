@@ -49,3 +49,11 @@ defect is not "46 pt is the wrong number", it is "the readout's content
 outgrew what the number was chosen for". A width assertion would pin a
 font metric and would have to be re-tuned whenever the face changed; the
 character count is the durable statement.
+
+### `fn group`
+
+The readout is a label rather than a field: there is no action that sets
+a zoom to a named value (see [`crate::text::status::zoom_percent`]), and
+a text box in front of nothing is a placeholder. It is given a fixed
+width so that stepping from `100%` to `75%` does not move the − button
+out from under the operator's pointer.

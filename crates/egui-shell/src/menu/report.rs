@@ -99,21 +99,12 @@ pub fn item(context_id: &str, command_id: &str) -> String {
 }
 
 /// The name under which one **application-drawn row** is published.
-///
-/// Keyed by `kind` rather than by position, because position is exactly
-/// what changes when a command above it is filtered out by the
-/// no-placeholders rule.
 #[must_use]
 pub fn custom(context_id: &str, kind: &str) -> String {
     format!("{PREFIX}.custom.{context_id}.{kind}")
 }
 
 /// The name under which one row's **painted icon slot** is published.
-///
-/// Published only when the application's icon painter was actually called
-/// for that row. See this module's header: the absence of this name is the
-/// assertion, and it is the only signal a driven check has that a menu
-/// surface draws glyphs at all.
 #[must_use]
 pub fn icon(context_id: &str, command_id: &str) -> String {
     format!("{PREFIX}.icon.{context_id}.{command_id}")

@@ -14,6 +14,8 @@
 //! anything it would have to reach in order to edit. Keep it that way — an arm
 //! that needs `PdfcerApp` belongs in a sibling module, because needing it is
 //! the evidence that the arm is not purely a selection.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/app/actions/selecting.md`.
 
 use crate::app::state::OpenDoc;
 use pdfcer_core::vector::{FormMarquee, MarqueeMode};
@@ -66,11 +68,6 @@ pub enum SelectionAction {
 }
 
 /// **Route one selection action.**
-///
-/// It takes `&mut OpenDoc` and nothing else — no `PdfcerApp`, no
-/// `&mut Vec<Action>`, no preferences. That narrow signature is the module's
-/// header made mechanical: an action that could reach anything else would be
-/// one that could change something, and none of these can.
 pub(super) fn apply_action(doc: &mut OpenDoc, action: SelectionAction) {
     match action {
         // Routed after the document guard, because a selection names parts of

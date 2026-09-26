@@ -14,130 +14,40 @@ const DIAG_IMAGE_PATH: &str = "PDFCER_DIAG_IMAGE_PATH"; // ui-text-exempt: an en
 pub const DIAG_OPEN_PATH: &str = "PDFCER_DIAG_OPEN_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
 /// The seam that answers the **attach a file** picker.
-///
-/// A fourth source variable rather than a shared one, on the argument
-/// [`pick_insert_source`] spells out for the second and this module's header
-/// states as a standing instruction: one seam answering two pickers makes a
-/// run that opens a document and then attaches a spreadsheet to it unwritable,
-/// which is precisely the run a driven check of this feature has to be.
 pub const DIAG_ATTACH_PATH: &str = "PDFCER_DIAG_ATTACH_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
 /// The seam that answers the **save an attachment out** dialog.
-///
-/// Separate from [`DIAG_SAVE_PATH`], and this is the sharpest instance of the
-/// rule rather than a routine application of it. [`pick_save_path`]'s own doc
-/// records that its seam is *shared* by its two callers, so a check driving
-/// both in one session gets one file. Attaching and saving out are the two
-/// halves of the round trip a check of this feature exists to prove — attach a
-/// known file, save it back, compare the bytes — and that check is
-/// unwritable if the save seam is the one the document-save also reads.
 pub const DIAG_ATTACHMENT_SAVE_PATH: &str = "PDFCER_DIAG_ATTACHMENT_SAVE_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
 /// The harness seam for [`pick_form_data_source`].
-///
-/// Its own variable rather than sharing [`DIAG_OPEN_PATH`], for the reason
-/// `DIAG_INSERT_PATH` gives: a driven check that imports form data into an
-/// already-open document must be able to name the data file **without** also
-/// answering the document picker, and one variable answering both would make
-/// the two indistinguishable.
 pub const DIAG_FORM_DATA_PATH: &str = "PDFCER_DIAG_FORM_DATA_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
 /// The text file `file.import_text` reads, for a driven check.
-///
-/// Its own variable rather than sharing one, for `DIAG_FORM_DATA_PATH`'s
-/// stated reason: a check that set one variable and got a different picker's
-/// answer would be a seam that reports the wrong subject, and the two pickers
-/// can be reached in one run.
 pub const DIAG_TEXT_IMPORT_PATH: &str = "PDFCER_DIAG_TEXT_IMPORT_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
 /// The harness seam for [`pick_font_folder`].
-///
-/// Its own variable, for `DIAG_FORM_DATA_PATH`'s reason: a driven check that
-/// adds a font folder must be able to name it without also answering the
-/// document picker.
 pub const DIAG_FONT_FOLDER_PATH: &str = "PDFCER_DIAG_FONT_FOLDER"; // ui-text-exempt: an environment variable name, never displayed
 
 /// The harness seam for [`pick_acrobat`] — `OPERATOR_REQUESTS.md` O122.
-///
-/// Its own variable, for [`DIAG_FONT_FOLDER_PATH`]'s reason and with an
-/// extra one of its own: a driven check that sets the Acrobat path must be
-/// able to name a **program** without also answering the document picker, and
-/// the file it names is deliberately not a PDF — sharing a variable with the
-/// open picker would make a check that set one accidentally answer the other.
 pub const DIAG_ACROBAT_PATH: &str = "PDFCER_DIAG_ACROBAT_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
 /// The harness seam for [`pick_trust_store`] — the signature-trust work,
 /// 2026-09-05.
-///
-/// Its own variable, and NOT shared with [`DIAG_ACROBAT_PATH`], for the
-/// reason that one gives about the document picker: the two controls sit in
-/// different groups of the same window, and a driven check that set one
-/// variable to answer both would silently make the Acrobat browse button
-/// return an `addressbook.acrodata`. The check would still pass and the thing
-/// it proved would be false.
 pub const DIAG_TRUST_STORE_PATH: &str = "PDFCER_DIAG_TRUST_STORE_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
 /// The harness seam for [`pick_certificate`] — the `.pfx`/`.p12` a driven
 /// check signs with.
-///
-/// ⚠ **A PATH, and never a passphrase.** There is deliberately no
-/// `PDFCER_DIAG_CERTIFICATE_PASSPHRASE` beside it: `tools/ui-verify` captures
-/// the child's environment into the same evidence directory it captures the
-/// trace into, and `crate::sign`'s §5 forbids a private key's passphrase
-/// reaching any file that outlives the session. A driven check types the
-/// passphrase into the field like an operator does, which is also the only way
-/// to prove the field works.
 #[cfg(feature = "signing")]
 pub const DIAG_CERTIFICATE_PATH: &str = "PDFCER_DIAG_CERTIFICATE_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
 /// The environment variable that answers the **save** dialog instead of
 /// opening it.
-///
-/// Added with [`pick_save_path`], and from the start rather than after a
-/// harness failed to reach it — which is this module's own recorded
-/// instruction: *"any future `rfd` call added to a scripted-driven GUI should
-/// get the same `PDFCER_DIAG_<PURPOSE>` seam from the start."* A native save
-/// dialog is the same hard wall as a native open dialog: it is a top-level
-/// window owned by the OS shell, outside egui's event loop, and no synthetic
-/// input reaches it.
-///
-/// It matters more here than it did for Open. `tools/ui-verify` can drive a
-/// recognition and read the trace, but without this seam the one thing it
-/// could never observe is **whether the recognised bytes are actually a
-/// document** — the write is behind a modal no harness can dismiss. With it,
-/// the check names a path, the file appears, and the assertion can be about
-/// the file rather than about a button having been pressed.
-///
-/// | `PDFCER_DIAG_SAVE_PATH` | [`pick_save_path`] returns | For |
-/// |---|---|---|
-/// | unset | whatever the native dialog says | the operator |
-/// | a path | [`Picked::Path`] — no dialog opens | a harness verifying what was written |
-/// | set but **empty** | [`Picked::Cancelled`] — no dialog opens | a harness exercising the path where the operator declines to save, which must leave nothing behind |
 pub const DIAG_SAVE_PATH: &str = "PDFCER_DIAG_SAVE_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
 /// **The seam for the MULTI-file picker** — `OPERATOR_REQUESTS.md` O68.
-///
-/// `PDFCER_DIAG_MERGE_SOURCES`, and it is the only one of these that names
-/// **several** paths: they are separated by `;`, which is the Windows path-list
-/// separator and therefore the one character that cannot appear in a path on
-/// this platform. (`:` would have been wrong — `C:\` — and a newline is
-/// unwritable in a `set` on a command line.)
-///
-/// Empty answers `Cancelled`, exactly as every other seam here does, so a
-/// driven check can exercise the branch where the operator dismisses the
-/// dialog. A single path is a legal answer and produces a one-source merge,
-/// which `pageops::merge` accepts and which is worth being able to drive: it is
-/// the case where the report's page count must equal the source's exactly.
 pub const DIAG_MERGE_SOURCES: &str = "PDFCER_DIAG_MERGE_SOURCES"; // ui-text-exempt: an environment variable name, never displayed
 
 /// What asking for a document produced.
-///
-/// Three answers rather than `Option<PathBuf>`, because the third one is not
-/// a refinement of "no path": **cancelled** is the operator saying no, and
-/// **unavailable** is this build having no way to ask. They call for
-/// different behaviour (silence versus a trace naming a build gap) and
-/// conflating them is how "the button does nothing" becomes indistinguishable
-/// from "the operator changed their mind".
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Picked {
     /// The operator (or the diagnostic seam) named this file.
@@ -163,15 +73,6 @@ pub enum Picked {
 }
 
 /// **Ask for a document to open.**
-///
-/// The diagnostic seam first, the platform picker second. See the module
-/// header for why that order is the whole point.
-///
-/// Blocks while a dialog is open, exactly as `rfd::FileDialog::pick_file`
-/// does: the caller is the command dispatcher, which runs between frames, and
-/// a picker that returned asynchronously would need a state machine to hold
-/// the half-finished intent across frames — machinery worth building for a
-/// dialog pdfcer draws itself, not for one the OS owns.
 #[must_use]
 pub fn pick_document() -> Picked {
     if let Some(raw) = std::env::var_os(DIAG_OPEN_PATH) {
@@ -225,11 +126,6 @@ fn queued(raw: &OsString) -> Option<Picked> {
 }
 
 /// Read the diagnostic seam, if it is set. Pure, so it can be tested.
-///
-/// `None` means "the variable is not set, go and ask properly". `Some` is a
-/// complete answer that the dialog is then never opened for — which is the
-/// property the harness depends on, because a dialog that opened *as well*
-/// would still block it.
 #[must_use]
 pub fn from_env(value: Option<OsString>) -> Option<Picked> {
     let value = value?;
@@ -244,31 +140,6 @@ pub fn from_env(value: Option<OsString>) -> Option<Picked> {
 }
 
 /// **Turn what the picker said into what the application does about it.**
-///
-/// The whole of the `file.open` dispatch arm, and it lives here rather than
-/// in [`crate::app::PdfcerApp`] for one reason: it is the only part of that arm
-/// a test may run. Dispatching `file.open` itself opens a **real modal
-/// dialog** and blocks until a human dismisses it, so a test that did it would
-/// hang `cargo test` behind an invisible window (rule 3 above). Everything
-/// downstream of the answer is therefore reachable from a test with the answer
-/// supplied directly, and only the `env::var_os` read itself is not — and
-/// cannot be, because `std::env::set_var` is `unsafe` in edition 2024 and this
-/// crate forbids unsafe code.
-///
-/// A free function rather than a method because it touches no application
-/// state, which is itself the point: a picker's answer becomes an action and
-/// nothing else. The deciding, the loading and the three-way failure
-/// classification all happen after the frame, in
-/// [`crate::app::PdfcerApp::apply_actions`].
-///
-/// The three answers get three different treatments, and the differences are
-/// the whole reason [`Picked`] is not an `Option<PathBuf>`:
-///
-/// | answer | what happens | why |
-/// |---|---|---|
-/// | a path | [`crate::app::actions::Action::Open`] | the ordinary case |
-/// | cancelled | nothing at all, not even a trace line | the operator changed their mind; that is a complete and correct outcome, and reporting it would put a line in the trace on every dismissed dialog |
-/// | unavailable | a trace naming the gap | a **build** limitation rather than an operator choice, and the one a reader of a trace from a machine they cannot see most needs told apart from "the click never arrived" |
 pub fn raise(picked: Picked, actions: &mut Vec<crate::app::actions::Action>) {
     match picked {
         Picked::Path(path) => actions.push(crate::app::actions::Action::Open(path)),
@@ -291,36 +162,6 @@ fn native_pick() -> Picked {
 }
 
 /// **Ask which PDF to take pages from** — `pages.insert_from_file`.
-///
-/// # Why this is not [`pick_document`] with a different title
-///
-/// Two reasons, and the second is the one that matters.
-///
-/// **The title.** Open replaces what is on screen; insert adds to it. A picker
-/// headed *"Open a PDF"* over a document the operator is part-way through
-/// editing says the wrong thing at the moment they are most likely to read it.
-///
-/// **The diagnostic seam.** [`pick_document`] reads `PDFCER_DIAG_OPEN_PATH`,
-/// which is how `ui-verify` drives Open without a modal dialog blocking the
-/// harness. If insert shared it, a check that set the variable to drive Open
-/// would ALSO silently answer every insert picker — so a run that opened one
-/// file and inserted another could not be written at all, and a run that meant
-/// to test one would quietly be testing both.
-///
-/// `PDFCER_DIAG_INSERT_PATH` is its own seam for its own verb. Same shape, same
-/// `from_env` parser, separate variable.
-/// Ask for a raster image to place on the page.
-///
-/// The third picker in this module and the first that is not asking for a PDF.
-/// The filter lists the four formats `pdfcer-core` actually places — its own
-/// `SUPPORTED_FORMATS` constant — because a picker that offers every file and
-/// then refuses most of them has moved the refusal from a dialog the operator
-/// can dismiss to one they have to read.
-///
-/// The *all files* filter stays beneath it, as it does for the other two: a
-/// `.jpeg` that somebody saved as `.dat` is still a JPEG, `sniff` reads the
-/// bytes rather than the extension, and an operator who knows what their file
-/// is should not be blocked by its name.
 #[must_use]
 pub fn pick_image_source() -> Picked {
     if let Some(answer) = from_env(std::env::var_os(DIAG_IMAGE_PATH)) {
@@ -347,21 +188,6 @@ pub fn pick_image_source() -> Picked {
 }
 
 /// **Ask which form-data file to read.**
-///
-///
-/// # Three filters, and the format is decided by CONTENT rather than by which
-/// one the operator picked
-///
-/// The filters are a convenience for finding the file. What decides how it is
-/// parsed is the **extension of the file actually chosen**, exactly as it
-/// decides the format on the way out — so the two halves of the round trip use
-/// one rule, and an operator who exported `.csv` and imports `.csv` cannot land
-/// in a branch they did not choose.
-///
-/// The *all files* filter stays beneath them, for [`pick_image_source`]'s
-/// stated reason: a file somebody saved under a different name is still that
-/// file, and an operator who knows what theirs is should not be blocked by its
-/// name.
 #[must_use]
 pub fn pick_form_data_source() -> Picked {
     if let Some(answer) = from_env(std::env::var_os(DIAG_FORM_DATA_PATH)) {
@@ -389,18 +215,6 @@ pub fn pick_form_data_source() -> Picked {
 
 /// **Ask which text file to import as pages** — `file.import_text`,
 /// `pdfcer-core` `Pass 252.0`.
-///
-/// It carries the **same `DIAG_*` env override** every picker in this module
-/// does, and that is not boilerplate: a native file dialog is an OS window a
-/// driven check cannot type into, so without this seam `tools/ui-verify` could
-/// press the ribbon item and get no further. `form-data`, `image`, `document`
-/// and `attachment` all have one for the same reason.
-///
-/// `.txt` first, then everything — the two filters `pick_form_data_source`
-/// offers and in that order. A text export from another system is very often
-/// `.log`, `.csv` or no extension at all, and a picker that hid those would
-/// send the operator to *All files* every time; a picker that opened on *All
-/// files* would make the common case one click longer.
 pub fn pick_text_source() -> Picked {
     if let Some(answer) = from_env(std::env::var_os(DIAG_TEXT_IMPORT_PATH)) {
         crate::diag::trace(|| {
@@ -423,24 +237,6 @@ pub fn pick_text_source() -> Picked {
 }
 
 /// **Ask which file to embed in the document** (ISO 32000-1 §7.11.4.1).
-///
-/// # Why this picker offers no format filter at all
-///
-/// Every other file picker in this module narrows what it shows, and each of
-/// them is right to: an image picker that offered `.dll` would have moved a
-/// refusal from a dialog the operator can dismiss to one they have to read.
-///
-/// **This verb refuses nothing.** `EditSession::attach_file` takes
-/// `bytes: &[u8]` and writes them into an embedded file stream without
-/// interpreting them — a PDF may legitimately carry a spreadsheet, a CAD
-/// model, a zip, a photograph or a text file, and the whole point of the
-/// feature is that the document is a container. A filter here would be this
-/// shell inventing a restriction the engine does not have, and the operator
-/// would have to know to select *All files* to defeat it.
-///
-/// So [`crate::text::files::filter_all`] alone, and it is the only entry rather
-/// than the last one — a single-entry filter list is what tells the operator
-/// the dialog is not hiding anything.
 #[must_use]
 pub fn pick_attachment_source() -> Picked {
     if let Some(answer) = from_env(std::env::var_os(DIAG_ATTACH_PATH)) {
@@ -463,28 +259,6 @@ pub fn pick_attachment_source() -> Picked {
 }
 
 /// **Ask where to write one attachment out.**
-///
-/// # Why this is not [`pick_save_path`] with a different title
-///
-/// Two differences, and both would be defects if this reused that function:
-///
-/// 1. **The filter.** [`native_save`] adds a hard-coded PDF filter, because its
-///    two callers are both writing PDFs. An attachment is whatever the document
-///    put in it, and a save dialog that offered to append `.pdf` to somebody's
-///    spreadsheet would be actively wrong.
-/// 2. **The seam.** See [`DIAG_ATTACHMENT_SAVE_PATH`]: the round-trip check
-///    this feature needs — attach a known file, save it back, compare — cannot
-///    be written if this dialog answers to the same variable the document save
-///    does.
-///
-/// `suggested` is the **sanitised** name joined to a directory, never the raw
-/// name from the document. The caller owns that, and
-/// `crate::app::actions::attachments` carries the argument for why: a name in a
-/// PDF is attacker-controlled and unconstrained, and handing one to a save
-/// dialog is handing it to the filesystem.
-///
-/// Honours [`pick_save_path`]'s frame-timing requirement — the caller is
-/// `PdfcerApp::apply`, which is step 3, after every panel and dialog has closed.
 #[must_use]
 pub fn pick_attachment_target(suggested: &std::path::Path) -> Picked {
     if let Some(answer) = from_env(std::env::var_os(DIAG_ATTACHMENT_SAVE_PATH)) {
@@ -512,11 +286,6 @@ pub fn pick_attachment_target(suggested: &std::path::Path) -> Picked {
 }
 
 /// **Ask which folder pdfcer may take fonts from.**
-///
-/// A *directory* picker, not a file one. `--font-dir`'s own name says the
-/// unit is a folder, and asking for a font FILE would make an operator add
-/// twenty-six entries to embed a family — while the engine searches a folder
-/// for whatever face it needs.
 #[must_use]
 pub fn pick_font_folder() -> Picked {
     if let Some(answer) = from_env(std::env::var_os(DIAG_FONT_FOLDER_PATH)) {
@@ -539,20 +308,6 @@ pub fn pick_font_folder() -> Picked {
 
 /// **Ask which program is Acrobat** — `OPERATOR_REQUESTS.md` O122's Browse
 /// button.
-///
-/// A *file* picker, not a folder one, and not the document picker: the value
-/// is a full path to an executable. It is offered beside the text field rather
-/// than instead of it, because typing a path from memory is how a letter goes
-/// missing and because somebody who already knows the path should not have to
-/// navigate to it.
-///
-/// The filter offers programs first and everything second. First, because a
-/// person browsing for Acrobat is looking for an `.exe` and a picker showing
-/// every file in `Program Files` is a picker they have to fight. Second,
-/// because pdfcer does not actually require an `.exe` — a launcher script or a
-/// shim is a legitimate answer, and `crate::acrobat::resolve` honours a
-/// configured path whatever its name — so a filter that could not be widened
-/// would be this shell overruling the operator about their own machine.
 #[must_use]
 pub fn pick_acrobat() -> Picked {
     if let Some(answer) = from_env(std::env::var_os(DIAG_ACROBAT_PATH)) {
@@ -577,20 +332,6 @@ pub fn pick_acrobat() -> Picked {
 
 /// **Ask where Acrobat's downloaded trust list is** — the Settings ▸ Digital
 /// signatures Browse button.
-///
-/// Offered beside the text field rather than instead of it, exactly as
-/// [`pick_acrobat`] is and for the same reason: the value is a full path buried
-/// four directories inside `%APPDATA%`, which is a path nobody types correctly
-/// from memory, and somebody who already knows it should not have to navigate.
-///
-/// The filter names `.acrodata` first and everything second. First because
-/// that is what the file is called and a picker showing every file in a
-/// `Security` directory is one the operator has to fight. Second because pdfcer
-/// does **not** require the extension — `pdfcer_core::trust_store` sniffs the
-/// `%PPKLITE-` header rather than the name, and an administrator who handed
-/// somebody a copy called `trust.dat` has given them a perfectly readable store
-/// — so a filter that could not be widened would be this shell overruling the
-/// operator about their own machine.
 #[must_use]
 pub fn pick_trust_store() -> Picked {
     if let Some(answer) = from_env(std::env::var_os(DIAG_TRUST_STORE_PATH)) {
@@ -614,29 +355,6 @@ pub fn pick_trust_store() -> Picked {
 }
 
 /// **The certificate file to sign with** — a PKCS#12 `.pfx` or `.p12`.
-///
-/// [`pick_trust_store`]'s shape, and its filter argument applies here twice
-/// over: `.pfx` and `.p12` are the two names one format goes by (Windows
-/// exports the first, OpenSSL the second), and neither is required —
-/// `Pkcs12Signer::from_der` reads DER and never looks at the name. So the
-/// specific filter is offered first, because a picker showing every file in a
-/// directory is one the operator has to fight, and *all files* is offered
-/// second, because a certificate somebody was handed as `identity.bin` is a
-/// perfectly readable one and a filter that could not be widened would be this
-/// shell overruling the operator about their own machine.
-///
-/// ⚠ **Nothing here remembers where the operator keeps their digital ID.**
-/// `set_directory` is not called, no preference is written, and the path is not
-/// traced. A picker that reopened in the right folder would be a convenience
-/// paid for with a durable pointer at somebody's private key, written by a file
-/// nobody thinks of as sensitive.
-///
-/// `#[cfg]` for `crate::sign`'s reason: without the capability there is no
-/// window that could open this picker and no verb that could use its answer,
-/// and the copy it names (`crate::text::sign`) is compiled out with it. The
-/// module boundary is where a capability is present or absent;
-/// `SHELL_FRAMEWORK.md` §5b's rule governs the ribbon, and is satisfied by
-/// `file.sign` simply not being registered.
 #[cfg(feature = "signing")]
 #[must_use]
 pub fn pick_certificate() -> Picked {
@@ -701,29 +419,6 @@ pub fn pick_insert_source() -> Picked {
 
 /// **Ask for several PDFs to combine into a new one** —
 /// `OPERATOR_REQUESTS.md` O68.
-///
-/// The only picker in this shell that answers with more than one path, and it
-/// is a separate function rather than a flag on [`pick_document`] for the
-/// reason that file's other seven pickers are separate: each one has a title,
-/// a filter set and a diagnostic seam of its own, and a harness that could
-/// answer "the Open dialog" and "the Combine dialog" with the same variable
-/// could not drive a check that used both.
-///
-/// # Why `Vec<PathBuf>` and not `Picked`
-///
-/// Because [`Picked`] carries exactly one path and widening it would touch
-/// eight call sites to serve one. The three states are expressed instead as:
-/// a non-empty vector (the operator chose), an empty vector (cancelled, or the
-/// build cannot ask), and — deliberately **not** distinguished — which of those
-/// two the empty case was. That collapse is safe here and is not elsewhere: a
-/// merge writes a NEW file and changes nothing, so "the operator changed their
-/// mind" and "there was no dialog" have the same correct consequence, which is
-/// to do nothing quietly. `Picked::Unavailable` exists for verbs where the two
-/// must be told apart because one of them is a silent failure.
-///
-/// Blocks while the dialog is open, exactly as its siblings do, and carries the
-/// same frame-timing requirement: the caller runs it after its frame's layout
-/// closure has returned.
 #[must_use]
 pub fn pick_merge_sources() -> Vec<PathBuf> {
     if let Some(raw) = std::env::var_os(DIAG_MERGE_SOURCES) {
@@ -759,51 +454,6 @@ pub fn pick_merge_sources() -> Vec<PathBuf> {
 }
 
 /// **Ask where to write a new document.**
-///
-/// `suggested` is pre-filled into the dialog as the file name and the starting
-/// directory. It is a *suggestion*: the operator may type anything, including
-/// — if they insist — the file they opened. What the caller guarantees is that
-/// the suggestion itself is never that file, which is
-/// `crate::dialogs::ocr::suggested_path`'s job and is asserted there.
-///
-///
-/// One function for both, deliberately, and `title` is what the second caller
-/// cost. The alternative was a second `native_save` beside this one, which
-/// would have been a second place for the seam, the trace line and the
-/// directory/file-name split to be written — and the seam is exactly the thing
-/// that must not exist twice, because a harness that can answer one dialog and
-/// not the other cannot tell a save that was declined from a save that never
-/// asked.
-///
-/// The diagnostic seam is read first, for the reason in the module header, and
-/// [`DIAG_SAVE_PATH`]'s own documentation says what each of its three states
-/// buys a harness. Note that the seam is **shared** by both callers: a harness
-/// that sets `PDFCER_DIAG_SAVE_PATH` answers whichever of the two runs next, so
-/// a check that drives both in one session names one path and gets one file.
-///
-/// Blocks while the dialog is open, exactly as [`pick_document`] does.
-///
-/// # The frame-timing requirement, and it is a requirement
-///
-/// **The caller runs it after its frame's layout closure has returned.** Not a
-/// convention — see `dialogs::ocr`'s `save_requested` field, which exists for
-/// nothing else: an `rfd` modal opened from inside an `egui::Window` closure
-/// blocks the frame it is being drawn in, so the window the operator clicked is
-/// left half-painted underneath a dialog they cannot dismiss to finish it.
-///
-/// The two callers honour it differently and both are honest about which:
-///
-/// * `dialogs::ocr` sets a flag in its button arm and calls this **after**
-///   `egui::Window::show` returns, still inside step 2b of the frame;
-/// * `crate::app::save` is reached from `PdfcerApp::apply`, which is **step 3**
-///   — after every panel, the canvas, the docks, the find bar and the dialogs
-///   have all closed. That is the strongest position available and it is why
-///   `file.save_copy` raises an `Action` rather than picking during dispatch.
-///
-/// The distinction matters because *dispatch is not always outside a layout
-/// closure*: `PdfcerApp::central` dispatches the canvas's context-menu tokens
-/// from **inside** `egui::CentralPanel::show`. See [`pick_document`], which is
-/// called straight from a dispatch arm and therefore does not honour this.
 #[must_use]
 pub fn pick_save_path(suggested: &std::path::Path, title: &str) -> Picked {
     if let Some(answer) = from_env(std::env::var_os(DIAG_SAVE_PATH)) {

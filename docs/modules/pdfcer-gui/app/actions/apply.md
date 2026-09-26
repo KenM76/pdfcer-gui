@@ -46,3 +46,11 @@ tested. This function decides *which* transition, never *what it
 means* — a zoom that saturates, a page step that stops at the last
 page and a NaN that falls back to actual size are all decided in
 `viewer`, under unit test.
+
+### `fn apply_actions`
+
+Applied in the order raised. `pixels_per_point` is passed in rather
+than read from a context because the per-page zoom ceiling depends
+on it — see [`viewer::max_zoom_for_page`] — and threading it makes
+this function pure with respect to egui, which is what keeps it
+reviewable.

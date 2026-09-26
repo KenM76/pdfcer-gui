@@ -372,3 +372,312 @@ drops the normalisation.
 steps because the error accumulates linearly and a dozen would not show
 it: at 1,000 minor ticks a naive walk is already off by enough for
 [`Ladder::is_major`]'s tolerance to start missing labels.
+
+### `const THICKNESS_PTS`
+
+**A constant, and R128 is why** — see this module's header, §3. It is never
+derived from a label's width, from the zoom, or from anything else that
+varies per frame, because the viewport it is subtracted from feeds
+[`crate::viewer::ViewState::apply_fit`].
+
+22 points holds the small text style with a point of padding either side,
+plus the 6-point major tick that runs up from the inner edge. Chosen by
+measuring the drawn result rather than by arithmetic: at 18 the labels
+touched the ticks, and a number sitting on a line is a number the eye has
+to disentangle from it.
+
+### `const MIN_MAJOR_PITCH_PTS`
+
+The one number that decides the ladder: [`Ladder::for_labels`] walks the
+1-2-5 sequence upward until a step is at least this far apart on screen.
+
+76 rather than something tighter because core's formatter is *fixed-place*
+— `format_measurement` renders `100.00 pt`, not `100 pt` — so a label is
+routinely ten characters, which is ≈46 logical points at the small text
+style. 76 leaves a 30-point gap between one label's end and the next
+label's start. Labels that run together are worse than a coarser ladder:
+the operator can always read an exact value off the pointer indicator, and
+can read nothing at all off two overlapping numbers.
+
+### `const MAX_LINES`
+
+[`MIN_MAJOR_PITCH_PTS`] and [`super::grid`]'s own minimum pitch already
+bound the count by the viewport, so this is unreachable in ordinary use. It exists because
+the ladder divides by a zoom and by a scale, both of which arrive from
+outside this module, and a degenerate value there would otherwise be a
+frame that never finishes rather than a frame that draws slightly wrong. A
+visible mistake beats a hang.
+
+### `struct Gutters`
+
+`Copy` for the same reason [`PageMapping`] is: it is a fact about one
+frame's layout, and one that outlived the frame would describe a canvas
+that has since been resized.
+
+With rulers off, `top`, `left` and `corner` are all `None` and `content`
+**is** `outer` — so every downstream expression is exactly the one it was
+before this feature. That is the same "the default path is unchanged, and
+it is asserted rather than intended" discipline [`crate::viewer::strip`]
+applies to single-page display.
+
+### `fn content_ui`
+
+A child rather than a `scope_builder` closure so that
+[`super::show_in`] keeps its early `return`s meaning what they say.
+Inside a closure a `return` leaves the closure rather than the
+function — the kind of silent semantic change a re-indentation hides
+perfectly.
+
+The clip is **intersected** with the parent's rather than replacing it,
+so a canvas inside an already-clipped dock compartment stays clipped by
+both.
+
+### `fn reserve`
+
+# Why the space is claimed here rather than at the end
+
+[`super::show_in`] has four exits and only one reaches the bottom of the
+function. Advancing the parent's cursor at each would be four places to
+forget; advancing it once, up front, from a rect that is already known,
+cannot be forgotten. Nothing else uses the parent `Ui` for layout
+afterwards — only for painting, which does not consult the cursor.
+
+# Why a degenerate canvas turns the rulers off rather than clamping them
+
+A dock compartment dragged down to nothing, or a window mid-resize, can
+leave less than two gutters' worth of room. Clamping would produce two
+rulers and no canvas, a picture that says the application is broken.
+Returning the no-ruler shape is the honest answer to *"there is not enough
+room to draw this"*, it recovers by itself on the next frame that has room,
+and — because the toggle is untouched — it does not silently countermand
+the operator's choice.
+
+### `struct CanvasGeometry`
+
+# Why this is handed back rather than read again
+
+Because it is only knowable *inside* [`super::show_in`], after the scroll
+area has laid out — the same reason `last_scroll_offset` is stored and the
+same reason `strip_visible` is published during layout. Re-deriving it
+outside would be a second answer to "where is the page", which is the
+failure `canvas::mapping`'s whole header exists to prevent.
+
+`None` from a frame that drew no page at all (no pages, a whole-canvas
+render refusal, a strip whose visible window fell outside every page). The
+gutters are still drawn in that state, empty: the chrome the operator asked
+for is there and has nothing to measure. Hiding it instead would make the
+canvas jump by 22 points on a page that failed to draw.
+
+### `fn anchor`
+
+The fallback is reachable for one frame after a mode change, when the
+scroll area has moved the strip but `view.page_index` has not caught up
+yet. A ruler measuring the wrong page for one frame is invisible; a
+ruler that vanishes for one frame is a flicker.
+
+### `fn page_at`
+
+The truthful answer is `None` in the gaps between rows and in the
+centring margin either side of a narrow page, and [`super::guides`]
+relies on it: a guide dropped into the grey belongs to no page and is
+therefore not created.
+
+### `struct Scale`
+
+See this module's header, §1. `Copy`, and both fields are `pdfcer-core`
+types — this struct adds no model of its own, it *selects* one the engine
+already owns, which is what keeps the ruler and a dimension in agreement by
+construction rather than by care.
+
+### `fn of`
+
+The **default group**, which `pdfcer-core` guarantees always exists:
+`DimensionModel::new` seeds exactly one group, `DEFAULT_GROUP_ID`, and
+nothing can delete it.
+
+**Not the *active* group, and that is an open behaviour question
+rather than a gap.** A picker exists —
+`crate::panels::dimension_groups`' *Draw into* column, written through
+[`crate::canvas::measure::set_active_group`] — and both readings are
+defensible:
+
+- **The default group**, which is what this does: the ruler is page
+  furniture, read while panning and reading, and a tool state left over
+  from ten minutes ago is an arbitrary thing for it to depend on. A
+  scale that changes because a radio moved in another window, with
+  nothing on screen saying why, is a bug report.
+- **The active group**: the ruler and the ce dimension the operator is
+  about to draw would **agree**, which is the ruler's stated purpose.
+  And on a sheet carrying a 1:50 plan and a 1:5 detail, one fixed scale
+  is wrong for half the sheet whatever it is.
+
+It is a question for the operator, so it is recorded here rather than
+decided. Answered *active*, this is the one line that changes: the
+function would take an `&egui::Context` and ask
+[`crate::canvas::measure::active_group`], and everything downstream is
+already scale-agnostic.
+
+A document whose sidecar is missing, unreadable or written by a newer
+build answers [`Scale::default`] — raw points. Every one of those means
+the same thing to a ruler (*nobody has told me what this drawing is
+scaled to*), and a preference is not worth an error path; the same
+posture `viewer::remembered::recall` takes.
+
+### `fn units_per_point`
+
+`1.0` when no scale is set, which is what makes the raw-points path the
+*same* arithmetic as every other path rather than a special case: the
+ladder is chosen in display units and converted back to points by
+dividing by this, and dividing by one is the identity.
+
+A non-finite or non-positive factor — reachable from a sidecar carrying
+a nonsense calibration — degrades to `1.0` rather than producing NaN
+tick positions. A ruler in the wrong unit is a legible mistake; a ruler
+whose ticks are all at NaN paints nothing and says nothing.
+
+### `struct Ladder`
+
+Both in **PDF points**, because that is the space every position downstream
+is computed in. The 1-2-5 choice is made in *display* units — the numbers
+the operator reads have to be round, and 100 mm at 1:50 is not a round
+number of points — and converted back here, once.
+
+### `fn nice_step`
+
+The universal ruler and axis ladder. 1-2-5 rather than 1-2-2.5-5 (Excel's)
+or anything containing a 3, because those are the multiples an operator can
+subdivide mentally: halves, fifths and tenths of the labelled step.
+
+Returns `1.0` for a non-finite or non-positive input rather than
+propagating it. Every caller then produces a ruler with the wrong spacing
+instead of one with no ticks at all, and a wrong ruler is visible where an
+empty one looks exactly like the feature being switched off.
+
+### `fn for_labels`
+
+The derivation, in one line: a tick every `s` display units is
+`s / units_per_point` points is `s × zoom / units_per_point` logical
+points on screen, so the smallest acceptable display-unit step is
+`min_pitch × units_per_point / zoom`, and [`nice_step`] rounds that up
+to something an operator can read.
+
+The **minor** ticks then fall where [`minor_divisions`] puts them, and
+they may be as close as a point or two on screen — which is right for a
+ruler, where a fine comb between the numbers is exactly what you want
+to count against, and wrong for a grid. See [`Self::for_lines`].
+
+A degenerate zoom yields a one-point ladder, which the caller's own
+line-count bound then refuses to draw — rather than an infinity, which
+it would happily try to.
+
+### `fn for_lines`
+
+# Why this is a second constructor
+
+⚠ [`Self::for_labels`] bounds the **labelled** step, so handing it the
+grid's minimum pitch bounds the wrong one. On the benchmark A3 sheet at
+its fit zoom of 1.3634 that picks a 10-point major and therefore a
+**1-point minor** — a grid line every 1.4 screen pixels, about 2,450
+lines a frame instead of about 250. That is not a grid, it is a tint,
+which is exactly what `grid`'s minimum pitch exists to prevent.
+
+**Neither a screenshot nor the suite can see that.** A 1.4-pixel mesh
+over a drawing reads as a plausible fine grid, and a check asserting
+the grid is *finer* than the ruler passes emphatically. Only printing
+the ladder the running application actually chose separates the two.
+
+# How it climbs
+
+The 1-2-5 rung whose minor step clears the pitch is not `nice_step` of
+anything simple, because the divisor changes with the mantissa: 100
+divides into tens, 200 into fifties, 500 into hundreds. So it climbs the
+sequence one rung at a time and stops at the first that clears — at most
+three iterations, because three consecutive rungs span a factor of ten
+and the divisor never exceeds ten.
+
+### `fn steps`
+
+The one walk the rulers and both grid axes share, and it multiplies an
+**integer index** rather than accumulating `value += minor`. Two things
+turn on that:
+
+1. **The label at the page's top edge would read `-0.00 pt`.** Repeated
+   addition from a negative start lands on `-1.8e-15` instead of zero,
+   which `format_measurement` renders with two decimals *and its sign*.
+   A ruler whose origin is labelled "minus zero" is a ruler the operator
+   has to stop and think about — and every position check stays green,
+   because the tick is in the right place to well under a pixel and only
+   the number is wrong.
+2. **[`Self::is_major`] would drift.** Accumulated error grows without
+   bound; from an exact multiple the comparison is exact for any tick
+   count a screen can hold.
+
+The residual `-0.0` — `(-0.15f64).ceil()` is negative zero, and
+`-0.0 * 10.0` is still negative zero — is normalised by the `+ 0.0`
+below, which is the one arithmetic identity that is *not* a no-op in
+IEEE 754: `-0.0 + 0.0 == 0.0`.
+
+Bounded by [`MAX_LINES`] so a degenerate ladder is a frame that draws
+slightly wrong rather than a frame that never finishes.
+
+### `fn is_major`
+
+Compared against a tenth of a minor step rather than exactly, because
+`major` and `minor` both arrive from a division — by the scale factor
+and by [`minor_divisions`] — so `value / self.major` lands a few ulps
+either side of an integer even for exact multiples. An exact remainder
+test drops those, visible as a ruler that stops labelling halfway
+along.
+
+[`Self::steps`] keeps the error at that floor by multiplying an
+integer index. A walk that accumulated `value += minor` would outgrow
+this tolerance after a few hundred ticks.
+
+### `enum Axis`
+
+`pub(super)` because [`super::grid`] speaks the second reading; see below.
+
+One enum for both, and the two readings are stated where each is used:
+[`ticks`] takes the axis of the **quantity being measured** (the top ruler
+measures canvas *x*), while [`grid_axis`] takes the axis the lines are
+**spaced along** (vertical lines are spaced along *x*). They coincide,
+which is why one enum serves; naming it for one of the two would make the
+other read backwards.
+
+### `fn point`
+
+Legal in **either** space, because the screen ⟷ canvas map is
+separable: `to_page` and `to_screen` compute x from x and y from y, so
+the component this axis does not care about cannot affect the one it
+does. That is what lets every position in this module be produced by
+handing a point to [`PageMapping`] rather than by a hand-rolled
+`origin + value * zoom` — which would compile, run, and drift the
+instant a page's drawn rect and its nominal zoom disagreed by a
+rounding, as they do on the frame a fit is settling. `canvas::mapping`
+exists precisely so there is no second place that divides by the zoom.
+
+### `fn draw`
+
+# Where the zero is, and why it is the page's top-left
+
+The origin is the **current page's own top-left corner in canvas space** —
+the same origin `canvas::mapping` calls canvas space and the same one the
+`canvas-pointer` trace reports as `page=`. Three consequences, all wanted:
+
+1. **The ruler and the pointer readout agree.** They are the same number in
+   the same frame; a ruler with its own origin would be a second coordinate
+   system with nothing to say which one a value came from.
+2. **Y increases downward**, which is what Acrobat, InDesign, Illustrator
+   and every layout tool do, and which needs no flip — so the classic
+   silent Y-up/Y-down defect `mapping`'s header warns about cannot occur
+   here, because there is no conversion to get backwards.
+3. **Under a continuous mode the numbers restart at each sheet**, because
+   the zero follows `view.page_index`. That is right for the same reason
+   the grid is per page: each sheet is its own drawing with its own
+   coordinate system, and a ruler that kept counting through a 36-sheet set
+   would be measuring the scroll rather than the drawing.
+
+The alternative — PDF user space, Y-up from the un-rotated CropBox corner —
+is what an annotation `/Rect` is written in, and is deliberately *not* what
+is shown: it disagrees with the pointer trace, it flips under `/Rotate`,
+and it is a frame the operator never sees anywhere in this application.

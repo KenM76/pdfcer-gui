@@ -137,3 +137,69 @@ Every rejection is local: a line with no separator, an unknown mode id
 and an empty path are each skipped and the rest is kept. The
 alternative — refusing the whole file — would discard two hundred good
 entries because one line was edited badly by hand.
+
+### `const REMEMBERED_FILE`
+
+`.txt` because the format is one line per document and an operator who
+opens it should find exactly what they expect — the same argument
+`recent.txt` makes. `.ron` would promise a structure that is not there and
+a parser this crate does not have.
+
+### `const CAP`
+
+Two hundred, and the number is about **disk** rather than about a menu:
+nothing draws this list, so the cap that governs [`crate::app::recent::CAP`]
+— "what fits in a File menu without becoming a scroll view" — does not
+apply. Two hundred lines is a few kilobytes, comfortably more documents
+than an operator revisits, and small enough that a read-modify-write costs
+nothing measurable.
+
+A cap exists at all because the file is written on every mode change and an
+uncapped one would grow forever across the life of an installation.
+
+### `fn default_path`
+
+Derived from the same `pdfcer_core::settings::resolve_store()` call that
+decides where `settings.txt`, `layout.ron` and `recent.txt` go — never a
+directory computed here. `persistence.rs`'s header carries the three
+reasons in full; the short one is that a second resolution is how two of an
+application's files end up in different folders.
+
+### `fn recall`
+
+`None` means *"this document has no remembered choice"*, and the caller
+answers it with [`PageDisplay::default_for_mode`] — the per-mode default,
+which is where "Read opens continuous" lives. It deliberately does **not**
+mean "single page": collapsing the two would make a fresh document in Read
+mode open paged, which is the operator decision of 2026-08-13 inverted.
+
+Never fails. A missing file, an unreadable one and a corrupt one all answer
+`None`, because every one of them means the same thing to the caller —
+there is no remembered choice to honour — and a preference is not worth an
+error path.
+
+### `fn remember`
+
+Read-modify-write of the whole file: the entry moves to the front, any
+previous entry for the same document is replaced rather than duplicated,
+and the list is truncated to [`CAP`]. Writes immediately rather than
+debouncing, for the same reason `recent.rs` does — a mode change is a rare
+discrete click, not a drag reporting sixty changes a second, so there is no
+gesture to settle and nothing to gain by deferring past a crash.
+
+Writing the mode a document *already* has costs nothing: the entry is
+already at the front with the same value, and the function returns without
+touching the disk. That matters because the caller cannot easily know
+whether a click changed anything, and re-writing the file on every click of
+an already-selected radio button would be a file write per click for no
+change.
+
+Failures are traced and otherwise ignored. There is no operator-facing
+consequence worth a dialog: the mode is applied to the open document either
+way, and the only loss is that it will not be there on the next open.
+
+### `fn recall_at`
+
+The twin of `pdfcer_core::settings::store_in` and of
+`LayoutStore::load_in`, and it exists for the same two reasons: tests, and
+a future `--user-data-dir` override.

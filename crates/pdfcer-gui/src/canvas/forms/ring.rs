@@ -19,10 +19,6 @@ const RINGS_KEY: &str = "pdfcer-canvas-form-rings"; // ui-text-exempt: internal 
 const RINGS_SLOT: &str = "canvas-form-rings"; // ui-text-exempt: trace slot name, never displayed
 
 /// One box, reduced to what ordering needs to know about it.
-///
-/// A borrow-free projection of [`WidgetBox`] so that [`assemble`] — the only
-/// part of this module with a decision in it — can be tested without a
-/// document, a page tree or an `egui::Context`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Stop {
     /// Where this box sits in the caller's list.
@@ -54,16 +50,6 @@ pub struct Assembled {
 }
 
 /// **Order one page's boxes, and collapse its radio groups.**
-///
-/// `order` is `TabSequence::order` — every annotation a reader visits on that
-/// page, widgets and non-widgets alike, in visit order. Ids naming something
-/// that is not in `stops` (a `/Link`, a `/Text` note) are skipped without
-/// comment: they are annotations, not fields, and this ring is over fields.
-///
-/// An **empty** `order` means the engine could not derive one — `/Tabs /S`, or
-/// an `/Annots` that is not an array. The fallback is `stops` in the order they
-/// arrived, which is `/Annots` order, and the caller says so off-canvas rather
-/// than letting the two cases look alike.
 #[must_use]
 pub fn assemble(order: &[ObjId], stops: &[Stop]) -> Assembled {
     let mut out = Assembled::default();
@@ -160,16 +146,6 @@ impl TabRings {
 }
 
 /// **The ring table for this document revision**, built once and cached.
-///
-/// Keyed on `(path, edit epoch)`, exactly as [`super::placed`] is and for the
-/// same reason: the stops are indices into that list, so the two must be
-/// rebuilt on the same boundary or an index can name a box that has moved.
-///
-/// Built for every page that has a box rather than for every page in the
-/// document, which is what keeps the cost proportional to the form instead of
-/// to the file. It is still strictly less work than the cache miss beside it —
-/// [`super::placed`] asks `widget_rects` for *every* page — and it happens on
-/// the same boundary, so a form is not parsed twice per revision.
 pub(crate) fn rings(ctx: &egui::Context, doc: &OpenDoc, list: &[WidgetBox]) -> Arc<TabRings> {
     let id = egui::Id::new(RINGS_KEY);
     let key = (doc.path.clone(), doc.edit_epoch);

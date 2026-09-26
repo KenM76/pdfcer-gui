@@ -170,3 +170,79 @@ Falsified: an `_ =>` arm in [`resolved`] falling through to
 `Some((TargetId::Object(0), 0))` makes this fail — the shape of the
 *"unwrap_or_default into line 0"* defect the enum's two variants exist
 to prevent.
+
+### `const TRACE_MENU`
+
+Emitted on the frame of the click and on that frame only, so a driven
+check can read *which line the menu thinks it is about* without pressing
+anything. Without it, a row that failed to appear and a row that appeared
+about the wrong line are the same observation.
+
+### `const TRACE_COMMAND`
+
+It carries the **pick**, not only the outcome, because the whole class of
+defect this design can produce is *the right verb on the wrong line*. A
+trace line has to carry the number a wrong build would get wrong.
+
+### `enum RunPick`
+
+Two answers and no `Option`, for [`crate::canvas::annotnodes::menu::NodePick`]'s
+stated reason: *"the pointer was nowhere near a line"* is a real state the
+menu has to render (the row absent, the rest of the object menu intact)
+rather than an error, and an `Option<RunPick>` would let a caller
+`unwrap_or_default` its way into treating it as run 0.
+
+### `fn pick_at`
+
+# The three gates, in the order they are cheapest to fail
+
+1. **The object under the pointer is a text object.** `part_kind_of`
+   answers `Some(PartKind::TextLine)` for `VectorObject::Text` and nothing else,
+   so a path, an image or an annotation leaves here immediately.
+2. **It has more than one line.** The module header carries why: on a
+   single-line object this row would descend to a place indistinguishable
+   from where the operator already stands.
+3. **The pointer is actually on a line.** `part_hits_of` is the SAME query
+   `canvas::input::probe` asks to enter the Part rung, so the line this
+   menu offers and the line a Points-tool click would enter cannot
+   disagree.
+
+# Why `part_hits_of` and not a hit test of this module's own
+
+Because the alternative is two spellings of *"which line is under this
+point"*, and the failure mode of that shape is silent: a change to one
+spelling's index handling leaves the other answering a different line, with
+every unit test of both still green. One query, two callers, no drift.
+
+# The coordinates
+
+`map.to_page(screen)` and `map.tolerance()` — the canonical pair, exactly
+as `menus::right_clicked_object` and `canvas::input::probe` both use. The
+tolerance is divided by zoom inside `PageMapping`, which is the one place
+in `canvas/` that divides by zoom, and keeping that true is what stops a
+second conversion drifting from this one.
+
+Every argument is an `Option` because the caller holds them that way: there
+may be no decomposed model, no object under the pointer, and no pointer at
+all (an off-window frame). Each of those is [`RunPick::Elsewhere`], which
+is the honest answer and not an error.
+
+### `fn resolve`
+
+# Why the pick is re-validated here and not trusted from the menu
+
+The row was drawn from [`pick_at`] on some earlier frame, and everything
+between then and now is a frame in which the document could have changed —
+an undo, a background reflow, another surface's edit, a page turn.
+Re-asking the provider costs one lookup on a press and removes the whole
+class of *"the menu was right when it was drawn"*.
+
+⇒ A pick that has stopped being valid raises **nothing**, and the trace
+says so. It does not raise a refusal sentence: the operator pressed a row
+that has quietly stopped applying, which is a first-order rarity, and a
+status line arriving after a menu closed would be a second explanation for
+an event with no first one.
+
+`page` is the page the canvas is showing **now**. A pick taken on another
+page is refused rather than applied to the same index on this one — which
+is *"the right verb on the wrong thing"*, one axis over.

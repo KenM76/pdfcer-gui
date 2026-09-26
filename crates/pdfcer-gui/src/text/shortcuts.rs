@@ -26,10 +26,6 @@ pub const fn window_title() -> &'static str {
 }
 
 /// The paragraph under the title.
-///
-/// Says the reference is **live** rather than written down, because that is a
-/// fact an operator can act on: if a key is not here, it is not bound, and
-/// there is no third possibility involving a list somebody forgot to update.
 #[must_use]
 pub const fn intro() -> &'static str {
     "Every key pdfcer responds to, read from the same table that dispatches \
@@ -37,38 +33,18 @@ pub const fn intro() -> &'static str {
 }
 
 /// Joins the chords of a command bound to more than one.
-///
-/// A comma and a space rather than a slash or a pipe: `Ctrl+Y` and
-/// `Ctrl+Shift+Z` are two *alternatives*, not a sequence, and a slash between
-/// keys reads as "press these together" to anyone who has met `Ctrl+Alt+Del`.
 #[must_use]
 pub const fn chord_separator() -> &'static str {
     ", "
 }
 
 /// How many shortcuts are listed, and where the number came from.
-///
-/// The count is here **because it is checkable**. An operator who suspects a
-/// key is missing can compare it against nothing useful — but a *future* build
-/// whose count drops has told them something, and the number is the cheapest
-/// form that fact can take.
 #[must_use]
 pub fn derived_note(commands: usize) -> String {
     format!("{commands} commands have a keyboard shortcut in this build.")
 }
 
 /// Chords bound to a command this build does not have.
-///
-/// **Disclosed rather than absorbed.** R8's convention is that a capability's
-/// absence is expressed by its command not being registered, and a customized
-/// or stripped build can therefore carry a keymap naming commands that are not
-/// there. Those keys do nothing, so they are not listed — and *"this build has
-/// fewer shortcuts than its keymap declares"* is a true, surprising fact that
-/// an operator comparing two installations needs.
-///
-/// Worded as a fact about **this build**, not as an error: a stripped build is
-/// a supported thing to be, and the eventual exe-to-DLL move makes it the
-/// ordinary case.
 #[must_use]
 pub fn dropped_note(dropped: usize) -> String {
     if dropped == 1 {
@@ -84,10 +60,6 @@ pub fn dropped_note(dropped: usize) -> String {
 }
 
 /// The build has no keymap at all.
-///
-/// Reachable when the manifest failed to load, in which case **no chord works
-/// either** — so an empty list would be accurate and unhelpfully so. Saying
-/// which of the two states this is turns a puzzling window into a diagnosis.
 #[must_use]
 pub const fn no_keymap() -> &'static str {
     "pdfcer could not read its own shortcut table, so no keys are bound in this \
@@ -95,10 +67,6 @@ pub const fn no_keymap() -> &'static str {
 }
 
 /// The keymap loaded and is empty.
-///
-/// A different sentence from [`no_keymap`], because the two are different
-/// situations and only one of them is a fault. A manifest that deliberately
-/// binds nothing is a legitimate customization.
 #[must_use]
 pub const fn none_bound() -> &'static str {
     "No keys are bound in this build."

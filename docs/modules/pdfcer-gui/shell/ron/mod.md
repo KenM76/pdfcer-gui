@@ -140,3 +140,19 @@ the equality test covers exactly. It is checking that the *file*
 contains the words an operator would search for — that the
 serialized form is legible enough to edit, which is the property
 the whole format choice was made for.
+
+### `fn built_in_ron`
+
+Compiled in rather than read at run time: this is the **built-in
+layer**, the one that is always available as the reset target and can
+never be missing or malformed on an operator's machine. A layer read
+from disk is layer two or three.
+
+### `fn parse_built_in`
+
+# Errors
+
+[`ManifestError::Parse`], carrying RON's line and column. Unreachable
+in a shipped build — the text is compiled in and a test parses it — but
+returned rather than unwrapped so that the same function can be pointed
+at an operator's file by a tool that wants the span.

@@ -97,3 +97,107 @@ rather than channel by channel, because `egui::Color32` stores
 multiplied byte, so a per-channel comparison against the opaque pen
 fails for a wash that is completely correct — a false failure against
 working code, which is why the whole value is compared.
+
+### `struct Preview`
+
+Returned by [`drag`] only while the pointer is down, and only when the
+release would commit — the same "the preview describes something that will
+actually happen" contract [`crate::canvas::moving::drag`] honours with its
+ghost.
+
+### `fn endpoints`
+
+# Why two point conversions and no arithmetic of our own
+
+[`viewer::canvas_to_pdf_space`] applies the renderer's own page transform —
+the crop-box origin, the `/Rotate`, and the Y flip. Writing any part of that
+out here would be a second derivation of the page transform, which is the
+precise failure `viewer`'s header warns about: *"PDF user space is y-UP;
+canvas and screen are y-DOWN. The failure is silent — the page looks perfect
+until someone selects a line and gets a different one."* For a markup the
+symptom is worse than a mis-selection, because it is written to the file: a
+rectangle dragged over the title block lands mirrored about the page's
+horizontal centre line, and the operator finds out after saving.
+
+Unlike [`crate::canvas::moving::page_delta`] this maps **positions**, not a
+displacement, so the transform's translation is *not* cancelled — which is
+the whole point. A markup has an absolute place on the page.
+
+Returns `None` for a page whose device transform cannot be inverted, which
+is the same condition under which both halves of the `viewer` bridge
+decline.
+
+### `fn drag`
+
+The **only** function here that touches the frame. It does one of two
+things:
+
+* [`Phase::InFlight`] — returns the band for [`draw_preview`] and changes
+  nothing. Nothing is decomposed and nothing is re-rasterized: a markup drag
+  hit-tests nothing at all, which is why `canvas::interact` deliberately
+  leaves it out of the set of outcomes that need an object model. A preview
+  over a 129,758-object drawing costs one stroke.
+* [`Phase::Complete`] — converts both endpoints to page space and pushes
+  exactly one [`Action::CommitMarkup`].
+
+Returns `Some` only when a band should be drawn, and — as with the move
+ghost — only when the release would actually commit. A drag with no page
+under it draws nothing rather than a band that promises an annotation the
+frame cannot author.
+
+**The first line is a guard on the family**, and it is not defensive
+clutter: `canvas::interact` routes a freehand drag to [`super::ink`] before
+reaching here, so a non-band kind arriving means the routing changed and this
+function's two-point assumption stopped holding. Drawing nothing is the only
+honest answer available — a band drawn between an ink stroke's first and
+latest point is a rectangle the operator never asked for and the release
+would author it.
+
+# Why the refusal is traced only on release
+
+An in-flight drag is re-evaluated 60 times a second, and the `canvas-pointer`
+lesson — fifty identical lines in nine seconds from a stationary pointer —
+is what a per-frame refusal trace would reproduce. The release is one event,
+and it is the one a harness reading the trace is asking about.
+
+### `fn draw_preview`
+
+# Why this is not `draw_marquee` with a different colour
+
+Because a marquee and a markup band answer different questions. A marquee
+asks *"what does this rectangle enclose?"* and is therefore always a
+rectangle whatever it is about to select. A markup band asks *"is this the
+shape you meant?"*, and the only way it can answer is by **being that
+shape**: an ellipse drawn as its bounding box misstates the geometry by the
+difference between a box and the ellipse inside it — 21 % of the area — and
+an arrow drawn as a plain segment says nothing about which end the head is
+on, which is the single most reversible property of the thing being
+committed.
+
+⚠ The near miss is `circle_stroke` at the *smaller* of the two
+half-extents — the inscribed **circle** rather than the ellipse about to be
+authored. On a wide drag the two differ by the whole aspect ratio, and the
+operator releases expecting the circle they were shown.
+
+# The colours are document colours, and that is why they are literals
+
+Everything painted here is the pen — the colour and width that are about to
+be written into the file. Reading it from [`egui::Visuals`] would be wrong in
+the way `check-theme-colors.sh`'s own header describes: restyling the
+application would change the colour of markup about to be committed, and the
+change would only become visible after saving.
+
+### `fn draw_text_marks`
+
+`OPERATOR_REQUESTS.md` **O54**. The sibling of [`draw_preview`] for the
+gesture that found text under it.
+
+It uses `highlight_wash` — the identical colour the area band draws —
+because they are one feature reached by one tool. A preview that changed
+colour depending on whether the pointer had found text would tell the
+operator they had switched tools when they had not.
+
+Rectangles rather than quads: the quads a text sweep produces are already
+axis-aligned per line in canvas space, which is what `TextSelection::
+highlights` hands back. A rotated run is drawn by the committed appearance
+stream, not by this — the same division `draw_preview` makes.

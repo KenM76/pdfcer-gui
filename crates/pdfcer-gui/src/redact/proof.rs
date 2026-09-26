@@ -8,46 +8,10 @@ use pdfcer_core::object::{ObjId, Object};
 
 /// The shortest redacted string whose presence **outside every content-bearing
 /// stream** is worth asserting anything about.
-///
-/// Below this length a byte-run match tells you nothing: `"Dr"` occurs inside
-/// `/Widths`-adjacent binary, font names, dates and half the words in any
-/// document, so such a hit would fire on a perfectly good redaction. Four
-/// characters is the point at which a coincidental match stops being the
-/// expected outcome — chosen deliberately conservatively, and paired with the
-/// fact that short strings are still verified against **content-bearing**
-/// streams (where the same match *is* meaningful, because it is being drawn).
-///
-/// The floor governs the whole disclosure half — raw bytes **and** opaque
-/// decoded streams — not the raw bytes alone. A two-character run inside a
-/// compressed font program is the same coincidence this constant exists to
-/// refuse to draw conclusions from, merely wearing a `/FlateDecode`.
-///
-/// The count of strings this excludes is reported, never hidden — see
-/// [`AbsenceVerification::strings_too_short_for_raw_check`], and
-/// [`crate::text::redact::verification_limit_line`], which is the sentence that
-/// puts the number in front of the operator.
-///
-/// The floor governs BOTH halves of the proof — the refusal as well as the
-/// disclosure. See [`leaked_in_content_streams`] for the per-glyph producer
-/// that makes a refusal-half floor necessary.
 pub const MIN_VERIFIABLE_LEN: usize = 4;
 
 /// **Where a disclosed residual was found**, so the sentence about it can name
 /// the place rather than say *"somewhere in the saved file"*.
-///
-/// This exists because the disclosure it feeds has to be **actionable**. A
-/// residual an operator cannot place is a warning they can only ignore, and a
-/// warning that is always ignored is worse than none, because it also trains
-/// them to ignore the real one.
-///
-/// Naming the site converts *"the text is still in the file somewhere"* into
-/// *"the text also spells a word inside an embedded font program"*, which the
-/// operator can weigh in a second. It is still a disclosure and never a verdict:
-/// pdfcer states where the bytes are, not what they mean.
-///
-/// The variants are **carriers**, deliberately in the engine's vocabulary
-/// (`pdfcer_core::redact::CarrierStatus::carrier`), so the two disclosure
-/// vocabularies on one screen do not diverge.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResidualSite {
     /// **In drawn content — a page's content stream, a form XObject, a
@@ -111,11 +75,6 @@ pub enum ResidualSite {
 
 /// One disclosed residual: a removed string that is absent from everything the
 /// document draws, and present somewhere else.
-///
-/// A struct rather than a bare `String`, so the site travels with the text
-/// instead of being re-derived (or, more likely, lost) by whichever surface
-/// renders it. Rule 15's spirit: a value that means *"the text `X` occurs in a
-/// font program"* must not be able to degrade into a value that means *"`X`"*.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Residual {
     /// The removed string that was found again.
@@ -148,12 +107,6 @@ struct DecodedStream {
 
 /// What the absence proof found, for the report the operator reads before
 /// confirming.
-///
-/// This is the structure the wording contract reads: *"never say **verified**
-/// unless a real verification step ran"*. [`Self::is_clean`] is the predicate
-/// that licenses the stronger word, and
-/// [`crate::text::redact::verified_line`] is the only sentence in the catalog
-/// permitted to use it.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct AbsenceVerification {
     /// Distinct redacted strings the proof checked against decoded streams.
@@ -202,12 +155,6 @@ impl AbsenceVerification {
 }
 
 /// Everything one pass of the proof establishes.
-///
-/// Two fields because the two answers have **different consequences** and must
-/// not be collapsed: [`Self::survivors`] is a refusal and
-/// [`Self::verification`] is a disclosure. A single "how did it go" value would
-/// invite a caller to treat the worse one as the milder one, which is precisely
-/// the reading this whole module exists to prevent.
 #[derive(Debug, Clone, Default)]
 pub(super) struct Proof {
     /// The disclosure half: what was checked, what the length floor could not
@@ -233,12 +180,6 @@ pub(super) fn prove(bytes: &[u8], redacted: &[String]) -> Proof {
 }
 
 /// **The refusal half, run on its own against `bytes`.**
-///
-/// The write path's last gate: [`super::PreparedRedaction::write_to`] re-asks
-/// this question about the exact buffer it is a statement away from handing to
-/// the file system. See that method's docs for why a second run of a check that
-/// has already passed is not redundancy but the thing that makes the proof
-/// **structural** rather than procedural.
 pub(super) fn survivors_in_content_streams(
     bytes: &[u8],
     redacted: &[String],
@@ -432,11 +373,6 @@ fn role_of(dict: &pdfcer_core::object::Dict, id: ObjId, content_ids: &[ObjId]) -
 }
 
 /// Whether `hay` contains `needle` as a byte subsequence.
-///
-/// The same naive scan `pdfcer-core`'s own absence tests use, kept local rather
-/// than exported from core: it is three lines, and **an absence proof that
-/// shared its search routine with the code it is auditing would be a weaker
-/// proof.**
 pub(super) fn contains(hay: &[u8], needle: &[u8]) -> bool {
     if needle.is_empty() || needle.len() > hay.len() {
         return false;

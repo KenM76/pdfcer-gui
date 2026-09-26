@@ -23,24 +23,12 @@ use egui_shell::Shell;
 use egui_shell::manifest::ManifestError;
 
 /// The built-in manifest as RON text.
-///
-/// Compiled in rather than read at run time: this is the **built-in
-/// layer**, the one that is always available as the reset target and can
-/// never be missing or malformed on an operator's machine. A layer read
-/// from disk is layer two or three.
 #[must_use]
 pub fn built_in_ron() -> &'static str {
     include_str!("built_in.ron")
 }
 
 /// Parse the built-in manifest from its RON text.
-///
-/// # Errors
-///
-/// [`ManifestError::Parse`], carrying RON's line and column. Unreachable
-/// in a shipped build — the text is compiled in and a test parses it — but
-/// returned rather than unwrapped so that the same function can be pointed
-/// at an operator's file by a tool that wants the span.
 pub fn parse_built_in() -> Result<Shell, ManifestError> {
     Shell::from_ron(built_in_ron())
 }

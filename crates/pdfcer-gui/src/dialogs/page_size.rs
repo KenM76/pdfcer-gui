@@ -101,27 +101,6 @@ pub struct PageSizeDialog {
 
 impl PageSizeDialog {
     /// Open the window over `pages`, the operand sheets.
-    ///
-    /// # It opens on what the sheets ALREADY ARE, not on A4
-    ///
-    /// The opposite of [`crate::dialogs::new_document`], and for the opposite
-    /// reason. That window opens on A4 because its sibling `file.new` makes an
-    /// A4 page and the difference between the two controls must be *"one
-    /// asks"* and nothing else. This window has no sibling and a document in
-    /// front of it: opening on A4 would mean an operator who opened it to
-    /// *check* what size his sheets were would be looking at a control that had
-    /// already changed the answer, and one careless press away from cropping an
-    /// A1 drawing to A4.
-    ///
-    /// So it opens on the size the picked sheets classify to, in their own
-    /// orientation. When they classify to nothing — a CAD exporter's rounded
-    /// A1, a genuinely odd sheet — it opens on **Custom**, pre-filled with
-    /// those millimetres, which is both the honest starting point and the one
-    /// from which a small correction is a small edit.
-    ///
-    /// Returns `None` when the survey found no sheets at all, which the caller
-    /// has already excluded by resolving operands; belt and braces, because a
-    /// window with nothing to act on has nothing true to say.
     #[must_use]
     pub fn open(doc: &OpenDoc, pages: &[usize]) -> Option<Self> {
         let survey = survey(doc, pages);

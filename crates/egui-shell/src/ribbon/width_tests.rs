@@ -75,11 +75,6 @@ use super::tests::{registry, shell};
 use super::{Ribbon, RibbonState, report, testfont};
 
 /// Tolerance, in points, for "on screen" and "does not overlap".
-///
-/// `egui` rounds widget rectangles to whole physical pixels, so an edge
-/// can land a fraction of a point beyond an exact arithmetic boundary
-/// without anything being wrong. One point is well below anything a person
-/// could see and well above the rounding.
 pub(super) const SLACK: f32 = 1.0;
 
 /// One rendered ribbon: the state after the frame, and every rect the
@@ -126,19 +121,6 @@ impl Rendered {
     }
 
     /// The height of the **band**, measured from the groups it drew.
-    ///
-    /// Every group in a band is padded to the same height (see
-    /// [`super::band::captioned_group`]'s `rows_height`), so any one of
-    /// them reports it — and the maximum is taken rather than the first so
-    /// that a group which somehow drew taller than the others is a failure
-    /// rather than a coin toss.
-    ///
-    /// `None` when the band drew no group at all, which is a real state:
-    /// at a width narrower than one group plus the overflow reservation,
-    /// every group is in the menu. A caller that wants R128's claim at
-    /// *those* widths has to ask [`Self::ribbon_height`] instead, and the
-    /// two are deliberately separate so neither can be mistaken for the
-    /// other.
     pub(super) fn band_height(&self, tab: &str) -> Option<f32> {
         let prefix = format!("ribbon.group.{tab}.");
         self.rects
@@ -155,10 +137,6 @@ impl Rendered {
 }
 
 /// A context with the synthetic face installed and proven to work.
-///
-/// `install` asserts that text measures non-zero and that the face is
-/// proportional, so a test built on this context cannot silently revert to
-/// measuring nothing.
 pub(super) fn context() -> egui::Context {
     let ctx = egui::Context::default();
     testfont::install(&ctx);
@@ -171,10 +149,6 @@ fn render_view_tab(ctx: &egui::Context, width: f32) -> Rendered {
 }
 
 /// Render any manifest twice at `width` and report the second frame.
-///
-/// The generalisation of [`render_view_tab`], for the tab-strip tests:
-/// those need a manifest with enough tabs to overflow a strip, which the
-/// two-tab fixture in [`super::tests`] deliberately is not.
 pub(super) fn render_shell(
     ctx: &egui::Context,
     shell: &Shell,
@@ -186,12 +160,6 @@ pub(super) fn render_shell(
 }
 
 /// [`render_shell`] against a caller-supplied [`CommandRegistry`].
-///
-/// The two-row tests need labels long enough to trip
-/// [`super::plan::GROUP_WRAP_WIDTH`], and the shared fixture registry is
-/// deliberately small and short-labelled — widening it would change the
-/// measured numbers in every other test in this file for a reason that has
-/// nothing to do with what they are about.
 pub(super) fn render_shell_with(
     ctx: &egui::Context,
     shell: &Shell,

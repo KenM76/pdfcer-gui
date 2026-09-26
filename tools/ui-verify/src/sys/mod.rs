@@ -14,10 +14,6 @@ pub use unsupported::*;
 
 /// Virtual-key codes the harness needs, named so that call sites read as
 /// keystrokes rather than as magic numbers.
-///
-/// Deliberately a tiny closed list rather than a binding of the whole
-/// `VIRTUAL_KEY` space: a harness that can press any key is a harness whose
-/// scripts stop being readable.
 pub mod vk {
     /// `Delete`. The key D1 is about.
     pub const DELETE: u16 = 0x2E;
@@ -38,28 +34,13 @@ pub mod vk {
     pub const TAB: u16 = 0x09;
 
     /// `Ctrl`, as a **modifier** for [`super::key_stroke_with`].
-    ///
-    /// Named `CONTROL` rather than `CTRL` because that is what Windows calls
-    /// it (`VK_CONTROL`), and a constant that renames a platform's own
-    /// vocabulary makes the next person check twice.
     pub const CONTROL: u16 = 0x11;
     /// `Shift`, as a modifier. `Ctrl+Shift+…` is two entries in the slice.
     pub const SHIFT: u16 = 0x10;
     /// `VK_LSHIFT` — the LEFT shift specifically.
-    ///
-    /// Not a synonym for [`SHIFT`] where synthesis is concerned. `VK_SHIFT`
-    /// is the "either shift" virtual key that Windows reports in keyboard
-    /// STATE; a real keyboard never sends it, and a toolkit that derives its
-    /// modifier state from key events — winit does — may not recognise it.
     pub const LSHIFT: u16 = 0xA0;
 
     /// `F` — the letter, for `Ctrl+F`.
-    ///
-    /// Letters are their ASCII uppercase code point on Windows, which is why
-    /// this is `0x46` and not something derived. Only the letters the harness
-    /// actually presses are listed: the closed-list rule above applies to
-    /// letters more than to anything else, because `pub const A..Z` would be
-    /// exactly the "can press any key" the doc comment refuses.
     pub const F: u16 = 0x46;
 
     /// `H`, for `Ctrl+H` — the read-mode toggle, and the only way back out of
@@ -69,13 +50,6 @@ pub mod vk {
     pub const ALT: u16 = 0x12;
     /// `F4`, for **`Alt+F4`** — the only way this harness can ask the
     /// application to close **gracefully**.
-    ///
-    ///
-    /// A check that killed the window and then asserted the preference survived
-    /// would be asserting that the 750 ms debounce had already expired --
-    /// which is true on a slow run and false on a fast one, and is not the
-    /// property anybody cares about. The property is *"I changed it and closed
-    /// the program straight away"*, and only a real `WM_CLOSE` reproduces it.
     pub const F4: u16 = 0x73;
 
     /// `Z`, for `Ctrl+Z` and `Ctrl+Shift+Z` — undo and redo.
@@ -87,10 +61,6 @@ pub mod vk {
     /// `E`, for `Ctrl+E` and `Ctrl+Shift+E` — edit text and add text.
     pub const E: u16 = 0x45;
     /// `[` (`VK_OEM_4`), for the bare-character `pages.rotate_left` binding.
-    ///
-    /// A bare character is the class that has to YIELD to typing, so it is the
-    /// one worth driving: a build where `[` fires while a caret is in flight
-    /// rotates the drawing instead of inserting a bracket.
     pub const OPEN_BRACKET: u16 = 0xDB;
     /// `Down` (`VK_DOWN`), for the `Alt+Down` page-move binding — the Alt
     /// modifier family, which nothing else here presses.
@@ -107,29 +77,9 @@ pub mod vk {
     /// rather than of the show operator the caret happens to sit in.
     pub const END: u16 = 0x23;
     /// `VK_NEXT` -- the key every keyboard prints as **Page Down**.
-    ///
-    ///
-    /// Pressed rather than reached through the ribbon because `Action::NextPage`
-    /// is what the operator's own gesture raises, and because the page-number
-    /// box would make the run depend on a text field's focus rules. Note the
-    /// Windows name is `VK_NEXT`, not `VK_PAGEDOWN`: the platform's own
-    /// vocabulary is kept, per the note on `CONTROL` above, and the doc line
-    /// is what tells a reader which key it is.
     pub const PAGE_DOWN: u16 = 0x22;
 
     /// `D`, `T`, `A`, `I` and `L` — the five letters that spell **DETAIL**.
-    ///
-    /// The closed-list rule again, and this is the first entry that exists to
-    /// **type a word** rather than to press a chord.
-    /// `checks::dimension_groups` names a new dimension group, and the name is
-    /// the one thing in that window a check must supply — the Add button is
-    /// greyed with an empty field, deliberately, so a check that cannot type
-    /// cannot reach the verb at all.
-    ///
-    /// "Detail" is chosen rather than a nonsense string because the check's
-    /// failure text quotes it, and an operator reading *"no group called
-    /// Detail appeared in the list"* is being told something about a drawing
-    /// they recognise. Added 2026-08-18.
     pub const D: u16 = 0x44;
     /// See [`D`].
     pub const T: u16 = 0x54;
@@ -154,20 +104,8 @@ pub mod vk {
 
     /// `Space` — the bar, pressed as a **character** rather than as a
     /// command.
-    ///
-    ///
-    /// A space rather than a tab, although the defect covers both: a tab in a
-    /// single-line egui field is a focus-moving key in most toolkits and would
-    /// risk measuring the focus handling instead of the search. The space is
-    /// also the character the operator actually named.
     pub const SPACE: u16 = 0x20;
 
     /// `2` — the digit, for the `Ctrl+2` mode chord.
-    ///
-    /// Present only as a **control probe**: `Ctrl+2` is bound to
-    /// `mode.review` and is a chord the application's key table has always
-    /// been able to spell, so a check that gets nothing from it learns that
-    /// the keystroke never arrived, rather than that the feature under test
-    /// is broken.
     pub const DIGIT_2: u16 = 0x32;
 }

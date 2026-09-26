@@ -24,3 +24,34 @@ A build that skipped the projection and hung a screen-space box off the
 pointer passes the first half and fails the second on 90 and 270 only,
 which is precisely the sheet the operator notices and the test author
 does not.
+
+### `fn click_rect`
+
+`at` is **canvas** space, as the click handler receives it; the answer is
+PDF user space, because that is what goes into the file.
+
+The click point is the **lower-left** corner rather than the centre, which
+matches what the drag does — the press is one corner and the control grows
+from it — so the two gestures agree about what the pointer meant.
+
+`None` for a page whose device transform cannot be inverted, which is the
+same refusal [`crate::canvas::markup::band::endpoints`] makes and for the
+same reason.
+
+### `fn preview`
+
+`pointer` is canvas space and `None` when the pointer has left the widget,
+in which case nothing is drawn — honestly, because there is no click to
+describe.
+
+# Why the projection goes the long way round
+
+The rect is computed in **PDF** space and projected back out through
+[`mapping::annot_canvas_rect`], which is the same function that places an
+existing widget's outline on the canvas. A ghost drawn as a screen-space box
+hung off the pointer would need width and height in pixels, which means
+deriving the page scale and the page rotation here — a second copy of the
+projection, agreeing with the first on an unrotated page and disagreeing on
+every `/Rotate 90` sheet. Going through PDF space costs one inversion per
+frame and makes the ghost and the placed box the same geometry by
+construction.

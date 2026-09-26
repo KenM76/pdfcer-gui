@@ -114,3 +114,55 @@ register entry.
 An `/Ink` is a **markup shape**. It is never a ce dimension and never page
 content, and [`super::geometry`] has already refused anything that is not
 [`crate::canvas::selection::AnnotKind::Markup`] before this table is built.
+
+## Item notes
+
+### `struct StrokeTable`
+
+Holds one length per stroke, in file order. Starts are derived (a prefix
+sum) rather than stored beside the lengths, so there is one number per
+stroke and no pair of numbers that has to agree.
+
+A stroke of length 0 or 1 is kept rather than dropped. `Annotation::
+ink_list` reads a malformed stroke as *empty* precisely so that stroke
+indices stay aligned with the file's — its doc says so — and a table that
+dropped it would put every later stroke one index off from what the engine
+calls it. The one-point stroke draws no anchor-to-anchor segment and its
+single anchor is draggable, which is the honest picture of what the file
+holds.
+
+### `fn address`
+
+`None` for an index past the end of the list, which is a press the
+painter could not have drawn an anchor for; the caller treats it as
+the engine would treat a bad index — a refusal, never a panic.
+
+### `fn segment_pairs`
+
+This is the one function that knows where a stroke ends, and both the
+preview painter and the right-click segment pick read it, so the
+segment a menu offers *"Add a point here"* on is always one the preview
+draws. A bridging pair here would be a segment the file does not hold.
+
+### `fn after_edit`
+
+* a **move** changes no length;
+* an **insert** grows the grabbed point's stroke by one — the engine's
+  rule that inserting after a stroke's last point *extends that stroke*
+  rather than starting or joining another;
+* a **remove** shrinks it by one.
+
+`None` for an index the table does not hold, matching
+[`Self::address`].
+
+### `fn plan`
+
+The displacement of a move is measured from `from` — the point as it
+stands — to `target`, exactly as `super::planned` measures a
+`VertexEdit::Move`, so the two families cannot disagree about what a
+delta is.
+
+`None` for a flat index the table does not hold. The engine would also
+refuse that (`InkPointIndexOutOfRange`), but it cannot be *asked* about
+an address this table cannot produce, so the caller words the refusal
+itself.

@@ -35,3 +35,21 @@ It does not apply the offset. [`Position::offset`] is returned, and
 `show_in` is where the `ScrollArea` is configured — for the same reason
 [`super::offset::decide`] returns rather than applies: **one place
 configures the area**, so a second opinion cannot be added by accident.
+
+## Item notes
+
+### `struct Geometry`
+
+Every field is already bound in [`super::present::show_in`] before this is
+called; none is derived here. Grouped into a struct rather than passed as
+seven positional arguments because five of them are sizes and three of
+those are `(f32, f32)` — an argument order a caller can get wrong in
+silence is a defect waiting for a resize.
+
+### `fn position`
+
+Called once per canvas frame, from [`super::present::show_in`], immediately
+before the `ScrollArea` is shown. Mutates `doc` in three places — the
+published overhang, the deep tier's anchor bookkeeping inside
+[`deep::track`], and the frame counter — and every one of those is a fact
+about *this* frame that a later frame reads.

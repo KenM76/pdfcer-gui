@@ -133,3 +133,34 @@ would otherwise reasonably suspect an oversight. From the operator's
 side they are one fact — *pdfcer will read this file* — and the
 difference between "you told me" and "I found it" is already visible in
 the field two lines above.
+
+### `const REGION_RESOLVED`
+
+Named for [`super::acrobat::REGION_RESOLVED`]'s reason: the whole value of
+that line is that it is **on screen and legible**, and `ui-verify` can only
+assert that about a rect the application published. A driven check that read
+the trace would learn what pdfcer resolved and nothing about whether the
+operator can see it.
+
+### `const REGION_INSPECT`
+
+**Its absence is the assertion.** R9 says an unavailable capability
+renders nothing, and "renders nothing" is only checkable if the thing that
+would have rendered has a name. A driven check on a machine with no trust
+store asserts this region is **not** published; on a machine with one it
+asserts it is, and presses it.
+
+### `fn store_path`
+
+`text_value` with an identity parse, exactly as [`super::acrobat::path`]
+uses it and for its stated reason: the helper exists to hold a half-typed
+*number* apart from a parsed value, and a path has no invalid intermediate
+state. Every keystroke reaches the draft, so Save writes exactly what is on
+screen.
+
+**No validation as you type and no red field.** A path that does not
+exist is not a typing error — it is a path to something not there yet, or on
+a drive that is not mounted, or typed from memory and about to be corrected.
+Marking it wrong mid-word would be the field arguing with somebody who has
+not finished. The resolved line below says what actually happened, and
+because locating is a stat rather than a process launch it says it live.

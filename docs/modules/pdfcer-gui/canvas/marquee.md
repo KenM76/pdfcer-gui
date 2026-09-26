@@ -171,3 +171,113 @@ would be the program overruling an explicit gesture.
 A check reads `combine=` by equality, so two arms spelled the same would
 collapse *the band added* and *the band replaced* into one answer — the
 pair the tests above exist to tell apart.
+
+### `fn mode_for`
+
+One function rather than an `if` at the call site, so the convention is
+stated once. A second spelling of it somewhere else is how a band that
+*paints* as a crossing window comes to *select* as a window.
+
+### `fn without_page_wrappers`
+
+# Why this exists, and it was measured rather than anticipated
+
+The first cut of the direction-sensitive band failed
+`a_marquee_encloses_objects_inside_a_form` with `[Object(0), Leaf(1)]` where
+only the leaf was wanted. That test's fixture is a page-sized form XObject
+with squares inside it — the shape a CAD exporter produces, and the shape
+`ncored-benchmark-cad-drawing.pdf` has.
+
+A crossing band **touches** a page-sized wrapper wherever it is drawn. So
+without this, every right-to-left drag on a wrapped drawing would silently
+include the whole sheet in the selection, and the operator's next gesture —
+a move, a delete, a cut — would act on all of it.
+
+Under `Enclosed` this could not happen and that is exactly why it is new:
+a band that *surrounds* a page-sized form has to surround the page, which
+cannot be drawn. Touching one is unavoidable.
+
+# The rule is the shell's existing one
+
+`CanvasTargetProvider::container_is_worth_selecting` already answers *"is
+this container really just the sheet?"* — measured against the page extent at
+`COVERS_EVERYTHING`, with its own argument about why the threshold is
+generous — and `canvas::smart` already applies it to the **click** ladder.
+Reusing it here is the consistency argument the provider's own
+`hit_test_rect` makes at length: two gestures that both mean *"select this"*
+must not disagree about what is selectable.
+
+Nothing new is measured here and no second threshold exists.
+
+# Only a hit that CONTAINS another hit is tested
+
+A lone path covering the whole sheet — a drawing border, which is on almost
+every sheet this program is for — is **not** a container and must stay
+selectable. Asking the container question about it would drop it, which
+would be a second defect wearing the first one's fix.
+
+So the container set is derived from the hits themselves: an id is a wrapper
+only if some *other* hit in the same band reports it as its containing form.
+Nothing is asked of the provider that the click path does not already ask.
+
+# Parameters, and why they are closures
+
+`container_of` and `worth_selecting` are the two provider queries, passed as
+functions so that this rule is testable without a provider, a page or a
+decomposition. The rule is the thing worth pinning; the queries are already
+under test where they live.
+
+### `enum Combine`
+
+`targets` is `None` when the page has no decomposition, in which case the
+band selects nothing. That is not an error and must not clear the selection
+by a different route than a genuine empty band does: `SelectionState::marquee`
+with an empty slice is the one path, and it is reached the same way either
+way.
+**What a band does to the selection it lands on** — `OPERATOR_REQUESTS.md`
+O104.
+
+A band subtracts as well as adds, because of the operator's report *"I can't
+unselect things once I have selected them"*. On a CAD sheet with hundreds of
+overlapping strokes, taking one object back out by clicking it precisely is
+often not practical; a band is how the work is actually done.
+
+### `const ALL`
+
+The one authoritative list. Anything that has to visit each combine
+walks this rather than writing its own copy, because a private copy
+cannot go red when the set grows and the guard above only watches this
+one.
+
+### `fn label`
+
+A word rather than the derived `Debug` form: a check reads this field by
+equality, and a `Debug` spelling is a rename away from breaking one
+silently.
+
+### `fn mode`
+
+Shift wins when both are held, because adding is the non-destructive answer
+and a band held with every modifier at once is an operator who has not
+decided yet.
+
+### `struct Band`
+
+The three travel together through every arm of the release and are decided
+in one place, by the gesture. Bundling them is what keeps a rung's entry
+point from growing an argument list nobody can read a call site of, and it
+is also the seam that makes the two rungs' bands provably the same gesture:
+the chunk arm and the object arm are handed the same value, so neither can
+come to disagree about direction or about which modifier means what.
+
+### `fn on_release`
+
+**THE DIRECTION DECIDES WHAT THE BAND TAKES** (O88): left to right
+encloses, right to left touches — AutoCAD's window / crossing-window rule.
+This module's header carries the operator's report, why the fix is geometric
+rather than about hit tests, and the page-wrapper hazard a crossing band
+introduces.
+
+And [`Combine`] decides what it does to what was already selected. The
+two are independent: *what the band reaches* and *what it then does with
+it*, which is why they are separate arguments rather than one flag.

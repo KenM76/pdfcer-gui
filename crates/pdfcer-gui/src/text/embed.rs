@@ -13,11 +13,6 @@ pub const fn window_title() -> &'static str {
 }
 
 /// The opening sentence.
-///
-/// It states the **permanence** and the **size**, which are the two
-/// consequences an operator cannot see from a list of font names. Embedding is
-/// undoable in this session; it is not undoable in a file somebody has already
-/// been sent.
 #[must_use]
 pub const fn intro() -> &'static str {
     "Embedding puts each font's outlines inside this document, so it looks the same on a machine \
@@ -38,18 +33,6 @@ pub fn will_embed(count: usize) -> String {
 }
 
 /// One font that will be embedded, and where it comes from.
-///
-/// It names the **source**, not just the face. Two files on a machine can
-/// advertise one name and produce visibly different letters, and an operator
-/// embedding into a drawing they will send out is entitled to know which one is
-/// going in.
-///
-/// Three rungs, three sentences, and the collapse to two would be the
-/// defect. `FontMatch`'s own doc calls them *"three materially different acts:
-/// honouring a name the file already spells, applying a well-known family
-/// equivalence, or falling back to a face pdfcer ships"* — and the third is the
-/// one an operator would most want to know about and least expect, because
-/// nothing they configured produced it.
 #[must_use]
 pub fn embed_row(face: &str, source: &str, matched: crate::app::fonts::Match) -> String {
     use crate::app::fonts::Match;
@@ -89,15 +72,6 @@ pub fn cannot_embed(count: usize) -> String {
 }
 
 /// One blocked font, with the engine's reason put into the operator's words.
-///
-/// Every arm names **what would fix it**, or says plainly that nothing
-/// will. A reason with no remedy and no closure is a sentence that leaves
-/// somebody trying things.
-///
-/// `#[non_exhaustive]` on the engine's enum means a ninth blocker is
-/// possible, and the catch-all says *"pdfcer would not embed it"* rather than
-/// inventing a reason — the same posture `TextColor::Other` takes. A build
-/// meeting a blocker it cannot name should say so, not guess.
 #[must_use]
 pub fn blocked_row(face: &str, blocker: &EmbedBlocker, pdfcer_has_a_copy: bool) -> String {
     let why = match blocker {
@@ -166,21 +140,6 @@ pub fn blocked_row(face: &str, blocker: &EmbedBlocker, pdfcer_has_a_copy: bool) 
 }
 
 /// The heading over names that matched nothing at all.
-///
-/// **The offer: which fonts pdfcer could stand in for, by name.**
-///
-/// # A LIST, NEVER A COUNT
-///
-/// *"3 fonts would be substituted"* is a number an operator cannot act on.
-/// *"Helvetica, Helvetica-Bold, Times-Roman"* is a sentence he can read and
-/// answer — *"those are the title block, so no"*, or *"those are notes nobody
-/// reads, so yes"*. The whole reason this control is safe to offer is that the
-/// consequence is stated **before** the press, and a count does not state it.
-///
-/// The document's own spelling, subset tag and all, because that is the
-/// string he saw in the Fonts panel and in whatever told him a font was
-/// missing. Translating it to a tidier family name here would make the window
-/// and the panel disagree about what the document contains.
 #[must_use]
 pub fn own_fonts_offer(faces: &[String]) -> String {
     format!(
@@ -196,24 +155,6 @@ pub fn own_fonts_offer(faces: &[String]) -> String {
 
 /// **What using them costs, in his terms** — the two things the list does not
 /// say.
-///
-/// Both sentences are consequences he cannot see by looking at the drawing,
-/// which is exactly the class rule 4 says an inference owes a report for.
-///
-/// 1. **The letters change on somebody else's screen.** It is his drawing and
-///    his client's monitor, and a stand-in is a different face however good the
-///    metrics match — the page does not reflow, and every letterform differs.
-/// 2. **It is a licence he takes on, not just a look he accepts.** pdfcer's
-///    fourteen substitutes are BSD-3-Clause (`THIRD_PARTY_LICENSES.md`,
-///    *"Bundled Foxit substitute faces"*), and embedding one puts it inside a
-///    file he then sends out, carrying that licence's attribution condition
-///    with it. `pdfcer`'s own command line states this as the reason its
-///    equivalent switch is off by default: *"That is your decision to make, so
-///    pdfcer does not make it for you."*
-///
-/// ⇒ The second is why this is a decision rather than a default. Written in
-/// plain words, because "BSD-3-Clause attribution condition" is not a sentence
-/// that helps anybody decide anything.
 #[must_use]
 pub const fn own_fonts_consequence() -> &'static str {
     "Those letters will look different on the screen of whoever you send this to. pdfcer's \
@@ -222,16 +163,6 @@ pub const fn own_fonts_consequence() -> &'static str {
 }
 
 /// The checkbox itself.
-///
-/// Phrased as what it does, not as what it is. *"Use pdfcer's own copies"*
-/// answers *"what will happen if I tick this"*; a label like *"Bundled fonts"*
-/// names an implementation detail and makes the operator work out the rest.
-///
-/// *"where none of yours match"* is in the label rather than only in the
-/// prose above, because that clause is what makes the control safe: it is the
-/// **last** rung, so ticking it can never displace a real font he owns. A label
-/// without it reads as *"use substitutes instead of my fonts"*, which is not
-/// what it does and is a reason to refuse it.
 #[must_use]
 pub const fn own_fonts_checkbox() -> &'static str {
     "Use pdfcer's own copies where none of yours match"
@@ -249,15 +180,6 @@ pub fn unmatched(names: &[String]) -> String {
 }
 
 /// What the document claims about PDF/A, and what an embed does to it.
-///
-/// Returns `None` when there is no claim, because a document with no PDF/A
-/// identification owes no sentence and a window that said *"this is not a
-/// PDF/A"* to everybody would be noise on every ordinary drawing.
-///
-/// pdfcer is **choosing** this disclosure rather than matching Acrobat —
-/// their own note says whether Acrobat warns about the same thing is an
-/// unresolved gap in the parity research. A deliberate choice is one this shell
-/// repeats rather than quietly dropping.
 #[must_use]
 pub fn pdfa_line(claim: &PdfaClaim) -> Option<String> {
     match claim {
@@ -319,13 +241,6 @@ pub fn refused(detail: &str) -> String {
 }
 
 /// The most the file can grow by, in the operator's units.
-///
-/// A **ceiling**, said as one. `bytes_added_uncompressed` is explicit that
-/// the writer deflates every program stream and a face typically halves, so
-/// this number is always larger than what lands on disk. Reporting it as a
-/// prediction would make pdfcer wrong on every single embed; reporting it as a
-/// bound makes it right on all of them, and it errs in the direction an
-/// operator can absorb.
 #[must_use]
 pub fn size_ceiling(bytes: u64) -> String {
     let mib = bytes as f64 / (1024.0 * 1024.0);
@@ -338,12 +253,6 @@ pub fn size_ceiling(bytes: u64) -> String {
 }
 
 /// How many fonts are still without a program once this plan has run.
-///
-/// `missing_after` is *"the end state the whole feature exists to reach"*,
-/// and the engine says so in those words. A window that reported only what it
-/// embedded would read as success on a file a print service will still reject.
-/// Returns `None` at zero — there is no sentence to write about a number that
-/// has arrived.
 #[must_use]
 pub fn still_missing(count: usize) -> Option<String> {
     (count > 0).then(|| {
@@ -355,14 +264,6 @@ pub fn still_missing(count: usize) -> Option<String> {
 }
 
 /// The same sentence when some of those fonts are **not** listed below.
-///
-/// Gated on `unexplained_missing`, and the engine's own docs demand exactly
-/// this gate: under a named selection a font nobody asked about is neither a
-/// target nor a refusal, so *"each one is listed below"* becomes a claim the
-/// window cannot keep and an operator is sent looking for reasons that were
-/// never printed. It is zero under `AllMissing` by construction — which is the
-/// only selection this window sends today, and precisely why the wrong wording
-/// would never have been caught here.
 #[must_use]
 pub fn still_missing_partly_unexplained(count: usize, unexplained: usize) -> String {
     format!(
@@ -372,34 +273,12 @@ pub fn still_missing_partly_unexplained(count: usize, unexplained: usize) -> Str
 }
 
 /// Why the Embed button is dead.
-///
-/// It points at the **evidence already on screen** rather than naming a
-/// cause. The window is open precisely because there is a list, every row of
-/// that list carries its own reason, and those reasons differ — one font needs
-/// a folder, another is a Type 3 that never can be. A single hover sentence
-/// that picked one of them would be wrong about the others; one that pointed
-/// at the list is right about all of them and is two inches from the answer.
 #[must_use]
 pub const fn nothing_to_embed() -> &'static str {
     "None of these fonts can be embedded. Each one below says what stopped it."
 }
 
 /// The disclosure after an embed, one sentence per fact worth stating.
-///
-/// Three clauses and each is CONDITIONAL, which is the whole design. A
-/// fixed sentence would either say nothing about the substitutions or say
-/// *"0 substituted"* on every ordinary embed, and both train an operator to
-/// stop reading the line.
-///
-/// - **What went in**, always.
-/// - **What is still missing**, only when it is not zero — the number
-///   `missing_after` exists to drive to zero, and a report showing only what it
-///   embedded reads as success on a file a print service will still reject.
-/// - **That a stand-in was used**, only when one was. This is Rule 4's
-///   surviving half in its purest form: substituting `Arial` for `Helvetica` is
-///   an inference the operator **cannot see** — the letters are metric
-///   compatible and the page looks right — so it is exactly the case that owes
-///   an off-canvas report.
 #[must_use]
 pub fn embedded_disclosure(
     embedded: usize,

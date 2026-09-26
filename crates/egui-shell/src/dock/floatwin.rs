@@ -133,11 +133,6 @@ use crate::theme::Theme;
 
 /// The padding between a floated panel's body and its window edge, in
 /// points.
-///
-/// The `Ui` a viewport callback receives is the window's root and nothing
-/// pads it, so without this every control in the panel touches the frame.
-/// A constant rather than a theme metric because it participates in nothing
-/// that could feed back into it.
 pub const BODY_MARGIN_PTS: f32 = 10.0;
 
 /// The height of the strip above a floated panel's body.
@@ -145,11 +140,6 @@ pub const HEADER_HEIGHT_PTS: f32 = 22.0;
 
 /// What one frame of the float windows drew and what the operator did to
 /// them.
-///
-/// Deliberately a separate type from [`super::DockFrameReport`] rather
-/// than more fields on it: the two are produced by two calls at two points
-/// in the frame, and a single struct would have half its fields stale
-/// whichever of the two a caller happened to read.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct FloatFrameReport {
     /// Every panel a window was actually drawn for.
@@ -218,24 +208,6 @@ pub struct FloatFrameReport {
 impl Dock<'_> {
     /// **Draw every floating panel's window**, calling `body` once per
     /// window with the same signature [`Dock::show`] uses.
-    ///
-    /// Call this from the application's top-level frame, beside its
-    /// dialogs — see the module header for why it cannot live inside
-    /// [`Dock::show`].
-    ///
-    /// # What it does per open float, in order
-    ///
-    /// 1. Decides the window's position, honouring a remembered one only
-    ///    if it is still plausible ([`float::honour_position`]).
-    /// 2. Opens or updates the viewport, asserting the position only on
-    ///    the frame the window opens.
-    /// 3. Paints the background, because nothing else will.
-    /// 4. Draws the header strip and offers its `Response` to the
-    ///    application's tab-menu handler — the same seam a tab uses.
-    /// 5. Calls `body`.
-    /// 6. Reads the window's geometry back and records it as an intent.
-    /// 7. Applies every intent afterwards, in one place, exactly as
-    ///    [`Dock::show`] does.
     pub fn show_floating(
         &mut self,
         ctx: &egui::Context,
@@ -554,14 +526,6 @@ impl Dock<'_> {
 }
 
 /// Split the window's inner rectangle into the header strip and the body.
-///
-/// A pure function so the arithmetic can be asserted without a window, and
-/// so the degenerate case has a named answer: a window too short to hold
-/// both gives the header nothing and the body everything. **The body
-/// wins**, because a header with no body is a window showing nothing at
-/// all, whereas a body with no header is still a panel — and the operator
-/// can still close it, because the OS window's close button is not drawn
-/// by us.
 #[must_use]
 pub fn split_header(inner: Rect) -> (Rect, Rect) {
     if inner.height() <= HEADER_HEIGHT_PTS * 2.0 {
@@ -611,16 +575,6 @@ fn apply_float_intents(
 }
 
 /// The viewport id for a panel's float window.
-///
-/// Derived from the panel id rather than counted: `ViewportId` is what
-/// `egui` keys the OS window on, so two panels sharing one would be two
-/// panels in one window, and a counter would give a panel a different
-/// window depending on what else happened to be floating when it was
-/// floated.
-///
-/// Salted with a prefix so a panel called `"print"` cannot collide with an
-/// application dialog of the same name — the two id spaces are independent
-/// and neither knows about the other.
 #[must_use]
 pub fn viewport_id(panel: &PanelId) -> ViewportId {
     ViewportId::from_hash_of(("egui-shell-float", panel.as_str()))

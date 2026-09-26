@@ -6,11 +6,6 @@
 use crate::render::worker::RenderKey;
 
 /// Which surface ordered an upload.
-///
-/// Not derivable from the pixels: a page thumbnail and the canvas raster are
-/// built from the same [`RenderKey`] type, by the same function, and differ
-/// only in what they are *for*. Passed in at the call site so that adding a
-/// fourth surface is a compile error rather than a silent miscount.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Surface {
     /// The page the operator is looking at. **The only blamable surface**,
@@ -30,10 +25,6 @@ pub enum Surface {
 }
 
 /// The page-shaped part of an upload, present only when there is one.
-///
-/// An icon has no page and no zoom; giving it a page number would be a right
-/// value in the wrong role, and the trace would read as though the operator
-/// were at scale 1.0 on page 0.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Raster {
     /// Which page the raster is a picture of (0-based).
@@ -104,11 +95,6 @@ pub enum Attribution {
 }
 
 /// Why a drained error could not be pinned on the canvas's page raster.
-///
-/// Each variant is a distinct thing to learn from a trace, which is why this
-/// is not a `bool`: *"the failure had nothing to do with the canvas"* and
-/// *"the failure was one of four uploads and we cannot say which"* call for
-/// different next moves, and collapsing them would hide that.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Unattributed {
     /// Nothing this crate knows about uploaded last frame.
@@ -130,10 +116,6 @@ pub enum Unattributed {
 }
 
 /// Decide what a drained error set can be blamed on. Pure; the whole rule.
-///
-/// Split out from [`poll`] because the rule is the part that can be wrong and
-/// the GL call is the part that cannot be tested. A caller acting on a
-/// [`Attribution::Blamed`] is acting on this function alone.
 #[must_use]
 pub fn attribute(uploads: &[Upload], drained: native_gl::Drained) -> Attribution {
     if drained.is_clean() {
@@ -161,10 +143,6 @@ fn slot() -> egui::Id {
 }
 
 /// Note that an upload of a **page raster** has been ordered this frame.
-///
-/// Called from [`crate::render::raster::texture_from_pixels`], which both the
-/// canvas and the thumbnails go through — hence `surface`, which that function
-/// cannot work out for itself.
 pub fn record_raster(ctx: &egui::Context, surface: Surface, key: &RenderKey, w: u32, h: u32) {
     push(
         ctx,
@@ -181,11 +159,6 @@ pub fn record_raster(ctx: &egui::Context, surface: Surface, key: &RenderKey, w: 
 }
 
 /// Note that an upload with no page behind it has been ordered this frame.
-///
-/// The icon sheet and the print preview. Neither can be blamed for a
-/// zoom-dependent failure, and that is exactly why they are recorded: an
-/// unrecorded upload makes a two-upload frame look like a one-upload frame,
-/// and the one left standing is blamed for the other's failure.
 pub fn record_other(ctx: &egui::Context, surface: Surface, w: u32, h: u32) {
     push(
         ctx,
@@ -209,18 +182,6 @@ fn take(ctx: &egui::Context) -> Vec<Upload> {
 }
 
 /// Read the error flag at the top of a frame and trace what it held.
-///
-/// `gl` is `None` when the backend is not glow or the context has gone away
-/// during shutdown; the previous frame's record is still cleared in that case,
-/// because a record kept across frames would be attributed to the wrong one
-/// the moment a context came back.
-///
-/// **Traces only when something was drained.** A line per frame would be sixty
-/// a second of "nothing happened", which is how the one line that matters
-/// becomes unfindable.
-///
-/// This does not change any ceiling. Per `DESIGNS.md`, the measurement with
-/// one, three and six documents open is owed before anything acts on it.
 pub fn poll(ctx: &egui::Context, gl: Option<&eframe::glow::Context>) {
     let uploads = take(ctx);
     let Some(gl) = gl else { return };
@@ -254,17 +215,6 @@ pub fn poll(ctx: &egui::Context, gl: Option<&eframe::glow::Context>) {
 }
 
 /// Trace the device's real single-axis texture limit whenever it changes.
-///
-/// ⚠ **Read every frame, never cached.** `egui` defaults
-/// `InputState::max_texture_side` to 2048 and only learns the true figure once
-/// the backend has supplied it through `RawInput` — so a value captured at
-/// startup is a plausible-looking number that belongs to no device. Reading it
-/// every frame costs one field access and cannot go stale.
-///
-/// Trace-only. The whole-page tier's budget is an edge count that admits
-/// 16383², which is over the limit on some devices and under it on others; the
-/// guard that uses this figure is a separate change, and on the operator's own
-/// card it is expected to be inert.
 pub fn trace_texture_limit(ctx: &egui::Context) {
     let side = ctx.input(|i| i.max_texture_side);
     crate::diag::trace_on_change("gl-max-texture-side", move || {

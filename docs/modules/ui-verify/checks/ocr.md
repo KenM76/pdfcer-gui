@@ -122,3 +122,10 @@ unreachable in Read.
 A stray recognised copy beside the fixture would be committed by
 somebody eventually, and a repository that gains a file every time the
 harness runs is a repository whose `git status` stops being read.
+
+### `fn click_command`
+
+The same shape as [`driving::click_mode_segment`], for the other half of the
+ribbon. Not folded into that module because it is the first check to need
+it: a second caller is the moment to move it, and moving it on the first
+would leave `driving` with an untested function.

@@ -289,11 +289,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 }
 
 /// Bring the Document properties panel up from the ribbon.
-///
-/// `file.document_properties`, on **File ▸ Document** — the band `RIBBON_IA.md`
-/// §5.1 heads *"inspection of what is inside the file"*, which is where Fonts
-/// and Properties already sit. A document's title is inside the file.
-///
 pub fn open_document_properties(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
     let trace = session.trace()?;
     let tab = declared(&trace, ui_rect, "ribbon.tab.file").ok_or_else(|| {

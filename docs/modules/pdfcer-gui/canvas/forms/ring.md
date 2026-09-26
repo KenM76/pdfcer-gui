@@ -32,3 +32,35 @@ standard contradicts itself about. Rule 4 requires them to be reported and
 forbids marking the canvas with them, so they are carried on [`TabRings`],
 traced, and left for an off-canvas surface to print verbatim. Nothing here
 paints.
+
+## Item notes
+
+### `struct Stop`
+
+A borrow-free projection of [`WidgetBox`] so that [`assemble`] — the only
+part of this module with a decision in it — can be tested without a
+document, a page tree or an `egui::Context`.
+
+### `fn assemble`
+
+`order` is `TabSequence::order` — every annotation a reader visits on that
+page, widgets and non-widgets alike, in visit order. Ids naming something
+that is not in `stops` (a `/Link`, a `/Text` note) are skipped without
+comment: they are annotations, not fields, and this ring is over fields.
+
+An **empty** `order` means the engine could not derive one — `/Tabs /S`, or
+an `/Annots` that is not an array. The fallback is `stops` in the order they
+arrived, which is `/Annots` order, and the caller says so off-canvas rather
+than letting the two cases look alike.
+
+### `fn rings`
+
+Keyed on `(path, edit epoch)`, exactly as [`super::placed`] is and for the
+same reason: the stops are indices into that list, so the two must be
+rebuilt on the same boundary or an index can name a box that has moved.
+
+Built for every page that has a box rather than for every page in the
+document, which is what keeps the cost proportional to the form instead of
+to the file. It is still strictly less work than the cache miss beside it —
+[`super::placed`] asks `widget_rects` for *every* page — and it happens on
+the same boundary, so a form is not parsed twice per revision.

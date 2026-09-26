@@ -266,3 +266,110 @@ timestamp against the sources and is on by default, because *a missing
 trace from an unbuilt change looks exactly like a broken feature*. A
 sandbox that refreshed the mtime would disarm the gate for every check
 in the suite.
+
+### `const ROOT`
+
+Dot-prefixed so it sorts away from the build outputs it will usually sit
+among, and named for the tool that makes it so that a directory found in the
+wild names its owner.
+
+### `fn for_check`
+
+# Errors
+
+The sandbox root or the check's directory could not be created, or the
+binary could neither be linked nor copied into it. Every one of those is
+a reason the caller must **not** silently fall back to the shared
+profile: an isolation that quietly did not happen is the defect this
+module exists to close, wearing a passing run as a disguise.
+
+### `fn write_prefs`
+
+`body` is the caller's own keys, one `key = value` per line, appended after
+[`PREFS_HEADER`]. Pass `""` for the bare seed.
+
+# Why this function exists, and what it cost not to have it
+
+`seed_prefs` has written `ask_default_app = false` into every sandbox since
+the offer shipped, and the reasoning above it is correct. It had one hole:
+**three checks write this same file themselves**, each overwriting the seed
+with their own keys —
+
+| check | what it did | effect |
+|---|---|---|
+| `ui_scale_resizes_the_chrome` | wrote a file containing only `ui_scale` | seed gone |
+| `the_print_window_opens_on_the_settings_you_last_used` | wrote its thirteen seeded answers, **and deleted the file before its control run** | seed gone twice over |
+| `a_page_display_choice_survives_a_close…` | **deleted** the file to normalise | seed gone |
+
+
+## What this function did NOT fix, for a day, and it is in the table above
+
+**A guard centralised into "the only write path" does not cover the delete
+path, because deleting is not writing.** A default state has two routes into
+it — *set the defaults*, or *remove the thing that overrode them* — and a
+header prepended to every write covers exactly one.
+
+`the_print_window_opens_on_the_settings_you_last_used` took both routes. Its
+seeding write was repaired to come through this function, and its control
+launch sixty lines earlier went on calling `std::fs::remove_file` to reach the
+shipped print defaults. So the 2026-09-12 sweep found the offer in that
+check's trace **after** the repair, and the check skipped saying *"the click on
+`ribbon.tab.file` produced no `ribbon-tab-activated tab=file` line, so no click
+reached the ribbon"* — a sentence that names a cause it never measured. Five
+places in three documents then recorded "the File-tab route" as a suite-wide
+ribbon blocker. The ribbon was never involved. Fixed 2026-09-13 by
+[`reset_prefs`], and the check passes.
+
+⇒ **When centralising a guard into a write path, grep the same modules for
+`remove_file`, `remove_dir`, truncation and "reset to defaults" before
+believing the guard is universal.** And ⚠ a doc comment listing the cases a
+fix repairs is a **claim to verify per case**, not a receipt: this table was
+correct about what each check had done and wrong about one of them being fixed,
+and re-driving the three named checks would have caught it in minutes.
+
+In `ui_scale`'s case that produced a **FAIL against the application**:
+`find_window_for_pid` returns the front-most window of the process, the
+offer was front-most, so the check measured the *dialog's* client area and
+reported that the UI-scale preference "did not reach
+`Context::set_zoom_factor` at all". It had reached it. The application was
+correct and the accusation was specific, confident and wrong — which is the
+failure mode this project has recorded more times than any other.
+
+⇒ **A suppression a caller has to remember is a suppression that will be
+forgotten.** Making it a header of the only write path removes the memory
+from the loop: a check can write whatever keys it likes and cannot restore
+the offer by doing so.
+
+# Errors
+
+The `userdata` directory could not be created, or the file could not be
+written. Callers in the sandbox path swallow this (see `seed_prefs`);
+callers in a check should report it as a SKIP, because a preference that
+could not be written means the check never began.
+
+### `fn reset_prefs`
+
+The correct way for a check to *normalise* persisted preferences between
+launches. **Deleting the file is not** — deletion takes the suppression
+with it, which is precisely how
+`a_page_display_choice_survives_a_close_and_reaches_a_new_document` grew
+the startup offer in front of its own second launch. See [`write_prefs`].
+
+**And how `the_print_window_opens_on_the_settings_you_last_used` grew it in
+front of its own FIRST launch, a day after [`write_prefs`] was written to stop
+exactly that.** Its control run needs the shipped print defaults, and the
+argument it made for deleting rather than resetting was good: the neutral state
+is *no print preferences at all*, and writing the defaults back would make a
+later reader think the operator had chosen them. Every clause true, conclusion
+wrong, because **the file holds one key that is not a print preference.** This
+function is that argument's actual answer — every print key absent and taking
+its compiled-in default, nothing pinned, and the offer still shut.
+
+⇒ So the rule has no exception worth writing down: **a check that wants a
+pristine preferences state calls this.** The only caller that may delete is one
+that exists to DRIVE the offer, and there is exactly one of those
+(`checks/default_app_offer.rs`).
+
+# Errors
+
+As [`write_prefs`].

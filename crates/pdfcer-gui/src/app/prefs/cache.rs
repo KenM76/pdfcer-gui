@@ -4,32 +4,6 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/app/prefs/cache.md`.
 
 /// How much memory the page cache may hold, as four named steps.
-///
-/// # Why four steps and not a slider
-///
-/// [`super::quality::RenderQuality`]'s argument applies unchanged: *the useful
-/// range is narrow, the middle of it is almost always right, and a slider
-/// invites an operator to spend attention tuning a number that will not repay
-/// it.* It applies with more force here, because the effect of an intermediate
-/// value is unobservable — an operator cannot tell 900 MB from 1,024 MB by
-/// using the program, so a slider would be asking for precision that cannot be
-/// felt.
-///
-/// # The steps, and what each is for
-///
-/// The megabyte column is what [`Self::megabytes`] reports and what the label
-/// shows; it is the texel count times four bytes over 1,048,576.
-///
-/// | | texels | RGBA | roughly |
-/// |---|---|---|---|
-/// | [`Self::Small`] | 48 M | 183 MB | a few large sheets |
-/// | [`Self::Medium`] | 128 M | 488 MB | a report, or a dozen large sheets |
-/// | [`Self::Large`] | 256 M | 976 MB | **the default** — about twenty-five large sheets at screen size |
-/// | [`Self::Maximum`] | 512 M | 1,953 MB | a whole drawing set resident |
-///
-/// [`Self::Small`] is kept so an operator who finds the default heavy has a
-/// smaller budget available **by name**, rather than having to discover a
-/// number.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum PageCache {
     /// 48 M texels ≈ 183 MB — enough for a few large sheets.
@@ -53,19 +27,9 @@ pub enum PageCache {
 
 impl PageCache {
     /// Every value, smallest first.
-    ///
-    /// Smallest-first so the control reads left to right as *less … more*,
-    /// which is [`super::quality::RenderQuality::ALL`]'s rule and the direction
-    /// a reader expects of a quantity.
     pub const ALL: &'static [Self] = &[Self::Small, Self::Medium, Self::Large, Self::Maximum];
 
     /// The budget in texels — what `render::strip` spends.
-    ///
-    /// Texels rather than bytes because that is the unit the cache counts in,
-    /// and it counts in texels because **a page is not a unit of memory**: a
-    /// thumbnail and an Annex C sheet differ by four orders of magnitude, so a
-    /// page count that admitted six of the latter would admit 1.5 GB without
-    /// saying so.
     #[must_use]
     pub const fn texels(self) -> u64 {
         match self {
@@ -77,13 +41,6 @@ impl PageCache {
     }
 
     /// The same budget in **megabytes of RGBA**, for the label.
-    ///
-    /// Derived from [`Self::texels`] rather than written beside it, which is
-    /// this project's recurring lesson applied before it bites: two spellings
-    /// of one quantity drift, and the drift here would be a settings window
-    /// promising an operator 488 MB while the cache spent 2 GB. It is
-    /// `NO_SURFACE.md`'s standing rule — assert the *relation*, because two
-    /// copies of one constant cannot disagree — applied to a label.
     #[must_use]
     pub const fn megabytes(self) -> u64 {
         // Four bytes per RGBA texel; 1 MB = 1,048,576 bytes.
@@ -91,11 +48,6 @@ impl PageCache {
     }
 
     /// The token written to the preferences file.
-    ///
-    /// Stable across releases and deliberately not the display name: a display
-    /// name is operator copy and may be reworded, and a file whose keys moved
-    /// when the wording did would silently reset everybody's preference. Same
-    /// rule [`super::quality::RenderQuality::key`] follows.
     #[must_use]
     pub const fn key(self) -> &'static str {
         match self {
@@ -111,10 +63,6 @@ impl PageCache {
     }
 
     /// Read a token back, or `None` if it names nothing.
-    ///
-    /// `None` rather than a default, so the loader can *report* an unreadable
-    /// value rather than silently substituting one — the per-key recovery
-    /// contract in [`super`]'s header.
     #[must_use]
     pub fn from_key(key: &str) -> Option<Self> {
         Self::ALL.iter().copied().find(|c| c.key() == key)

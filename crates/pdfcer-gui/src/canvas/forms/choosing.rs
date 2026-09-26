@@ -80,12 +80,6 @@ fn forget(ctx: &egui::Context, id: Id) {
 const CHOICE_STATE: &str = "form-choice-state";
 
 /// **Take a click on a choice widget**: focus the field and open its list.
-///
-/// [`super::focus_button`]'s twin, and `draft` is seeded the same way and for
-/// the same reason — equal to what the document holds, so that
-/// [`super::commit`] on the way out finds nothing changed and writes nothing.
-/// A choice field's value is never a draft: every pick is a complete command
-/// the instant it is made.
 pub(super) fn focus_choice(
     ctx: &egui::Context,
     doc: &OpenDoc,
@@ -136,14 +130,6 @@ pub(super) fn focus_choice(
 
 /// Draw the focused choice field's ring and, while it is open, its option
 /// list.
-///
-/// Returns whether this frame's primary press belonged to the popup, so
-/// [`super::overlay`] does not also read it as a request to focus something
-/// else.
-///
-/// The `rect` is [`super::boxes::editor_rect`]'s — the widget's own rectangle,
-/// grown to a legible minimum — so the ring and the popup's anchor are the
-/// same rectangle the text editor would have used on the same widget.
 pub(super) fn choose(
     ui: &mut Ui,
     focus: Focus,

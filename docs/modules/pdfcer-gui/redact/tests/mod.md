@@ -314,3 +314,16 @@ The `None` case is the important half and it is a claim rather than a
 convenience: the staging verb discards its bytes, so no sweep has run, and a
 caller passing a default `AbsenceVerification` would have told the operator
 that one had and found nothing.
+
+### `fn assemble`
+
+The same fixture shape `pdfcer-core`'s own redaction tests use —
+synthetic, so that every byte in the file is one this suite put there.
+`pub(super)` so [`super::proof`]'s tests share it rather than growing a
+second, subtly different assembler.
+
+### `fn assemble_with_trailer`
+
+The trailer is where a carrier that is on no page lives — `/Info` above
+all — so a fixture that needs one needs this rather than a second
+assembler. `extra` is inserted verbatim before the closing `>>`.

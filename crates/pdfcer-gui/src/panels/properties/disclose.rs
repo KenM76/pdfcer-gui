@@ -6,10 +6,6 @@
 use crate::app::state::OpenDoc;
 
 /// The region this block publishes when it has something to say.
-///
-/// Published only on the frames it draws, so its **absence** is the evidence
-/// that there is no disclosure — which is the distinction a driven check about
-/// a refusal is actually asking about.
 pub const REGION: &str = "properties.disclosures"; // ui-text-exempt: trace region name, never displayed
 
 /// Draw the disclosure block, and say whether it drew.

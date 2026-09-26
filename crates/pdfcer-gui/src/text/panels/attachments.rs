@@ -13,10 +13,6 @@ use pdfcer_core::attachments::{AttachmentNotes, DeclaredSizeCheck, NameHazard};
 // ---------------------------------------------------------------------------
 
 /// How many files this document carries, as the panel's first line.
-///
-/// Singular is spelled out rather than reached by a plural rule, matching
-/// [`super::bookmarks_count`]'s shape: *"1 attached files"* is the tell that a
-/// program is filling in a template.
 #[must_use]
 pub fn count(total: usize) -> String {
     if total == 1 {
@@ -27,82 +23,36 @@ pub fn count(total: usize) -> String {
 }
 
 /// Shown when the document carries nothing.
-///
-/// **Worded as a fact about the document, not as an absence of a feature.**
-/// The overwhelming majority of PDFs have no attachments and are perfectly
-/// ordinary; an operator reading this must not be left wondering whether pdfcer
-/// failed to look.
 #[must_use]
 pub const fn empty() -> &'static str {
     "This document carries no attached files."
 }
 
 /// A row for an attachment nothing named.
-///
-/// `NameSource::None` is reachable — a filespec may carry no `/F`, `/UF`,
-/// `/DOS`, `/Mac` or `/Unix`, and a page annotation has no name-tree key to
-/// fall back on — and the row must still exist, because the operator can still
-/// save the bytes out. A blank line where a name belongs reads as a rendering
-/// fault.
 #[must_use]
 pub const fn unnamed() -> &'static str {
     "(unnamed)"
 }
 
 /// Where a document-level attachment lives.
-///
-/// The distinction this states is the one `pdfcer_core::attachments`' module
-/// docs say *"bites hardest at save time and at page-delete time"*: this kind
-/// belongs to the document and survives the deletion of every page.
 #[must_use]
 pub const fn where_document() -> &'static str {
     "Attached to the document"
 }
 
 /// Where a page-level attachment lives, and the consequence of that.
-///
-/// The clause about page deletion is the whole reason this string is not
-/// simply *"On page 3"*. A `/FileAttachment` annotation (§12.5.6.15) is
-/// **destroyed when its page is deleted**, and this application can delete a
-/// page from three different surfaces. An operator who has been told is one
-/// who can decide; one who has not finds out from a file that used to have
-/// their supplier's spreadsheet in it.
 #[must_use]
 pub fn where_page(page_number: usize) -> String {
     format!("On page {page_number} — deleting that page takes this file with it")
 }
 
 /// The media type the document claims for the payload.
-///
-/// *"claims"* is load-bearing and is not softened. `/Subtype` on an embedded
-/// file stream is a **claim by the document about its own payload, never a
-/// measurement** — `pdfcer-core` does not sniff the bytes, and `/text#2Fplain`
-/// on a Windows executable is trivially authorable. A caller that presented
-/// this as a safety signal would be turning an unverified assertion into an
-/// assurance, which is exactly the shape of the mistake that gets somebody to
-/// double-click.
 #[must_use]
 pub fn kind_claimed(mime: &str) -> String {
     format!("Type, as the document declares it: {mime}")
 }
 
 /// The size line for a row.
-///
-/// # Four different sentences, because there are four different facts
-///
-/// Collapsing them would put a number on screen with no way to tell an
-/// agreed measurement from an unchecked declaration — and it is the *third*
-/// case that makes the collapse dishonest rather than merely lossy:
-///
-/// | state | what pdfcer actually knows |
-/// |---|---|
-/// | `NotDeclared` | the document said nothing. §7.11.4 makes `/Size` optional, so this is ordinary. |
-/// | `NoStream` | there are no bytes at all — an external file reference (§7.11.3), legal and not extractable. |
-/// | `Unverified` | a size was declared and the stream is **filtered**, so its raw byte count is not its decoded byte count. Comparing them would manufacture a false verdict in both directions. |
-/// | `Agrees` / `Disagrees` | pdfcer counted. Only here is a comparison honest. |
-///
-/// The `Disagrees` wording states both numbers and passes no judgment; see
-/// this module's header for why that is a requirement rather than a courtesy.
 #[must_use]
 pub fn size(declared: Option<u64>, check: DeclaredSizeCheck) -> String {
     match check {
@@ -137,10 +87,6 @@ pub fn size(declared: Option<u64>, check: DeclaredSizeCheck) -> String {
 
 /// The created/modified line for a row, or `None` when the document said
 /// neither.
-///
-/// Printed verbatim. See the module header: `pdfcer-core` stores these raw
-/// because it has no shared §7.9.4 date type, and a parser written here would
-/// be a second one that disagrees with whichever is written next.
 #[must_use]
 pub fn dates(created: Option<&str>, modified: Option<&str>) -> Option<String> {
     match (created, modified) {
@@ -152,11 +98,6 @@ pub fn dates(created: Option<&str>, modified: Option<&str>) -> Option<String> {
 }
 
 /// Why a date can look like machine output.
-///
-/// On hover rather than on the row, exactly as
-/// [`super::comments::comment_row_modified_tooltip`] is and for its reason: it
-/// answers a question most operators will never ask, and the ordinary value is
-/// legible enough to compare two rows by.
 #[must_use]
 pub const fn date_tooltip() -> &'static str {
     "Shown exactly as the file wrote it. pdfcer does not reformat a date it has not parsed."
@@ -167,84 +108,36 @@ pub const fn date_tooltip() -> &'static str {
 // ---------------------------------------------------------------------------
 
 /// The name shown is pdfcer's best reading of bytes it could not fully decode.
-///
-/// `Attachment::name_exact` is `false` when decoding needed at least one
-/// U+FFFD substitution — an undefined PDFDocEncoding code, an odd trailing byte
-/// after a UTF-16BE BOM, an unpaired surrogate. That is **pdfcer's own
-/// lossiness**, and rule 4 requires disclosing it exactly as much as it
-/// requires disclosing an inference about the document.
 #[must_use]
 pub const fn name_is_approximate() -> &'static str {
     "This name is approximate — some of its characters could not be decoded."
 }
 
 /// The document gave no filename at all, so the index key is standing in.
-///
-/// A name-tree key is **not** a filename and has no declared encoding.
-/// Table 31 describes `/EmbeddedFiles` as mapping name strings to file
-/// specifications and stops there — the sibling `/Renditions` row in the same
-/// table *does* require Unicode, so the omission is deliberate — and §7.9.6
-/// says outright that *"any encoding of the keys may be used as long as it is
-/// self-consistent"*. Producers routinely mangle these with numeric suffixes
-/// and portfolio folder prefixes, so a key shown as a name is a guess twice
-/// over, and this sentence is how both are disclosed.
 #[must_use]
 pub const fn name_is_the_index_key() -> &'static str {
     "The document gave this file no name; what is shown is its index key."
 }
 
 /// There is a filespec but no bytes behind it.
-///
-/// **Not necessarily a defect.** §7.11.3 file specifications also describe
-/// *external* files, which legitimately have nothing embedded — so this is
-/// worded as a fact about what the row can do, not as damage.
 #[must_use]
 pub const fn no_bytes() -> &'static str {
     "This entry points at a file kept outside the PDF, so pdfcer has nothing to save out."
 }
 
 /// The document promised bytes and cannot produce them.
-///
-/// Distinct from [`no_bytes`], and the distinction is the whole reason both
-/// exist: `AttachmentNotes::unresolvable_streams` is documented as *"always a
-/// defect"* — an `/EF` entry that exists and does not resolve to a stream —
-/// while `filespecs_without_stream` is ordinary. One sentence for both would
-/// either call a legal document damaged or let real damage pass unremarked.
 #[must_use]
 pub const fn broken_stream() -> &'static str {
     "This attachment's bytes are missing from the file — the document points at them and they are not there."
 }
 
 /// The whole listing may be ciphertext.
-///
-/// See this module's header for why over-warning is the correct error here:
-/// the flag is set from the presence of `/Encrypt` alone, which is cheap and
-/// deliberately over-broad, and the failure it guards against is *silent* —
-/// a successful-looking extraction of garbage.
 #[must_use]
 pub const fn may_be_encrypted() -> &'static str {
     "This document is encrypted, so anything saved out of it may be unreadable — pdfcer does not decrypt attachments yet."
 }
 
 /// Everything the listing had to skip, bound or degrade, as sentences.
-///
-/// # Why this is a function over the whole struct rather than a string per flag
-///
-/// Because the panel must show **all** of them, and the failure mode of a
-/// string-per-flag catalog is a caller that renders four of the seven. The
-/// disclosure obligation here is not per-flag; it is *"is this list
-/// complete?"*, and that question has one answer assembled from the whole
-/// struct. Written as a pure function so [`tests`] can hold it to that without
-/// a `Ui`.
-///
-/// An all-default `AttachmentNotes` returns an **empty vector**, which is the
-/// property the panel relies on to draw nothing: *"all-zero/false means the
-/// listing is complete and everything parsed."*
-///
-/// `page_tree_unwalkable` is reported even though the document-level list is
-/// still complete, because the operator cannot tell the difference between
-/// *"there are no page attachments"* and *"pdfcer could not go and look"* — and
-/// those are the two answers that matter when a file has gone missing.
 #[must_use]
 pub fn listing_notes(notes: &AttachmentNotes) -> Vec<String> {
     let mut said = Vec::new();
@@ -320,23 +213,12 @@ pub const fn attach_heading() -> &'static str {
 }
 
 /// The hint text in the optional description field.
-///
-/// *"optional"* is in the hint rather than in a sentence beside it, because
-/// it is the answer to the only question the field raises and an operator who
-/// reads it in the box has been answered before they wonder.
 #[must_use]
 pub const fn attach_description_hint() -> &'static str {
     "Description (optional)"
 }
 
 /// Why the description is worth typing, and why it can only be typed now.
-///
-/// The second half is a **capability disclosure**, not a nicety.
-/// `EditSession::attach_file` takes the description at attach time and
-/// `pdfcer-core` has no verb that edits one afterwards, so an operator who
-/// leaves the box empty has made a decision they cannot revisit without
-/// removing the file and attaching it again. R9 forbids drawing a control for
-/// the edit that does not exist; it does not forbid saying so.
 #[must_use]
 pub const fn attach_description_note() -> &'static str {
     "A note about what this file is. It can only be set now — pdfcer cannot edit a description afterwards."
@@ -362,20 +244,6 @@ pub const fn attach_dialog_title() -> &'static str {
 
 /// **What attaching actually did**, said off-canvas because the page cannot
 /// show it.
-///
-/// Three clauses, and each one is a thing the operator has no other way to
-/// learn:
-///
-/// 1. **the file is embedded, and a copy** — the original is untouched, which
-///    is the first thing anybody wonders and the thing that decides whether
-///    they go and delete it;
-/// 2. **it is not on any page** — a document-level attachment (§7.11.4.1
-///    route 2) appears nowhere in the rendering, so an operator looking for a
-///    visual confirmation will not find one and must not conclude the attach
-///    failed;
-/// 3. **the document has grown** — the bytes are now inside the PDF, and on a
-///    large attachment that is the difference between a file that emails and
-///    one that does not.
 #[must_use]
 pub fn attached(name: &str, bytes: u64) -> String {
     format!(
@@ -385,38 +253,12 @@ pub fn attached(name: &str, bytes: u64) -> String {
 }
 
 /// The one refusal this surface can provoke that the operator can understand.
-///
-/// # Why this refusal is surfaced and the other three are not
-///
-/// `attach_file` refuses four ways. Three of them —
-/// `DocumentEncrypted`, the certification gate and
-/// `ObjectCreationWouldExposeHiddenObjects` — are properties of the *document*
-/// that every other authoring verb in this shell shares, and this shell's
-/// settled answer for those is `super::super::apply::vector_edit`'s trace: they
-/// are conditions an operator cannot fix from this panel, and wording them here
-/// would put four sentences in the one status slot for states the Attachments
-/// panel did not create.
-///
-/// `AttachmentTreeUnsupported` is different in kind, and that is the whole
-/// argument for this string. It is **specific to this feature**, it is
-/// **unreachable from any other surface**, and — the part that matters — the
-/// press produces *nothing at all*: no row appears, no error appears, and an
-/// operator has no way to distinguish it from a button that is broken.
-///
-/// It is worded as a limit of pdfcer rather than as a fault in the file, because
-/// that is what it is: a `/Kids` name tree is entirely legal (§7.9.6), and the
-/// engine's refusal is a refusal to risk *"a document whose EXISTING
-/// attachments stop resolving"* by guessing at a `/Limits` repair.
 #[must_use]
 pub const fn attach_refused_multi_node_tree() -> &'static str {
     "pdfcer cannot add to this document's attachment index — it is stored in a form pdfcer would risk damaging. The files already attached are unharmed and can still be saved out."
 }
 
 /// The source file could not be read.
-///
-/// The detail is the operating system's own message, passed through: it names
-/// the file and says whether it was a permission, a lock or a missing path,
-/// and none of those is a distinction this catalog could redraw better.
 #[must_use]
 pub fn attach_source_unreadable(detail: &str) -> String {
     format!("pdfcer could not read that file, so nothing was attached: {detail}")
@@ -433,27 +275,12 @@ pub const fn remove_button() -> &'static str {
 }
 
 /// What removing does, before the press.
-///
-/// It names the **three objects** that go, because *"remove the row"* is what
-/// a careless implementation would do and it is the worst possible outcome:
-/// `detach_file`'s own docs say that removing only the tree entry leaves *"the
-/// bytes in the file with nothing pointing at them: invisible to every reader,
-/// still fully present on disk."* Saying what pdfcer does is how an operator can
-/// tell this implementation from that one.
 #[must_use]
 pub const fn remove_tooltip() -> &'static str {
     "Remove this file from the document — the index entry, the file specification and the bytes, as one undoable step."
 }
 
 /// Why a page-level attachment has no Remove button here.
-///
-/// R9 says an absent capability renders nothing, and this is the sentence that
-/// makes the absence legible rather than mysterious. It is not that pdfcer
-/// cannot remove one; it is that a `/FileAttachment` is an **annotation**, is
-/// listed in the Comments panel as one, and is removed as one —
-/// `EditSession::detach_file` answers `AttachmentNotFound` for it by name,
-/// precisely so a shell can say which of the two kinds the operator is looking
-/// at.
 #[must_use]
 pub const fn remove_lives_with_the_note() -> &'static str {
     "This one is a note on a page. Remove it from the page, as a comment, rather than from here."
@@ -461,18 +288,6 @@ pub const fn remove_lives_with_the_note() -> &'static str {
 
 /// **What removing actually did** — including the part that is not what
 /// the word suggests.
-///
-/// # This sentence is required by `pdfcer-core`, in its own words
-///
-/// > *"This is NOT a redaction verb and must not be described as one. If the
-/// > attachment was sensitive, the operator needs a full rewrite … Shells are
-/// > expected to say so rather than let 'delete' imply erasure."*
-///
-///
-/// And the second sentence **names the command that does it**. A disclosure
-/// that states a hazard and leaves the operator to find the remedy has done
-/// half the job; `file.save_compacted` is the full rewrite, it is on File ▸
-/// Save, and it is one control away.
 #[must_use]
 pub fn removed(name: &str) -> String {
     format!(
@@ -490,23 +305,12 @@ pub fn removed(name: &str) -> String {
 // ---------------------------------------------------------------------------
 
 /// The button that writes one attachment to disk.
-///
-/// *"Save a copy"* rather than *"Extract"*: extraction is the engine's word for
-/// decoding a stream, and an operator's word for what this does is saving a
-/// copy. Nothing is taken out of the document.
 #[must_use]
 pub const fn save_button() -> &'static str {
     "Save a copy…"
 }
 
 /// What pressing it will do, on hover.
-///
-/// The second clause is the disclosure the first invites: the bytes came from
-/// inside a file that arrived from somewhere, and `pdfcer-core`'s own module
-/// docs say it *"does not execute, open, or interpret them, and neither should
-/// a caller without its own gate."* pdfcer writes the file and stops; opening it
-/// is the operator's decision, and they should make it knowing that the
-/// document's declared type is a claim rather than a check.
 #[must_use]
 pub const fn save_tooltip() -> &'static str {
     "Write this file to disk. pdfcer does not open or check what is in it — the type shown is only what the document claims."
@@ -525,25 +329,6 @@ pub fn saved(path: &str) -> String {
 }
 
 /// **pdfcer used a different name than the row shows, and here is why.**
-///
-/// # Why this is a required disclosure and not a nicety
-///
-/// `sanitize_attachment_name`'s own docs record the design choice this string
-/// completes. pdfcer reports the **raw** name in the listing, because *"a
-/// forensic reader that quietly repairs its input is not a reader"* — the
-/// operator investigating a suspicious file must see the traversal that made it
-/// suspicious. And pdfcer refuses to *use* that raw name on a filesystem,
-/// because the failure mode is silent, remote and severe.
-///
-/// Between those two correct decisions sits a gap: the row says one thing and
-/// the file on disk is called another. This sentence is the bridge, and
-/// `SafeName::hazards` exists — sorted and deduplicated, *"so a message can
-/// list them deterministically"* — for exactly this call.
-///
-/// The hazard names are translated to plain English rather than printed. An
-/// operator seeing *"ParentTraversal"* has been shown a Rust identifier; one
-/// seeing *"it tried to climb out of the folder you chose"* has been told what
-/// happened to them.
 #[must_use]
 pub fn name_was_changed(from: &str, to: &str, hazards: &[NameHazard]) -> String {
     let mut said = format!("The document calls this file {from}; pdfcer saved it as {to}");
@@ -582,12 +367,6 @@ fn hazard(hazard: NameHazard) -> &'static str {
 }
 
 /// The bytes could not be decoded out of the document.
-///
-/// The detail is `AttachmentError`'s own `Display`, which distinguishes the
-/// four causes the engine went to the trouble of separating — an external
-/// reference, a missing stream, an unservable span, and a filter chain that
-/// failed or blew the decompression-bomb ceiling. Re-wording them here would
-/// be a second vocabulary for facts the engine already states precisely.
 #[must_use]
 pub fn extract_failed(detail: &str) -> String {
     format!("pdfcer could not read that attachment out of the document: {detail}")
@@ -600,12 +379,6 @@ pub fn save_failed(detail: &str) -> String {
 }
 
 /// The row the operator pressed is no longer in the document.
-///
-/// Reachable, and by the ordinary route rather than an exotic one: the queue
-/// drains **after** the frame, so an undo or a second removal raised earlier in
-/// the same frame can take the row away before this action is applied.
-/// Declining with a sentence beats declining in silence, and both beat acting
-/// on whatever moved into its place.
 #[must_use]
 pub const fn gone() -> &'static str {
     "That attachment is no longer in this document, so nothing was saved."

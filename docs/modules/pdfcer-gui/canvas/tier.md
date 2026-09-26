@@ -78,3 +78,56 @@ the stuff is"*. Gating only the first would leave the band of empty grey
 exactly where it was and hide the thing that justified it — the worst of
 the two states. **A layout cost with no visible cause is worse than the
 feature it pays for.**
+
+## Item notes
+
+### `fn decide`
+
+Set for the **current page only**. A region is expressed in one page's own
+coordinate space, and `OpenDoc::region_for` refuses it for any other page
+rather than rasterizing the wrong part of a neighbour.
+
+# Arguments
+
+* `layout` — where every page in this view sits, in strip space.
+* `current` — the page being acted on. Passed rather than re-read from
+  `doc.view.page_index` so this function and its caller cannot disagree
+  about which page the frame is about.
+* `raster_scale` — device pixels per point, as the draw loop will key on.
+  Both ceiling questions below are asked at this scale.
+* `deep` — whether the view is at tier 3, where the scroll offset is no
+  longer the position and the visible rectangle must come from the anchor.
+* `visible_rect` / `avail` — what of the strip is on screen, and the size of
+  the viewport, in strip space.
+
+### `fn overhang`
+
+# Why this lives here and not at its call site
+
+
+* `present.rs` had eight lines of R2 headroom and this is thirteen.
+* **This is the same decision `decide` makes**, expressed against the
+  layout instead of against the raster. Both answer *"does this page reach
+  past its sheet, and is the operator asking to be shown it?"*, and a
+  switch whose two halves live in two files is a switch that will one day
+  be half-flipped. Adjacent functions in one module is the cheapest
+  arrangement in which that cannot happen quietly.
+
+# The contract
+
+Written to [`crate::app::state::OpenDoc::pasteboard_overhang`] by the
+caller, once per frame, and read from there by nine places. **Two spellings
+of the pasteboard is precisely the defect O23 spent three attempts on** —
+see that field's own documentation.
+
+`content_bounds_if_known` PEEKS and never builds: a decomposition costs
+469 ms on the operator's benchmark sheet, and this runs every frame. The
+honest consequence is that on the first frame after opening a large drawing
+the pasteboard is the plain one, and one frame later it is the wider one —
+the same one-frame lag the halo raster has, for the same reason.
+
+Multiplied by the zoom HERE, because the overhang is a fact about the
+drawing (canvas points) while every `geometry` term is in screen points.
+`halo::overhang` resolves `/Rotate` through `PageFrame::canvas_box_of`,
+which is O174's single place for it. A non-finite or non-positive zoom
+yields zero rather than a NaN that would propagate into every scroll bound.

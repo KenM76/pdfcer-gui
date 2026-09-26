@@ -9,18 +9,6 @@ use pdfcer_core::vector::Point;
 use crate::canvas::dimdrag::VertexIntent;
 
 /// **Where each stroke of an `/InkList` sits in the flat anchor list.**
-///
-/// Holds one length per stroke, in file order. Starts are derived (a prefix
-/// sum) rather than stored beside the lengths, so there is one number per
-/// stroke and no pair of numbers that has to agree.
-///
-/// A stroke of length 0 or 1 is kept rather than dropped. `Annotation::
-/// ink_list` reads a malformed stroke as *empty* precisely so that stroke
-/// indices stay aligned with the file's — its doc says so — and a table that
-/// dropped it would put every later stroke one index off from what the engine
-/// calls it. The one-point stroke draws no anchor-to-anchor segment and its
-/// single anchor is draggable, which is the honest picture of what the file
-/// holds.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StrokeTable {
     /// Points per stroke, in `/InkList` order.
@@ -63,10 +51,6 @@ impl StrokeTable {
 
     /// **Flat anchor index → `(stroke, point)`**, the address the engine's
     /// `InkEdit` variants carry.
-    ///
-    /// `None` for an index past the end of the list, which is a press the
-    /// painter could not have drawn an anchor for; the caller treats it as
-    /// the engine would treat a bad index — a refusal, never a panic.
     #[must_use]
     pub fn address(&self, flat: usize) -> Option<(usize, usize)> {
         let mut start = 0;
@@ -92,11 +76,6 @@ impl StrokeTable {
 
     /// **The index pairs a preview joins** — every consecutive pair **within**
     /// a stroke, and never a pair that spans two strokes.
-    ///
-    /// This is the one function that knows where a stroke ends, and both the
-    /// preview painter and the right-click segment pick read it, so the
-    /// segment a menu offers *"Add a point here"* on is always one the preview
-    /// draws. A bridging pair here would be a segment the file does not hold.
     #[must_use]
     pub fn segment_pairs(&self) -> Vec<(usize, usize)> {
         let mut out = Vec::with_capacity(self.total().saturating_sub(self.strokes()));
@@ -112,15 +91,6 @@ impl StrokeTable {
 
     /// The table **after** an edit at flat index `flat`, so the preview's
     /// point list and its stroke boundaries move together.
-    ///
-    /// * a **move** changes no length;
-    /// * an **insert** grows the grabbed point's stroke by one — the engine's
-    ///   rule that inserting after a stroke's last point *extends that stroke*
-    ///   rather than starting or joining another;
-    /// * a **remove** shrinks it by one.
-    ///
-    /// `None` for an index the table does not hold, matching
-    /// [`Self::address`].
     #[must_use]
     pub fn after_edit(&self, intent: VertexIntent, flat: usize) -> Option<Self> {
         let (stroke, _) = self.address(flat)?;
@@ -135,16 +105,6 @@ impl StrokeTable {
 
     /// **The [`InkEdit`] one frame's intent asks the engine for**, addressed
     /// through this table.
-    ///
-    /// The displacement of a move is measured from `from` — the point as it
-    /// stands — to `target`, exactly as `super::planned` measures a
-    /// `VertexEdit::Move`, so the two families cannot disagree about what a
-    /// delta is.
-    ///
-    /// `None` for a flat index the table does not hold. The engine would also
-    /// refuse that (`InkPointIndexOutOfRange`), but it cannot be *asked* about
-    /// an address this table cannot produce, so the caller words the refusal
-    /// itself.
     #[must_use]
     pub fn plan(
         &self,

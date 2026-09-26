@@ -33,15 +33,12 @@
 //! `rows_height`, `band_height`, `GroupBox`. Those really are facts about the
 //! band: R128 makes the band's height a promise to the canvas below it, and
 //! that promise belongs in the file that keeps it.
+//!
+//! Design and rationale: `docs/modules/egui-shell/ribbon/measure.md`.
 
 use egui::TextStyle;
 
 /// The horizontal padding `egui` will add inside a button, both sides.
-///
-/// `pub(crate)` because the tab strip budgets buttons too — a tab, a QAT
-/// control and a band control are all `egui::Button`s and must be measured
-/// with the same constants, or one row's estimate disagrees with another's
-/// for no reason a reader could find.
 pub(crate) fn button_padding(ui: &egui::Ui) -> f32 {
     ui.spacing().button_padding.x * 2.0
 }
@@ -85,38 +82,16 @@ pub(crate) fn min_button_width(ui: &egui::Ui) -> f32 {
 
 /// The space a `ui.separator()` allocates for itself in a horizontal
 /// layout, excluding the layout gaps around it.
-///
-/// `egui::Separator`'s default `spacing` is 6 pt in the cross direction,
-/// with the 1 pt rule painted down the middle of it. It is not exposed as
-/// a constant, so it is named here rather than left as a bare literal at a
-/// call site.
 pub(crate) const SEPARATOR_LINE: f32 = 6.0;
 
 /// The full cost of putting a `ui.separator()` **between two things** in a
 /// horizontal layout: its own width plus the `item_spacing` `egui` puts on
 /// each side of it.
-///
-/// This is the band's inter-group figure — `[group][gap][rule][gap][group]`
-/// — and is what [`plan::plan_band`] is handed as `separator`. It is *not*
-/// the right number for a separator that is an item inside a group; see
-/// [`measure_item`].
-///
-/// `pub(crate)` because [`super::qat`] ends with the same `ui.separator()`
-/// and must charge itself the same figure for it.
 pub(crate) fn separator_width(ui: &egui::Ui) -> f32 {
     SEPARATOR_LINE + ui.spacing().item_spacing.x * 2.0
 }
 
 /// Measure a string in the font `egui` will draw it in.
-///
-/// Uses [`egui::Color32::PLACEHOLDER`] so the galley this produces is the
-/// **same cache entry** the widget will later ask for with its real
-/// colour — `egui` memoizes layout jobs, and a placeholder-coloured
-/// galley is the form it stores. Measuring therefore costs a hash lookup
-/// rather than a second text layout.
-///
-/// `pub(crate)` for the reason [`button_padding`] gives: every row of the
-/// ribbon that plans its own width must measure text the same way.
 pub(crate) fn text_width(ui: &egui::Ui, text: &str, style: &TextStyle) -> f32 {
     if text.is_empty() {
         return 0.0;

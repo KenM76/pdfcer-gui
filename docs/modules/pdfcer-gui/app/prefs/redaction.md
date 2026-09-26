@@ -25,3 +25,18 @@ whose shape lies about what it does.
 `from_key` is the parser for `preferences.txt`; a duplicate key would
 make one value unreachable from a saved file while the settings window
 went on offering it.
+
+### `const ALL`
+
+Narrowest to widest, so the control reads top to bottom as *less … more*
+destruction. Unlike `super::quality::RenderQuality::ALL` the default is
+**not** in the middle by accident: it is second because that is where
+the scale puts it, and a reader who stops at the first two has met the
+only two values that never edit a page they did not look at.
+
+### `fn scope`
+
+Exhaustive on this crate's enum by construction, which is the whole
+reason the shell carries one: the engine's `ResidualScope` is
+`#[non_exhaustive]` and a match on it would compile with a catch-all
+that silently swallowed a fourth value.

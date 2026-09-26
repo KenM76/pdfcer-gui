@@ -16,10 +16,6 @@ use crate::app::state::OpenDoc;
 const POINTS_PER_PAGE: f32 = 40.0;
 
 /// **Is the plain wheel a page turn rather than a scroll this frame?**
-///
-/// Asked before the `ScrollArea` is built, to withhold the wheel from it, and
-/// by the status bar, to decide whether the toggle exists. Independent of
-/// the page count: see the module header's one-page section.
 #[must_use]
 pub(super) fn wheel_turns_pages(doc: &OpenDoc) -> bool {
     doc.prefs.wheel_paging.flips() && !doc.view.display.is_continuous()
@@ -34,31 +30,6 @@ pub(super) fn flips_pages(doc: &OpenDoc) -> bool {
 
 /// Accumulate this frame's wheel travel and raise a page turn when it is
 /// enough.
-///
-/// Call once per frame, after the canvas has drawn, with `hovered` saying
-/// whether the pointer is over the canvas. Pushes at most one
-/// [`Action::NextPage`] or [`Action::PrevPage`] per call.
-///
-/// # The sign, and why it is this way round
-///
-/// `egui`'s scroll delta is positive when the content should move **down** —
-/// i.e. when the operator is scrolling **up**, toward the start. So a positive
-/// delta is a *previous* page. Getting this backwards produces a viewer that
-/// works and feels wrong, which is harder to notice than one that is broken;
-/// [`tests::rolling_the_wheel_up_goes_back_and_down_goes_on`] pins it.
-///
-/// # Why the accumulator is zeroed rather than decremented
-///
-/// Subtracting the threshold and keeping the remainder would let a long
-/// trackpad swipe page continuously at a rate set by the hand — which sounds
-/// right and is not: the remainder carries across the gesture's end, so the
-/// *next* small nudge lands a page turn it did not earn. Zeroing makes every
-/// turn cost a full threshold of fresh travel, which is what "one notch, one
-/// sheet" means.
-///
-/// The accumulator is also **reset on a direction change**, so a wheel
-/// rolled half a notch forward and then back does not arrive at a page turn by
-/// cancellation. Travel toward a page turn is travel in one direction.
 pub(super) fn flip(ui: &egui::Ui, doc: &mut OpenDoc, hovered: bool, actions: &mut Vec<Action>) {
     if !flips_pages(doc) {
         // Nothing pending can survive a mode change: a half-notch of travel

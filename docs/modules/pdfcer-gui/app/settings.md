@@ -330,3 +330,11 @@ It also runs the two builders the print and export paths actually
 chain onto the funnel's output — `with_annotation_scope` and
 `with_backdrop` — because a builder that reset the field would defeat
 everything above and is invisible from this side otherwise.
+
+### `trait SettingsExt`
+
+A **trait on the engine's type** rather than a wrapper struct. The engine's
+`Settings` is `#[non_exhaustive]`, so a wrapper would have to re-expose
+thirteen fields by hand and would go stale the day a fourteenth arrived —
+whereas an extension trait grows only where it must, which is in the three
+option builders below.

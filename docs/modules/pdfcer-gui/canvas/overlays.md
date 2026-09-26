@@ -77,3 +77,22 @@ possible: a role nobody defined returns `None`, the caller falls back,
 and **nothing looks broken** — the snap marker simply keeps drawing in
 the selection stroke, which is exactly the state this module was written
 to end and which survived unnoticed for a whole phase.
+
+### `fn overlays_for`
+
+Pure, and takes the [`Theme`] rather than reading the context, so the test
+below can run it against every preset without a frame. That is the same
+shape `crate::panels::properties::font_embedded` takes and for the same
+reason: a rule stated as a function is a rule that can be asserted.
+
+### `fn install`
+
+Called beside `Theme::apply` in `crate::app::frame`, and per frame rather
+than once at start-up for the theme's own reason: the operator can change
+the preset from the Settings window, and a one-time install would mean a
+restart to see the effect.
+
+Cheap — a two-entry `BTreeMap` into an `Arc`, once per frame — and the
+alternative is a cached copy that can disagree with the theme that is
+actually applied, which is the class of bug `app::frame`'s own settings
+snapshot exists to prevent.

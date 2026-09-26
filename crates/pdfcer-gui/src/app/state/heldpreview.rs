@@ -47,21 +47,6 @@ const HELD_PREVIEW_GRACE: std::time::Duration = std::time::Duration::from_millis
 
 impl OpenDoc {
     /// **The held preview, if it should still be on screen.**
-    ///
-    /// Three conditions, in order, and each rejects a different way for a hold
-    /// to be wrong:
-    ///
-    /// | test | what it rejects |
-    /// |---|---|
-    /// | the epoch moved | a gesture that was **refused** — nothing committed, so there is nothing to preview |
-    /// | the raster has not caught up | a picture that is already correct — drawing over it would be strictly worse than the real thing |
-    /// | it is younger than [`HELD_PREVIEW_MAX`] | a raster that will never arrive, leaving a preview nobody can clear |
-    ///
-    /// There is a fourth state that deliberately draws: the frame **between**
-    /// the release and the commit. Actions are drained after the frame that
-    /// raised them, so for exactly one frame `edit_epoch` still equals
-    /// `captured_at_epoch`. Rejecting that frame would blink the preview off and
-    /// on again, which is the flicker this feature exists to remove.
     pub(crate) fn held_preview_to_draw(&self) -> Option<&crate::canvas::shapes::ShapePreview> {
         let held = self.held_preview.as_ref()?;
         if held.since.elapsed() > HELD_PREVIEW_MAX {
@@ -91,12 +76,6 @@ impl OpenDoc {
     }
 
     /// Drop a held preview that has stopped being live.
-    ///
-    /// Separate from [`Self::held_preview_to_draw`] because that one takes
-    /// `&self` — it is called from the painter, which holds the document
-    /// immutably. This is called once a frame from `canvas::interact`, which
-    /// does not, and it exists so a dead hold does not sit in memory carrying
-    /// thousands of segments until the next gesture replaces it.
     pub(crate) fn retire_held_preview(&mut self) {
         if self.held_preview.is_some() && self.held_preview_to_draw().is_none() {
             crate::diag::trace(|| {
@@ -108,10 +87,6 @@ impl OpenDoc {
     }
 
     /// **Hold this preview until the page catches up.**
-    ///
-    /// Called on release, with the geometry the gesture last drew. Replaces any
-    /// previous hold outright: a second edit supersedes the first, and two
-    /// previews on screen would be two claims about one document.
     pub(crate) fn hold_preview(&mut self, shape: crate::canvas::shapes::ShapePreview) {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
@@ -134,38 +109,6 @@ const CATCHING_UP_AFTER: std::time::Duration = std::time::Duration::from_millis(
 
 impl OpenDoc {
     /// **Is the picture on screen behind the document, noticeably?**
-    ///
-    /// # What this answers, and why it is not the same question as the hold
-    ///
-    /// [`Self::held_preview_to_draw`] asks *"should this particular geometry
-    /// still be drawn?"* and only ever has an answer for a **canvas gesture on
-    /// a path**. This asks *"is the page the operator is looking at out of
-    /// date?"* and has an answer for **every edit in the program** — a colour,
-    /// a Bold press, a delete, a redaction mark, a page rotation, an undo.
-    ///
-    /// ⇒ That is the whole reason it exists. `OPERATOR_REQUESTS.md` O63 is
-    /// *"live preview for everything we do"*, and a drawn preview is only
-    /// possible where the shell holds the geometry. Where it does not, the
-    /// honest substitute is not a worse picture — it is **saying that the
-    /// picture is not the answer yet**, which is the third of the three options
-    /// the operator chose between and the one with no failure mode.
-    ///
-    /// Deliberately silent under [`CATCHING_UP_AFTER`]: see that constant.
-    ///
-    /// **Both sides of the comparison must come from the same counter.**
-    /// `edit_epoch` is incremented by the action modules; `page_texture_epoch`
-    /// holds a `PageEpochs` value written by `render::settle`. They are issued
-    /// independently, so an `EditScope::Page(other)` edit advances `edit_epoch`
-    /// without advancing this page's entry and the two pass each other for good
-    /// — deleting a page guarantees it, because `actions::pages` calls
-    /// `bump_all` and a `resize` in the same breath. Comparing across the two
-    /// counters therefore does not flicker, it **sticks**: *"the picture is
-    /// catching up"* stays on the status bar for the rest of the session over a
-    /// picture that is perfectly correct.
-    ///
-    /// A unit test that sets both fields by hand cannot see this — equal or
-    /// adjacent values hold under either model. Only a test that edits a
-    /// *different* page exercises the divergence.
     pub(crate) fn page_is_catching_up(&self) -> bool {
         self.page_texture_epoch != self.page_epochs.get(self.view.page_index)
             && self

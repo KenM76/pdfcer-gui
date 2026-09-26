@@ -75,16 +75,6 @@ pub mod constrain;
 /// **The three sentences a Delete that removed nothing shows** — for
 /// [`crate::canvas::deleting`], the module that routes a Delete to the verb for
 /// the rung the operator is on.
-///
-/// Three of eleven refusals speak, and its header carries the rule that decides
-/// which: an operator meets these three **having done nothing wrong**, with an
-/// outline on screen round the thing they want gone and a key that does
-/// nothing. The other eight describe states they can already see, and
-/// `canvas::moving::decline`'s rule applies unchanged — a surface that narrates
-/// the obvious stops being read.
-///
-/// It inherits [`dimension_groups`]' rule 15 discipline and asserts it: the
-/// word on screen is **label**, never a bare "dimension".
 pub mod deleting;
 /// Every word the Render-diagnostics dialog adds around the findings — the
 /// title, the three measurements of the render itself, and the two states in
@@ -92,16 +82,6 @@ pub mod deleting;
 /// [`status`]. Consumed by `crate::dialogs::diagnostics`.
 pub mod diagnostics;
 /// Every word the Manage-dimension-groups window shows.
-///
-/// A sibling of [`scale`] and it inherits that module's rule 15 discipline: the
-/// bare word "dimension" never appears, because a **ce dimension** (one pdfcer
-/// authors) and a **pdf dimension** (CAD-exported page content pdfcer must not
-/// alter) are opposites and the ambiguity has already cost one investigation.
-///
-/// Its own hardest job is different from `scale`'s: explaining that a group
-/// edit reaches **backwards**, over dimensions already placed on pages that are
-/// not on screen — and doing it with a count that is computed before the edit
-/// rather than reported after it.
 pub mod dimension_groups;
 /// The three sentences a dragged-and-dropped file can answer with.
 /// **The document tab strip, and the page drag between documents.** What a tab
@@ -112,37 +92,15 @@ pub mod embed;
 /// What the measure tools say about what they INFERRED — the two-line
 /// gesture's refusals, the angle an override overrode, and an apex that is
 /// only real if the lines are extended.
-///
-///
-/// Its hardest job is stated in its own header: a resolution is a property of
-/// the **placement**, not of the file, and every mistake it can report — a
-/// 2000 dpi photo in a 2-inch box, a 12 dpi logo across a page — looks perfect
-/// on screen at editing zoom and only shows up on the plot.
-/// Every word the Export-DXF window shows.
-///
-/// Its header carries the sentence the whole feature turns on, quoted from
-/// `pdfcer-core`: every generic PDF-to-DXF converter exports at paper scale and
-/// says nothing, so a 1:2 detail arrives at half size **looking plausible**.
 pub mod export_dxf;
 pub mod export_form;
 /// Every word the Export-image window shows, and every sentence an image
 /// export owes afterwards. `OPERATOR_REQUESTS.md` O120.
-///
-/// Its header carries the operator's own parenthesis — *"(including
-/// transparency where supported!)"* — and why that parenthesis is an
-/// instruction rather than an aside: one of the three formats cannot do it, and
-/// what is being asked for is that pdfcer be the thing that says which.
 pub mod export_image;
 /// The SVG/EMF keep-text choice and what an export that kept text owes afterwards.
 pub mod export_keeptext;
 /// Every word the Export-text window shows, and every sentence a text
 /// export owes afterwards.
-///
-/// Its header carries the sentence the whole feature is arranged around — **a
-/// scanned drawing has no text layer, so exporting it writes an empty file, and
-/// an empty file looks exactly like a successful export** — and the reason the
-/// losses are said twice, in the window and in the receipt, in two different
-/// registers.
 pub mod export_text;
 /// The FORM-FIELD clipboard's sentences — five refusals and the paste's
 /// off-canvas loss note. Separate from [`clipboard`] because the loss note is
@@ -185,10 +143,6 @@ pub mod links;
 pub mod markup;
 /// Every word the **maximum-zoom** control says — the popup behind the
 /// status bar's zoom readout (O24).
-///
-/// Its header carries why the copy is unusually plain: the operator settled
-/// the performance question himself, so the control states where the crossover
-/// is and offers no advice about it.
 pub mod maxzoom;
 pub mod measure;
 /// The copy the **context-menu** surface owns, as distinct from the copy
@@ -240,26 +194,8 @@ pub mod panels;
 /// eleven class rows, and the standing line that appears when nothing at all
 /// is selectable. Consumed by `crate::app::status` and driven by
 /// `crate::canvas::pick`.
-///
-/// Its header carries the vocabulary argument, which is the interesting part:
-/// every row has a correct specification name that would be the wrong label,
-/// and the file explains each substitution — including why a form XObject is
-/// called a **Block**, borrowing the CAD word for the thing rather than
-/// inventing one or exposing "form XObject" to somebody who has not read the
-/// specification.
 pub mod pick;
 /// Every word the Markup ▸ Style group shows — three tooltips and a unit.
-///
-/// Small, and load-bearing out of proportion to its size: the controls are a
-/// colour swatch and a number, so the tooltip is the only place they can say
-/// what they are, and the only place an operator learns the setting applies to
-/// the **next** mark rather than to one already drawn.
-/// What pdfcer says after combining files — `OPERATOR_REQUESTS.md` O68.
-///
-/// Separate from [`files`], which owns the dialog HEADINGS the operating
-/// system draws. These are what pdfcer says afterwards, on its own status row.
-/// What a window says when it steps aside so the operator can point at the page
-/// — `OPERATOR_REQUESTS.md` O66.
 pub mod placing;
 /// Every word the print dialog shows. Consumed by `crate::dialogs::print`.
 pub mod print;
@@ -279,46 +215,17 @@ pub mod redact;
 /// Every word the redaction surface says — the marking panel, the apply
 /// report, the two acknowledgements, and the residual lines. Consumed by
 /// `crate::panels::redact` and `crate::dialogs::redact`.
-///
-/// The catalog with the strictest wording rules in the crate, and its header
-/// carries all three: never say "removed" when anything was left, never say
-/// "verified" unless a verification step ran, and never put the word "Undo"
-/// near a post-apply state. This is the one feature where a comfortable
-/// sentence is a security defect.
-/// Every sentence the eight resize grips show — six refusals and one
-/// disclosure.
-///
-/// Its header carries why the refusals matter more than the feature: the grips
-/// were drawn, cursored and drag-consuming for the whole life of this shell and
-/// committed nothing, which is `DEFECTS.md` D4a's shape exactly.
 pub mod resizing;
 /// Every word the **review-status** control says — `/State` and
 /// `/StateModel` (§12.5.6.3, Table 171), consumed by
 /// `crate::panels::comments::reviewstate` and by
 /// `crate::app::actions::reviewstate`.
-///
-/// Its own header carries the two facts that decide almost every string in it:
-/// a status is **appended, not set** (so nothing says *Set status*), and the
-/// engine reads both keys **verbatim without interpreting them** (so an
-/// unrecognised value is shown rather than normalised, on
-/// [`buttonaction`]'s `Unmodelled`-versus-`Foreign` seam).
 pub mod reviewstate;
 /// The ribbon's structural strings: tab labels and questions, group
 /// captions, mode labels. Consumed by `crate::shell::manifest`.
 pub mod ribbon;
 /// Every sentence the **ninth handle** shows — four refusals and two
 /// disclosures, for `crate::canvas::rotating` and the two rotation verbs.
-///
-/// The sibling of [`resizing`], and its header carries the one thing worth
-/// knowing before reading either: a rotation is an **isometry**, so it has no
-/// stroke-scaling question, no distortion warning and no options type — which
-/// is why this catalog is half the size of its neighbour despite covering three
-/// kinds of target rather than one.
-///
-/// It carries the disclosure `pdfcer-core` asked for by name: a `Linear` ce
-/// dimension's axis lock cannot survive a rotation, and *"an operator whose
-/// dimension silently stopped being axis-locked will find out later and blame
-/// something else."*
 pub mod rotating;
 /// Why merging text runs was declined, and the width it wrote.
 pub mod runmerge;
@@ -333,21 +240,6 @@ pub mod unembed;
 
 /// Every word the Settings window shows — the thirteen spec-ambiguity choices,
 /// what each leaves open, and what each costs.
-///
-/// The one area of this catalog with a rule of its own: a string here must be
-/// readable by someone who has never opened the PDF standard, because the
-/// operator is being asked to make a judgement and a judgement cannot be made
-/// from a clause number.
-/// The six strings the keyboard reference shows — and **none of them is a
-/// shortcut**.
-///
-/// Its header carries the rule: a string here may *describe* the reference; it
-/// may not be *part* of it. Every chord and every command name comes from the
-/// live keymap and the registry, because `DEFECTS.md` D5 was a hand-maintained
-/// list that omitted six live bindings and that nothing exercised.
-/// Encryption, passwords and signatures — `OPERATOR_REQUESTS.md` O108. Two of
-/// its sentences are `pdfcer-core`'s own wording and must not be re-worded; its
-/// header says which and why.
 pub mod security;
 pub mod shortcuts;
 
@@ -355,11 +247,6 @@ pub mod shortcuts;
 /// write side of a subject whose read side is `text::security` (what a document
 /// says about its protection) and `text::trust` (what pdfcer could and could
 /// not check about a signature that already exists).
-///
-/// `#[cfg]` for `crate::sign`'s reason: with the capability compiled out there
-/// is no window for these strings to appear in, and a catalogue of copy for a
-/// surface that does not exist is exactly the dead weight `check-string-gaps`
-/// is there to notice.
 #[cfg(feature = "signing")]
 pub mod sign;
 /// **What this shell says about a digital signature before and after it
@@ -399,140 +286,45 @@ pub mod textedit;
 /// sticky note does not.
 /// Every word the TOOLS say, wherever they are said — the one-line status
 /// strip, the Properties panel's armed-tool section, and the canvas refusals.
-///
-/// It was *"every word the Tool panel says"* until `OPERATOR_REQUESTS.md` O123
-/// dissolved that panel; the copy outlived it and its header tabulates which
-/// surface now says which sentence, and which fifteen strings were deleted with
-/// the tool list rather than re-homed.
-///
-/// The three rules are unchanged: no label that the command registry already
-/// owns, no sentence that is a tip rather than a fact, and no instruction that
-/// fails to say how its gesture ends.
 pub mod tool;
 /// The one-line tool status's own two strings — `OPERATOR_REQUESTS.md` O123.
-///
-/// Deliberately tiny. Everything else the strip says is already written down
-/// somewhere authoritative — the tool's NAME in the command registry, its
-/// SENTENCE in [`tool`], its verb in [`tool::put_down_button`] — and its
-/// header tabulates which is which and why none of them was copied.
 pub mod toolstatus;
 /// Whether a signature's signer can be trusted — and the four different
 /// sentences for the four ways trust can go unchecked.
-///
-/// Kept apart from [`signature`], which is about a save that would INVALIDATE a
-/// signature, because the two answer opposite questions and share only a noun.
-/// Its header carries the four rules that govern it, and the one worth reading
-/// first is that `NotChecked` renders as itself: never as a soft "no", never as
-/// a grey tick, never omitted.
 pub mod trust;
 /// The words of the question `file.close` had been promising to ask since it
 /// shipped, and did not.
-///
-/// Its own header carries the two rules the copy follows and both are unusual:
-/// nothing in it says *"changes"* — it says how many **edits**, because the
-/// decision an operator is being asked to make depends entirely on whether they
-/// moved one dimension or spent an hour — and nothing in it says *"Save"*,
-/// because this build has no Save and a button that claimed one would be the
-/// same lie as the tooltip that exposed the defect.
 pub mod unsaved;
 /// Every sentence *"give this page its own copy"* can say — seven refusals,
 /// the disclosure a **successful** unshare owes, and the remedy sentence this
 /// shell appends to the engine's `SHARED CONTENT` report.
-///
-/// Its header carries the two things a reader must not have to rediscover.
-/// First, why a feature this small needs the biggest refusal catalog on the
-/// canvas: `unshare_form` is a *structural* verb, so it runs the whole
-/// engine-wide guard ladder before it acts, and **not one** of its seven
-/// declines is visible on the page. Second, why the SUCCESS owes a sentence
-/// too — the copy is byte-identical to the original, so a page that has just
-/// been unshared renders pixel-for-pixel as it did before, and without a
-/// sentence the operator's evidence that it worked is indistinguishable from
-/// their evidence that nothing happened.
-///
-/// Consumed by `crate::app::actions::xobject`,
-/// `crate::app::dispatch::format` and the `CommitTextEdit` apply arm.
 pub mod unshare;
 
 /// **The way back out of a mode that hides its own control** — the read-mode
 /// exit, said on the window title and on the status bar.
-///
-/// The one catalog in the crate whose entries are *claim-bearing about a
-/// keyboard*: each takes the chord as a parameter, resolved from the keymap
-/// that dispatches, and no chord is spelled anywhere inside it. Its header
-/// carries the operator report that produced it and the argument for why a
-/// tooltip on the hidden control was never a disclosure.
 pub mod window;
 
 use std::path::Path;
 
 /// The window title.
-///
-/// Just the product name at S0. Once a document can be open, the
-/// convention every document application follows is `<file> — pdfcer`, and
-/// that belongs here rather than at the `ViewportBuilder` call site.
 #[must_use]
 pub fn window_title() -> &'static str {
     "pdfcer"
 }
 
 /// Shown on the canvas when nothing is open.
-///
-/// **This sentence changed when `file.open` was wired**, and the change is
-/// the rule rather than an edit. It used to read *"No document open. Start
-/// pdfcer with a PDF path, for example: pdfcer-gui drawing.pdf"*, because at S0
-/// there was no Open command and *"a message that names a control the
-/// operator cannot find is worse than no message."* The command exists now —
-/// on the File tab, on the quick-access toolbar, and on Ctrl+O — so the
-/// message names it. The old wording would have been the same defect in
-/// reverse: telling an operator to restart the application to do something
-/// there is a button for.
-///
-/// The command line stays in the sentence because it is still true and is
-/// still how a file association or a shell "Open with" reaches pdfcer.
 #[must_use]
 pub fn canvas_no_document() -> &'static str {
     "No document open. Choose File > Open, press Ctrl+O, or start pdfcer with a PDF path."
 }
 
 /// Shown when a document opened successfully but contains no pages.
-///
-/// This is a real, legal PDF: `/Count 0`. Presenting it as a failure would
-/// be a lie about the operator's file, which is why the page-index clamp in
-/// [`crate::viewer::clamp_page_index`] maps the empty document to page 0
-/// rather than panicking — the "no pages" condition is a *presentation*
-/// decision and this is the presentation.
 #[must_use]
 pub fn canvas_no_pages() -> &'static str {
     "This document has no pages."
 }
 
 /// Shown when the current page could not be rasterized.
-///
-/// The document stays open. One page that will not draw is not a reason to
-/// close a file the operator can still navigate, and it is not the same
-/// event as a file that would not load — hence a distinct message rather
-/// than reusing [`open_failed`].
-///
-/// `detail` is `pdfcer-render`'s own error `Display`, passed through rather
-/// than rewritten: the renderer's errors are structured, specific
-/// diagnostics — a content stream that would not decode names the object
-/// that would not decode — and replacing one with "an error occurred" throws
-/// away the only part of the sentence that helps.
-///
-///
-/// It read: *"the renderer's errors are structured, specific diagnostics
-/// ('requested raster size 115200x86400 exceeds MAX_PIXMAP_EDGE')"*. That is
-/// `pdfcer_render::RenderError::BadRasterSize`, and on 2026-09-12 the operator
-/// reported seeing exactly it, painted across a site plan he was editing
-/// (`OPERATOR_REQUESTS.md` O186). Two pixel counts are a precise fact about a
-/// pixmap and no instruction at all to a man looking at a blank sheet.
-///
-/// So `crate::render::worker` now takes that variant out of the pass-through
-/// and gives it one of this module's own sentences. The example is kept here
-/// inverted rather than deleted, because the **rule** in the paragraph above is
-/// still right — repeat the engine where it knows more than the shell does —
-/// and the way it goes wrong is to repeat the engine where the shell knows what
-/// the operator should DO.
 #[must_use]
 pub fn canvas_render_failed(detail: &str) -> String {
     format!("This page could not be drawn. {detail}")
@@ -541,53 +333,6 @@ pub fn canvas_render_failed(detail: &str) -> String {
 /// The `detail` clause for the one render refusal that has a remedy the
 /// operator can carry out, and the reason this shell does **not** pass the
 /// engine's own sentence through here.
-///
-/// # What it covers
-///
-///
-/// # Why the engine's `Display` is deliberately thrown away here
-///
-///
-/// **Until `Pass 296.5` (`4f6f5a5`)**, `RasterizerLimit`'s `Display` was
-/// `"the rasterizer cannot work at scale {scale}: {panic_message}"`, where
-/// `panic_message` is **third-party panic text from `tiny-skia`** — e.g.
-/// *"range start index 442613758592 out of range for slice of length
-/// 1088737"*. The reply that shipped the variant said outright that it *"is
-/// third-party text and explicitly not a contract, so please do not match on
-/// it"*, in the same breath as putting it in the message. This shell wrote a
-/// named arm to stop it reaching a canvas and reported the workaround under
-/// decision 058; the engine treated that as the defect report it was and took
-/// the panic text out. **The `Display` is now `"the rasterizer cannot work at
-/// scale {scale}"`, and nothing would leak if this function did not exist.**
-///
-/// ⇒ **It still exists, on the half of the argument that was never about the
-/// leak.** The engine's sentence is a *fact about the renderer*; this one is
-/// an *instruction to an operator*. A man looking at a blank drawing cannot
-/// act on "the rasterizer cannot work at scale 8053069" — he can act on "zoom
-/// out", and he needs to be told his page is undamaged. Passing the engine's
-/// sentence through now would be correct, contract-respecting, and useless.
-///
-/// The diagnosis still goes to a `diag::trace` — where it is exactly as useful
-/// as the reply intended, and where the deliberately-unsilenced panic hook has
-/// already printed it — and the operator gets the half of the event that is
-/// actionable: **zoom out**.
-///
-/// # Why it names no number
-///
-/// The engine measured the first failing scale across six page geometries and
-/// got three distinct values **ordering with nothing**: an E-size sheet fails
-/// at 284,964 while a business card and an A1 sheet share 8,053,069, and the
-/// largest sheet is the most fragile. There is therefore no threshold this
-/// sentence could honestly quote, and `MAX_GUARANTEED_REGION_SCALE` is
-/// published as a floor rather than a ceiling for that reason. "Zoom out"
-/// is true at every geometry; "zoom out below X" would be invented.
-///
-/// # Why it says the page is unchanged
-///
-/// A refusal that appears where a picture was is read as damage. It is not:
-/// nothing was written, nothing was edited, and the same page at a lower zoom
-/// draws exactly as it did before. Saying so costs one clause and removes the
-/// question.
 #[must_use]
 pub fn canvas_zoom_past_rasterizer() -> &'static str {
     "This zoom is further in than pdfcer can rasterize. Zoom out and it will draw again. Nothing about the page has changed."
@@ -611,26 +356,12 @@ pub fn canvas_zoom_past_rasterizer() -> &'static str {
 // it*. The page number is 1-based, like every page number the operator sees.
 
 /// Shown on a page whose raster is being made right now.
-///
-/// Present tense and an ellipsis, because something is happening and it will
-/// finish. Distinguished from [`canvas_page_waiting`] so that a strip filling
-/// in slowly looks like progress rather than like a stall — on the benchmark
-/// CAD sheet one page takes over a second, and a row of identical "not drawn"
-/// labels would give the operator no way to tell a working renderer from a
-/// stuck one.
 #[must_use]
 pub fn canvas_page_drawing(page_number: usize) -> String {
     format!("Page {page_number} — drawing…")
 }
 
 /// Shown on a visible page the renderer has not started yet.
-///
-/// "Not drawn yet" rather than "loading" or a bare page number: it says
-/// plainly that the absence is pdfcer's doing and is temporary, which is the
-/// whole difference between this and a blank rectangle. No ellipsis, because
-/// nothing is happening to *this* page at this moment — the ellipsis belongs
-/// to [`canvas_page_drawing`], and spending it here would make the two
-/// indistinguishable.
 #[must_use]
 pub fn canvas_page_waiting(page_number: usize) -> String {
     format!("Page {page_number} — not drawn yet")
@@ -638,93 +369,18 @@ pub fn canvas_page_waiting(page_number: usize) -> String {
 
 /// Shown on a **neighbour** page in a continuous strip whose whole-sheet raster
 /// is larger than the renderer can allocate at the zoom the operator is at.
-///
-/// # Why this is not [`canvas_page_waiting`], and why that mattered
-///
-///
-/// > *"This page could not be drawn. requested raster size 50411508x32619210
-/// > is empty or exceeds MAX_PIXMAP_EDGE"*
-///
-/// painted across a neighbouring sheet. That was [`canvas_page_refused`]
-/// carrying `pdfcer-render`'s own sentence, which is the right thing to do for
-/// a page that is *broken* and the wrong thing for a page that is merely
-/// **further in than the renderer's pixmap ceiling** — nothing is wrong with
-/// the sheet, nothing is wrong with the document, and the engine's wording
-/// names a constant the operator has never heard of and a pixel count he cannot
-/// act on.
-///
-/// Closing the hole that ordered that raster (`render::settle::fill_strip` now
-/// declines to place an order it knows cannot be filled) leaves the page with
-/// no picture and no sentence. [`canvas_page_waiting`] would then be the
-/// obvious thing to show and it would be a **lie**: nothing is coming, at this
-/// zoom, ever. A wrong refusal sentence hides the defect in whoever believes
-/// it, so the state gets its own words.
-///
-/// # Why it says what to do and not why
-///
-/// *"Zoom out"* is the whole of the operator's available response, and it
-/// works. The cause — a pixmap edge limit measured in device pixels, which
-/// bites at a different zoom on every sheet size — is traced for us and is of
-/// no use to him. [`canvas_zoom_past_rasterizer`] made the same choice for the
-/// same reason, and the two sentences are deliberately close: one is about the
-/// sheet he is reading, this one is about a sheet beside it.
-///
-/// It names the page because a strip shows several at once and an unqualified
-/// sentence in one rectangle reads as a statement about the document.
 #[must_use]
 pub fn canvas_page_beyond_raster(page_number: usize) -> String {
     format!("Page {page_number} — not drawn this far in. Zoom out to see it.")
 }
 
 /// Shown on a page that will not draw at all.
-///
-/// The per-page sibling of [`canvas_render_failed`], and the difference
-/// between them is which page is being talked about: that one is shown
-/// *instead of* the canvas when the current page fails, this one is shown *in
-/// the failing page's own rectangle* while the pages around it draw normally.
-/// One bad sheet in a forty-page set must not replace the other thirty-nine
-/// with a message.
-///
-/// `detail` is `pdfcer-render`'s own error text, passed through rather than
-/// rewritten, for the reason [`canvas_render_failed`] gives: the renderer's
-/// errors are specific and replacing one with "an error occurred" throws away
-/// the only part of the sentence that helps.
 #[must_use]
 pub fn canvas_page_refused(page_number: usize, detail: &str) -> String {
     format!("Page {page_number} could not be drawn. {detail}")
 }
 
 /// Shown when the background render thread died without reporting.
-///
-/// Distinguished from [`canvas_render_failed`] because the causes are
-/// different in kind: a render *failure* is something about this page, and
-/// a stopped worker is something about the process. Conflating them would
-/// send an operator looking at their document for a fault that is ours.
-/// Shown when the renderer was asked for a picture with no pixels in it.
-///
-/// `pdfcer_render::RenderError::BadRasterSize` covers two conditions in one
-/// variant — *"is empty **or** exceeds MAX_PIXMAP_EDGE"* — and they are
-/// opposite failures that want opposite sentences. This is the empty half;
-/// [`canvas_zoom_past_rasterizer`] is the other. `crate::render::worker`
-/// decides which by reading the two pixel counts the variant carries, never by
-/// reading its prose.
-///
-/// # Why it names the page box rather than the zoom
-///
-/// Because a real page cannot reach this by zooming out.
-/// `crate::viewer::MIN_ZOOM` is 0.10, so rounding a pixmap's width to zero at
-/// that scale needs a page under about ten points on a side. Every ordinary
-/// page — the smallest thing in a drawing set is a business card at 252 pt —
-/// is an order of magnitude clear of it. What does reach it is a `/MediaBox` or
-/// `/CropBox` with no area, which is a property of the **file** and is the
-/// thing the operator can act on: the page is malformed, not mis-displayed.
-///
-/// Saying *"zoom out and it will draw"* here would be the worse failure. It
-/// is false, it is actionable, and an operator who follows it concludes the
-/// program is broken rather than the sheet.
-///
-/// It says *this page* and not *this document*, because a drawing set with
-/// one degenerate sheet navigates perfectly and the other thirty-five draw.
 #[must_use]
 pub fn canvas_page_has_no_area() -> &'static str {
     "This page has no area to draw — its page box is empty."
@@ -736,19 +392,6 @@ pub fn canvas_render_worker_stopped() -> &'static str {
 }
 
 /// The document could not be read: it is damaged, truncated, or not a PDF.
-///
-/// One of **three distinct ways to fail, said three distinct ways** — a
-/// distinction carried across from the old shell because it is one of the
-/// things pdfcer does that most viewers do not:
-///
-/// - this function — *the file is wrong*;
-/// - [`open_unsupported`] — *the file is fine and pdfcer is not finished*;
-/// - [`open_needs_password`] — *the file is encrypted and pdfcer has not
-///   been told the password*.
-///
-/// The branch between them is made on **structured error data** from
-/// `pdfcer-core`, never by matching on a message string. That is what makes
-/// the distinction reliable rather than a heuristic that decays.
 #[must_use]
 pub fn open_failed(path: &Path, detail: &str) -> String {
     format!(
@@ -760,11 +403,6 @@ pub fn open_failed(path: &Path, detail: &str) -> String {
 }
 
 /// The document is well-formed and uses something pdfcer does not implement.
-///
-/// Saying "failed to open" here would tell the operator a lie about their
-/// own file. `pdfcer-core` detects such a document and refuses it *cleanly*
-/// rather than misparsing it into plausible-looking garbage, and this
-/// sentence is the other half of that honesty.
 #[must_use]
 pub fn open_unsupported(path: &Path, detail: &str) -> String {
     format!(
@@ -776,31 +414,6 @@ pub fn open_unsupported(path: &Path, detail: &str) -> String {
 }
 
 /// The document is encrypted with a password pdfcer has not been given.
-///
-/// A third thing: neither damaged nor unsupported. pdfcer *can* decrypt this
-/// file and has not been told how.
-///
-/// # IT SAID "THIS BUILD CANNOT YET PROMPT FOR A PASSWORD" WHILE PROMPTING
-///
-///
-/// The old doc comment is worth keeping because it is the whole diagnosis:
-///
-/// > *S0 has no password prompt, and this message says so plainly instead of
-/// > showing an input the shell would then ignore. That is the "no
-/// > placeholders" invariant (`PROJECT_PLAN.md` §3) [...] The prompt lands with
-/// > the rest of the open/save surface at **stage S2**.*
-///
-/// Every word of that was true when it was written, and it cited R9 correctly.
-/// **Then S2 arrived**, `dialogs::password` shipped, `Action::OpenWithPassword`
-/// shipped — and nothing re-read the sentence whose only justification was that
-/// they did not exist. R9 stopped applying the moment the capability stopped
-/// being unavailable.
-///
-/// This is the sixth time this project has recorded the same shape: **a claim
-/// that was true when written, cited later as evidence, with nothing re-reading
-/// its premise.** It is also the reason the canvas arm in `app::surfaces` no
-/// longer draws anything for this status: the dialog IS the surface now, and a
-/// second surface repeating a superseded fact is how the two came to disagree.
 #[must_use]
 pub fn open_needs_password(path: &Path) -> String {
     format!(

@@ -74,13 +74,6 @@ use std::collections::BTreeMap;
 use crate::manifest::Keymap;
 
 /// Command id → the chord a menu will show for it.
-///
-/// Built once per frame (or once per menu open) from a
-/// [`Keymap`], because the keymap is indexed the other way round. See the
-/// module header.
-///
-/// Ordered (`BTreeMap`) so enumerating it — in a trace, in a failing test
-/// message — is deterministic.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Shortcuts {
     by_command: BTreeMap<String, String>,
@@ -88,10 +81,6 @@ pub struct Shortcuts {
 
 impl Shortcuts {
     /// No chord for anything.
-    ///
-    /// What a menu gets when the manifest has no keymap: every row draws
-    /// its label alone, which is a correct menu rather than a degraded
-    /// one.
     #[must_use]
     pub fn none() -> Self {
         Self::default()
@@ -117,10 +106,6 @@ impl Shortcuts {
     }
 
     /// Invert the keymap of a manifest, if it has one.
-    ///
-    /// The convenience the renderer actually uses: a [`crate::Shell`] with
-    /// no `keymap` key yields [`Self::none`] rather than requiring every
-    /// call site to unwrap an `Option`.
     #[must_use]
     pub fn of(shell: &crate::manifest::Shell) -> Self {
         shell
@@ -156,10 +141,6 @@ impl Shortcuts {
 }
 
 /// Which of two chords a menu should teach: `Less` means `a` wins.
-///
-/// Fewest modifiers, then shortest, then lexicographic. See the module
-/// header for why each step is there. Total and antisymmetric, so the
-/// result is a function of the two strings and of nothing else.
 #[must_use]
 pub fn prefer(a: &str, b: &str) -> Ordering {
     modifier_count(a)
@@ -170,14 +151,6 @@ pub fn prefer(a: &str, b: &str) -> Ordering {
 
 /// How many modifiers a chord names, counted as `+`-separated pieces
 /// minus the key itself.
-///
-/// `"Ctrl+Shift+P"` → 2, `"F11"` → 0, `"Ctrl+E"` → 1.
-///
-/// Degenerate inputs degrade to 0 rather than to a panic or a negative:
-/// `"+"` names no pieces at all once empty segments are dropped, and
-/// `""` names none either. A chord this strange is an operator's typo,
-/// and the correct penalty is that it sorts first among equals — not that
-/// the menu refuses to draw.
 #[must_use]
 pub fn modifier_count(chord: &str) -> usize {
     chord

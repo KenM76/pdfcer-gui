@@ -10,24 +10,12 @@ use pdfcer_core::settings::AcrobatTrustStore;
 use crate::text::trust as t;
 
 /// The region the resolved-state line publishes.
-///
-/// Named for [`super::acrobat::REGION_RESOLVED`]'s reason: the whole value of
-/// that line is that it is **on screen and legible**, and `ui-verify` can only
-/// assert that about a rect the application published. A driven check that read
-/// the trace would learn what pdfcer resolved and nothing about whether the
-/// operator can see it.
 pub const REGION_RESOLVED: &str = "settings:signatures.resolved"; // ui-text-exempt: trace region name, never displayed
 
 /// The Browse button's region.
 pub const REGION_BROWSE: &str = "settings:signatures.browse"; // ui-text-exempt: trace region name, never displayed
 
 /// The inspect button's region.
-///
-/// **Its absence is the assertion.** R9 says an unavailable capability
-/// renders nothing, and "renders nothing" is only checkable if the thing that
-/// would have rendered has a name. A driven check on a machine with no trust
-/// store asserts this region is **not** published; on a machine with one it
-/// asserts it is, and presses it.
 pub const REGION_INSPECT: &str = "settings:signatures.inspect"; // ui-text-exempt: trace region name, never displayed
 
 /// The region the inspect button's answer publishes.
@@ -72,19 +60,6 @@ pub fn use_store(ui: &mut Ui, draft: &mut super::Draft) {
 
 /// Setting 2 — where the trust list is, what pdfcer currently resolves, and
 /// (when there is one to read) what is in it.
-///
-/// `text_value` with an identity parse, exactly as [`super::acrobat::path`]
-/// uses it and for its stated reason: the helper exists to hold a half-typed
-/// *number* apart from a parsed value, and a path has no invalid intermediate
-/// state. Every keystroke reaches the draft, so Save writes exactly what is on
-/// screen.
-///
-/// **No validation as you type and no red field.** A path that does not
-/// exist is not a typing error — it is a path to something not there yet, or on
-/// a drive that is not mounted, or typed from memory and about to be corrected.
-/// Marking it wrong mid-word would be the field arguing with somebody who has
-/// not finished. The resolved line below says what actually happened, and
-/// because locating is a stat rather than a process launch it says it live.
 pub fn store_path(ui: &mut Ui, draft: &mut super::Draft) {
     super::widgets::header(
         ui,

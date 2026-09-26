@@ -143,3 +143,124 @@ starts disagreeing with the number the operator can act on.
 One trace shape for every refusal, so a harness reads `canvas-move-declined`
 and finds the cause on the same line rather than inferring it from an
 absence — the same contract `canvas-delete-declined` already honours.
+
+### `struct PageDelta`
+
+A distinct type rather than a bare `(f64, f64)` so a canvas-space `Vec2`
+cannot be handed to a page-space verb by a call that happens to typecheck.
+The only way to build one is [`page_delta`], which is the only place in
+`canvas/` that crosses into PDF space.
+
+### `fn is_travel`
+
+# Why the threshold is exactly zero, and not a nudge more
+
+egui already applies the only distance threshold this gesture needs:
+a press-and-release that does not exceed the drag threshold is reported
+as `clicked`, never as a drag, so a shaky hand cannot reach here at all
+(see [`crate::canvas::gesture`]'s header). Adding a second threshold
+*in page space* would make it zoom-dependent in the wrong direction —
+at 16× a deliberate quarter-point nudge is a 4 px screen drag the
+operator meant, and swallowing it would read as "the drag did not
+take". So the only thing refused here is a gesture that ended exactly
+where it began (a drag out and back), which must not put a no-op
+command on the undo stack.
+
+Non-finite is refused for the obvious reason: it would author NaN
+operands into a content stream.
+
+### `enum MoveSubject`
+
+One variant per rung of the selection ladder, because that is the whole
+rule: the rung the operator is standing on decides which of the `move_*`
+family the gesture means.
+
+### `struct MoveContext`
+
+Assembled by [`drag`], which owns the provider, and handed to [`eligible`]
+as plain data — the same shape, and for the same reason, as
+[`ClickHit`](crate::canvas::selection::ClickHit): every rule below is then
+a pure function of "what is selected" and "what kind of thing is it", with
+no decomposition anywhere near the test that proves it.
+
+### `fn eligible`
+
+Consulted **twice per drag**: once per frame while the drag is in flight,
+to decide whether a ghost may be drawn at all, and once on release, to
+build the command. Asking the same question both times is the mechanism
+behind obligation 3 in the module docs — a ghost is drawn if and only if
+the release would commit, so the preview cannot promise a move the engine
+is going to refuse.
+
+Deliberately says nothing about the *distance* dragged: a zero-travel drag
+is eligible (it names a real verb on real operands), it simply has nothing
+to commit, and that is [`action`]'s call. Splitting it this way is what
+keeps the ghost visible during the frames where the pointer happens to pass
+back over the press point.
+
+### `fn action`
+
+`node_at` is the entered anchor's **current** page-space position, and is
+consulted only by [`MoveSubject::Node`]. It is needed because `move_node`
+takes an absolute destination rather than a displacement — the operand it
+rewrites is a coordinate pair, and expressing the drag as "where the point
+ends up" is what lets the planner map one point through the object's CTM
+inverse instead of decomposing a translation into a space it would have to
+re-derive.
+
+### `struct MovePreview`
+
+Two values rather than one, since `OPERATOR_REQUESTS.md` **O63**, and they
+answer different questions:
+
+| field | question |
+|---|---|
+| [`Self::ghost`] | *where is the selection going?* — the bounding outline, which is the SELECTION indicator |
+| [`Self::shape`] | *what will it look like?* — the real geometry, which is what the operator asked for |
+
+The second is `None` on every rung the shell cannot draw honestly: a text
+run, an image, a form XObject, a page that will not decompose, or a selection
+past `canvas::shapes`' cap. In every one of those cases the outline alone is
+drawn, which is exactly what this canvas did before the shape preview
+existed — so the fallback is a known-good behaviour rather than a degraded
+one.
+
+Not folded into one enum. `dragroute::Previews` gives the argument and it
+applies here: the painter reads each independently, and one value whose
+meaning depends on which rung is live is a value the paint loop has to
+interrogate.
+
+### `fn drag`
+
+The **only** function here that touches the live object model. It gathers
+[`context`], asks [`eligible`], and then does one of two things:
+
+* [`Phase::InFlight`] — returns the canvas-space delta for the ghost, and
+  changes nothing. Nothing is re-rasterized and nothing is decomposed: the
+  ghost is a translated copy of the outlines
+  [`SelectionState::outlines`] already caches in canvas space, which is
+  zoom-independent, so a preview costs one `Rect::translate` and one stroke
+  per selected entry.
+* [`Phase::Complete`] — converts the delta to page space, resolves the node
+  position if the rung needs one, and pushes exactly one [`Action`].
+
+Returns a [`MovePreview`] carrying the bounding ghost and, since
+`OPERATOR_REQUESTS.md` O63, the selection's own **geometry** at its new
+position. A drag that is not eligible draws nothing, which is the visible
+half of obligation 3.
+
+# Why the refusal is traced only on release
+
+An in-flight drag is re-evaluated 60 times a second. Tracing a refusal per
+frame would bury every other event on the channel — the lesson
+`canvas-pointer` taught when a stationary pointer emitted fifty identical
+lines in nine seconds. The release is one event, and it is the one a
+harness reading the trace is asking about.
+
+### `mod nudge`
+
+It is under `moving` rather than under `keys` because the shared thing is the
+**coordinate crossing**, not the key: a nudge written in the key handler
+would have had to re-derive the Y flip and the page rotation, which is the
+silent failure `viewer`'s header warns about. See that module's own header
+for the whole argument, the step it takes and whose convention it is.

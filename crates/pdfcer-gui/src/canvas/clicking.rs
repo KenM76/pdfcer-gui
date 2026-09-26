@@ -108,15 +108,6 @@ use crate::canvas::tool::CanvasTool;
 use crate::panels::objects::provider::ObjectModelProvider;
 
 /// Everything a completed click needs, gathered by the caller.
-///
-/// The `Frame` shape this codebase already uses for `resizing`, `handledrag`
-/// and `dimdrag`, and for the reason those give: the members are read-only
-/// facts about one frame, so grouping them says what they are and removes the
-/// failure a long parameter list invites — three of the four `bool`s below
-/// would compile in each other's places.
-///
-/// The two things that are **mutated** stay outside it, deliberately: a
-/// `Frame` is what the frame knows, and a selection is what the document is.
 pub struct Frame<'a> {
     /// The frame's context, for the caret and the pick, both of which store
     /// per-frame state in `egui::Memory`.

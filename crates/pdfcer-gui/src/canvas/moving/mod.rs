@@ -49,11 +49,6 @@ use crate::viewer;
 
 /// A drag displacement in **PDF page space** — the frame every `move_*` verb
 /// consumes.
-///
-/// A distinct type rather than a bare `(f64, f64)` so a canvas-space `Vec2`
-/// cannot be handed to a page-space verb by a call that happens to typecheck.
-/// The only way to build one is [`page_delta`], which is the only place in
-/// `canvas/` that crosses into PDF space.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PageDelta {
     /// Horizontal displacement, PDF user-space units.
@@ -65,22 +60,6 @@ pub struct PageDelta {
 
 impl PageDelta {
     /// Whether this displacement is a real move.
-    ///
-    /// # Why the threshold is exactly zero, and not a nudge more
-    ///
-    /// egui already applies the only distance threshold this gesture needs:
-    /// a press-and-release that does not exceed the drag threshold is reported
-    /// as `clicked`, never as a drag, so a shaky hand cannot reach here at all
-    /// (see [`crate::canvas::gesture`]'s header). Adding a second threshold
-    /// *in page space* would make it zoom-dependent in the wrong direction —
-    /// at 16× a deliberate quarter-point nudge is a 4 px screen drag the
-    /// operator meant, and swallowing it would read as "the drag did not
-    /// take". So the only thing refused here is a gesture that ended exactly
-    /// where it began (a drag out and back), which must not put a no-op
-    /// command on the undo stack.
-    ///
-    /// Non-finite is refused for the obvious reason: it would author NaN
-    /// operands into a content stream.
     #[must_use]
     pub fn is_travel(self) -> bool {
         self.dx.is_finite() && self.dy.is_finite() && (self.dx != 0.0 || self.dy != 0.0)
@@ -89,10 +68,6 @@ impl PageDelta {
 
 /// Which core verb a completed move drag on this selection would reach, with
 /// its operands already resolved.
-///
-/// One variant per rung of the selection ladder, because that is the whole
-/// rule: the rung the operator is standing on decides which of the `move_*`
-/// family the gesture means.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MoveSubject {
     /// Every selected object, moved by a **matrix** rather than by rewriting
@@ -320,12 +295,6 @@ pub enum MoveSubject {
 }
 
 /// What the object model says about the entries a move would act on.
-///
-/// Assembled by [`drag`], which owns the provider, and handed to [`eligible`]
-/// as plain data — the same shape, and for the same reason, as
-/// [`ClickHit`](crate::canvas::selection::ClickHit): every rule below is then
-/// a pure function of "what is selected" and "what kind of thing is it", with
-/// no decomposition anywhere near the test that proves it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct MoveContext {
     /// The paint-order index of the first selected object `move_objects`
@@ -412,19 +381,6 @@ pub fn page_delta(canvas: Vec2, page: &Page) -> Option<PageDelta> {
 
 /// Which verb a move drag on this selection would reach, or why it reaches
 /// none.
-///
-/// Consulted **twice per drag**: once per frame while the drag is in flight,
-/// to decide whether a ghost may be drawn at all, and once on release, to
-/// build the command. Asking the same question both times is the mechanism
-/// behind obligation 3 in the module docs — a ghost is drawn if and only if
-/// the release would commit, so the preview cannot promise a move the engine
-/// is going to refuse.
-///
-/// Deliberately says nothing about the *distance* dragged: a zero-travel drag
-/// is eligible (it names a real verb on real operands), it simply has nothing
-/// to commit, and that is [`action`]'s call. Splitting it this way is what
-/// keeps the ghost visible during the frames where the pointer happens to pass
-/// back over the press point.
 pub fn eligible(
     selection: &SelectionState,
     page: usize,
@@ -636,14 +592,6 @@ fn entered_entry(
 }
 
 /// The ONE action a completed move drag becomes.
-///
-/// `node_at` is the entered anchor's **current** page-space position, and is
-/// consulted only by [`MoveSubject::Node`]. It is needed because `move_node`
-/// takes an absolute destination rather than a displacement — the operand it
-/// rewrites is a coordinate pair, and expressing the drag as "where the point
-/// ends up" is what lets the planner map one point through the object's CTM
-/// inverse instead of decomposing a translation into a space it would have to
-/// re-derive.
 pub fn action(
     subject: MoveSubject,
     delta: PageDelta,
@@ -885,26 +833,6 @@ fn node_point(provider: &ObjectModelProvider, object: usize, node: usize) -> Opt
 }
 
 /// **What one frame of a move drag gives the painter.**
-///
-/// Two values rather than one, since `OPERATOR_REQUESTS.md` **O63**, and they
-/// answer different questions:
-///
-/// | field | question |
-/// |---|---|
-/// | [`Self::ghost`] | *where is the selection going?* — the bounding outline, which is the SELECTION indicator |
-/// | [`Self::shape`] | *what will it look like?* — the real geometry, which is what the operator asked for |
-///
-/// The second is `None` on every rung the shell cannot draw honestly: a text
-/// run, an image, a form XObject, a page that will not decompose, or a selection
-/// past `canvas::shapes`' cap. In every one of those cases the outline alone is
-/// drawn, which is exactly what this canvas did before the shape preview
-/// existed — so the fallback is a known-good behaviour rather than a degraded
-/// one.
-///
-/// Not folded into one enum. `dragroute::Previews` gives the argument and it
-/// applies here: the painter reads each independently, and one value whose
-/// meaning depends on which rung is live is a value the paint loop has to
-/// interrogate.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct MovePreview {
     /// The canvas-space displacement, for the bounding ghost.
@@ -929,31 +857,6 @@ pub struct MovePreview {
 }
 
 /// Apply one frame of a move drag: draw the ghost, or commit the command.
-///
-/// The **only** function here that touches the live object model. It gathers
-/// [`context`], asks [`eligible`], and then does one of two things:
-///
-/// * [`Phase::InFlight`] — returns the canvas-space delta for the ghost, and
-///   changes nothing. Nothing is re-rasterized and nothing is decomposed: the
-///   ghost is a translated copy of the outlines
-///   [`SelectionState::outlines`] already caches in canvas space, which is
-///   zoom-independent, so a preview costs one `Rect::translate` and one stroke
-///   per selected entry.
-/// * [`Phase::Complete`] — converts the delta to page space, resolves the node
-///   position if the rung needs one, and pushes exactly one [`Action`].
-///
-/// Returns a [`MovePreview`] carrying the bounding ghost and, since
-/// `OPERATOR_REQUESTS.md` O63, the selection's own **geometry** at its new
-/// position. A drag that is not eligible draws nothing, which is the visible
-/// half of obligation 3.
-///
-/// # Why the refusal is traced only on release
-///
-/// An in-flight drag is re-evaluated 60 times a second. Tracing a refusal per
-/// frame would bury every other event on the channel — the lesson
-/// `canvas-pointer` taught when a stationary pointer emitted fifty identical
-/// lines in nine seconds. The release is one event, and it is the one a
-/// harness reading the trace is asking about.
 pub fn drag(
     delta: Vec2,
     phase: Phase,
@@ -1133,13 +1036,6 @@ fn decline(selection: &SelectionState, reason: Refusal, actions: &mut Vec<Action
 }
 
 /// **The keyboard's way of asking for the same move** — the arrow keys.
-///
-///
-/// It is under `moving` rather than under `keys` because the shared thing is the
-/// **coordinate crossing**, not the key: a nudge written in the key handler
-/// would have had to re-derive the Y flip and the page rotation, which is the
-/// silent failure `viewer`'s header warns about. See that module's own header
-/// for the whole argument, the step it takes and whose convention it is.
 pub(crate) mod nudge;
 mod refusal;
 

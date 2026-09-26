@@ -82,10 +82,6 @@ use super::report;
 const SEGMENT_PADDING: f32 = 18.0;
 
 /// The cues that distinguish the selected segment.
-///
-/// The same shape as [`super::tabs::TabCues`] and for the same reason:
-/// R84 is a property of the *set* of cues, and a property of a set cannot
-/// be asserted about expressions scattered through drawing code.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SegmentCues {
     /// A border around the segment's plate. A **shape** cue.
@@ -126,11 +122,6 @@ pub enum Move {
 }
 
 /// Apply a keyboard movement, clamped at both ends.
-///
-/// See the module header on why this clamps rather than wraps. `len == 0`
-/// is answered with `0` rather than a panic: an empty selector is not
-/// drawn at all, so the value is never used, and a `panic!` in the paint
-/// loop for an empty manifest would be a poor trade.
 pub fn move_index(current: usize, movement: Move, len: usize) -> usize {
     if len == 0 {
         return 0;
@@ -162,10 +153,6 @@ pub(crate) fn mode_label(mode: &Mode) -> &str {
 }
 
 /// The index of the selected mode, defaulting to the first.
-///
-/// An unknown id resolves to the first position rather than to "nothing
-/// selected", because a segmented control with no segment selected shows
-/// the operator a state that is not one of the states the control offers.
 pub(crate) fn selected_index(modes: &[Mode], selected: Option<&str>) -> usize {
     selected
         .and_then(|id| modes.iter().position(|m| m.id == id))
@@ -173,11 +160,6 @@ pub(crate) fn selected_index(modes: &[Mode], selected: Option<&str>) -> usize {
 }
 
 /// The width of each segment, and the total.
-///
-/// Every segment is the width of the widest label, so the control reads
-/// as evenly divided track rather than as a row of differently sized
-/// buttons — which is what makes it look like one control with positions
-/// rather than like three buttons that happen to be adjacent.
 pub(crate) fn segment_widths(labels: &[&str], measure: impl Fn(&str) -> f32) -> (f32, f32) {
     let widest = labels
         .iter()
@@ -190,16 +172,6 @@ pub(crate) fn segment_widths(labels: &[&str], measure: impl Fn(&str) -> f32) -> 
 
 /// Measure the track the way [`render`] will, so the tab-strip row can
 /// reserve it before anything is drawn.
-///
-/// Returns `(segment_width, natural_total_width)` — the *uncompressed*
-/// numbers. [`fit_track`] applies the compression, and it does so inside
-/// [`render`] against the room the row actually granted.
-///
-/// This exists because the reservation and the rendering must agree.
-/// [`super::plan::plan_strip_row`] subtracts this figure from the row
-/// before the tabs are planned; if the selector then measured itself
-/// differently it would either overhang the tabs or leave a gap, and the
-/// tab plan would be wrong by the difference.
 pub(crate) fn measure_track(ui: &egui::Ui, modes: &[Mode]) -> (f32, f32) {
     if modes.is_empty() {
         return (0.0, 0.0);
@@ -216,37 +188,6 @@ pub(crate) fn measure_track(ui: &egui::Ui, modes: &[Mode]) -> (f32, f32) {
 }
 
 /// Fit the track into the room the row actually has.
-///
-/// # Why this exists — the same failure mode as the overflow affordance
-///
-/// Two things on this ribbon must never be squeezed out by content: the
-/// mode selector and the overflow affordance ([`super`]'s module header
-/// owns that rule). Laying the selector out first, from the right edge,
-/// achieves it against **content**. It does nothing about the case where
-/// the selector alone is wider than the row.
-///
-/// `egui` answers `allocate_exact_size` on a right-to-left layout by
-/// extending **leftwards past the edge of the container**. So a track that
-/// does not fit is not clipped, not shrunk and not warned about: it is
-/// placed with its left portion off screen. At a 180 pt viewport with real
-/// font metrics, a three-position *Read · Review · Edit* selector measures
-/// 189 pt and the first position lands at x = −9 — present in the layout,
-/// unreachable with a mouse, and invisible in every test that measured
-/// text as zero-width.
-///
-/// So the shortfall is spent on the **segments' width** instead of on
-/// their position: every position stays on screen and stays clickable,
-/// and the labels crowd. That is the same trade the overflow affordance
-/// makes (see [`super::band`]) and it is made for the same reason — a
-/// control the operator cannot reach has failed completely, whereas a
-/// control whose label is tight has failed cosmetically.
-///
-/// `room` that is not finite or not positive means "no constraint known";
-/// the natural size is returned unchanged, because clamping to a bogus
-/// number would shrink a control that had plenty of space.
-///
-/// Returns `(segment_width, total_width)`, and the caller discloses a
-/// shrink through the verification channel — see [`render`].
 pub(crate) fn fit_track(each: f32, positions: usize, room: f32) -> (f32, f32) {
     let total = each * positions as f32;
     if positions == 0 || !room.is_finite() || room <= 0.0 || total <= room {
@@ -258,10 +199,6 @@ pub(crate) fn fit_track(each: f32, positions: usize, room: f32) -> (f32, f32) {
 
 /// Draw the selector and report the mode the operator chose, if it
 /// changed.
-///
-/// Returns `None` when nothing changed, or when there are no modes at all
-/// — an application with no modes gets no selector, rather than a control
-/// with one position that does nothing.
 pub(crate) fn render(
     ui: &mut egui::Ui,
     ctx: &mut Ctx<'_>,

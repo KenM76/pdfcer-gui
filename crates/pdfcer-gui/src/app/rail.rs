@@ -20,10 +20,6 @@ pub const REGION_PREFIX: &str = "rail"; // ui-text-exempt: trace region name, ne
 pub const REGION_CHEVRON: &str = "rail.chevron"; // ui-text-exempt: trace region name, never displayed
 
 /// The region name for one control: `rail.<group>.<command id>`.
-///
-/// The group is in the name because a command may legitimately appear in two
-/// groups one day, and because a check that failed on `rail.view.tool_hand`
-/// would not say which run of the strip lost it.
 #[must_use]
 pub fn region(group: &str, id: &str) -> String {
     format!("{REGION_PREFIX}.{group}.{id}")
@@ -33,16 +29,6 @@ pub fn region(group: &str, id: &str) -> String {
 const INSET: f32 = 3.0;
 
 /// Draw the rail and return the handler tokens the operator invoked.
-///
-/// Called from inside the dock's rail handler, so the `Ui` it is given is
-/// already `WIDTH_PTS` wide and already clipped to the strip.
-///
-/// # Why the tokens come back rather than being dispatched here
-///
-/// The same borrow rule the tab menu and the tool banner obey: this closure
-/// lives across `Dock::show`, which is holding `self.dock` mutably, so it
-/// cannot reach the dispatcher. Record and act after `show` returns — which is
-/// also what makes the press order well defined.
 pub fn show(
     ui: &mut egui::Ui,
     rail: &Rail,

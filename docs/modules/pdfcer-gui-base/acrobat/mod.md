@@ -164,3 +164,119 @@ so that the cleaning is tested.
 Whatever the platform reports: the executable has been removed since
 discovery, the operator lacks permission, the process table is full.
 The caller words it; this trait does not.
+
+### `enum Edition`
+
+**Pro beats Reader**, and [`Edition::rank`] is where that is written down.
+Pro is the superset: somebody who has both installed reached for Pro when
+they bought it, and a button that sent them to Reader would be answering a
+question they did not ask. Reader is the fallback, not the preference.
+
+### `enum Source`
+
+Carried on the [`Viewer`] rather than discarded, for two reasons that are
+both about the operator rather than about the code: Settings shows it, so a
+person who cannot tell whether their typed path is being used can look; and
+a trace naming the source turns *"the wrong program opened"* into a
+one-line diagnosis.
+
+### `fn rank`
+
+The ordering between [`Self::AppPaths`] and [`Self::PdfHandler`] only
+ever decides between two candidates of the **same** edition, because
+[`resolve`] sorts on [`Edition::rank`] first. A Reader found in
+`App Paths` therefore does **not** beat a Pro found through the `.pdf`
+handler, which is the operator's stated preference and is asserted by
+`pro_beats_reader_even_when_reader_is_the_registered_handler`.
+
+### `struct Viewer`
+
+Constructing one is a **claim that the executable existed** at the moment
+discovery ran — see [`Registrations::exists`] and this module's §4. It is
+not a claim that it still exists when the operator finally presses the
+button, which is why [`launch`] reports failure rather than assuming
+success.
+
+### `trait Registrations`
+
+# Why `exists` is on this trait and not `Path::exists`
+
+It is the same kind of fact as the other two: something only the real
+machine can answer, which a test must be able to state. A [`resolve`] that
+called `Path::exists` directly would be untestable in precisely the case
+that matters most — *the registry names an Acrobat that has been
+uninstalled* — because a test could only produce that state by creating and
+deleting real files at real paths.
+
+### `trait Launcher`
+
+Separate from [`Registrations`] because the two are used at different
+times by different code: discovery runs when the shell starts and when a
+setting changes, launching runs when the operator presses a button. A
+single "platform" trait would force every test that cares about one to
+stub the other.
+
+### `fn resolve`
+
+The whole decision, as a pure function over [`Registrations`]. See this
+module's §4 for the sources and §3 for why the impurity is behind a trait.
+
+`configured` is the operator's Settings value. An empty or whitespace-only
+string means *"not configured"* rather than *"configured to nothing"*:
+clearing a text field is how a person un-sets it, and reading a cleared
+field as a path would turn the escape hatch into a trap that permanently
+suppresses the button.
+
+# Why a configured path that does not exist yields `None` rather than a
+`Viewer`
+
+It is tempting to honour whatever the operator typed on the grounds that
+they know their own machine. But the failure that produces — a button that
+is present and does nothing — is worse than the failure it avoids, and the
+operator has no way to tell the two apart from the ribbon. The escape hatch
+still works: **Settings shows what discovery resolved**, so a typo is
+visible where it was made, next to the field that caused it. See
+`pdfcer_gui::dialogs::settings`.
+
+# A configured path does NOT fall back to discovery
+
+If the operator typed a path and it does not exist, [`resolve`] answers
+`None` — it does not quietly go and find a different Acrobat. Falling back
+would mean a person who deliberately pointed pdfcer at their second
+installation gets silently sent to their first one, with nothing on screen
+saying so, which is the whole reason the setting exists being undone by the
+code that implements it.
+
+### `enum Prompt`
+
+Three variants because there are three genuinely different situations, and
+collapsing any two of them produces a sentence that is false in one of
+them. See this module's §2.
+
+### `fn prompt_for`
+
+A pure function over two `bool`s so the branch is asserted rather than
+inferred from a screenshot. Both facts come from
+`pdfcer_gui::app::save` — `has_a_file` and `has_unsaved_edits` — and that is
+deliberate: *"does this document have unsaved edits?"* already has exactly
+one answer in the application, and a second one here would be a second
+thing to keep in step with the tab strip's unsaved marker.
+
+`has_file` is asked **first**, and the order is the whole content of the
+function. A never-saved document is also a dirty one, so testing dirtiness
+first would offer *"Save and open"* over a document with nowhere to save
+to — a button that either does nothing or silently opens a file picker the
+operator did not ask for.
+
+### `fn launch`
+
+A thin wrapper over the [`Launcher`] seam, present so that call sites read
+as intent and so the trace line has one home. The ordering around it is the
+caller's to keep, not this function's: the document is closed **after** a
+successful spawn, because a launch that failed after the close would leave
+the operator with no document on screen and no Acrobat either. See
+`pdfcer_gui::app::actions::acrobat`.
+
+# Errors
+
+Propagates the [`Launcher`]'s error unchanged.

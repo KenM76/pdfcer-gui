@@ -43,3 +43,10 @@ are indistinguishable afterwards, so the substitution says so.
 
 `id` is in the trace line so a reader can tell which command fell back.
 Without it the trace says a substitution happened and not what asked for it.
+
+### `fn handles`
+
+A predicate rather than a `match` in `super`, so the routing arm cannot
+drift from the arms it routes to. `measure_for_command` already answers for
+the tool-arming ids; the named ones are the `measure.*` commands that are
+**not** tools, each for a reason its own arm records.

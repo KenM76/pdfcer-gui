@@ -47,6 +47,8 @@
 //! evidence, one surface over. A rail that derived its fold order from
 //! position would fold the panel tabs first, and the panel tabs are the
 //! rail's entire argument for existing.
+//!
+//! Design and rationale: `docs/modules/egui-shell/manifest/rail.md`.
 
 use serde::{Deserialize, Serialize};
 
@@ -166,12 +168,6 @@ impl RailGroup {
 }
 
 /// The rail: a list of groups, top to bottom.
-///
-/// A newtype rather than a bare `Vec` for [`super::Trailing`]'s reason — the
-/// region gets a name a doc comment can hang an argument on, and a
-/// present-but-empty rail is treated exactly as an absent one so that an
-/// operator customization which removed the last group reclaims the strip
-/// instead of leaving a 52 pt column of nothing.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct Rail(pub Vec<RailGroup>);
@@ -184,10 +180,6 @@ impl Rail {
     }
 
     /// Whether there is nothing to draw.
-    ///
-    /// True for a rail with no groups **and** for one whose every group is
-    /// empty: a caption with no entries under it is the placeholder R9
-    /// forbids, and a strip of nothing but captions is that defect repeated.
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.0.iter().all(|g| g.items.is_empty())

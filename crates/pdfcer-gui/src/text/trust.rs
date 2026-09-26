@@ -11,13 +11,6 @@ use pdfcer_core::trust_store::SourceCounts;
 
 /// The sentence above the list, replacing the old *"pdfcer does not check
 /// whether these signatures are valid — it cannot yet"*.
-///
-/// That sentence had to go the moment `verify_all_with_trust` was wired,
-/// and this project's most expensive recorded failure is exactly a claim like
-/// it going stale while the prose around it stayed true. What replaces it is
-/// **not** a reassurance: it names the three facts, in the order the rows print
-/// them, so a reader knows before they start that there are three answers and
-/// that one of them may be *not checked*.
 #[must_use]
 pub const fn panel_intro() -> &'static str {
     "For each signature below, pdfcer reports three separate facts and never \
@@ -37,35 +30,18 @@ pub fn signature_heading(name: &str) -> String {
 // ---------------------------------------------------------------------------
 
 /// The label the integrity line always begins with.
-///
-/// A shared prefix rather than three sentences that each happen to mention
-/// integrity: the three facts are read as a column, and a column with a ragged
-/// left edge is one an operator scans instead of reads.
 #[must_use]
 pub const fn integrity_label() -> &'static str {
     "Intact:"
 }
 
 /// The digest matched and the CMS signature verified.
-///
-/// It names the algorithms rather than saying "yes", and that is
-/// [`pdfcer_core::signature::Integrity::Verified`]'s own instruction: the two
-/// fields are carried *"so a shell can disclose a SHA-1 signature as
-/// verified-with-a-weak-digest rather than hide it"*. A shell that printed
-/// "verified" alone would be discarding the one field that distinguishes a
-/// modern signature from one nobody should rely on.
 #[must_use]
 pub fn integrity_verified(digest: &str, signature: &str) -> String {
     format!("yes — the signed bytes are exactly what was signed ({digest}, {signature}).")
 }
 
 /// A SHA-1 digest, disclosed beside a verdict that is otherwise good news.
-///
-/// The engine reports SHA-1 in its `notes` and does not downgrade the verdict,
-/// which is right: the signature genuinely verifies. This shell repeats the
-/// fact where the verdict is read, because *"verified"* and *"verified with a
-/// digest that has been collision-broken since 2017"* are different things to
-/// act on.
 #[must_use]
 pub const fn integrity_weak_digest() -> &'static str {
     "This signature uses SHA-1, which is no longer considered strong enough to \
@@ -74,11 +50,6 @@ pub const fn integrity_weak_digest() -> &'static str {
 }
 
 /// The covered bytes were altered after signing.
-///
-/// The one string in this file that states a loss. Worded as the engine words
-/// it — the digest does not match, so the bytes changed — and deliberately not
-/// as *"the signature is invalid"*, because that phrase folds integrity, trust
-/// and coverage into one word and is the exact collapse this feature refuses.
 #[must_use]
 pub const fn integrity_digest_mismatch() -> &'static str {
     "NO — the bytes this signature covers have been ALTERED since it was \
@@ -87,11 +58,6 @@ pub const fn integrity_digest_mismatch() -> &'static str {
 }
 
 /// The digest matched but the signature value did not verify.
-///
-/// A genuinely different fault from a digest mismatch and the engine keeps them
-/// apart, so this does too: the document's covered bytes are what was signed,
-/// and the signature, the certificate or the signed attributes were tampered
-/// with instead.
 #[must_use]
 pub const fn integrity_signature_invalid() -> &'static str {
     "NO — the covered bytes are what was signed, but the signature itself does \
@@ -100,13 +66,6 @@ pub const fn integrity_signature_invalid() -> &'static str {
 }
 
 /// pdfcer could not reach a verdict, and says why in the engine's words.
-///
-/// `reason` is passed through **unedited**. The engine promises this case is
-/// *"never reported as either of the other three"*, and it names each cause
-/// precisely — an unimplemented subfilter, `adbe.x509.rsa_sha1`, RFC 3161,
-/// P-521, Brainpool, a malformed CMS, a hole that does not fit the range. A
-/// shell that paraphrased would produce a second, vaguer vocabulary for faults
-/// the engine already names exactly.
 #[must_use]
 pub fn integrity_unverifiable(reason: &str) -> String {
     format!("pdfcer could not tell — {reason}. This is not a pass and not a failure.")
@@ -133,22 +92,6 @@ pub const fn trust_label() -> &'static str {
 }
 
 /// The signer chains to a trusted anchor.
-///
-/// **The single most dangerous string in this application**, and the reason
-/// it is long. It states four things in one sentence because separating any of
-/// them would leave the good news standing alone:
-///
-/// 1. the chain reached a trusted anchor, **by verified signatures**;
-/// 2. **which** anchor, by subject — an operator who does not recognise the
-///    name has learned something a tick could not tell them;
-/// 3. its provenance (`AATL`/`EUTL`/`ADBE`), because those are three different
-///    programmes with three different admission bars;
-/// 4. **what was not checked** — revocation always, and validity dates when the
-///    signature carried no signing-time clock.
-///
-/// Point 4 is not a hedge. `PathChecks::revocation_checked` is `false` on every
-/// verdict this build can produce, and a certificate that was revoked the day
-/// after it was issued chains exactly as well as one that was not.
 #[must_use]
 pub fn trusted(anchor_subject: &str, source: &[String], validity_checked: bool) -> String {
     let provenance = if source.is_empty() {
@@ -172,12 +115,6 @@ pub fn trusted(anchor_subject: &str, source: &[String], validity_checked: bool) 
 }
 
 /// Trust was evaluated and the signer does not chain to a trusted anchor.
-///
-/// *"Valid but untrusted"* is a real and common state — a self-signed
-/// certificate, a corporate CA nobody added to Acrobat — and this sentence says
-/// so, because an operator who reads "untrusted" beside an intact signature will
-/// otherwise conclude the document was tampered with. The engine's own reason
-/// is carried through unedited.
 #[must_use]
 pub fn untrusted(reason: &str) -> String {
     format!(
@@ -189,11 +126,6 @@ pub fn untrusted(reason: &str) -> String {
 }
 
 /// Trust was requested and the signer's certificate could not be parsed.
-///
-/// The engine keeps this apart from `Untrusted` and so does this. *"pdfcer could
-/// not read the certificate"* and *"pdfcer read the certificate and does not
-/// trust it"* are opposite findings, and only the second says anything about the
-/// signer.
 #[must_use]
 pub const fn signer_unknown() -> &'static str {
     "could not be identified — pdfcer could not read the certificate embedded in \
@@ -202,10 +134,6 @@ pub const fn signer_unknown() -> &'static str {
 }
 
 /// The prefix every unchecked-trust sentence begins with.
-///
-/// Its own function, and every caller of the four `not_checked_*` sentences
-/// goes through [`not_checked`], so the words *"Not checked"* cannot be dropped
-/// from one branch by a well-meaning edit that shortened it.
 #[must_use]
 pub const fn not_checked_prefix() -> &'static str {
     "not checked"
@@ -213,20 +141,12 @@ pub const fn not_checked_prefix() -> &'static str {
 
 /// The trust line when no anchors were available, with which of the four
 /// situations applies.
-///
-/// The `why` half is supplied by one of the four functions below. They are kept
-/// separate from the prefix so that a test can assert **every** one of them
-/// starts with the same three words — see this module's tests.
 #[must_use]
 pub fn not_checked(why: &str) -> String {
     format!("{} — {why}", not_checked_prefix())
 }
 
 /// The setting is off.
-///
-/// Names the remedy and where it is, because this is the one of the four states
-/// the operator can fix in five seconds and will otherwise assume is a missing
-/// feature.
 #[must_use]
 pub const fn not_checked_opted_out() -> &'static str {
     "pdfcer did not look at who signed this, because checking signers is turned \
@@ -246,11 +166,6 @@ pub fn not_checked_no_store(looked_in: usize) -> String {
 }
 
 /// The operator configured a path and nothing is there.
-///
-/// Not the same sentence as [`not_checked_no_store`], and the separation is
-/// the point: this person did not fail to have a store, they made a typo, and
-/// telling them their machine has no trust list would send them looking in
-/// entirely the wrong place.
 #[must_use]
 pub fn not_checked_configured_missing(path: &str) -> String {
     format!(
@@ -276,11 +191,6 @@ pub fn not_checked_unreadable(path: &str, reason: &str) -> String {
 // ---------------------------------------------------------------------------
 
 /// **How many anchors, from where, and how old** — one sentence, always.
-///
-/// See this module's header for why the date is not separable from the count.
-/// `modified` is already formatted by [`crate::trust::modified_date`]; a `None`
-/// says the filesystem would not give a date, which is itself worth printing
-/// because a store whose age is unknown is not a store known to be current.
 #[must_use]
 pub fn store_line(path: &str, modified: Option<&str>, counts: &SourceCounts) -> String {
     let dated = match modified {
@@ -300,10 +210,6 @@ pub fn store_line(path: &str, modified: Option<&str>, counts: &SourceCounts) -> 
 }
 
 /// Entries in the store whose certificate could not be decoded.
-///
-/// Only drawn when non-zero. Surfaced rather than swallowed because an operator
-/// whose signer happens to be one of the refused entries would otherwise see an
-/// inexplicable *"does not chain"* with nothing to look at.
 #[must_use]
 pub fn store_undecodable(count: usize) -> String {
     format!(
@@ -314,11 +220,6 @@ pub fn store_undecodable(count: usize) -> String {
 
 /// The at-own-risk disclosure, shown wherever the store is turned on or
 /// inspected.
-///
-/// Translated from `pdfcer_core::settings::AcrobatTrustStore`'s own type
-/// documentation and from the CLI's identical warning, deliberately: two front
-/// ends wording one legal limitation differently is worse than either wording,
-/// and this is the sentence a person would quote back at us.
 #[must_use]
 pub const fn at_own_risk() -> &'static str {
     "This reads a file that belongs to Adobe's program, on your own machine, and \
@@ -344,13 +245,6 @@ pub const fn use_store_title() -> &'static str {
 }
 
 /// What the standard leaves open here.
-///
-/// **This one is not a spec silence and the sentence says so**, exactly as
-/// `quad_point_order`'s does. ISO 32000-1 is perfectly clear that validation
-/// has a trust leg; what it does not do — and cannot — is tell a program which
-/// certificates a particular person trusts. That is a fact about the operator,
-/// not about the format, and there is no public machine-readable bundle of the
-/// lists that matter.
 #[must_use]
 pub const fn use_store_silence() -> &'static str {
     "The standard says a reader should check who signed a document and cannot \
@@ -382,10 +276,6 @@ pub const fn use_store_off_note() -> &'static str {
 }
 
 /// The at-own-risk option.
-///
-/// The label spells *"at your own risk"* because the engine's own persisted
-/// token does — `acrobat_trust_store = at_own_risk` — and an operator who opens
-/// `settings.txt` must find the same words they clicked.
 #[must_use]
 pub const fn use_store_on_label() -> &'static str {
     "Use the trust list my Acrobat has downloaded, at my own risk"
@@ -455,13 +345,6 @@ pub const fn store_path_filter() -> &'static str {
 }
 
 /// What pdfcer currently resolves, when a usable store was found.
-///
-/// Reported as of the last time pdfcer looked, which is every frame this
-/// group is drawn — a `stat`, not a read. That differs from
-/// `crate::text::acrobat::resolved_note`, which cannot update as you type
-/// because resolving an Acrobat spawns processes. Locating a file does not, so
-/// this line **is** live and the field's mistakes are visible where they are
-/// made.
 #[must_use]
 pub fn resolved_found(path: &str, modified: Option<&str>) -> String {
     match modified {
@@ -488,13 +371,6 @@ pub fn resolved_configured_missing(path: &str) -> String {
 }
 
 /// The button that reads the store and reports what is in it.
-///
-/// **This control is drawn only when a store was actually found**, which is
-/// R9: an unavailable capability renders nothing, and greying is reserved for
-/// something that is *temporarily* unavailable. A person with no Acrobat store
-/// is not one press away from having one. The path field above stays visible in
-/// that case, because it is the remedy — and R9's rule cuts both ways: an
-/// absent capability whose remedy is also absent is a dead end.
 #[must_use]
 pub const fn inspect_button() -> &'static str {
     "Show what is in it"

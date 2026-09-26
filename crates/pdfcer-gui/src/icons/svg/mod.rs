@@ -19,11 +19,6 @@ use path::parse_path_data;
 mod path;
 
 /// The viewBox edge length every asset uses (`viewBox="0 0 48 48"`).
-///
-/// All geometry in the assets is in these units; [`IconArt::rasterize`]
-/// scales by `px / VIEWBOX` and lets tiny-skia scale the stroke width with
-/// it, which is why a 2.5-unit stroke stays optically identical at every
-/// output size.
 pub const VIEWBOX: f32 = 48.0;
 
 /// Stroke-width multiplier for [`IconWeight::Bold`].
@@ -39,17 +34,6 @@ const KAPPA: f32 = 0.552_284_8;
 // ---------------------------------------------------------------------------
 
 /// Why an icon asset could not be turned into geometry.
-///
-/// Every variant means "this asset is wrong", never "this input was
-/// untrusted" — the assets are compiled-in constants, so any of these is an
-/// authoring bug that `super::tests::every_icon_parses` is there to catch
-/// before it ships. They carry position/context because the alternative (a
-/// bare "parse failed") turns a two-minute fix into an afternoon.
-///
-/// Hand-written `Display`/`Error` impls rather than `thiserror`: this crate
-/// does not depend on `thiserror`, and adding a dependency to spell four
-/// lines of `match` would be a poor trade against the workspace's
-/// "no dependency pdfcer's lockfile does not already carry" rule.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum IconError {
     /// An element outside the supported subset (`<g>`, `<use>`, `<defs>`,
@@ -204,22 +188,6 @@ pub struct IconArt {
 
 impl IconArt {
     /// Parse an SVG asset into drawable geometry.
-    ///
-    /// See this module's header for the exact supported subset. This is a
-    /// scanner, not an XML parser: it walks the byte stream looking for
-    /// `<`, dispatches on the tag name, and reads `name="value"` attribute
-    /// pairs out of the tag body. That is sufficient (and safe) because the
-    /// only inputs are the crate's own compiled-in constants, which are
-    /// mechanically uniform by the style contract — and any input that is
-    /// *not* uniform hits [`IconError::UnsupportedElement`] rather than
-    /// being interpreted loosely.
-    ///
-    /// # Errors
-    ///
-    /// Returns the [`IconError`] describing the first thing it refused to
-    /// guess at. It never returns partial geometry: a half-read asset would
-    /// draw a half-glyph, which looks like a rendering fault rather than an
-    /// authoring one and is therefore attributed to the wrong subsystem.
     pub fn parse(source: &str) -> Result<Self, IconError> {
         let bytes = source.as_bytes();
         let mut shapes = Vec::new();
@@ -286,10 +254,6 @@ impl IconArt {
     }
 
     /// How many drawable shapes the asset contains.
-    ///
-    /// Exists so a test can prove a multi-element asset was fully read
-    /// rather than truncated at the first element. The renderer never needs
-    /// to count shapes.
     #[must_use]
     pub fn shape_count(&self) -> usize {
         self.shapes.len()
@@ -306,15 +270,6 @@ impl IconArt {
 
     /// Rasterize to a square white-on-transparent coverage mask of `px`
     /// physical pixels a side (module header, "Theming").
-    ///
-    /// The colour written is always opaque white; only the alpha channel
-    /// carries information, and the caller's tint supplies the hue at draw
-    /// time. Antialiasing is on — at 16 pt these glyphs are ~2 px strokes
-    /// and aliased diagonals would be immediately obvious.
-    ///
-    /// Returns a 1×1 transparent image (never panics, never `None`) if the
-    /// pixmap allocation fails for an absurd `px`; a missing icon is a
-    /// cosmetic defect, a crashed editor holding unsaved edits is not.
     #[must_use]
     pub fn rasterize(&self, px: u32, weight: IconWeight) -> egui::ColorImage {
         // NOT A THEME COLOUR: opaque WHITE, always, and it is not a look —
@@ -327,12 +282,6 @@ impl IconArt {
 
     /// [`Self::rasterize`], with each shape's colour chosen by `colour_of`
     /// from its index in paint order: `None` leaves the shape out.
-    ///
-    /// `|_| Some(WHITE)` is [`Self::rasterize`] exactly. The two-colour icon
-    /// option draws the same art twice through this — once without the accent
-    /// shapes, once with only them — so each layer is still a white mask the
-    /// caller tints, or bakes a pair of colours into one image where the
-    /// drawing surface takes a single texture. Colours are drawn opaque.
     #[must_use]
     pub fn rasterize_with(
         &self,

@@ -5,12 +5,6 @@
 use pdfcer_core::dimension::Unit;
 
 /// Convert a length in PDF points into `unit`, at 1:1.
-///
-/// One multiply by the engine's exact factor. `points` is a PDF user-space
-/// unit, which ISO 32000-2 §8.3.2.3 defines as 1/72 inch in the default user
-/// space — this function assumes the default CTM, which is what every surface
-/// in this program that shows a sheet size has already established by reading
-/// the page's `/MediaBox`.
 #[must_use]
 #[inline]
 pub fn from_points(points: f64, unit: Unit) -> f64 {
@@ -18,10 +12,6 @@ pub fn from_points(points: f64, unit: Unit) -> f64 {
 }
 
 /// Convert a length expressed in `unit` back into PDF points.
-///
-/// The exact inverse of [`from_points`] — one divide by the same factor, so a
-/// round trip loses at most one rounding step rather than two independently
-/// spelled ones.
 #[must_use]
 #[inline]
 pub fn to_points(value: f64, unit: Unit) -> f64 {
@@ -29,11 +19,6 @@ pub fn to_points(value: f64, unit: Unit) -> f64 {
 }
 
 /// Points to millimetres.
-///
-/// Millimetres are given their own pair because they are what most surfaces in
-/// this program actually want, and a named function reads better at the call
-/// site than `from_points(w, Unit::Millimeter)` repeated eleven times. It is
-/// the same arithmetic, not a second table.
 #[must_use]
 #[inline]
 pub fn mm_from_points(points: f64) -> f64 {
@@ -62,28 +47,6 @@ pub fn points_from_inches(inches: f64) -> f64 {
 }
 
 /// **The one rounding rule for a whole-number length shown to the operator.**
-///
-/// Half away from zero. `2.5 → 3`, `-2.5 → -3`, `2.4 → 2`.
-///
-/// This is `f64::round`'s rule, and the reason it gets a named wrapper rather
-/// than a bare `.round() as i64` at each site is that the wrapper is
-/// greppable: a reviewer can ask "which surfaces turn a length into a whole
-/// number?" and get a complete answer, which was impossible while half the
-/// sites spelled it `{:.0}` inside a format string.
-///
-/// ⚠ **Do not reach for `{:.0}`.** It rounds half to *even*, which disagrees
-/// with this on every tie, and a tie is exactly what a half-millimetre sheet
-/// produces. The module header has the measured case.
-///
-/// # Saturation
-///
-/// `as i64` on an out-of-range or non-finite `f64` saturates rather than
-/// wrapping (Rust 1.45 onwards: `NaN → 0`, `+inf → i64::MAX`). A page big
-/// enough to overflow an `i64` of millimetres is about 9×10^15 metres, so this
-/// is a note for the reader rather than a guard anybody needs — but it is
-/// written down because the previous spelling was `as i64` too, and a reader
-/// checking whether the refactor changed overflow behaviour deserves the
-/// answer without leaving the file.
 #[must_use]
 #[inline]
 pub fn whole(value: f64) -> i64 {
@@ -99,13 +62,6 @@ pub fn whole_mm_from_points(points: f64) -> i64 {
 }
 
 /// The render scale that produces `dpi` dots per inch from a PDF page.
-///
-/// A PDF point is 1/72 inch, so rendering at scale `s` yields `72 × s` dots per
-/// inch and the inverse is `dpi / 72`. Three sites spelled this by hand
-/// (`ocr`, the image-export action, the print preview); they agree with each
-/// other and always did, so this is consolidation rather than a fix — but it is
-/// the same physical constant as the rest of this table and leaving it outside
-/// would have re-created the problem in a second place.
 #[must_use]
 #[inline]
 pub fn scale_from_dpi(dpi: f64) -> f64 {

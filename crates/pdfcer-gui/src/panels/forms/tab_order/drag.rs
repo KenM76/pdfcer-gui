@@ -9,25 +9,6 @@ use pdfcer_core::object::ObjId;
 use super::model::PageTabs;
 
 /// A drag in flight over the tab-order list.
-///
-/// # Why it carries the page and not just the row
-///
-/// The list is per page and there are as many blocks as the document has pages.
-/// A drag that began on page 3 must not be answered by page 4's block — which
-/// is not hypothetical, because every block runs the same code in the same
-/// frame and would otherwise all believe the drag was theirs.
-///
-/// Reordering **across** pages is deliberately not offered: moving a widget to
-/// another page is a different edit (it changes which sheet the field is on,
-/// not merely when it is reached) and `reorder_annotations` cannot express it.
-/// A drag that leaves its own block simply finds no gap and lands nowhere.
-///
-/// `Default` is derived for one reason, and it is the same one
-/// [`crate::pagedrag::PageDrag`] records: `egui::IdTypeMap::remove_temp`
-/// demands it of anything it can take back out. A defaulted `Drag` — page 0,
-/// row 0 — is never constructed here and is not a state the application can
-/// reach; [`current`] answers `Option`, so "no drag" is `None` and never a
-/// drag of the first row of the first page.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub(super) struct Drag {
     /// The 0-based page index whose block the drag started in.
@@ -37,13 +18,6 @@ pub(super) struct Drag {
 }
 
 /// Where a drag in flight would land.
-///
-/// [`crate::panels::pages`]' `DropTarget`, with the same three fields and the
-/// same reasons: a gap has no position until the rows have been laid out, so it
-/// is resolved during the layout pass and carried out; the caret is a `Rect`
-/// because a line is two endpoints and the layout pass knows nothing about
-/// colour or width; and `lands` is computed where the row set is in scope
-/// because the paint pass no longer has it.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(super) struct DropTarget {
     /// The gap index: `0` before the first row, `rows.len()` after the last.
@@ -99,46 +73,6 @@ pub(super) fn end(ctx: &egui::Context) -> Option<Drag> {
 }
 
 /// **Permute a page's `/Annots` so its widget rows sit in a new order.**
-///
-/// `slots` are the rows' indices into `annots`, ascending — that is,
-/// `page.rows.iter().map(|r| r.slot)`. `from` and `to_gap` are in **row**
-/// space: `from` is the row being dragged, `to_gap` is the boundary it is
-/// dropped at, where `0` is before the first row and `slots.len()` is after the
-/// last.
-///
-/// # The rule: widgets move among widget slots; nothing else moves at all
-///
-/// The alternative — permuting the array wholesale, so a widget travels with
-/// whatever entries happen to sit beside it — was considered and rejected. Two
-/// reasons, and the second is the stronger:
-///
-/// 1. **It is not what the gesture says.** The operator dragged a row in a list
-///    of form fields. Moving a `/Link` because a text box passed over it is a
-///    consequence of the implementation, not of the request.
-/// 2. **`/Annots` order is paint order.** Moving a non-widget changes which
-///    annotation is drawn on top where two overlap. That is a visible change to
-///    the rendered page, produced by a gesture whose entire subject was the
-///    order boxes are *reached in*. The engine discloses it
-///    (`non_widgets_moved`) precisely because it is surprising — and the right
-///    response to a surprising consequence you can avoid is to avoid it, and
-///    keep the disclosure for the cases you cannot.
-///
-/// So this route reports `non_widgets_moved == 0` on every call, by
-/// construction. That is not the disclosure being dead code: it is this route
-/// being the one that does not need it.
-///
-/// # Returns the whole array, not the changed part
-///
-/// Because that is what the verb takes. `annots` in, `annots` permuted out,
-/// same length, same multiset — which is exactly the property the engine
-/// validates and refuses (`AnnotsNotAPermutation`) rather than trusts.
-///
-/// # A drag that lands where it started returns the input unchanged
-///
-/// `to_gap == from` and `to_gap == from + 1` are both the row's own boundaries.
-/// The output is then equal to the input, the engine's `moved` is `0`, and
-/// nothing is disclosed — which is the common case for a drag an operator
-/// thinks better of, and it must not read as a refusal.
 pub(super) fn reordered(
     annots: &[ObjId],
     slots: &[usize],
@@ -170,26 +104,11 @@ pub(super) fn reordered(
 }
 
 /// Whether releasing at `to_gap` would change anything.
-///
-/// Its own function, and named, because it is the *same* question
-/// [`crate::panels::pages`]' `ops::drag_is_a_no_op` answers for pages, and
-/// because it is what decides whether the caret is drawn at full strength or
-/// dimmed. Getting it wrong in the dim direction makes a working drop look
-/// refused; getting it wrong the other way promises an edit that will not
-/// happen.
 pub(super) const fn lands(from: usize, to_gap: usize) -> bool {
     to_gap != from && to_gap != from + 1
 }
 
 /// Draw the insertion caret.
-///
-/// The colour is [`egui_shell::theme::Theme::canvas_selection_ink`] — the
-/// theme's, never a literal, and the same source the page rail's caret, the
-/// current-page ring and the canvas guide preview all take, so a preset that
-/// changes the accent changes every one of them together. **Not
-/// `visuals().selection.stroke`**: that is `egui`'s selected-*widget* channel,
-/// which a preset is free to move independently, and a caret drawn from it
-/// drifts away from every other selection mark in the application.
 pub(super) fn paint(ui: &egui::Ui, drop: Option<&DropTarget>) {
     let Some(drop) = drop else {
         return;
@@ -213,10 +132,6 @@ pub(super) fn paint(ui: &egui::Ui, drop: Option<&DropTarget>) {
 
 /// Resolve the gap a row's rectangle implies for the pointer, and keep the
 /// nearest.
-///
-/// Called once per row during the layout pass, with the row's rectangle and the
-/// pointer. The row's own midpoint splits it: above means *before* this row,
-/// below means *after* it.
 pub(super) fn consider(
     row: egui::Rect,
     index: usize,
@@ -257,22 +172,6 @@ pub(super) fn consider(
 }
 
 /// **End a drag** — read the release, build the permutation, raise the action.
-///
-/// # Why the release is read from raw input
-///
-/// [`crate::panels::pages`]' `settle_drag`, and its reason applies here
-/// unchanged: a drag that began on a row may end anywhere — over the page
-/// heading, past the last row, outside the scroll area, or after the pointer
-/// has left the window. A `Response` reports releases only inside the widget
-/// that produced it, so a release elsewhere would strand the drag in flight
-/// with a caret nobody could dismiss.
-///
-/// # A drag that lands nowhere raises NO action, and says so
-///
-/// Released over no gap, over its own boundary, or in another page's block: the
-/// drag ends, the caret goes, and nothing is committed. Traced, because
-/// "nothing happened" and "something happened that did nothing" are the two
-/// readings a check has to be able to tell apart.
 pub(super) fn settle(
     ui: &egui::Ui,
     page: &PageTabs,

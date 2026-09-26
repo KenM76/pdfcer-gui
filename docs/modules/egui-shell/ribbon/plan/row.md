@@ -208,3 +208,22 @@ And the drop is announced. `trailing_dropped` is a separate flag from
 `trailing == 0.0` precisely because the ordinary state of this region
 is to be empty, and announcing that every frame would bury the one
 case worth reading.
+
+### `struct RowDemand`
+
+A struct rather than five positional `f32`s because four of the five
+are widths and a transposed pair would compile, run, and produce a row
+that is subtly wrong at exactly the widths nobody checks by hand.
+
+### `struct RowPlan`
+
+Returned by [`plan_strip_row`]. Widths, not rectangles — this module
+has no coordinate system; [`super::super::strip`] turns these into
+rects.
+
+### `struct StripPlan`
+
+Returned by [`plan_tab_strip`]. `shown` and `hidden` are **indices**
+rather than counts because, unlike a band, the visible set is not a
+prefix — the active tab is pinned into it wherever it sits. Both are
+ascending, so the strip and the menu each keep the manifest's order.

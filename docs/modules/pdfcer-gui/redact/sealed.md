@@ -229,3 +229,29 @@ fixture tree is built under the OS temporary directory with the
 violation two levels down, because a walker that only read its top
 directory would pass every test above and report the real crate clean —
 the crate's own offender would have to be in `src/` itself to be seen.
+
+### `fn calls_in`
+
+Both a free call (`path::to::subject(..)`) and a method call
+(`receiver.subject(..)`) count. The engine's is a free function, so only the
+first can occur today; the second is counted because a future engine that
+moved it onto a type would otherwise slip the monopoly silently, and because
+counting one shape and not the other is the kind of narrowness that makes a
+check answer a question nobody asked.
+
+# Errors
+
+The source did not parse as Rust. **Fails closed**: an unreadable file
+stops the sweep rather than contributing a reassuring zero.
+
+### `fn sweep`
+
+`root` is a parameter rather than a reach for [`crate_src`] for
+[`calls_in`]'s reason, one level up: the self-test below points it at a
+temporary tree containing a planted violation, and a sweep that could only
+be aimed at the real crate could not be shown to report one.
+
+# Errors
+
+The directory could not be read, or a file in it did not parse. Both fail
+closed.

@@ -146,3 +146,94 @@ Asserted as the two properties rather than against a table of
 coordinates, because the properties are what "resize about a corner"
 means and a coordinate table would pass for a build that had the anchor
 at the centre.
+
+### `enum Refusal`
+
+Every variant is **a sentence to show**, never a silent drop —
+`canvas::textedit::Refusal`'s rule. A gesture whose answer to a case it
+cannot handle is to do nothing is a gesture the operator reports as broken,
+because from the outside it is indistinguishable from one.
+
+### `fn factors`
+
+# Why the anchor is the OPPOSITE corner and not the centre
+
+Because that is what every drawing application does, and the standing
+tie-breaker for anything an operator compares against the tools they already
+use is to behave the way those tools behave. Dragging the south-east grip
+moves the south-east corner and leaves the north-west one exactly where it
+is — so the part of the object the operator is *not* pointing at does not
+move under their hand.
+
+[`Grip::anchor`] already answers this, in **screen** space, for the drawing
+side. This computes in the same frame and hands the result to the caller to
+map, rather than re-deriving the opposite-corner rule: two spellings of
+"which corner stays still" would eventually disagree, and the disagreement
+would be an object that jumps on the first frame of a drag.
+
+# The mid-edge grips scale ONE axis
+
+`East` and `West` scale x and leave y at 1.0; `North` and `South` the
+reverse. That is what a mid-edge grip means, and it is why they are offered
+separately from the corners rather than being four more corners.
+
+### `fn is_usable`
+
+A factor at or below zero collapses or mirrors the object. Refused rather
+than clamped — see [`Refusal::Degenerate`].
+
+The floor is not `0.0` but a small positive number, because a drag that
+passes exactly through zero would otherwise produce a
+zero-area object whose next resize has no bounds to scale from: the
+`w <= EPSILON` guard in [`factors`] would then answer `None` for ever and
+the object could never be recovered except by undo.
+
+### `fn action`
+
+Pure, so the whole decision is testable without a window: the selection, the
+object model, the anchor in PDF space and the two factors go in, and one
+`VectorAction::MoveNodes.into()` or one named refusal comes out.
+
+# The anchor arrives in PDF user space, already converted
+
+The caller converts once, through `canvas::mapping`, for the reason
+`canvas::textedit::resolve_run` records about its own two hops: a second
+conversion is how a preview and a commit come to disagree about where the
+operator's hand was.
+
+### `struct Frame`
+
+A struct rather than seven parameters, and it is not only clippy's
+arity rule: **five of the seven are read-only facts about the same frame**,
+so grouping them says what they are. It also removes the failure a long
+parameter list invites — `map` and `page` are both `Option<&…>` and adjacent,
+and swapping them would compile if their types ever converged.
+
+`selection`, `provider` and `actions` stay outside it, deliberately: the
+first two are *the document's* state rather than the frame's, and the third
+is an output. A struct that mixed all three would be a bag rather than a
+grouping.
+
+### `const rain`
+
+Live, unlike `gesture::Drag::shift`, and the two are different facts
+that happen to read the same key. That one asks *"what did this gesture
+MEAN"* — extend the selection or replace it — and must be sampled at the
+press, because the meaning of a gesture cannot change half-way through
+it. This asks *"is the operator constraining right now"*, and every
+program in the class lets that be picked up and put down mid-drag. An
+operator who starts a free resize, sees it going crooked and grabs Shift
+expects the shape to snap to proportion under their hand.
+
+### `mod ifiers`
+
+Carried on the [`Frame`] rather than read from `egui::Memory` inside
+this module, so `resizing` stays a pure decision over its inputs and
+stays testable without a `Context`. Every other live fact on this struct
+arrives the same way, including `constrain`.
+
+### `fn decline`
+
+One place, so a variant added to [`Refusal`] is a compile error in
+`crate::text::resizing` rather than a drag that silently does nothing —
+which is the failure `canvas::textedit`'s own history is about.

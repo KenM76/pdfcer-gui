@@ -32,11 +32,6 @@ const MAX_WIDTH_PT: f64 = 12.0;
 const DASH_WIDTH: f32 = 180.0;
 
 /// **Draw the selected markup's style controls, or nothing.**
-///
-/// Returns whether it drew, so [`super::body`] knows the panel is already
-/// saying something — the same contract [`super::dimension::section`] has, and
-/// for the same reason: *"nothing is selected"* under a section describing the
-/// thing that is selected would be the panel contradicting itself.
 pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     let Some(selection) = doc.selection.annot() else {
         return false;

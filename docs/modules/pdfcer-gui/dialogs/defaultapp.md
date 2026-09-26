@@ -94,3 +94,10 @@ that happened.
 This asserts only the cheap half — that the preference gates the
 question — because the other half spawns processes and depends on the
 machine the test runs on. The live half belongs to a driven check.
+
+### `fn new`
+
+The checkbox starts **unticked**. A pre-ticked *"don't ask me again"*
+is a dialog that suppresses itself if the operator dismisses it without
+reading, which is the same defect as a pre-ticked consent box and is
+worse here because there is no way to notice it happened.

@@ -63,3 +63,82 @@ The vocabulary earns its keep only if a harness can tell one from
 another; two reasons that happened to be spelled the same would collapse
 *click something first* into *the program is broken* with nothing to say
 which had happened.
+
+### `const MAX_CHUNK_BOXES`
+
+A backstop rather than the normal case. The largest text object measured on
+the operator's own `SW41177.pdf` holds 144 chunks; this is an order of
+magnitude above that, so a page that trips it is a page where the boxes would
+be a grey wash rather than an answer. When it trips, the count is disclosed
+off-canvas — an inference the operator cannot see still owes a report.
+
+### `fn enabled`
+
+**`true` when nothing has been stored**, which is the same argument smart
+select makes: the switch exists so the boxes can be turned OFF, and an
+operator who has to find a checkbox before a feature he asked for appears has
+not been given the feature.
+
+### `fn sync`
+
+The direction is strictly `Prefs` → memory, and the guard is not an
+optimisation: an unconditional write every frame would make the value
+impossible to change from anywhere else, which is how a mirror becomes an
+overwrite.
+
+### `fn boxed`
+
+The gate on every gesture that narrows the selection to a chunk. Narrowing
+to a unit the operator cannot see is the unpredictability O215 ask 1
+reports, reached from the other side, so the rung is offered exactly where
+the boxes are and nowhere else. The second term is the same one [`outlines`]
+declines `single-chunk` on: a one-line object draws no box, so a click that
+descended into it would change the verb set with nothing on screen to say
+it had.
+
+### `fn under`
+
+The first hit, exactly as `probe` takes the first of `part_hits_of` — one
+rule, asked in two places, rather than two rules that agree today. `None`
+means the point is inside the block's box but not on any of its lines,
+which on a CAD note is most of the block.
+
+### `fn within`
+
+`crossing` is the band's own direction bit: a right-to-left drag takes
+anything it **touches**, a left-to-right one only what it **surrounds**.
+One rule at both rungs, because an operator who learns the direction on a
+page of objects and then finds it does not hold inside a text block has
+learned a rule with an exception in it.
+
+Empty means the band reached no chunk, which is the caller's signal that
+this was not a chunk band at all — see [`crate::canvas::marquee::on_release`]
+for what it does with that.
+
+### `type Declined`
+
+A fixed vocabulary rather than free text, for the reason
+`canvas::painting`'s `draw_anchors` states: the driven checks that read this
+trace all begin by asking whether the boxes appeared, and every one of them
+would otherwise have to guess whether the answer means *the program is
+broken*, *the aim is wrong* or *this is the normal case*.
+
+| reason | what it means | what it is about |
+|---|---|---|
+| `switched-off` | the operator turned the boxes off | neither; normal |
+| `nothing-selected` | the boxes are on and nothing is selected | the driver: click a text block first |
+| `other-page` | everything selected is on a page this call is not painting | neither; continuous view |
+| `not-text` | the selection holds no text object | the driver, or the aim |
+| `single-chunk` | every selected text object holds one chunk | neither: a box on the whole block says nothing the selection outline does not |
+| `no-provider` | the page decomposition is not available this frame | the program, or a load still in flight |
+| `too-many-chunks` | past [`MAX_CHUNK_BOXES`]; the count is on the status bar | the document |
+
+### `fn outlines`
+
+Canvas space, not screen space: the projection is the painter's, and doing it
+here would bake this frame's scroll offset into a value the caller then
+projects again.
+
+Callers hold the returned `Vec` rather than a `Ref` into the decomposition
+cache, deliberately. The borrow is taken and released inside this function,
+which is the discipline `app::cache::page_objects` asks of every reader.

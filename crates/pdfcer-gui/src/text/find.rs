@@ -11,26 +11,12 @@
 // ---------------------------------------------------------------------------
 
 /// The word in front of the search field.
-///
-/// A label rather than placeholder text inside the field. Placeholder text
-/// disappears the moment the operator types, so a box identified only by its
-/// placeholder has no name for as long as it is being used — and this one
-/// floats over the page rather than sitting in a bar the operator already
-/// recognises, so "what is this?" is worth answering permanently.
 #[must_use]
 pub fn field_label() -> &'static str {
     "Find"
 }
 
 /// Hover text for the search field.
-///
-/// Names the three keys the field itself owns, because none of them is
-/// discoverable by looking: Enter searches (and then steps), Shift+Enter
-/// steps backwards, Escape closes. The last one is qualified — it closes the
-/// bar *while you are typing in it* — because once focus has left the field
-/// Escape belongs to the canvas's selection ladder, and a tooltip that
-/// promised otherwise would be describing a key fight this build
-/// deliberately does not have.
 #[must_use]
 pub fn field_tooltip() -> &'static str {
     "Type what to look for, then press Enter. Enter again goes to the next hit and \
@@ -40,12 +26,6 @@ pub fn field_tooltip() -> &'static str {
 }
 
 /// The close button's label.
-///
-/// `×` (U+00D7 MULTIPLICATION SIGN), not `✕`/`✖`, and not the word "Close".
-/// The word is three times as wide as the control needs on a box that floats
-/// over the page and is kept deliberately narrow; and U+00D7 is Latin-1, so it
-/// is present in every font a desktop toolkit ships, where the dingbat crosses
-/// are not.
 #[must_use]
 pub fn close() -> &'static str {
     "×"
@@ -59,12 +39,6 @@ pub fn close_tooltip() -> &'static str {
 }
 
 /// The status bar's Find toggle.
-///
-/// `RIBBON_IA.md` §6 lists this first among the status bar's controls. It is
-/// a *toggle* rather than a button because the box it opens is a persistent
-/// surface the operator leaves up while working through hits, and a control
-/// that showed no state would give them no way to tell "it is closed" from "it
-/// is open at the other end of the window".
 #[must_use]
 pub fn toggle() -> &'static str {
     "Find"
@@ -110,14 +84,6 @@ pub fn next_tooltip() -> &'static str {
 }
 
 /// `3 of 47` — which hit the view is on, out of how many.
-///
-/// **One-based**, because it is read next to the status bar's page counter,
-/// which is one-based for the same reason: an operator counts hits from one.
-/// The zero-based index is an internal fact and never reaches this function.
-///
-/// Deliberately not `3/47`: a slash reads as a fraction or a date, and this
-/// row already carries `n/N` shapes in the page box a few points to its
-/// right.
 #[must_use]
 pub fn position(current_one_based: usize, total: usize) -> String {
     format!("{current_one_based} of {total}")
@@ -130,34 +96,18 @@ pub fn position_tooltip() -> &'static str {
 }
 
 /// Shown after a search that found nothing.
-///
-/// A sentence rather than `0 of 0`, because zero of zero is arithmetic and
-/// the operator's question is whether the search ran at all. This says it
-/// ran.
 #[must_use]
 pub fn no_matches() -> &'static str {
     "No matches"
 }
 
 /// Hover text for the two step buttons while they are **greyed**.
-///
-/// `RIBBON_IA.md` P3 allows greying only for *temporarily* unavailable and
-/// only when it *"is always explained on hover"*. Both hold: there is nothing
-/// to step through until a search has found something, that state ends on the
-/// next Enter, and this is the sentence that says so. A greyed control with
-/// no explanation is the shape defect D1 took — an affordance that looks
-/// available and is inert, with nothing on screen to say why.
 #[must_use]
 pub fn step_unavailable_tooltip() -> &'static str {
     "There are no hits to step through yet. Type what to look for and press Enter."
 }
 
 /// Hover text for the no-matches readout.
-///
-/// Names the two limits that produce a surprising empty result on real
-/// files, because both are properties of the *document* rather than of the
-/// query and an operator has no way to guess either. Both are
-/// `pdfcer-core`'s documented limits on `find_text`, not this shell's.
 #[must_use]
 pub fn no_matches_tooltip() -> &'static str {
     "Nothing on any page matched. pdfcer searches only text that is drawn with real glyphs, \
@@ -166,15 +116,6 @@ pub fn no_matches_tooltip() -> &'static str {
 }
 
 /// Shown when the document has been edited since the search ran.
-///
-/// **The hits are not merely out of date; their geometry may name text
-/// that is no longer there.** A `delete_*` renumbers and re-splices the
-/// content stream, so a quad recorded before an edit can cover different
-/// glyphs after it — and rule 4 forbids painting a mark over content that
-/// does not say what the mark claims. So the highlights stop being drawn the
-/// instant `edit_epoch` moves, the readout says so, and the query is kept:
-/// re-running it is one keypress, and it is the operator's keypress rather
-/// than a search this shell decided to repeat on a 5.6 MB drawing.
 #[must_use]
 pub fn stale() -> &'static str {
     "Document changed"
@@ -192,34 +133,18 @@ pub fn stale_tooltip() -> &'static str {
 // ---------------------------------------------------------------------------
 
 /// The options menu button's label.
-///
-/// A word plus the disclosure triangle the status bar already uses, rather
-/// than a bare chevron or a gear: `crate::find::bar` puts the four search
-/// options behind this button, and an operator who cannot find "case
-/// sensitive" will look for a word before they will click an unlabelled
-/// glyph. `⏷` is U+23F7, measured present in egui's bundled font set —
-/// `crate::text::status`'s header records that the obvious `▾` is not.
 #[must_use]
 pub fn options() -> &'static str {
     "Options ⏷"
 }
 
 /// Hover text for the options menu button.
-///
-/// Names what is inside it, because the whole cost of putting the options
-/// behind a menu is that they stop being visible — and a button labelled
-/// "Options" with no further word is a button an operator has to open to find
-/// out whether it is worth opening.
 #[must_use]
 pub fn options_tooltip() -> &'static str {
     "Case sensitivity, whole-word matching, wildcards, and whether going to a hit may change the zoom. They are in a menu so this bar stays narrow enough to sit over the page without hiding it."
 }
 
 /// The case-sensitivity control's label.
-///
-/// Phrased as the thing the operator switches **on**, matching Acrobat's own
-/// "Case-Sensitive" toggle: off means an ordinary, forgiving search, which
-/// is what a find bar does everywhere.
 #[must_use]
 pub fn match_case() -> &'static str {
     "Match case"
@@ -250,22 +175,12 @@ pub fn whole_word_tooltip() -> &'static str {
 }
 
 /// The wildcard control's label.
-///
-/// The label **names the two characters and what each does**. See this
-/// module's header: a bare "Wildcards" would leave the operator exactly
-/// where the old shell's silent pattern search left them, one checkbox
-/// later.
 #[must_use]
 pub fn wildcards() -> &'static str {
     "Wildcards: # digit, ? any"
 }
 
 /// Hover text for the wildcard control.
-///
-/// The last sentence is the hazard note the brief asks be left where the
-/// next person will see it: a future "redact every hit" control cannot be
-/// built on a wildcard search, because `mark_redactions_by_search` matches
-/// **literally** and would decline to mark hits this bar highlighted.
 #[must_use]
 pub fn wildcards_tooltip() -> &'static str {
     "Off by default, so pdfcer searches for exactly what you typed. Switch it on and \"#\" \
@@ -275,48 +190,12 @@ pub fn wildcards_tooltip() -> &'static str {
 }
 
 /// The zoom control's label.
-///
-/// **The operator named this control.** His words, 2026-09-09: *"add a
-/// checkbox option to our search bar called zoom — when I uncheck it just jump
-/// to the page and highlight the found item as before but don't change the
-/// zoom."* A request that carries a name is a request for that name, so the
-/// label is the word he used and the tooltip carries the explanation.
-///
-/// Phrased as the thing the operator switches **on**, like its three siblings
-/// — see [`match_case`]. On is what this build has always done; off is the new
-/// answer he asked for.
 #[must_use]
 pub fn find_zoom() -> &'static str {
     "Zoom"
 }
 
 /// Hover text for the zoom control.
-///
-/// **It names the mechanism, because the mechanism is not guessable.**
-///
-/// Nothing in Find has ever set a zoom. What changes the zoom on a jump is
-/// **Fit page** / **Fit width** still being switched on: a fit is a standing
-/// instruction to re-scale to whatever page is showing, so landing on a sheet
-/// of a different size re-scales, and on a drawing set whose sheets are not
-/// all the same size that is a large jump. An operator reading at a size they
-/// chose experiences that as Find having zoomed them out.
-///
-/// So the tooltip says the two consequences of switching it off rather than
-/// describing an implementation: the reading size is kept, and the view stops
-/// following the fit. The second half is disclosure — turning this off *does*
-/// change a setting the operator can see in the zoom readout, and a control
-/// that quietly dropped Fit width without saying so would be the shell being
-/// sneaky about its own state.
-///
-///
-/// Shipped, this control governed the zoom and nothing else, so with it off
-/// the view still scrolled the hit to the middle of the canvas on every
-/// step. Ken: *“instead of jumping to the page that the text is found on and
-/// leaving the page in its current position on the canvas it still zooms and
-/// repositions the page on the canvas.”* The control now also holds the
-/// POSITION, which is what he read the word to mean, so the sentence has to
-/// say so — a tooltip that promises only half of what a control does is a
-/// second defect sitting beside the first.
 #[must_use]
 pub fn find_zoom_tooltip() -> &'static str {
     "On by default. Going to a hit lands on whatever page it is on, centres the hit, and \
@@ -334,13 +213,6 @@ pub fn word_rule() -> &'static str {
 }
 
 /// Hover text for the whole-word rule chooser.
-///
-/// Says outright that there is no correct answer to import. That is not
-/// hedging: `pdfcer-core`'s `WordBoundary` quotes §14.8.2.5 NOTE 1 saying the
-/// notion of a word *"is not precisely defined"*, and NOTE 4 offers a menu
-/// of reader strategies rather than a rule. Telling the operator that the
-/// choice is theirs is the honest version of a setting that exists because
-/// the standard refused to decide.
 #[must_use]
 pub fn word_rule_tooltip() -> &'static str {
     "What counts as one word. The PDF standard says outright that this has no single \
@@ -390,17 +262,6 @@ pub fn word_rule_non_space_or_dash_tooltip() -> &'static str {
 
 /// What a zero-result search says when part of the document could never have
 /// matched.
-///
-/// Worded as a fact about the DOCUMENT, not about the search and not about
-/// pdfcer. "No matches" is still the answer to what they asked; the second
-/// clause tells them why the answer may be incomplete. It deliberately does not
-/// say "pdfcer cannot read" — Acrobat cannot read it either, the file simply
-/// does not carry the mapping, and phrasing a file's own gap as a tool
-/// limitation invites an operator to go looking for a better tool.
-///
-/// Singular and plural are separate strings rather than "font(s)", because a
-/// parenthesised plural in a sentence an operator reads under pressure is how
-/// software sounds when nobody cared.
 #[must_use]
 pub fn unsearchable_one() -> &'static str {
     "No matches. One font in this document stores text that cannot be searched, so there may be more."
@@ -422,17 +283,6 @@ pub fn unsearchable_tooltip() -> &'static str {
 
 /// **The sentence when the blank was IGNORED** — `OPERATOR_REQUESTS.md`
 /// **O180**, 2026-09-12.
-///
-/// Trimming silently would be the reported defect wearing the other coat.
-/// He typed something; pdfcer searched for something else; without this row
-/// there is no surface anywhere that says so. Rule 4: the page renders
-/// normally and the inference is reported **off-canvas**, here, in the
-/// bar's own second row beside the unsearchable-fonts note.
-///
-/// Deliberately neutral about which end and about which character. A
-/// clipboard hands over tabs and non-breaking spaces as readily as spaces,
-/// and naming the character would mean either six sentences or a wrong one.
-/// *“Blanks”* covers all of them in the operator's own register.
 #[must_use]
 pub fn blanks_trimmed() -> &'static str {
     "Blanks at the ends of your search were ignored."
@@ -440,21 +290,12 @@ pub fn blanks_trimmed() -> &'static str {
 
 /// **The sentence when the blank was KEPT** — the same fact, the other
 /// setting.
-///
-/// Owed for the mirror-image reason: with trimming off, an invisible
-/// character is deciding the answer and the operator cannot see it. This is
-/// the row that turns *“why does this find nothing”* into one glance, which
-/// is the whole of what O180 reported.
 #[must_use]
 pub fn blanks_kept() -> &'static str {
     "Your search starts or ends with a blank, and pdfcer is looking for it."
 }
 
 /// The hover explanation behind either sentence, naming where the switch is.
-///
-/// One tooltip for both rows rather than two: the operator needs the same
-/// two facts in either state — what a blank is, and where the setting lives
-/// — and the row above has already told them which way it is pointing.
 #[must_use]
 pub fn blanks_tooltip() -> &'static str {
     "Spaces, tabs and similar characters are invisible in this box, and copying out of a spreadsheet or a table very often brings one along. Whether they are ignored is set in Settings, under Copying and extracting text. Blanks in the middle of what you type are always kept."

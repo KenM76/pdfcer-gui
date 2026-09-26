@@ -247,3 +247,26 @@ exactly that.
 `form` is `None` here — the fixture's catalog has no `/AcroForm`, which is
 the whole point of it — and `collect` is documented to put every widget in
 `unclaimed` in that case.
+
+### `fn rows`
+
+`page_index` is 0-based — it is carried into the action for the trace and
+the re-raster, not for the engine, which edits the document-level
+`/AcroForm` and never asks which page.
+
+# At most one registration per frame, and it is not an accident
+
+The loop `break`s after a press. Two presses in one frame would queue two
+`AdoptWidget`s against a listing computed **before** either ran, and the
+second would be acting on a set the first has already changed — the same
+stale-index hazard the engine hit in its own CLI and described plainly:
+*"the indices shift after every add … I got this wrong myself and nested
+something two levels deeper than intended, and the output looked entirely
+plausible."*
+
+The ids here are stable where indices are not, so the second action would in
+fact still name the right widget. The `break` is kept anyway, because
+*"queue only what was computed against the state you have"* is the property
+worth holding mechanically rather than re-deriving each time a queued verb
+is added. It costs the operator nothing: physically, one press per frame is
+all there is.

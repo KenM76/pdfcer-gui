@@ -74,3 +74,79 @@ shallow curve. "Whichever came first in the list" would make which one
 the operator got depend on the decomposition order — a coin toss they
 cannot see and cannot learn, and one that would show up as "sometimes it
 drags the wrong side".
+
+### `const GRAB_PX`
+
+Eight — larger than the six-pixel mark it is grabbing, matching the two
+points of slack `handles::GRIP_GRAB_SLACK_PX` gives a resize grip and for
+the same reason: a target that requires hitting its exact pixels is a target
+an operator misses, and the miss here is worse than for a grip because it
+falls through to a *move of the whole object*.
+
+### `fn visible`
+
+Returned as a flat list rather than grouped per anchor, because both
+consumers — the hit test and the painter — want to walk all of them, and the
+anchor each belongs to travels on the tuple.
+
+Empty at the Object and Part rungs: a handle is a property of a *selected
+anchor*, and there is no selected anchor above the Node rung.
+
+### `fn at`
+
+# Why the press is in SCREEN space and the handles are in canvas space
+
+Because the grab radius is a **screen** distance — eight pixels is eight
+pixels at any zoom, which is what makes the target feel the same size on an
+A1 sheet at 0.38× and on a letter page at 1×. Comparing in canvas space
+would make the radius shrink with the zoom, so a handle on a drawing would
+be ungrabbable at exactly the zoom an operator uses to see the whole sheet.
+
+### `struct Frame`
+
+The same shape and the same reason as `canvas::resizing::Frame`: everything
+below is a pure function of these, so the geometry is testable without a
+document, a provider or an `egui::Context`.
+
+### `fn drag`
+
+Returns the preview to draw while the drag is in flight: the handle's
+canvas-space position and the anchor it is tethered to, so the overlay can
+draw the tether moving with the pointer.
+
+# Why the preview is the pointer position and not a ghost of the curve
+
+Because drawing the curve the drag *would* produce means evaluating the
+Bézier this shell does not own — and a preview curve that differed from what
+the engine writes, by any amount, would be two rendering paths for one
+shape. `BENCHMARK.md`'s standing rule about previews applies: **a preview
+shows the cursor, the render shows the document.**
+
+### `fn anchor`
+
+Only ever asked for by a *constrained* handle drag —
+[`crate::canvas::constrain::toward`] needs a point to measure the
+displacement from, and for a control point that point is its anchor rather
+than the press. A handle's whole meaning is its direction and distance from
+the on-curve point it serves, so locking it to the *press* row would lock a
+quantity nobody thinks in.
+
+It is a separate call, made only when Shift is down, because
+[`ObjectModelProvider::subpath_node_points`] allocates over every anchor of
+the subpath. Folding it into the unconstrained path would put that
+allocation on every frame of every handle drag for a value nothing reads —
+the same cost `canvas::moving::drag` is at pains to avoid, where one
+measured CAD export has 6,681 anchors.
+
+Subpath-scoped rather than object-scoped for the same reason: the anchor is
+known to be on the entered subpath, and asking the object costs every other
+subpath's nodes as well.
+
+### `fn tether`
+
+A free function so the overlay can draw it without knowing how a handle is
+found, and so this file owns the one statement of *what a handle looks
+like*: a line from the on-curve point to the control point, with a mark at
+the far end. That is the universal vector-editor idiom — Illustrator,
+Inkscape, Figma and the old shell all draw it — and the reason it is
+universal is that a control point with no tether is an unexplained dot.

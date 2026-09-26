@@ -75,20 +75,11 @@ fn secret_pdf() -> Vec<u8> {
 
 /// Assemble a classic single-revision PDF from object bodies `1..=n` with a
 /// correct xref table. Object 1 must be the catalog.
-///
-/// The same fixture shape `pdfcer-core`'s own redaction tests use —
-/// synthetic, so that every byte in the file is one this suite put there.
-/// `pub(super)` so [`super::proof`]'s tests share it rather than growing a
-/// second, subtly different assembler.
 pub(super) fn assemble(bodies: &[&str]) -> Vec<u8> {
     assemble_with_trailer(bodies, "")
 }
 
 /// [`assemble`], plus extra keys spliced into the trailer dictionary.
-///
-/// The trailer is where a carrier that is on no page lives — `/Info` above
-/// all — so a fixture that needs one needs this rather than a second
-/// assembler. `extra` is inserted verbatim before the closing `>>`.
 pub(super) fn assemble_with_trailer(bodies: &[&str], extra: &str) -> Vec<u8> {
     let mut buf = b"%PDF-1.7\n%\xE2\xE3\xCF\xD3\n".to_vec();
     let mut offsets = Vec::new();

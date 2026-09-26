@@ -146,3 +146,375 @@ It decodes every embedded font program, so rebuilding it per page is a
 large cost for a value that cannot have changed — and an edit *can*
 add or remove a font, so keeping it across one reports a font list the
 document no longer has.
+
+### `struct PageObjectCache`
+
+# Why this is a cache at all
+
+`pdfcer_core::vector::decompose_page` resolves every `/Contents` stream,
+inflates it, concatenates, tokenizes and walks the whole token stream
+resolving fonts as it goes, and there is **no cache anywhere in
+`pdfcer-core`**. On a CAD sheet that is a frame's worth of work; doing it
+per frame at 60 Hz is not an option, and doing it *twice* per frame — once
+for the Objects panel and once for a canvas hit test — is the *"two
+decompositions quietly diverge"* failure decision 011 names.
+
+So there is exactly one, and it lives here: on the document, whose
+lifetime bounds it exactly. See the module docs for the borrow argument
+the two-field shape exists to satisfy.
+
+`pub(in crate::app)` rather than private because [`OpenDoc`] declares the
+field and lives in the sibling module `crate::app::state`. The type is not
+part of the crate's surface: nothing outside `crate::app` can name it, and
+every read goes through [`OpenDoc::page_objects`].
+
+### `struct LinkCache`
+
+# Why this exists at all
+
+The text surgery in `pdfcer-core` rewrites the show operator a run came
+from, so a run that names no operator of its own has nothing to anchor on
+and cannot take a caret. The only published way to tell those runs apart is
+`GlyphProvenance::content_stream`, and provenance is only populated when the
+extraction asked for it, which [`PageTextCache`] deliberately does not.
+
+So answering *"can this run be edited?"* costs **a second extraction of the
+whole page, with provenance on**.
+
+The name says *form* and the question does not: form content is editable,
+and what is left in the refused set is the `/ActualText` case described on
+the field below.
+
+**Measured on two documents, and the range is the point.** The operator
+pointed out - correctly - that testing on the densest sheet available makes
+everything look slow:
+
+| document | runs | extraction |
+|---|---|---|
+| a 6-page scanned note | 0 | **1 ms** |
+| the benchmark CAD site plan, 129,758 objects | 4,655 | **336 ms** |
+
+So this is not "text extraction is slow". It is *"text extraction is
+proportional to how much text is on the page, and on the documents this
+operator actually works on there is a great deal of it."* Both numbers are
+recorded because a single alarming one invites the wrong fix.
+
+The cache is still the right answer, and the dense end is why: 336 ms
+inside the click handler froze the UI thread for a third of a second on
+every click that lands on text - a visible hitch on exactly the documents
+this application exists for, and one that makes a driven check flake
+because the trace it waits on has not been written by the time the settle
+window closes.
+
+# What is cached, and why it is a `Vec<bool>` rather than the extraction
+
+The **answer**, not the evidence. A second `PageText` for a dense sheet is
+megabytes held for the life of the page; a bit per run is 4,655 bytes. The
+commit path still does its own provenance extraction, because it needs the
+byte spans rather than the verdict and a commit is a rare, already-expensive
+act.
+
+Keyed on `(page index, edit epoch)` like every other cache here, so an edit
+invalidates it - which matters, because an edit can change how many runs a
+page has and a stale `Vec` indexed by run number would answer confidently
+about the wrong run.
+**Every clickable `/Link` on the current page, and the reader that resolves
+where each one goes** (ISO 32000-1 §12.5.6.5, §12.3.2).
+
+# Why this is TWO caches with two different keys
+
+They have genuinely different lifetimes, and collapsing them would make the
+expensive one page-scoped:
+
+| | keyed on | cost | rebuilt when |
+|---|---|---|---|
+| [`Self::reader`] | the **edit epoch** | **O(document)** | any edit |
+| [`Self::links`] | `(page, epoch)` | O(annots on the page) | the page changes, or any edit |
+
+`pdfcer_core::outline::DestinationReader` has to flatten two document-wide
+tables before it can answer anything: the page-object → index map, and both
+§12.3.2.3 named-destination namespaces. The engine's own reply on shipping
+it put the point plainly — a proposed per-call signature *"would have
+rebuilt both on every call. A page with 200 links would have walked the page
+tree 200 times, and you would have discovered it as 'links are slow on big
+documents' months from now with no obvious cause."*
+
+So the reader is held for as long as the document's structure is unchanged,
+and the per-page link list is rebuilt beside it whenever the operator turns
+a page.
+
+# The reader is a SNAPSHOT and going stale is silent
+
+
+The epoch key is what prevents that, and it is why the reader is keyed on
+the epoch rather than held for the document's lifetime: **every** edit bumps
+`OpenDoc::edit_epoch`, so the reader cannot survive one. That is coarser
+than necessary — recolouring a path invalidates a reader nothing structural
+touched — and coarse in the safe direction. Rebuilding it is a page-tree
+walk; getting it wrong is a link that navigates somewhere plausible and
+false, which is the one failure this feature could ship that nobody would
+report as a bug.
+
+# Why the whole `PageLinks` is kept, not just the navigable ones
+
+Because `PageLinks::links_without_destination` is the count of `/Link`
+annotations carrying **neither** `/Dest` nor `/A` — clickable boxes that
+Table 173 gives no way to act. A caller that only saw the resolved list
+could not tell a page with no links from a page whose links are all broken,
+and those two want opposite sentences from the program.
+
+### `struct FontCache`
+
+Cached for the same reason [`PageObjectCache`] is, and the sweep is more
+expensive: `pdfcer_core::fontinfo::inventory` **decodes every embedded font
+program**, because that is where the `OS/2` table lives. On a document
+carrying a megabyte of CJK outlines that is not a per-frame cost.
+
+Document-scoped rather than page-scoped — paging does not drop it — but
+**not** revision-scoped-by-accident: an edit can add or remove a font, so
+the epoch is the key.
+
+### `fn page_objects`
+
+# This is THE decomposition — there is deliberately only one
+
+The Objects panel lists it, the Properties panel describes a row of
+it, the diagnostic `objects n=` line counts it, and the canvas
+hit-tests against it — all from *this* value. A second
+`decompose_page` over the same page is the *"two decompositions
+quietly diverge"* pattern decision 011 warns about, and
+[`ObjectModelProvider::page_objects`]' own docs call this the shared
+escape hatch that exists to prevent it.
+
+**The canvas has no decomposition of its own.** It calls this method,
+so *"what did I click?"* and *"what is in this list?"* are answered
+from one value by construction rather than by two code paths that
+happen to agree. A private `ObjectModelProvider` built per gesture
+would be one extra full decomposition per click and per marquee
+release, on a page the Objects panel has already decomposed.
+
+# Why it lives on `OpenDoc` and needs no identity key
+
+A cache hanging off the *application* outlives the document it
+describes, so it has to say **which** document that was — and the only
+token available is the `Arc<EditSession>`'s address, which is not an
+identity and carries an ABA hazard.
+
+Living here dissolves that question rather than answering it, for the
+reason [`OpenDoc::new`]'s doc comment gives: *"opening a document
+constructs a whole new `OpenDoc`, so a cached texture or a page index
+can never refer to a page from a previous file."* A cache held
+**inside** that structure inherits the guarantee for free — there is no
+"which document is this?" to get wrong, because the answer is "the one
+you are holding". So the key is `(page, epoch)`: two plain values, no
+address, no ABA. The canvas selection lives on [`OpenDoc`] beside this
+for the same reason.
+
+# Returns
+
+`None` when the page's content cannot be decoded — the same failure
+the renderer would hit. A caller says so in words rather than showing
+an empty list, because a failure state indistinguishable from a
+success state is the same defect as no message at all. The reason is
+kept for the trace channel; see [`Self::page_objects_failure`].
+
+# Holding the `Ref`
+
+The return is a [`Ref`] into the cache, so it keeps a shared borrow of
+`*self` alive for as long as the caller holds it — which is exactly
+what stops a `borrow_mut` racing it (module docs, step 3). A caller
+that needs `&mut OpenDoc` afterwards must let it go first; `Ref`
+implements `Drop`, so the borrow does **not** end at its last use and
+an explicit `drop` is sometimes required. `canvas::interact` does that
+and says why.
+
+### `fn ensure_content_bounds`
+
+A separate name from [`Self::page_objects`] because the intent is
+different and the intent is the thing that must survive a refactor:
+this caller does not want the objects, it wants the **cost paid at a
+moment of its choosing**. See [`Self::content_bounds_if_known`] for
+which moment and why.
+
+Idempotent and cheap after the first call: `ensure_page_objects`
+records its key *before* doing the work, so a page that will not
+decompose is attempted once rather than on every frame.
+
+### `fn page_objects_failure`
+
+Separate from [`Self::page_objects`] because the two audiences differ:
+a panel shows the operator a sentence from the text catalog, and the
+`PDFCER_DIAG` channel wants the engine's own error text. A harness that
+learns only *that* a page failed has to work out *why* by hand.
+
+`pub(in crate::app)` because the one consumer is
+`OpenDoc::trace_object_count`, which stayed in `state.rs` with the rest
+of the per-frame bookkeeping.
+
+### `fn refresh_content_generation`
+
+Called once per frame from `app::frame`, before anything draws. Silent
+when the session is shared — a render in flight holds the second handle
+— and that silence is safe by construction: the stamp stored with the
+digest is compared against the live epoch before it is trusted.
+
+It is `&mut self` because the engine's accessor is, and the engine's
+accessor is because *"which forms a page paints is an OUTPUT of the
+decomposition"*: there is no way to fold the form set into the digest
+without walking, and walking populates a memo.
+
+### `fn page_links`
+
+The one resolution. The hover cursor, the click that follows a link and
+anything that ever reports a document's broken links all read *this*
+value, for the same reason [`Self::page_text`] is the one extraction:
+two resolutions of one page are two chances for what the cursor promises
+and what the click performs to disagree.
+
+# Returns
+
+`None` only when there is no such page. A page with **no** links returns
+an empty [`PageLinks`], which is a different answer and a caller may
+need the difference — see [`LinkCache`] on why the unresolvable ones are
+counted rather than dropped.
+
+# Cost
+
+The first call for a `(page, epoch)` pays one `/Annots` walk plus, if
+the epoch moved, one page-tree walk and one name-tree flatten for the
+[`DestinationReader`]. Every call after it is two comparisons. See
+[`LinkCache`] for why those two costs are keyed separately.
+
+It is called from a **hover**, sixty times a second, which is why the
+caching is not optional. The first sketch of this feature resolved links
+per frame and would have walked the page tree of a 36-sheet drawing on
+every mouse move.
+
+# Holding the `Ref`
+
+As [`Self::page_text`]: the return keeps a shared borrow of `*self`
+alive, so a caller that needs `&mut OpenDoc` afterwards must drop it
+first — or clone the one link it cares about, which is what
+`crate::canvas::links` does.
+
+### `fn run_has_no_anchor`
+
+The first call for a `(page, epoch)` pays one provenance-bearing
+extraction; every call after it is a vector index. See
+[`FormRunCache`] for the measurement that made the cache necessary.
+
+### `fn page_has_extractable_text`
+
+The question *"is this page an image rather than a document"*, answered
+as a **cache read** rather than as an extraction. Read by
+[`crate::find::bar`] to decide whether to offer OCR when a search comes
+back empty, and it is the whole reason that offer is affordable.
+
+# Why this is not "the search found nothing"
+
+The operator's rule for the Find offer, and the trap inside it: the
+trigger is *"this document is images"*, **not** *"this search had no
+matches"*. A search for `flange` that finds nothing on a text PDF is an
+ordinary empty result and offering to recognise it would be nonsense —
+the words are there, that one just is not among them.
+
+This function is what tells the two apart, and it does so by asking
+about the **page** rather than about the query. `false` means the
+extractor walked this page's content streams and found no character on
+it: there is nothing here for *any* search to have matched.
+
+# `false` covers two different states, on purpose
+
+A page with no text, and a page whose content stream will not walk, both
+answer `false`. [`Self::page_text`] separates them and
+[`Self::page_text_failure`] carries the reason; this predicate
+deliberately does not, because the *offer* is right in both cases —
+a page whose stream pdfcer cannot read is exactly a page where
+recognising the pixels is the remaining route to its words.
+
+# Cost
+
+One extraction per `(page, edit epoch)`, shared with canvas text
+selection and `file.copy_page_text` — see [`Self::page_text`]'s cost
+section. The first caller on a page pays it and the rest are a `Cell`
+comparison, so this is affordable **as long as it is asked at a moment
+the operator caused**. `crate::find::bar` asks it only when the readout
+is already `Empty`, i.e. after a committed search has run a
+whole-document extraction — which is strictly more expensive than this
+and has just been paid. Calling it every frame the bar is open would be
+the right work charged at the wrong moment.
+
+Whitespace does not count as text. A page carrying one space is an
+image page with a stray operator on it, and an offer suppressed by that
+would be suppressed on exactly the scans most in need of it.
+
+### `fn page_text_failure`
+
+Separate from [`Self::page_text`] for the reason
+[`Self::page_objects_failure`] is separate: the `PDFCER_DIAG` channel
+wants the engine's own error text, and a consumer that learns only
+*that* extraction failed has to work out *why* by hand.
+
+Read by the `file.copy_page_text` dispatch arm, which uses it to tell
+three states apart — *the content stream would not walk*, *there is no
+such page*, and *the page has no text on it* — rather than reporting one
+"unavailable" for all three.
+
+### `fn font_inventory`
+
+Moved here from `crate::panels::PanelsState` at S4 for exactly the
+reason [`Self::page_objects`] was, and it is the cheaper half of the
+argument to state: the inventory decodes every embedded font program,
+and it is read by two panels (Fonts lists it; Properties joins one
+object's `/BaseFont` against it). Two inventories over one document
+would be two sweeps and two chances to disagree.
+
+`pdfcer_core::fontinfo::inventory` is **infallible** — it reports
+problems in its `diagnostics` rather than in a `Result` (core API trap
+T-9.8) — so there is no error path here, and an empty inventory does
+not mean a clean document. The Fonts panel reads the diagnostics.
+
+### `fn invalidate_derived_text`
+
+Called from `PdfcerApp::adopt_settings` and from nowhere else, because
+there is exactly one thing that invalidates these without also
+invalidating everything: the operator changing a setting.
+
+# Why the ordinary staleness keys do not cover this
+
+Every cache in this module is keyed on document state — a page index, an
+edit epoch. Those keys are complete for the question they were built to
+answer, which is *"has the document changed under this?"*. They are
+silent on *"has the configuration this was computed under changed?"*,
+and three settings change what an extraction produces:
+
+| setting | what moves |
+|---|---|
+| `word_gap_ratio` | where spaces appear between words |
+| `unmappable_code` | what stands in for undecodable text — **and whether a whole run survives at all** |
+| `actual_text` | whether a document's own replacement text wins over the glyphs |
+
+The middle row is why this is not cosmetic. Under *Leave it out*, a run
+whose codes are all unmappable **disappears entirely**, so a stale
+extraction is not merely differently spaced — it can be missing content
+that a find, a text selection or a redaction-by-pattern would then fail
+to see. A cache holding one of those after the setting has changed is a
+surface confidently reporting the wrong answer.
+
+# Why the keys are not extended instead
+
+Adding the settings to `built_for` would mean hashing a
+`#[non_exhaustive]` struct from another crate into every key, and it
+would spread the answer across three tuples that must each be updated
+when a fourteenth setting arrives. Clearing at the one moment the
+configuration changes is both cheaper and visible in one place — the
+same reasoning `render::settle` applies to the raster keys.
+
+# What is NOT cleared, and why
+
+[`PageObjectCache`] and [`FontCache`] hold structure rather than text:
+the object model's paint-order inventory and the document's font list.
+No setting in the window changes either. They are left alone rather than
+swept along for tidiness, because clearing a cache nothing invalidated
+makes the next frame pay for a rebuild that changes nothing — and on the
+benchmark sheet the object model is the expensive one.

@@ -104,3 +104,28 @@ reserves greying for: *temporarily* unavailable, and one keystroke or
 one tick makes it live. The blocker's sentence is also drawn beside the
 button rather than only on hover, because a hover tooltip is a thing you
 find after you have already wondered why nothing happened.
+
+### `fn open`
+
+The plan is built **once, here**. Re-deriving it per frame would be a
+name-tree read and a full uniqueness pass sixty times a second for an
+answer that only changes when the operator types — and, worse, would
+throw away every name he had typed on the frame after he typed it.
+
+# Where the seeded category comes from, in order
+
+1. The collection's own category, when this document already is one.
+   Re-opening a collection to fix one typo must not retype the heading.
+2. The document's `/Info` `/Title`.
+3. The filename's stem.
+
+All three are *suggestions in an editable field the operator is looking
+at*, which is why none of them owes a disclosure sentence: what will be
+written is on screen, in the box, before anything is written.
+
+### `fn open_for`
+
+The no-document guard is real rather than ceremonial: the window's rows are
+one per page and its category is seeded from the file, so there is nothing
+to build without one. An empty document declines for the same reason —
+a collection with no stamps in it is not a thing Acrobat will show.

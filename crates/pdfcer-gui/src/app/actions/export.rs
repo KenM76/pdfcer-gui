@@ -6,34 +6,6 @@
 use crate::app::state::OpenDoc;
 
 /// Write one page's vector geometry as an ASCII DXF.
-///
-/// ## What this owes the operator, and why it is not optional
-///
-/// `DxfOutcome` is the disclosure half, and two of its counts are the reason
-/// this feature is worth having over any generic converter:
-///
-/// - **`skipped_images`** — DXF has no raster entity, so a picture on the page
-///   is simply not in the file. The engine's own words for why that must be
-///   said: *"an operator whose drawing was half annotation gets a DXF that
-///   looks like the geometry went missing, and 'the labels are not in this
-///   file' is a sentence they need **before** they open it in SOLIDWORKS, not
-///   after."*
-/// - **`unreadable_text`** — text pdfcer could not decode, kept apart from
-///   `skipped_text` (which the operator asked for) because one is a choice and
-///   the other is a fact about the source PDF. Rolling them together would let
-///   the second hide inside the first.
-///
-/// ## Why the geometry is fetched here and not carried in the action
-///
-/// `PageObjects` is a decomposition of a whole page — every path, every text
-/// run, every image placement — and the shell already holds one, cached, keyed
-/// on `(page, epoch)`. Carrying it through the action queue would clone it for
-/// a value the apply phase can borrow, and a **stale** clone at that: the queue
-/// drains after the frame, and an edit raised earlier in the same frame would
-/// leave the export describing the page as it was.
-///
-/// Fetching it here means the export sees the document as it stands when the
-/// export runs, which is the only reading that can be defended.
 pub(super) fn dxf(doc: &mut OpenDoc, page: usize, options: &pdfcer_core::export::dxf::DxfOptions) {
     // The decomposition, from the cache the canvas and the Objects panel share.
     // `None` is reachable — a page still being read, or one whose content
@@ -120,58 +92,6 @@ pub(super) fn dxf(doc: &mut OpenDoc, page: usize, options: &pdfcer_core::export:
 }
 
 /// **Write the form's values out as FDF, XFDF or CSV.**
-///
-/// `file.export_form_data`. This command was registered, drawn on
-/// File ▸ Export, and **inert**, behind a `SCAFFOLDED` reason claiming the
-/// writer did not exist and citing a `FEATURES.md` row saying the
-/// FDF/XFDF/CSV half was unbuilt.
-///
-/// # The recorded reason was false, and it is the sixth of these
-///
-/// Three writers exist: `fdf::FormData::to_fdf`, `to_xfdf`, and
-/// `formcsv::to_csv`, reached through `EditSession::export_form_data`. The
-/// `FEATURES.md` row the entry cited was itself stale, so the reason was a
-/// **citation of a citation** and nothing had re-read either.
-///
-/// ⇒ The rule now written on the allow-list's own assertion: *when you touch
-/// that list for any purpose, re-derive the reason of the entry beside the one
-/// you came for.* This one was found by doing exactly that.
-///
-/// # The format is chosen by the EXTENSION, not by a third dialog
-///
-/// One picker, three formats, decided by what the operator types or picks in
-/// the *Save as type* box — which is how every application on this desktop
-/// does it, and which `crate::text::tool`'s rule about conventions makes the
-/// default answer rather than a shortcut.
-///
-/// The alternative — a format dialog, then a picker — is two modal windows for
-/// one act, and it puts the choice **before** the operator has thought about
-/// where the file goes, which is the order they think in reversed.
-///
-/// An unrecognised extension is **FDF**, and that is a decision rather than a
-/// fallback: FDF is the format the standard defines for this data (§12.7.8),
-/// it is what Acrobat writes, and it is the only one of the three that a
-/// reader can import without being told what it is.
-///
-/// # The CSV disclosure is not optional, and it is about a spreadsheet
-/// rather than about a PDF
-///
-/// `formcsv::to_csv` **neutralises** values that would otherwise be executed as
-/// formulas when the file is opened in a spreadsheet — a leading `=`, `+`, `-`
-/// or `@`. That is a real and well-known injection route, and pdfcer doing the
-/// right thing silently would leave an operator believing their exported data
-/// is byte-identical to what the form holds.
-///
-/// It is not. `neutralised` counts how many, `neutralised_fields` names them,
-/// and both are reported. Rule 4's *"the half that survives is the point"*: an
-/// inference the operator cannot see still owes them an off-canvas sentence.
-///
-/// # Nothing about the document changes
-///
-/// No `vector_edit`, no epoch bump, no cache invalidation — this module's
-/// header explains why that is what makes these verbs a family. The
-/// disclosures ride `record_edit_disclosure` at the current epoch, so they
-/// stand until the next real edit moves past them.
 pub(super) fn form_data(doc: &mut OpenDoc) {
     // The data first, the picker second — `dxf`'s ordering and its reason:
     // the operator is never asked where to put a file that turns out to be
@@ -326,89 +246,6 @@ fn suggested_path(doc: &OpenDoc) -> std::path::PathBuf {
 /// **Write one or more pages out as PNG, JPEG or SVG** —
 /// `OPERATOR_REQUESTS.md` **O120**, and the third member of this module's
 /// family.
-///
-/// The operator, verbatim:
-///
-/// > *"can you add the ability to export page(es) to png, jpg, svg. note that
-/// > there had better be full support (including transparency where
-/// > supported!)."*
-///
-/// This module's header says the third export is the one that decides whether
-/// the family is real. It is, and it is: nothing here changes the document, no
-/// `vector_edit` runs, no epoch moves, no cache is dropped. What it shares with
-/// its two siblings is the whole of what the module is for — **it reads the
-/// open file and writes a different one.**
-///
-/// # The refusal comes FIRST, before the picker and before the render
-///
-/// [`crate::app::actions::imageexport::ImagePlan::impossible`] is asked before
-/// anything else happens, and the reason is the engine's own instruction:
-///
-/// > **refuse a "transparent" JPEG by name in your UI, never flatten silently**
-///
-/// The window already prevents the combination — its checkbox goes dead when
-/// JPEG is selected and says why — so reaching this branch means the window was
-/// bypassed. That it is *unreachable today* is exactly why it is here: the
-/// property that must hold is **pdfcer never puts a page on a white background
-/// without saying so**, and a guard that lives only in a window makes that a
-/// property of the window rather than of the program. A keymap, a restored
-/// plan, or a later window with a different layout each walk past a window and
-/// none of them walks past this.
-///
-/// ⇒ And it *refuses*. Flattening would produce a file that opens, looks nearly
-/// right, and carries a white rectangle the operator meets when the drawing is
-/// already inside somebody else's document.
-///
-/// # Why there is no call to `pdfcer_render::export::flatten_over`
-///
-/// The engine offers it, this function does not use it, and that is worth
-/// stating rather than leaving as an apparent omission.
-///
-/// Transparency is declined **at the source**, by rendering with
-/// [`pdfcer_render::PageBackdrop::White`]. ISO 32000-1 §11.4.7 already makes
-/// the page an isolated group composited over white, so the renderer's own
-/// composite *is* the standard's; `flatten_over` is a second, later composite
-/// over a buffer that has already been premultiplied. The two agree for
-/// ordinary content and only one of them is the specification's, so that is
-/// the one used. `flatten_over` earns its place in a caller holding a pixmap
-/// it did not render — a clipboard paste, a region grab — and this is not one.
-///
-/// # The order is REFUSE, ASK, RENDER — and it differs from [`dxf`]'s
-///
-/// [`dxf`] does the whole write before opening the picker, on the rule *"the
-/// operator is never asked where to put a file that turns out to be empty"*,
-/// and it can afford to because a DXF write is pure and cannot fail.
-///
-/// A page render is neither pure nor cheap. It is the most expensive thing this
-/// program does, it takes seconds on a dense CAD sheet, and fifty of them
-/// before a picker would mean an operator who presses Cancel has waited for
-/// nothing. So the picker comes second — and the property `dxf`'s ordering was
-/// protecting is preserved by a different mechanism: **everything that could
-/// make this export empty has already been said in the window**, beside the
-/// control that causes it. The pixel count, the `MAX_PIXMAP_EDGE` ceiling, a
-/// range naming no page, and the transparent-JPEG refusal are all on screen
-/// before the button is pressable.
-///
-/// # Rule 4 — the disclosure, off-canvas and afterwards
-///
-/// Nothing is marked on the page or on the canvas. Every sentence goes to
-/// [`super::record_notes`], the same slot [`dxf`] and [`form_data`] use,
-/// stamped with the current epoch so it stands until the next real edit moves
-/// past it.
-///
-/// What it carries, and why each is owed:
-///
-/// * **the resolution written into the file.** The engine's note: *"without
-///   `pHYs` Word places a 300 DPI page four times too large."* That the number
-///   was *chosen* is not the claim; that it *travelled* is.
-/// * **whether transparency survived**, in either direction — the operator
-///   asked for it by name, so both answers are answers.
-/// * **`ExportTally`, for SVG** — shadings rasterised, soft masks kept,
-///   overprint and non-separable blends drawn as their `Normal` approximation,
-///   dashed strokes pre-applied, blend modes Word's importer ignores.
-/// * **that SVG text is glyph outlines**, which nothing counts, which no
-///   inspection of the file by an operator would reveal, and which is the
-///   single largest surprise the format holds.
 pub(super) fn image(doc: &mut OpenDoc, plan: &crate::app::actions::imageexport::ImagePlan) {
     use crate::app::actions::imageexport;
     use crate::app::settings::SettingsExt;
@@ -881,84 +718,6 @@ fn trace_emf_text(o: &pdfcer_render::emf::EmfTextOutcome) {
 
 /// **Write the words on one or more pages out as a plain text file** — the
 /// operator's ask, and the fourth member of this module's family.
-///
-/// > *"also the engine can export PDFs as text. we should have export/import
-/// > for that."*
-///
-/// Both halves of that sentence ship. `super::exporttext`'s header carries the
-/// finding on which of the three senses of *"import text"* the other half is:
-/// `EditSession::place_text` and `blank_document` are wired as
-/// `file.import_text`, and `crate::app::actions::importtext` is the other end
-/// of the round trip.
-///
-/// # It writes the CLIPBOARD's own string
-///
-/// At the plan's defaults, the bytes this writes are exactly what
-/// `file.copy_document_text` puts on the clipboard: the settings funnel's
-/// `ExtractOptions`, `plain_text()`, U+000C between pages, no BOM, no
-/// line-ending rewrite. `app::dispatch::textcopy`'s header makes the argument
-/// for its two verbs sharing one extraction; this is the same argument with a
-/// file on the end of it. **Two answers to "what is the text of this document"
-/// inside one program is worse than either**, because both of them look like
-/// text and nothing on screen would say which one you have.
-///
-/// # The order is EXTRACT, REFUSE, ASK, WRITE — and the refusal is the
-/// whole feature
-///
-/// [`dxf`]'s ordering, not [`image`]'s, and for [`dxf`]'s stated rule: *"the
-/// operator is never asked where to put a file that turns out to be empty."*
-///
-/// Here that rule stops being a nicety and becomes the point of the feature.
-/// **A scanned drawing has no text layer**, so extracting it succeeds, returns
-/// nothing, and would write a zero-byte `.txt` — which is indistinguishable
-/// from a successful export of a blank page. The operator finds out when they
-/// open it, or worse, when whoever they sent it to does.
-///
-/// So a zero character count refuses **before the picker opens**, names why (the
-/// page is a picture of its words rather than words — a fact about their file,
-/// not a pdfcer failure) and names the remedy by its ribbon label,
-/// `File ▸ Recognise text`. See `crate::text::export_text::no_text_at_all`.
-///
-/// ⇒ [`image`] can afford the opposite ordering because a render is expensive
-/// and everything that could make *it* empty is already stated in its window.
-/// An extraction is 331–449 ms on this project's fixtures — `crate::find`'s own
-/// measurement — and the thing that makes this one empty is a property of the
-/// document that no window could have known in advance.
-///
-/// # `extract_pages_view`, for every scope, including "every page"
-///
-/// One entry point rather than two. `resolve_pages` already turns *every page*
-/// into `0..count`, so branching to `extract_document_view` for that case would
-/// buy nothing and would introduce the one thing this feature cannot afford: a
-/// second path to the same string, differing in its failure semantics.
-/// (`extract_document_view` swallows a bad index; `extract_pages_view` reports
-/// `NoSuchPage`, which is the honest answer when a page vanished between the
-/// press and the drain.)
-///
-/// `session.view()`, never `session.document()` — the operator is exporting the
-/// document they are looking at, unsaved edits included (decision 018), which
-/// is the same rule the two clipboard verbs and the print preview follow.
-///
-/// # Rule 4 — the disclosure, off-canvas and afterwards
-///
-/// Nothing is marked on the page. Every sentence goes to [`super::record_notes`]
-/// at the current epoch, and the set is chosen so each one tells the operator
-/// something they could **act** on:
-///
-/// * **the file, the page count and the character count** — the receipt;
-/// * **which pages came out empty**, by number, because an empty page 4 in a
-///   six-page set is a scanned insert they can go and look at;
-/// * **pages that could not be read at all**, kept apart from the above: an
-///   empty page is one pdfcer read and found nothing on, this is one pdfcer
-///   could not read, and rolling them together would let damage present as a
-///   scan;
-/// * **fonts publishing no route to Unicode** — Type 3 without `/ToUnicode`,
-///   Identity-H without `/ToUnicode`. The text renders perfectly and is missing
-///   from the file, which is the standard's own answer (§9.10.2) and is exactly
-///   why it has to be said. Acrobat's answer to this case is silence;
-/// * **characters that fell through the decoding ladder**, as a fraction, so
-///   40-in-200 and 40-in-400,000 do not read as the same event;
-/// * **what pdfcer itself added**, when page markers were asked for.
 pub(super) fn text(doc: &mut OpenDoc, plan: &super::exporttext::TextExportPlan) {
     use crate::app::settings::SettingsExt;
     use crate::text::export_text as t;

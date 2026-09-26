@@ -324,3 +324,43 @@ drag: it pins that the control's bounds are the pen's own
 that would silently rewrite the operator's value if the widget's range
 were narrower than what the pen may legally hold. A control narrower than
 its value is the defect the settings window's own sliders document.
+
+### `const REGION_INK`
+
+One per part rather than one for the group: a harness proving that a colour
+can be *changed* has to click the swatch, and a rect covering all three
+controls would give it the wrong target two times in three.
+
+### `const REGION_DASH`
+
+It doubles as the combo's `id_salt`, which is deliberate and is the one
+place in this module where a region name is load-bearing twice: a driven
+check finds the control by this name, and `egui` remembers the popup's open
+state under it. Two spellings of one control would give the harness a rect
+for a widget whose popup lives under a different key.
+
+### `const REGION_PALETTE`
+
+Published only while a popup is open, which is the point: a driven check
+asking *"did pressing the swatch show Acrobat's colours"* gets no rect at all
+on the frame before the press, and a rect afterwards. A region that were
+always present would answer the question the same way whether the popup had
+opened or not — the exact failure `app::status::filter`'s own header records
+from the day a Select button did nothing for a week.
+
+### `fn show`
+
+# It edits in place and raises nothing
+
+No `Action`, no `HandlerToken`, no return value. The funnel's invariant is
+that no code path runs from a widget to a **document**, and this touches no
+document: it sets the pen the *next* gesture will use, which is application
+state with no undo log to order against and nothing to alias. The same
+argument `crate::dialogs::print` makes about spooling, one size down.
+
+# Horizontal, and narrow on purpose
+
+A ribbon group is a band about 70 points tall, and three stacked rows would
+not fit. More usefully: these three are read together — *what colour, how
+thick* — so a row is what an operator scans, and the ribbon's own group
+caption underneath says which group they are in.

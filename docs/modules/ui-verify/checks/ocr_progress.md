@@ -191,3 +191,31 @@ Deliberately does not test the override branch: setting a process-wide
 environment variable from a test races every other test in the binary,
 and this crate runs its tests in threads. The branch is three lines and
 its risk is a typo in the variable name, which this pins instead.
+
+### `struct OcrSaysHowFarItHasGot`
+
+Runs to completion and asserts that at least two *different* `attempted`
+values were reported, that they rose, that the last one equals the number of
+pages in scope, and that words and characters were counted along the way.
+
+See the module header for why a declared rect is not enough on its own.
+
+### `struct StoppingOcrKeepsWhatItHasDone`
+
+The operator's wording: *"the stop finished the page it is on and keeps the
+work it has done."* So the assertion is a conjunction, and both halves
+matter: some pages were kept (`ocr-recognised pages=` is not zero, and the
+session took a layer), **and** it really was an early end (fewer pages than
+the scope).
+
+### `struct CancellingOcrThrowsAwayWhatItHadDone`
+
+The falsifying half of the pair. Every assertion in [`StoppingOcrKeepsWhatItHasDone`]
+would be satisfied by a build in which Stop and Cancel were the same button;
+this one fails against that build, because it asserts the **absence** of the
+two lines the other one requires — no `ocr-applied`, no `ocr-layer`.
+
+That absence is asserted over the *whole* trace rather than over the tail,
+deliberately. A Cancel that raised the edit and then tried to take it back
+would leave both lines behind and an undo entry in the operator's stack,
+which is not "nothing was kept".

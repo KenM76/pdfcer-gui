@@ -102,10 +102,6 @@ pub(super) const FIT_PAGE: &str = include_str!("assets/fit-page.svg");
 pub(super) const FIT_WIDTH: &str = include_str!("assets/fit-width.svg");
 
 /// `fit-height.svg` - the art for [`super::Icon::FitHeight`].
-///
-/// The exact 90-degree sibling of [`FIT_WIDTH`]: the same corner-bracket
-/// family, rotated, so the ribbon's three fit glyphs read as one set and none
-/// of them is mistaken for another at a glance.
 pub(super) const FIT_HEIGHT: &str = include_str!("assets/fit-height.svg");
 
 /// `floating-panels.svg` — the art for [`super::Icon::FloatingPanels`].
@@ -166,10 +162,6 @@ pub(super) const CUT: &str = include_str!("assets/cut.svg");
 pub(super) const PASTE: &str = include_str!("assets/paste.svg");
 
 /// `cursor.svg` — the art for [`super::Icon::Cursor`].
-///
-/// Authored for pdfcer in the header §3 style contract. The filled half of the
-/// black-arrow / white-arrow pair; its outline is byte-identical to
-/// [`CURSOR_NODE`]'s and that is the whole message.
 pub(super) const CURSOR: &str = include_str!("assets/cursor.svg");
 
 /// `cursor-node.svg` — the art for [`super::Icon::CursorNode`].
@@ -374,14 +366,6 @@ pub(super) const SIDEBAR: &str = include_str!("assets/sidebar.svg");
 pub(super) const SIGNATURES: &str = include_str!("assets/signatures.svg");
 
 /// `sign.svg` — the art for [`super::Icon::Sign`].
-///
-/// The SIGNING control's glyph, and deliberately a different asset from
-/// [`SIGNATURES`] even though the two subjects are one word apart. That one
-/// is a **panel toggle** — it opens a report about signatures that already
-/// exist — and this one **authors** a new one. Sharing a key would make
-/// `tools/compare-mockup-ribbon.py`'s item comparison unable to tell the
-/// File ▸ Security band from the View ▸ Panels row, and would put the same
-/// picture on a control that reads and one that writes.
 pub(super) const SIGN: &str = include_str!("assets/sign.svg");
 
 /// `stamp.svg` — the art for [`super::Icon::Stamp`].
@@ -473,39 +457,18 @@ pub(super) const ZOOM_SELECTION: &str = include_str!("assets/zoom-selection.svg"
 // neighbour it had to stay distinguishable from, and why.
 
 /// `pick-text.svg` — the art for [`super::Icon::PickText`].
-///
-/// Authored for pdfcer in the header §3 style contract — three text lines with
-/// two square grips on the diagonal. Deliberately frameless, so it cannot be
-/// read as [`TEXT_FREETEXT`], and deliberately not an I-beam, so it cannot be
-/// read as [`TEXT_SELECT`] one row below it.
 pub(super) const PICK_TEXT: &str = include_str!("assets/pick-text.svg");
 
 /// `pick-path.svg` — the art for [`super::Icon::PickPath`].
-///
-/// Authored for pdfcer in the header §3 style contract — one straight segment
-/// crossing one curve, with **no nodes anywhere**, which is the only thing
-/// separating it from [`EDIT_OBJECTS`] and [`SHOW_POINTS`].
 pub(super) const PICK_PATH: &str = include_str!("assets/pick-path.svg");
 
 /// `pick-part.svg` — the art for [`super::Icon::PickPart`].
-///
-/// Authored for pdfcer in the header §3 style contract — a three-segment chain
-/// with a bracket under the middle segment only. The bracket's span is the
-/// message: under the whole chain it would mean the Object rung instead.
 pub(super) const PICK_PART: &str = include_str!("assets/pick-part.svg");
 
 /// `pick-form-xobject.svg` — the art for [`super::Icon::PickFormXObject`].
-///
-/// Authored for pdfcer in the header §3 style contract — a frame holding three
-/// unlike marks. The heterogeneous contents are what separate it from
-/// [`TEXT_FREETEXT`]'s evenly spaced prose rules.
 pub(super) const PICK_FORM_XOBJECT: &str = include_str!("assets/pick-form-xobject.svg");
 
 /// `pick-link.svg` — the art for [`super::Icon::PickLink`].
-///
-/// Authored for pdfcer in the header §3 style contract — the box-with-escaping
-/// -arrow every browser and office suite uses for "goes somewhere else".
-/// Explicitly **not** [`LINK`], which is a chain and belongs to Combine.
 pub(super) const PICK_LINK: &str = include_str!("assets/pick-link.svg");
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -674,12 +637,6 @@ pub(super) const RECENT: &str = include_str!("assets/recent.svg");
 pub(super) const RECOGNISE_TEXT: &str = include_str!("assets/recognise-text.svg");
 
 /// `off-page.svg` — the art for [`super::Icon::OffPage`].
-///
-/// Edit ▸ Check for content off the sheet (`edit.offpage`) — a page outline
-/// with line work running out past its left edge. **Stroke-only, deliberately**:
-/// its three redaction siblings all carry a solid bar and this command removes
-/// nothing, so joining the closed fill set would say "destroys content" in the
-/// one cue that survives downscaling. The asset's own header carries the rest.
 pub(super) const OFF_PAGE: &str = include_str!("assets/off-page.svg");
 
 /// `redact-selection.svg` — the art for [`super::Icon::RedactSelection`].
@@ -828,11 +785,6 @@ pub(super) const SET_SCALE: &str = include_str!("assets/set-scale.svg");
 // invites the mistake.
 
 /// `copy-as-vector.svg` — the art for [`super::Icon::CopyAsVector`].
-///
-/// Copy the selection to the clipboard as vector geometry rather than as a
-/// picture of it — `edit.copy_as_vector`, token 408, drawn icon-only beside
-/// Cut / Copy / Paste on Edit ▸ Clipboard. See the asset for which glyph it
-/// must stay distinguishable from and by what cue.
 pub(super) const COPY_AS_VECTOR: &str = include_str!("assets/copy-as-vector.svg");
 
 /// `encrypt.svg` — the art for [`super::Icon::Encrypt`].
@@ -842,61 +794,22 @@ pub(super) const COPY_AS_VECTOR: &str = include_str!("assets/copy-as-vector.svg"
 pub(super) const ENCRYPT: &str = include_str!("assets/encrypt.svg");
 
 /// `export-image.svg` — the art for [`super::Icon::ExportImage`].
-///
-/// Export the page as a raster image — `file.export_image`, which wore
-/// [`DOWNLOAD`] before this art existed. See the asset for the reversal and
-/// its reason.
 pub(super) const EXPORT_IMAGE: &str = include_str!("assets/export-image.svg");
 
 /// `open-in-acrobat.svg` — the art for [`super::Icon::OpenInAcrobat`].
-///
-/// Hand this file to the system's PDF viewer. ⚠ The label names a vendor; the
-/// art carries nothing of that vendor's mark, and the asset's comment states
-/// that constraint before it states anything else.
 pub(super) const OPEN_IN_ACROBAT: &str = include_str!("assets/open-in-acrobat.svg");
 
 /// `permissions.svg` — the art for [`super::Icon::Permissions`].
-///
-/// What the document permits — the engine's `set_permissions`. Worn by
-/// `file.permissions` (token 127) on File ▸ Security; `OPERATOR_REQUESTS.md`
-/// O119 is answered and closed.
 pub(super) const PERMISSIONS: &str = include_str!("assets/permissions.svg");
 
 /// `select-all.svg` — the art for [`super::Icon::SelectAll`].
-///
-/// Select all — `edit.select_all`. ⇒ **A refusal argued by a build session is
-/// not the operator's ruling, however often it is re-quoted.** This glyph
-/// exists because that distinction was lost and he corrected it; the asset's
-/// own comment carries the account, including which half of the old argument
-/// is drawn into the glyph rather than discarded.
 pub(super) const SELECT_ALL: &str = include_str!("assets/select-all.svg");
 
 /// `bold.svg` — the art for [`super::Icon::Bold`].
-///
-/// `format.bold`'s glyph. It was registered with no icon because *"this build
-/// has no such art"* — a statement about SUPPLY, and the operator's standing
-/// ruling is that a missing glyph is **authored**. The asset's own comment
-/// carries the account, and the reason its stroke is 4 rather than the set's
-/// 2.5.
 pub(super) const BOLD: &str = include_str!("assets/bold.svg");
 
 /// `italic.svg` — the art for [`super::Icon::Italic`].
-///
-/// [`BOLD`]'s sibling, on the same ruling and for the same reason. See the
-/// asset for why the slant is exaggerated and why the serifs are offset rather
-/// than centred.
 pub(super) const ITALIC: &str = include_str!("assets/italic.svg");
 
 /// `line-weights.svg` — the art for [`super::Icon::LineWeights`].
-///
-/// `view.line_weights` (`OPERATOR_REQUESTS.md` O137), a control that exists
-/// only because the engine has `RenderOptions::stroke_display` behind it. The
-/// glyph was authored rather than borrowed, on the operator's standing ruling
-/// that a missing glyph is authored, not worked around.
-///
-/// The **only** asset in this directory that does not stroke at a uniform
-/// 2.5, and the asset's own comment carries why: the varying weight IS the
-/// subject, so a glyph drawn at one width would be a picture of the feature
-/// switched off. It also carries the 16 px measurement behind the thinnest
-/// bar's 1.6, and the two axes that keep it clear of `list.svg`.
 pub(super) const LINE_WEIGHTS: &str = include_str!("assets/line-weights.svg");

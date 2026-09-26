@@ -6,11 +6,6 @@
 use crate::app::actions::Action;
 
 /// Whether this file owns `id`.
-///
-/// `pub(crate)` for `dispatch::format::handles`' reason: `shell::commands::reach`'s
-/// reachability checker must be able to **evaluate** every guard arm it finds,
-/// and a guard it cannot evaluate is a place commands could hide from the check
-/// that exists to find them.
 #[must_use]
 pub(crate) fn handles(id: &str) -> bool {
     target(id).is_some()
@@ -51,12 +46,6 @@ fn target(id: &str) -> Option<&'static str> {
 }
 
 /// Raise the command this route points at.
-///
-/// It does **not** re-check the target's guards. `dispatch_command` is the
-/// choke point and the raised id goes through it exactly as a ribbon click
-/// would — which is the entire point of routing rather than performing. A
-/// guard applied here would be a second copy of the target's rule, in the file
-/// whose purpose is to have none.
 pub(crate) fn dispatch(id: &str, actions: &mut Vec<Action>) {
     if let Some(target) = target(id) {
         actions.push(Action::Command(target.to_owned()));

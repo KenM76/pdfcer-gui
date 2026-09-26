@@ -10,10 +10,6 @@ use crate::canvas::selection::{SelectionLevel, SelectionState};
 use crate::canvas::target::TargetId;
 
 /// Which rule a band dragged in this direction selects by.
-///
-/// One function rather than an `if` at the call site, so the convention is
-/// stated once. A second spelling of it somewhere else is how a band that
-/// *paints* as a crossing window comes to *select* as a window.
 #[must_use]
 pub const fn mode_for(crossing: bool) -> MarqueeMode {
     if crossing {
@@ -24,53 +20,6 @@ pub const fn mode_for(crossing: bool) -> MarqueeMode {
 }
 
 /// **Drop the page's own wrapper from a crossing selection.**
-///
-/// # Why this exists, and it was measured rather than anticipated
-///
-/// The first cut of the direction-sensitive band failed
-/// `a_marquee_encloses_objects_inside_a_form` with `[Object(0), Leaf(1)]` where
-/// only the leaf was wanted. That test's fixture is a page-sized form XObject
-/// with squares inside it — the shape a CAD exporter produces, and the shape
-/// `ncored-benchmark-cad-drawing.pdf` has.
-///
-/// A crossing band **touches** a page-sized wrapper wherever it is drawn. So
-/// without this, every right-to-left drag on a wrapped drawing would silently
-/// include the whole sheet in the selection, and the operator's next gesture —
-/// a move, a delete, a cut — would act on all of it.
-///
-/// Under `Enclosed` this could not happen and that is exactly why it is new:
-/// a band that *surrounds* a page-sized form has to surround the page, which
-/// cannot be drawn. Touching one is unavoidable.
-///
-/// # The rule is the shell's existing one
-///
-/// `CanvasTargetProvider::container_is_worth_selecting` already answers *"is
-/// this container really just the sheet?"* — measured against the page extent at
-/// `COVERS_EVERYTHING`, with its own argument about why the threshold is
-/// generous — and `canvas::smart` already applies it to the **click** ladder.
-/// Reusing it here is the consistency argument the provider's own
-/// `hit_test_rect` makes at length: two gestures that both mean *"select this"*
-/// must not disagree about what is selectable.
-///
-/// Nothing new is measured here and no second threshold exists.
-///
-/// # Only a hit that CONTAINS another hit is tested
-///
-/// A lone path covering the whole sheet — a drawing border, which is on almost
-/// every sheet this program is for — is **not** a container and must stay
-/// selectable. Asking the container question about it would drop it, which
-/// would be a second defect wearing the first one's fix.
-///
-/// So the container set is derived from the hits themselves: an id is a wrapper
-/// only if some *other* hit in the same band reports it as its containing form.
-/// Nothing is asked of the provider that the click path does not already ask.
-///
-/// # Parameters, and why they are closures
-///
-/// `container_of` and `worth_selecting` are the two provider queries, passed as
-/// functions so that this rule is testable without a provider, a page or a
-/// decomposition. The rule is the thing worth pinning; the queries are already
-/// under test where they live.
 #[must_use]
 pub fn without_page_wrappers(
     hits: Vec<TargetId>,
@@ -85,20 +34,6 @@ pub fn without_page_wrappers(
 }
 
 /// **Resolve a completed select-band into a new selection.**
-///
-///
-/// `targets` is `None` when the page has no decomposition, in which case the
-/// band selects nothing. That is not an error and must not clear the selection
-/// by a different route than a genuine empty band does: `SelectionState::marquee`
-/// with an empty slice is the one path, and it is reached the same way either
-/// way.
-/// **What a band does to the selection it lands on** — `OPERATOR_REQUESTS.md`
-/// O104.
-///
-/// A band subtracts as well as adds, because of the operator's report *"I can't
-/// unselect things once I have selected them"*. On a CAD sheet with hundreds of
-/// overlapping strokes, taking one object back out by clicking it precisely is
-/// often not practical; a band is how the work is actually done.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Combine {
     /// No modifier: the band's hits become the selection.
@@ -128,18 +63,9 @@ const _: () = {
 impl Combine {
     /// **Every combine there is**, in the order a modifier reaches for them:
     /// no modifier, Shift, Ctrl.
-    ///
-    /// The one authoritative list. Anything that has to visit each combine
-    /// walks this rather than writing its own copy, because a private copy
-    /// cannot go red when the set grows and the guard above only watches this
-    /// one.
     pub const ALL: [Self; 3] = [Self::Replace, Self::Add, Self::Subtract];
 
     /// The word the diagnostic trace spells this with.
-    ///
-    /// A word rather than the derived `Debug` form: a check reads this field by
-    /// equality, and a `Debug` spelling is a rename away from breaking one
-    /// silently.
     #[must_use]
     pub const fn label(self) -> &'static str {
         match self {
@@ -154,10 +80,6 @@ impl Combine {
 }
 
 /// Which [`Combine`] a pair of modifiers asks for.
-///
-/// Shift wins when both are held, because adding is the non-destructive answer
-/// and a band held with every modifier at once is an operator who has not
-/// decided yet.
 #[must_use]
 pub const fn mode(shift: bool, ctrl: bool) -> Combine {
     if shift {
@@ -171,13 +93,6 @@ pub const fn mode(shift: bool, ctrl: bool) -> Combine {
 
 /// **A released band, described once**: where it was drawn, which way, and what
 /// it is to do with what it reached.
-///
-/// The three travel together through every arm of the release and are decided
-/// in one place, by the gesture. Bundling them is what keeps a rung's entry
-/// point from growing an argument list nobody can read a call site of, and it
-/// is also the seam that makes the two rungs' bands provably the same gesture:
-/// the chunk arm and the object arm are handed the same value, so neither can
-/// come to disagree about direction or about which modifier means what.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Band {
     /// The rectangle swept, in **canvas** space — the space the chunk boxes
@@ -192,17 +107,6 @@ pub struct Band {
 
 /// **Everything a released selection band does**, so `canvas::interact` holds
 /// the wiring and this module holds the behaviour.
-///
-///
-/// **THE DIRECTION DECIDES WHAT THE BAND TAKES** (O88): left to right
-/// encloses, right to left touches — AutoCAD's window / crossing-window rule.
-/// This module's header carries the operator's report, why the fix is geometric
-/// rather than about hit tests, and the page-wrapper hazard a crossing band
-/// introduces.
-///
-/// And [`Combine`] decides what it does to what was already selected. The
-/// two are independent: *what the band reaches* and *what it then does with
-/// it*, which is why they are separate arguments rather than one flag.
 pub fn on_release(
     ctx: &egui::Context,
     doc: &OpenDoc,

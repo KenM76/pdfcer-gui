@@ -14,12 +14,6 @@ use pdfcer_core::writer::SaveOptions;
 use pdfcer_render::RenderOptions;
 
 /// The application's view of the operator's configuration.
-///
-/// A **trait on the engine's type** rather than a wrapper struct. The engine's
-/// `Settings` is `#[non_exhaustive]`, so a wrapper would have to re-expose
-/// thirteen fields by hand and would go stale the day a fourteenth arrived —
-/// whereas an extension trait grows only where it must, which is in the three
-/// option builders below.
 pub trait SettingsExt {
     /// Text extraction, configured.
     fn extract_options(&self) -> ExtractOptions;

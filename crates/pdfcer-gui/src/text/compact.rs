@@ -10,11 +10,6 @@ pub const fn window_title() -> &'static str {
 }
 
 /// The opening sentence.
-///
-/// It leads with the **mechanism**, not the benefit, because the mechanism is
-/// the part that explains every consequence below it. An operator who
-/// understands *"pdfcer normally adds to the end of the file"* can predict what a
-/// rewrite costs; one told only *"this makes your file smaller"* cannot.
 #[must_use]
 pub const fn intro() -> &'static str {
     "pdfcer normally saves by adding your changes to the end of the file, which keeps the earlier \
@@ -23,17 +18,6 @@ pub const fn intro() -> &'static str {
 }
 
 /// How much smaller the file is expected to be.
-///
-/// A **measurement of this document**, taken by writing it — not an
-/// estimate. The window computes the compacted bytes before it opens, because a
-/// prediction that turned out wrong on the operator's own file would be worse
-/// than saying nothing: they would have accepted the losses below for a saving
-/// that did not arrive.
-///
-/// The **no-saving** case is a real outcome and gets its own sentence. A file
-/// that has never been edited, or one whose deletions were all in the current
-/// revision anyway, has nothing to reclaim — and *"this will save 0 KB"* reads
-/// as a failure when it is an accurate answer about a tidy file.
 #[must_use]
 pub fn size_change(before: u64, after: u64) -> String {
     if after >= before {
@@ -66,11 +50,6 @@ fn bytes(n: u64) -> String {
 }
 
 /// The previous revision is discarded.
-///
-/// Said to everybody, because everybody loses it and almost nobody knows it
-/// was there. An incremental save leaves the file's earlier state recoverable
-/// from inside the file itself; a rewrite is the moment that stops being true,
-/// and it is the only moment at which saying so is any use.
 #[must_use]
 pub const fn revisions_line() -> &'static str {
     "The earlier version of the drawing that pdfcer keeps inside the file is dropped. Your own \
@@ -78,16 +57,6 @@ pub const fn revisions_line() -> &'static str {
 }
 
 /// The document is signed and the copy will not be.
-///
-/// The loudest sentence in this window, and the only one that is
-/// **conditional**, for `text::unembed`'s reason: a warning about signatures on
-/// every unsigned drawing is noise that teaches an operator to skip the window.
-///
-/// It says *"cannot be repaired"*, which is the part that distinguishes this
-/// from every other loss pdfcer discloses. A signature covers a byte range
-/// (§12.8.1); rewriting the file moves everything, and no later save puts it
-/// back. The operator is being asked to accept something irreversible and is
-/// entitled to be told that in the word that means it.
 #[must_use]
 pub fn signature_line(count: usize) -> String {
     format!(
@@ -98,10 +67,6 @@ pub fn signature_line(count: usize) -> String {
 }
 
 /// The button that writes it.
-///
-/// It names the **act**, not "OK". The operator has just read three sentences
-/// about losses, and a button reading `OK` after that asks them to agree to a
-/// question rather than to perform a thing they chose.
 #[must_use]
 pub const fn save_button() -> &'static str {
     "Choose where to save…"
@@ -130,28 +95,12 @@ pub fn written(path: &str, before: u64, after: u64) -> String {
 }
 
 /// The engine refused to rewrite this file.
-///
-/// A real refusal with a named cause, not a fallback. `pdfcer-core` refuses
-/// a full rewrite by name — since `Pass 281.0` for a **hybrid file whose
-/// `/XRefStm` does not parse**, not for the whole hybrid class this line
-/// claimed until 2026-09-11 — and points at incremental as the supported
-/// path. `app::save`'s header states the rule this obeys:
-/// *"if a future change finds incremental genuinely impossible for some input,
-/// the honest response is to refuse and say so, not to fall back."* This is that
-/// rule read in the other direction, and quietly writing an incremental copy
-/// here would give the operator a file that is not what the command promised.
 #[must_use]
 pub fn refused(detail: &str) -> String {
     format!("pdfcer cannot rewrite this file: {detail}. Save a copy the ordinary way instead.")
 }
 
 /// The operating system refused the write.
-///
-/// The reason is passed through verbatim, on `export_dxf::export_failed`'s
-/// stated rule: *"access is denied"* and *"the device is not ready"* are
-/// different problems with different remedies, and a shell that collapsed them
-/// to *"could not save"* would leave the operator with the one fact they cannot
-/// derive.
 #[must_use]
 pub fn write_failed(detail: &str) -> String {
     format!("pdfcer could not write the compacted copy: {detail}")

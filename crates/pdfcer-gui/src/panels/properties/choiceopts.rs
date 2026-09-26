@@ -86,11 +86,6 @@ const ROW_REGIONS: [[&str; 5]; 3] = [
 
 /// One `/Opt` entry as the panel holds it — decoded, so it is what the operator
 /// reads and types.
-///
-/// A third type beside `forms::ChoiceOption` (raw bytes, the read side) and
-/// `edit::ChoiceOption` (`String`s, the write side): the one a text box can be
-/// bound to. [`ChoiceOptsDraft::read`] and [`to_engine`] are the only two
-/// places the conversion is stated.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct OptionRow {
     /// What a reader displays — `/Opt`'s second element.
@@ -117,10 +112,6 @@ fn to_engine(list: &[OptionRow]) -> Vec<pdfcer_core::edit::ChoiceOption> {
 }
 
 /// The typed half of the option editor.
-///
-/// A draft for the reason [`super::fieldedit::FieldPropsDraft`] has one and for
-/// no other: these controls take typing. The checkboxes read `field.flags` each
-/// frame, so a refused press leaves them where they were.
 #[derive(Default)]
 pub struct ChoiceOptsDraft {
     /// `(fully-qualified name, edit epoch)` the rows below were read at. The
@@ -183,10 +174,6 @@ enum Op {
 }
 
 /// Draw a choice field's option list and the three flags that belong with it.
-///
-/// Called from `fieldedit::section`'s choice branch. `epoch` is the document's
-/// edit epoch — the draft's staleness key, and the stamp `record_note` needs so
-/// a refusal retires when the next edit lands.
 pub fn section(
     ui: &mut Ui,
     field: &Field,

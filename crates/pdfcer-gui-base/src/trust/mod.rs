@@ -24,17 +24,6 @@ const ADDRESS_BOOK: &str = "addressbook.acrodata"; // ui-text-exempt: a file nam
 
 /// Every place an installed Acrobat/Reader may have put its downloaded trust
 /// list on this machine, most likely first.
-///
-/// **Platform-neutral by construction, with no `cfg(windows)`.** `%APPDATA%` is
-/// a Windows variable, so on any other target `env::var` simply returns `Err`
-/// and this returns an empty list — which every caller already handles, because
-/// "no store on this machine" is a real state on Windows too. The CLI takes the
-/// identical approach and states the identical reason.
-///
-/// It reports **candidates**, not findings: nothing here touches the disk.
-/// [`locate`] is what asks whether any of them exists, and keeping the two
-/// apart is what lets [`Located::None`] report *what was looked at*, which is
-/// the only actionable half of "nothing was found".
 #[must_use]
 pub fn candidate_paths() -> Vec<PathBuf> {
     let Ok(appdata) = std::env::var("APPDATA") else {
@@ -54,13 +43,6 @@ pub fn candidate_paths() -> Vec<PathBuf> {
 }
 
 /// What locating a trust store produced.
-///
-/// Five states rather than `Option<PathBuf>`, and every extra one exists
-/// because it is a different sentence to an operator. In particular
-/// [`Self::ConfiguredMissing`] must never be rendered as [`Self::None`]: a
-/// person who typed a path and got *"no trust store was found"* is being told
-/// their machine has no store, when what actually happened is that they made a
-/// typo — and the field they would fix is the one they are looking at.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Located {
     /// The operator named a path in Settings and there is a file there.
@@ -98,10 +80,6 @@ impl Located {
     }
 
     /// The path this state is *about*, whether or not it can be read.
-    ///
-    /// Distinct from [`Self::usable`] on purpose: a missing configured path is
-    /// still the path the operator needs to see printed back, and a control
-    /// that showed nothing there would be answering a typo with silence.
     #[must_use]
     pub fn named(&self) -> Option<&Path> {
         match self {
@@ -112,17 +90,6 @@ impl Located {
 }
 
 /// Find the trust store, preferring what the operator configured.
-///
-/// `configured` is `pdfcer-gui`'s `app::prefs::Prefs::acrobat_trust_store_path` as
-/// typed. It is trimmed here as well as on the way in, because this file is not
-/// the only route a value takes — the same argument `prefs` makes about
-/// `acrobat_path`, and the same reason: a trailing space is a path that does
-/// not exist and the failure presents as *"the setting does nothing"*.
-///
-/// **An empty field means "ask this machine", not "no store".** Clearing a text
-/// box is how a person un-sets it, and reading a cleared box as a positive
-/// choice would suppress the feature with no way back except editing a file by
-/// hand.
 #[must_use]
 pub fn locate(configured: &str) -> Located {
     let configured = configured.trim();
@@ -145,13 +112,6 @@ pub fn locate(configured: &str) -> Located {
 
 /// A trust store as read, with the provenance every surface must show beside
 /// it.
-///
-/// [`Self::modified`] is carried in the same struct as the anchors rather
-/// than fetched where it is displayed. That is deliberate: the count and the
-/// date are one fact — *"1,780 anchors, as Adobe last downloaded them on this
-/// date"* — and a surface that could obtain one without the other would
-/// eventually show the count alone. The whole argument for reading the store
-/// live rather than snapshotting it is that its age stays visible.
 #[derive(Debug, Clone)]
 pub struct Store {
     /// The file that was read.
@@ -172,14 +132,6 @@ pub struct Store {
 }
 
 /// Read a trust store from `path`.
-///
-/// # Errors
-///
-/// Returns the engine's own error text. It is not re-worded here: the engine
-/// names its refusals precisely (`NotAnAddressBook` explains that
-/// `directories.acrodata` and `security-policy.acrodata` carry no anchors), and
-/// a shell that paraphrased would produce a second, vaguer vocabulary for the
-/// same faults.
 pub fn load(path: &Path) -> Result<Store, String> {
     // The stat is taken FIRST, before the read, so the date reported belongs to
     // the bytes that were parsed rather than to whatever the file became while
@@ -239,10 +191,6 @@ pub enum Anchors {
 
 impl Anchors {
     /// Whether trust was actually evaluated.
-    ///
-    /// Used only to decide which sentence to draw, **never** to decide what a
-    /// verdict means. The verdict is the engine's; this predicate says which
-    /// explanation of `NotChecked` belongs beside it.
     #[must_use]
     pub const fn evaluated(&self) -> bool {
         matches!(self, Self::Used { .. })
@@ -250,10 +198,6 @@ impl Anchors {
 }
 
 /// Everything one examination of a file produced.
-///
-/// Deliberately a value with no methods that judge. It carries the engine's
-/// verdicts verbatim and the provenance of the anchors, and every reading of it
-/// happens in `pdfcer-gui`'s `text::trust` where the words live.
 #[derive(Debug, Clone)]
 pub struct Report {
     /// What pool the verdicts were evaluated against.
@@ -270,19 +214,6 @@ pub struct Report {
 }
 
 /// Read a file, resolve the anchor pool, and verify every signature in it.
-///
-/// # Why this takes bytes AND a graph
-///
-/// Because `/ByteRange` is a claim about **bytes**, and the object model cannot
-/// check a claim about bytes against itself — the engine's own reason for
-/// `byte_range_coverage` taking a length rather than deriving one. Verification
-/// needs the real file, digested; the graph is only how the signature
-/// dictionaries are found.
-///
-/// ⚠ The bytes must be **the file on disk**, not the session's rendering of it.
-/// A signature covers what was written, and an unsaved edit is not in the file.
-/// [`examine_path`] is the route that guarantees this; this function is split
-/// out so the whole decision table is testable without a filesystem.
 #[must_use]
 pub fn examine<G: ObjectGraph + ?Sized>(
     graph: &G,
@@ -357,12 +288,6 @@ fn describe_absence(setting: AcrobatTrustStore, configured: &str) -> Anchors {
 }
 
 /// [`examine`], reading the file from disk.
-///
-/// # Errors
-///
-/// The `std::io::Error` text, when the file cannot be read. There is no
-/// verdict in that case and none is invented: a document whose file pdfcer
-/// cannot read is not a document whose signatures failed.
 pub fn examine_path<G: ObjectGraph + ?Sized>(
     graph: &G,
     path: &Path,
@@ -374,15 +299,6 @@ pub fn examine_path<G: ObjectGraph + ?Sized>(
 }
 
 /// A modification time as `YYYY-MM-DD`, UTC.
-///
-/// Date only, no clock time. The question an operator is answering is *"is
-/// this anchor set current?"*, which is a question about weeks and months —
-/// AATL refreshes are not a daily event — and a timestamp to the second would
-/// invite the reading that the number is precise about something it is not.
-///
-/// Returns `None` for a time the filesystem could not give, or one before the
-/// Unix epoch, rather than substituting today. A store with no readable date is
-/// a store whose staleness is unknown, and saying so is the whole point.
 #[must_use]
 pub fn modified_date(at: SystemTime) -> Option<String> {
     let secs = at.duration_since(UNIX_EPOCH).ok()?.as_secs();
@@ -409,17 +325,6 @@ fn slot() -> egui::Id {
 }
 
 /// The verdicts for `path`, computed at most once per distinct [`CacheKey`].
-///
-/// Returns `Err` with the reason the file could not be read — which is a
-/// different statement from any verdict and must not be rendered as one.
-///
-/// **It computes on the first frame it is called on, without being asked.**
-/// The alternative considered was a *Check signatures* button. It was refused:
-/// an operator who has opened a panel called Signatures has already asked, and
-/// a button would leave the panel's default state showing coverage numbers with
-/// no integrity beside them — which is the state this whole feature exists to
-/// end. The cost is one verification the first time the panel is drawn for a
-/// given file; the cache above is what stops it being sixty.
 pub fn cached_report(
     ctx: &egui::Context,
     graph: &(impl ObjectGraph + ?Sized),

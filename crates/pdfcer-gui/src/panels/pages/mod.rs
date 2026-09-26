@@ -26,23 +26,6 @@ use crate::text::pages as t;
 use thumbnails::TileState;
 
 /// Right-click on a page tile in the Pages panel.
-///
-/// Defined by `crate::shell::menus::built_in` — see this module's header,
-/// section 2. The constant lives here rather than being spelled at the attach
-/// site for the reason that module gives for its own four: *"a context id is
-/// used in exactly two places that must agree… a typo in either produces
-/// silence rather than an error."*
-///
-/// `crate::shell::menus::PAGES_ROW` is the other spelling, and
-/// [`tests::the_page_tile_menu_context_is_named_and_defined`] asserts the two
-/// agree — because a menu attached to a context nobody defines opens nothing at
-/// all, silently.
-///
-/// The six verbs it offers all reach a dispatch arm. `pages.split` does not,
-/// and is deliberately **not** on this menu: the dispatcher records what it is
-/// waiting for. `pages.merge_into` and `pages.insert_from_file` are wired but
-/// are document-level verbs rather than verbs about the sheets pointed at, so
-/// they stay on the ribbon's Pages tab.
 pub const PAGES_ROW: &str = "pages.row"; // ui-text-exempt: a menu context id, never displayed
 
 /// The narrowest a tile may be drawn before the grid drops to one column.
@@ -58,10 +41,6 @@ const CURRENT_RING_PTS: f32 = 2.0;
 const SELECTION_MAT_PTS: f32 = 3.0;
 
 /// Draw the Pages panel.
-///
-/// Returns the handler tokens a right-click produced — **intent**, never an
-/// executed command. See [`crate::panels::Panel::show`] on why a panel must
-/// not translate a context-menu command into an [`Action`] for itself.
 #[must_use]
 pub fn body(
     ui: &mut egui::Ui,
@@ -861,10 +840,6 @@ fn tile(
 }
 
 /// How many columns fit in `available` points.
-///
-/// At least one, always: a dock dragged narrower than a single tile must show
-/// a column of squeezed thumbnails rather than none at all, because zero
-/// columns is a panel that has silently emptied itself.
 #[must_use]
 pub fn columns_for(available: f32, spacing: f32) -> usize {
     if !available.is_finite() || available <= 0.0 {
@@ -897,12 +872,6 @@ pub fn tile_width_for(available: f32, spacing: f32, columns: usize) -> f32 {
 }
 
 /// How tall a tile is, from its page's own aspect ratio.
-///
-/// The shape is free — it comes from the page tree, not from rendering — so
-/// every tile is the right shape from the first frame, before any picture
-/// exists. That is what makes the scroll bar honest while the grid fills:
-/// each row occupies its final height whether or not its pictures have
-/// arrived, so nothing jumps.
 #[must_use]
 pub fn tile_height_for(page: &pdfcer_core::page_tree::Page, tile_width: f32) -> f32 {
     let (width, height) = crate::viewer::page_extent_pts(page);
@@ -918,10 +887,6 @@ pub fn tile_height_for(page: &pdfcer_core::page_tree::Page, tile_width: f32) -> 
 
 /// The page at the middle of what is on screen — the centre eviction
 /// measures distance from.
-///
-/// Falls back to the current page when nothing is visible, which happens on
-/// the frame a panel is first mounted and on any frame the dock gives it no
-/// height.
 #[must_use]
 pub fn viewport_centre(visible: &[usize], current: usize) -> usize {
     if visible.is_empty() {
@@ -931,10 +896,6 @@ pub fn viewport_centre(visible: &[usize], current: usize) -> usize {
 }
 
 /// The Pages panel's own state, between frames.
-///
-/// Held by [`crate::panels::PanelsState`], which owns every panel's
-/// inter-frame state — see its header for why that is there rather than on
-/// `PdfcerApp`.
 #[derive(Default)]
 pub struct PagesUi {
     /// Which pages the operator has picked.

@@ -35,13 +35,6 @@ pub fn intro(kind: FormFieldKind) -> String {
 }
 
 /// The label above the name box.
-///
-/// It reads differently for a radio button, and that is the most important
-/// wording decision in this file. For every other kind the name identifies
-/// **this control**; for a radio it identifies **the group**, and two radios
-/// sharing it is what makes them exclusive. An operator who reads the same
-/// label on both will place three radios that are all separately tickable and
-/// wonder why.
 #[must_use]
 pub fn name_label(kind: FormFieldKind) -> String {
     match kind {
@@ -81,11 +74,6 @@ pub fn tooltip_hint() -> String {
 }
 
 /// The consequence of leaving the tooltip empty, stated always.
-///
-/// Not a warning and not conditional on the box being empty: it is a fact about
-/// what a tooltip *does*, which is entirely invisible on screen. Rule 4's
-/// surviving half asks for exactly this — report what cannot be seen, and do
-/// not nag about it.
 #[must_use]
 pub fn tooltip_note() -> String {
     "Shown on hover, and read aloud by a screen reader. Leave it blank if the \
@@ -118,12 +106,6 @@ pub fn password() -> String {
 }
 
 /// What "hide what is typed" does **not** mean.
-///
-/// Salvaged in substance from the old shell's `form_field_password_tooltip`,
-/// which exists because a masked box reads as "secure" to anyone not told
-/// otherwise. It is not: the value is stored as plain text in the file, and
-/// anybody with the file can read it. Getting this wrong is the difference
-/// between a UI convention and a false security claim.
 #[must_use]
 pub fn password_hover() -> String {
     "Shows dots instead of characters on screen. The value is still stored as \
@@ -172,10 +154,6 @@ pub fn export_note() -> String {
 }
 
 /// How a radio group works, said before the operator names one.
-///
-/// The single sentence that stops the most common form-authoring mistake:
-/// placing three radio buttons with three different names and getting three
-/// independent tick boxes that happen to be round.
 #[must_use]
 pub fn radio_group_note() -> String {
     "Place each button in the set with the same group name above, and a \
@@ -238,10 +216,6 @@ pub fn sort() -> String {
 }
 
 /// Who does the sorting, and when.
-///
-/// Worth a hover because the answer is surprising: the flag asks the *viewer*
-/// to sort, so what the operator typed and what a reader sees can differ, and
-/// pdfcer is not the one doing it.
 #[must_use]
 pub fn sort_hover() -> String {
     "Asks the viewer to show them in alphabetical order rather than the order \
@@ -262,10 +236,6 @@ pub fn required() -> String {
 }
 
 /// What "required" actually enforces, and where.
-///
-/// Not in pdfcer. The flag is a request to whatever software submits the form,
-/// and nothing stops a document being saved with the field empty — which is
-/// worth saying, because "required" reads as a guarantee.
 #[must_use]
 pub fn required_hover() -> String {
     "Marks the field as one the form should not be submitted without. Nothing \
@@ -355,10 +325,6 @@ pub const fn background_no_colour_unavailable() -> &'static str {
 }
 
 /// The popup entry that puts the background back to unchosen.
-///
-/// Worded as what the box will look like rather than as undoing a choice,
-/// because before placement there is no file yet for a key to be removed from
-/// — what the operator is picking is how the box will arrive.
 #[must_use]
 pub const fn background_remove_entry() -> &'static str {
     "Place it the usual way"
@@ -397,13 +363,6 @@ pub const fn background_no_colour_note() -> &'static str {
 }
 
 /// The popup note over `/BC` — the same sentence in both of its unset states.
-///
-/// Black, not *nothing*. `WidgetChrome::stroke` resolves an unstated `/BC`
-/// AND an empty one to the same black, so the honest sentence is that the
-/// outline will be drawn — and the way to have none is a border width of 0,
-/// which is the control directly above this one. Because those two states are
-/// indistinguishable before placement, one sentence covers both rather than
-/// two that would have to claim a difference the engine does not make.
 #[must_use]
 pub const fn border_colour_note() -> &'static str {
     "The outline and any mark will be drawn in black unless a colour is chosen here. A box with no border at all is one with a border width of 0."

@@ -14,18 +14,6 @@ use crate::panels::Panel;
 
 /// **Panel ids the defaults name that this build does not register, and
 /// why.**
-///
-/// `(id, reason)`, in the shape and for the reasons
-/// `crate::shell::manifest::PLANNED` uses for absent *commands*: an
-/// omission that is data can be tested, enumerated and grepped, whereas an
-/// omission that is a comment becomes stale the day it stops being true.
-///
-/// Tested in both directions by
-/// `every_default_panel_is_registered_or_declared_absent`: nothing in a
-/// default layout may be missing from both `Panel::ALL` and this list, and
-/// nothing in this list may already exist as a panel. So the day either
-/// panel lands, the suite fails until this entry is removed — which is the
-/// same commit in which the default starts mounting it.
 pub const ABSENT_PANELS: &[(&str, &str)] = &[
     // **The list is empty, and empty is a valid state** — it means every
     // panel the defaults name exists in this build. Do not delete the list:
@@ -75,19 +63,6 @@ fn comments() -> &'static str {
 }
 
 /// The Pages panel's id.
-///
-/// A function rather than a `const`, because the id must come from
-/// [`Panel::command_id`] like every other one — a second spelling of the same
-/// string is a second thing to keep in step, and [`SideSpec`]'s own doc
-/// comment explains why that matters here.
-///
-/// It is a function and not an inline call only so the three arms below read
-/// alike, and so this doc comment has somewhere to live.
-///
-/// `pub(super)` rather than private: it belongs with the arrangements, and
-/// `super`'s upgrade-reconciliation tests name the Pages panel the same way
-/// its own arms do. Deliberately not `pub` —
-/// outside this module the id comes from [`Panel::command_id`] directly.
 pub(super) fn pages() -> &'static str {
     Panel::Pages.command_id()
 }
@@ -105,14 +80,6 @@ const EDIT_INSPECTOR_WIDTH: f32 = 360.0;
 
 /// The default arrangement for `mode_id`, **before** this build's panels
 /// are taken into account.
-///
-/// The intended arrangement, naming every panel the mode is specified to
-/// offer whether or not this build has it. Almost every caller wants
-/// [`layout_for_build`] instead; this exists so the intent is expressible,
-/// testable and readable on its own.
-///
-/// An unrecognised `mode_id` gets the full arrangement — see the module
-/// header on why removing is the opinionated act.
 #[must_use]
 pub fn layout_for(mode_id: &str) -> DockLayout {
     build(&spec(mode_id), None)
@@ -120,15 +87,6 @@ pub fn layout_for(mode_id: &str) -> DockLayout {
 
 /// The default arrangement for `mode_id`, with panels this build does not
 /// register dropped and whatever they emptied pruned.
-///
-/// This is the one an application calls. `SHELL_FRAMEWORK.md` §5b: a
-/// capability's presence is expressed by registering it and by nothing
-/// else, so a default that mounts a panel nothing registers must mount
-/// nothing rather than produce a tab whose body cannot be drawn.
-///
-/// The filter runs over the same [`PanelCatalog`] the dock and the layout
-/// loader use, so "what a fresh profile starts with" and "what a saved
-/// layout is allowed to contain" cannot disagree.
 #[must_use]
 pub fn layout_for_build(mode_id: &str, catalog: &dyn PanelCatalog) -> DockLayout {
     build(&spec(mode_id), Some(catalog))

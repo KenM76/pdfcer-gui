@@ -14,12 +14,6 @@ use egui::{Color32, Context, FontId};
 const SENTINELS: [char; 3] = ['\u{0870}', '\u{2FFFF}', '\u{10FFFD}'];
 
 /// A "can the font stack draw this?" predicate for one font family and size.
-///
-/// Construct once per family, then call [`Self::can_draw`] freely — laying a
-/// single character out is cheap and `epaint` caches galleys.
-///
-/// See the module header for why this exists rather than
-/// [`epaint::Fonts::has_glyph`], which returns false negatives.
 pub struct GlyphProbe {
     font: FontId,
     /// The atlas rectangle `epaint` produces for an unsupported codepoint.
@@ -37,16 +31,6 @@ struct AtlasRect {
 
 impl GlyphProbe {
     /// Fingerprint the substitution mark for `font`.
-    ///
-    /// # Panics
-    ///
-    /// If the three [`SENTINELS`] do not all render identically. That means
-    /// one of them has acquired a real glyph, the fingerprint is no longer
-    /// the substitution mark, and **every subsequent answer would be a false
-    /// pass** — so this fails closed rather than going quietly blind.
-    ///
-    /// Must be called inside a live frame ([`Context::run_ui`] or equivalent);
-    /// `egui` has no fonts before one.
     pub fn new(ctx: &Context, font: FontId) -> Self {
         let rects: Vec<_> = SENTINELS
             .iter()
@@ -71,12 +55,6 @@ impl GlyphProbe {
     }
 
     /// Would `c` render as itself, rather than as the substitution mark?
-    ///
-    /// Returns `false` for the substitution mark's own codepoint (`◻`,
-    /// U+25FB), which is the one irreducible false negative of this approach
-    /// — the mark is indistinguishable from itself. That is harmless here
-    /// (nothing in the catalog uses it) and is asserted in the tests so the
-    /// limit is recorded rather than discovered.
     pub fn can_draw(&self, ctx: &Context, c: char) -> bool {
         Self::uv_rect_of(ctx, &self.font, c) != self.substitute
     }
@@ -125,10 +103,6 @@ pub struct Literal {
 }
 
 /// Why a source file could not be scanned.
-///
-/// Every variant is a **refusal**, never a silent skip. A scanner that
-/// returned "no literals" for a file it could not parse would be the
-/// fail-open shape this gate exists to remove.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ScanError {
     /// A raw string literal (`r"…"` / `r#"…"#`) was found.
@@ -143,39 +117,6 @@ pub enum ScanError {
 }
 
 /// Extract every string and character literal that a human could read.
-///
-/// ## What it excludes, and why each exclusion is principled
-///
-/// 1. **Comments — line, doc and block (nested).** Comments are not drawn.
-///    This matters here more than in most scanners: this codebase's doc
-///    comments are dense with `▸ § —`, and `▸` in particular is a
-///    codepoint the font stack cannot draw. Scanning comments would produce
-///    a permanent false failure that would get the gate switched off.
-///
-/// 2. **`#[cfg(test)]` items, by balanced brace span.** Test prose is read
-///    by whoever is staring at a failing test, never rendered. It is also
-///    where deliberately-exotic strings live — `text/panels/comments.rs`
-///    asserts a note body survives byte for byte using `"多行\ntext"`, and
-///    CJK is genuinely absent from the bundled fonts.
-///
-///    **The skip is bounded, which is `DEFECTS.md` D13.** This scanner skips
-///    exactly the braced item the attribute is attached to and **resumes**, so
-///    a test module in the middle of a file costs nothing. Asserted here
-///    independently of `check-ui-strings.sh`, which holds the same property
-///    through a different implementation:
-///    `tests::a_mid_file_test_module_does_not_blind_the_scanner`.
-///
-/// ## What it does not attempt
-///
-/// Byte strings, macro-generated text, and text composed at runtime from
-/// non-literal sources. The catalog is a set of `&'static str` returns and
-/// `format!` templates, so literals are the whole surface; anything else
-/// would need a real parser and is out of proportion to the risk.
-///
-/// # Errors
-///
-/// See [`ScanError`]. Both variants mean *"this file was not scanned"* and
-/// must be treated as a gate failure, never as a clean result.
 pub fn string_literals(src: &str) -> Result<Vec<Literal>, ScanError> {
     let b: Vec<char> = src.chars().collect();
     let n = b.len();

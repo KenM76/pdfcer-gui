@@ -48,126 +48,15 @@ use pdfcer_core::page_tree::{self, Rect};
 
 /// **The raster size recognition is run at, as a pixel count** — measured,
 /// not chosen.
-///
-///
-/// `ocrs`'s detector **resizes every image to its model's fixed input size**
-/// before running it (`detection.rs`: *"Resize images to the text detection
-/// model's input size"*), then resizes the probability mask back. So the thing
-/// that decides whether a 3 mm character survives detection is not its
-/// resolution in the raster — it is **how much the whole raster is shrunk to
-/// reach the model's input**, which is a function of total pixels and nothing
-/// else. A DPI is only a proxy for that, and it is a bad one: the same DPI is
-/// a 2× reduction on a postcard and an 8× reduction on an A0 sheet.
-///
-/// # The measurement
-///
-/// Run against `D:\Dev\temp\pdfcer\SW41177.pdf` — a real 36-sheet SolidWorks
-/// drawing whose **vector text is the ground truth**, which is what makes this
-/// an accuracy figure rather than an impression. Recognised tokens of three or
-/// more characters were compared against the page's own extracted text:
-///
-///
-/// The first version of this table was produced by a text-detection model that
-/// **did not work** — `pdfcer-core`'s bundled build had been broken since the
-/// engine landed, returning fragments clustered at a page margin plus one
-/// "word" the size of the page. Every number in it was therefore a measurement
-/// of how *noise* varies with resolution, and it was retracted rather than
-/// adjusted. Fixed engine-side in Pass 129.0; re-run here against
-/// `text-detection.rten` **2,510,284 B / `f15cfb56…`**, verified by hash before
-/// measuring, because measuring the same broken thing twice is the obvious way
-/// to waste the exercise.
-///
-/// `SW41177.pdf` page 1, 130 ground-truth tokens of 3+ characters:
-///
-/// | DPI | raster | Mpx | recognised ≥3 chars | exactly in ground truth | was (noise) |
-/// |---:|---|---:|---:|---|---:|
-/// | 72 | 1584×1224 | 1.9 | 207 | 117 (56.5 %) | 34.8 % |
-/// | **100** | **2200×1700** | **3.7** | **210** | **119 (56.7 %)** | 20.0 % |
-/// | 150 | 3300×2550 | 8.4 | 191 | 104 (54.5 %) | 44.7 % |
-/// | 200 | 4400×3400 | 15.0 | 191 | 103 (53.9 %) | 53.9 % ← was 27.5 |
-/// | 300 | 6600×5100 | 33.7 | 191 | **67 (35.1 %)** | 3.3 % |
-///
-/// ## What survived the retraction, and what did not
-///
-/// **Survived: more resolution is not better, and the conventional answer is
-/// the worst one.** 300 DPI — the scanning standard, and what this module's
-/// first implementation used — is still clearly the poorest row, now by 21
-/// points rather than by 41. The mechanism the old table was explained by is
-/// unchanged and is a property of the crate rather than of the weights: `ocrs`
-/// resizes every image to its model's fixed input, so **pixel count governs,
-/// not resolution**, and past a point more pixels only means more downscaling
-/// before the model ever sees them.
-///
-/// **Did not survive: the sharp peak at 150.** The real curve is a *plateau*
-/// from 72 to 200 — 56.5, 56.7, 54.5, 53.9, a spread of under three points,
-/// which is inside the noise of a 130-token sample — and then a cliff. The old
-/// curve's jagged shape (34.8 → 20.0 → 44.7 → 27.5) was the detector failing
-/// differently at each size, and reading a maximum out of it was reading a
-/// maximum out of noise.
-///
-/// **That is why [`TARGET_PIXELS`] does not move.** 8.4 Mpx puts the
-/// benchmark sheet at 150 DPI, which is inside the plateau and 2.2 points off
-/// the nominal best — a difference this sample cannot resolve. The constant was
-/// right for a wrong reason and is now right for a measured one, which is worth
-/// distinguishing: nothing about the code changed, and everything about what is
-/// *known* about it did.
-///
-/// ## What this is still not
-///
-/// Two documents, one of them small. `fixtures/a1-titleblock.pdf` has 16
-/// ground-truth tokens and produced 11.1 / 0.0 / 10.0 / 33.3 / 20.0 % across the
-/// same sweep — too few tokens for any row to mean anything individually,
-/// though it agrees that 300 is not the answer. A defensible *general* figure
-/// needs a corpus of real scans rather than two CAD sheets, and that is
-/// outstanding.
-///
-/// **The first implementation of this module used 300 DPI**, on the entirely
-/// conventional reasoning that 300 is the scanning standard and that more
-/// resolution cannot hurt. It is the worst row on the table — 35.1 % against
-/// 56.7 % — and it was the worst row on the broken table too. That finding has
-/// now been made twice, by two different detectors, which is about as much
-/// confirmation as a single-document measurement can offer.
-///
-/// 8,400,000 is the 150-DPI row, expressed as the quantity that actually
-/// governs. A small scanned page therefore gets *more* DPI than 150 and a large
-/// sheet gets less, which is exactly what the detector's fixed-size resize
-/// wants and what a constant DPI cannot express.
-///
-/// # What this figure is and is not
-///
-/// It is two documents, both CAD — dense linework, which is adversarial for a
-/// model trained on photographs and document pages. **56.7 % is not a quality
-/// claim for pdfcer's OCR on ordinary material**: on a synthetic scan of
-/// ordinary text at 200 dpi, blurred and skewed with sensor noise, the engine
-/// reads 47 of 47 words. These figures are the hard end, not the typical one.
-/// See `ocr::fixture` for what is and is not established about recognition
-/// quality, and the report to the operator for the plain-English version.
 pub const TARGET_PIXELS: u64 = 8_400_000;
 
 /// The most resolution a page is ever rasterized at, in DPI.
-///
-/// A ceiling for **small** pages, where [`TARGET_PIXELS`] would otherwise ask
-/// for an absurd magnification: a business card at 8.4 megapixels is over 1,000
-/// DPI, which costs time and adds nothing — the ink has no more detail in it
-/// than the source had. 300 is the scanning standard and is the right ceiling
-/// even though it is the wrong *target*.
 pub const MAX_DPI: f32 = 300.0;
 
 /// The least resolution a page is ever rasterized at, in DPI.
-///
-/// A floor for pages so large that [`TARGET_PIXELS`] would ask for less than
-/// one device pixel per point. Below this the recognition crops are too small
-/// to carry a glyph at all, and the honest failure — a refusal, or a page of
-/// nonsense the disclosure warns about — is preferable to spending the time.
 pub const MIN_DPI: f32 = 50.0;
 
 /// Why recognition did not happen, in the operator's terms.
-///
-/// Every variant is a **named** cause with a different action behind it. The
-/// engine's own error type does the same thing and for the same stated reason:
-/// on a portable install "the weights are not beside the binary" is the most
-/// likely failure by a wide margin and is entirely fixable — but only if the
-/// message says so.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Refusal {
     /// **This page already draws text**, so recognising it would add an
@@ -213,11 +102,6 @@ pub enum Refusal {
 }
 
 /// A finished recognition, before it is anywhere on disk.
-///
-/// **The bytes and the report travel together and are only ever handed over
-/// together.** `pdfcer-core`'s report type says a caller "that builds a layer
-/// and drops the report has made pdfcer silent about a page of guesses", and
-/// keeping them in one struct is how that is made awkward to do by accident.
 #[derive(Debug, Clone)]
 pub struct Recognised {
     /// **How many pages had been attempted when the operator pressed Stop**, or
@@ -295,32 +179,12 @@ pub struct Recognised {
 }
 
 /// Device pixels per PDF user-space unit for a given DPI.
-///
-/// `dpi / 72.0`, because a PDF user-space unit is 1/72 inch by definition
-/// (ISO 32000-1 §8.3.2.3). One line, in one place, so no call site does the
-/// division by hand and gets 96 into it.
-///
-/// That "one place" is now [`crate::units::scale_from_dpi`], one level
-/// further out again: this function was one of THREE that each held the same
-/// one line, which is the same defect at a larger scale. The `f32` signature
-/// stays because every caller hands the result to `pdfcer-render` as a scale;
-/// the widening and narrowing around the call is cheaper to read than an `f32`
-/// twin of the table would be to maintain.
 #[must_use]
 pub fn raster_scale(dpi: f32) -> f32 {
     crate::units::scale_from_dpi(f64::from(dpi)) as f32
 }
 
 /// The DPI to rasterize a page of `width_pt` × `height_pt` at.
-///
-/// Solves [`TARGET_PIXELS`] for this page's area, then clamps to
-/// [`MIN_DPI`]..=[`MAX_DPI`]. Returns a DPI rather than a scale so that the
-/// number reported to the operator and the number handed to the rasterizer are
-/// derived from one another instead of computed twice.
-///
-/// A page with no area yields [`MAX_DPI`] rather than infinity: the caller has
-/// already refused an empty page by then, and a non-finite scale out of a clamp
-/// would be a worse failure than the one it is guarding.
 #[must_use]
 pub fn fitted_dpi(width_pt: f64, height_pt: f64) -> f32 {
     let area_in_sq_inches =
@@ -342,28 +206,6 @@ pub fn fitted_dpi(width_pt: f64, height_pt: f64) -> f32 {
 }
 
 /// RGBA (or BGRA) pixels to 8-bit greyscale, row-major and top-down.
-///
-/// # Why the luma weights and not a plain average
-///
-/// ITU-R BT.601's `0.299 R + 0.587 G + 0.114 B` — the same coefficients
-/// `pdfcer-core`'s own JPEG paths use. A flat average treats a saturated blue
-/// stamp as mid-grey and a yellow highlighter as near-white, which is exactly
-/// backwards for a page that has been marked up: the blue ink a human reads
-/// easily would fade and the yellow wash the human ignores would swallow the
-/// text under it.
-///
-/// # Why the channel order does not matter here
-///
-/// `tiny_skia::Pixmap` is premultiplied RGBA. The weights below are applied in
-/// that order. If a future backend hands over BGRA the red and blue weights
-/// swap, which shifts a *coloured* pixel's grey by at most 0.185 of full scale
-/// and leaves every neutral pixel — which is nearly all of a scan — exactly
-/// where it was. Stated rather than guarded, because a guard against a
-/// hypothetical byte order would be untestable here.
-///
-/// Alpha is ignored: the rasterizer is asked for a white-backed page, so every
-/// pixel is already composited and an alpha channel that is uniformly opaque
-/// carries no information.
 #[must_use]
 pub fn greyscale(rgba: &[u8], width: u32, height: u32) -> Vec<u8> {
     let expected = (width as usize).saturating_mul(height as usize);
@@ -385,23 +227,6 @@ pub fn greyscale(rgba: &[u8], width: u32, height: u32) -> Vec<u8> {
 }
 
 /// Where this shell looks for model files.
-///
-/// Two locations, in `pdfcer-core`'s order: beside the running executable
-/// (the portable-folder case, which is how `tools/package-portable.py` ships
-/// them), then the platform user-data directory (so a developer running out of
-/// `target/` can put them somewhere durable without copying 12 MB into a
-/// build output that `cargo clean` deletes).
-///
-/// No operator-supplied path is passed today because no setting offers one.
-/// `resolve_model_dir`'s first parameter is left `None` rather than
-/// synthesised, which keeps its documented rule — *a named path that is
-/// missing is an error, never a silent fallback* — reachable the day a setting
-/// exists.
-///
-/// # Errors
-///
-/// [`models::ModelsNotFound`], carrying every path that was tried, which is
-/// the actionable half of the message.
 pub fn resolve_models(
     engine: EngineId,
     exe_dir: Option<&Path>,
@@ -424,10 +249,6 @@ pub fn resolve_models(
 }
 
 /// The directory the running executable is in, if it can be determined.
-///
-/// `None` rather than a guess when `current_exe` fails: a wrong directory here
-/// produces "models not found" naming a path nobody has, which is worse than
-/// naming one fewer place that was genuinely searched.
 #[must_use]
 pub fn exe_dir() -> Option<PathBuf> {
     std::env::current_exe()
@@ -437,10 +258,6 @@ pub fn exe_dir() -> Option<PathBuf> {
 
 /// Everything a recognition needs, assembled on the UI thread and moved whole
 /// onto the worker.
-///
-/// A struct rather than six arguments because it is what crosses the thread
-/// boundary, and because the compiler then checks that every field is `Send`
-/// in one place instead of at a `spawn` call.
 #[derive(Clone)]
 pub struct Request {
     /// The session to read. Only its **base document** is used — see the
@@ -514,41 +331,6 @@ pub struct Request {
 }
 
 /// The worker body. Runs on the spawned thread; touches no GUI type.
-///
-/// Written as a free function taking `&Request` for the same reason
-/// `render::worker::render_on_worker` is: a body that cannot reach `self` is a
-/// body that provably shares nothing with the UI thread.
-///
-/// **Recognise every requested page, chaining the revisions.**
-///
-/// # The shape, and why it is a fold rather than a map
-///
-/// `add_ocr_layer` takes a whole `Document` and returns a whole PDF. So page
-/// two must be recognised **against the output of page one**, not against the
-/// original — otherwise the second write would be an incremental revision over
-/// a base that does not have the first layer, and the first page's words would
-/// be silently dropped.
-///
-/// That chaining was the audit's one UNVERIFIED risk and it was measured before
-/// this was written: two successive in-place recognitions produce a file that
-/// round-trips byte-identical and extracts both layers.
-///
-/// # What a failure on one page does to the rest
-///
-/// **Nothing.** A page with no recognisable text — a blank sheet, a photograph
-/// of a wall — reports `NothingRecognised`, and on a forty-page scan that must
-/// not abandon the other thirty-nine. So a per-page refusal is *counted*, not
-/// propagated, and the run reports how many pages produced words.
-///
-/// The exception is an **engine** failure, which is not about the page: if the
-/// recogniser itself is broken, every remaining page will fail the same way and
-/// grinding through thirty-nine more is only a slower way to say so.
-///
-/// # A run that recognised nothing anywhere is a refusal
-///
-/// If no page produced a single word, there is nothing to write and nothing to
-/// save, and reporting success would leave the operator with a dialog saying it
-/// worked and a document with nothing in it.
 pub(in crate::ocr) fn recognise(
     request: &Request,
     report: &job::Reporter,
@@ -819,10 +601,6 @@ fn pages_of(request: &Request) -> Result<Vec<page_tree::Page>, Refusal> {
 }
 
 /// Whether this build carries a recogniser at all.
-///
-/// Read by the dialog before it looks for models: *cannot look* and *could not
-/// find the files to look with* are different refusals, and asking in the
-/// wrong order would report the second when the first is true.
 #[must_use]
 pub const fn engine_compiled_in() -> bool {
     cfg!(any(feature = "ocrs", feature = "ocrcer"))

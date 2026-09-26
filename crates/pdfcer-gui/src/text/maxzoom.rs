@@ -32,11 +32,6 @@ pub fn heading() -> &'static str {
 }
 
 /// The one sentence of context, under the heading.
-///
-/// It names the **consequence**, not the mechanism. *"pdfcer draws the whole
-/// page below this and only the visible part above it"* is an implementation
-/// detail; *"panning stays instant below, and redraws above"* is what he will
-/// actually notice, and it is the same fact.
 #[must_use]
 pub fn crossover_note() -> &'static str {
     "Below about 1000% pdfcer draws the whole page, so panning is instant. \
@@ -53,11 +48,6 @@ pub fn readout_tooltip() -> &'static str {
 }
 
 /// One preset row's label, from its percentage.
-///
-/// Spelled in the units he used — *"1,000,000,000,000%"* — rather than in
-/// exponent notation. A person reading a menu should not have to decode
-/// `1e12`, and the grouping separators are what make the difference between
-/// a million and a billion legible at a glance.
 #[must_use]
 pub fn preset(percent: f32) -> String {
     let value = percent.round() as u64;
@@ -74,10 +64,6 @@ pub fn preset(percent: f32) -> String {
 }
 
 /// The label on the row that is currently in force.
-///
-/// A suffix rather than a tick, because the rows are a `selectable_label` set
-/// and the selection is already drawn — this says *why* one is selected for
-/// somebody who arrives at the popup without having set it.
 #[must_use]
 pub fn current_suffix() -> &'static str {
     " (current)"

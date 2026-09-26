@@ -307,3 +307,26 @@ Note what this shell refuses to do throughout: read
 [`std::fmt::Display`]. The sentences are unchanged and are still
 implementer-voiced. The engine's own doc says *"Match this, never `Display`
 output"*, and that was this shell's position before the type existed.
+
+### `enum StyleChange`
+
+One variant per control, because **one control press is one undo entry**. A
+struct carrying five `Option`s would let the panel batch a size and a colour
+into a single request — which the engine supports — and would make `Ctrl+Z`
+after two separate presses take back a state the operator never saw. The
+panel commits on `drag_stopped` / `lost_focus` for the same reason.
+
+### `fn apply`
+
+# The ordering is done here, not asked of the caller
+
+`runs` arrives in whatever order the caller measured it; this sorts,
+deduplicates and reverses. A caller that had to remember to pass them
+backwards is a caller that will one day forget, and the failure would be
+silent and rare — see the module header.
+
+# What a refusal does
+
+**Stops.** A restyle that half-applies and carries on is worse than one that
+half-applies and says so: the operator sees some of their text change, has no
+way to tell how much, and the undo stack holds an unknown number of entries.

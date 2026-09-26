@@ -18,16 +18,6 @@
 // ===========================================================================
 
 /// Zero-tint scope: what it is.
-///
-/// **The title asks about GREY, not about "OPM 1's scope".** The engine's
-/// own account of this setting is four screens on a genuine ambiguity in
-/// §8.6.7; the operator's version of the same question is *"does a grey fill
-/// wipe out the spot colour underneath it, or not?"* — which is what he would
-/// have seen on paper and what would send him looking.
-///
-/// ⇒ The window's rule is that a heading names the SYMPTOM. A heading reading
-/// *"Overprint zero-tint scope"* is the field name, and a field name is
-/// findable only by somebody who already knows the answer.
 #[must_use]
 pub const fn zero_tint_title() -> &'static str {
     "Grey over a spot colour in print-ready files"
@@ -40,10 +30,6 @@ pub const fn zero_tint_silence() -> &'static str {
 }
 
 /// What it costs, and what it does not affect.
-///
-/// It names the same narrow reach the blend-space setting does, because it
-/// has the same one: nothing happens on a file that never asked for overprint,
-/// which is nearly every file that is not print-ready.
 #[must_use]
 pub const fn zero_tint_radius() -> &'static str {
     "Changes how overprinted areas are drawn and printed. It never changes the file, and it does nothing at all unless a page actually asks for overprint — which almost none do outside print-ready artwork."
@@ -65,16 +51,6 @@ pub const fn zero_tint_label(scope: pdfcer_core::settings::OverprintZeroTintScop
 }
 
 /// **The suffix that marks whichever scope is currently the default.**
-///
-/// DERIVED from `OverprintZeroTintScope::default()`, never written into a
-/// label — and that is the whole point of it existing.
-///
-///
-/// The label went on saying "(pdfcer's default)" about the option that was no
-/// longer it — a sentence true when written and silently false afterwards,
-/// which is the class this project has now met a dozen times. The engine's own
-/// note is what caught it, and its advice was exactly this: *"if you read
-/// `OverprintZeroTintScope::default()` to decide that, nothing to do."*
 #[must_use]
 pub fn zero_tint_default_suffix(
     scope: pdfcer_core::settings::OverprintZeroTintScope,
@@ -87,12 +63,6 @@ pub fn zero_tint_default_suffix(
 }
 
 /// One scope's description.
-///
-/// Each note says what comes out on paper, with the measured numbers where
-/// there are any and an admission where there are none. The third option is
-/// unmeasured and its note says so in the operator's terms — *"nobody has
-/// checked"* — rather than leaving him to infer it from the absence of a
-/// figure.
 #[must_use]
 pub const fn zero_tint_note(scope: pdfcer_core::settings::OverprintZeroTintScope) -> &'static str {
     use pdfcer_core::settings::OverprintZeroTintScope as S;

@@ -169,3 +169,70 @@ It is unreachable from the panel, which only ever passes names out of
 `AcroForm::groups`. Asserted anyway: the day a caller passes a field
 name, the operator must get nothing armed rather than a confirmation
 block describing a deletion of the wrong size.
+
+### `struct Armed`
+
+Carries the engine's own [`FieldGroupDeletion`] verbatim rather than a
+flattened set of counts, because the panel needs the **names** as well as
+the numbers and because re-shaping the report here would be a second
+vocabulary for facts the engine already has words for.
+
+### `fn armed`
+
+**The panel's read** — see [`crate::panels::forms::groups`]. Returns `None`
+when nothing is armed, or when the armed preview was taken against a
+revision the document has since moved off.
+
+### `fn delete`
+
+# The disclosure is built from the ENGINE'S REPORT, not from the preview
+
+`delete_field_group` returns a [`FieldGroupDeletion`] whose `nodes_removed`
+is *"what the cascade ACTUALLY emptied, not a prediction"* — core replaces
+the preview's figure with the truth and keeps a `debug_assert` for the day
+the two disagree. Building the sentence from the report rather than from the
+armed preview means the operator reads what happened, on the day those two
+stop agreeing, instead of reading what was expected to.
+
+# Rule 4, and why the sentence is owed rather than optional
+
+Deleting a grouping node changes **nothing an operator can see**. The page
+is identical, the canvas is identical, the raster is identical; a form field
+is not drawn as such and a grouping node is not drawn at all. The disclosure
+is not a courtesy on this verb, it is the only evidence that the press did
+anything — which is why it names all three counts and the group.
+
+# The armed preview is not cleared here, and does not need to be
+
+A successful deletion bumps the epoch through `vector_edit`, and [`armed`]
+filters on the epoch. A *failed* one does not bump it, so the preview
+survives a refusal — which is right: the operator is looking at a block
+describing a group that is still there, beside a sentence saying it was not
+removed.
+
+# The refusal is worded HERE, because `vector_edit`'s refusal arm only
+traces
+
+That arm's own comment is explicit about it: a refusal *"is deliberately not
+routed"* to the disclosure row, because a disclosure is after-the-fact and a
+decline is not, and *"sharing one slot would mean an undone gesture and a
+completed one wearing the same wording in the same place."*
+
+The argument is right about the **slot** and it does not license a silence
+on this verb. Every consequence of a grouping-node deletion is off-canvas,
+so an operator who has just read a list of four field names and pressed a
+button labelled *"Delete 4 fields"* has **no evidence at all** of what
+happened — a success and a refusal are the identical screen. A trace line is
+not a disclosure; the operator cannot read it.
+
+So this follows `import_data`'s precedent — the one other form verb that
+words its own decline through [`crate::app::actions::record_note`] — and
+resolves the slot-sharing hazard in the **wording** rather than by adding a
+second mechanism: [`crate::text::forms::field_group_delete_refused`] says
+*"the form is unchanged. Nothing was removed."* in the sentence itself, so
+it cannot be misread as a report of a completed act however it is placed.
+
+The epoch is captured **before** the call and is the right stamp on either
+outcome: a refusal does not move it, so the sentence is current; a success
+moves it, and the success path's own disclosure is stamped with the new one
+by `vector_edit`.

@@ -36,3 +36,39 @@ The sweep is one point at a time, deliberately. A claim about what
 happens across a range that is checked at two widths is a claim about
 two widths: endpoints agreeing is not evidence about what happens
 between them.
+
+### `struct Candidate`
+
+Deliberately not the manifest's `Group`: the ladder needs three widths and a
+priority, and keeping it that way is what makes it testable without building
+a manifest, a registry and a font.
+
+### `fn fit`
+
+Returns a state per group, parallel to `groups`. A pure function of its
+inputs, which is the whole of the monotonicity argument in this module's
+header.
+
+# The ladder
+
+1. Everything at [`State::Natural`]. If it fits, stop — a band that
+   compacted a group it had room for would be making itself harder to read
+   for no gain.
+2. **Re-wrap** every group that gets narrower by it, in manifest order.
+   This rung is exhausted before the next one begins.
+3. **Collapse** in authored priority order, skipping any group that
+   declines.
+4. Stop when it fits, or when the ladder is exhausted — at which point what
+   is left over goes to [`super::plan_band`] and its overflow affordance,
+   which was always going to be the last resort.
+
+Each step re-measures rather than subtracting a precomputed saving,
+because the two are not the same once separators are involved, and the
+difference is exactly the kind of one-group-too-many error that shows up
+only at a single window width.
+
+### `fn widths_after`
+
+A convenience so the caller does not re-derive the same `match` in a third
+place — the states and the widths must agree, and the cheapest way to
+guarantee that is to produce them together.

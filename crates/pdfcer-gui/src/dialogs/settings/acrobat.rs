@@ -8,11 +8,6 @@ use egui::Ui;
 use crate::text::acrobat as t;
 
 /// The region the resolved-state line publishes.
-///
-/// Named, because the whole value of that line is that it is **on screen and
-/// legible**, and `ui-verify` can only assert that about a rect the
-/// application published. A driven check that read the trace would learn what
-/// pdfcer resolved and nothing about whether the operator can see it.
 pub const REGION_RESOLVED: &str = "settings:acrobat.resolved"; // ui-text-exempt: trace region name, never displayed
 
 /// The Browse button's region.
@@ -20,23 +15,6 @@ pub const REGION_BROWSE: &str = "settings:acrobat.browse"; // ui-text-exempt: tr
 
 /// Where Acrobat is — the field, its Browse button, and the line that says
 /// what pdfcer currently resolves.
-///
-/// `text_value` with an identity parse, exactly as [`super::comments`] uses
-/// it and for its stated reason: the helper exists to hold a half-typed
-/// *number* apart from a parsed value, and a path has no invalid intermediate
-/// state. Every keystroke reaches the draft, so Save writes exactly what is on
-/// screen.
-///
-/// **No validation as you type, and no red field.** A path that does not
-/// exist is not a typing error — it is a path to something that is not there
-/// yet, or on a drive that is not mounted, or typed from memory and about to
-/// be corrected. Marking it wrong mid-word would be the field arguing with
-/// somebody who has not finished. The resolved line below says what actually
-/// happened, once, after Save, which is the moment the answer is knowable.
-///
-/// `resolved` is the application's live answer, passed in rather than computed
-/// here: this module must not resolve, because resolving spawns processes and a
-/// Settings pane redraws on every frame.
 pub fn path(
     ui: &mut Ui,
     prefs: &mut crate::app::prefs::Prefs,

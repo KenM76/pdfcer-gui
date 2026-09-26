@@ -8,15 +8,6 @@ use pdfcer_core::document::LoadAnomaly;
 use crate::text::anomalies as t;
 
 /// How many of each class of contradiction this file contained.
-///
-/// A named struct rather than a tuple so the two call sites read as prose and so
-/// a fifth field cannot be added without every construction site being visited
-/// by the compiler.
-///
-/// `unknown` is not a bug counter. It is the count of anomalies reported by a
-/// `LoadAnomaly` variant this build has no arm for, which becomes possible the
-/// moment the engine adds one — see [`crate::text::anomalies::clause_unknown`]
-/// for why silently dropping them would be the worst available behaviour.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub(crate) struct Census {
     /// [`LoadAnomaly::ObjectUnreadable`] — content the document does not have.
@@ -35,12 +26,6 @@ pub(crate) struct Census {
 
 impl Census {
     /// True when the file contained no contradiction at all.
-    ///
-    /// The control the engine's notice calls out by name: *"An empty slice means
-    /// the file was clean — that is the control, and it is tested."* Both
-    /// surfaces draw nothing in this case; see
-    /// [`crate::text::anomalies`]' header for why the all-clear is not stated
-    /// out loud.
     pub const fn is_clean(self) -> bool {
         self.unreadable == 0
             && self.duplicate_keys == 0
@@ -54,13 +39,6 @@ impl Census {
 type Clause = (usize, fn(usize) -> String);
 
 /// Count the anomalies by class.
-///
-/// ⚠ The `_` arm is **not** dead code and must never become an `unreachable!()`.
-/// [`LoadAnomaly`] is `#[non_exhaustive]`, which means a newer `pdfcer-core`
-/// compiles against this shell without the compiler saying a word about a
-/// variant that has no arm here. The gate catches the API growing; this arm
-/// catches what the operator sees in the window between the engine growing and
-/// this file being taught.
 pub(crate) fn census(anomalies: &[LoadAnomaly]) -> Census {
     let mut census = Census::default();
     for anomaly in anomalies {
@@ -76,27 +54,6 @@ pub(crate) fn census(anomalies: &[LoadAnomaly]) -> Census {
 }
 
 /// The census as an ordered list of clauses, ready to be joined into one line.
-///
-/// Empty when the file was clean, which is how the caller knows to draw nothing.
-///
-/// # The order is the argument
-///
-/// Most consequential first, because the bar **truncates** (R128) and truncation
-/// drops from the right. Whatever an operator's window width leaves room for, he
-/// should be reading the gravest clause:
-///
-/// 1. **Objects that could not be read** — the only class where content is
-///    *absent*. Every other class is a choice between two readings of content
-///    that is present.
-/// 2. **Duplicate keys** — pdfcer picked one of two values the file offered, and
-///    on a drawing a wrong pick is a line in the wrong place on a page that
-///    renders perfectly.
-/// 3. **Stream lengths** and 4. **missing terminators** — the file is damaged
-///    and pdfcer measured what the file failed to state. There was no second
-///    reading to choose between, so there is nothing here the operator could
-///    have decided differently.
-/// 5. **Unknown** — last, because it is the only clause that is about *this
-///    build* rather than about the file.
 pub(crate) fn clauses(anomalies: &[LoadAnomaly]) -> Vec<String> {
     let c = census(anomalies);
     // The control, taken first and named. Almost every file an operator opens
@@ -126,11 +83,6 @@ pub(crate) fn clauses(anomalies: &[LoadAnomaly]) -> Vec<String> {
 
 /// The status bar's sentence, or `None` for a file that contained no
 /// contradiction.
-///
-/// `Option` rather than an empty `String` so the caller cannot accidentally draw
-/// an empty row: an allocated, empty, hoverable rect in the status bar is a
-/// disclosure that reads as a rendering bug, and R9 says an inapplicable
-/// capability renders **nothing**.
 pub(crate) fn status_line(anomalies: &[LoadAnomaly]) -> Option<String> {
     let clauses = clauses(anomalies);
     if clauses.is_empty() {
@@ -140,20 +92,6 @@ pub(crate) fn status_line(anomalies: &[LoadAnomaly]) -> Option<String> {
 }
 
 /// One sentence per anomaly, in the order the engine reported them.
-///
-/// # Why these are NOT re-ordered the way [`clauses`] is
-///
-/// The bar's census is a summary and is sorted by consequence. This is the list
-/// the operator reads when he has gone looking for *which*, and the engine's
-/// order is the file's own order — roughly the order the objects appear in the
-/// bytes. Sorting it by class would scatter the two defects of one broken object
-/// (the operator's file has a doubled key *and*, one object later, a stream with
-/// no `/Length`) into two distant groups, and locating a fault in a file is a
-/// positional job.
-///
-/// ⚠ Unbounded in length: a badly damaged file can report hundreds. The caller
-/// draws this inside the Properties panel's existing scroll area — never in the
-/// status bar, which gets the census and nothing else.
 pub(crate) fn rows(anomalies: &[LoadAnomaly]) -> Vec<String> {
     anomalies
         .iter()

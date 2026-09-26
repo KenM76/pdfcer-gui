@@ -88,19 +88,6 @@ pub(super) struct Sweep {
 }
 
 /// **Count the calls to `subject` in one file's source.**
-///
-///
-/// Both a free call (`path::to::subject(..)`) and a method call
-/// (`receiver.subject(..)`) count. The engine's is a free function, so only the
-/// first can occur today; the second is counted because a future engine that
-/// moved it onto a type would otherwise slip the monopoly silently, and because
-/// counting one shape and not the other is the kind of narrowness that makes a
-/// check answer a question nobody asked.
-///
-/// # Errors
-///
-/// The source did not parse as Rust. **Fails closed**: an unreadable file
-/// stops the sweep rather than contributing a reassuring zero.
 pub(super) fn calls_in(src: &str, subject: &str) -> Result<usize, String> {
     use syn::visit::Visit;
 
@@ -143,16 +130,6 @@ pub(super) fn calls_in(src: &str, subject: &str) -> Result<usize, String> {
 
 /// **Walk `root` and count `subject`'s call sites in every `.rs` file under
 /// it.**
-///
-/// `root` is a parameter rather than a reach for [`crate_src`] for
-/// [`calls_in`]'s reason, one level up: the self-test below points it at a
-/// temporary tree containing a planted violation, and a sweep that could only
-/// be aimed at the real crate could not be shown to report one.
-///
-/// # Errors
-///
-/// The directory could not be read, or a file in it did not parse. Both fail
-/// closed.
 pub(super) fn sweep(root: &Path, subject: &str) -> Result<Sweep, String> {
     let mut out = Sweep::default();
     walk(root, subject, &mut out)?;

@@ -179,3 +179,58 @@ A tolerated structural oddity was absorbed and drawn correctly, and a
 `BX`/`EX` skip is the file telling readers to skip it (§7.8.2 Table
 32). Reporting either would put reassurance in front of the findings
 that need reading.
+
+### `const NOTES_OPEN_ID`
+
+`pub(super)` because the parent's R128 test drives the flag directly — it
+measures the bar open and closed, and it can only do that by writing the
+same key this module reads.
+
+### `fn show`
+
+Drawn only when a page has actually been rasterized: the notes describe a
+raster, and `page_texture` is `None` only before the first render and
+after a failure the canvas already reports in words.
+
+**Opening this does not make the bar taller.** The line is drawn beside
+the triangle, inside the same row, elided at [`NOTES_WIDTH_FRACTION`] of
+the bar with the whole text on hover. See the R128 section of this
+module's header for why that is a requirement rather than a layout
+preference.
+
+### `fn findings`
+
+Empty is a real answer and means the page drew clean. Callers word that
+themselves, because the bar and the dialog have different room for it.
+
+# What is reported, and what is deliberately not
+
+Every field here changes **what the operator can see on the page**: text
+that was not drawn, images that were not drawn, glyphs whose shapes are
+not the document's, layers that were hidden, content the file does not
+actually contain. Those are facts an operator can act on — supply a font,
+turn a layer back on, go and find the missing stream.
+
+`Diagnostics::tolerated` and `Diagnostics::compat_skipped` are **not**
+reported. Both count divergences that leave the picture correct: a
+tolerated structural oddity (an unbalanced `Q`, a mid-path `cm`) is
+something the renderer absorbed and drew right anyway, and a `BX`/`EX`
+skip is spec-sanctioned (§7.8.2 Table 32) — the file is *telling* readers
+to skip it. Listing them **here** would put two numbers that mean "nothing
+is wrong" in front of the seven that mean something is.
+
+They are not lost: the Render-diagnostics dialog shows them, separately
+and with a sentence saying they are not faults
+([`crate::text::diagnostics::absorbed`]). That is the distinction this
+exclusion has always rested on — *"this is a status bar, not a report"* —
+finally having a report to be distinguished from.
+
+# Order
+
+Most consequential first: content the file is missing, then whole
+surfaces that were not drawn, then glyph-level substitution, then the
+operator's own hidden layers, then operators pdfcer has not implemented. A
+line that opens with "3 unrecognised drawing operators" and buries "text
+from 2 fonts not drawn" is sorted by the renderer's interest rather than
+by the reader's. The dialog lists them top-down in the same order, for the
+same reason.

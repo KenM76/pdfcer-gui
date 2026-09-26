@@ -66,14 +66,6 @@ pub struct Row<'a> {
 }
 
 /// What the operator asked the key to become.
-///
-/// The shell's own enum rather than `pdfcer_core::edit::MkColorEdit`, which
-/// carries the same two states. `MkColorEdit` is `#[non_exhaustive]`, so
-/// matching it here would need a catch-all arm — and a catch-all is exactly
-/// what [`mk_value`] refuses, for the reason written there: a state added to
-/// the engine's enum must break this file's build rather than fall silently
-/// into a default. The conversion is one `match` in each caller, at the point
-/// where the answer's destination is already known.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Pick {
     /// Write this colour, `MkColor::None` included — the empty array is a
@@ -84,10 +76,6 @@ pub enum Pick {
 }
 
 /// Draw the row. Returns a colour **once**, on the frame the gesture ended.
-///
-/// `None` on every other frame, including every frame of a drag inside the
-/// picker — see [`super::swatch`]'s header for why that matters and what it
-/// costs when it is got wrong.
 pub fn row(ui: &mut Ui, spec: &Row<'_>) -> Option<Pick> {
     // Held outside the call because `MkValue` borrows its mark, and this is the
     // one state whose mark is computed rather than a `&'static str`.

@@ -14,12 +14,10 @@
 //! nothing sounds like it must be changing the document; it is not, and saying
 //! so is the difference between a setting somebody uses and one they leave
 //! alone in case it does something.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/text/settings/ocrlayer.md`.
 
 /// **The colour the recognised text is drawn in** — O229.
-///
-/// Worded around the scan rather than around the layer: the operator is
-/// picking a colour they can *tell apart from the drawing underneath*, which
-/// is the whole of the decision they are making.
 #[must_use]
 pub const fn ocr_colour_title() -> &'static str {
     "Colour of the recognised text"

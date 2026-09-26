@@ -12,10 +12,6 @@ use super::pen::{MAX_WIDTH_PTS, MIN_OPACITY, MIN_WIDTH_PTS, Pen, PenSlot};
 use crate::text::markup as t;
 
 /// The region this control publishes, so a check can find and drive it.
-///
-/// One per part rather than one for the group: a harness proving that a colour
-/// can be *changed* has to click the swatch, and a rect covering all three
-/// controls would give it the wrong target two times in three.
 pub const REGION_INK: &str = "markup.style.ink"; // ui-text-exempt: trace region name, never displayed
 /// As [`REGION_INK`], for the highlighter.
 pub const REGION_HIGHLIGHTER: &str = "markup.style.highlighter"; // ui-text-exempt: trace region name, never displayed
@@ -24,41 +20,13 @@ pub const REGION_WIDTH: &str = "markup.style.width"; // ui-text-exempt: trace re
 /// As [`REGION_INK`], for the opacity.
 pub const REGION_OPACITY: &str = "markup.style.opacity"; // ui-text-exempt: trace region name, never displayed
 /// As [`REGION_INK`], for the line-style chooser.
-///
-/// It doubles as the combo's `id_salt`, which is deliberate and is the one
-/// place in this module where a region name is load-bearing twice: a driven
-/// check finds the control by this name, and `egui` remembers the popup's open
-/// state under it. Two spellings of one control would give the harness a rect
-/// for a widget whose popup lives under a different key.
 pub const REGION_DASH: &str = "markup.style.dash"; // ui-text-exempt: trace region name, never displayed
 /// The palette grid inside an open swatch popup.
-///
-/// Published only while a popup is open, which is the point: a driven check
-/// asking *"did pressing the swatch show Acrobat's colours"* gets no rect at all
-/// on the frame before the press, and a rect afterwards. A region that were
-/// always present would answer the question the same way whether the popup had
-/// opened or not — the exact failure `app::status::filter`'s own header records
-/// from the day a Select button did nothing for a week.
 pub const REGION_PALETTE: &str = "markup.style.palette"; // ui-text-exempt: trace region name, never displayed
 /// The id salt for the *More colours…* disclosure inside the popup.
 const REGION_MORE_COLOURS: &str = "markup.style.more_colours"; // ui-text-exempt: widget id salt, never displayed
 
 /// Draw the Style group's controls, editing `pen` in place.
-///
-/// # It edits in place and raises nothing
-///
-/// No `Action`, no `HandlerToken`, no return value. The funnel's invariant is
-/// that no code path runs from a widget to a **document**, and this touches no
-/// document: it sets the pen the *next* gesture will use, which is application
-/// state with no undo log to order against and nothing to alias. The same
-/// argument `crate::dialogs::print` makes about spooling, one size down.
-///
-/// # Horizontal, and narrow on purpose
-///
-/// A ribbon group is a band about 70 points tall, and three stacked rows would
-/// not fit. More usefully: these three are read together — *what colour, how
-/// thick* — so a row is what an operator scans, and the ribbon's own group
-/// caption underneath says which group they are in.
 pub fn show(ui: &mut Ui, pen: &mut Pen) {
     ui.horizontal(|ui| {
         // The two swatches are ADJACENT and labelled, rather than one swatch

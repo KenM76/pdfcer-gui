@@ -28,11 +28,6 @@ const VENDOR: [&str; 2] = ["Adobe", "Acrobat"]; // ui-text-exempt: filesystem na
 const NOT_A_GENERATION: [&str; 3] = ["Privileged", "TypeQuest", "Preflight"];
 
 /// The operator's Acrobat stamps folder, if one can be identified.
-///
-/// Returns the folder whether or not it exists — an operator who has never
-/// made a stamp in Acrobat has no `Stamps` directory, and suggesting the path
-/// it *would* have is more useful than suggesting nothing. The caller's
-/// picker creates it if he accepts.
 #[must_use]
 pub fn user_stamps_dir() -> Option<PathBuf> {
     let appdata = std::env::var_os("APPDATA")?;
@@ -84,17 +79,6 @@ fn pick_generation(found: &[(String, bool)]) -> Option<String> {
 }
 
 /// A filename for a collection whose category is `category`.
-///
-/// Acrobat writes an opaque key here and reads the category from `/Info`
-/// `/Title`, so the filename is ours to choose and a readable one is strictly
-/// better for anyone who ever opens that folder.
-///
-/// **`set_file_name`, never `set_extension`** is the rule at the picker; the
-/// same hazard applies to building the string. A category of `Rev. 2` would
-/// have `set_extension` replace `2` and produce `Rev..pdf`, so the extension
-/// is concatenated, never substituted. The finding is
-/// `app/actions/export.rs`'s and is repeated here because the next person to
-/// write a suggested filename will not have read that one.
 #[must_use]
 pub fn suggested_file_name(category: &str) -> String {
     let cleaned: String = category

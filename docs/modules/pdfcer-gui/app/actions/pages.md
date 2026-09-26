@@ -181,3 +181,188 @@ The empty case matters as much as the full one: `vector_edit` records
 `None` for an empty list, so a build that returned a placeholder
 sentence would put a line under every page delete and train the operator
 to ignore the ones that mean something.
+
+### `enum PageAction`
+
+## Why this is a sub-enum rather than five more variants on `Action`
+
+The same three reasons [`super::dimensions::DimensionAction`] gives, and the
+first is again the one that decided it:
+
+1. **They share a rule the flat enum could not express.** Every verb here
+   can **renumber** the document, and what each owes the shell's derived
+   state afterwards is different: a rotation preserves both selections
+   (nothing renumbers), a reorder remaps the Pages panel's picks and clears
+   the canvas selection, a delete clears both, an insert navigates to what
+   arrived. As five flat variants that rule is re-derived in five arms; as a
+   family it lives here, where a sixth verb has to answer it.
+
+   The failure that guards against is specific and silent: a page verb with
+   the wrong invalidation produces a **correct document** and a wrong
+   screen, so nothing fails and the operator sees a selection pointing at a
+   sheet that has moved.
+2. **R2.** `super`'s enum crossed 1,500 lines when image placement landed,
+   and the alternative to a seam is thinner prose — which the file-size
+   gate's own header names as the incentive it refuses to create.
+3. **The destination already existed.** This module has held the five
+   verbs' *bodies* since page operations shipped, and `apply` already routed
+   every one of them here. The enum was the only half still living
+   elsewhere.
+
+### `fn resync`
+
+Called from `super::apply::vector_edit`'s success path — every document
+change in the application, including an undo or a redo of one. See the
+module header for why it lives there rather than in the four page arms, and
+for the table of what each kind of edit invalidates.
+
+# The comparison, and why it is `(id, rotate)` rather than the whole page
+
+`pdfcer_core::page_tree::Page` is not `PartialEq` and comparing it fully
+would compare two resolved `/Resources` dictionaries, which is expensive and
+answers a question nobody asked. The pair below is the **complete** set of
+page facts anything in this application caches:
+
+* **`id`** — the page object's identity. A change in the *sequence* of ids
+  is a reorder or a delete, and it is the only signal that separates "page 3
+  is a different sheet now" from "page 3 looks different now". Nothing else
+  in `Page` can tell those apart, which is why identity rather than geometry
+  is the key.
+* **`rotate`** — the one page attribute an edit in this build changes that
+  does not change the id. A rotation leaves every index meaning the same
+  sheet and makes every cached picture of it wrong.
+
+A page whose *media box* changed would be missed. No verb in this build
+changes one, and the honest note is here rather than in a comment claiming
+completeness: the day a crop verb lands, its extent belongs in this pair.
+
+# What a failed page walk does
+
+Traces and returns, leaving the previous vector in place. The alternative —
+emptying it — would turn a transient page-tree read failure into a document
+that appears to have no pages, and an operator cannot save what the shell
+has decided is empty. `page_tree::pages` fails only on structural damage,
+which an edit through `EditSession` cannot introduce; this is the honest
+answer for a case that should not arise rather than a case that is expected.
+
+### `fn merge_into`
+
+# Why this uses the SESSION verb and not `pageops::insert`
+
+`pdfcer_core::pageops::insert` also inserts pages and returns the bytes of a
+**new document**. Wiring that would have meant replacing `OpenDoc::session`
+wholesale — which discards the undo stack, invisibly to any test that
+checks page counts, and visibly the first time an operator presses Ctrl+Z
+twice.
+
+So it was filed rather than shipped, and `pdfcer-core` answered the same day
+with `EditSession::insert_pages`: the missing member of the `delete_pages` /
+`reorder_pages` / `rotate_pages` family. It records **one** undoable command
+however many pages arrive, exactly as a reorder does however many move.
+
+# What it does not carry
+
+Page content, resources, fonts and XObjects come across at fresh object
+numbers. The source's **document-level** structures do not — outlines, the
+AcroForm field tree, named destinations, page labels. That is the honest
+cost of staying incremental, because a document-level merge rewrites objects
+an incremental save exists in order not to touch.
+
+[`crate::text::pages::inserted`] says so in the disclosure, because an
+operator whose bookmarks did not come across is entitled to know at the
+moment it happened rather than by going looking for a bug.
+
+# The three ways it can decline, and why they read differently
+
+| condition | sentence |
+|---|---|
+| the file would not open | [`crate::text::pages::insert_failed`], carrying the engine's own reason — encrypted, truncated, not a PDF |
+| it opened and has no pages | [`crate::text::pages::insert_empty`] — **not a failure**, and collapsing it into one would send the operator looking for corruption that is not there |
+| the insert itself refused | `vector_edit`'s own decline path, as every other edit |
+**Merge a whole document into this one**, with its form, its bookmarks and
+its named destinations.
+
+Raised by `pages.merge_into` on the Pages tab.
+
+# It is not [`insert_from_file`] with "all pages" ticked
+
+`insert_pages` takes some pages and **orphans** the widgets on them: a form
+field arriving that way is drawn and cannot be filled. `merge_document`
+re-parents each widget to its field, so the field arrives working — the
+engine's own words, *"that is the whole point of the verb"* — and carries
+the source's `/AcroForm`, its outline and its named destinations with it.
+
+So the two commands on the Pages tab are *"pages"* and *"a document, with
+the things that make its pages work"*, and an operator choosing between them
+has no way to find that out except from the tooltips.
+
+# The blocker this had was real, and it was answered
+
+Its `SCAFFOLDED` entry read: *"`insert` returns the bytes of a NEW document
+rather than mutating the session … wiring it means replacing
+`OpenDoc::session` wholesale, which discards the command log the undo work
+is building."* That was **true when written**, was filed rather than worked
+around, and the engine answered it with an in-session verb that is one undo
+entry.
+
+What the entry then said — that this *"wants a destination document, and a
+shell that can only edit the open document has nowhere to put it"* — had the
+destination backwards: the manifest's own taxonomy is that Pages ▸ Merge
+*adds to this document* and Tools ▸ Merge *combines files into a new one*.
+The open document **is** the destination. Found by re-deriving the list.
+
+# Position
+
+`InsertPosition::End`, and it is not a placeholder. Merging is *"add this
+document to mine"*, and every application that offers it appends — the
+alternative, asking where, is `pages.insert_from_file`'s question and that
+command already asks it. A merge that opened a position dialog would be the
+insert command wearing a different label.
+
+### `fn insert_from_view`
+
+Sharing it is not merely tidy. `crate::text::pages::inserted` reports six
+facts about what did and did not come across (orphaned widgets, of which
+some are unrecoverable; a dropped outline; dropped page labels; stale page
+labels), and a second copy of that reporting would be a second place for it
+to fall behind what the engine actually returns.
+
+# Returns
+
+**How many pages the document actually gained**, which is `0` for every
+refusal — an empty operand list, an engine decline, a source with nothing in
+it. The cross-document *move* needs it: the source's pages are removed only
+if the target's insert happened, and *"did it happen"* is a
+question this function is the only one in a position to answer. A move that
+deleted first, or deleted regardless, would lose the operator's sheets to a
+refusal they never saw.
+
+### `fn apply`
+
+## Why this takes `panels` as well as `doc`
+
+Because the answer to *"what does this edit do to what is on screen?"* is
+**different for each of the five**, and three of the answers are about the
+Pages panel's own picks, which live on [`crate::panels::PanelsState`] rather
+than on the document:
+
+| verb | canvas selection | panel picks |
+|---|---|---|
+| rotate | kept — nothing renumbers | kept |
+| reorder | cleared by the resync | **remapped** through the permutation |
+| delete | cleared by the resync | **cleared** |
+| insert | — | — (the view navigates instead) |
+| extract | — | — (no document changes at all) |
+
+`vector_edit` cannot reach `PanelsState`, so the choice has to be made by
+the caller of it — and making it *here*, beside the bodies, is what keeps
+the table above in one place instead of spread across five arms in the
+interpreter.
+
+## Every guard is on the EPOCH, not on a return value
+
+A refused delete — the engine refuses removing every page, §7.7.3.3 — must
+leave the operator's selection exactly as they built it. Testing whether
+the epoch moved is what distinguishes *"the edit applied"* from *"the verb
+was called"*, and it is the one signal that is true for every path including
+a session that could not be borrowed.

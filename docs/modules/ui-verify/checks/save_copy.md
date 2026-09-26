@@ -282,3 +282,11 @@ would pass against the build this phase exists to catch.
 A degenerate one would be refused by `markup::action`'s no-extent rule
 and phase B would report "the drag authored nothing" about a fixture
 defect. A drag near the edge would be clamped by the canvas.
+
+### `fn click_command`
+
+A SKIP rather than a failure when nothing was reported, on
+[`crate::checks::markup_rectangle`]'s rule: a check that could not deliver a
+click has learned nothing about the application, and naming a feature as the
+culprit when nothing was ever clicked at it is worse than no check at all.
+`pub(crate)` for [`crate::checks::text_edit`] — see [`click_tab`].

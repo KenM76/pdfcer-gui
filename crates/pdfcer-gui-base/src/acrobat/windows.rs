@@ -48,10 +48,6 @@ const CLASSES: &str = r"HKLM\SOFTWARE\Classes";
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 /// The real machine.
-///
-/// A unit struct with no state: every answer is read fresh, because the
-/// operator can install Acrobat while pdfcer is running and a cached "no"
-/// would outlive the fact it recorded.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Windows;
 
@@ -124,10 +120,6 @@ fn reg_query(key: &str, args: &[&str]) -> Option<String> {
 
 /// Pull the value out of `reg query` output. See this module's header for the
 /// format and for the one way this is fragile.
-///
-/// Public to the crate rather than private so that its tests can be real: the
-/// format is the thing most likely to be wrong, and it is the only part of
-/// this file that can be tested without a registry.
 #[must_use]
 pub fn value_from_reg_output(text: &str) -> Option<String> {
     // ui-text-exempt: registry value TYPE tokens, matched literally in

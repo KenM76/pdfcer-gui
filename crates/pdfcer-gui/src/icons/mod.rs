@@ -19,12 +19,6 @@ pub mod paint;
 pub mod svg;
 
 /// Font-glyph coverage: *can the stack actually draw this character?*
-///
-/// Test-only, and the sibling of [`paint_missing_mark`] on the text side —
-/// same question ("what happens when a mark cannot be drawn?"), different
-/// pipeline. It carries the widened glyph gate over `crate::text`, and the
-/// finding that `egui`'s own `has_glyph` answers the question incorrectly.
-/// See `DEFECTS.md` D12 and the module header.
 #[cfg(test)]
 pub mod glyphs;
 
@@ -37,27 +31,6 @@ use cache::with_cache;
 
 /// Icon edge length in **logical points** for a control this crate draws
 /// itself.
-///
-/// The ribbon does not use this — it reserves a square from
-/// `egui_shell::theme::Metrics::icon_pts` and hands the rect to the painter,
-/// which is the right layering: the shell owns its own metrics. This is the
-/// size for menus, the status bar and anything else drawn with [`image`].
-///
-/// # Recorded deviation: 16 pt, not the 18–20 px the ui-spec suggested
-///
-/// A toolbar button is 28×24 pt and egui's default `button_padding` is (4,1),
-/// leaving a 20×22 pt content box. The ui-spec
-/// §4.1 asked for "roughly 18–20px … leaving a few px of padding on every
-/// side"; those two halves of the sentence conflict — 18 pt in a 20 pt box
-/// leaves 1 pt, not "a few".
-///
-/// 16 pt honours the paragraph's actual intent (the click target stays
-/// meaningfully larger than the visible glyph — the Fitts's-law win the spec
-/// is really asking for), leaves 2 pt of padding horizontally and 3 pt
-/// vertically, and pairs optically with egui's 12.5 pt body text on
-/// icon+text controls, which an 18 pt glyph does not. It also happens to
-/// match `egui_shell`'s own `Metrics::icon_pts` for the Quiet and Dark
-/// presets, so the two families of control agree by default.
 pub const ICON_PTS: f32 = 16.0;
 
 /// How heavily an icon's outline is stroked.
@@ -75,16 +48,6 @@ pub enum IconWeight {
 
 /// Build the drawable image for `icon`, tinted `tint`, at [`ICON_PTS`]
 /// logical points.
-///
-/// The texture is rasterized at `ICON_PTS * pixels_per_point()` PHYSICAL
-/// pixels and then declared to be `ICON_PTS` logical points wide, which is
-/// what makes it crisp on a HiDPI display instead of a stretched blur. See
-/// this module's header, "DPI".
-///
-/// Prefer [`paint_icon`] where a `Painter` and a rect are already in hand
-/// (anything inside a laid-out widget); this returns an [`egui::Image`]
-/// widget for the case where the caller is composing a layout and wants the
-/// icon to take part in it.
 pub fn image_tinted(
     ui: &egui::Ui,
     icon: Icon,
@@ -109,56 +72,11 @@ pub fn image_tinted(
 }
 
 /// An icon in the ordinary (non-selected) state.
-///
-/// The tint is `ui.visuals().text_color()` read from the CALLER's `Ui`,
-/// which is what makes an icon inside `add_enabled_ui(false, …)` fade in
-/// lockstep with the text beside it, with no disabled-state logic of its
-/// own. It is also why no colour is chosen here: the theme already set that
-/// visual.
 pub fn image(ui: &egui::Ui, icon: Icon) -> egui::Image<'static> {
     image_tinted(ui, icon, IconWeight::Regular, ui.visuals().text_color())
 }
 
 /// An icon in the selected/active state of a toggle.
-///
-/// Two cues at once, neither of which is the background fill egui already
-/// paints: the accent tint AND [`IconWeight::Bold`]. That layering is the
-/// standing "selected state is never colour alone" rule surviving the loss
-/// of a text label to embolden.
-///
-/// # WHICH BACKGROUND THIS GLYPH IS DRAWN ON, since it is not this
-/// function that paints it
-///
-/// The plate underneath is **`egui`'s selected-widget fill** — the theme's
-/// [`egui_shell::theme::Palette::selected_plate`]. `egui` substitutes it into
-/// both `bg_fill` and `weak_bg_fill` for anything carrying `SELECTED_CLASS`
-/// (`egui-0.35.0/src/widget_style.rs:151-154`), so a toggle drawn with
-/// `Button::image(...).selected(true)` gets that plate whether or not the call
-/// site mentions a colour. This function's only job is to put the ink that
-/// reads on it into the glyph.
-///
-/// [`Theme::selected_widget_ink`] is *defined* as that ink, and
-/// `egui_shell::theme::tests::the_selected_widget_accessors_agree_with_the_style_egui_will_paint`
-/// asserts it equals `visuals.selection.stroke.color` in every preset — so the
-/// pairing is held by an assertion, not by this paragraph.
-///
-/// # Why not `ui.visuals().selection.stroke.color`, which is the same value
-///
-/// Same value, different promise, and `check-selection-channel.sh` forbids the
-/// raw read here for that reason. `visuals.selection` is a raw `egui` channel
-/// whose meaning the theme decides, and re-pointing it is cheap: it has
-/// variously carried the canvas's 27 % wash (defect T2), `accent` + `on_accent`
-/// (which breaks the focused-`TextEdit` ring `egui` drives from the *same*
-/// field), and `selected_plate` + `accent`. Each re-pointing silently changes
-/// what this glyph is tinted with, and nothing here fails. A named accessor
-/// cannot drift that way: it is checked against the shipped style, and a
-/// re-pointing has to walk past a red test that names this call site.
-///
-/// Note the ink is deliberately NOT [`egui_shell::theme::Theme::accent_pair`]'s
-/// `on_accent`. That pair is the *emphasised action* surface — the full accent
-/// at full strength — and a selected toggle is a quieter thing: a diluted plate
-/// with accent ink. Tinting this glyph `on_accent` would put a near-white mark
-/// on a pale plate, which is `DEFECTS.md` D2 exactly.
 pub fn selected_image(ui: &egui::Ui, icon: Icon) -> egui::Image<'static> {
     let tint = egui_shell::theme::Theme::selected_widget_ink(ui.ctx());
     image_tinted(ui, icon, IconWeight::Bold, tint)

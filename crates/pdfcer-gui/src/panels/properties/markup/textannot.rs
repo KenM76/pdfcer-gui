@@ -20,34 +20,9 @@ pub(super) const REGION: &str = "properties.markup.textannot"; // ui-text-exempt
 
 /// The **label-size spinner**'s own region, published only when the row is
 /// actually on screen.
-///
-/// # Why this constant exists at all
-///
-/// The operator, twice, in the same words:
-///
-/// > *"still can't adjust the size of a stamp on the canvas, **or by entering a
-/// > different size in the properties box**."*
-///
-/// The second clause is this row. A region is how `tools/ui-verify` locates a
-/// control, and a control with no region can be drawn under another widget,
-/// clipped off the bottom of the panel's scroller, or not drawn at all, with
-/// every test in the crate still green. A panel can be unreachable in a real
-/// build with every gate passing, which is why R1 says a phase is not done
-/// until the behaviour is asserted by driving the binary.
-///
-/// ⇒ Published through [`crate::diag::ui_rect_visible`] and not `ui_rect`, for
-/// the reason the rail's header gives in full: this row lives inside a
-/// scrolling panel, and a rectangle published for a row that is scrolled out of
-/// view is a rectangle a driven check will click on — hitting whatever is
-/// really there.
 pub(super) const SIZE_REGION: &str = "properties.markup.textannot.size"; // ui-text-exempt: trace region name, never displayed
 
 /// The **fit chooser**'s region — see [`SIZE_REGION`] for the argument.
-///
-/// Separate from the spinner's because the two are separate failure modes: a
-/// build can draw the number and clip the chooser below it, and the operator
-/// then has a size they can change and no way to say what should give when it
-/// stops fitting.
 pub(super) const FIT_REGION: &str = "properties.markup.textannot.fit"; // ui-text-exempt: trace region name, never displayed
 
 /// The trace slot the label row reports **its own reading** through.
@@ -75,28 +50,6 @@ const ROW_SLOT: &str = "stamp-label-row"; // ui-text-exempt: diagnostic trace sl
 /// **Which of `pdfcer-core`'s TWO annotation-style verbs reaches the
 /// selected mark** — the guard between them, as a `match` the compiler
 /// checks.
-///
-/// # Why an enum and not two booleans
-///
-/// Because two booleans have four states and only three of them mean anything,
-/// and the fourth — *both verbs reach it* — is the one that would send a mark
-/// down whichever branch happened to be tested first. The two engine readers
-/// are disjoint by construction (`spec_from_dict` has no `/Text`, `/Stamp` or
-/// `/FreeText` arm; `text_spec_from_dict` has **only** those three), so the
-/// disjointness is a fact about the engine — and encoding it in a type is the
-/// difference between a fact that holds and a fact that is relied upon.
-///
-/// # ⚠ [`Self::TextBoxWithheld`] is this SHELL's decision, not the engine's
-///
-/// Every other arm reports what an engine function answered.
-/// This one reports a refusal of our own, and it is labelled so nobody reads it
-/// as a capability gap and files it: `set_text_annot_style` restyles a
-/// `/FreeText` perfectly well. The module header carries what the refusal was
-/// written against, and why that reasoning now wants re-checking.
-///
-/// ⚠ **`Clone`, not `Copy`** — [`Self::TextAnnot`] carries a [`Reading`], which
-/// carries a [`StickyIcon`], whose `Other(Vec<u8>)` variant owns its bytes. The
-/// `match` in `super::section` binds it by reference.
 #[derive(Debug, Clone)]
 pub(super) enum Reach {
     /// `EditSession::set_markup_style` — the geometric family and the four text
@@ -115,18 +68,6 @@ pub(super) enum Reach {
 
 /// **Which text-bearing face is selected** — the closed set
 /// `set_text_annot_style` is offered for by this shell.
-///
-/// An enum rather than the `/Subtype` string, so that *which properties does
-/// this face take?* is answered by a `match` the compiler checks. A `bool` pair
-/// (`takes_icon`, `takes_colour`) would let a third face arrive and be given
-/// both by whichever default the author typed first.
-///
-/// ⚠ **`/FreeText` is deliberately not a variant.** The engine's verb accepts
-/// one; this shell declines to send it, and the module header carries the
-/// measurement. Modelling it here as a face that takes only a colour would put
-/// a live control in front of the operator whose press unwraps their callout —
-/// which is the *visible control, silently destructive* case, one worse than
-/// the *visible control, silently inert* case this panel already fixed once.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum Face {
     /// `/Text` — a sticky note. Icon and colour.
@@ -140,13 +81,6 @@ pub(super) enum Face {
 
 impl Face {
     /// Whether this face takes an icon.
-    ///
-    /// The same question `set_text_annot_style` asks before it writes
-    /// anything (`style.icon.is_some() && target.subtype != b"Text"`), asked
-    /// here so the chooser is **absent** rather than drawn-and-refused. Belt and braces:
-    /// the engine's refusal is what catches a shell that drifted anyway, which
-    /// is exactly the arrangement [`super::Current::restylable`] has with its
-    /// own verb.
     pub(super) const fn takes_icon(self) -> bool {
         match self {
             Self::Sticky => true,
@@ -157,10 +91,6 @@ impl Face {
 
 /// What the selected text-bearing mark's dictionary currently says, in the
 /// terms this subsection can change.
-///
-/// ⚠ **`Clone`, not `Copy`** — `StickyIcon::Other(Vec<u8>)` owns its bytes, so
-/// the struct has no implicit copies. Every borrow is explicit; the row
-/// functions take `&Reading`.
 #[derive(Debug, Clone)]
 pub(super) struct Reading {
     /// Which face, and therefore which properties mean anything.
@@ -234,25 +164,6 @@ pub(super) struct Reading {
 
 impl Reading {
     /// **Read one, or answer `None` for a mark this subsection does not serve.**
-    ///
-    /// `None` covers three different situations and they are worth telling
-    /// apart in the head even though the answer is the same:
-    ///
-    /// 1. a `/Subtype` outside `/Text`, `/Stamp` and `/FreeText` —
-    ///    `text_spec_from_dict` refuses it and so does the verb;
-    /// 2. a `/FreeText` — the verb accepts it and **this shell declines**, per
-    ///    the module header's multiline finding;
-    /// 3. a `/Text` or `/Stamp` whose `/Rect` is missing or unreadable —
-    ///    `SpecReadError::BadGeometry`, the same refusal the verb would make.
-    ///
-    /// [`Reach`] separates (2) from the other two, because
-    /// only (2) has a sentence of its own to show.
-    ///
-    /// It takes the spec the caller already read and **nothing else**, which
-    /// is what lets a test build a `Reading` in one expression. There is
-    /// nothing to read beside the spec: the engine's reader is lossless
-    /// (`StickyIcon::from_name_lossless`), so an unmodelled `/Name` is already
-    /// in the value.
     pub(super) fn of(spec: &TextAnnotSpec) -> Option<Self> {
         match spec {
             TextAnnotSpec::Sticky { color, icon, .. } => Some(Self {
@@ -295,25 +206,6 @@ impl Reading {
 
     /// **Carry the stamp's label parameters in**, read from the session by
     /// [`super::Reach::read`].
-    ///
-    /// # Why a builder and not a second argument to [`Self::of`]
-    ///
-    /// Because a second argument on `of` would make the pure function impure
-    /// for every caller, including the tests that build a `Reading` in one
-    /// expression — and because a second read beside the spec is a second
-    /// chance to disagree with the engine about an operator's file.
-    ///
-    /// ⇒ A builder keeps `of`'s signature at *one spec in, one reading out*
-    /// and puts the session-shaped read where the session already is. The
-    /// tests that assert the reachability verdict never see it; the one test
-    /// that means to assert the size row appears calls this.
-    ///
-    /// ⚠ It takes an `Option` rather than a value, and passes it straight
-    /// through, because `EditSession::stamp_label_parameters` answers
-    /// `Ok(None)` for a stamp whose appearance shows no text — Acrobat's own
-    /// custom stamps are artwork — and the engine is explicit that this is
-    /// *"the honest answer … not a failure"*. Collapsing it to a default here
-    /// would invent a size for a picture of a signature.
     #[must_use]
     pub(super) fn with_stamp_label(mut self, label: Option<StampLabelParameters>) -> Self {
         self.label = label;
@@ -322,17 +214,6 @@ impl Reading {
 }
 
 /// **Draw the rows `set_text_annot_style` can commit.**
-///
-/// Called from [`super::section`]'s `Reach::TextAnnot` arm and from nowhere
-/// else, on a mark the parent has already established is neither locked nor a
-/// ce dimension.
-///
-/// # The order: what it says, then what it looks like
-///
-/// The colour first, because it is the property both faces have and the one an
-/// operator reaches for; the icon second, because it exists on one face only
-/// and a row that appears and disappears between selections should not be the
-/// one that sets the panel's vertical rhythm.
 pub(super) fn rows(
     ui: &mut Ui,
     current: &Reading,
@@ -527,23 +408,6 @@ fn size_row(
 }
 
 /// **Where the displayed label size came from**, as one word for the trace.
-///
-/// # Why the shell writes this token and the engine does not
-///
-/// `StampLabelFit` publishes `token()` because a *driven check reads it* and
-/// the engine tests that contract. `StampSizeSource` publishes no such thing —
-/// it is a panel-facing distinction, and the engine's own doc says as much:
-/// *"the three cases are kept apart because a panel owes different things to
-/// each"*. So the vocabulary is this shell's, and it is written here, once,
-/// rather than at the format string, so a check and a reader are looking at the
-/// same list.
-///
-/// ⚠ **`StampSizeSource` is `#[non_exhaustive]`**, so the `_` arm is reachable
-/// by nothing but a pin bump — and it is a **tripwire**, not a fallback. A
-/// driven run showing `source=unknown` means the engine grew a fourth answer to
-/// *"where did this number come from?"*, and this row's disclosure rule (only
-/// `DaUnreadable` owes a sentence) was written against three. Seeing it is the
-/// signal to go and read the new variant before deciding whether it owes one.
 pub(super) fn source_token(source: StampSizeSource) -> &'static str {
     // ui-text-exempt: diagnostic trace tokens, never displayed.
     match source {

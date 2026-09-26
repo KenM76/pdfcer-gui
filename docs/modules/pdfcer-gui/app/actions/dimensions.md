@@ -93,3 +93,52 @@ with an implicit fallback, a variant added to [`DimensionAction`] and
 not added here silently answers `false`. Nothing in this test compels
 the author to pick a side; only turning the predicate into an exhaustive
 `match` would.
+
+### `fn regenerates_the_whole_group`
+
+The module header's first table, expressed once as code so a new variant
+cannot be added without picking a side. [`apply`] uses it to decide
+whether to clear every cached raster, and the honest answer is derived
+from *what the engine verb touches*, not from what the operator was
+looking at when they asked.
+
+[`Self::Commit`] is `false` even though it is the one that *creates* a
+member: authoring places a single annotation on a single page, and the
+group's other members are not redrawn by it.
+
+Three verbs that look group-scoped answer `false`, each for its own
+reason, which is why they are worth stating rather than leaving to the
+`matches!`:
+
+- [`Self::RenameGroup`] regenerates **nothing at all** — no member's
+  appearance depends on what its group is called.
+- [`Self::SetDimensionGroup`] regenerates **exactly one** annotation.
+  Its label changes, which is startling and is still one annotation.
+- [`Self::DeleteGroup`] regenerates **as many as its policy moves**,
+  which is zero under `Refuse` and every member under `Reassign`. That
+  is a property of the *policy* rather than of the verb, and a predicate
+  taking `&self` cannot see inside the variant honestly — so [`apply`]
+  decides it there, at the one place the policy is in hand.
+
+### `fn apply`
+
+# The two-step every arm shares
+
+1. **Invalidate as widely as the verb reaches.** A group verb clears
+   `doc.strip_rasters` wholesale, because a group's members are wherever the
+   operator put them and a strip entry drawn before the edit would keep
+   showing the old number with nothing to say so. This is the same
+   wholesale-invalidation argument `app::pages` makes for a page
+   permutation, arriving from a different direction.
+2. **Mutate through [`super::apply::vector_edit`]**, so the
+   cancel-mutate-bump-invalidate protocol, the undo entry, the trace line
+   and the disclosure store are the ones every other edit in this
+   application uses, rather than a second implementation of them here.
+
+# Why the group arms pass page `0`
+
+`vector_edit` takes a page for its trace line and its per-page raster drop.
+A group is document-scoped and has no page, so `0` is passed with this note
+rather than the signature gaining an `Option<usize>` that every other caller
+would have to spell. The wholesale clear in step 1 is what actually
+discharges the invalidation; the page reaches the funnel only as a label.

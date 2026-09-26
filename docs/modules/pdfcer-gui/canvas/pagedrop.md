@@ -94,3 +94,18 @@ and the no-op boundary is where every same-document drag begins.
 margin around a page that is smaller than the viewport is not a gap, and
 treating it as one would let a drop land somewhere the operator was not
 pointing.
+
+### `fn offer`
+
+Called once per frame from [`crate::canvas::show_in`], after the scroll area
+has closed and therefore after every visible page's screen rectangle is
+known. Does nothing at all — not one branch past the first — when no page
+drag is in flight, which is every frame but the handful the operator is
+carrying something.
+
+`drawn` is the visible pages with the rectangles they were actually drawn
+in, which is what makes the gap resolution exact rather than reconstructed.
+`D:\dev\rag\egui` records the rule this obeys: **do not compute a coordinate
+the application could publish** — a harness, or a second piece of the
+application, that derives a widget position by arithmetic can be wrong in
+the same direction as the code under test.

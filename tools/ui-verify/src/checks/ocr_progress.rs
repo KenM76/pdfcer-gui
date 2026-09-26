@@ -284,12 +284,6 @@ fn refusal(session: &Session) -> Result<Option<String>> {
 // ---------------------------------------------------------------------------
 
 /// **The operator can watch the run move.**
-///
-/// Runs to completion and asserts that at least two *different* `attempted`
-/// values were reported, that they rose, that the last one equals the number of
-/// pages in scope, and that words and characters were counted along the way.
-///
-/// See the module header for why a declared rect is not enough on its own.
 pub struct OcrSaysHowFarItHasGot;
 
 impl Check for OcrSaysHowFarItHasGot {
@@ -517,12 +511,6 @@ fn drive_progress(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option
 // ---------------------------------------------------------------------------
 
 /// **Stop finishes the page in hand and keeps every page before it.**
-///
-/// The operator's wording: *"the stop finished the page it is on and keeps the
-/// work it has done."* So the assertion is a conjunction, and both halves
-/// matter: some pages were kept (`ocr-recognised pages=` is not zero, and the
-/// session took a layer), **and** it really was an early end (fewer pages than
-/// the scope).
 pub struct StoppingOcrKeepsWhatItHasDone;
 
 impl Check for StoppingOcrKeepsWhatItHasDone {
@@ -551,16 +539,6 @@ impl Check for StoppingOcrKeepsWhatItHasDone {
 // ---------------------------------------------------------------------------
 
 /// **Cancel discards the run and touches the document not at all.**
-///
-/// The falsifying half of the pair. Every assertion in [`StoppingOcrKeepsWhatItHasDone`]
-/// would be satisfied by a build in which Stop and Cancel were the same button;
-/// this one fails against that build, because it asserts the **absence** of the
-/// two lines the other one requires — no `ocr-applied`, no `ocr-layer`.
-///
-/// That absence is asserted over the *whole* trace rather than over the tail,
-/// deliberately. A Cancel that raised the edit and then tried to take it back
-/// would leave both lines behind and an undo entry in the operator's stack,
-/// which is not "nothing was kept".
 pub struct CancellingOcrThrowsAwayWhatItHadDone;
 
 impl Check for CancellingOcrThrowsAwayWhatItHadDone {

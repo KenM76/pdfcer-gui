@@ -275,14 +275,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 }
 
 /// Bring the Pages panel up from the ribbon.
-///
-/// Separated because it is the part with nothing to assert: if the panel is
-/// already docked — which is the default layout — this is not called at all,
-/// and pressing its toggle would have CLOSED the surface under test.
-///
-/// `pub(crate)` for `checks::drop_onto_thumbnails`, which needs the same panel
-/// on screen and would otherwise carry a second copy of a two-click sequence
-/// that already handles the ribbon overflow.
 pub(crate) fn open_pages_panel(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
     let trace = session.trace()?;
     let tab = declared(&trace, ui_rect, "ribbon.tab.view").ok_or_else(|| {

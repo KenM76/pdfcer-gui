@@ -41,12 +41,6 @@
 use crate::dock::{DockSide, PanelId};
 
 /// Where in a layout document a problem was.
-///
-/// Positional, because the model is positional — see
-/// [`crate::dock::model`]'s note on why there are no generated handles to
-/// name. A site is enough for an application to say *"the second stack of
-/// the left dock's first column"* or to offer to open the file at
-/// roughly the right place.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LayoutSite {
     /// The document as a whole — a missing file, a parse failure, an
@@ -117,16 +111,6 @@ impl std::fmt::Display for LayoutSite {
 }
 
 /// Why one item of a layout was dropped.
-///
-/// Every variant carries the offending value, so an application can act
-/// on it — offer to remove the entry, name the capability that is not in
-/// this build, or simply log it with enough detail to be actionable.
-///
-/// `PartialEq` but **not** `Eq`, because [`Self::InvalidSize`] carries the
-/// `f32` the file actually said. Carrying it is worth losing `Eq` for: an
-/// application that wants to tell the operator *which* number was
-/// rejected cannot get it from anywhere else, and a reason that said only
-/// "a size was wrong" would be one an operator can do nothing with.
 #[derive(Debug, Clone, PartialEq)]
 pub enum LayoutSkipReason {
     /// There was no layout file. The built-in default was used.
@@ -306,11 +290,6 @@ impl std::fmt::Display for LayoutSkip {
 }
 
 /// Everything a load had to skip.
-///
-/// Returned **by value** so the caller must deal with it, which is the
-/// same shape and the same argument as [`crate::manifest::MergeReport`]:
-/// returning the rejects alongside the result makes them a value the
-/// caller must handle instead of a side effect it may forget.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct LoadReport {
     skips: Vec<LayoutSkip>,
@@ -336,11 +315,6 @@ impl LoadReport {
     }
 
     /// Whether any skip is one an operator would want to hear about.
-    ///
-    /// [`LayoutSkipReason::FileMissing`] is the first run of a fresh
-    /// profile and is not news. Everything else is a difference between
-    /// what was saved and what was restored, which is exactly the class
-    /// of fact this project's disclosure convention exists to surface.
     #[must_use]
     pub fn is_noteworthy(&self) -> bool {
         self.skips

@@ -415,26 +415,6 @@ fn mean_channel(c: Rgb) -> i32 {
 
 /// **File tab → Settings → expand Appearance**, the three clicks both checks in
 /// this file begin with.
-///
-/// `Ok(None)` means the theme radios are on screen and clickable. `Ok(Some(_))`
-/// is a FAILURE message — a control that should be there and is not. `Err` is a
-/// SKIP: the harness could not deliver a click, or the application never said
-/// anything, and neither is a verdict on the feature.
-///
-/// # Why this is shared and `markup_rectangle`'s equivalent is not
-///
-/// `checks::driving`'s header records the rule: a move is shared when the two
-/// callers would otherwise **drift apart while both passing**. These two are the
-/// same three clicks at the same three regions, and every failure message names
-/// a specific application constant — `file.settings`, `dialog:settings`,
-/// `settings.heading.appearance`. Two copies would mean two places to update
-/// when one of those is renamed, and the copy nobody updated would go on
-/// reporting *"the window has no theme picker in it"* about a window that has
-/// one. That is the failure this suite has already recorded twice.
-///
-/// It stays inside this module rather than moving to `driving` because nothing
-/// outside this file opens the Settings window, and a helper hoisted before it
-/// has a second caller is a helper whose shape is guessed.
 pub(super) fn open_the_theme_picker(
     session: &Session,
     driver: &Driver,

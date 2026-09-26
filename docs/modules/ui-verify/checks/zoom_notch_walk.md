@@ -38,3 +38,30 @@ both — this walks every notch.
   on the way in is the canvas losing a raster, not the drawing being empty.
 
 Every capture is kept as an artifact, named by direction, notch and zoom.
+
+## Item notes
+
+### `const DRIFT_PX`
+
+Above the floor both walks measure on SW41177 with the pointer still: up to
+about 5 points per step, from the scroll area rounding the drawn page to
+whole pixels on every animation frame plus the harness reading the
+position from the trace at both ends. Carrying the anchor fraction across
+frames did not move that figure. A region ordered for the wrong place, the
+defect this guards, is off by whole screens.
+
+### `fn region_misses_view`
+
+The viewport in page points is rebuilt from `canvas-pos at=` (the pan in
+logical points from the page's top-left), the zoom of the `canvas` line
+before it, and the canvas size. The page's y axis points up, so the top of
+the view is `ext.y - at.y / zoom`. A tolerance of 1e-3 of the view's width
+absorbs the region's snapping and the trace's rounding. Off-page content
+widens the order past the sheet, never narrows it, so clipping the view to
+the sheet cannot hide a miss.
+
+### `fn rig`
+
+# Errors
+Missing binary, PDF, target or page size; input disabled (a SKIP); launch
+or trace failures.

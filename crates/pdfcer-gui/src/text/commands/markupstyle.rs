@@ -6,35 +6,6 @@
 use super::CommandText;
 
 /// `format.colour` — the mark's **stroke** colour, `/C`.
-///
-/// # "Line colour", not "Colour" and not "Stroke"
-///
-/// Three names were possible and two are refused:
-///
-/// - **"Colour"** is what `RIBBON_IA.md` §5.8's table calls the row, and it is
-///   taken: `format.font_colour` already carries it, and its own doc comment
-///   records the collision from the other side — *"`format.colour` was already
-///   taken, by the markup property editor in the same tab's future."* Two
-///   commands sharing a label is not a style problem; it is two controls the
-///   operator cannot tell apart, which is the rule
-///   `no_two_commands_share_a_label` exists to hold.
-/// - **"Stroke"** is the PDF word. `crate::text::paint`'s own note settles it
-///   for this catalog: *"'Fill' and 'Line', not 'fill' and 'stroke'. Stroke is
-///   the PDF word"* — a name the file format uses and the operator does not.
-///
-/// ⇒ "Line colour" pairs with [`format_fill`]'s "Fill colour" so the two read
-/// as one family, which is what an operator scanning a band of five needs more
-/// than either name needs to be short.
-///
-/// ## The tooltip names the refusal, because the refusal is common here
-///
-/// A `/C` that is not RGB or grey — DeviceCMYK, or a separation — has no
-/// faithful sRGB, so the swatch shows the default rather than a converted
-/// near-match that the next press would write back. That is
-/// `panels::properties::markup::rgb_of`'s rule and
-/// [`crate::app::markupband`] re-derives it; stating it in the tooltip is what
-/// keeps the swatch from reading as broken on exactly the drawings this
-/// program is for.
 #[must_use]
 pub const fn format_colour() -> CommandText {
     CommandText::new(
@@ -46,22 +17,6 @@ pub const fn format_colour() -> CommandText {
 }
 
 /// `format.fill` — the mark's **interior** colour, `/IC`.
-///
-/// **The one control here whose default state is "off", and the tooltip
-/// has to say so.** See this module's header: pdfcer authors every shape with
-/// no fill on purpose, Acrobat does the same, and an operator who tries a fill
-/// on a drawing needs to know in the same sentence how to get back to the
-/// mark they had. `StyleEdit::Clear` is that route and *"No fill"* is what it
-/// is called on screen.
-///
-/// It says *"shapes that have an interior"* rather than listing them,
-/// because the list is the engine's and would go stale here: `/IC` is
-/// meaningful for `Square`, `Circle`, `Polygon` and the cloud built on one, and
-/// `MarkupStyle::interior`'s own doc says the subtypes without an interior
-/// **ignore** it rather than refusing — *"a property of the shape and not an
-/// error."* [`crate::app::markupband`] draws no fill control for those at all,
-/// which is the honest surface for an ignored field, so this sentence only has
-/// to be true of the marks the control is drawn beside.
 #[must_use]
 pub const fn format_fill() -> CommandText {
     CommandText::new(
@@ -73,18 +28,6 @@ pub const fn format_fill() -> CommandText {
 }
 
 /// `format.line_width` — `/BS` `/W`, in points.
-///
-/// **The tooltip discloses that the mark's box moves.**
-/// `MarkupStyle::width`'s own doc carries the warning — for every subtype
-/// except `Square` and `Circle` the `/Rect` is derived from the geometry plus a
-/// margin that contains the stroke and any arrowheads, so a wider pen needs a
-/// bigger box — and the Properties panel discloses it in a sentence under the
-/// section ([`crate::text::panels::properties::markup_note`]).
-///
-/// A ribbon band has no room for that sentence, so it goes in the hover, which
-/// is Rule 4's shape exactly: the restyled mark renders on the canvas precisely
-/// as the saved file will render it, and what pdfcer *inferred* on the
-/// operator's behalf is disclosed off-canvas.
 #[must_use]
 pub const fn format_line_width() -> CommandText {
     CommandText::new(
@@ -95,16 +38,6 @@ pub const fn format_line_width() -> CommandText {
 }
 
 /// `format.opacity` — `/CA`, shown as a percentage.
-///
-/// **Per cent, not `0.0`–`1.0`.** That is the unit every application an
-/// operator has used states opacity in, and `/CA`'s own range is a file-format
-/// detail they should never meet. The Properties panel's twin makes the same
-/// choice and its doc comment carries the argument.
-///
-/// The tooltip says what the setting is *for* — seeing the drawing through
-/// a mark — rather than what the number means, because the number is on the
-/// control. A tooltip that reads "sets the opacity" is a tooltip that has told
-/// the operator nothing they could not read off the label.
 #[must_use]
 pub const fn format_opacity() -> CommandText {
     CommandText::new(
@@ -115,22 +48,6 @@ pub const fn format_opacity() -> CommandText {
 }
 
 /// `format.arrowheads` — `/LE`, the pair of line endings. `/Line` only.
-///
-/// # Why the control offers four POSITIONS and not nine pairs
-///
-/// `/LE` is two independent endings (§12.5.6.7, Table 176) and pdfcer's author
-/// side offers three shapes each, which is nine combinations — a menu nobody
-/// would read on a ribbon band. [`crate::app::markupband`] therefore offers the
-/// four **positions** an operator actually means (none, at the start, at the
-/// end, at both) and **preserves the shape** the mark already carries, so a
-/// closed arrowhead stays closed and an open one stays open.
-///
-/// ⇒ The tooltip says "arrowheads" and not "line endings", for
-/// [`format_colour`]'s reason: `/LE` is the file format's word and *arrowhead*
-/// is the operator's. It also names the `/Line`-only restriction, because the
-/// control is **absent** for every other subtype and an operator who saw it on
-/// an arrow and then not on a cloud is owed the rule rather than left to infer
-/// one.
 #[must_use]
 pub const fn format_arrowheads() -> CommandText {
     CommandText::new(
@@ -141,25 +58,6 @@ pub const fn format_arrowheads() -> CommandText {
 }
 
 /// `format.line_style` — `/BS` `/S` and `/D`, the border's line style.
-///
-/// # Why the tooltip says what LEAVING IT ALONE does
-///
-///
-/// ⇒ So the sentence a hover most needs to carry is *your producer's dash is
-/// safe*. An operator marking up a consultant's drawing has no other way to
-/// learn it, and the wrong belief — *"if I recolour this it will go solid"* — is
-/// one they would have been right to hold a day earlier.
-///
-/// It names the `/Line`-and-shapes restriction the same way
-/// [`format_arrowheads`] names its own, and for that string's reason: the
-/// control is **absent** for a highlight, an underline, a strikeout and a
-/// squiggly, and an operator who saw it on a cloud and then not on a highlight
-/// is owed the rule rather than left to infer one.
-///
-/// *"Line style"* and not *"Dash pattern"*: §5.8 names the row *Line style*,
-/// and the chooser's first entry is **Solid** — a label reading *Dash pattern*
-/// would make the first entry read as *no dash pattern*, which is the absence
-/// of the thing the label promises rather than one of its values.
 #[must_use]
 pub const fn format_line_style() -> CommandText {
     CommandText::new(

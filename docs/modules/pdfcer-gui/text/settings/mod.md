@@ -217,3 +217,159 @@ choosing, not after they press Save.
 Both were documented in `pdfcer-core` and shown nowhere in the old
 window. A test rather than a comment, because "we should surface that"
 is the kind of intention that survives one session.
+
+### `fn intro`
+
+Load-bearing rather than decorative: it is the sentence that tells an
+operator why this window is full of questions instead of being full of
+answers. Without it, thirteen radio groups read as thirteen things pdfcer
+could not decide.
+
+### `fn store_location`
+
+# Why this line is always shown
+
+An operator who does not know which of the two homes is live cannot follow
+the update instructions, and those instructions are the one place a wrong
+guess costs them their configuration: *"replace the program files, keep
+your `userdata` folder"* means nothing if the settings are not in it.
+
+[`StoreKind`] is `#[non_exhaustive]`, so the catch-all arm is required by
+the compiler — and it still says something useful rather than falling
+silent, because a variant this build does not know about is still a home
+the operator's settings are in.
+
+### `fn save_disabled_tooltip`
+
+Greyed rather than absent, which is the one place this window departs from
+the no-placeholders rule and is entitled to: Save is *temporarily*
+unavailable — one radio click makes it live — and greying with a reason on
+hover is exactly what that rule reserves greying for.
+
+### `fn cancel_tooltip`
+
+Not a courtesy. Four of the thirteen settings change **saved bytes**, so an
+operator who has been clicking radio buttons for a minute needs to know
+that none of it has taken effect — and needs to know it *before* they
+decide whether to click Cancel, which is why it is a tooltip on an
+always-enabled control rather than a confirmation after the fact.
+
+### `fn restore_defaults_tooltip`
+
+It replaces the **draft** and does not save. Said out loud because the
+button's name suggests otherwise: "restore defaults" in most programs is
+immediate and irreversible, and this one is neither.
+
+### `fn save_failed`
+
+Loud, and deliberately not softened: the operator asked for something to be
+remembered and it was not. The session still honours the choice — see the
+dispatch arm — so the sentence has to carry the distinction between "this
+did not happen" and "this will not survive a restart".
+
+### `fn group_comments`
+
+*"Comments"*, not *"Annotations"* or *"Markup"*. Every reviewer UI the
+operator has used calls them comments; *annotation* is the PDF's word for
+the object and *markup* is ours for the tool. The heading is where somebody
+looks, so it takes their word.
+
+### `fn group_forms`
+
+*"Forms"*, not *"Tab order"*. The caption names the subject an
+operator is looking for; both controls inside it name the property.
+It also leaves room for a second forms setting to join without the
+caption turning into a list.
+
+### `fn group_fonts`
+
+*"Fonts"*, not *"Font folders"*. A group caption names the subject and the
+control inside it names the property — the same call `text::ribbon`'s
+`group_format_font` makes, and it leaves room for a second font setting to
+join without the caption becoming a list.
+
+### `fn font_folders_hint`
+
+pdfcer does not search the system font directory and will not: embedding
+whatever a machine happens to hold into somebody's document is a licensing
+decision, and it is not pdfcer's to make silently. So an empty list is not a
+default that works — it is embedding switched off, and the sentence says so
+before the operator meets it at the far end of a failed embed.
+
+### `fn font_folders_none`
+
+Its wording changed on 2026-08-28 when the OS-fonts checkbox landed:
+"no folders" stopped meaning "nothing to embed from", because the box may be
+ticked. An empty-state sentence that contradicts a control four rows below it
+is worse than none -- an operator who has ticked the box and reads *"nowhere
+to take one from"* has been told their setting does not work.
+
+### `fn font_folders_none_at_all`
+
+Two sentences for two states rather than one that hedges. This is the only
+configuration in which embedding genuinely cannot take a font from anywhere,
+and it is worth saying plainly at the moment it is true -- not at the far end
+of an embed, which is where the operator would otherwise meet it.
+
+### `fn use_os_fonts_label`
+
+`OPERATOR_REQUESTS.md` **O50**: *"just a simple checkbox to include fonts
+from the OS installed font folders."* "Installed on this computer" rather
+than "system fonts" or "OS fonts", because that is what the thing IS to the
+person ticking it -- they installed them, or their IT did, and either way
+"OS" is a word about implementation.
+
+### `fn use_os_fonts_hint`
+
+It states the **licensing** consequence, and that is not legal throat-
+clearing: it is the reason this is a checkbox and not the default. The
+operator is being handed a decision, and a control that hands somebody a
+decision without saying what the decision is about is a control that took it
+for them.
+
+### `fn use_os_fonts_folders`
+
+The folders are DRAWN, greyed, under the tick. A checkbox whose effect is
+invisible is one nobody can verify -- and the per-user folder in particular
+is somewhere most operators do not know exists, so listing it is the
+difference between a setting they trust and one they re-tick to see if it
+took.
+
+### `fn use_os_fonts_none_found`
+
+A real state and not a defensive one: `%WINDIR%` and `%LOCALAPPDATA%` are
+read from the environment rather than assumed, and a stripped or unusual
+image can leave both unset. Saying so beats a tick with nothing under it,
+which reads as the list still loading.
+
+### `fn font_folder_remove`
+
+A word rather than a `×`. This list is at most sixteen rows and every row
+is a path an operator typed or picked; a glyph that means *delete* on a row
+whose other content is a file path is one mis-click from removing the wrong
+one, and the word is two characters wider.
+
+### `fn group_measuring`
+
+**New in this port.** In the old shell `parallel_epsilon_degrees` sat
+under *Copying and extracting text* — where it has nothing to do with
+either — purely because it happened to be a slider like the word-gap one
+beside it. The operator symptom is *"my dimension came out as an angle"*,
+and nobody with that symptom looks under a heading about copying.
+
+The group headings are the whole navigation model of this window: an
+operator arrives with a symptom and the headings are how a symptom finds
+its setting. A setting filed under the wrong one is not untidy, it is
+unreachable.
+
+### `fn group_display`
+
+**Named for what it is about, not for where its values are stored.** These
+two settings live in `preferences.txt` rather than `settings.txt`, which is
+an implementation fact the operator has no business meeting: they opened one
+window, they press one Save, and one Cancel discards the lot.
+
+*"Drawing"* rather than *"Rendering"* or *"Performance"*. "Rendering" is a
+word from our side of the fence; "Performance" promises a tuning panel and
+there are two controls. What both settings actually change is how the page
+gets drawn, which is what the heading says.

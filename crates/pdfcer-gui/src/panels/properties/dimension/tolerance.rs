@@ -29,16 +29,6 @@ const FORMS: [Tolerance; 7] = [
 ];
 
 /// Draw the tolerance editor, mutating `value` in place.
-///
-/// Returns `false` when the current fields do not validate, in which case the
-/// caller must not raise an action — see the module header's rule two. The
-/// refusal has already been drawn by the time this returns, so the caller does
-/// not have to know why.
-///
-/// `unit` is the ce dimension's **resolved** display unit, used only for the
-/// note saying which unit the numbers are in. It is resolved rather than the
-/// group's own, because a ce dimension overriding its unit reads its tolerance
-/// in the overridden one.
 pub fn show(ui: &mut Ui, value: &mut Tolerance, unit: Unit) -> bool {
     egui::ComboBox::from_id_salt("dimension-tolerance-form")
         .selected_text(t::tolerance_name(*value))

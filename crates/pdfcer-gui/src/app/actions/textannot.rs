@@ -38,13 +38,6 @@ use pdfcer_core::annot_author::StampLabelFit;
 /// **What the operator placed** — the values that come off the action,
 /// grouped so [`commit`] takes a handful of arguments rather than a row of
 /// them.
-///
-/// A struct rather than a longer parameter list, and not only to satisfy a
-/// lint: every field here is part of **one thing the operator did**, while
-/// `prefs` and the pen are settings that happen to be in scope. A signature
-/// that mixed them all in a row would let a caller transpose two silently,
-/// which on adjacent `usize` and `f64` positions is the class of mistake that
-/// compiles.
 pub(super) struct Placement {
     /// The page it goes on.
     pub page: usize,

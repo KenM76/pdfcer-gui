@@ -43,96 +43,25 @@ use crate::text::panels::docprops as t;
 mod stamps;
 
 /// The region this panel publishes.
-///
-/// **Unchanged by the move to a panel of its own, deliberately.** The name
-/// is a harness interface: `ui-verify`'s `properties_metadata_round_trips`
-/// finds the section by this string and finds each editor by
-/// [`REGION_FIELD_PREFIX`], and that check **cannot be run by the session that
-/// made this move** — the machine's pointer belongs to another track. Renaming
-/// the regions would put an unverifiable change into the one instrument that
-/// could confirm the panel still works, on top of a verifiable one (which tab
-/// the check must bring to the front). One change at a time is what keeps the
-/// next run's verdict readable.
 pub const REGION: &str = "properties.info"; // ui-text-exempt: trace region name, never displayed
 /// The prefix of the per-field editor regions; the field's index in
 /// `InfoField::all()` is appended.
-///
-/// Indexed by **position in the engine's own list**, not by a name spelled
-/// here, so a field the engine adds is addressable by a check without this
-/// constant changing.
 pub const REGION_FIELD_PREFIX: &str = "properties.info."; // ui-text-exempt: trace region name, never displayed
 
 /// **The load-anomaly block's own region** — the heading, the note and every
 /// row, as one rectangle.
-///
-/// Published by [`load_anomalies_note`] and **only when the file actually
-/// contradicted itself**, because that function returns before drawing
-/// anything when the row list is empty. That absence is the half of the
-/// contract a driven check can only test with a second launch: a region that
-/// is declared on `fixtures/contradicts-itself.pdf` and declared on a clean
-/// file too would be a heading that is always there, which is a different
-/// defect wearing the same green tick.
-///
-/// Named `properties.` like its neighbours so that
-/// `declared_names(&trace, ui_rect, "properties")` — which several checks
-/// already print when they cannot find a region — lists it. A region under a
-/// prefix nobody enumerates is discoverable only by whoever wrote it.
 pub const REGION_ANOMALIES: &str = "properties.load-anomalies"; // ui-text-exempt: trace region name, never displayed
 
 /// The prefix of the per-anomaly row regions; the row's index in
 /// [`crate::app::status::anomalies::rows`]' output is appended.
-///
-/// Indexed by **position in the engine's own anomaly list**, exactly as
-/// [`REGION_FIELD_PREFIX`] is indexed by position in `InfoField::all()`, so a
-/// second anomaly in a fixture is addressable without this constant changing.
-///
-/// ⚠ The count of these regions is the only thing a driven run can use to say
-/// *how many* places the file contradicted itself; the block region above says
-/// only that at least one did. A check that wants the census must count these.
 pub const REGION_ANOMALY_ROW_PREFIX: &str = "properties.load-anomalies."; // ui-text-exempt: trace region name, never displayed
 
 /// **The region the re-read button publishes**, so a driven check can assert
 /// that the operator's intervention is reachable rather than merely built.
-///
-/// Published with `ui_rect_visible` like everything else in this block: it
-/// draws inside `body`'s `ScrollArea`, and a rect published for a scrolled-out
-/// control gets clicked by the harness at a coordinate the operator can never
-/// reach. This project has shipped panels that were unreachable in a real build
-/// with every gate green; the visible-rect discipline is what ended that.
 pub const REGION_ANOMALY_REREAD: &str = "properties.load-anomalies.reread"; // ui-text-exempt: trace region name, never displayed
 
 /// **The region the dropped-object disclosure publishes** — both sentences, as
 /// one rectangle.
-///
-/// Published by [`dropped_objects_note`] and **only when recovery actually
-/// dropped something**. That absence is the half of the contract a driven check
-/// can only test with a second launch, exactly as for [`REGION_ANOMALIES`]: a
-/// region declared on a damaged file *and* on a sound one would be a permanent
-/// heading announcing losses that never happened, which is a worse defect than
-/// the silence it replaced and wears the same green tick.
-///
-/// ⚠ It is a sibling of the recovery note rather than a child of the anomaly
-/// block, and the two must not be confused by a check. `Document::recovery()`
-/// and `Document::load_anomalies()` are disjoint questions — one is about the
-/// cross-reference machinery, the other about the objects — and the fixtures
-/// are authored so that each lights exactly one of them.
-/// **The region the whole recovery note publishes** -- heading and detail line,
-/// as one rectangle, drawn whenever `Document::recovery()` is `Some`.
-///
-/// ## Why it exists even though nothing clicks it
-///
-/// It is the **positive witness** that makes
-/// [`REGION_RECOVERY_DROPPED`]'s absence mean something. A driven check's
-/// control launch opens a file that was rebuilt by scanning and lost nothing,
-/// and asserts the dropped-object block is not drawn. On its own that absence
-/// is satisfied by at least three states which are not the one being tested:
-/// the panel never opened, the document was never recovered, or the recovery
-/// disclosure stopped drawing altogether. Requiring *this* region on the same
-/// launch rules out all three, and leaves exactly one reading -- the block is
-/// driven by `objects_dropped` and by nothing else.
-///
-/// ⚠ It is therefore not decoration and must not be removed as unused. The
-/// check that depends on it is `recovery_losses_are_listed_in_document_properties`.
 pub const REGION_RECOVERY: &str = "properties.recovery"; // ui-text-exempt: trace region name, never displayed
 
 pub const REGION_RECOVERY_DROPPED: &str = "properties.recovery-dropped"; // ui-text-exempt: trace region name, never displayed
@@ -141,25 +70,6 @@ pub const REGION_RECOVERY_DROPPED: &str = "properties.recovery-dropped"; // ui-t
 const FIELDS: usize = InfoField::all().len();
 
 /// The operator's half-typed metadata, between frames.
-///
-/// ## Why a draft exists at all
-///
-/// Because `TextEdit` needs a `&mut String` that survives the frame, and
-/// because committing on every keystroke would make one typed word a dozen
-/// undo entries. The draft is what the operator has typed; the document is
-/// what it will be compared against when focus leaves.
-///
-/// ## Why it reloads on the edit epoch
-///
-/// The drafts are re-seeded whenever `doc.edit_epoch` moves, and that is what
-/// makes **undo work in this panel**. `Ctrl+Z` after setting a title runs the
-/// engine command backwards and bumps the epoch; without the reload the box
-/// would still show the title the document no longer has, and the next focus
-/// change would write it straight back — an undo the panel silently reverses.
-///
-/// It also covers the case nobody thinks of: a field changed by some *other*
-/// surface. There is only one today (this panel), and the reload means there
-/// does not have to be a rule about it.
 #[derive(Default)]
 pub struct InfoDrafts {
     /// One draft per `InfoField::all()` position.
@@ -219,34 +129,6 @@ impl InfoDrafts {
 }
 
 /// **Draw the Document properties panel.**
-///
-/// # Why there is no "nothing to show" state
-///
-/// Every PDF has these four fields, in the sense that matters: absent is a
-/// value, and an empty box is how absent is spelled. A document with no
-/// `/Info` dictionary at all renders four empty boxes, which is the truth and
-/// is also exactly what the operator needs in order to add one — `set_info_field`
-/// **creates `/Info` if it is absent**.
-///
-/// The *no document at all* case never reaches here; see the module header's R9
-/// section.
-///
-/// # One scroll area, round everything, and it is here rather than in the
-/// dock
-///
-/// The four editors, the seven facts and the recovery note together are taller
-/// than a 320 pt inspector at most window sizes, and a dock pane does not
-/// scroll its body for a panel. `crate::panels::properties::body` carries the
-/// same wrapper and the measurement behind it: before it existed, the one
-/// control that commits an edit was laid out below the window with no scrollbar
-/// and no gesture that would reach it, and it was reported as a dead button.
-///
-/// No nested scroll area anywhere inside: a scroll area inside a scroll area
-/// steals the wheel from its parent depending on where the pointer happens to
-/// sit, which is a worse surface than the one being fixed.
-///
-/// # No collapsing header any more
-///
 pub fn body(ui: &mut Ui, doc: &OpenDoc, drafts: &mut InfoDrafts, actions: &mut Vec<Action>) {
     egui::ScrollArea::vertical()
         .id_salt("docprops-body")

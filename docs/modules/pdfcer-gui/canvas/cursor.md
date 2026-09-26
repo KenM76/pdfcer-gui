@@ -282,3 +282,145 @@ on demand.
 
 `cargo test -p pdfcer-gui --lib canvas::cursor::preview::ibeam_ascii -- \
  --ignored --nocapture`
+
+### `fn crosshair`
+
+`pixels_per_point` is `egui::Context::pixels_per_point` — the product of the
+display's scale factor and the operator's UI-scale preference.
+
+Returns the **same `Arc`** for repeated calls at the same size, which is
+what makes egui-winit's `Arc::as_ptr` dedupe work and keeps the cursor from
+being re-uploaded to the OS every frame.
+
+# Why it cannot fail
+
+The size is clamped into `1..=MAX_CURSOR_PX` and the buffer is allocated
+from it, so the length invariant `CustomCursorImage` requires
+(`size[0] * size[1] * 4`) holds by construction. A non-finite or absurd
+`pixels_per_point` — which egui does not produce, but which a preference
+file could once have contained — lands on the clamp rather than on an
+allocation the size of a display.
+
+### `struct Tilt`
+
+# Why the cursor has an angle at all
+
+
+> *"In Adobe when I hover over it the I cursor re-orients itself to match
+> the text orientation […] as it is now the I cursor doesn't reorient."*
+
+Acrobat is right and this is the convention, not an embellishment: the
+I-beam's whole job is to say *"text flows this way and the caret will land
+between two glyphs"*, and over a 90° stamp an upright beam says it about the
+wrong axis.
+
+# Why pdfcer can do this at all, where most applications cannot
+
+`egui::CursorIcon` has no rotated I-beam and neither does Win32 —
+`IDC_IBEAM` is one fixed monochrome bitmap. Acrobat ships its own artwork
+for each orientation, and so, as it happens, does this shell: the module
+already generates its I-beam as an RGBA bitmap for
+`Context::set_cursor_image`, because the platform's was invisible on white
+paper. **The rotation is free on top of a mechanism that had to exist
+anyway.** Had this application still been asking the platform for
+`CursorIcon::Text`, the operator's request would have been unbuildable.
+
+# The quantisation, and the two reasons for it
+
+Five degrees. Each distinct angle is a separate generated bitmap held in a
+cache, and each is uploaded to the OS as a platform cursor handle the first
+time it is used, so an unquantised angle would mean a new handle every time
+the pointer crossed a slightly different line. Five degrees is also below
+what anyone can see in a 32-pixel glyph: at that size one degree moves the
+beam's tip by a quarter of a pixel.
+
+Folded into `0..180` because the glyph is symmetric under a half turn — a
+beam at 200° and one at 20° are the same pixels — which halves the cache for
+nothing.
+
+### `fn nearest`
+
+Takes any real angle — including negative ones, which is what an
+`atan2` in a Y-down space produces for text running up the page — so no
+caller has to normalise before asking.
+
+A non-finite angle answers [`Self::UPRIGHT`] rather than panicking: it
+can only arise from a degenerate page transform, and an upright cursor
+on a broken page is a far better outcome than a crash in the middle of a
+pointer move.
+
+### `fn ibeam`
+
+# Why an I-beam and not simply a smaller crosshair
+
+Because the two answer different questions and the shape IS the answer. A
+crosshair says *"the point under the intersection is what you are picking"*;
+an I-beam says *"text flows this way, and the caret will land between two
+glyphs"*. Its serifs are not decoration — they are what makes a one-pixel
+bar findable on a page of one-pixel strokes, which a CAD drawing is entirely
+made of.
+
+And it is exactly *because* the shape carries that meaning that it has to
+turn: see [`Tilt`].
+
+### `enum Shape`
+
+Called once per frame from [`crate::canvas::interact`], which is the one
+place that knows whether the cursor's answer is a crosshair.
+
+# Why this is traced at all, when nothing else about a cursor is
+
+**A cursor cannot be verified by screenshot.** Windows composites the
+pointer separately from window contents, so `BitBlt` and `PrintWindow` — the
+two ways `ui-verify` captures a window — return an image with **no cursor
+in it**. There is no pixel oracle available here at any price, which is
+unusual for this project: R1's normal answer is "drive it and look at the
+picture", and for this one feature the picture cannot contain the answer.
+
+So the trace is the only machine-readable evidence that the wiring works,
+and the wiring has two failure modes worth naming:
+
+| failure | what the operator sees |
+|---|---|
+| never applied | the platform's crosshair, i.e. the reported defect, unchanged |
+| never cleared | pdfcer's crosshair over the ribbon, the panels and the scrollbars, and still there after the document closes |
+
+The second is the one this exists for. `cursor_image` is **sticky between
+frames** and `egui-winit` prefers it over every later `set_cursor_icon`, so
+forgetting the clear is not a small bug — see the module header.
+
+# On change only
+
+A line per frame at sixty hertz is not a diagnostic, it is a denial of
+service on the reader. This emits when the answer *changes*, which is what
+a reader is looking for: `cursor-crosshair on px=32` when a tool is armed,
+`cursor-crosshair off` when it is retired.
+
+# The one gap, stated
+
+A frame in which the canvas does not run at all — no document open — does
+not reach here, so a transition to "off" caused by *closing the document*
+is not traced. The cursor is still cleared: [`crate::app::frame`] does that
+unconditionally and earlier, which is exactly why the clear lives there and
+not here.
+Which of pdfcer's own cursors a frame wants, if any.
+
+# The I-beam is here for the SAME reason the crosshair is, reported
+the same way, three weeks apart
+
+2026-08-18: *"the crosshairs when over the canvas are white making it hard
+to see them."* 2026-08-19: *"the I cursor turns white for text selection so
+I cant see it on a white background."*
+
+One cause. `IDC_IBEAM` is a **monochrome** stock cursor exactly as
+`IDC_CROSS` is, coloured by the operator's pointer scheme, and a white
+I-beam over white paper is not a cursor. The fix that worked for the
+crosshair works here unchanged: stop asking the platform, supply a two-tone
+glyph with a dark core and a light halo.
+
+It is filed as a defect in this module rather than a new feature
+because the first fix should have been made here. The header already argued
+that the platform's monochrome cursors are unusable over a document, and
+then fixed exactly one of them — the one that had been reported. Every
+other `CursorIcon` this application asks for over the canvas has the same
+exposure, and the two that matter over *paper* are these two.

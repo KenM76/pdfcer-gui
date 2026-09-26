@@ -51,6 +51,8 @@
 //! this one. `egui` is already requesting a repaint for the duration of a
 //! drag, so this is one frame of latency during a pointer-down gesture
 //! and is not perceptible.
+//!
+//! Design and rationale: `docs/modules/egui-shell/dock/ctx.md`.
 
 use egui::Id;
 
@@ -62,12 +64,6 @@ use super::tab_menu::TabMenuHandler;
 use crate::theme::Theme;
 
 /// Something the operator did that the layout must respond to.
-///
-/// Collected during a frame and applied after it — see the module
-/// header. A struct-like enum rather than a callback so the whole set of
-/// mutations the dock can perform is **one readable list**, which is what
-/// makes "nothing else writes to the layout" a claim a reviewer can
-/// check.
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum Intent {
     /// Make a panel the active tab of its stack.
@@ -223,10 +219,6 @@ pub(crate) enum Intent {
 }
 
 /// Everything a dock surface needs for one frame.
-///
-/// Not `Clone`, not `Copy`, and never stored: it borrows the
-/// application's registry and sink for the duration of one
-/// [`super::Dock::show`] call and is dropped at the end of it.
 pub(crate) struct Ctx<'a> {
     /// What the application can draw. A layout may only reference these.
     pub registry: Option<&'a PanelRegistry>,
@@ -316,32 +308,11 @@ pub(crate) struct Ctx<'a> {
 
 impl Ctx<'_> {
     /// A stable widget id for one part of one compartment.
-    ///
-    /// Every interactive element in the dock derives its id from the
-    /// **structural address** — side, column, stack, role — rather than
-    /// from a counter or from the panel's id. That is deliberate and it
-    /// is the property `egui` needs: an id that changed when a tab was
-    /// activated would end the in-flight interaction that caused the
-    /// activation, and an id that changed when a panel moved would reset
-    /// a splitter drag mid-gesture. An id that changes between frames
-    /// silently resets every in-flight interaction keyed on it, and the
-    /// symptom — a drag that stops responding partway — never points back
-    /// at the id.
     pub(crate) fn id(&self, role: &str, side: DockSide, column: usize, stack: usize) -> Id {
         self.id_salt.with((role, side, column, stack))
     }
 
     /// The label and tooltip for a panel, falling back to the id itself.
-    ///
-    /// **Falling back rather than skipping is load-bearing.** A panel
-    /// mounted in the layout but absent from the registry is normally
-    /// dropped at load time with a disclosed reason
-    /// ([`crate::layout`]), so reaching this fallback means the
-    /// application registered panels *after* loading, or mutated the
-    /// layout by hand. Drawing the raw id is ugly and truthful; drawing
-    /// nothing would give a tab with no name, which is
-    /// indistinguishable from a rendering fault and impossible to report
-    /// usefully.
     pub(crate) fn describe(&self, panel: &PanelId) -> (String, String) {
         match self.registry.and_then(|r| r.get(panel.as_str())) {
             Some(info) => (info.label.clone(), info.accessible_name().to_owned()),

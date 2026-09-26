@@ -12,11 +12,6 @@ pub fn copy_button() -> String {
 }
 
 /// What Copy does, said in terms of the thing it enables.
-///
-/// Names the **destination** rather than the mechanism. *"Copies the file to
-/// the clipboard"* describes a data structure; an operator wants to know they
-/// can now put it in the other document, which is the whole reason the verb
-/// exists.
 #[must_use]
 pub fn copy_tooltip() -> String {
     "Takes a copy of this file, so you can paste it into another open document.".to_owned()
@@ -46,20 +41,12 @@ pub fn paste_button() -> String {
 
 /// What Paste does, naming the file so the operator can see what is on the
 /// clipboard without pressing anything.
-///
-/// The name is in the **tooltip** rather than the button, because the button
-/// sits in a row of two-word controls and *"Paste drawing-rev-C.dwg"* would be
-/// the only one that changed width as the clipboard changed.
 #[must_use]
 pub fn paste_tooltip(name: &str) -> String {
     format!("Attaches {name} to this document.")
 }
 
 /// Said when the destination already has an attachment of that name.
-///
-/// Beside the button, before the press. See the module header: the engine
-/// **replaces** rather than refusing, so without this the operator would lose
-/// a file and see nothing at all.
 #[must_use]
 pub fn replaces_note(name: &str) -> String {
     format!(
@@ -75,20 +62,12 @@ pub fn pasted(name: &str) -> String {
 }
 
 /// The status line after a paste that replaced something.
-///
-/// A **different** sentence from [`pasted`], because the operator who did not
-/// read the note needs the fact afterwards too, and *"Attached X"* is true of
-/// both cases and useful in only one.
 #[must_use]
 pub fn pasted_over(name: &str) -> String {
     format!("Attached {name}, in place of the file of the same name that was there before.")
 }
 
 /// Said when Paste is pressed and the clipboard holds no attachment.
-///
-/// Reachable only through a chord or the harness seam — the control is not
-/// drawn at all when there is nothing to paste, per R9. It exists so that route
-/// says something rather than nothing.
 #[must_use]
 pub fn nothing_to_paste() -> String {
     "There is no file on the clipboard. Copy one from another document's Attachments panel \

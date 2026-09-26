@@ -112,3 +112,20 @@ the **active** document's disclosure and nothing else, so a sentence
 filed against the source's revision would be recorded, correct, and
 invisible — the shape of failure `app::actions::vector_edit`'s own
 header calls *recorded, not disclosed*.
+
+### `fn apply_insert_from_open_document`
+
+**The target is always the active document**, and is not carried by the
+action. That is not an omission: the drop landed on a surface, the
+surface was showing the active document, and a slot carried from the
+press would name whatever was active when the *drag started* — which,
+with spring-loading, is precisely the document it is not.
+
+# How it declines, and why each refusal is silent or spoken
+
+| condition | what happens |
+|---|---|
+| the source tab has gone, or never held an open document | traced, nothing said — unreachable without a close mid-drag, and there is no remedy to offer |
+| nothing is open to drop into | traced, nothing said — same |
+| the source **is** the target | traced and **refused**; a same-document drag is a reorder and reaches a different arm entirely |
+| the engine refuses the insert | `vector_edit`'s own decline path, which puts the engine's reason on the status row |

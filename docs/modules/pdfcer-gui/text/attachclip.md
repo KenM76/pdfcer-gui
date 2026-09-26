@@ -47,3 +47,34 @@ around.
 Both halves. A note saying only *"a file of that name exists"* leaves the
 operator to guess what pressing the button does — and the answer is the
 surprising one.
+
+### `fn copy_tooltip`
+
+Names the **destination** rather than the mechanism. *"Copies the file to
+the clipboard"* describes a data structure; an operator wants to know they
+can now put it in the other document, which is the whole reason the verb
+exists.
+
+### `fn paste_tooltip`
+
+The name is in the **tooltip** rather than the button, because the button
+sits in a row of two-word controls and *"Paste drawing-rev-C.dwg"* would be
+the only one that changed width as the clipboard changed.
+
+### `fn replaces_note`
+
+Beside the button, before the press. See the module header: the engine
+**replaces** rather than refusing, so without this the operator would lose
+a file and see nothing at all.
+
+### `fn pasted_over`
+
+A **different** sentence from [`pasted`], because the operator who did not
+read the note needs the fact afterwards too, and *"Attached X"* is true of
+both cases and useful in only one.
+
+### `fn nothing_to_paste`
+
+Reachable only through a chord or the harness seam — the control is not
+drawn at all when there is nothing to paste, per R9. It exists so that route
+says something rather than nothing.

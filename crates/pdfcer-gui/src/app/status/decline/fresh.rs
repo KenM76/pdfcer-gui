@@ -18,34 +18,6 @@ use crate::app::state::OpenDoc;
 impl Declined {
     /// Whether this decline still describes the application in front of the
     /// operator.
-    ///
-    /// **Pure, and that is the point** — the project's standing split
-    /// (`crate::viewer`'s header: *"this module is unit-testable and the widget
-    /// code is not"*). Every property of the retirement rule that can be wrong
-    /// is decided here and asserted headlessly; [`live`] adds only "go and ask
-    /// the two questions".
-    ///
-    /// The facts are named as booleans rather than taken as a `&OpenDoc`
-    /// so that the caller is forced to state *which* question it asked. All
-    /// are asked through the same predicates that produced the decline in the
-    /// first place, which is what stops a second spelling of "is there
-    /// anything to frame?" drifting away from the first.
-    ///
-    /// # Why a fourth parameter rather than a `&OpenDoc`
-    ///
-    /// [`History`] arrived with the undo wiring and needed a third fact — *is
-    /// there anything on the stack now?* — which is where the temptation to
-    /// collapse the list into the document it is all read from is strongest.
-    /// The list stays, for the reason it was a list to begin with: a
-    /// `&OpenDoc` here would make this function able to ask **any** question,
-    /// and the one property that makes it worth testing is that every question
-    /// it asks was asked by the code that produced the decline. The parameters
-    /// are the contract; [`live`] is the only place allowed to go and get them.
-    ///
-    /// The two history variants take their fact as *one* [`History`] pair
-    /// rather than as two more booleans, so a caller cannot transpose them —
-    /// and each arm below names the field it reads, so neither can read the
-    /// other's stack.
     #[must_use]
     pub(super) fn still_true(
         &self,
@@ -297,18 +269,6 @@ impl Declined {
 
 /// **What the command log says right now** — the fact
 /// [`Declined::NothingToUndo`] and [`Declined::NothingToRedo`] are retired by.
-///
-/// A pair rather than two parameters because they are read together, from one
-/// borrow of one session, and because a caller that had to pass two loose
-/// booleans in the right order would eventually pass them in the wrong one —
-/// and the symptom would be a sentence that retires when the *other* stack
-/// fills, which reads exactly like a sentence that retires correctly.
-///
-/// Both are asked through `EditSession`'s own predicates, which is the same
-/// pair `crate::app::conditions` publishes `undo.available`/`redo.available`
-/// from and the same pair `crate::app::actions`' history arm declines on. Three
-/// readers, one derivation: the control cannot be greyed while the sentence
-/// says the opposite.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(crate) struct History {
     /// `EditSession::can_undo` — something has been changed and not taken back.

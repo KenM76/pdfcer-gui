@@ -30,27 +30,6 @@ const PREFIX: &str = "off_page.";
 const READING_MODE: &str = "read";
 
 /// Off-page display, remembered per ribbon mode.
-///
-/// # Why a map of the answers GIVEN rather than three `bool` fields
-///
-/// Three fields would be smaller, and would also be a closed set: a manifest
-/// with a fourth mode could not be remembered, and — more importantly — three
-/// fields cannot distinguish *"the operator chose `false` for Read"* from
-/// *"nobody has said anything about Read yet"*. Those are the same value and
-/// different facts. Keeping only the answers actually given means:
-///
-/// * a fresh profile writes **no** `off_page.*` lines at all, so the file does
-///   not fill up with keys nobody set;
-/// * [`default_for_mode`] remains the single source of the shipped behaviour,
-///   free to change in a later build without a stale copy sitting in every
-///   operator's preferences file contradicting it;
-/// * the round trip is exact — an empty map writes nothing and reads back
-///   empty, which is what `every_preference_round_trips_through_the_file`
-///   requires of every member of [`Prefs`](super::Prefs).
-///
-/// [`BTreeMap`] and not [`HashMap`](std::collections::HashMap) for the writer's
-/// sake: the file must be byte-stable across runs or a diff of two preference
-/// files is unreadable noise.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct OffPagePrefs {
     /// Mode id → the operator's answer. Absent means *never answered*.
@@ -59,14 +38,6 @@ pub struct OffPagePrefs {
 
 impl OffPagePrefs {
     /// What this build ships for `mode`, before any operator answer.
-    ///
-    /// **Read is off; everything else is on**, including a mode this build has
-    /// never heard of. The fallback direction is chosen so that an unfamiliar
-    /// mode behaves like Edit rather than like Read: showing material that is
-    /// there costs a band of pasteboard, whereas hiding it costs the operator
-    /// the knowledge that it exists at all. Between a cosmetic cost and a
-    /// silent omission, take the cosmetic one — the same posture
-    /// `PageDisplay::default_for_mode` takes on its own unknown mode.
     #[must_use]
     pub fn default_for_mode(mode: &str) -> bool {
         mode != READING_MODE
@@ -82,12 +53,6 @@ impl OffPagePrefs {
     }
 
     /// Remember `on` as the answer for `mode`.
-    ///
-    /// The answer is stored **even when it equals the shipped default**, and
-    /// that is not redundancy. An operator who turns off-page display off in
-    /// Review has expressed an intent about Review; if a later build changed
-    /// its mind about Review's default, the operator's own answer must win
-    /// over the new default rather than be indistinguishable from it.
     pub fn set(&mut self, mode: &str, on: bool) {
         self.answers.insert(mode.to_owned(), on);
     }
@@ -98,20 +63,6 @@ impl OffPagePrefs {
 // ---------------------------------------------------------------------------
 
 /// Read one `key = value` line into [`OffPagePrefs`], if it belongs here.
-///
-/// Returns [`KeyOutcome`] — borrowed from the print group rather than
-/// re-declared, because the caller's dispatch chain needs one vocabulary and a
-/// second three-variant enum meaning the same three things is how the two come
-/// to disagree about what `NotMine` obliges the caller to do.
-///
-/// `value` arrives already trimmed, as `prefs::file` trims both halves before
-/// it dispatches.
-///
-/// ⚠ **An empty mode (`off_page. = true`) is `BadValue`, not `NotMine`.** It is
-/// unmistakably one of ours — it carries the prefix — and reporting it as an
-/// unknown key would tell the operator to check the spelling of a key they
-/// spelled correctly, which is the exact confusion [`KeyOutcome`]'s three
-/// variants exist to prevent.
 pub(super) fn parse_key(prefs: &mut OffPagePrefs, key: &str, value: &str) -> KeyOutcome {
     let Some(mode) = key.strip_prefix(PREFIX) else {
         return KeyOutcome::NotMine;
@@ -129,12 +80,6 @@ pub(super) fn parse_key(prefs: &mut OffPagePrefs, key: &str, value: &str) -> Key
 }
 
 /// Write this group's commented block into the file.
-///
-/// Called once by `Prefs::write_to_string`. The comment is written **always**,
-/// even when no answer has been given, because the file is meant to be opened
-/// in a text editor and a preference nobody can discover is a preference
-/// nobody has. The key lines below it are written only for answers the
-/// operator actually gave — see [`OffPagePrefs`] on why.
 pub(super) fn write_block(prefs: &OffPagePrefs, out: &mut String) {
     out.push_str(
         "\n\
@@ -172,39 +117,6 @@ pub(super) fn write_block(prefs: &OffPagePrefs, out: &mut String) {
 
 /// **Remember the operator's answer to `View ▸ Off-Page Content`**, for the
 /// ribbon mode they are in, and put it on disk.
-///
-/// Called from the single `Action::ToggleViewChrome` arm in
-/// [`crate::app::actions`], for *every* chrome toggle, and it returns
-/// immediately for the [`ViewChrome`] variants that have no memory. That shape
-/// is deliberate, because the obvious alternative — an `if chrome == OffPage` at
-/// the call site — looks tidier and is worse: **the knowledge stays in one
-/// module.** That off-page is the toggle with a remembered answer, that the
-/// answer is keyed by mode, and that a mode-less shell has nothing to key it by
-/// are all facts about *this* preference. A caller that had to know the first of
-/// them would be a second place to update when a second toggle grows a memory.
-///
-/// # What it writes, and why immediately
-///
-/// One `prefs.save()` per click, exactly as `view.smart_select` and the
-/// find-zoom toggle do, and for the reason stated there: **one discrete
-/// operator decision is one write**. Deferring to shutdown would lose the
-/// answer to a crash or a power cut, and the operator's request was that the
-/// preference be *remembered* — a memory that survives only an orderly exit is
-/// not what anybody means by that.
-///
-/// A failed write is swallowed. Preferences are a convenience and a modal in
-/// front of somebody who just flipped a view switch would be a worse defect
-/// than the lost line; the same judgement every other `prefs.save()` call in
-/// this crate makes.
-///
-/// # `mode` is an [`Option`] because the shell's is
-///
-/// [`crate::shell::ribbon`] answers `None` before a manifest has been applied.
-/// There is no sensible key for "no mode", and inventing one (`""`, or
-/// defaulting to `read`) would write an answer against a mode the operator was
-/// never in — which the next real mode would then inherit. Doing nothing is
-/// the honest response: the toggle still works for the session, it simply has
-/// nowhere to be remembered.
 pub fn remember(chrome: ViewChrome, on: bool, prefs: &mut super::Prefs, mode: Option<&str>) {
     if chrome != ViewChrome::OffPage {
         return;
@@ -221,34 +133,6 @@ pub fn remember(chrome: ViewChrome, on: bool, prefs: &mut super::Prefs, mode: Op
 }
 
 /// **Put the mode's answer into every open document's view state.**
-///
-/// Called from the one place a ribbon mode change is observed
-/// (`crate::app::surfaces`, beside `on_mode_capabilities_changed`). One site,
-/// stated as a requirement rather than an accident: a second would let the
-/// canvas show one mode's answer while the ribbon shows another's, and that
-/// state is indistinguishable from the toggle being broken.
-///
-/// # The consequence, stated plainly because it is intended
-///
-/// **Leaving Edit for Read can change the page layout.** Read's shipped answer
-/// is off, so the band of pasteboard that held off-sheet material goes, and
-/// with it the gap it opened between one sheet and the next. That is the
-/// operator's request — *"when not showing the stuff that is off page there
-/// shouldn't be a gap between pages where the stuff is"*. It is not a surprise
-/// to be softened; a mode change is a deliberate gesture and this is the thing
-/// it was asked to do.
-///
-/// # Why EVERY document and not just the active one
-///
-/// The answer is a property of the mode, not of the document. A parked tab
-/// that kept the outgoing mode's layout would spring to the incoming mode's
-/// the instant it was activated, with no gesture in between to explain it —
-/// the operator would have watched a document rearrange itself for nothing.
-/// Writing them all now costs one bool per open file and makes activation
-/// inert, which is what the operator already believes it is.
-///
-/// `parked` is taken as a slice rather than the app, so this function cannot
-/// reach anything else and the caller's three field borrows stay disjoint.
 pub fn apply_mode(prefs: &super::Prefs, mode: &str, status: &mut Status, parked: &mut [Status]) {
     let on = prefs.off_page.for_mode(mode);
     for status in std::iter::once(status).chain(parked.iter_mut()) {

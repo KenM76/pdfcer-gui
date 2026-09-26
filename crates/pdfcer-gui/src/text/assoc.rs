@@ -8,22 +8,12 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/text/assoc.md`.
 
 /// The Settings group's heading, and the ask-once dialog's title.
-///
-/// Deliberately identical. The dialog is the offer and the group is where the
-/// offer lives afterwards; an operator who ticks *"don't ask again"* and then
-/// changes their mind is looking for the words they dismissed, and finding a
-/// differently-named group is how a feature is concluded not to exist.
 #[must_use]
 pub fn title() -> String {
     "Open PDFs with pdfcer".to_owned()
 }
 
 /// What the offer means, on both surfaces.
-///
-/// Two sentences: what pdfcer does, then what is left for the operator. The
-/// second is not a caveat tucked underneath — it is half the act, and an
-/// operator who is not expecting a Windows dialog will read that dialog as
-/// something going wrong.
 #[must_use]
 pub fn body() -> String {
     "pdfcer can add itself to the list of programs Windows offers for PDF \
@@ -47,11 +37,6 @@ pub fn action_hover() -> String {
 }
 
 /// The ask-once dialog's dismissal.
-///
-/// *"Not now"* rather than *"Cancel"*: cancelling implies the offer is
-/// withdrawn, and it is not — it is in Settings, permanently, which is the
-/// whole point of the operator's *"then it should be in the top of our
-/// settings"*.
 #[must_use]
 pub fn later() -> String {
     "Not now".to_owned()
@@ -84,12 +69,6 @@ pub fn state_default() -> String {
 }
 
 /// **Windows opens PDFs with something else, and here is its name.**
-///
-/// The ProgID is shown raw. It is not a friendly name and there is no
-/// reliable way to turn one into a friendly name — `AppXd4nrz…` is what Windows
-/// stores for Edge — but it is *stable and searchable*, and an operator who
-/// wants to know what has the association can paste it somewhere. A prettier
-/// string that guessed would eventually name the wrong program.
 #[must_use]
 pub fn state_other(owner: &str) -> String {
     format!("Windows currently opens PDF files with another program ({owner}).")
@@ -118,12 +97,6 @@ pub fn state_unregistered() -> String {
 }
 
 /// **The list points at a different copy of pdfcer.**
-///
-/// ⚠ The state worth calling out, because it is the one that looks like it
-/// works and does not: a portable build gets unzipped somewhere new, and the
-/// registration still names the old folder. Double-clicking then opens a build
-/// the operator thought they had replaced — or nothing, if the old folder is
-/// gone.
 #[must_use]
 pub fn state_registered_elsewhere() -> String {
     "Windows' list points at a different copy of pdfcer. Use the button to \
@@ -167,10 +140,6 @@ pub fn application_description() -> String {
 // ---------------------------------------------------------------------------
 
 /// pdfcer cannot find its own executable, so there is no path to register.
-///
-/// Rare enough to be surprising and real enough to need a sentence:
-/// `current_exe` is documented as able to fail. Saying so plainly beats a
-/// button that does nothing.
 #[must_use]
 pub fn no_exe_path() -> String {
     "pdfcer could not determine where its own program file is, so it cannot \
@@ -185,10 +154,6 @@ pub fn refused(key: &str) -> String {
 }
 
 /// The Windows settings page would not open.
-///
-/// ⇒ The instruction is the fallback: this names the route through the Settings
-/// app, because an operator who cannot reach the page by link can still reach
-/// it by hand, and a refusal with no way forward is just an apology.
 #[must_use]
 pub fn settings_page_refused() -> String {
     // A plain `>` rather than a typographic separator. `icons::glyphs`

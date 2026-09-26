@@ -12,15 +12,6 @@ pub const fn window_title() -> &'static str {
 }
 
 /// The standing rule, first line of the window, before any choice.
-///
-/// # Why this is the first thing on screen and not a footnote
-///
-/// Because it is the one belief the operator arrives with that is wrong. Every
-/// "page size" control he has ever used — Word, LibreOffice, a print dialog —
-/// reflows or scales. This one does not, and a window that let him discover
-/// that from the result would be the *"fuzzy, never sneaky"* failure in its
-/// purest form: he would get a file that is exactly what he asked for and
-/// nothing like what he wanted.
 #[must_use]
 pub const fn intro() -> &'static str {
     "This changes the paper, not the drawing. Nothing on the page moves, and \
@@ -46,11 +37,6 @@ pub fn now_uniform_named(count: usize, name: &str, w_pt: f64, h_pt: f64) -> Stri
 }
 
 /// Every picked sheet is the same size and it is not one pdfcer has a name for.
-///
-/// Said out loud rather than shown as bare numbers with no comment. A CAD
-/// exporter that writes 2,381.10 × 1,683.78 has produced an A1 sheet rounded to
-/// two decimals by a units conversion, and an operator who sees "not a standard
-/// size" learns something true about his own export pipeline.
 #[must_use]
 pub fn now_uniform_unnamed(count: usize, w_pt: f64, h_pt: f64) -> String {
     format!(
@@ -60,11 +46,6 @@ pub fn now_uniform_unnamed(count: usize, w_pt: f64, h_pt: f64) -> String {
 }
 
 /// The picked sheets are **not** all the same size.
-///
-/// This is the state that makes a single "current size" readout a lie, and
-/// the reason the dialog reads the operands rather than the current page. A
-/// drawing set with one A3 detail sheet among nine A1s is the ordinary case,
-/// not the exotic one.
 #[must_use]
 pub fn now_mixed(count: usize, distinct: usize) -> String {
     format!(
@@ -100,11 +81,6 @@ pub const fn size_custom() -> &'static str {
 }
 
 /// The name of a standard sheet size.
-///
-/// The wildcard arm is load-bearing. `PaperSize` is `#[non_exhaustive]` and
-/// its own docs say the table will grow (ARCH, JIS B, ISO B/C); a size the
-/// engine adds must appear in the list with its machine id rather than making
-/// this module fail to compile or, worse, silently vanish from the picker.
 #[must_use]
 pub fn size_name(size: PaperSize) -> String {
     match size {
@@ -201,31 +177,12 @@ pub const fn outcome_heading() -> &'static str {
 }
 
 /// Nothing drawn on the picked sheets falls outside the new paper.
-///
-/// This is the *only* wording in the window that promises anything, so it is
-/// bounded exactly to what was measured — the union of the picked pages' drawn
-/// vector extents, which is what `PageObjects::page_bbox` computes. See
-/// [`overhang_unmeasurable`] for the case where even that could not be read,
-/// and [`annots_not_counted`] for the boundary this sentence does not cover.
 #[must_use]
 pub const fn fits() -> &'static str {
     "Everything drawn on these sheets fits inside the new paper. Nothing will fall off."
 }
 
 /// The drawing runs past the new paper, by how much and on which edges.
-///
-/// # Why this names the EDGES and the AMOUNT
-///
-/// Because "content will be cropped" is a warning and this is a
-/// **measurement**, and the operator's decision turns on the difference. On his
-/// own A1 title-block sheet the overhang is 1,636 pt off the right edge — the
-/// width of the whole title block — and a number that large tells him
-/// immediately that he has picked the wrong size. A generic warning would read
-/// identically for a 2 pt overhang he does not care about.
-///
-/// The four amounts are in points because that is the unit the sheet is in and
-/// the unit the numbers beside it are in; a millimetre conversion here would
-/// make the reader do arithmetic to compare this line with the one above it.
 #[must_use]
 pub fn overhang(left: f64, right: f64, bottom: f64, top: f64) -> String {
     let mut edges: Vec<String> = Vec::new();
@@ -259,12 +216,6 @@ fn join_and(parts: &[String]) -> String {
 }
 
 /// The drawn extent of at least one picked sheet could not be read.
-///
-/// A stated boundary rather than a cheerful silence. A page whose content
-/// stream will not decompose is exactly the page most likely to be a strange
-/// export, and reporting "nothing falls off" for it would be a false negative
-/// dressed as a measurement — which is the failure the engine's own
-/// `MediaBoxChange` names as its residual and refuses to commit.
 #[must_use]
 pub fn overhang_unmeasurable(unread: usize, total: usize) -> String {
     format!(
@@ -290,15 +241,6 @@ pub const fn no_change() -> &'static str {
 
 /// The picked sheets' lower-left corners disagree, so the new sheet is placed
 /// at the origin.
-///
-/// # Why this exists at all
-///
-/// §7.7.3.3 does not require a media box to start at `(0, 0)`, and imposition
-/// output and cropped scans really do carry offset ones. `set_media_boxes`
-/// takes **one** rectangle for the whole selection, so when the picked sheets
-/// sit at different corners no single rectangle can preserve all of them; the
-/// dialog anchors at the origin and says so, rather than moving the paper
-/// relative to the drawing without a word.
 #[must_use]
 pub const fn origin_differs() -> &'static str {
     "These sheets do not all start at the same corner, so the new paper is placed at the \
@@ -351,13 +293,6 @@ pub const fn apply_tooltip() -> &'static str {
 // ---------------------------------------------------------------------------
 
 /// The sheet lost area on `n` pages.
-///
-/// The asymmetry is the part worth reporting and is quoted from the engine's
-/// own reasoning: §14.11.2.1 says content outside the media box *"may safely be
-/// discarded without affecting the meaning of the PDF file"* — an unusually
-/// strong permission, because it asserts the discard is meaning-preserving. So
-/// shrinking is reversible **in pdfcer**, by Undo, and is not reversible **in
-/// the ecosystem**, once the file has been through any other tool.
 #[must_use]
 pub fn disclosure_lost_area(n: usize) -> String {
     format!(
@@ -369,12 +304,6 @@ pub fn disclosure_lost_area(n: usize) -> String {
 }
 
 /// A `/CropBox` on `n` pages is no longer inside the new media box.
-///
-/// Disclosed, not repaired, and the engine's argument for that is quoted
-/// because the operator would otherwise reasonably expect a fix: a conforming
-/// reader *"shall treat the box as its intersection with the media box"*, so
-/// clamping the entry would change no reader's output while rewriting an entry
-/// the operator did not name.
 #[must_use]
 pub fn disclosure_crop_outside(n: usize) -> String {
     format!(
@@ -386,11 +315,6 @@ pub fn disclosure_crop_outside(n: usize) -> String {
 
 /// `n` pages' own `/MediaBox` entry was removed because an ancestor already
 /// says the same thing.
-///
-/// Worth a sentence rather than silence: the page is now sized by
-/// inheritance, so a later change to the document's default size will move it
-/// and a sibling's will not. That is a real, invisible difference in what the
-/// next edit does.
 #[must_use]
 pub fn disclosure_inherited(n: usize) -> String {
     format!(
@@ -416,11 +340,6 @@ pub fn disclosure_size_advisory(n: usize, below: bool) -> String {
 }
 
 /// The engine refused the change because the document is certified.
-///
-/// Worded rather than traced, because `RESUME.md`'s standing cross-cutting
-/// defect is that *"every engine refusal reaches the operator as SILENCE"*.
-/// Measured 2026-09-06 on `fixtures/certified-comments.pdf`: the engine refuses
-/// with `CertificationForbidsChange` and this is what that has to read as.
 #[must_use]
 pub const fn refused_certified() -> &'static str {
     "This document carries a certification signature that does not permit structural page \

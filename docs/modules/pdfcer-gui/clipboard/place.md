@@ -226,3 +226,31 @@ The failure this guards against is silent in the worst way: registering
 `CF_DIBV5`'s *name* would create a private format nothing reads, and
 treating `"PNG"` as predefined would place it under format id 0. Both
 look like a successful copy from inside this program.
+
+### `enum Refusal`
+
+Four variants rather than one, because the operator's next move differs
+for every one of them and a single "copy failed" would tell them nothing
+about which. The sentences live in [`crate::text::clipboard`]; this type
+carries only the distinction.
+
+### `fn copy_out`
+
+The whole command, in the order the operator experiences it: work out what
+the operand is, produce every format for it, refuse if the set would
+degrade, then place it in one transaction.
+
+# Why the payload is built BEFORE the clipboard is opened
+
+A CAD sheet can take seconds to record. Windows serialises clipboard access
+across every process on the desktop, so holding it open while rendering
+would stall every other application's copy and paste for that long. The
+engine's CLI states the same rule for the same reason, and
+`native-clipboard` enforces it structurally: nothing there opens the
+clipboard until every handle has already been created.
+
+# Errors
+
+[`Refusal`] — see the type. Every variant leaves the operator's existing
+clipboard contents intact except [`Refusal::Clipboard`] carrying
+`PlaceError::Set`, which is the one failure Win32 offers no rollback for.

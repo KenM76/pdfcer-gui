@@ -40,3 +40,15 @@ The uncompressed data is the scanlines, each prefixed by a filter-type byte
 of 0 (None). That per-row prefix byte is the classic thing to forget; the
 symptom is an image that shears diagonally, because every row is offset one
 byte further than the last.
+
+## Item notes
+
+### `fn encode_rgb`
+
+`rgb` must be exactly `width * height * 3` bytes, row-major, top row first.
+
+# Panics
+
+Never. A length mismatch returns `None` rather than panicking: this is
+diagnostic plumbing, and a panic in the evidence writer would destroy the
+evidence of whatever it was called to record.

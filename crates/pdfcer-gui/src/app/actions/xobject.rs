@@ -67,11 +67,6 @@ pub enum XObjectAction {
 }
 
 /// Apply one form-XObject verb.
-///
-/// One arm today, matching its neighbours' shape: `super::bookmarks::apply` and
-/// `super::attachments::apply` are both reached from `super::apply` by a single
-/// line, so the family's rules live with the family rather than in the
-/// interpreter's match.
 pub(super) fn apply(doc: &mut OpenDoc, action: XObjectAction) {
     match action {
         XObjectAction::Unshare { page, form } => unshare(doc, page, form),

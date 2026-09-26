@@ -72,3 +72,24 @@ placeholder's own at `render-failed`, because the scroll area is built below
 that return — and either way it is a `Sense::hover()` widget in the canvas's
 layer, so a floating window over the canvas keeps swallowing the wheel
 exactly as it does one tier up.
+
+## Item notes
+
+### `fn offer`
+
+Called from `canvas::present` immediately before each of the two
+`canvas-unavailable` traces and their early returns.
+
+`hovered` answers *"is the pointer over the canvas?"* and is the only gate
+either handler gets; which response the caller reads it from is a property
+of the call site. See the module header.
+
+# Order matters, and it is the same order the ordinary path uses
+
+The page turn is read **before** the zoom, so the two are consulted in the
+order egui produced the events. They cannot both fire on one gesture: a
+modified wheel populates `zoom_delta` and contributes nothing to the scroll
+delta [`paging::flip`] reads. Reversing them here would make the rescue path
+behave differently from the ordinary one under a gesture that is ambiguous on
+some pointing device nobody has tested — and the whole value of this module
+is that the operator's habits keep working when the canvas has gone blank.

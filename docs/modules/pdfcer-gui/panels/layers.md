@@ -402,3 +402,23 @@ mutually exclusive group can end up showing at once.
 `/Name` is Required, so its absence is a real malformation. A
 synthesised "Layer 3" would disguise a defect in the file as data
 from it.
+
+### `fn layer_name_for`
+
+`None` when the document's registered groups contain no such id — an OCMD
+(§8.11.2.2), or an OCG page content refers to and `/OCProperties` never
+listed. A caller must say something *different* in that case, never
+`on layer ""`: an empty pair of quotes is the placeholder R9 forbids, and
+[`crate::text::panels::layers::layer_clause`] has words for it.
+
+# Why the status bar comes here rather than reading `/Name` itself
+
+[`row_name`]'s own header states the rule: **one spelling of what a layer
+is called.** It was written when the search needed to match what the row
+showed, and the reason generalises to every second surface. A bar that read
+`Layer::name` directly would print the empty string for an undeclared
+`/Name` where the panel prints its placeholder — the same layer, two names,
+on two surfaces the operator sees at once.
+
+`DEFECTS.md` D5 in a feature small enough to have been assumed safe. That
+is the second time this function has absorbed a would-be copy.

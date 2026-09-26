@@ -112,3 +112,64 @@ in [`Host::fit`] and not a smarter comparison here.
 It is written as a test rather than a comment so that anyone tempted to
 replace the budget with "just check the size is different" has to delete
 an assertion that says why it will not work.
+
+### `fn forget_fit`
+
+Called from [`Self::show`] on the pass a dialog opens. See the call site
+for the operator report that made it necessary; the short version is
+that `fit`'s two guards are scoped to *one opening* and were living in
+memory that outlives the window.
+
+### `fn fit`
+
+# Why this exists: `.resizable(false)` was a SIZE, and an OS window
+# has to be given one
+
+
+An OS window must be created at some size, so a naive conversion means
+**guessing thirteen numbers**, and a guess that is too small does not
+look wrong: it clips the bottom of the dialog, which on a confirmation
+is the row with the buttons on it. That is exactly the class of defect
+`D:/dev/rag/egui/` records as *"panels that shipped unreachable in real
+builds with every gate green"*.
+
+So the window is created at a stated size and then **asks the content
+how big it actually is**, growing to fit. The stated size stops being a
+promise and becomes an opening bid.
+
+# It only ever GROWS, it grows by a MEANINGFUL amount, and it
+# never asks twice for the same size
+
+Three guards, and every one of them is here because of R128 — the
+fit-zoom feedback loop this project has already been bitten by, where a
+measurement fed a size that changed the measurement.
+
+**The first version of this function had that exact defect, and a driven
+run found it in one launch.** It padded the measured content by an item
+spacing before comparing — so `want` was always larger than `inner`,
+every frame asked for eight more pixels than the last, and the
+once-per-size guard did not help because *every* size was a new one.
+The About window opened at 560 x 480 and was 1624 x 746 by the time the
+trace was read. Monotonic creep is a loop; a guard that only stops
+*repetition* does not stop it.
+
+1. **Grow only.** Shrinking to content would fight the operator every
+   time they enlarged a window, and would shrink a scrollable body to
+   its own scroll viewport, which is circular by construction.
+2. **Grow by something worth growing by.** [`FIT_MARGIN`] is the floor
+   on how much overflow is worth a resize. Below it the difference is
+   measurement noise between `min_rect` and a client size the window
+   manager reports, and acting on noise is what creep is made of.
+3. **Never ask twice for the same size**, so a body that genuinely does
+   respond to its window settles after one round trip instead of
+   oscillating for the life of the dialog.
+
+The content is measured RAW, with nothing added. A margin added here
+is indistinguishable from real overflow, which is the whole of the bug
+above: the padding an eye would want belongs in the *layout*, not in the
+question "is the layout bigger than its window".
+
+A scrollable body cannot trigger this at all: a `ScrollArea` reports
+the size it was *given*, not the size of what is inside it. That is why
+the print dialog — the one dialog that already had a measured size and a
+scrollbar — is unaffected by a mechanism written for the other twelve.

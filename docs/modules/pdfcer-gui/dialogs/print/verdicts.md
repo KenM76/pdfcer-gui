@@ -173,3 +173,127 @@ about this sheet*:
 2. the plan names a page that is no longer there;
 3. the sheet was never previewed, or was previewed under a different
    placement or page size.
+
+### `struct Context`
+
+# Why these three fields and no others
+
+A sheet's overhang verdict is a function of exactly two things: **the
+pixels** (what the page renders to) and **the band** (which part of the
+page falls outside the printable rectangle).
+
+- `scope` and `settings` decide the pixels. They are `PreviewKey`'s own two
+  non-page fields, and they are held here whole for the reason that type
+  gives at length: naming the five rendering settings individually would be
+  a second statement of which settings affect a render, and the failure mode
+  of the two disagreeing is a preview that silently never updates.
+- `printable_pt` decides the band, together with the per-sheet placement.
+  The *sheet* rectangle and the unprintable offset do **not** appear,
+  because they only move the whole diagram: the band, expressed as a
+  fraction of the page — which is the coordinate system
+  [`super::ink::InkMask`] speaks — depends on the printable extent, the
+  placement and the page size, and on nothing else. The preview's zoom, pan
+  and fit drop out for the same reason, which is why panning does not throw
+  a verdict away.
+
+It is `PartialEq` rather than `Eq` because `Settings` carries a `String`
+and `printable_pt` carries `f64`s. Comparing device dimensions with `==` is
+exact here on purpose: these numbers are copied out of the driver's own
+report, not computed, so two reads of an unchanged device produce the same
+bits. A device that reported a different rectangle *should* void every
+verdict.
+
+### `fn new`
+
+Built **once per frame** in [`super::PrintDialog::show`] and passed
+down, rather than rebuilt at each of the three sites that need it: the
+`Settings` clone is the only allocation in this module's whole hot path
+and there is no reason to pay for it three times.
+
+### `fn preview_key`
+
+# This is the enforcement, not a convenience
+
+`super::preview::texture_for` obtains its key from **here**. That is
+what makes "the verdict is keyed on at least what the pixels are keyed
+on" a structural fact rather than a promise: the texture's key is
+derived from this context, so a context that still matches implies a
+`PreviewKey` that still matches, for every page.
+
+Building the key in two places instead — one for the texture and one
+for the verdict — is the exact shape of drift this project has been
+caught by repeatedly: two readings of one rule, kept level by memory.
+
+`placement` is the page's paper points per page point; it joins the
+key only while a fixed line width is on, because only then does it
+change the pixels.
+
+### `struct Verdicts`
+
+Lives on [`super::PrintDialog`], so it is forgotten when the dialog closes.
+That is the right lifetime: the verdicts describe one job's placements
+against one device, and neither survives the dialog.
+
+### `fn remember`
+
+Called from `super::preview::paint`, at the single point where the ink
+question was actually asked — the same computation the hatch is drawn
+from. **Nothing recomputes the verdict a second way**, which is the
+property `super::preview::lost_regions` was made pure to guarantee and
+which this cache would otherwise quietly undo.
+
+A change of context throws the whole map away first. Merging instead —
+keeping entries whose sheet identity happens to still match — would be
+keeping verdicts recorded from a *different raster*, which is precisely
+the staleness the context exists to catch.
+
+### `fn claim`
+
+One pass over the plan list. Every clipped sheet is sorted into one of
+three buckets and [`ClipClaim::from_counts`] turns the three totals
+into a claim — split that way so the arithmetic is testable without a
+`Job`, a device or a document.
+
+Only [`Overhang::BlankBand`] and [`Overhang::Losing`] are treated as
+knowledge. `Unknown` means the page would not render and the whole band
+was hatched as the honest fallback — *"we could not look"*, which must
+not be allowed to look like *"we looked and it was fine"*. `Fits` on a
+sheet whose placement reports a clip is the degenerate case
+`super::preview::lost_regions` describes, where the arithmetic produced
+no positive band; it is not evidence about ink either. Both count as
+unexamined, which keeps the sheet in the number.
+
+### `enum ClipClaim`
+
+Four states, four sentences, each the strongest thing its state can support.
+The type exists so that the number and the wording are decided **together**,
+once: a count that is a measurement and a count that is a ceiling cannot
+share a sentence, and choosing the sentence at the two call sites
+separately is how the button and the caption come to disagree — which is
+the entire defect this module was written for, one level up.
+
+### `fn commit_label`
+
+The count is in the button's own label rather than beside it, which is
+this dialog's standing choice: *"the difference between a warning the
+operator has to have read and one they can have looked past — it is on
+the control their hand is already on."*
+
+### `fn summary`
+
+`Geometric` and `Measured` share one sentence, and that is not
+laziness. [`t::clip_summary`] has always read *"N of these T sheets
+will lose content outside the printable area"* — a content claim. Under
+`Measured` that claim is now **verified**; under `Geometric` it is the
+unchanged shipped wording, for the reason [`Self::Geometric`] gives.
+Only the ceiling needs a sentence of its own, because only the ceiling
+is a number that was never measured.
+
+### `fn trace_word`
+
+This is the ONLY headless evidence of which claim a frame made, and
+it is needed for the same reason `overhang=` is: a button reading
+*"Print — 2 sheets will lose content"* and one reading *"Print — up to
+2 sheets may lose content"* differ by a state nothing else exposes, and
+a capture cannot tell a correct subtraction from a cache that silently
+never matched. The word says which.

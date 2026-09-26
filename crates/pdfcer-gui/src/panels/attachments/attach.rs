@@ -23,20 +23,6 @@ pub const REGION_DESCRIPTION: &str = "attachments.description"; // ui-text-exemp
 pub const REGION_ATTACH: &str = "attachments.attach"; // ui-text-exempt: trace region name, never displayed
 
 /// Draw the attach-a-file row.
-///
-/// # The button is never greyed, and the contrast with the Bookmarks add row
-/// is the argument
-///
-/// That row greys its Add button until a title has been typed, because a
-/// bookmark with no title is an invisible row — the operand is *required* and
-/// the control cannot act without it.
-///
-/// Here the operand is a **file the operator has not chosen yet**, and the
-/// description beside the button is optional by the engine's own signature. So
-/// there is no state in which this control cannot act, nothing to grey it for,
-/// and nothing to explain on hover about why it is unavailable. P3 reserves
-/// greying for *temporarily unavailable, always explained*; a permanently
-/// enabled control is the honest rendering of a permanently available verb.
 pub fn show(ui: &mut Ui, ui_state: &mut AttachmentsUi, actions: &mut Vec<Action>) {
     ui.label(t::attach_heading());
 

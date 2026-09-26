@@ -30,13 +30,6 @@ use crate::canvas::handles::Grip;
 
 /// What the pointer did over the page this frame, already converted to
 /// **canvas space**.
-///
-/// Assembled in `canvas/mod.rs` from one egui [`egui::Response`] and handed
-/// here as plain data, which is what makes the whole state machine testable
-/// without a window. Every field is a question egui has already answered; the
-/// value of naming them is that the *set* is closed — a future gesture that
-/// wants some other signal has to add it here, in front of this module's
-/// docs, rather than reaching into a `Response` at a call site.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct PointerFrame {
     /// A primary-button drag began this frame.
@@ -124,10 +117,6 @@ pub struct PointerFrame {
 }
 
 /// The canvas's pointer-gesture state between frames.
-///
-/// One `Option`. Everything else is derived from the frame's own signals,
-/// which is deliberate: gesture state that outlives its gesture is how a
-/// canvas ends up in a mode the operator cannot see and cannot leave.
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct GestureState {
     drag: Option<Drag>,
@@ -135,54 +124,6 @@ pub struct GestureState {
 
 impl GestureState {
     /// Advance the machine by one frame.
-    ///
-    /// `press_kind` is consulted **only** on the frame a drag starts; on
-    /// every other frame it is ignored, so the caller may compute it however
-    /// cheaply it likes without worrying about which frame it is.
-    ///
-    /// # The order of the branches is the invariant
-    ///
-    /// 0. **Escape abandons a drag in flight**, and only then. `Option::take`
-    ///    does both halves in one expression: it clears the gesture and
-    ///    reports whether there was one to clear, so an Escape with no drag
-    ///    under it changes nothing here and reaches the ladder untouched.
-    /// 1. **A press starts a drag and returns `Idle`.** Nothing else. No hit
-    ///    test, no clear, no selection change. This is invariant 2.
-    /// 2. **A drag in flight owns the frame**, so a stray `clicked` cannot be
-    ///    read out of the middle of one.
-    /// 3. **A completed click** is the only thing that reaches the selection
-    ///    by hit test.
-    ///
-    /// Reordering 1 and 3 is exactly the defect: `clicked` would still be
-    /// false on the press frame, but a future edit that "helpfully" hit-tested
-    /// on press would have nowhere obvious to be wrong. Keeping the press arm
-    /// first, and empty, is what makes the rule visible to the next reader.
-    ///
-    /// Branch 0 sits above the press for a smaller but real reason: a frame
-    /// carrying both a cancel and a fresh `drag_started` is a *new* gesture,
-    /// and the abandoned one must not be able to resurrect itself by having
-    /// its origin overwritten.
-    ///
-    /// # `press_kind: None` — the press means nothing in this mode
-    ///
-    /// [`press_kind`] returns `None` when the active mode forbids the meaning
-    /// this press would have had (see its own header). `None` suppresses
-    /// **two** branches, and it is worth naming both because suppressing only
-    /// the first would look like it worked:
-    ///
-    /// * **branch 1**, so no drag ever starts — no band, no ghost, no release
-    ///   to refuse;
-    /// * **branch 3**, so no `Click` is reported — and *this* is the one that
-    ///   makes a click in Read select nothing. A click is not a drag and does
-    ///   not consult `press_kind` on its own, so gating the drag alone would
-    ///   leave the single most common gesture on the canvas ungated.
-    ///
-    /// Branch 0 deliberately still runs: an in-flight drag stays cancellable
-    /// whatever the mode has since become. Branch 2 likewise still completes a
-    /// drag already in flight — unreachable in practice, because a mode change
-    /// cancels the gesture on the way in (`PdfcerApp`'s mode-change arm), but a
-    /// state machine that silently dropped a gesture it had already started
-    /// would be wrong regardless of whether anything could reach it.
     pub fn update(&mut self, frame: PointerFrame, press: PressMeaning) -> GestureOutcome {
         // **WHAT THE MACHINE SAW, AND WHAT IT HOLDS.**
         //

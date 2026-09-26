@@ -31,11 +31,6 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/text/export_form.md`.
 
 /// The save dialog's title bar.
-///
-/// It names all three formats, because the dialog is where the format is
-/// **chosen** — by the extension — and a title saying only "Export form data"
-/// would leave an operator who wants CSV with no way to know they may ask for
-/// it. The one place this can be said is the one window they are looking at.
 #[must_use]
 pub const fn save_dialog_title() -> &'static str {
     "Export form data — type .fdf, .xfdf or .csv"
@@ -48,20 +43,6 @@ pub const fn import_dialog_title() -> &'static str {
 }
 
 /// **What an import did, and what it could not find.**
-///
-/// The two numbers are not decoration and the second is the important one: a
-/// data file may legitimately name a **superset** of this document's fields —
-/// that is the ordinary case when one FDF fills a family of related forms — and
-/// `import_form_data` counts those and skips them rather than failing.
-///
-/// So an operator who imports forty values into a thirty-field form gets
-/// thirty filled and ten skipped, and **nothing anywhere else would tell
-/// them**. A sentence saying only "imported" would be true and would hide the
-/// ten fields they thought they were setting.
-///
-/// `skipped` is mentioned only when it is non-zero. The overwhelming case is
-/// a file that matches, and a bar that narrated "0 skipped" would be adding a
-/// number to be ignored.
 #[must_use]
 pub fn imported(applied: usize, skipped: usize) -> String {
     if skipped == 0 {
@@ -81,34 +62,18 @@ pub fn import_unreadable(detail: &str) -> String {
 }
 
 /// The bytes were read and are not form data pdfcer can parse.
-///
-/// Distinct from [`import_unreadable`], and the distinction is the operator's
-/// next move: an unreadable file is a permissions or a path problem, and an
-/// unparseable one means they picked the wrong file or the format is one pdfcer
-/// does not read. The remedies share nothing.
 #[must_use]
 pub fn import_unparseable(detail: &str) -> String {
     format!("That file is not form data pdfcer can read: {detail}")
 }
 
 /// The engine refused the import outright.
-///
-/// Its own sentence rather than folding into [`import_unparseable`], because
-/// this is a refusal about the **document** — no form, a certification that
-/// forbids filling, an encrypted file — rather than about the data file. An
-/// operator told their data file was bad when their document is certified would
-/// go and re-export it, twice.
 #[must_use]
 pub fn import_refused(detail: &str) -> String {
     format!("pdfcer would not import into this document: {detail}")
 }
 
 /// The open document carries no `/AcroForm` at all.
-///
-/// Distinct from [`no_fields`], and the two are not pedantry: a document with
-/// no form has nothing to export and never will until fields are added, while a
-/// document with an empty form is one somebody has already started. The remedy
-/// differs, so the sentence does.
 #[must_use]
 pub const fn no_form() -> &'static str {
     "This document has no form, so there are no values to export."
@@ -121,11 +86,6 @@ pub const fn no_fields() -> &'static str {
 }
 
 /// FDF written.
-///
-/// The format is named in the operator's terms — *"the format Acrobat
-/// uses"* — because `FDF` is an acronym that tells somebody who does not
-/// already know it precisely nothing, and the reason to pick it over the other
-/// two is exactly that other software reads it.
 #[must_use]
 pub fn wrote_fdf(fields: usize) -> String {
     format!("Exported {fields} field value(s) as FDF, the format Acrobat reads.")
@@ -144,25 +104,6 @@ pub fn wrote_csv(fields: usize) -> String {
 }
 
 /// **Values were rewritten so a spreadsheet will not execute them.**
-///
-/// See the module header. The three things this sentence has to carry:
-///
-/// **How many**, because one is a curiosity and forty is a form somebody has
-/// been putting expressions into on purpose.
-///
-/// **Which**, because the operator may need to check the value survived
-/// intelligibly — a part number `-40C` is a legitimate value that a spreadsheet
-/// would otherwise read as arithmetic, and its owner should know it now reads
-/// with a leading quote.
-///
-/// **What was done**, in the passive voice of a thing pdfcer did rather than a
-/// thing that went wrong. It is a protection, and an operator who reads it as
-/// an error will go looking for a way to switch it off.
-///
-/// The field list is **elided in the middle** past a few names. A status line
-/// is one line; naming four hundred fields would push everything else off it,
-/// and the first and last names are what an operator scans to recognise the
-/// group.
 #[must_use]
 pub fn neutralised(count: usize, fields: &[String]) -> String {
     let names = name_list(fields);
@@ -186,22 +127,12 @@ fn name_list(fields: &[String]) -> String {
 const MAX_NAMED_FIELDS: usize = 4;
 
 /// Where the file went.
-///
-/// Its own sentence rather than a clause on the format line, because the two
-/// answer different questions and an operator scanning for *"where is it?"*
-/// should not have to read past *"what is it?"*.
 #[must_use]
 pub fn written_to(path: &str) -> String {
     format!("Written to {path}")
 }
 
 /// The write failed, with the operating system's own reason.
-///
-/// The OS string is passed through rather than re-worded, for
-/// `export_dxf::export_failed`'s reason: *"access is denied"* and *"the device
-/// is not ready"* are different problems with different remedies, and a
-/// generic *"could not write the file"* throws away the only part an operator
-/// can act on.
 #[must_use]
 pub fn export_failed(detail: &str) -> String {
     format!("The form data could not be written: {detail}")

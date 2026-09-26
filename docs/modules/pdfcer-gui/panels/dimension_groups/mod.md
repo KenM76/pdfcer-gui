@@ -240,3 +240,82 @@ made to say so.
 That every control is legible, or that wrapping put things somewhere
 sensible. It proves nothing is off the edge, which is the operator's
 complaint exactly.
+
+### `const REGION_DRAW_INTO_PREFIX`
+
+Indexed by the **`GroupId`**, not by the row's position in the list. A row
+index would change under a check the moment a group was added, which is
+exactly what a check that adds a group is doing.
+
+### `const REGION_ROW_PREFIX`
+
+Distinct from [`REGION_DRAW_INTO_PREFIX`] beside it, and the distinction is
+the window's own: the radio chooses where the **next dimension** goes, the
+name chooses which group's **settings are on screen**. Collapsing them would
+make inspecting a group silently redirect the next dimension drawn.
+
+### `const REGION_HEADING_PREFIX`
+
+Existence is the "open" state, as everywhere in [`super`] — there is no
+`open: bool` that could disagree with whether the state exists.
+
+**Almost nothing is held here**, and that is the design. The groups, their
+scales, standards, styles and member counts are all read from
+`EditSession::dimension_model()` on every frame. A local copy would be a
+second source of truth for a model that this very window edits through an
+action queue applied *after* the frame — so the copy would be stale for
+exactly one frame after every change the operator made, which is the frame
+they are looking at.
+
+What is held is the four things the *document* does not know: which row the
+operator is configuring, what they have typed into the new-group fields, and
+the two one-shot requests that have to survive past the window closure.
+The region a fold heading publishes; the section's stable key is appended.
+
+The key is deliberately **not** derived from the caption, for the reason
+[`crate::dialogs::settings::widgets::group`] records: a caption is operator
+copy and may be reworded, and a check aimed at a region named after it would
+then report a heading that is not there rather than a heading that is
+illegible. Those are different verdicts and only one of them is true.
+
+### `struct DimensionGroupsUi`
+
+**Almost nothing is held here**, and that is the design. The groups, their
+scales, standards, styles and member counts are all read from
+`EditSession::dimension_model()` on every frame. A local copy would be a
+second source of truth for a model that this very panel edits through an
+action queue applied *after* the frame — so the copy would be stale for
+exactly one frame after every change the operator made, which is the frame
+they are looking at.
+
+What is held is the four things the *document* does not know: which row the
+operator is configuring, what they have typed into the new-group fields, and
+the one-shot request that has to survive past the frame that raised it.
+
+# Why `Default` rather than a constructor taking the authoring group
+
+As a window this was built by `open(active)` and seeded its selection with
+the group the operator was drawing into — *"an operator who opens this while
+working has a group in mind and it is the one they are drawing into."* That
+reasoning is still right and is still honoured, but it cannot live in a
+constructor any more: a panel is not constructed when it is shown. It lives
+on [`crate::panels::PanelsState`] for the life of the document and is reset
+by `forget_document`, exactly like the Redact panel's query and the
+Bookmarks panel's draft.
+
+So [`Self::selected`] is an `Option` and the seeding happens on the first
+frame that draws — see [`Self::show`]. `None` means *"whatever the operator
+is drawing into"*, which is a better default than any `GroupId` because it
+keeps following them until they say otherwise.
+
+### `fn take_scale_request`
+
+Called by `PdfcerApp::docks` immediately after the dock draws. Returning
+it rather than acting on it is what keeps this module free of any
+knowledge of the dialog layer.
+
+### `fn body`
+
+The entry point [`crate::panels::Panel::show`] calls, in the shape every
+panel body has: the empty-document case never arrives here, because it is
+answered once for all panels rather than eleven times.

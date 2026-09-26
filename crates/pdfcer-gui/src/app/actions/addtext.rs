@@ -11,10 +11,6 @@ use crate::canvas::textedit::pen::TextPen;
 
 /// **What the operator placed**, gathered off the action so the two functions
 /// below take one argument rather than five.
-///
-/// The same argument [`super::textannot::Placement`] makes: `page`, `origin`,
-/// `text` and `wrap` are **one thing the operator did**, and a signature that
-/// listed them in a row would let a caller transpose two `f64`s silently.
 pub(super) struct Placed {
     /// The 0-based page.
     pub page: usize,
@@ -31,14 +27,6 @@ pub(super) struct Placed {
 
 /// **Author the text**, wrapped or not, and disclose it if this arm chose the
 /// rectangle.
-///
-/// # The whole body is two calls and a funnel, deliberately
-///
-/// Every decision is in [`request`], which is pure and therefore provable
-/// without a document, a session or a window. This function owns only the
-/// things that need `&mut OpenDoc`: the crop box it reads, the funnel it calls,
-/// and the disclosure it appends. That is the split every geometry rule in this
-/// crate is written to, and it is what lets the interesting half be tested.
 pub(super) fn commit(doc: &mut OpenDoc, placed: Placed) {
     // The page's own rectangle, and `None` when there is no such page — which
     // the engine will then refuse by index, in its own words. Guessing a
@@ -102,44 +90,6 @@ fn select_what_was_authored(doc: &mut OpenDoc, page: usize) {
 }
 
 /// **Build the engine request, and say whether this arm chose the rectangle.**
-///
-/// Pure, and separate from [`commit`] for the standing reason: it is the part
-/// that could be wrong in a way the operator would notice — text laid into the
-/// wrong box, a paragraph authored as one long line, a font forgotten — and a
-/// `&mut EditSession` is not available to a test that only wants to ask what
-/// was built.
-///
-/// # The three cases, and why they are three
-///
-/// | draft | `wrap` | `\n`? | request |
-/// |---|---|---|---|
-/// | dragged box | `Some` | either | boxed, at the **operator's** rectangle |
-/// | clicked point, one line | `None` | no | **point** — unchanged, and this is the common case |
-/// | clicked point, several lines | `None` | yes | boxed, at the **sheet's** rectangle, and disclosed |
-///
-/// The second row is the one to protect. It is what an operator does dozens of
-/// times an hour — click, type a label, click away — and it must stay a point
-/// add. A build that boxed every add would wrap a one-line label at whatever
-/// width it invented, and the width would have to be invented, because a click
-/// has no extent.
-///
-/// # `with_box` takes ORIGIN AND EXTENT, not two corners
-///
-/// A signature worth reading rather than assuming: `(x, y, w, h)` and
-/// `(llx, lly, urx, ury)` are four `f64`s either way and transposing them
-/// compiles, runs, and puts the text somewhere plausible and wrong. The
-/// subtraction happens here, once, at the boundary — [`tests::a_dragged_box_reaches_the_engine_as_origin_and_extent`]
-/// is the assertion that keeps it honest.
-///
-/// # Why a degenerate sheet falls back to a point rather than to a zero box
-///
-/// If the click is at or past the crop box's right or bottom edge there is no
-/// rectangle to lay text into, and a zero-width box is a request the engine
-/// would refuse for a reason that has nothing to do with what the operator did.
-/// The honest answer is the request that *can* be made — a point — and the
-/// engine's own `\n` refusal then names the real problem. Reaching for a
-/// made-up minimum width here would be inventing exactly the number this
-/// module's header refuses to invent.
 pub(super) fn request(
     placed: &Placed,
     crop: Option<pdfcer_core::page_tree::Rect>,

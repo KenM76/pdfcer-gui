@@ -192,3 +192,205 @@ Pinned because three surfaces read it — the preview caption, the
 commit button's label and the trace — and the entire point of
 computing it once is that the button cannot promise a different number
 from the caption above it.
+
+### `enum Unavailable`
+
+# Two variants, mapping onto two of the three sentences
+
+[`crate::text::print`]'s header sets out three ways to have no printer,
+deliberately said three ways. Two of them are failures and live here; the
+third is not a failure at all and therefore has no variant:
+
+| condition | represented by | sentence |
+|---|---|---|
+| pdfcer could not ask this system about printers **at all** | [`Unavailable::Spooler`] | [`crate::text::print::spooler_unavailable`] |
+| this *particular* device would not describe itself | [`Unavailable::Device`] | [`crate::text::print::device_unavailable`] |
+| the spooler answered and reported none installed | `Ok(vec![])` — **not an error** | [`crate::text::print::no_printers`] |
+
+The third row is the one worth stating explicitly, because collapsing it
+into the first is the exact defect `pdfcer-print` names: a machine with no
+printers installed is a *normal machine*, and reporting that as a failure
+sends an operator looking for a fault that does not exist. The engine
+returns an empty `Vec` there and this type has nowhere to put one, which
+is the type system holding the distinction rather than a convention.
+
+# Why a `String` rather than the engine's `PrintError`
+
+`PrintError` is `Debug + Clone` and neither `Copy` nor `Eq`, and this
+value is stored in dialog state, compared in tests, and copied into trace
+lines. Carrying the engine's own `Display` output — which is written as
+operator-facing prose, complete with the remedy — keeps every one of those
+cheap while losing nothing: nothing in the shell branches on *which*
+`PrintError` it was, only on which of the two rows above applies, and that
+is what the variant already encodes.
+
+### `enum ScaleMode`
+
+**Four modes, not three**, and the fourth is not a rounding error:
+`pdfcer-print` keeps `Fit` and `ShrinkOversized` apart because collapsing
+them — *"the natural simplification"* — *"silently blows a business card
+up to A4"* — `ScaleMode`'s own doc. Fit scales in both directions; Shrink only
+ever reduces.
+
+Maps to `pdfcer_print::ScaleMode`, variant for variant.
+
+### `enum Orientation`
+
+`Auto` is resolved **per page** from the page's own aspect, which is what
+keeps a document mixing portrait text with a landscape drawing upright
+throughout.
+
+### `enum Duplex`
+
+**Driver-gated, never simulated.** pdfcer will not fake duplex by
+reordering pages and asking the operator to reinsert the stack: *"that is
+a workflow with a documented mis-assembly failure mode, and offering it as
+though it were duplex would be claiming a capability the hardware does not
+have."* [`DeviceFeatures::supports_duplex`] is what the dialog consults
+before drawing the control at all.
+
+### `struct JobSpec`
+
+Maps to `pdfcer_print::JobSpec`, field for field. **Kept separate from
+[`DeviceSettings`]** for the engine's own reason: everything here is
+arithmetic pdfcer performs and can be exact about, and everything there is
+a *request to the driver* which the driver may quietly decline. Presenting
+both as though pdfcer controlled them is what makes a job silently come out
+single-sided with nothing to say so.
+
+### `enum PaperChoice`
+
+# Why choosing paper is a REQUEST and not a setting
+
+`pdfcer-print` reported, while building this: **two drivers were found
+silently ignoring a paper request.** The `DEVMODE` is handed over with
+`DM_PAPERSIZE` asserted, the driver is free to do as it likes with it, and
+nothing comes back to say it declined. There is no acknowledgement in the
+Win32 API to read and none to invent.
+
+That is a fact pdfcer cannot verify and the operator cannot see, which puts
+it squarely under rule 4 — *fuzzy, never sneaky*. The disclosure is
+[`crate::text::print::paper_is_a_request`], off-canvas, in words, beside
+the control that makes the choice. It is **not** a warning icon on the
+preview and **not** a differently-styled sheet outline: the preview draws
+the sheet the job was planned for, exactly as it would draw any other, and
+pdfcer's uncertainty about the driver is reported in text next to it.
+
+# Why there is no `Custom` variant here when the engine has one
+
+Because there is no surface to type a size into. The engine's
+`PaperSelection::Custom` takes a sheet in tenths of a millimetre and is
+reachable through the driver's own properties dialog — an operator who
+needs a 900 mm roll length sets it there, and
+[`super::device::ConfigSummary::custom_paper_pt`] is read back so the
+dialog can say what it holds. Mirroring a variant this shell cannot
+construct would be a value with no producer; recorded in `NO_SURFACE.md`
+rather than half-built here.
+
+### `struct DeviceGeometry`
+
+Maps to `pdfcer_print::DeviceGeometry`.
+
+# Turned, and that word is the whole defect this type prevents
+
+`printer_caps` reports the device's *default* `DEVMODE`. On a
+portrait-default printer that is a portrait printable area — so a
+landscape job planned against it under-scales every page to about 77 % of
+correct size, leaves a wide empty margin, and **reports no clip**, so
+nothing says it happened. The engine removed the `From` impl that made
+that mistake reachable, *"because a wrong answer that is one `.into()`
+away will be reached again"*, leaving `DeviceGeometry::from_caps` as the
+only route — and it cannot be called without stating the orientation and
+the first page.
+
+The port honours that by not exposing raw capabilities at all: [`plan`]
+takes the orientation and the page sizes and hands back a geometry that
+has already been turned, so the picture the preview draws and the paper
+the job lands on are the same claim.
+
+### `struct JobResolution`
+
+Maps to `pdfcer_print::JobResolution`, plus one value flattened: the engine
+exposes `uncapped_page_mb()` as a method, and it is carried here as a
+field so no formula of the engine's is restated in this crate.
+
+### `struct Job`
+
+# Why one struct rather than three calls
+
+The three come from the same three engine calls, in a fixed order, against
+the same inputs — and getting the order wrong is exactly the orientation
+defect described on [`DeviceGeometry`]. Returning them together means the
+dialog cannot plan against one geometry and preview against another.
+
+### `fn clipped`
+
+Counted over the **whole job**, not the sheet on screen, because a
+multi-page job's clip is usually on a sheet the operator is not
+looking at. This one number reaches three surfaces — the preview
+caption, the commit button's label, and the trace — and it is computed
+in one place so they cannot disagree.
+
+### `struct PageBitmap`
+
+Maps to `pdfcer_print::PageBitmap`. **RGBA8, row-major, top row first** —
+i.e. `pixmap.data().to_vec()` handed over unchanged, premultiplied, with
+no conversion in between. The engine is explicit that this is the
+contract; re-encoding it here would be a second colour convention of
+exactly the kind [`crate::render::raster`]'s header exists to prevent.
+
+### `struct SpoolReport`
+
+**Never constructed in this build**, because [`spool`] cannot succeed
+here. The `allow` is scoped to this one type and names the condition that
+removes it, following the precedent `crate::viewer` sets for salvaged
+items whose first consumer arrives in a later stage. Deleting the type
+instead would mean the footer had no shape to render a success into, and
+the day the manifest line lands the success path would be written from
+scratch rather than reviewed.
+
+### `enum SettingsSource`
+
+# Why a shell must report this, and why it cannot be inferred
+
+pdfcer writes at most four members of a `DEVMODE`. Everything else a device
+does — media type, print quality, colour handling, stapling, output bin,
+the entire vendor-private half — lives in the driver's own configuration,
+which pdfcer carries through untouched **when it has one**.
+
+[`Self::Synthesised`] is the case where it did not. The driver refused to
+report its settings, so the job went out carrying only what pdfcer sets
+itself and everything the driver held was lost. **The job still prints**,
+which is exactly what makes this dangerous: the operator gets paper, and
+the paper is wrong in ways — plain instead of glossy, draft instead of
+best — that look like a printer problem rather than a pdfcer one.
+
+It is not visible from the printed page, not visible from the dialog, and
+not derivable from anything the shell knows before the call. The engine
+reports it because it is the only party that can, and the shell says it
+out loud for the same reason.
+
+### `fn spool`
+
+Fill with
+`pdfcer_print::spool(printer, &bitmaps, DryRun::No, None, settings, first_page_pt)`.
+
+# This is the one call in the application that consumes paper
+
+`pdfcer-print`'s own header: *"Printing consumes paper, occupies a device
+other people may share, and cannot be undone. Nothing in this crate starts
+a job as a side effect of anything else: `spool` is the only function that
+reaches `StartDoc`, and it is reached only from a control an operator
+deliberately clicked."* The shell's half of that contract is that this
+function is reached from **one** place — the commit button — and from no
+keyboard chord, no dispatch arm and no frame-loop condition.
+
+`first_page_pt` must come from `bitmaps.first()`, never from the
+document's page 0: a reversed or range-filtered job sends a different page
+first, and the driver picks its paper from whichever one it is handed.
+
+# Errors
+
+[`Unavailable::Spooler`] carrying whatever the spooler reported — passed
+through to the operator verbatim by [`crate::text::print::failed`],
+because a structured spooler error is the specific half of that sentence.

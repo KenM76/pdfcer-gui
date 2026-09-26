@@ -21,6 +21,8 @@
 //! Windows API grows a function and this one does not, the non-Windows build
 //! breaks immediately and loudly, which is the intended failure mode — much
 //! better than a stub that silently returns a plausible zero.
+//!
+//! Design and rationale: `docs/modules/ui-verify/sys/unsupported.md`.
 
 use crate::coords::WindowFrame;
 use crate::error::{Error, Result};
@@ -136,31 +138,17 @@ pub fn with_modifiers<T>(_modifiers: &[u16], body: impl FnOnce() -> T) -> T {
 }
 
 /// Always `None` — there is no clipboard here.
-///
-/// A check that asserts on the clipboard therefore reports SKIPPED on this
-/// platform, which is the honest answer. Returning `Some(String::new())` would
-/// let a comparison against an expected string fail and be read as a defect in
-/// the application.
 #[must_use]
 pub fn clipboard_text() -> Option<String> {
     None
 }
 
 /// Always `false` — nothing was cleared, because there is nothing to clear.
-///
-/// `false` rather than `true` so a caller that gates on "did the clear work"
-/// refuses rather than proceeding to assert against a clipboard it never
-/// controlled.
 pub fn clear_clipboard() -> bool {
     false
 }
 
 /// Always `None` — there is no clipboard here, so there are no formats on it.
-///
-/// `None` rather than `Some(vec![])` for [`clipboard_text`]'s reason one step
-/// on: an empty list is a real and *different* answer, and a caller that read
-/// one here would report "the application placed nothing" about a platform that
-/// has no clipboard to place onto.
 #[must_use]
 pub fn clipboard_formats() -> Option<Vec<(u32, String)>> {
     None
@@ -176,10 +164,6 @@ pub const fn caps_lock_is_on() -> bool {
 
 /// A zero-size desktop, which every caller reads as *"there are no bounds to
 /// check a coordinate against here"*.
-///
-/// See the Windows implementation for what this is for: a guard against a
-/// pointer coordinate that lies off the screen and would be silently clamped.
-/// Off Windows nothing drives a pointer at all, so there is nothing to guard.
 #[must_use]
 pub const fn desktop_bounds() -> (i32, i32, i32, i32) {
     (0, 0, 0, 0)

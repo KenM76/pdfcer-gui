@@ -18,12 +18,6 @@ const PREVIEWS_REGION: &str = "panel-pages-previews"; // ui-text-exempt: trace r
 const BUDGET_REGION: &str = "panel-pages-budget"; // ui-text-exempt: trace region name, never displayed
 
 /// Draw the previews checkbox, the per-page time limit, and the skip note.
-///
-/// Takes [`PagesUi`] rather than the cache alone so the call site reads the
-/// same as every other section of the panel, and so a future addition here (a
-/// second control, a second disclosure) does not change the signature and
-/// therefore the call site.
-///
 pub fn row(ui: &mut egui::Ui, pages: &mut PagesUi, actions: &mut Vec<Action>) {
     // THE PREVIEWS ROW — a checkbox and the time limit beside it (O151).
     //

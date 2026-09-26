@@ -93,3 +93,78 @@ A surface publishes a census, something else happens, and the surface
 **stops publishing**. `last` still answers with the stale census — which
 is what made two checks report a working panel as broken — and
 `last_after`, anchored on the cause, correctly answers `None`.
+
+### `fn get_usize`
+
+Tolerates the `Some(3)` wrapper, because `Debug` on an `Option<usize>`
+is what several of these fields actually are and requiring every call
+site to strip it would put the same three lines in five places.
+
+### `fn parse`
+
+`prefix` is the marker the application puts at the head of every
+diagnostic line (`"pdfcer-diag"`). Lines without it go to
+[`Trace::other`].
+
+### `fn read`
+
+Reads lossily: a crashing process can leave a partial UTF-8 sequence at
+the tail of the file, and a harness that returned "invalid UTF-8"
+instead of the ninety good lines above it would be hiding the evidence
+at the exact moment it matters most.
+
+### `fn last`
+
+Written as an explicit reverse search rather than `events(..).last()`
+so it stops at the first match from the end instead of walking the
+whole trace. Traces from a real run are tens of thousands of lines and
+several checks ask this question per assertion.
+
+### `fn last_after`
+
+# Why this exists: [`Trace::last`] cannot tell "unchanged" from
+"stopped"
+
+A trace is an append-only log, so `last` answers *"what is the newest
+line this run ever produced?"* — which is the right question only while
+the thing producing it is still producing. The moment a surface stops
+emitting, its final line stands for ever, and a check that keeps reading
+it sees **a number that never changes** and reports the feature behind
+it as inert.
+
+
+> `save_copy_round_trip` and `undo_redo_round_trip` both read
+> `comments-panel … listed=` with `last`, and both reported *"THE
+> COMMENTS PANEL DOES NOT SEE THE ANNOTATION THAT WAS JUST AUTHORED"*.
+> The panel saw it perfectly. It had been sent to the back of a tabbed
+> dock by a persisted layout, a dock draws only its active tab, and so
+> the panel had stopped tracing three hundred frames before the drag.
+> `last` handed both checks the census it published in the *previous
+> mode*.
+
+⇒ **If a check compares a number to what that number was earlier, the
+later read must be anchored.** `after` is normally the `lineno` of the
+event that is supposed to have caused the change — a commit line, a
+gesture's start — so a value published before the cause cannot satisfy
+it, and `None` means *"the surface said nothing since"*, which is a
+different verdict from *"the surface said the same thing"* and must be
+reported differently.
+
+`TraceLine::lineno` is the line's position in the capture, so marks
+taken from any event are directly comparable with any other — the same
+property `declared_since` relies on.
+
+### `fn started`
+
+`false` with a non-empty capture means the diagnostic variable did not
+reach the process. `false` with an empty capture means the process
+produced nothing at all — a bad binary, or a crash before start.
+
+### `fn rejected_steps`
+
+Always worth printing, whatever a check was looking for. pdfcer records
+two working features being declared broken because their scripts used
+step names that did not exist: the harness traced the rejection on every
+single run, and every filter in use matched only the traces the test
+*expected*, so the explanation was never seen. A filter that matches
+only your expectation cannot tell you your input was wrong.

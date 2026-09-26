@@ -27,16 +27,6 @@ const REGISTERED_APP: &str = "pdfcer";
 const CAPABILITIES_PATH: &str = r"Software\pdfcer\Capabilities";
 
 /// What Windows currently opens a `.pdf` with, as a ProgID.
-///
-/// `None` when the key is absent, which is the ordinary state on a machine
-/// where nobody has ever chosen — Windows then falls back to the machine-wide
-/// association, and there is no honest single answer to report.
-///
-/// Read from `UserChoice` rather than from `HKCR\.pdf`, because `UserChoice`
-/// is what Explorer actually consults and the two disagree routinely.
-/// Reporting the wrong one would produce a state line saying pdfcer is the
-/// default while double-clicking still opened Edge — the exact confusion this
-/// line exists to end.
 #[must_use]
 pub fn current_owner() -> Option<String> {
     let out = reg(&[
@@ -61,13 +51,6 @@ pub fn is_default() -> bool {
 
 /// **Where Windows' list of PDF programs points**, as far as this build is
 /// concerned.
-///
-/// Three states rather than a bool, and the third is the load-bearing one. A
-/// portable build gets unzipped somewhere new; the registration then still
-/// names the *old* folder, so Windows opens a build the operator thought they
-/// had replaced — or nothing at all, if the old folder is gone. That failure
-/// looks exactly like success from the inside: the key exists, the ProgID is
-/// pdfcer's, and everything reports fine. Only the **path** tells them apart.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Registration {
     /// pdfcer is not in Windows' list. The state every portable build starts
@@ -80,14 +63,6 @@ pub enum Registration {
 }
 
 /// **Everything the two surfaces need to know about the machine, read once.**
-///
-/// Why this is a struct probed on demand rather than three functions the
-/// UI calls: a Settings pane redraws on **every frame**, and every one of these
-/// answers costs a `reg.exe` process. `dialogs::settings::acrobat`'s header
-/// states the same rule for the same reason — *"this module must not resolve,
-/// because resolving spawns processes and a Settings pane redraws on every
-/// frame"*. So the probe happens when the window opens and when the button is
-/// pressed, and never in a paint.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Status {
     /// The ProgID Windows currently opens `.pdf` with, if the user has ever
@@ -99,11 +74,6 @@ pub struct Status {
 
 impl Status {
     /// Whether Windows currently opens PDFs with pdfcer.
-    ///
-    /// Derived from [`Self::owner`] — a reading of what Windows recorded —
-    /// and never from *"we pressed the button"*. Only the operator can make
-    /// this true, in a dialog pdfcer does not own, so pdfcer's memory of its
-    /// own actions is not evidence.
     #[must_use]
     pub fn is_default(&self) -> bool {
         self.owner.as_deref() == Some(PROGID)
@@ -140,30 +110,6 @@ pub fn registration() -> Registration {
 }
 
 /// **Register this executable as a candidate for `.pdf`.**
-///
-/// Returns `Ok(())` when every key was written, or the first failure as a
-/// sentence — `reg.exe`'s own message, which names the key it could not write
-/// and is more use than any wording this module could invent.
-///
-/// ## What is written, and why each one is needed
-///
-/// | Key | Without it |
-/// |---|---|
-/// | `Classes\pdfcer.pdf` and its `shell\open\command` | there is nothing to associate; the ProgID does not exist |
-/// | `Classes\pdfcer.pdf\DefaultIcon` | pdfcer's entry in every chooser is the blank generic icon |
-/// | `Classes\.pdf\OpenWithProgids` | pdfcer is missing from the **Open with** submenu |
-/// | `Classes\Applications\<exe>` + `SupportedTypes` | *Open with ▸ Choose another app* does not offer it either |
-/// | `Software\pdfcer\Capabilities` + `RegisteredApplications` | Windows Settings' *Default apps* list does not contain pdfcer, so the deep link has nothing to land on |
-///
-/// All under `HKCU`. Nothing here needs administrator rights, nothing affects
-/// another user of the machine, and an operator who changes their mind can
-/// delete one key. A portable build that wrote to `HKLM` would be a portable
-/// build that needed elevation and left something behind — the opposite of what
-/// the package promises on its front page.
-///
-/// # Errors
-///
-/// The first `reg.exe` invocation that failed, with its own output.
 pub fn register() -> Result<(), String> {
     let exe = exe_path().ok_or_else(crate::text::assoc::no_exe_path)?;
     // ui-text-exempt: a Windows registry command line, read by Explorer and
@@ -236,23 +182,6 @@ pub fn register() -> Result<(), String> {
 }
 
 /// **Open Windows' own *Default apps* page, deep-linked to pdfcer.**
-///
-/// `registeredAppUser=` and not `registeredAUMID=`. The first names an entry
-/// in `HKCU\Software\RegisteredApplications` — which [`register`] has just
-/// written — and the second names a packaged (Store) app identity that a
-/// portable exe does not have and cannot get. Passing the wrong one lands on
-/// the unfiltered list, which is a page with three hundred entries on it.
-///
-/// ⚠ Older Windows 10 builds ignore the query entirely and open the top of the
-/// Default-apps page. That is a degraded outcome rather than a failure, and it
-/// is why the wording on both surfaces says *"Windows will ask you to
-/// confirm"* rather than describing a specific dialog: the dialog differs
-/// between builds, and a sentence describing one of them would be wrong on the
-/// others.
-///
-/// # Errors
-///
-/// The shell's own refusal when the page could not be opened.
 pub fn open_settings_page() -> Result<(), String> {
     let url = format!("ms-settings:defaultapps?registeredAppUser={REGISTERED_APP}");
     open_url(&url)

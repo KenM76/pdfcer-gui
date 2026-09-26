@@ -23,6 +23,8 @@
 //!
 //! ⇒ Registering them instead is a **ribbon** decision, not a dispatch one;
 //! `shell::commands::reach::UNREACHED_ARMS` carries what it would take.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/app/dispatch/zoom.md`.
 
 use crate::app::PdfcerApp;
 use crate::app::actions::Action;
@@ -30,15 +32,6 @@ use crate::app::state::Status;
 use crate::viewer::FitMode;
 
 /// Whether this file owns `id`.
-///
-/// `pub(crate)` rather than `pub(super)`: `shell::commands::reach`'s
-/// `guard_claiming` calls it, because the reachability checker must be able to
-/// EVALUATE every guard arm it finds — a guard it cannot evaluate is a place
-/// commands could hide from the check that exists to find them.
-///
-/// A separate predicate rather than a `match` returning `bool`, for the reason
-/// [`super::pages::handles`] gives: the caller is a guard on a match arm, and
-/// the guard and the body must not be able to disagree about what is claimed.
 #[must_use]
 pub(crate) fn handles(id: &str) -> bool {
     matches!(

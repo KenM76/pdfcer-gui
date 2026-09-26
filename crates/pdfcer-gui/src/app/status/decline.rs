@@ -15,12 +15,6 @@ const REGION_DECLINE: &str = "status-group:decline"; // ui-text-exempt: trace re
 // ---------------------------------------------------------------------------
 
 /// A framing zoom that did not happen, and why.
-///
-/// A *narrower* type than [`ZoomOutcome`] on purpose: that enum's third
-/// variant is a zoom that **did** happen (possibly clamped, which is a partial
-/// grant and not a decline — see the module docs), and a store that could hold
-/// it would be a store a future edit could word. This one cannot represent a
-/// grant at all.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum Declined {
     /// Nothing on the page resolved to a box to frame.
@@ -1025,11 +1019,6 @@ pub(crate) enum Declined {
 
 impl Declined {
     /// The decline in an outcome, if it is one.
-    ///
-    /// `None` for [`ZoomOutcome::Zoomed`] **including the clamped case**. See
-    /// the module docs: a clamped framing zoom is a partial grant that already
-    /// reports itself through the zoom readout, and wording it here would word
-    /// a non-event.
     #[must_use]
     pub(crate) fn of(outcome: ZoomOutcome) -> Option<Self> {
         match outcome {
@@ -1052,39 +1041,12 @@ thread_local! {
 // ---------------------------------------------------------------------------
 
 /// Forget any live decline — **the operator's next act**.
-///
-/// Called at the top of `crate::app::dispatch::PdfcerApp::dispatch_command`,
-/// before the arm for the new command runs. That placement is the whole
-/// retirement rule and it is deliberate on both counts:
-///
-/// - **the dispatcher**, because it is the one choke point that knows an
-///   operator has invoked *something*, and "the next thing you did" is the
-///   only honest lifetime for a sentence about a gesture. See the module docs
-///   for why an epoch cannot serve here;
-/// - **before the arm**, so that re-pressing the declining chord retires the
-///   old sentence and then [`record`]s a new one. Two presses are two events
-///   (module docs, reason 2), and this is where that becomes mechanical rather
-///   than aspirational.
-///
-/// Idempotent and free: one `Option` write per *invoked command*, which is an
-/// operator click, not a frame.
 pub(crate) fn retire() {
     LAST.with_borrow_mut(|slot| *slot = None);
 }
 
 /// The live decline, if there is one and it still describes what the operator
 /// is looking at.
-///
-/// The bar's read. Both facts are gathered from the modules that own them —
-/// [`zoom::can_zoom_to_selection`] is the same predicate `view.zoom_selection`
-/// is gated on and the same one [`zoom::zoom_to_selection`] declines from, and
-/// [`zoom::last_frame`] is the same record the framing verbs check for
-/// [`ZoomOutcome::NoCanvas`]. Asking the producing predicate rather than an
-/// equivalent-looking one (`doc.page_texture.is_some()`, say, which is a
-/// *different* question by one frame) is what keeps the retirement rule from
-/// drifting away from the decline it retires.
-///
-/// Filters rather than clears; see the module docs.
 #[must_use]
 pub(super) fn live(ctx: &egui::Context, doc: &OpenDoc) -> Option<Declined> {
     let has_bounds = zoom::can_zoom_to_selection(doc);
@@ -1106,34 +1068,11 @@ pub(super) fn live(ctx: &egui::Context, doc: &OpenDoc) -> Option<Declined> {
 
 /// Record that a verb refused because what is selected lives inside a form
 /// XObject.
-///
-/// # Recorded by the DISPATCHER, not by an apply arm
-///
-/// [`record_history_empty`]'s docs argue the opposite placement for undo, and
-/// the argument holds there: *"is there anything to undo?"* is a question about
-/// the document that the apply phase has to ask anyway, so asking it twice is
-/// how the greyed control and the sentence come to disagree.
-///
-/// This one is different in the way that matters. *"Is this selection inside a
-/// form?"* is answered from the **selection**, which the dispatcher holds, and
-/// there is no apply phase to reach: the refusal is that no `Action` is raised
-/// at all. An arm that raised a doomed action so that the apply phase could
-/// decline it would be manufacturing an edit in order to have somewhere to
-/// refuse it.
 pub(crate) fn record_inside_form(reason: crate::text::status::InsideFormRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::InsideForm(reason)));
 }
 
 /// **The raw store, for tests only.**
-///
-/// [`live`] is the bar's read and applies the retirement filter, which needs a
-/// document and a context. A test asserting that a *dispatcher* recorded a
-/// decline is asking a narrower question — did the sentence get written down? —
-/// and routing it through the filter would make the assertion depend on zoom
-/// bounds and canvas state that have nothing to do with what it is testing.
-///
-/// `cfg(test)` rather than `pub(crate)` unconditionally, so nothing in the
-/// shipped build can read the store without the retirement rule.
 #[cfg(test)]
 #[must_use]
 pub(crate) fn recorded_for_test() -> Option<Declined> {
@@ -1141,19 +1080,6 @@ pub(crate) fn recorded_for_test() -> Option<Declined> {
 }
 
 /// What the BAR would draw — [`live`] under a test-visible name.
-///
-/// # Why this exists when [`recorded_for_test`] is right there
-///
-/// Because they answer different questions and one of them was standing in
-/// for the other. `recorded_for_test` reads the store; `live` re-asks the
-/// sentence's predicate and is the only thing the bar calls. A decline whose
-/// predicate is false on the frame it is written is **recorded and never
-/// readable**, and a test that stops at the store cannot tell the two apart.
-///
-///
-/// `live` is `pub(super)` and stays that way: the bar is the one reader.
-/// This is a `#[cfg(test)]` widening, so it cannot become a second reader in
-/// a shipped binary.
 #[cfg(test)]
 pub(crate) fn live_for_test(ctx: &egui::Context, doc: &OpenDoc) -> Option<Declined> {
     live(ctx, doc)
@@ -1164,22 +1090,6 @@ pub(crate) fn live_for_test(ctx: &egui::Context, doc: &OpenDoc) -> Option<Declin
 // ---------------------------------------------------------------------------
 
 /// Draw the worded decline into the bar's single row, if one is live.
-///
-/// Drawn through [`super::disclosure_line`] rather than by hand, which is the
-/// point of that function existing: the R128 defence is four small rules that
-/// only work together — a bounded sub-region, a fixed row height,
-/// `truncate()` rather than wrapping, and the full text on hover — and a third
-/// hand-written copy would be a third chance to omit one of them.
-///
-/// **It does not make the bar taller**, and that matters more here than for
-/// its neighbours rather than less. A decline arrives from a *keyboard chord*,
-/// which is the gesture during which the operator's hands are furthest from
-/// the thing they are looking at; if this line grew the bar, an active
-/// `FitMode` would recompute its zoom from a smaller viewport on the very next
-/// frame and the page would shrink under a gesture that, by construction,
-/// changed nothing. "The page moved when the command did nothing" is the
-/// worst-reading symptom on this surface.
-/// [`tests::a_worded_decline_does_not_change_the_bar_height`] pins it.
 pub(super) fn show(ui: &mut egui::Ui, doc: &OpenDoc) {
     let Some(declined) = live(ui.ctx(), doc) else {
         return;

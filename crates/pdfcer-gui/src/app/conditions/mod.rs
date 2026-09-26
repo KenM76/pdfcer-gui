@@ -16,43 +16,6 @@ mod armed;
 
 impl PdfcerApp {
     /// The conditions the ribbon evaluates its predicates against.
-    ///
-    /// Rebuilt every frame because that is what it describes — the state
-    /// *this* frame is drawn from. The set is **closed**, and the vocabulary
-    /// is written down once in `crate::shell::commands`' `KNOWN` list rather
-    /// than counted here — a count in prose drifts the moment a condition is
-    /// added, and this sentence has already been wrong once for saying
-    /// "five". That module has a test asserting no predicate names anything
-    /// outside the list, so a typo in a manifest cannot silently produce a
-    /// control that is disabled forever.
-    ///
-    /// # `selection.any` is published from here, and only now
-    ///
-    /// It was deliberately absent while the selection lived in
-    /// `egui::Memory`: this function has no `egui::Context`, so it could not
-    /// have read the selection even if it wanted to, and publishing a
-    /// condition it could not evaluate would have armed a **destructive**
-    /// control that could not work — the inverse of the no-placeholders rule
-    /// and the exact shape of defect D1.
-    ///
-    /// The selection now lives on [`state::OpenDoc`], so the answer is one
-    /// field read. Two surfaces come alive with it, both of which the manifest
-    /// has been carrying unpowered: the contextual **Format** tab
-    /// (`visible_when: "selection.any"`, which is the appear-on-selection
-    /// affordance `RIBBON_IA.md` §5.8 calls the single largest usability
-    /// change) and the **Delete** inside it (`enabled_when` the same). One
-    /// spelling, one source — see `shell::manifest::format::VISIBLE_WHEN`.
-    ///
-    /// **The Objects panel's focus is not a selection and must never satisfy
-    /// this**, which is what `panels::PanelsState::focus`'s own test asserts
-    /// through the enable machinery: a panel row being focused must not arm a
-    /// destructive command, because the operator would have no way to tell
-    /// which of two "selections" it was about to act on. This reads
-    /// `doc.selection` and nothing else.
-    /// `pub(super)` rather than private: this moved out of `app/mod.rs` and
-    /// its three callers stayed. Deliberately NOT `pub` — nothing outside
-    /// `app` may publish or read the condition set, because a second producer
-    /// is how a control comes to be enabled by one rule and drawn by another.
     pub(super) fn conditions(&self, ctx: &egui::Context) -> egui_shell::commands::ConditionSet {
         let mut set = egui_shell::commands::ConditionSet::new();
         // **More than one document is open**, and therefore something to

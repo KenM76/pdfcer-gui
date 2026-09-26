@@ -309,3 +309,236 @@ at another.
 target at all**. `by_target` is reached directly rather than through
 [`Statuses::on`] for exactly that reason — `on` can only be asked about
 an id somebody already suspects.
+
+### `const REGION_RECORD`
+
+Published for the **first row that offers it** and no other, exactly as
+[`super::REGION_EDIT`] is — one name, one rectangle, and the first row is
+the only deterministic choice on a list whose length depends on the file.
+
+### `const OFFERED`
+
+`Review`'s five first, then `Marked`'s two, because the `Review` model is
+what a comment workflow uses and `Marked` is a two-value tick that Acrobat
+surfaces separately. Grouped rather than alphabetical: the two models are
+different vocabularies (`Annotation::state` — *"a caller that wants the
+effective state must read both fields together"*) and an alphabetical list
+would interleave them into one seven-item menu that implies they are
+alternatives within a single scale.
+
+⚠ **Nothing here can be compiler-exhaustive, and the reason is worth
+stating rather than assuming.** [`ReviewState`] is `#[non_exhaustive]`, so a
+`match` over it must carry a wildcard and an array over it must be written
+by hand — a variant the engine adds cannot fail to compile here, and a unit
+test that iterates *this* array cannot notice either. The unit test
+`every_authored_state_is_recognised_as_modelled` pins the **count** at
+Table 171's seven, which turns a silent addition into a failing assertion;
+the instrument that actually reports the engine growing one is
+`tools/gates/check-engine-api-drift.py`, which watches variants as well as
+verbs and exists because two earlier gates watched only `EditSession`.
+
+### `enum StateReading`
+
+See the module header's table for the four readings and for why the middle
+two are not one. Every variant keeps the file's own bytes, so
+[`Self::raw`] can always answer *what does the document literally say*.
+
+### `fn of`
+
+Matching is **exact and case-sensitive**, because Table 171's values are
+text strings rather than names and `ReviewState::as_str` writes exactly
+those bytes. `accepted` is therefore [`Self::Unmodelled`] and is shown
+as the file wrote it — which is the whole posture of this feature: a
+case-folding match would be this shell normalising a value the engine
+deliberately did not.
+
+### `fn raw`
+
+The key the status filter matches on, so the chooser can offer a value
+pdfcer has never heard of and filtering to it works — which is the
+operator-facing consequence of the engine reading these keys verbatim.
+
+### `fn authorable_model`
+
+This is where the `Unmodelled`/`Foreign` distinction actually
+**bites**, and it is the reason the two are separate variants rather
+than one "unrecognised". `Some` means *pdfcer can continue this
+vocabulary*; `None` means it cannot, and the row says so instead of
+pretending. [`crate::text::buttonaction`]'s *"offer to replace"* versus
+*"offer nothing"*, translated to a verb that appends.
+
+[`Self::ModelMissing`] answers `Some("Review")`: the file did not say
+which vocabulary, so nothing is being continued and pdfcer records in
+its own default. That is a guess about **what to write next**, not about
+what the file means — the reading itself still says the model is
+missing.
+
+### `fn label`
+
+A method rather than a `match` at the call site because two surfaces
+draw it — the row and the *this row is a status* caption — and a second
+copy is a second place for a variant to be forgotten.
+
+### `struct Statuses`
+
+Built once per frame by [`read`], for [`super::model::ce_dimension_annots`]'
+reason: it is one walk of the page tree, and asking it per row would make
+the panel quadratic in a document's annotation count.
+
+### `fn on`
+
+Empty for a row with no id: `/IRT` is an indirect reference, so nothing
+can point at an annotation written as a direct dictionary — see
+[`super::model::CommentRow::id`].
+
+### `fn values`
+
+Derived from the document rather than from [`OFFERED`], and that is the
+decision: the engine reads these keys verbatim, so a file may carry
+`Deferred` and a reviewer must be able to filter to it. A menu of
+pdfcer's own seven would be this shell telling the operator their
+document does not contain what it contains.
+
+Only **tip** values appear. A value that occurs solely in the middle
+of somebody's chain is a status they have since superseded, and offering
+it would filter to zero rows — an entry that can only disappoint.
+
+The same rule [`super::filter::subtypes`] follows for `/Subtype`: the
+file's own spelling, never a friendly relabelling.
+
+### `fn keeps`
+
+`Is` matches if **any** reviewer's current status is that value, not
+if every one is. Two people may disagree, and a reviewer asking *"what
+has been rejected"* wants the mark somebody rejected even though
+somebody else accepted it — the conservative direction on a work list is
+to show the thing that may need attention.
+
+### `enum StatusChoice`
+
+Two entries plus the absent case, and the third is the one the filter exists
+for — see [`crate::text::reviewstate::filter_status_unrecorded`]. `None` on
+[`super::filter::Filter::status`] is *any status, and none*.
+
+[`Self::Unrecorded`] is **not** a `/State` of `None`. Table 171 makes
+`None` a writable value in the `Review` model and `Annotation::state`'s doc
+is explicit that it *"is a writable value, not a spelling of 'the key is
+absent'"*. A reviewer who withdrew their status has done something; a
+comment nobody has looked at has not. Folding them would hide the second
+behind the first, and the second is the whole work list.
+
+### `fn read`
+
+`graph` must be the session view, not the file on disk — this panel's rule,
+stated in [`super::model`]'s header: a status recorded thirty seconds ago
+and not yet saved must be on the row.
+
+# The algorithm, and why it is the engine's rather than a simpler one
+
+1. Collect every annotation on every page that carries a `/State` **and**
+   has an object id. An id is required because the chain is built out of
+   `/IRT` references, which are indirect by construction.
+2. A state annotation is a **tip** when no other state annotation *by the
+   same `/T`* replies to it. That is §12.5.6.3's *"in reply to the previous
+   reply for a given user"* read backwards, and it is the only definition of
+   "current" the standard supplies — see the module header on why `/M` is
+   not used.
+3. From each tip, walk `/IRT` **upward** through same-author state
+   annotations, counting them, until the parent is not one. That parent is
+   the annotation being reviewed.
+
+Same-author comparison treats an absent `/T` as **never equal**, matching
+`deepest_state_for_author`'s `a.title.as_deref() == Some(author)` exactly.
+An unsigned status therefore neither continues a chain nor is continued by
+one, which is a fact about the file and is what
+[`crate::text::reviewstate::row_status_unsigned`] tells the operator.
+
+A state annotation with **no** `/IRT` describes nothing — §12.5.6.3 puts
+the state on an annotation *"that refers to the original annotation by means
+of its `IRT` entry"* — so it is recorded in [`Statuses::is_status`], where
+it will still name itself on its own row, and reaches no target. Dropping it
+silently would be the panel hiding a malformed annotation.
+
+# Cost
+
+One walk of every page's `/Annots` — the same walk
+[`super::model::collect`] does — plus a pass over the state annotations
+alone, which on any real document is a handful. The tip test is quadratic in
+the number of **state annotations**, not in the number of annotations; a
+document with a thousand statuses does a million cheap `Option<ObjId>`
+comparisons once a frame, and a document with none does nothing at all.
+
+### `fn narrow`
+
+Ordering is deliberately untouched here. [`super::filter::apply`] owns it,
+and a second sort would be a second answer to a question that already has
+one — the failure [`super::model`]'s header names for the *list* ordering
+and the same argument applies to the *filter* pipeline.
+
+### `fn status_strip`
+
+# Built from the document, not from [`OFFERED`]
+
+[`Statuses::values`] carries the argument: the engine reads `/State`
+verbatim, so the values a reviewer needs to filter by are whatever the file
+contains. What is offered here and what may be **recorded** are therefore
+two different lists, and deliberately so — [`record_control`] offers
+pdfcer's seven because those are the ones it can write.
+
+# Drawn only when the document has any status at all
+
+R9's shape applied to a control that would do nothing: on a document nobody
+has reviewed, this chooser's only entries are *Any status* and *No status
+recorded*, and the second selects every row. It is not greyed — greying
+implies a temporary condition — it is simply not there, and it appears the
+moment the first status is recorded, which also makes its arrival a wordless
+statement that something happened.
+
+### `fn row_status`
+
+Called from [`super::body`]'s row loop, after [`super::row`] has drawn the
+comment itself, so the status sits with the row's other disclosures and
+above nothing.
+
+# What is drawn, and the condition on each
+
+| line | when |
+|---|---|
+| *this row is a status* | the annotation **is** a state annotation — see the module header on the blank row |
+| one line per reviewer | that reviewer has a status on this comment |
+| the history count | that reviewer has more than one |
+| *no status recorded* | only under the **No status recorded** filter, where the row's emptiness is the answer to the question asked |
+| the *Record status* chooser | the stance authors markup, the row has an id, and it is neither a ce dimension nor itself a status |
+
+# Why the control is withheld in three cases, and each is R83
+
+R83 — *an affordance that cannot be honoured is not drawn* — rather than R9,
+with one exception noted below:
+
+- **No object id.** `/IRT` is an indirect reference; a direct dictionary in
+  `/Annots` cannot be referred to. `super::delete_control` declines for the
+  same reason.
+- **A ce dimension.** `add_review_state` routes through `add_reply`, whose
+  errors include `AnnotationIsCeDimension` — the engine refuses by name.
+  Rule 15: it is named as a ce dimension on the row and offered nothing that
+  would be refused.
+- **The row is itself a status.** Nothing forbids it — §12.5.6.3 chains
+  states onto states — but a status *about a status* is not a thing a
+  reviewer means to create, and the row already says what it is.
+
+And the **stance** gate is R9, not R83, exactly as `super::delete_control`'s
+is: a mode that does not author markup renders nothing rather than something
+greyed, because a stance is not a temporary condition and the mode selector
+is the visible explanation.
+
+`controls_drawn` is tallied into the same counter the Delete button and the
+note editor use, so `super::note::CommentsUi::writing_controls_drawn`
+keeps its meaning — *how many writing controls the panel drew* — and the
+headless assertion that Read offers none covers this control too, without
+that test having to learn it exists.
+
+### `struct RowStatusCtx`
+
+A struct rather than four loose parameters, for [`super::RowSink`]'s reason:
+a call site passing `true, false, &mut x, &mut y` positionally is one
+transposition away from a control that draws in the wrong stance.

@@ -29,12 +29,6 @@ pub const REGION_OPEN: &str = "password.open"; // ui-text-exempt: trace region n
 pub const REGION_CANCEL: &str = "password.cancel"; // ui-text-exempt: trace region name, never displayed
 
 /// Why the last attempt did not open the document.
-///
-/// Two variants, not one, because `pdfcer-core` reports two errors and its own
-/// doc comment says why: `PasswordRequiresNormalisation` exists *"so that
-/// failure does not masquerade as `PasswordRequired`'s 'you typed it wrong',
-/// which would send the operator to re-check a password that was correct."*
-/// Collapsing them here would undo that on the last step.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Rejection {
     /// Nothing authenticated. The ordinary case: a wrong password.
@@ -45,11 +39,6 @@ pub enum Rejection {
 }
 
 /// The dialog.
-///
-/// `password` is a plain `String` here rather than a [`Secret`] because that is
-/// what `egui::TextEdit` binds to; it becomes a `Secret` at the moment it leaves
-/// this struct, which is the boundary that matters — the value never enters an
-/// `Action`, a queue or a trace unwrapped.
 pub struct PasswordDialog {
     /// The file being opened. Carried so the retry knows what to re-open, and so
     /// the prompt can name it.
@@ -91,13 +80,6 @@ impl PasswordDialog {
     }
 
     /// **Report that the password just submitted did not work**, and stay open.
-    ///
-    /// Called by the application when its retry comes back refused. Clears the
-    /// field, because a wrong password left in the box is one an operator
-    /// re-submits by reflex, and increments the attempt count so the message can
-    /// say which try this was — without that, a second rejection produces a
-    /// dialog identical to the first and the operator cannot tell whether their
-    /// press registered.
     pub fn reject(&mut self, why: Rejection) {
         self.attempts += 1;
         self.rejection = Some(why);
@@ -120,15 +102,6 @@ impl PasswordDialog {
     }
 
     /// Draw it, raising an action when a password is submitted.
-    ///
-    /// Returns `false` when the dialog should close — cancelled, or dismissed by
-    /// the window's own ✕.
-    ///
-    /// The ✕ is a **Cancel**. The window's close control must mean the
-    /// non-destructive answer, which is the rule `dialogs::unsaved` states: it is
-    /// the control an operator presses reflexively to make a surprise go away.
-    /// Here nothing is destroyed either way, and the tab stays in the document
-    /// list saying why it did not open.
     pub fn show(&mut self, ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
         let (frame, ()) = crate::dialogs::host::Host::new(
             "password", // ui-text-exempt: a viewport key, never displayed.

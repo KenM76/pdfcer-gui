@@ -20,6 +20,8 @@
 //! - The band shrinks the area the engine tiles, so a job with marks can need
 //!   more sheets than one without. That is the cost of not printing over the
 //!   drawing.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui-base/poster.md`.
 
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -151,11 +153,6 @@ pub enum Imposed {
 }
 
 /// Tile one page onto sheets whose printable area is `printable_pt`.
-///
-/// # Errors
-///
-/// The engine's [`ImpositionError`], unchanged: an empty sheet, a degenerate
-/// page, a bad scale or overlap, or more tiles than the engine's ceiling.
 pub fn impose(
     printable_pt: (f64, f64),
     page_pt: (f64, f64),

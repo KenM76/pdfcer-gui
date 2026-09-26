@@ -24,6 +24,8 @@
 //! line also says *"and the saved file if pdfcer re-compresses the image"*. It
 //! is the only setting whose radius spans two of the three. It sits with the
 //! others in its dialog group, where an operator looks for it.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/text/settings/bytes.md`.
 
 // ===========================================================================
 // Pages and printing — separations
@@ -36,12 +38,6 @@ pub const fn separations_title() -> &'static str {
 }
 
 /// Separations: what the standard leaves open.
-///
-/// Careful wording, and the care is the point. This is **not** a spec
-/// ambiguity: §14.11.4 is perfectly clear about the invariant. What it does
-/// not say is what an *editor* should do when an edit breaks it, and all three
-/// answers are defensible for different workflows. Blurring the two shapes of
-/// silence would make the window's whole framing dishonest.
 #[must_use]
 pub const fn separations_silence() -> &'static str {
     "Some print-ready files split one page into several — one per printing plate \
@@ -115,11 +111,6 @@ pub const fn missing_as_silence() -> &'static str {
 }
 
 /// Missing `/AS`: what changing it costs.
-///
-/// The only setting whose radius separately names **printing**, and it needs
-/// to: an appearance chosen for the screen is the appearance that goes on
-/// paper, and an operator checking a form before printing it is exactly the
-/// person this setting is for.
 #[must_use]
 pub const fn missing_as_radius() -> &'static str {
     "Affects what you see and what prints. Does not change the file."
@@ -132,12 +123,6 @@ pub const fn missing_as_nothing_label() -> &'static str {
 }
 
 /// Why refusing to guess is the shipped answer.
-///
-/// The guess disclosure here is inverted from every other setting's, and
-/// deliberately: what is disclosed is that *the other two are the guesses*.
-/// Making either of them the default would be the "sneaky" failure the
-/// disclosure rule forbids, because the operator would see a plausible
-/// appearance with no indication pdfcer had chosen it.
 #[must_use]
 pub const fn missing_as_nothing_note() -> &'static str {
     "Refuses to guess. Nothing appears, and pdfcer counts it so you can see how \
@@ -190,10 +175,6 @@ pub const fn xref_eol_silence() -> &'static str {
 }
 
 /// Xref EOL: what changing it costs.
-///
-/// Bytes and nothing else. Every value here is conforming, so unlike the
-/// preview settings there is nothing for the operator to *see* and therefore
-/// nothing to disclose beyond the fact itself.
 #[must_use]
 pub const fn xref_eol_radius() -> &'static str {
     "Changes the bytes pdfcer writes. Nothing visible."
@@ -206,17 +187,6 @@ pub const fn xref_eol_match_label() -> &'static str {
 }
 
 /// Why matching is the default, and what a fixed form would cost.
-///
-/// This default was changed on an operator ruling after the register pointed
-/// out the shipped one was *"arguably wrong on pdfcer's own invariant"* — and
-/// it was: objects pdfcer did not logically touch are re-emitted byte-identical,
-/// and a full rewrite of a `CR LF` file under a fixed `SP LF` changes two bytes
-/// in every entry. On a 5,000-object file that is a 10,000-byte diff in a
-/// document nobody edited.
-///
-/// The note's *"below"* is only correct because the panel renders this option
-/// **first**, which is not the order the functions are declared in. The
-/// rendering order is the contract; see [`crate::dialogs::settings`].
 #[must_use]
 pub const fn xref_eol_match_note() -> &'static str {
     "Saving a document pdfcer did not otherwise change leaves its index untouched. \
@@ -239,10 +209,6 @@ pub const fn xref_eol_space_lf_note() -> &'static str {
 }
 
 /// The second fixed form.
-///
-/// No note: *"Space then carriage return"* describes itself completely, and
-/// padding it would be noise. The `Option<&str>` in the option helper exists
-/// for exactly these two entries.
 #[must_use]
 pub const fn xref_eol_space_cr_label() -> &'static str {
     "Space then carriage return"
@@ -283,10 +249,6 @@ pub const fn trailing_eol_lf_label() -> &'static str {
 }
 
 /// The guess disclosure the old note omitted.
-///
-/// Both readings of the standard are self-consistent and it does not choose.
-/// The note read as a plain recommendation; it now says which of the two
-/// pdfcer picked and that it picked.
 #[must_use]
 pub const fn trailing_eol_lf_note() -> &'static str {
     "Conventional, and what most tools produce. Both readings of the standard are \
@@ -333,13 +295,6 @@ pub const fn quad_order_title() -> &'static str {
 }
 
 /// Quad-point order: what the standard leaves open.
-///
-/// It does NOT leave it open, and that is the honest and unusual thing to
-/// have to say in a window whose every other silence line means *the standard
-/// declines to choose*. Section 12.5.6.10 states an order and essentially no
-/// producer follows it, so pdfcer is choosing between the clause and the world.
-/// Saying "the standard is silent" here would be a comfortable sentence and a
-/// false one.
 #[must_use]
 pub const fn quad_order_silence() -> &'static str {
     "The standard states one order and almost no program follows it. Acrobat, \
@@ -388,41 +343,18 @@ pub const fn quad_order_ccw_note() -> &'static str {
 // ===========================================================================
 
 /// Faking bold/italic: what it is.
-///
-/// Named for the ACT, not for the engine's type. `StylePolicy` means nothing
-/// to an operator; *"faking bold and italic"* is what they will have seen
-/// happen and the phrase they would search for.
 #[must_use]
 pub const fn style_policy_title() -> &'static str {
     "Faking bold and italic"
 }
 
 /// Faking bold/italic: what is left open.
-///
-/// This is the one `*_silence` line in the window that is **not** about the
-/// standard being silent. Every other setting here exists because ISO 32000-1
-/// permits two readings; this one exists because the *page* may not carry what
-/// the operator asked for, and there is no answer in any standard to what a
-/// program should do then.
-///
-/// It says so outright rather than borrowing the shape of the others. A
-/// sentence implying the standard is undecided about synthesised weights would
-/// send an operator looking for a clause that does not exist.
 #[must_use]
 pub const fn style_policy_silence() -> &'static str {
     "Nothing in the PDF standard says what a program should do when you ask for bold and the page carries no bold face. It describes how to thicken letters artificially and leaves the choice of whether to entirely to the program."
 }
 
 /// Faking bold/italic: what it costs.
-///
-/// It changes **the bytes pdfcer writes**, and that is not obvious.
-///
-/// A faked weight is not a display trick: it is text rendering mode 2 plus a
-/// stroke width written into the page's content stream, and a faked slant is a
-/// shear term written into the text matrix. Both survive Save and both are what
-/// every other viewer will show. An operator who read this as a preview setting
-/// would hand on a drawing carrying artificial letterforms they thought were
-/// only on their screen.
 #[must_use]
 pub const fn style_policy_radius() -> &'static str {
     "Changes the bytes pdfcer writes: a faked weight or slant is drawn into the page itself and is what every other viewer will show."
@@ -435,10 +367,6 @@ pub const fn style_policy_auto_label() -> &'static str {
 }
 
 /// Faking bold/italic: the default's note.
-///
-/// It states what pdfcer does FIRST, because the thing operators get wrong
-/// about this setting is assuming it decides whether a real face is used. It
-/// does not — a real face is always preferred, under all three choices.
 #[must_use]
 pub const fn style_policy_auto_note() -> &'static str {
     "pdfcer always uses a real bold or italic face when the page carries one. This is only about what happens when it does not: the letters are thickened or slanted artificially, and pdfcer reports that it did. The shipped default."
@@ -463,26 +391,12 @@ pub const fn style_policy_refuse_label() -> &'static str {
 }
 
 /// Faking bold/italic: refuse's note.
-///
-/// It says the button will appear not to work, in advance. This is the only
-/// setting in this window that can make a control do nothing, and an operator
-/// who chose it months earlier will otherwise read the silence as a defect.
 #[must_use]
 pub const fn style_policy_refuse_note() -> &'static str {
     "Bold and italic then change nothing on a page that carries no real face for them, and pdfcer says which face it looked for. Choose this if an artificial weight would be worse than no change at all — and expect the buttons to decline on some pages."
 }
 
 /// Faking bold/italic: the bound, disclosed under the whole group.
-///
-/// The fact that makes this setting narrower than it looks, and it is a
-/// fact rather than a direction — so it is drawn under the group rather than
-/// attached to one option, exactly as `actual_text_bound` is.
-///
-/// A real face is preferred under **every** choice here. pdfcer asks the engine
-/// which real face is on offer before it asks for anything to be faked, and
-/// takes the offer when there is one. None of the three options can turn that
-/// off, and an operator who read *"Never fake it"* as *"never change my font"*
-/// has misread it in the direction that matters.
 #[must_use]
 pub const fn style_policy_bound() -> &'static str {
     "Whichever you choose, pdfcer looks for a real bold or italic face on the page first and uses it if there is one — including a face from another family when nothing in the text's own family will do. These options only decide what happens after that search comes up empty."

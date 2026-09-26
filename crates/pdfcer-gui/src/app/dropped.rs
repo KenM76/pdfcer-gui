@@ -12,10 +12,6 @@ use std::path::{Path, PathBuf};
 use crate::app::actions::Action;
 
 /// What a dropped file turned out to be.
-///
-/// Named rather than answered as a `bool` pair, because the four outcomes have
-/// four different sentences and a caller reading two booleans would have to
-/// re-derive which combination means what.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Dropped {
     /// A PDF. Open it.
@@ -32,13 +28,6 @@ pub enum Dropped {
 const IMAGE_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "bmp", "tif", "tiff"];
 
 /// Classify one dropped path by its extension.
-///
-/// # Why the extension and not the bytes
-///
-///
-/// A `.pdf` that is not a PDF therefore produces the *parser's* error, which is
-/// the specific one, rather than "pdfcer does not accept this kind of file",
-/// which would be wrong.
 #[must_use]
 pub fn classify(path: &Path) -> Dropped {
     let ext = path
@@ -56,17 +45,6 @@ pub fn classify(path: &Path) -> Dropped {
 
 /// **What a drop means when no surface claimed it**: open it, insert it, or
 /// explain the refusal.
-///
-/// `has_document` decides whether an image can be placed at all; the caller
-/// knows it and this module does not need the whole `OpenDoc` to find out.
-///
-/// Returns the image to insert, if one was dropped and can be — the caller owns
-/// the picker-and-dialog path and this module deliberately does not reach into
-/// it.
-///
-/// It is handed the files rather than reading them. See the header: the
-/// position-aware half of the feature has to read the input first, and two
-/// readers of one `dropped_files` would each see it and each act.
 pub fn resolve(
     files: &[PathBuf],
     has_document: bool,

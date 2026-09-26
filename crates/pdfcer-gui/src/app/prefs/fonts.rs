@@ -8,56 +8,9 @@
 use std::path::{Path, PathBuf};
 
 /// The most folders this preference will hold.
-///
-/// Sixteen, and the cap exists for the same reason every cap in this project
-/// does — a bound is a decision and an unbounded list is a decision nobody
-/// made. It is not a performance limit: an embed searches folders once per
-/// missing face. It is a **legibility** limit, because a settings pane listing
-/// forty directories has stopped being a setting and become a file manager,
-/// and because a preferences file that has accumulated forty entries is one
-/// nobody has pruned.
 pub const MAX_FOLDERS: usize = 16;
 
 /// **The operating system's own font directories**, in search order.
-///
-/// # Why searching them is allowed, when pdfcer must not go looking
-///
-/// The rule the module header states is against pdfcer **deciding silently** —
-/// a program that searched `C:\Windows\Fonts` on its own would be answering a
-/// licensing question on the operator's behalf, in a file that outlives the
-/// decision. An explicit, persistent, **off-by-default** switch — the checkbox
-/// `OPERATOR_REQUESTS.md` **O50** asks for — is not a loophole in that rule: it
-/// is the operator making the decision once, visibly, somewhere they can find
-/// it again.
-///
-/// ⇒ The shape recurs: **when a capability is refused on the grounds that the
-/// program must not decide, the answer is usually a visible setting rather than
-/// a permanent no.**
-///
-/// # TWO folders, and the second is the one that matters
-///
-/// | | |
-/// |---|---|
-/// | `%WINDIR%\Fonts` | the machine's fonts, installed for everybody |
-/// | `%LOCALAPPDATA%\Microsoft\Windows\Fonts` | installed for **this user only** |
-///
-/// The per-user location is where a plain double-click on a `.ttf` installs by
-/// default — **without** an administrator prompt, which is exactly why it is the
-/// common case. A checkbox that searched only the machine folder would miss the
-/// font the operator installed themselves for this drawing, which is the font
-/// they are most likely to have ticked the box for.
-///
-/// # Read from the environment rather than hard-coded
-///
-/// `%WINDIR%` is `C:\Windows` on essentially every machine and is not guaranteed
-/// to be; a domain image can put it elsewhere. The cost of asking is one
-/// environment lookup, and the cost of assuming is a checkbox that silently
-/// finds nothing on somebody's machine.
-///
-/// Returns only directories that **exist**, unlike [`add`] -- and the two
-/// differ on purpose. A folder the operator typed may be an unmounted drive and
-/// is kept; these are derived, not typed, so a path that is not there is not a
-/// promise anybody made and listing it would put a dead row under the checkbox.
 #[must_use]
 pub fn os_font_dirs() -> Vec<PathBuf> {
     let mut out = Vec::new();
@@ -85,13 +38,6 @@ pub fn os_font_dirs() -> Vec<PathBuf> {
 }
 
 /// Every folder an embed may take a donor from, given the preference.
-///
-/// The operator's own folders **first**, then the OS ones. Order is search
-/// order and the first match wins ([`add`]), so a face the operator put in a
-/// folder of their own beats the same-named face the machine happens to have --
-/// which is the only ordering that makes their list mean anything. A folder
-/// they curated for a job is a decision; `C:\Windows\Fonts` is whatever has
-/// accumulated.
 #[must_use]
 pub fn search_path(configured: &[PathBuf], include_os: bool) -> Vec<PathBuf> {
     let mut out = configured.to_vec();
@@ -108,16 +54,6 @@ pub fn search_path(configured: &[PathBuf], include_os: bool) -> Vec<PathBuf> {
 }
 
 /// Add `folder`, keeping order and refusing a duplicate or an over-long list.
-///
-/// Returns whether the list changed, so a caller can tell "added" from "you
-/// already have that one" without comparing lengths.
-///
-/// It does **not** check that the folder exists. A removable drive that is
-/// not mounted right now is still where the operator's fonts live, and a
-/// preference that silently dropped it on the day the drive was unplugged
-/// would be worse than one that keeps a path that occasionally resolves to
-/// nothing. The *embed* is where a missing folder is reported, because that is
-/// where it matters.
 pub fn add(folders: &mut Vec<PathBuf>, folder: &Path) -> bool {
     if folders.len() >= MAX_FOLDERS || folders.iter().any(|f| f == folder) {
         return false;
@@ -127,12 +63,6 @@ pub fn add(folders: &mut Vec<PathBuf>, folder: &Path) -> bool {
 }
 
 /// Parse one `font_folder = …` line's value.
-///
-/// Trims, and rejects only the empty result. A path is otherwise taken
-/// verbatim — no canonicalisation, no separator normalisation — because
-/// `Path` comparison on Windows is case-insensitive in the filesystem and
-/// case-sensitive in `PathBuf`, and a preference that rewrote what the
-/// operator typed would make their own file unrecognisable to them.
 #[must_use]
 pub fn parse_one(value: &str) -> Option<PathBuf> {
     let trimmed = value.trim();
@@ -141,12 +71,6 @@ pub fn parse_one(value: &str) -> Option<PathBuf> {
 
 /// The `font_folder` lines for [`super::Prefs::write_to_string`], with the
 /// comment that explains them.
-///
-/// The comment is emitted **even when the list is empty**, which is the
-/// convention every other block in that file follows and is the reason the
-/// file is editable by hand: an operator who wants to add a folder without
-/// opening pdfcer needs to see the key name and its rules, and a key that only
-/// appears once it is already set cannot teach anybody anything.
 #[must_use]
 pub fn write_block(folders: &[PathBuf]) -> String {
     let mut out = String::from(
@@ -246,12 +170,6 @@ mod tests {
 
 /// The `use_os_fonts` line for [`super::Prefs::write_to_string`], with the
 /// comment that explains it.
-///
-/// Written **always**, both values, for [`write_block`]'s reason: the file is
-/// editable by hand, and a key that only appears once it is already set cannot
-/// teach anybody it exists. This one has a second reason of its own — it is the
-/// switch with a licensing consequence, so the file states that consequence
-/// where somebody editing it will read it.
 #[must_use]
 pub fn write_os_flag(on: bool) -> String {
     let mut out = String::from(

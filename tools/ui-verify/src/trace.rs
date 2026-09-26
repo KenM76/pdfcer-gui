@@ -41,10 +41,6 @@ impl TraceLine {
     }
 
     /// A field parsed as an integer.
-    ///
-    /// Tolerates the `Some(3)` wrapper, because `Debug` on an `Option<usize>`
-    /// is what several of these fields actually are and requiring every call
-    /// site to strip it would put the same three lines in five places.
     #[must_use]
     pub fn get_usize(&self, key: &str) -> Option<usize> {
         let v = self.get(key)?;
@@ -113,10 +109,6 @@ pub struct Trace {
 
 impl Trace {
     /// Parse a captured stderr stream.
-    ///
-    /// `prefix` is the marker the application puts at the head of every
-    /// diagnostic line (`"pdfcer-diag"`). Lines without it go to
-    /// [`Trace::other`].
     #[must_use]
     pub fn parse(text: &str, prefix: &str) -> Self {
         let mut trace = Self::default();
@@ -147,11 +139,6 @@ impl Trace {
     }
 
     /// Read a captured stderr file and parse it.
-    ///
-    /// Reads lossily: a crashing process can leave a partial UTF-8 sequence at
-    /// the tail of the file, and a harness that returned "invalid UTF-8"
-    /// instead of the ninety good lines above it would be hiding the evidence
-    /// at the exact moment it matters most.
     pub fn read(path: &std::path::Path, prefix: &str) -> Result<Self> {
         let bytes = std::fs::read(path)
             .map_err(|e| Error::new(format!("cannot read the trace at {}: {e}", path.display())))?;
@@ -164,11 +151,6 @@ impl Trace {
     }
 
     /// The last line with this event name.
-    ///
-    /// Written as an explicit reverse search rather than `events(..).last()`
-    /// so it stops at the first match from the end instead of walking the
-    /// whole trace. Traces from a real run are tens of thousands of lines and
-    /// several checks ask this question per assertion.
     #[must_use]
     pub fn last(&self, name: &str) -> Option<&TraceLine> {
         self.lines.iter().rev().find(|l| l.event == name)
@@ -182,38 +164,6 @@ impl Trace {
 
     /// The last line with this event name that the application traced **after**
     /// `after` — where `after` is a [`TraceLine::lineno`] taken earlier.
-    ///
-    /// # Why this exists: [`Trace::last`] cannot tell "unchanged" from
-    /// "stopped"
-    ///
-    /// A trace is an append-only log, so `last` answers *"what is the newest
-    /// line this run ever produced?"* — which is the right question only while
-    /// the thing producing it is still producing. The moment a surface stops
-    /// emitting, its final line stands for ever, and a check that keeps reading
-    /// it sees **a number that never changes** and reports the feature behind
-    /// it as inert.
-    ///
-    ///
-    /// > `save_copy_round_trip` and `undo_redo_round_trip` both read
-    /// > `comments-panel … listed=` with `last`, and both reported *"THE
-    /// > COMMENTS PANEL DOES NOT SEE THE ANNOTATION THAT WAS JUST AUTHORED"*.
-    /// > The panel saw it perfectly. It had been sent to the back of a tabbed
-    /// > dock by a persisted layout, a dock draws only its active tab, and so
-    /// > the panel had stopped tracing three hundred frames before the drag.
-    /// > `last` handed both checks the census it published in the *previous
-    /// > mode*.
-    ///
-    /// ⇒ **If a check compares a number to what that number was earlier, the
-    /// later read must be anchored.** `after` is normally the `lineno` of the
-    /// event that is supposed to have caused the change — a commit line, a
-    /// gesture's start — so a value published before the cause cannot satisfy
-    /// it, and `None` means *"the surface said nothing since"*, which is a
-    /// different verdict from *"the surface said the same thing"* and must be
-    /// reported differently.
-    ///
-    /// `TraceLine::lineno` is the line's position in the capture, so marks
-    /// taken from any event are directly comparable with any other — the same
-    /// property `declared_since` relies on.
     #[must_use]
     pub fn last_after(&self, name: &str, after: usize) -> Option<&TraceLine> {
         self.lines
@@ -241,23 +191,12 @@ impl Trace {
     }
 
     /// Did the process reach its unconditional first trace line?
-    ///
-    /// `false` with a non-empty capture means the diagnostic variable did not
-    /// reach the process. `false` with an empty capture means the process
-    /// produced nothing at all — a bad binary, or a crash before start.
     #[must_use]
     pub fn started(&self, start_event: &str) -> bool {
         self.first(start_event).is_some()
     }
 
     /// Script steps the application rejected as unparseable.
-    ///
-    /// Always worth printing, whatever a check was looking for. pdfcer records
-    /// two working features being declared broken because their scripts used
-    /// step names that did not exist: the harness traced the rejection on every
-    /// single run, and every filter in use matched only the traces the test
-    /// *expected*, so the explanation was never seen. A filter that matches
-    /// only your expectation cannot tell you your input was wrong.
     #[must_use]
     pub fn rejected_steps(&self) -> Vec<&TraceLine> {
         self.lines

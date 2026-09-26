@@ -12,20 +12,10 @@ use crate::app::actions::Action;
 use crate::app::actions::bookmarks::BookmarkAction;
 
 /// The region name the insertion caret publishes.
-///
-/// `ui_rect_visible` rather than `ui_rect`, for the reason `diag.rs`'s own
-/// header records: this is drawn inside a `ScrollArea`, and a mark scrolled out
-/// of view must not keep publishing a rectangle a driven check would then aim
-/// at.
 pub const REGION_CARET: &str = "bookmarks.drop-caret"; // ui-text-exempt: trace region name, never displayed
 
 /// The prefix of the per-row disclosure-triangle regions; the item's object
 /// **number** is appended.
-///
-/// Keyed by object number rather than by position, for
-/// [`super::BookmarksUi::selected`]'s reason: an id survives an edit and a
-/// position does not. A check that expands a row and then re-aims must name the
-/// same bookmark, and the row it sits on will have moved.
 pub const REGION_DISCLOSE_PREFIX: &str = "bookmarks.disclose."; // ui-text-exempt: trace region name, never displayed
 
 /// How thick the insertion caret is drawn, in points.
@@ -38,27 +28,6 @@ const CARET_DIMMED: f32 = 0.35;
 const CARET_REFUSED: f32 = 0.15;
 
 /// One row of the outline **as it was actually drawn**, in draw order.
-///
-/// # Why the walk collects these instead of resolving the drop as it goes
-///
-/// Two answers are unavailable at the moment a row is drawn:
-///
-/// * **the end of its subtree**, which is where the `After` and `LastChild`
-///   carets belong — its children have not been laid out yet;
-/// * **whether the row is the last of its level**, which decides nothing here
-///   but would have to be re-derived by any caller that wanted it.
-///
-/// Collecting the rows and resolving afterwards makes both a lookup in a flat
-/// list. It is the same shape `crate::panels::pages`' `visible`, `go` and
-/// `tokens` already have: an answer only the layout pass is in a position to
-/// give, carried out of it rather than acted on inside it.
-///
-/// # Why it holds an `ObjId` and not a `&OutlineItem`
-///
-/// So it can be built in a test. `OutlineItem` is `#[non_exhaustive]` and this
-/// crate cannot construct one — the same constraint that split
-/// [`super::tree`]'s walks in two — and every geometric decision in this module
-/// is made from these five fields and nothing else.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct VisibleRow {
     /// Which bookmark this row is.
@@ -104,12 +73,6 @@ pub enum Band {
 const EDGE_BAND: f32 = 0.25;
 
 /// Which band `y` falls in, within `rect`.
-///
-/// Pure, and separated from everything that needs a `Ui` so the boundary
-/// arithmetic — the part with something to get wrong — is testable. A zero- or
-/// negative-height rect answers [`Band::Into`]: a row with no height cannot
-/// have an edge, and answering *"the middle"* keeps the caret on the row the
-/// pointer is over rather than inventing a boundary.
 #[must_use]
 pub fn band_at(rect: Rect, y: f32) -> Band {
     let height = rect.height();
@@ -127,19 +90,6 @@ pub fn band_at(rect: Rect, y: f32) -> Band {
 }
 
 /// The bottom of `rows[index]`'s **subtree**, as it was drawn.
-///
-/// The run of consecutive rows after `index` whose level is deeper than
-/// `rows[index]`'s. A collapsed or childless row has an empty run and answers
-/// its own bottom edge, which is correct: there is nothing drawn between it and
-/// the next row at its level.
-///
-/// It reads the **drawn** rows and not the tree, which is the whole point. A
-/// collapsed chapter has forty items under it in the document and none of them
-/// on screen, and the caret is a mark on the screen.
-///
-/// Returns `rows[index].rect.bottom()` for an index past the end, which cannot
-/// happen from [`resolve_at`] and is the answer that keeps a caller from
-/// panicking if it ever does.
 #[must_use]
 pub fn subtree_bottom(rows: &[VisibleRow], index: usize) -> f32 {
     let Some(anchor) = rows.get(index) else {
@@ -157,27 +107,6 @@ pub fn subtree_bottom(rows: &[VisibleRow], index: usize) -> f32 {
 
 /// What releasing on a landing would do — the three answers the caret has to
 /// be able to draw.
-///
-/// # Why "changes nothing" and "would be refused" are separate
-///
-/// They have different remedies and, on release, they do different things.
-///
-/// A no-op is the operator asking for the state they are already in. The honest
-/// response is to raise nothing and say nothing: the dimmed caret already said
-/// so **before** the press, which is this panel's whole posture, and
-/// [`crate::panels::pages`]' release makes the identical call for its own
-/// no-op. Raising it anyway would put *"nothing changed"* in the status bar for
-/// a gesture the panel had already declined to promise anything about, evicting
-/// a real disclosure to do it.
-///
-/// A refusal is the operator asking for something pdfcer will not do, and **a
-/// refusal must be a sentence, never a silence** — they will otherwise read it
-/// as *"the drag did not register"* or, worse, as the move having succeeded
-/// somewhere they cannot see, which is a real state this feature can produce.
-/// So it **is** raised, the engine refuses it by name
-/// (`EditError::OutlineMoveIntoOwnSubtree`), and
-/// `crate::app::actions::bookmarks` words it. See [`settle`] for why the
-/// sentence comes from there and not from here.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Landing {
     /// The bookmark would move. The caret is drawn at full strength.
@@ -192,12 +121,6 @@ pub enum Landing {
 }
 
 /// Where a drag in flight would land, resolved during the layout pass.
-///
-/// [`crate::panels::pages`]' `DropTarget` with a depth added. The caret is a
-/// `Rect` for that type's stated reason: it is a **line**, its two endpoints
-/// are all the layout pass knows, and carrying them in one value keeps the
-/// geometry decision beside the rows and the appearance decision beside the
-/// theme.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct DropTarget {
     /// The placement a release would ask the engine for.
@@ -211,11 +134,6 @@ pub struct DropTarget {
 
 /// Where a bookmark sits in the tree — its parent, its siblings, and its place
 /// among them.
-///
-/// The three facts [`landing_for`] needs to answer *"would this move change
-/// anything?"*, and the reason they travel together is that they are one
-/// lookup: a second walk to fetch the index after a first fetched the parent
-/// is a second walk that can disagree with the first about which node it found.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Location {
     /// The bookmark it is filed under, or `None` for the top level — which is
@@ -246,12 +164,6 @@ pub fn locate(items: &[OutlineItem], id: ObjId) -> Option<Location> {
 }
 
 /// Depth-first search for a node's parent, siblings and index.
-///
-/// Generic over the tree for [`super::tree::find_in`]'s reason. `parent` is the
-/// id of the list's owner — `None` at the top level, which is the outline
-/// root and is deliberately *not* given an id here: `read_outline` reports the
-/// root's children as its top-level items and never exposes the root itself, so
-/// there is no id to use and `None` is the only honest spelling.
 pub fn locate_in<'a, T>(
     items: &'a [T],
     parent: Option<ObjId>,
@@ -275,41 +187,6 @@ pub fn locate_in<'a, T>(
 }
 
 /// **Would this move do anything, and would pdfcer allow it?**
-///
-/// # This is a FORECAST of the engine's answer, not a second copy of it
-///
-/// `move_outline_item` decides both facts for itself: it answers
-/// `OutlineMove::moved = false` for a placement the bookmark already occupies,
-/// writing no objects and creating no undo entry, and it refuses
-/// `EditError::OutlineMoveIntoOwnSubtree` unconditionally.
-///
-/// The shell asks anyway, and the reason is the caret: a mark that could only
-/// be drawn *after* the release would be no use at all. This is the same
-/// relationship `panels::properties::formfield::refuses_delete` has with
-/// `EditSession::deletion_refusal` — a query the shell can answer from what it
-/// can see, standing in front of a guard that remains the authority. Where the
-/// two disagree the engine wins, and the operator reads
-/// [`crate::text::panels::bookmarks::bookmark_move_no_change`] or
-/// [`crate::text::panels::bookmarks::bookmark_move_declined_engine`].
-///
-/// It is **not** R171 duplication, because the two are asked at different times
-/// about different things: this one asks *"what should the mark under the
-/// pointer look like?"* and the engine asks *"what shall I write?"*. Only the
-/// second may change a document.
-///
-/// # The arithmetic, in one place
-///
-/// | placement | changes nothing when |
-/// |---|---|
-/// | `Before { sibling }` | `sibling` is the item, or the item's **next** sibling |
-/// | `After { sibling }` | `sibling` is the item, or the item's **previous** sibling |
-/// | `LastChild { parent }` | the item is already that parent's last child |
-/// | `FirstChild { parent }` | the item is already that parent's first child |
-///
-/// Each is *"the slot the item is in, named from the other side"*, which is
-/// why a lone `==` on ids is not enough: `After` the previous sibling and
-/// `Before` the next sibling are both the item's own slot, and both would
-/// otherwise draw a live caret over a drop that does nothing.
 #[must_use]
 pub fn landing_for(items: &[OutlineItem], dragged: ObjId, to: OutlinePlacement) -> Landing {
     let anchor = match to {
@@ -368,18 +245,6 @@ fn is_inside(items: &[OutlineItem], ancestor: ObjId, candidate: ObjId) -> bool {
 
 /// **Where a drag would land**, from the rows as drawn and the pointer as it
 /// is.
-///
-/// Pure, and every geometric decision in this module is in it. `indent` is the
-/// theme's own indent width, so an `Into` caret sits exactly where the row it
-/// describes would be drawn; `right` is the panel's right edge, so the mark
-/// spans the list rather than stopping under the longest title.
-///
-/// `None` when the pointer is over no row — including the space below the last
-/// one, which is deliberately **not** treated as *"the end of the top level"*.
-/// [`crate::panels::pages`]' release makes the same choice and states the
-/// reason: a landing an operator reached by missing is a landing they did not
-/// choose. The end of the top level is reachable, precisely, from the bottom
-/// band of the last top-level row.
 #[must_use]
 pub fn resolve_at(
     rows: &[VisibleRow],
@@ -423,10 +288,6 @@ pub fn resolve_at(
 }
 
 /// [`resolve_at`], with the pointer and the theme read from the `Ui`.
-///
-/// Nothing is resolved unless a drag is actually in flight — the caret is a
-/// mark about a gesture, and a panel that computed one every frame would be
-/// paying for a question nobody asked.
 #[must_use]
 pub fn resolve(
     ui: &Ui,
@@ -453,25 +314,6 @@ pub fn resolve(
 }
 
 /// Draw the insertion caret for a drag in flight.
-///
-/// # Rule 4: this is the cursor, not a mark on content
-///
-/// [`crate::panels::pages`]' `paint_caret` argument, unchanged: a drop caret is
-/// in the class the rule permits by name — *"snap indicators, hover highlights,
-/// rubber-bands and selection handles are the cursor and are welcome"*. It
-/// draws nothing into a page, changes no title, and disappears the instant the
-/// pointer is released.
-///
-/// # The colour is the theme's, never a literal
-///
-/// [`egui_shell::theme::Theme::canvas_selection_ink`], the same source the
-/// pages caret and the current-page ring take, so a preset that changes the
-/// accent changes all three together. **Not `visuals().selection.stroke`** —
-/// that is `egui`'s selected-*widget* channel, and a mark drawn over content is
-/// not a widget, so a theme that restyled selected list rows would silently
-/// restyle this caret with them. The two dimmed states are `gamma_multiply`
-/// ratios of the one colour rather than two more colours: one colour with a
-/// stated relationship beats several that have to be kept in step.
 pub fn paint_caret(ui: &Ui, target: Option<&DropTarget>) {
     let Some(target) = target else {
         return;
@@ -526,54 +368,6 @@ fn anchor_number(to: OutlinePlacement) -> u32 {
 }
 
 /// **End a drag** — read the release, raise the move, clear the state.
-///
-/// # Why the release is read from raw pointer input
-///
-/// [`crate::panels::pages`]' `settle_drag` discipline and its reason,
-/// unchanged: a drag that began on a row may end anywhere — over the panel
-/// header, past the end of the list, outside the window entirely — and a
-/// `Response` only reports releases inside the widget that produced it. Reading
-/// the input means a drag **always** ends, which is the property that stops a
-/// half-finished gesture surviving into the next frame as a caret nobody can
-/// get rid of.
-///
-/// # Why it runs unconditionally, and what each ending does
-///
-/// Because a drag that has started has to be able to end. The four endings:
-///
-/// | released | raises | says |
-/// |---|---|---|
-/// | over no row | nothing | nothing — the operator let go over empty space, which is how a drag is abandoned |
-/// | on a landing that changes nothing | nothing | nothing — the dimmed caret said so before the press |
-/// | on the bookmark itself or inside it | [`BookmarkAction::Move`] | **a sentence**, from the engine's refusal |
-/// | anywhere else | [`BookmarkAction::Move`] | the engine's report, afterwards |
-///
-/// # Why a landing this module has already judged impossible is still
-/// raised
-///
-/// It looks wasteful and it is the only correct shape. **A refusal must be a
-/// sentence, never a silence**, and the channel for a decline is
-/// `crate::app::status::decline`, which is `pub(super)` inside `crate::app`
-/// because a decline is written by the one dispatcher and read by the one bar.
-/// A panel is outside that boundary.
-///
-/// The two ways round it are both worse than going through it. A `record_note`
-/// from here would render the sentence under **`⚑ About your last edit:`**,
-/// which `crate::text::status` forbids for a decline: nothing was edited, and
-/// an operator told otherwise after a gesture that did nothing has been lied to
-/// confidently. Widening the module would trade a real invariant for one call
-/// site.
-///
-/// ⇒ So the action is raised, `EditSession::move_outline_item` refuses it by
-/// name, `crate::app::actions::bookmarks::move_to` records the decline from
-/// **inside** the closure, and nothing is written: the engine's guard runs
-/// before it plans anything, so there is no epoch bump and no undo entry.
-///
-/// And it puts the authority where the module header already says it is.
-/// [`landing_for`] is a **forecast**, and its whole purpose is the caret. The
-/// engine's guard decides what happens, exactly as it does for every other
-/// refusal in this shell, and the two cannot drift into disagreeing about the
-/// *outcome* because only one of them produces it.
 pub fn settle(
     ui: &Ui,
     ui_state: &mut super::BookmarksUi,

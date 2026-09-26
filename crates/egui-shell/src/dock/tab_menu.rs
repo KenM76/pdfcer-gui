@@ -160,21 +160,9 @@
 use super::model::PanelId;
 
 /// The handler an application supplies to [`super::Dock::with_tab_menu`].
-///
-/// Spelled as a type alias for the same reason [`super::RectSink`] is: the
-/// `dyn` form appears in [`super::Dock`]'s private field and in
-/// [`super::ctx::Ctx`], and writing it out twice is two places for the
-/// lifetimes to drift apart.
 pub type TabMenuHandler<'a> = dyn FnMut(&mut TabMenu<'_>) + 'a;
 
 /// One drawn tab, offered to the application's tab-menu handler.
-///
-/// Constructed by the dock immediately after the tab is drawn and dropped
-/// as soon as the handler returns — it borrows the `Response` that was
-/// just produced, so it cannot outlive the frame and cannot be stored.
-///
-/// See the module header for the seam this sits on and for what happens to
-/// the dock's built-in "Close".
 pub struct TabMenu<'a> {
     /// Which panel's tab this is. The application's own identifier for it,
     /// echoed back unchanged — the dock never interprets it.
@@ -224,75 +212,29 @@ impl<'a> TabMenu<'a> {
     }
 
     /// Which panel this tab belongs to.
-    ///
-    /// The application's own id — whatever string it registered with
-    /// [`super::PanelInfo`]. A handler attaching a context menu usually
-    /// needs this to decide *which* menu to attach, or to carry alongside
-    /// the chosen command so the dispatcher knows what the operator
-    /// right-clicked.
     #[must_use]
     pub fn panel(&self) -> &PanelId {
         self.panel
     }
 
     /// The tab button's response.
-    ///
-    /// Senses clicks, so [`crate::menu::Menu::attach`] and
-    /// [`egui::Response::context_menu`] both work on it directly. Its
-    /// `WidgetInfo` is already published (see the module header's
-    /// accessibility section); a handler that publishes another one would
-    /// overwrite the panel's purpose with whatever it supplies, which is
-    /// allowed but is almost always a mistake.
-    ///
-    /// **One popup per response.** Attaching two context menus to it is
-    /// the id collision the module header describes; attach one.
     #[must_use]
     pub fn response(&self) -> &egui::Response {
         self.response
     }
 
     /// Ask the dock to close this panel.
-    ///
-    /// The seam's route to the dock's own close path: it becomes an
-    /// [`super::ctx::Intent::Close`] like any other, applied after the
-    /// frame, reported in [`super::DockFrameReport::closed`], and counted
-    /// towards [`super::DockFrameReport::layout_changed`] so an
-    /// application that persists on that flag persists this.
-    ///
-    /// **Nothing happens during this call.** The panel is still drawn for
-    /// the rest of this frame, its body included; the layout is not
-    /// mutable while it is being drawn and this method does not make it
-    /// so. Calling it twice is the same as calling it once, and calling it
-    /// on a panel that is not mounted is a no-op — see
-    /// [`super::DockLayout::close`].
     pub fn request_close(&mut self) {
         self.close_requested = true;
     }
 
     /// Whether [`Self::request_close`] has been called on this tab.
-    ///
-    /// Rarely needed by an application — it knows what it asked for — but
-    /// it makes the flag readable by a handler composed of several
-    /// independent pieces, and it is what the dock itself reads.
     #[must_use]
     pub fn close_requested(&self) -> bool {
         self.close_requested
     }
 
     /// **Ask the dock to tear this panel out into a window of its own.**
-    ///
-    /// The verb this module's own header names as the canonical example
-    /// of something *"the shell cannot know"* — and it still cannot: the
-    /// application owns the row, its label, its icon, its position in the
-    /// menu and its keyboard chord. What arrives here is the **act**, and
-    /// it goes through the dock's queue exactly as a close does, so it
-    /// appears in [`super::DockFrameReport::floated`], counts towards
-    /// [`super::DockFrameReport::layout_changed`], and is therefore
-    /// persisted by an application that saves on that flag.
-    ///
-    /// A no-op on a panel that is already floating or is not mounted —
-    /// see [`super::DockLayout::float`]. **Nothing happens during this
-    /// call**; the tab and its body are drawn for the rest of this frame.
     pub fn request_float(&mut self) {
         self.float_requested = true;
     }
@@ -304,15 +246,6 @@ impl<'a> TabMenu<'a> {
     }
 
     /// **Ask the dock to put this panel back where it came from.**
-    ///
-    /// The mirror of [`Self::request_float`], and the verb a floating
-    /// panel's header strip offers. A no-op on a panel that is not
-    /// floating.
-    ///
-    /// It is offered on a **tab** as well as on a header strip, and
-    /// deliberately: one handler serves both surfaces, so an application
-    /// writes one menu and gets the right rows in both places by making
-    /// the rows conditional rather than by writing the menu twice.
     pub fn request_dock(&mut self) {
         self.dock_requested = true;
     }

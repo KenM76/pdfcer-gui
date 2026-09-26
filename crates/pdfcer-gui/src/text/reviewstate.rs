@@ -10,22 +10,6 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/text/reviewstate.md`.
 
 /// The seven states pdfcer AUTHORS, as the operator reads them.
-///
-/// # These are the file's own words, and that is the decision
-///
-/// `Accepted`, `Rejected`, `Cancelled`, `Completed`, `None`, `Marked`,
-/// `Unmarked` are Table 171's vocabulary and
-/// [`pdfcer_core::edit::ReviewState::as_str`] writes exactly those bytes. A
-/// friendlier relabelling — *Approved*, *Done*, *Ticked* — would give the
-/// operator a fourth name for a value they will meet again in Acrobat, in the
-/// saved file and in `pdfcer list-annotations`, and would make a screenshot of
-/// this panel un-checkable against the document it describes.
-///
-/// The one place a word is added rather than changed is `None`, which alone is
-/// ambiguous on screen: Table 171 makes it a **writable value** in the `Review`
-/// model and *not* a spelling of "no status recorded" — `Annotation::state`'s
-/// doc says so in as many words — and a bare *None* in a chooser would read as the
-/// empty entry. See [`state_none`].
 #[must_use]
 pub fn state_name(state: pdfcer_core::edit::ReviewState) -> &'static str {
     match state {
@@ -35,15 +19,6 @@ pub fn state_name(state: pdfcer_core::edit::ReviewState) -> &'static str {
 }
 
 /// `Review`-model `None`, disambiguated from *no status at all*.
-///
-/// # The distinction the standard makes and a menu would lose
-///
-/// `Annotation::state`'s doc: *"`None` is a **writable value**, not a spelling
-/// of 'the key is absent'."* Recording `None` is an act — it is how a reviewer
-/// withdraws a status they set an hour ago — and it produces a state
-/// annotation with a `/State` of `None` in the file. A chooser entry reading
-/// just *None* sits beside [`filter_status_any`] and
-/// [`filter_status_unrecorded`] and would be read as one of them.
 #[must_use]
 pub fn state_none() -> &'static str {
     "None (status withdrawn)"
@@ -51,26 +26,6 @@ pub fn state_none() -> &'static str {
 
 /// **A `/State` in a model pdfcer authors, whose value is not in that model's
 /// vocabulary** — shown verbatim, never normalised.
-///
-/// # Why this is not folded into [`state_foreign`]
-///
-/// [`crate::text::buttonaction::button_action_current`]'s table, applied to a
-/// different key for the same reason:
-///
-/// | state | what it means | what the row offers |
-/// |---|---|---|
-/// | modelled | Table 171's value, in Table 171's model | show it, record another |
-/// | **unmodelled** | pdfcer **authors** this model and did not decode this value | name both, **still offer to record** |
-/// | foreign | a `/StateModel` pdfcer will not author | name both, offer nothing in it |
-///
-/// Collapsing the two would grey a row pdfcer writes happily: a `/StateModel`
-/// of `Review` carrying a `/State` of `Deferred` is a document pdfcer can add
-/// its own `Accepted` to, in the same model, on the same chain rule. Greying it
-/// would be this shell claiming an incapacity it does not have.
-///
-/// `model` is carried because the value alone is not interpretable —
-/// `Annotation::state`: *"a caller that wants the effective state must read
-/// both fields together."*
 #[must_use]
 pub fn state_unmodelled(state: &str, model: &str) -> String {
     format!("{state} — a status pdfcer does not recognise, in the {model} model")
@@ -78,33 +33,12 @@ pub fn state_unmodelled(state: &str, model: &str) -> String {
 
 /// **A `/StateModel` pdfcer will not author** — both values named, and nothing
 /// offered in that vocabulary.
-///
-/// §12.5.6.3 names two models and neither edition says *shall be one of*, so a
-/// third is unhandled rather than illegal. pdfcer cannot record a status in a
-/// vocabulary it does not know the values of, and
-/// [`pdfcer_core::edit::ReviewState`] has no variant that could hold one — so
-/// this is the `Foreign` row of the table above, and R9 makes it render the
-/// fact rather than a greyed control.
-///
-/// It does **not** stop the operator recording their own status: their status
-/// goes in the `Review` model, on their own `/IRT` chain, and leaves this one
-/// untouched. [`record_other_model_note`] is the sentence that says so.
 #[must_use]
 pub fn state_foreign(state: &str, model: &str) -> String {
     format!("{state} — in {model}, a review vocabulary pdfcer does not author")
 }
 
 /// A `/State` with **no** `/StateModel` — the one combination Table 171 forbids.
-///
-/// Table 171 makes `/StateModel` *"Required if `State` is present"*, and
-/// `Annotation::state_model`'s doc calls this out as the asymmetric half:
-/// *"the only non-conforming combination is `/State` present with this
-/// absent."* So this is a malformed file, surfaced rather than repaired — the
-/// same posture `crate::panels::comments::model::CommentRow::subtype` takes
-/// for a missing `/Subtype`.
-///
-/// pdfcer's own authoring cannot produce it: `add_review_state` derives the
-/// model from the state.
 #[must_use]
 pub fn state_without_model(state: &str) -> String {
     format!("{state} — recorded without saying which review vocabulary it is from")
@@ -120,15 +54,6 @@ pub fn row_status_by(who: &str, status: &str) -> String {
 }
 
 /// The same line for a status whose state annotation carries **no** `/T`.
-///
-/// Worded as a fact about the document rather than as *Anonymous*, for
-/// `crate::text::panels::comments::comment_row_byline`'s reason: `/T` is a
-/// Table 170 markup key and its absence is not a claim about a person.
-///
-/// It also has a consequence the operator can act on, and the sentence
-/// carries it: `add_review_state` chains on `/T` equality, so an unsigned
-/// status can never be continued by a signed one — a later status starts a
-/// fresh history beside it.
 #[must_use]
 pub fn row_status_unsigned(status: &str) -> String {
     format!("{status} — recorded without a name, so it stands on its own")
@@ -136,32 +61,12 @@ pub fn row_status_unsigned(status: &str) -> String {
 
 /// **How much history stands behind the status being shown**, when there is
 /// more than one.
-///
-/// # This is the string that stops the panel lying about the format
-///
-/// The row shows one status per reviewer — the tip of that reviewer's `/IRT`
-/// chain. `depth` is how many states that reviewer has recorded on this
-/// comment altogether. Drawn only when it is greater than one, so the line
-/// means something when it appears rather than reading *1 status recorded*
-/// beside every row.
-///
-/// Without it the panel shows a single value per person and is indistinguishable
-/// from a panel over a format that stores a mutable field — which is precisely
-/// what §12.5.6.3 is not. The engine says so plainly: *"the history a
-/// reviewer's chain encodes would simply not be there"* if the shape were
-/// flattened.
 #[must_use]
 pub fn row_status_history(depth: usize) -> String {
     format!("{depth} statuses recorded, most recent shown")
 }
 
 /// The line a row carries when it **has no status at all**.
-///
-/// Drawn only under the status chooser's *No status recorded* filter and
-/// nowhere else — see [`crate::panels::comments::reviewstate`]. On an ordinary
-/// unfiltered list a caption on every unreviewed row would be forty repetitions
-/// of "nothing has happened here", which is the noise
-/// `crate::panels::comments`' disclosure discipline exists to keep out.
 #[must_use]
 pub fn row_status_none() -> &'static str {
     "No status recorded"
@@ -169,34 +74,12 @@ pub fn row_status_none() -> &'static str {
 
 /// **The row that IS a status**, named so an empty comment is not a
 /// mystery.
-///
-/// # Why this exists, and why not filtering the row out instead
-///
-/// A status is a `/Text` annotation with `/IRT`, `/State`, `/StateModel`, a
-/// `/T` — and a deliberately **empty** `/Contents`. `add_review_state`:
-///
-/// > *"`/Contents` is deliberately EMPTY. A status is not a comment, and
-/// > inventing 'Accepted' as the body would put a sentence in the operator's
-/// > comment list that the operator never wrote."*
-///
-/// So the moment the operator records one, a **blank row** appears in the
-/// Comments panel. Excluding it was considered and rejected: this panel's
-/// founding rule is that *nothing is silently omitted*, and its three existing
-/// exclusions are each counted and disclosed in numbers. A fourth silent one
-/// would be the panel deciding what the file contains.
-///
-/// So the row stays and says what it is. `status` is the reading of its own
-/// `/State`.
 #[must_use]
 pub fn row_is_a_status(status: &str) -> String {
     format!("This row is a review status — {status} — recorded on another comment")
 }
 
 /// The control that records a status. **Record**, never *Set*.
-///
-/// See this module's header: the file holds a log. *Set status* would name a
-/// field that §12.5.6.3 explicitly does not define, and an operator who read
-/// it as one would expect their second status to replace their first.
 #[must_use]
 pub fn record_label() -> &'static str {
     "Record status"
@@ -210,13 +93,6 @@ pub fn record_placeholder() -> &'static str {
 
 /// The tooltip on the control, carrying the three things the operator cannot
 /// see from the panel.
-///
-/// **Where it goes** (a new annotation, not this one), **that it is added**
-/// (the earlier one stays), and **that it is signed** with the name from
-/// Settings. All three are invisible from a screenshot of the row, and the
-/// third writes a person's name into a file that may leave the building —
-/// which `crate::app::prefs::Prefs::author_name` treats as a decision the
-/// operator makes rather than one pdfcer makes for them.
 #[must_use]
 pub fn record_tooltip() -> &'static str {
     "Adds a separate status annotation beside this comment, signed with your \
@@ -225,10 +101,6 @@ pub fn record_tooltip() -> &'static str {
 }
 
 /// The note on a comment whose only status is in a **foreign** model.
-///
-/// Says what the control will do rather than leaving the operator to infer it
-/// from a value in a vocabulary nobody has explained: their status is recorded
-/// in the `Review` model, on its own chain, and the foreign one is untouched.
 #[must_use]
 pub fn record_other_model_note() -> &'static str {
     "Recording a status here adds one in the Review vocabulary, beside the \
@@ -242,45 +114,18 @@ pub fn filter_status_label() -> &'static str {
 }
 
 /// The chooser's "no filter" entry.
-///
-/// Worded *Any status* rather than *All*, unlike the author and type choosers'
-/// shared [`crate::text::panels::comments::comment_filter_all`], for one
-/// reason: this chooser's other entries include [`filter_status_unrecorded`],
-/// and *All* beside *No status recorded* reads as a pair of opposites rather
-/// than as an entry and its negation.
 #[must_use]
 pub fn filter_status_any() -> &'static str {
     "Any status"
 }
 
 /// The entry that keeps only comments **nobody has reviewed**.
-///
-/// This is the entry the whole filter is for. A reviewer's question on a
-/// thirty-six-sheet drawing set is *"what have I not dealt with"*, and it is
-/// unanswerable from a chooser that can only name statuses that exist. It is
-/// distinct from a `/State` of `None` — see [`state_none`] — and the two
-/// entries sit next to each other saying so.
 #[must_use]
 pub fn filter_status_unrecorded() -> &'static str {
     "No status recorded"
 }
 
 /// **What was written**, on the status row, after the edit lands.
-///
-/// # Why `depth` is in the sentence
-///
-/// [`pdfcer_core::edit::ReviewStateAdded::chain_depth`] is *"how deep the chain
-/// for this author now is — `1` for their first status on this target"*, and it
-/// is the only observable that distinguishes a correct per-author chain from a
-/// star of statuses all pointing at the comment. The engine is blunt about why
-/// it is exposed: *"the wrong shape is invisible … a star of state annotations
-/// all pointing at the target renders the same as a correct chain in every
-/// viewer, so nothing would ever report it."*
-///
-/// So this sentence is the operator-facing half of that, and it does a second
-/// job at the same time: on the second press it says **2**, which is the panel
-/// telling the truth about a log rather than a field, at the exact moment the
-/// operator would otherwise assume they had overwritten something.
 #[must_use]
 pub fn status_recorded(state: &str, depth: usize) -> String {
     if depth <= 1 {
@@ -294,16 +139,6 @@ pub fn status_recorded(state: &str, depth: usize) -> String {
 }
 
 /// The second sentence, when the operator has **no name set**.
-///
-/// `add_review_state` takes an author `&str` and uses it as the chain key —
-/// its `deepest_state_for_author` matches on `title == Some(author)` — so an
-/// empty one
-/// writes an empty `/T` and **cannot be continued** by a later status recorded
-/// once a name is set: that one starts a fresh history beside it.
-///
-/// That consequence is invisible — the row looks identical either way, and it
-/// only shows up later as two parallel chains — so it is stated at the moment
-/// it is caused, and it names the place to fix it.
 #[must_use]
 pub fn status_recorded_unsigned() -> &'static str {
     "Recorded without a name. Set one in Settings > Comments — a later status \

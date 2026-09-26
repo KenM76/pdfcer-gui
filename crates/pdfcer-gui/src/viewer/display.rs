@@ -7,12 +7,6 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/viewer/display.md`.
 
 /// **How many pages the canvas shows, and how they are arranged.**
-///
-/// The four positions of View ▸ Page display. Exactly one is active at a time
-/// — it is a radio, not four toggles — which is why this is an enum on
-/// [`crate::viewer::ViewState`] rather than a pair of booleans. Two booleans
-/// would admit a fifth state ("facing, but also single") that means nothing,
-/// and the ribbon would have to reconstruct which of them is "on".
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash)]
 pub enum PageDisplay {
     /// One page, filling the canvas. Paging is how you move between pages.
@@ -30,13 +24,6 @@ pub enum PageDisplay {
 
 impl PageDisplay {
     /// Every variant, in the order View ▸ Page display offers them.
-    ///
-    /// The order is the ribbon's and it is not arbitrary: it runs from fewest
-    /// pages on screen to most, so the group reads as a scale rather than as a
-    /// list. Exhaustive by construction — [`tests::all_lists_every_variant`]
-    /// fails if a variant is added and not listed, which is what makes the
-    /// round-trip and command-id tests below complete rather than merely
-    /// passing.
     pub const ALL: &'static [Self] = &[
         Self::Single,
         Self::Continuous,
@@ -46,11 +33,6 @@ impl PageDisplay {
 
     /// Whether this mode scrolls through the whole document rather than
     /// showing one page (or one spread) at a time.
-    ///
-    /// The single predicate the rest of the build asks. It is what decides
-    /// whether the strip holds every page or only the current row, whether the
-    /// current page is derived from the scroll offset or set by navigation,
-    /// and whether more than one page can need a raster at once.
     #[must_use]
     pub fn is_continuous(self) -> bool {
         matches!(self, Self::Continuous | Self::FacingContinuous)
@@ -63,12 +45,6 @@ impl PageDisplay {
     }
 
     /// The stable id this mode is written to disk as.
-    ///
-    /// Lowercase, hyphenated, and **never** the enum's `Debug` spelling: a
-    /// `Debug` impl is a developer convenience that a `derive` may change,
-    /// and a persistence format that changed with it would silently reset
-    /// every operator's remembered choice. See
-    /// [`crate::viewer::remembered`] for the file these ids appear in.
     #[must_use]
     pub fn id(self) -> &'static str {
         match self {
@@ -84,26 +60,12 @@ impl PageDisplay {
     }
 
     /// The mode `id` names, or `None` if nothing does.
-    ///
-    /// `None` rather than a default, deliberately: the caller is reading a
-    /// file that may have been written by a newer build or edited by hand, and
-    /// *"this line names a mode I do not have"* is a different fact from
-    /// *"this document has no remembered mode"*. The store treats the first as
-    /// a line to drop and the second as a document to give the mode default
-    /// to; collapsing them would make an unrecognised entry look like a
-    /// deliberate choice of `Single`.
     #[must_use]
     pub fn from_id(id: &str) -> Option<Self> {
         Self::ALL.iter().copied().find(|m| m.id() == id)
     }
 
     /// What a fresh profile gets in the ribbon mode named `mode`.
-    ///
-    /// **The one place `MODES_AND_PANELS.md`'s per-mode rule is written
-    /// down.** Read is continuous; everything else — including an id this
-    /// build does not know — is single page. See the module header for the
-    /// operator decision behind it and for why an unknown id falls back to
-    /// `Single` rather than refusing.
     #[must_use]
     pub fn default_for_mode(mode: &str) -> Self {
         if mode == "read" {
@@ -176,12 +138,6 @@ impl PageDisplay {
     }
 
     /// How many rows a document of `page_count` pages has, in this mode.
-    ///
-    /// `Single` and `Facing` still report the document's full row count even
-    /// though they show one row at a time: the number is what a *strip* would
-    /// hold, and the two non-scrolling modes are the same strip with one row
-    /// selected. Keeping one definition means a page step and a scroll step
-    /// cannot disagree about how many rows there are.
     #[must_use]
     pub fn row_count(self, page_count: usize) -> usize {
         if page_count == 0 {

@@ -19,3 +19,19 @@ misalignment rather than as a different kind of thing.
 The width feeds the ladder, and a zero would make the ladder believe
 collapsing is free, which is how every group ends up collapsed at a
 width where two would have fitted.
+
+### `fn width`
+
+Measured from the caption, since that is the only thing whose width can
+vary. The ladder needs this before it can decide anything, which is why it
+is a free function taking a `&Ui` rather than something the renderer
+returns — a width that were only known after drawing would be a
+measurement fed back into a layout, which is the feedback loop R128
+forbids.
+
+### `fn render`
+
+`rows` is the split the group *would* have had expanded, passed through
+untouched so the popup is identical to the band's rendering. `box_` is the
+band's box, used for the button's height only — the popup gets
+[`GroupBox::NATURAL`], so it is as tall as its own content.

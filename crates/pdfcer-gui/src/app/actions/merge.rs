@@ -7,28 +7,6 @@
 use std::path::{Path, PathBuf};
 
 /// **Combine `sources`, in order, into a new document at `target`.**
-///
-/// Every page of every source, which is what `pageops::merge` does and what
-/// *Combine Files* means. A partial merge is a different verb and would need a
-/// page chooser; this one has nothing left to ask, which is why it opens no
-/// options window between the two pickers.
-///
-/// # The order is the operator's, and it is the picker's
-///
-/// `rfd::FileDialog::pick_files` returns the selection in the order the
-/// platform reports it. That is not nothing — it is the order the combined
-/// document's pages come out in — and it is deliberately **not** re-sorted
-/// here. Sorting by name would be a rule pdfcer invented; leaving it alone means
-/// the answer is whatever the operator's file manager showed them, which is the
-/// only order they have any expectation about. When a reorder is wanted, it is
-/// a list with drag handles in a dialog, and that is a feature rather than a
-/// default.
-///
-/// # What is reported, and where
-///
-/// One trace line naming the counts, and the engine's own disclosures on the
-/// status row. Failures are traced and reported; nothing is silent, which is
-/// the standing rule for a verb whose whole effect is off screen.
 pub(crate) fn write_merge(status: &crate::app::state::Status, sources: &[PathBuf], target: &Path) {
     use pdfcer_core::document::Document;
 

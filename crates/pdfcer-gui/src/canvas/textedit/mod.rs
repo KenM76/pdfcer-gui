@@ -66,13 +66,6 @@ pub mod hit;
 pub mod keys;
 /// **The caret's arithmetic inside a draft that holds more than one line**
 /// — `OPERATOR_REQUESTS.md` **O127**, defect 2.
-///
-/// Enter inserting a line break is one keystroke; a caret that can reach the
-/// second line is four more. Its header carries the distinction that keeps it
-/// separate from [`blocks`]: a line here is one the **operator typed**, and a
-/// line there is one the **page draws** — different models, different costs
-/// (nothing, against 336 ms), and confusing them moves the caret to another
-/// part of the sheet mid-word.
 pub mod lines;
 /// What a draft looks like on the page — the in-place editor and its caret. Its
 /// header carries the standing rule that the text and the caret are measured
@@ -141,32 +134,9 @@ use crate::canvas::mapping::PageMapping;
 const DRAFT_MEMORY_KEY: &str = "pdfcer-textedit-draft"; // ui-text-exempt: internal memory id, never displayed
 
 /// The environment variable that supplies a draft when no keyboard can.
-///
-/// **A diagnostic seam in the shape `app::files`' two already have** — see
-/// `DIAG_OPEN_PATH` and `DIAG_SAVE_PATH`, which exist because a native modal
-/// cannot be driven from a harness. This one exists because **this machine
-/// cannot inject text**: `tools/ui-verify`'s `sys::vk` is a deliberately closed
-/// list of eight non-character virtual keys, and its own comment refuses to
-/// grow into `pub const A..Z` on the ground that *"a harness that can press any
-/// key is a harness whose scripts stop being readable"*.
-///
-/// Typing is this feature's entire input, so without a seam the only honest
-/// verification would be *"the tool armed"* — an assertion pointing in the
-/// right direction that measures the wrong thing.
-///
-/// **It is not load-bearing and it is not a second input path.** It is read at
-/// exactly one place, [`typing`], on the frame a caret is set, and what it does
-/// is push characters through **the same** [`insert`] every `egui::Event::Text`
-/// goes through. A build with the variable unset cannot tell it exists; a build
-/// with it set still has to route the click, resolve the anchor, plan the
-/// disposition and reach the engine, which is every link the check is about.
 pub const DIAG_TYPE: &str = "PDFCER_DIAG_TYPE"; // ui-text-exempt: an environment variable name, never displayed
 
 /// **Which of the two text verbs is armed.**
-///
-/// One value carried on the tool, for [`MarkupKind`](crate::canvas::markup::MarkupKind)'s
-/// argument: the operator is doing exactly one of these, so a type that could
-/// express both would have illegal states to prevent by discipline.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TextEditKind {
     /// `edit.text` — replace the words in a run that is already on the page.
@@ -177,11 +147,6 @@ pub enum TextEditKind {
 
 impl TextEditKind {
     /// The command id that arms this kind.
-    ///
-    /// The single binding between an id and a kind, in the shape
-    /// `shell::commands::markup_for_command` has — read from both directions by
-    /// `crate::shell::commands::text_edit_for_command` and by the label the
-    /// status bar shows, so the two cannot drift.
     #[must_use]
     pub const fn command_id(self) -> &'static str {
         match self {
@@ -338,19 +303,6 @@ pub struct Draft {
 }
 
 /// Why a click could not start a draft, in a form the status bar can render.
-///
-/// Every variant is a *sentence to show*, not a state to be silent in. That is
-/// the whole difference from the old shell, which set a boolean and stopped
-/// responding to the keyboard.
-///
-/// **There is no variant for "the line is made of several runs"**, and
-/// there must not be: on a CAD sheet that describes nearly every click, and it
-/// answers a question about the *line* when the operator is editing a *run*.
-/// `place::resolve_run` carries the measurement. That case is a disclosure —
-/// `text::textedit::shares_the_line_note` — not a refusal.
-///
-/// Every variant here is a genuine absence of a thing to edit, or a run that
-/// nothing could be typed into.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Refusal {
     /// The click landed on no text at all.
@@ -426,38 +378,6 @@ pub enum Refusal {
 
 /// **Is the operator composing text ANYWHERE?** The one predicate, asked in
 /// one place.
-///
-/// # Two claimants, one predicate
-///
-/// This shell composes text in two different places, and both have to be asked
-/// about:
-///
-/// 1. [`egui::Context::text_edit_focused`] — a real `egui::TextEdit`: a form
-///    field, the page-number box, a dialog's box, the Find bar. **D1's
-///    predicate**, never `egui_wants_keyboard_input()`, for the reason
-///    `app::keyboard::collect` gives at length.
-/// 2. **A canvas text draft** — the caret this shell paints on the page, which
-///    is deliberately *not* a `TextEdit` (this module's header says why: the
-///    caret sits in PDF space at the glyphs' own scale, which a floating widget
-///    cannot do). **egui therefore reports no focused text field for an
-///    operator who is visibly mid-word.**
-///
-/// A call site that asks only the first is **defect D1 one rung along**: D1 was
-/// `egui_wants_keyboard_input()` where `text_edit_focused()` was meant; this is
-/// `text_edit_focused()` where *"anybody is composing"* was meant. Same shape,
-/// same invisibility to a harness that builds a bare `Context` with no draft in
-/// it, same silent loss of a key the operator is plainly pressing — the space
-/// bar is the hand tool's modifier, so an operator typing on the canvas gets a
-/// pan instead of a space. The operator: *"it doesn't accept spaces. Like how?"*
-///
-/// ⇒ **A predicate with two claimants must exist once**, and
-/// `tools/gates/check-typing-guard.sh` fails the build on any bare
-/// `text_edit_focused()` outside this function.
-///
-/// # Why "is a draft in flight" and not "is a caret tool armed"
-///
-/// An armed tool that has not been clicked yet owns no keystrokes — the page
-/// keys must keep working right up until the caret is placed.
 #[must_use]
 pub fn composing(ctx: &egui::Context) -> bool {
     ctx.text_edit_focused() || read(ctx).is_some()
@@ -475,24 +395,6 @@ pub(crate) fn store(ctx: &egui::Context, draft: Draft) {
 }
 
 /// Forget the draft, returning whether there was one.
-///
-/// The teardown half of an exit, never an exit in itself. Returns `bool` for
-/// the reason `measure::abandon` does: the ladder rung above it needs to know
-/// whether this rung consumed the key.
-///
-/// **Every caller runs `commit_into` immediately before it**, so nothing in
-/// the program reaches this without writing what was typed — Escape included,
-/// which takes the [`settle`] route. Read the name as *forget*, not as *throw
-/// away*: a caller that meant to discard would be the first, and would be
-/// contradicting the ruling recorded on [`settle`].
-///
-/// # `text-edit-abandon` is not evidence that an edit was lost
-///
-/// A successful commit runs `keys::commit_into` and then tears the draft down
-/// through this same path, so the trace line is emitted on the happy path too.
-/// The evidence that a commit happened is the published action — `add-text` or
-/// `edit-text`. A driven check must assert on that, never on the absence of
-/// `text-edit-abandon`.
 pub fn abandon(ctx: &egui::Context) -> bool {
     let had = read(ctx).is_some();
     ctx.data_mut(|d| d.remove::<Draft>(egui::Id::new(DRAFT_MEMORY_KEY)));
@@ -509,28 +411,6 @@ pub fn abandon(ctx: &egui::Context) -> bool {
 }
 
 /// Turn a draft into the action that commits it, if it says anything.
-///
-/// A draft byte-identical to what it replaces is **not a write**. Without this,
-/// an operator who typed a character and deleted it again would put a no-op
-/// entry on the undo stack every time they clicked away — the old shell's own
-/// finding, and it matters more here because clicking out commits.
-///
-/// ## An emptied RUN is a write; an empty ADD caret is not
-///
-/// The two look like one rule and they are opposite ones, so the emptiness
-/// guard sits on `Origin` and `Box` and not on `Run`.
-///
-/// Deleting every character of a run and clicking away is ambiguous — *remove
-/// this text* and *I changed my mind* are the same gesture — and this shell
-/// takes the operator's reading, leaving **undo** as the recovery, which is
-/// what Acrobat does with the same gesture. The other reading wrote nothing,
-/// and its cost was not the lost edit: with no action raised there is no
-/// plan, no `edit_text` call, no refusal to classify and **no sentence
-/// anywhere the operator could read one**, so an edit that was declined was
-/// indistinguishable from one that failed to save. O216.
-///
-/// An `Add` caret with nothing typed is genuinely not a write — there is no
-/// content to remove and nothing to undo — so those two arms keep the guard.
 pub(super) fn commit_into(
     ctx: &egui::Context,
     draft: &Draft,
@@ -587,34 +467,6 @@ pub(super) fn commit_into(
 
 /// **Finish a draft that is going out of scope: write what it says, then
 /// tear it down.** Reports whether there was one.
-///
-/// # The rule it enacts: typed text is not thrown away by a navigation gesture
-///
-/// `OPERATOR_REQUESTS.md` **O222** and **O223**, in the operator's words:
-///
-/// > *"I think for adding and editing text when using any tool that has text
-/// > escape should also save changes to the text. The user can always undo if
-/// > they want, but it is easy to accidentally press escape and lose a lot of
-/// > text that has been entered."*
-///
-/// That is a ruling about **asymmetric cost**. A draft written by mistake is
-/// one `Ctrl+Z`; a draft discarded by mistake is minutes of typing with no
-/// recovery anywhere, because a draft lives in `egui::Memory` and never
-/// reaches the undo stack. So every exit writes first and tears down second,
-/// and there is no exit that does the second without the first: [`abandon`] is
-/// reached only immediately after a [`commit_into`], here and at the two exits
-/// that inline the same pair (`Ctrl+Enter`, and a click that starts a new
-/// draft). An exit that meant *throw this away* would be the first, and there
-/// is none.
-///
-/// ## Why it is safe for the emptied-run case
-///
-/// [`commit_into`] treats an emptied `Run` as a deletion and an empty `Add`
-/// caret as nothing at all, so settling a draft the operator never typed into
-/// raises no action and puts nothing on the undo stack. Settling is therefore
-/// unconditional at the call sites: they do not have to ask whether the draft
-/// says anything, which is the question that would get asked differently in
-/// each of them.
 pub fn settle(ctx: &egui::Context, actions: &mut Vec<crate::app::actions::Action>) -> bool {
     let Some(draft) = read(ctx) else {
         return false;
@@ -626,52 +478,6 @@ pub fn settle(ctx: &egui::Context, actions: &mut Vec<crate::app::actions::Action
 
 /// **What the text edit currently being applied is trying to write** — the four
 /// operands of the `Action::CommitTextEdit` that [`plan`] was called for.
-///
-/// ## Why this exists, and it is O141's second half rather than a cache
-///
-/// When the engine refuses a commit because the run's font has no code for the
-/// character just typed, the shell offers a face that carries it
-/// (`panels::properties::refusedchar`). Taking that offer must be **one**
-/// gesture, and cannot be without this: `Ctrl+Enter` calls `commit_into` and
-/// then `abandon` unconditionally, so by the time the offer is on screen the
-/// draft the operator wrote is gone — leaving them to click back into the text
-/// and type the character a second time.
-///
-/// The replacement text is the one operand of the retry that cannot be recovered
-/// from anywhere else: the page still holds the *original* words (the refusal
-/// changed nothing), and the page index and run index travel on the refusal
-/// already — but **what the operator typed exists only in a draft that has been
-/// abandoned**. So it is kept here, at the one function every text commit goes
-/// through, and the offer re-applies the edit itself.
-///
-/// ## Why a slot here rather than a parameter on the refusal recorder
-///
-/// `app::status::decline::textedit::record_edit_text_refusal` is called from
-/// **inside** `vector_edit`'s closure in `app::actions::apply`, where the only
-/// things in scope are the session and the engine's error. Widening its
-/// parameter list means widening the router's call, and `app/actions/apply.rs`
-/// is a file whose whole job is to route: it decides nothing, and an operand it
-/// carries only to hand on is a decision it would then appear to have made.
-///
-/// More importantly the datum is not the router's. *What this edit is trying to
-/// write* is a fact about the edit, and [`plan`] is the one function that has
-/// it: every `CommitTextEdit` passes through it, exactly once, immediately
-/// before `EditSession::edit_text` is called with the request it built. There is
-/// no path from a caret to the engine that does not cross this line.
-///
-/// ## Why staleness cannot bite, stated rather than assumed
-///
-/// The slot is written on **every** call and read only by
-/// `panels::properties::refusedchar::record`, which is itself called only from
-/// the refusal arm of the very `edit_text` this plan was built for. So the value
-/// read is always the one written microseconds earlier in the same call stack.
-/// It is a thread-local for the reason `refusedchar::PENDING` is one — the
-/// writer is the dispatcher and the reader is a panel body handed `&OpenDoc`
-/// shared — and the shell is single-threaded at the UI.
-///
-/// `canvas::textedit::last_commit_is_the_one_just_planned` asserts the round
-/// trip, so a build that stopped writing it, or that wrote it before the
-/// operands were known, goes red rather than silently retyping the wrong words.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Committing {
     /// The 0-based page the commit named.
@@ -694,10 +500,6 @@ thread_local! {
 
 /// **The operands of the text commit that is being applied right now**, or
 /// `None` if no commit has been planned in this process yet.
-///
-/// See [`Committing`] for the whole argument. Cloned rather than borrowed
-/// because the caller stores it: the offer outlives the frame it was recorded
-/// on, which is the entire point of it.
 #[must_use]
 pub fn last_commit() -> Option<Committing> {
     LAST_COMMIT.with_borrow(Clone::clone)

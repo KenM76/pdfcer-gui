@@ -59,27 +59,6 @@ const CELLS_LONG_SIDE: u32 = 256;
 const INK_MAX_LEVEL: u8 = 246;
 
 /// A downsampled record of **where a rendered page carries ink**.
-///
-/// One cell is inked when *any* raster pixel inside it is ink (see
-/// [`INK_MAX_LEVEL`]). That "any" is what makes the approximation safe: a
-/// hairline a third of a pixel wide still lights its cell, so the mask never
-/// reports blank where the raster has a mark. The cost is that a cell holding
-/// one stroke and a great deal of paper reads as fully inked, which hatches at
-/// most one cell too far in each direction — quantified in
-/// [`CELLS_LONG_SIDE`].
-///
-/// # Coordinates: normalised page space, on purpose
-///
-/// [`Self::ink_extent`] takes and returns rectangles in **0..1 page space**,
-/// where `(0, 0)` is the page's top-left corner and `(1, 1)` its
-/// bottom-right — the same convention `egui::Painter::image`'s UV rectangle
-/// uses, which is what the preview already speaks when it draws the page.
-///
-/// It deliberately does **not** speak screen points. The screen rectangle
-/// depends on the fit, the zoom and the pan, all of which change every frame;
-/// a mask that spoke screen coordinates would have to be rebuilt on a pan.
-/// Normalised page space depends on nothing but the page, which is exactly the
-/// lifetime the mask has.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct InkMask {
     /// Cells across, at least 1.
@@ -92,39 +71,6 @@ pub(super) struct InkMask {
 
 impl InkMask {
     /// Build a mask from a rendered page's **premultiplied** RGBA8 bytes.
-    ///
-    /// # Premultiplied, and why it does not complicate the test here
-    ///
-    /// `tiny-skia` stores pixels premultiplied — `[R·A, G·A, B·A, A]` — and
-    /// `crate::render::raster`'s header is emphatic that reading them as
-    /// straight bytes "silently darkens every partially transparent pixel".
-    /// That hazard is real for *upload*, where the bytes are handed to epaint
-    /// with a declared convention.
-    ///
-    /// It does not bite here, and the reason is the measurement in this
-    /// module's header rather than luck: the preview's pages are composited
-    /// over opaque white, so **`A = 255` in every pixel**, and premultiplying
-    /// by 1.0 is the identity. The stored bytes *are* the colour. This
-    /// function still reads the alpha byte and refuses to treat a
-    /// non-opaque pixel's colour channels at face value — see the guard
-    /// below — so it stays correct if a future caller ever hands it a
-    /// `PageBackdrop::Transparent` raster, rather than being silently wrong on
-    /// one.
-    ///
-    /// # What is done with a partially transparent pixel
-    ///
-    /// It is **ink**. On a transparent-backdrop raster, `A < 255` means the
-    /// page group did not fully cover that pixel, and a partially covered
-    /// pixel is one something was painted into. Treating it as ink is the
-    /// conservative reading and matches the "any pixel in the cell" rule.
-    ///
-    /// # Degenerate inputs
-    ///
-    /// A zero-sized raster, or a `data` slice shorter than `width * height * 4`
-    /// (which cannot happen from `tiny-skia` but is not this function's to
-    /// assume), yields a 1 × 1 mask with no ink. Nothing is hatched, the
-    /// geometric clip disclosure is untouched, and no index can be out of
-    /// bounds.
     pub(super) fn from_rgba_premultiplied(width: u32, height: u32, data: &[u8]) -> Self {
         let (w, h) = (width as usize, height as usize);
         let blank = Self {
@@ -215,39 +161,6 @@ impl InkMask {
 
     /// The **ink extent within `region`**, in normalised 0..1 page space, or
     /// `None` when no cell touching `region` carries ink.
-    ///
-    /// `None` is the whole point of O113. *"No ink in the band ⇒ no hatch at
-    /// all"* — the 1:1 CAD sheet whose overhang is empty paper gets no red
-    /// pattern, because there is nothing to warn about.
-    ///
-    /// # The extent is snapped OUT to cell boundaries, never in
-    ///
-    /// The returned rectangle is the union of the *whole cells* that are both
-    /// inked and overlapping `region`, clamped back into `region`. It is
-    /// therefore never smaller than the true ink extent and at most one cell
-    /// larger on each side. Snapping inward would be the unsafe direction: it
-    /// could draw a hatch that stops short of a mark that will in fact be
-    /// cropped, which is a disclosure understating a loss — the one error this
-    /// whole surface exists to avoid.
-    ///
-    /// # Which cells "overlap `region`"
-    ///
-    /// Cell `(col, row)` covers `[col/cols, (col+1)/cols] × [row/rows,
-    /// (row+1)/rows]`. A cell is considered when that box overlaps `region`
-    /// with positive area, so a region ending exactly on a cell boundary does
-    /// not drag in the cell beyond it. The column and row ranges are computed
-    /// by flooring the region's minimum and taking the ceiling of its maximum,
-    /// which is the same "cover, do not crop" convention
-    /// `pdfcer_render::region_device_geometry` documents for its own tiling.
-    ///
-    /// # Inputs outside the page
-    ///
-    /// `region` is intersected with the unit square first, so a caller that
-    /// hands over a band extending past the page edge — which the print
-    /// preview's overhang band routinely does, since the whole point is that
-    /// it runs off the printable area — gets an answer about the page rather
-    /// than an out-of-range index. An empty or non-finite region yields
-    /// `None`.
     pub(super) fn ink_extent(&self, region: Rect) -> Option<Rect> {
         let unit = Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0));
         if !region.min.x.is_finite()

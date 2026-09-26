@@ -226,3 +226,17 @@ makes the chain complete: manifest → register → renderer → registry.
 A fourth kind added here and not to the manifest is a renderer arm
 nothing can ever reach; a fourth added to the manifest and not here is
 the empty-band defect above. Only an equality catches both.
+
+### `fn draw`
+
+Returns the command's handler token when the operator changed something, in
+which case `parked` holds the change. `None` means *nothing was invoked*,
+which is what the shell expects for a frame in which the operator merely
+looked at the control.
+
+# `kind` is matched, not asserted
+
+An unrecognised kind returns `None` and draws nothing, exactly as
+[`crate::app::PdfcerApp::ribbon_band`]'s renderer does for one it does not
+know. A manifest is data; the honest response to a kind nobody implements
+is a gap, not a panic in the paint loop.

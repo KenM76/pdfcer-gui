@@ -7,11 +7,6 @@
 use crate::canvas::constrain::{Axis, Lock};
 
 /// The sentence for a live constraint.
-///
-/// One function over the enum rather than one per variant, for the reason
-/// [`crate::text::resizing::refusal`] gives for the same shape: a variant added
-/// to [`Lock`] becomes a compile error here instead of a constraint that
-/// silently announces nothing.
 #[must_use]
 pub const fn caption(lock: Lock) -> &'static str {
     match lock {

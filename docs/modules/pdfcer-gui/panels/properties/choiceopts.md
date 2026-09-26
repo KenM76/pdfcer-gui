@@ -224,3 +224,22 @@ that opens, reads correctly in the drop-down, and submits the wrong
 data — the failure the engine's own note calls something that *"would
 silently break forms"*. The only thing between this crate and that is one
 line's argument order, so it is asserted rather than read.
+
+### `struct OptionRow`
+
+A third type beside `forms::ChoiceOption` (raw bytes, the read side) and
+`edit::ChoiceOption` (`String`s, the write side): the one a text box can be
+bound to. [`ChoiceOptsDraft::read`] and [`to_engine`] are the only two
+places the conversion is stated.
+
+### `struct ChoiceOptsDraft`
+
+A draft for the reason [`super::fieldedit::FieldPropsDraft`] has one and for
+no other: these controls take typing. The checkboxes read `field.flags` each
+frame, so a refused press leaves them where they were.
+
+### `fn section`
+
+Called from `fieldedit::section`'s choice branch. `epoch` is the document's
+edit epoch — the draft's staleness key, and the stamp `record_note` needs so
+a refusal retires when the next edit lands.

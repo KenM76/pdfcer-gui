@@ -14,13 +14,6 @@ use crate::app::actions::text::TextAction;
 use crate::app::state::Status;
 
 /// Whether this file owns `id`.
-///
-/// `edit.reflow_block` is the only id here that can fail after the mode has
-/// allowed it — the arming pair can only be declined by the mode, and arming a
-/// tool cannot fail once it is.
-///
-/// `pub(crate)` for [`super::routes::handles`]' reason: `shell::commands::reach`'s
-/// reachability checker must be able to evaluate every guard arm it finds.
 #[must_use]
 pub(crate) fn handles(id: &str) -> bool {
     // ui-text-exempt: registered command ids, never displayed.
@@ -28,14 +21,6 @@ pub(crate) fn handles(id: &str) -> bool {
 }
 
 /// Route one caret command.
-///
-/// The mode check is here for the arming pair and NOT for the reflow, and
-/// the asymmetry is deliberate. `edit.text` is reachable from the tool row as
-/// well as the Edit tab — `view.tool_text`, the `T` chord — so it can be
-/// invoked in a stance whose ribbon never drew it, and [`super::navigate`]'s
-/// `view.tool_node` arm declines by name for exactly that reason. Reflow has no
-/// such second door: it exists on the Edit tab and in the canvas text menu,
-/// both of which are absent outside an editing stance.
 pub(crate) fn dispatch(
     app: &mut crate::app::PdfcerApp,
     ctx: &egui::Context,

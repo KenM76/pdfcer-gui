@@ -201,11 +201,6 @@ pub struct OcrDialog {
 }
 
 /// Which pages a recognition run covers.
-///
-/// Four options is what the surveyed tools converge on — Acrobat, ABBYY, Foxit
-/// and PDF-XChange all offer all / current / a range in some wording — and the
-/// order below is theirs: the broadest first, because it is both the default
-/// and the one most runs want.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Scope {
     /// Every page of the document. The default.
@@ -250,11 +245,6 @@ pub(super) enum Scope {
 
 impl Scope {
     /// The pages this scope names, zero-based and in order.
-    ///
-    /// `None` when the scope cannot be resolved — an unparseable or empty range
-    /// — which the dialog renders as a disabled Recognise button rather than as
-    /// an error, because a half-typed range is a normal state of a text field
-    /// and not a mistake to be reported.
     pub(super) fn pages(
         self,
         current: usize,
@@ -287,11 +277,6 @@ impl Scope {
 
 impl OcrDialog {
     /// Build the dialog for the page `doc` is showing.
-    ///
-    /// Nothing is recognised yet: opening the dialog is free, and the several
-    /// seconds of work start on a press the operator makes after reading what
-    /// the operation does. A dialog that started recognising on open would
-    /// spend that time before the operator had decided they wanted it.
     #[must_use]
     pub(super) fn open(doc: &OpenDoc, picked: Vec<usize>, preferred: Option<EngineId>) -> Self {
         Self {
@@ -944,17 +929,6 @@ fn sentence(refusal: &Refusal) -> String {
 }
 
 /// The name to suggest for the recognised copy.
-///
-/// **Never the file that was opened.** The suffix is what makes the default
-/// answer a new document, so an operator who accepts the suggestion without
-/// reading it cannot overwrite their scan. That is the standing rule expressed
-/// as a default rather than as a warning — a warning is something to click
-/// past.
-///
-/// The extension is forced to `.pdf` rather than preserved: the bytes are a
-/// PDF whatever the source was called, and a recognised copy of `scan.PDF`
-/// landing as `scan-recognised.PDF` would be correct but is one more way for a
-/// tool downstream to disagree about case.
 #[must_use]
 pub fn suggested_path(source: &Path) -> PathBuf {
     let stem = source.file_stem().map_or_else(
@@ -991,12 +965,6 @@ fn confidence_sentence(engine: EngineId) -> &'static str {
 }
 
 /// Open the dialog for the document in `status`, if there is one.
-///
-/// The dispatch target for `file.ocr`. Lives here rather than in
-/// [`super::DialogsState`] only because it needs [`OcrDialog::open`]'s private
-/// constructor; the guard it applies is the one `open_print` documents — the
-/// ribbon control is gated on `doc.pages`, a chord bound to the same id is not,
-/// and both are fixed by refusing here at the one place the dialog is built.
 pub(super) fn open_for(
     status: &Status,
     picked: Vec<usize>,

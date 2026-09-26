@@ -14,15 +14,6 @@ use crate::text::export_text as t;
 /// The region this dialog publishes for its body.
 pub const REGION_BODY: &str = "dialog:export-text"; // ui-text-exempt: trace region name, never displayed
 /// The region ONE page-scope radio publishes.
-///
-/// These exist for `OPERATOR_REQUESTS.md` **O196**. Until the export windows
-/// remembered anything, a driven check had nothing to assert about a radio
-/// beyond *"it is drawn"*; now the question is which one is **selected on
-/// open**, and that cannot be asked of a group rectangle.
-///
-/// The alternative — pressing the group's rectangle plus an offset — is the
-/// check that presses the wrong control the day a hint gains a line, which
-/// `dialogs::export_image::region_for_format` states in full.
 #[must_use]
 pub const fn region_for_scope(scope: PageScope) -> &'static str {
     match scope {
@@ -113,22 +104,6 @@ pub struct ExportTextDialog {
 impl ExportTextDialog {
     /// Open the window for the document on screen, seeded from what the last
     /// text export asked for.
-    ///
-    ///
-    /// > *"the export windows forget everything. every time I export a dxf I
-    /// > have to set it up again."*
-    ///
-    /// All four of this window's answers were literals until that day. The
-    /// membership rule — **a setting is remembered only if it would still be
-    /// the right answer for a different document** — and the argument for the
-    /// shipped value of each one live on
-    /// [`crate::app::prefs::ExportTextPrefs`]. Read that first; this is only
-    /// the seeding.
-    ///
-    /// ⚠ `range_text` is NOT seeded and is not a preference. A typed range is
-    /// a statement about *this document's* page numbering, and restoring
-    /// `12-40` onto a nine-page file would open the window in a state whose
-    /// Export button is already dead for a reason the operator did not cause.
     #[must_use]
     pub fn open(doc: &OpenDoc, remembered: &crate::app::prefs::ExportTextPrefs) -> Self {
         let page_index = doc.view.page_index;
@@ -183,11 +158,6 @@ impl ExportTextDialog {
     }
 
     /// Draw it. Returns `false` when it should close.
-    ///
-    /// Takes `&mut Prefs` for O196 alone: the Export press writes this window's
-    /// habits to the preferences file before the action is pushed. See
-    /// [`crate::dialogs::export_remembered`] for why it happens at the press
-    /// and not at the close.
     pub fn show(
         &mut self,
         ctx: &egui::Context,
@@ -398,11 +368,6 @@ impl ExportTextDialog {
 }
 
 /// Open the window for `status`, or decline.
-///
-/// `doc.pages` non-empty is the same guard the command's own predicate applies,
-/// asserted twice for the reason the DXF window asserts it twice: the predicate
-/// greys the control and this refuses the open, and a keymap or a restored
-/// layout can reach a command without going through the ribbon at all.
 #[must_use]
 pub fn open_for(
     status: &Status,

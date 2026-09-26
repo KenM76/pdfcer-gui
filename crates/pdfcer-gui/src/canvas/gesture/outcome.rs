@@ -14,18 +14,14 @@
 //! variant, its fields, and the arm in [`Drag::outcome`] that shapes it. A new
 //! rule about *when* a press counts as a drag is a change in `super`, and
 //! touches nothing in this file.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/canvas/gesture/outcome.md`.
 
 use super::{DragKind, Grip, MarqueeIntent};
 use crate::canvas::markup::MarkupKind;
 use egui::{Pos2, Rect, Vec2};
 
 /// Whether a drag is still happening or has just finished.
-///
-/// Both matter and they mean different things: an in-flight drag draws a
-/// rubber-band or a ghost outline (a pre-commit affordance — the cursor
-/// describing what is about to happen), while a completed one changes the
-/// selection or raises an action. Collapsing them into one signal is how a
-/// marquee ends up committing on every frame it is dragged across.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Phase {
     /// The pointer is still down. Draw, do not commit.

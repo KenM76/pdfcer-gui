@@ -52,13 +52,6 @@ const CHEVRON: &str = "⏷";
 const SIDE_PADDING: f32 = 10.0;
 
 /// **What a collapsed group costs the band.**
-///
-/// Measured from the caption, since that is the only thing whose width can
-/// vary. The ladder needs this before it can decide anything, which is why it
-/// is a free function taking a `&Ui` rather than something the renderer
-/// returns — a width that were only known after drawing would be a
-/// measurement fed back into a layout, which is the feedback loop R128
-/// forbids.
 pub(crate) fn width(ui: &egui::Ui, group: &Group) -> f32 {
     let caption = super::band::caption_text(group);
     let text = super::measure::text_width(ui, caption, &TextStyle::Button);
@@ -67,11 +60,6 @@ pub(crate) fn width(ui: &egui::Ui, group: &Group) -> f32 {
 }
 
 /// **Draw one collapsed group**: the button, and the popup behind it.
-///
-/// `rows` is the split the group *would* have had expanded, passed through
-/// untouched so the popup is identical to the band's rendering. `box_` is the
-/// band's box, used for the button's height only — the popup gets
-/// [`GroupBox::NATURAL`], so it is as tall as its own content.
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn render(
     ui: &mut egui::Ui,

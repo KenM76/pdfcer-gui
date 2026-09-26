@@ -21,10 +21,6 @@ impl From<VectorAction> for super::action::Action {
 }
 
 /// One change to the marks on a page.
-///
-/// Carried by [`super::action::Action::Vector`]. Every variant names a page and
-/// paint-order indices into it; see the module header for why both travel
-/// rather than being re-derived.
 #[derive(Debug, Clone, PartialEq)]
 pub enum VectorAction {
     /// Remove the canvas selection's objects from `page`, as **one**
@@ -741,16 +737,6 @@ fn fold_undo(
 }
 
 /// **Apply one geometry verb**, as one undoable command.
-///
-/// Routed here from `super::apply` rather than living there, which is the shape
-/// [`super::dimensions::apply`] already sets: the family module owns both the
-/// vocabulary and what the vocabulary does. `super::apply` stays a routing
-/// table.
-///
-/// Every arm goes through `super::apply::vector_edit` — the four-step protocol
-/// (cancel the render worker, mutate through `Arc::get_mut`, bump the epoch,
-/// drop the texture) whose whole reason for existing is that seven hand-written
-/// copies would be seven chances to omit a step.
 pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) {
     // `vector_edit_on_page`, not `vector_edit` — `OPERATOR_REQUESTS.md`
     // O74. Every verb in this module addresses paint-order indices **into one

@@ -118,6 +118,8 @@
 //! entries to each other instead would pass on a palette that renders
 //! unreadable, because nothing in that comparison is what the screen
 //! receives.
+//!
+//! Design and rationale: `docs/modules/egui-shell/lib.md`.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -131,10 +133,6 @@ pub mod peek;
 pub mod ribbon;
 /// **The document tab strip** — the row of tabs an application draws when the
 /// operator has several documents open at once.
-///
-/// Deliberately separate from [`dock`]'s tab bar: a dock tab names a *panel*
-/// and a strip tab names an *operand*. See the module's own header for the
-/// table, and for the two things it refuses to know.
 pub mod tabstrip;
 pub mod theme;
 pub mod verify;

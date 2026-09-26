@@ -75,3 +75,31 @@ the stride exists to hold: a raster two orders of magnitude larger than
 the sample target still examines about the sample target's worth of
 pixels. Written as an arithmetic assertion on the stride itself so it
 cannot pass by accident on a fast machine.
+
+### `fn sampled_tone_count`
+
+Distinct exact RGB triples, saturating at [`TONE_CAP`], over a stride chosen
+so at most about [`TONE_SAMPLE_TARGET`] pixels are examined.
+
+# Why exact triples rather than perceptual buckets
+
+Antialiasing means a single black hairline on white paper produces dozens of
+distinct greys, so counting exact triples is if anything **more** sensitive
+to faint ink than bucketing would be. For a blank-detector that is the
+direction to err: a false "there is ink here" makes a check ask a further
+question, while a false "this is blank" makes it excuse a real defect.
+
+# Why the answer is never zero
+
+An empty pixmap cannot occur — the renderer refuses a zero-area region — and
+returning `0` would make *"no pixels"* and *"one colour"* indistinguishable
+in the trace, which is the precise ambiguity this function exists to remove.
+The empty case therefore returns `1` and says so here rather than leaving a
+reader to infer it.
+
+# Cost
+
+Bounded: `pixels.len() / TONE_SAMPLE_TARGET` sets the stride, so the loop
+runs at most `TONE_SAMPLE_TARGET` times regardless of raster size, and it
+exits early the moment [`TONE_CAP`] distinct tones have been seen — which on
+any inked region happens within the first few hundred pixels.

@@ -61,3 +61,50 @@ tabs out itself and reporting a plausible `hidden`.
 The assertion is that the drawn tabs stop short of the strip's right
 edge by at least the affordance's width — measured from the published
 rectangles, not recomputed.
+
+### `const STRIP_HEIGHT`
+
+A constant, and it must stay one. A surface whose height varies with its
+content and which sits above a viewport that fits a page to itself forms a
+measured feedback loop — `D:\dev\rag\egui\bottom_panel_height_change_retriggers_fit_to_viewport_zoom.md`
+records a 230 % → 224 % → 215 % zoom drift from exactly that shape. The
+caller is expected to give this an `exact_size` panel, not a
+`default_height` one.
+
+Two points taller than [`plan::TAB_BAR_HEIGHT`], deliberately: a document
+tab carries a close glyph beside its label and a 24 pt row makes the two
+touch.
+
+### `struct TabItem`
+
+Built fresh each frame by the caller from whatever it has open. There is no
+retained model here on purpose: a strip that cached its own list would be a
+second copy of *what is open*, and the two would disagree the first time a
+close failed.
+
+### `fn strip`
+
+`active` is the index of the tab currently on screen; out-of-range is
+treated as "none of them is active", which is a state a caller can reach
+legitimately for one frame while a close is being confirmed.
+
+Returns intents. Applies nothing.
+
+# Layout, in the order that makes the reservation hold
+
+The same six steps [`crate::dock::tabs`] documents, because it is the same
+arithmetic:
+
+1. measure every label (egui memoizes the galley, so this is a hash lookup)
+2. add [`CLOSE_WIDTH`] to each, then clamp through [`plan::tab_width`]
+3. subtract the overflow affordance's width from the strip's — **first**
+4. choose the visible window inside what is left
+5. lay the tabs into a rect that *is* that budget
+6. lay the affordance into the space nothing else was allowed to touch
+
+Step 3 before step 4 is what makes it impossible for the number of tabs to
+eat the route to the tabs.
+
+A seventh step is this module's own and has no counterpart there: the
+reorder caret, resolved and painted after everything else, because the
+boundary it marks does not exist until the tabs are laid out.

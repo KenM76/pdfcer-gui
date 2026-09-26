@@ -24,10 +24,6 @@ const ENABLED_KEY: &str = "pdfcer.smart-select.enabled"; // ui-text-exempt: a me
 const ENTERED_KEY: &str = "pdfcer.smart-select.entered"; // ui-text-exempt: a memory key, never displayed
 
 /// **The container a click is currently scoped to.**
-///
-/// Carries the page and the document epoch with the object index for the reason
-/// in the module header: the record invalidates itself rather than relying on
-/// five call sites to clear it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Entered {
     /// The page the container is on.
@@ -50,15 +46,6 @@ fn id(key: &str) -> egui::Id {
 }
 
 /// **Is Smart-Selector on?** Defaults to `true`.
-///
-/// # Why the default is ON, when the operator asked for a checkbox
-///
-/// Because the checkbox exists so the behaviour can be turned **off**, and the
-/// behaviour is what every program in the class does. A default of `false`
-/// would ship the convention switched off and leave the complaint that produced
-/// this row — *"I'm still not entirely clear how to reliably get to a point
-/// where I can edit nodes"* — answered only for an operator who found a
-/// checkbox first.
 #[must_use]
 pub fn enabled(ctx: &egui::Context) -> bool {
     ctx.data(|d| d.get_temp::<bool>(id(ENABLED_KEY)))
@@ -82,23 +69,6 @@ pub fn set_enabled(ctx: &egui::Context, on: bool) {
 }
 
 /// **Mirror the persisted answer into the live one**, once per frame.
-///
-/// # Why this is not [`set_enabled`], which looks like the same function
-///
-/// `set_enabled` is what a **press** calls, and it also leaves whatever
-/// container the operator is inside — because switching the mechanism off while
-/// scoped to a container would leave the next click resolving by a rule that is
-/// no longer switched on.
-///
-/// This runs every frame from `app::frame`, changed or not. Leaving on every
-/// call would make entering a container impossible; leaving on every *change*
-/// would make it identical to `set_enabled` and the two would not need to exist
-/// separately. It does neither — it writes the value and nothing else, and the
-/// consequence lives on the press path where the operator's intent is.
-///
-/// ⇒ The direction is strictly `Prefs` → memory. The only writer of the
-/// persisted answer is the dispatch arm an operator's press runs, so there is
-/// one source of truth and one mirror of it.
 pub fn sync(ctx: &egui::Context, on: bool) {
     if enabled(ctx) != on {
         ctx.data_mut(|d| d.insert_temp(id(ENABLED_KEY), on));
@@ -107,10 +77,6 @@ pub fn sync(ctx: &egui::Context, on: bool) {
 
 /// **The container the pointer is scoped to**, if the record is still valid for
 /// this page and this document.
-///
-/// Returns `None` — and clears nothing — when the record names another page or
-/// another document. Reading is not the place to write; the record is replaced
-/// the next time one is written and is harmless meanwhile.
 #[must_use]
 pub fn entered(ctx: &egui::Context, page: usize, slot: usize) -> Option<Entered> {
     ctx.data(|d| d.get_temp::<Entered>(id(ENTERED_KEY)))
@@ -130,13 +96,6 @@ pub fn enter(ctx: &egui::Context, entered: Entered) {
 }
 
 /// **Leave whatever container was entered**, and report whether there was one.
-///
-/// The `bool` is what makes Escape composable. `canvas::keys` consults this as
-/// its **last** claimant — one press clears the selection, a second steps back
-/// out of the container — which follows that ladder's own rule of retiring the
-/// most transient thing first: a selection inside a title block is remade by
-/// every click, while the fact that the operator is working inside it survives
-/// all of them.
 pub fn leave(ctx: &egui::Context) -> bool {
     let had = ctx.data_mut(|d| {
         let had = d.get_temp::<Entered>(id(ENTERED_KEY)).is_some();
@@ -153,21 +112,6 @@ pub fn leave(ctx: &egui::Context) -> bool {
 }
 
 /// **The scope one frame's clicks resolve in** — read once, passed down.
-///
-/// # Why a value rather than reading the context at each call site
-///
-/// The pick helpers in [`crate::canvas::input`] are pure functions over a
-/// `&dyn CanvasTargetProvider`, deliberately: they are the most heavily
-/// unit-tested code in this crate and they answer *"what did this click
-/// land on?"* without a running application. Handing them an `egui::Context`
-/// to consult would make every one of those tests build a context and would
-/// put a global read in the middle of a hit test.
-///
-/// ⇒ So the scope is read **once**, at the surface that has the context, and
-/// travels as two facts. Every consumer then resolves identically by
-/// construction — which is the property that matters, because a press and the
-/// click that follows it must agree about what is under the pointer or a drag
-/// starts on one thing and selects another.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Scope {
     /// Whether the substitution happens at all.
@@ -189,20 +133,6 @@ impl Scope {
     }
 
     /// **What a click on `target` should actually select.**
-    ///
-    /// The whole rule, in one function so that the click path, the press path
-    /// and any future caller cannot each have their own version of it:
-    ///
-    /// | switched on | target | inside its container | resolves to |
-    /// |---|---|---|---|
-    /// | no | anything | — | itself — the behaviour before O70, unchanged |
-    /// | yes | a page object | — | itself |
-    /// | yes | a **leaf** | no | its **outermost container** |
-    /// | yes | a **leaf** | yes | itself |
-    ///
-    /// The third row is the whole feature and the fourth is what stops it
-    /// from being a cage: once you have entered a title block, clicking its
-    /// lines selects its lines.
     #[must_use]
     pub fn resolve(
         self,
@@ -252,11 +182,6 @@ impl Scope {
 }
 
 /// Read this frame's scope for `page`.
-///
-/// The document slot comes from `crate::pagedrag::active`, which the frame
-/// publishes before any surface draws — the same source the Pages panel uses
-/// to know which document it is showing, so *"which document is this?"* has
-/// one answer in this crate rather than two.
 #[must_use]
 pub fn scope(ctx: &egui::Context, page: usize) -> Scope {
     let slot = crate::pagedrag::active(ctx).unwrap_or_default().slot;

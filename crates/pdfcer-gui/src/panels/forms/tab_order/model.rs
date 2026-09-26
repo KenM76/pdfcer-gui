@@ -44,10 +44,6 @@ impl Listing {
     }
 
     /// How many pages show a sequence that is **not** the tab order.
-    ///
-    /// A page under `/Tabs /R`, `/C` or `/S` has an order a viewer *derives*
-    /// rather than one the file stores, so the `/Annots` sequence on screen is
-    /// not it. Counted so the trace can prove the disclosure fired.
     #[must_use]
     pub fn pages_with_derived_order(&self) -> usize {
         self.pages
@@ -120,18 +116,6 @@ pub struct PageTabs {
 }
 
 /// One `/Widget` this page lists that no field in the form claims.
-///
-/// # Why this is a struct and not the bare `ObjId`
-///
-/// Because two independent things are true of it and both are needed at the
-/// same moment: it is a **thing to register** (the id, which
-/// `EditSession::adopt_widget` takes) and it is a **place in the tab
-/// sequence** (the position, which is how an operator finds the box on the
-/// page — they tab to it and watch the focus ring land).
-///
-/// The position cannot be recovered from the id afterwards without walking
-/// `/Annots` again, and a second walk is a second answer to a question this
-/// module exists to answer once.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Unclaimed {
     /// The widget's object identity — what `adopt_widget` takes.
@@ -151,11 +135,6 @@ impl PageTabs {
 }
 
 /// One widget, as a row.
-///
-/// Owned strings rather than borrows. The `AcroForm` is parsed fresh inside the
-/// panel body and dropped when the frame ends, so borrowing would tie the
-/// listing's lifetime to a temporary; and the whole listing is a few hundred
-/// short strings at most.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TabRow {
     /// **The annotation's object id** — what a reorder is expressed in.
@@ -225,19 +204,6 @@ pub struct TabRow {
 }
 
 /// Build the listing for a whole document.
-///
-/// `graph` must be the **session view**, not the loaded file — see this
-/// module's header. `slots` is `EditSession::page_slots()`, whose index is the
-/// page index every row carries and whose `ancestors` [`page_tabs`] reads.
-/// `form` is the parsed `/AcroForm` the panel body already has.
-///
-/// # Cost
-///
-/// One `/Annots` walk per page, bounded by
-/// `pdfcer_core::annot::MAX_ANNOTS_PER_PAGE`, plus one `HashMap` of widget ids
-/// built once for the whole document rather than once per page. That is the
-/// Comments panel's cost exactly, and its header's measurement applies:
-/// negligible beside a raster on anything this project measures against.
 #[must_use]
 pub fn collect<G: ObjectGraph + ?Sized>(
     graph: &G,

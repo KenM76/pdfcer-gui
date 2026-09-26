@@ -184,3 +184,22 @@ reasons applies. This is what pins that sharing: an operator who put
 `file.sign` on their own QAT-adjacent group in a build without signing
 must be told *"this build does not include that"*, not *"you made a
 mistake"*, because they did not.
+
+### `struct MergeInput`
+
+A struct rather than three positional arguments because two of them
+are `Option<&Shell>` of the same type, and a call site that swapped
+them would compile and would apply the operator's customization before
+the application's override — producing a shell that is wrong in a way
+no test of either file could find.
+
+### `fn merge`
+
+Never fails. Anything it cannot carry across becomes a [`Skip`] in
+[`Merged::report`]; see this module's header for why that is the right
+posture for inputs that come from outside the build.
+
+The `catalog` is what makes a stale command id detectable. Pass
+[`super::AnyCommand`] only in tooling that has no registry — in an
+application it would disable the check that turns a stale reference
+into a disclosed skip instead of a control that does nothing.

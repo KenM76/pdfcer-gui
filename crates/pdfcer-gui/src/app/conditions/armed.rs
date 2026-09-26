@@ -28,16 +28,13 @@
 //! Collecting every pressed condition in one file is the mitigation: the next
 //! person adding a tool meets all of them in a single screen rather than
 //! finding four scattered through a thousand lines of enable logic.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/app/conditions/armed.md`.
 
 use egui_shell::commands::ConditionSet;
 
 impl crate::app::PdfcerApp {
     /// Publish the pressed state of every control that has one.
-    ///
-    /// Called from [`super::PdfcerApp::conditions`] with the set it is building,
-    /// so there is one `ConditionSet` per frame and this adds to it rather than
-    /// returning a second one to be merged — a merge being a place two answers
-    /// about one control could both be present.
     pub(super) fn armed_conditions(&self, ctx: &egui::Context, set: &mut ConditionSet) {
         // **The armed tool's state lives in `egui::Memory`**, and is read back
         // from there rather than shadowed on `PdfcerApp`. That is why this

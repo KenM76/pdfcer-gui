@@ -71,13 +71,6 @@ pub(crate) mod preview;
 /// stores **these** types — [`spooler::Orientation`], [`spooler::Duplex`],
 /// [`spooler::ScaleMode`], [`spooler::PageSubset`], [`spooler::PaperChoice`] —
 /// rather than a mirrored set of its own.
-///
-/// The alternative was a second copy of five enums on the other side of the
-/// boundary, and this project's standing lesson about mirrored enums is that
-/// they drift: a variant added here would round-trip through the preferences
-/// file as somebody else's default, silently, with every test still green.
-/// Widening this module is the cheaper of the two mistakes and the only one
-/// the compiler can police.
 pub(crate) mod spooler;
 pub(crate) mod tabs;
 
@@ -133,15 +126,6 @@ use crate::dialogs::print::tabs::{PrintRange, PrintTab};
 use crate::text::print as t;
 
 /// The print dialog's live state.
-///
-/// # Why a dialog struct rather than a dock panel
-///
-/// Printing is a single transaction with a start and an end, not something an
-/// operator dips in and out of while working — which is what a dock pane is
-/// for. It is also *modal in spirit and not in mechanism*: nothing blocks the
-/// rest of the shell, but the surface is screen-anchored and stationary
-/// rather than positioned relative to the page, because controls whose
-/// position is derived from the page move on every zoom and scroll.
 pub struct PrintDialog {
     /// Why the print system could not be reached at all, if it could not.
     ///
@@ -463,33 +447,6 @@ pub struct PrintDialog {
 
 impl PrintDialog {
     /// Build the dialog for the document `doc`.
-    ///
-    /// # Two things happen here and nowhere else
-    ///
-    /// 1. **The spooler is enumerated, once, on a deliberate click.**
-    ///    Enumerating printers can block briefly on a network spooler, so it
-    ///    must not happen inside the frame loop.
-    /// 2. **The preview opens on the page the operator is looking at.** Not
-    ///    page 1: the commonest print is "this sheet", and opening the preview
-    ///    somewhere else makes the operator step back to where they already
-    ///    were.
-    ///
-    /// The guard against re-opening over a half-configured job is
-    /// [`crate::dialogs::DialogsState::open_print`]'s, because it is the one
-    /// place that can see whether a dialog already exists.
-    ///
-    ///
-    /// *"the printer dialogue box needs to remember our last settings."* Every
-    /// field below that reads `remembered` was a literal until that day, so an
-    /// operator who prints every drawing landscape, two-sided, on the plotter,
-    /// at 600 dpi re-answered all four questions on every single print.
-    ///
-    /// What is in that value and what is deliberately not is
-    /// [`crate::app::prefs::PrintPrefs`]'s subject, argued at length in its own
-    /// header. The rule, in one line: **a setting is remembered only if it
-    /// would still be the right answer for a different document.** Which is
-    /// why the range, the preview's sheet, its zoom and the active tab are
-    /// still literals here and always will be.
     pub(super) fn open(doc: &OpenDoc, remembered: &crate::app::prefs::PrintPrefs) -> Self {
         // The preferences file's own token functions, aliased so the trace
         // below spells every remembered value exactly as the file spells it.

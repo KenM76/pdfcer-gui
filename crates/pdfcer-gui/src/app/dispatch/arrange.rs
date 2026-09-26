@@ -11,18 +11,6 @@ use crate::app::state::Status;
 use crate::canvas::selection::AnnotKind;
 
 /// Whether `id` is one of the four Arrange commands.
-///
-/// Named `claims` rather than `handles` for [`super::markupnodes::claims`]'
-/// stated reason: `shell::commands::reach::guards::EVALUATED_GUARDS` is a set of
-/// **function names** read out of `dispatch.rs`'s syntax tree, `claims` is
-/// already in it, and the register's own note blesses two guards sharing a name.
-/// One line in `guard_claiming` and no change to that list.
-///
-/// Paired with [`destination`] rather than with a second `match` in
-/// [`dispatch`], which is `dispatch::routes`' improvement on the
-/// membership-test shape: the two statements that could grow apart are **one
-/// statement**, so an id this predicate claims and that function cannot place is
-/// unrepresentable.
 #[must_use]
 pub(crate) fn claims(id: &str) -> bool {
     destination(id).is_some()
@@ -41,26 +29,6 @@ fn destination(id: &str) -> Option<ArrangeTo> {
 }
 
 /// Dispatch one of the four.
-///
-/// # Three gates, and only one of them can be met by an operator who did
-/// nothing wrong
-///
-/// | gate | reachable from the ribbon? | how it reports |
-/// |---|---|---|
-/// | the mode may not author markup | **no** — the Markup tab is not shown in Read | trace only |
-/// | no markup is selected | **no** — the group is not drawn (`selection.markup_restylable`) | trace only |
-/// | the mark is **locked** | **yes** — the group is drawn and the mark is selected | a sentence on the status row |
-///
-/// The first two are belt to the ribbon's braces: a customized manifest or a
-/// chord reaches any command from any state, so they are written rather than
-/// assumed — the same *"push the chord blind, gate the effect in dispatch"* rule
-/// every arm in `super` follows. Neither owes the operator a sentence, because
-/// neither can happen to one.
-///
-/// The **lock** can, and does: `selection.markup_restylable` deliberately
-/// excludes the lock (§12.5.3 bit 8 is a fact about one annotation, not about
-/// the build or the mode), so the four controls are live on a locked mark and
-/// pressing one has to say why it did nothing.
 pub(super) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>) {
     let Some(to) = destination(id) else {
         return;

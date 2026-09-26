@@ -29,3 +29,28 @@ dropping it hands the choice of *which* occurrence to edit to the engine's
 scan order. [`Plan::occurrences`] carries the whole argument for why that is
 never permitted, and `super::glyphwall` holds it as tests over two fixtures
 — one where the edit must land, one where it must be refused.
+
+## Item notes
+
+### `fn plan`
+
+Called from the apply arm rather than from the canvas, because it needs the
+document and an `Action` is plain data. It is still one function in one place
+— the arm routes to it and computes nothing itself.
+
+The three things it derives, all from `(page_text, run)`:
+
+1. **the provenance pin** — `operator_span`, which is how the surgery finds
+   *this* show operator rather than the first one whose text matches. Without
+   it, editing the second `TITLE` on a title-block sheet edits the first.
+2. **the matrices** — `Tm` and the CTM in force at the run's first glyph,
+   which is what [`disposition::is_upright`] reads.
+3. **the block alignment** — through `ReflowEngine::detect_alignment` on a
+   model recognised with [`reflow_recognition_options`], i.e. the **relaxed**
+   recogniser. That is the old shell's own choice for its reflow target and
+   the reason carries here unchanged: the default recogniser splits on
+   indentation, so a right-aligned block whose lines start at different x —
+   which is what right alignment *is* — is exactly the shape it fragments,
+   and a fragmented block is a one-line block, and a one-line block reports
+   `SingleLineDefault`. Using the default model would make the alignment
+   fix unreachable on precisely the documents it is for.

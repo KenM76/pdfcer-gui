@@ -23,38 +23,18 @@ pub fn fonts_none() -> &'static str {
 }
 
 /// The document-wide embedded-font total.
-///
-/// The equivalent of the parity reference's Audit Space Usage "Fonts"
-/// bucket, which is a paid-tier feature there and gives no per-font
-/// breakdown at all. Summed over DISTINCT font objects, so a font used on
-/// four hundred pages is counted once.
 #[must_use]
 pub fn fonts_total_size(total: &str) -> String {
     format!("Embedded font data in this document: {total}.")
 }
 
 /// The coverage disclosure, shown unconditionally above the list.
-///
-/// Not a caveat and not a footnote. An operator reading a font inventory to
-/// decide what to delete needs the shape of the evidence, and "there is one
-/// place pdfcer did not look" is part of the answer rather than a hedge on
-/// it. A list that quietly missed a surface and looked complete is this
-/// project's most-repeated defect shape.
-///
-/// Acrobat's own coverage here is recorded as an unconfirmed GAP, so pdfcer
-/// states its own scope rather than assuming parity with a behaviour nobody
-/// has measured.
 #[must_use]
 pub fn fonts_coverage_note() -> &'static str {
     "Covers fonts on each page (including inherited page resources, nested form objects, patterns and soft-mask groups), inside Type 3 fonts, in the interactive form's shared resources, and in every annotation's own appearance stream. It does NOT cover font objects that nothing in the document refers to — those still take up space in the file but do not appear here."
 }
 
 /// Shown when pdfcer could not walk the page tree at all.
-///
-/// Without this, "this document has no fonts" and "pdfcer could not look"
-/// render identically, and an operator would read the second as the first.
-/// It goes FIRST, above everything, because it changes what an empty list
-/// beneath it means.
 #[must_use]
 pub fn fonts_page_scan_failed() -> &'static str {
     "pdfcer could not read this document's page tree, so no page's fonts are listed below. A short list here is not a statement about the document."
@@ -67,28 +47,12 @@ pub fn fonts_scan_truncated() -> &'static str {
 }
 
 /// The end state: nothing is missing an embedded program.
-///
-/// Deliberately NOT "ready to submit", "passes embedding checks", or
-/// anything naming PDF/A or a print service. Those are claims about a third
-/// party's acceptance that pdfcer has not verified. This states only what
-/// pdfcer measured.
 #[must_use]
 pub fn fonts_all_embedded() -> &'static str {
     "Every font this document declares now has an embedded program."
 }
 
 /// How many of this document's fonts have no embedded program.
-///
-/// **New at salvage.** The old panel answered this only through a control —
-/// the embed block's "n exact, n substitute" summary, which is a statement
-/// about a *plan*, not about the document. With no embed control here, the
-/// document-level fact would otherwise be recoverable only by opening every
-/// row, and it is the fact that sends an operator to a print service's
-/// rejection notice.
-///
-/// It states the count and nothing more. Naming a remedy pdfcer cannot
-/// perform in this build would be the placeholder rule broken in prose
-/// instead of in a widget.
 #[must_use]
 pub fn fonts_missing_programs(n: usize) -> String {
     if n == 1 {
@@ -133,10 +97,6 @@ pub fn font_verdict_not_embedded() -> &'static str {
 }
 
 /// Verdict: pdfcer did not establish enough to classify this font.
-///
-/// "Unclassified" rather than the bare word "Unknown", because the `fsType`
-/// line inside the same row independently reads as unknown for an unrelated
-/// reason. Two bare "Unknown"s in one row look like one fact stated twice.
 #[must_use]
 pub fn font_verdict_unknown() -> &'static str {
     "Unclassified"
@@ -154,12 +114,6 @@ pub fn font_reason_removable() -> &'static str {
 
 /// Reason for [`font_verdict_blocked_identity`] — the sentence this whole
 /// panel exists to say.
-///
-/// Two tiers, because two independently-bad outcomes stack here and a
-/// 64-file survey found them stacking on most real files: without the
-/// embedded program the text cannot be DRAWN, and without a `/ToUnicode` map
-/// it cannot be RECOVERED either. The parity reference refuses these fonts
-/// too and shows no reason at all — it simply leaves them off its list.
 #[must_use]
 pub fn font_reason_blocked_identity(has_to_unicode: bool) -> String {
     let base = "This font uses Identity encoding: its character codes are positions inside this specific embedded program, not standard character codes. Removing the program would leave this text undrawable by any other font.";
@@ -307,11 +261,6 @@ pub fn font_fstype_version_gated() -> &'static str {
 }
 
 /// `fsType` could not be read.
-///
-/// Must never be mistaken for value 0 — which genuinely means Installable,
-/// the most permissive value the field can express. The word "unknown" is in
-/// the sentence itself, not carried by styling, and the sentence says pdfcer
-/// read nothing rather than implying it read a permissive value.
 #[must_use]
 pub fn font_fstype_unknown() -> &'static str {
     "Unknown — pdfcer could not read this font's embedding-permission bits. That is not the same as no restriction."
@@ -337,10 +286,6 @@ pub fn font_fstype_not_embedded() -> &'static str {
 // ---------------------------------------------------------------------------
 
 /// A composite font's type, parent and descendant together.
-///
-/// `Type0 / CIDFontType2`. Both halves are shown because the parent alone
-/// says nothing about the glyph source — the descendant is where the
-/// outlines and the font descriptor actually live (§9.8.1).
 #[must_use]
 pub fn font_composite_type(parent: &str, descendant: &str) -> String {
     format!("{parent} / {descendant}")
@@ -375,12 +320,6 @@ pub fn font_embedded_line(key: &str) -> String {
 
 /// The program's byte size, rounded — and exact whenever rounding lost
 /// anything.
-///
-/// The rounded figure is for ranking two hundred rows at a glance; the exact
-/// figure is the measurement, and this project shows the measurement. Below
-/// 1024 the two are the same number, and printing `474 B (474 bytes)` is
-/// noise that teaches an operator to stop reading the parenthesis on the
-/// rows where it carries information.
 #[must_use]
 pub fn font_size_line(rounded: &str, exact: usize) -> String {
     if exact < 1024 {
@@ -391,10 +330,6 @@ pub fn font_size_line(rounded: &str, exact: usize) -> String {
 }
 
 /// The decoded program size, when it differs from the stored size.
-///
-/// Shown only when the two differ, which is when the program is compressed.
-/// A line repeating the number above would be noise, and noise is how the
-/// lines that matter get skimmed past.
 #[must_use]
 pub fn font_decoded_size_line(rounded: &str) -> String {
     format!("Uncompressed program: {rounded}")
@@ -441,28 +376,12 @@ pub fn font_found_in_type3() -> &'static str {
 }
 
 /// A font that no page references — reached only from a shared surface.
-///
-/// **New at salvage.** `FontRecord::pages` being empty is NOT "unused" (the
-/// core API map's trap T-9.4 says so explicitly: a font reached only through
-/// the AcroForm `/DR` has no page list but is a live form-default font). The
-/// old panel simply omitted the pages line in that case, which left an
-/// operator to infer *"this font is on no page"* from an absence — and the
-/// three "also used in…" lines below it are easy to miss.
-///
-/// Stated rather than inferred, because the inference is wrong.
 #[must_use]
 pub fn font_no_pages_line() -> &'static str {
     "No page references this font directly."
 }
 
 /// Tooltip on the display name, carrying the full `/BaseFont`.
-///
-/// The row shows the family name with the six-letter subset tag stripped,
-/// because the tag reads as noise when scanning. But two independent subsets
-/// of one face de-prefix to the SAME name, so back-to-back identical-looking
-/// rows would read as a rendering fault rather than as the real and useful
-/// fact that the document subsetted the face twice. The tag has to resurface
-/// somewhere, and this is where.
 #[must_use]
 pub fn font_full_name_tooltip(full_base_font: &str) -> String {
     format!("Full name in the file: {full_base_font}")
@@ -475,23 +394,6 @@ pub fn font_unnamed() -> &'static str {
 }
 
 /// The collapsed row: verdict, size, name.
-///
-/// Field order is the scanning order, and it is deliberate. The verdict
-/// leads because it is the field an operator sweeping two hundred rows is
-/// looking for and the one no other tool shows them; the size ranks it; the
-/// name identifies it. Putting the name first would read better in isolation
-/// and scan worse in bulk, which is the case that matters here.
-///
-/// The name is the DE-PREFIXED family name — the six-letter subset tag reads
-/// as noise at a glance. It resurfaces in [`font_full_name_tooltip`], which
-/// is what keeps two subsets of one face from looking like a duplicated row.
-///
-/// **The name is LAST, and that is the overflow decision.** A dock pane is
-/// ~370 pt and a `/BaseFont` can be arbitrarily long; something has to be
-/// allowed to clip. Putting the name last means what clips is the one field
-/// an operator can recover from elsewhere (the tooltip), rather than the
-/// byte size — which is what actually clipped when this row was first laid
-/// out verdict-name-size.
 #[must_use]
 pub fn font_row_header(name: &str, size: &str, verdict: &str) -> String {
     format!("{verdict} · {size} · {name}")

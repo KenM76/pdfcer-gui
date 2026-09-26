@@ -54,3 +54,21 @@ as arbitrary. Each traces separately all the same, because *"the mode says
 no"* and *"there was nothing to act on"* are different facts with different
 answers and a reader of a trace from a machine they cannot see should not
 have to guess which nothing happened.
+
+## Item notes
+
+### `fn claims`
+
+Named `claims` rather than `handles` because
+`shell::commands::reach::guards::EVALUATED_GUARDS` is a set of **function
+names** read out of `dispatch.rs`'s syntax tree and asserted equal to the
+set the reachability checker evaluates. A guard function whose name is not
+in that set is a place commands can hide from the check that exists to find
+them, so a new module reuses an evaluated name rather than inventing one.
+
+A predicate paired with [`dispatch`] over the same ids, which is two
+statements of one set — the shape this crate usually refuses. It is accepted
+here only because the two sit adjacent in one small file. **Nothing
+mechanical welds them**: the `match` below ends in a `_ => {}`, so an id
+added here and not there is a control that does nothing and says nothing.
+Add to both, in the same edit.

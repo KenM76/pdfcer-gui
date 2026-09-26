@@ -270,3 +270,35 @@ narrower and more useful statement — **the press belongs to whichever tool
 is armed** — and every arm below is one instance of it. The hand's row is
 the odd one and is kept for the same reason it always was: it does not
 reach the gesture machine at all.
+
+### `fn takes_the_press`
+
+The mode gate, and the whole of it — this module's header. One expression,
+read by exactly two callers so they cannot disagree about what a press means:
+[`crate::canvas::gesture::press_kind`], which decides it, and
+`canvas::interact`, which routes the resulting click. That is the same
+two-reader shape `CanvasTool::measure_kind` already has.
+
+Note what it does **not** consult: any [`Capabilities`] field of its own.
+`caps.edit_content` appears here as *"is the primary button already spoken
+for?"*, not as a permission — see the header for why a `select_text`
+capability would be the operator's *copying is not authoring* ruling restated
+in a place free to disagree with it.
+
+# Two disjuncts, and the second one is the original rule unchanged
+
+> A press means text when the **text tool is armed**, *or* when the select
+> tool is active and the mode cannot select content.
+
+The order they are written in is the order they are read in, and it is also
+the order of *deliberateness*: the first is a tool the operator chose, the
+second is what an un-armed canvas does in a mode with nothing else for the
+primary button to mean. Adding the first changed **nothing** about the
+second — Read and Review answer `true` through the same expression they
+always did, so an operator who never presses the new control cannot tell it
+exists.
+
+`is_text` rather than `matches!(tool, CanvasTool::Text)` spelled here: the
+same predicate decides the ribbon's pressed state, and
+[`CanvasTool::is_text`]'s docs record all three of its callers for the reason
+`markup_kind` and `measure_kind` do.

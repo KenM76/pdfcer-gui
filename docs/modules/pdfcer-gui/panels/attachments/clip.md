@@ -105,3 +105,24 @@ records for `cut_objects`. Recorded in `EDITABLE_SURFACES.md`.
 a stem — the harness's `declared_names(.., "attachments.paste")` lists
 both, which is wanted — but `declared(.., "attachments.paste")` is an
 exact match and resolves only the button.
+
+### `fn row_controls`
+
+`key` is the `/EmbeddedFiles` name-tree key — the thing the document is
+addressed with. `name` is what the row displays. They are **different**, and
+the distinction is `panels::attachments`' own: the key is bytes with no
+declared encoding (§7.9.6) which producers mangle with numeric suffixes and
+portfolio folder prefixes, so it is the right thing to address the document
+with and the wrong thing to show a person.
+
+Cut is offered only where Remove is — a document-level attachment. A
+page-level one is removed by deleting its note, and `detach_file` answers
+`AttachmentNotFound` for it by name. Offering a Cut that could only refuse
+would be an affordance for an act this code cannot perform.
+
+### `fn paste_control`
+
+`existing` is every name already listed in **this** document, which is what
+the replacement question is answered from. Passed in rather than re-derived
+so the panel's listing and this control cannot disagree about what is here —
+the same rule `rows::block_reason` states for the fillable/selectable split.

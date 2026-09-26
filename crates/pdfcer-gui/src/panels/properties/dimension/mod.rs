@@ -25,14 +25,6 @@ pub const REGION_DISPLAY: &str = "properties.dimension.display"; // ui-text-exem
 
 /// Draw the ce-dimension section, if one is selected. Returns whether it drew
 /// anything.
-///
-/// # Why it reports whether it drew
-///
-/// So [`super::body`] can decide what the panel says when there is no object
-/// focused. A ce dimension selected on the canvas with nothing focused in the
-/// object tree is a perfectly ordinary state — it is what happens the moment
-/// the operator clicks a dimension — and *"nothing is selected"* would be
-/// false in front of a section describing the thing that is.
 pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     let Some(selection) = doc.selection.annot() else {
         return false;

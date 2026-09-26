@@ -177,3 +177,133 @@ Three clauses in one test because each is a bound on the same `min`:
   to learn one, so it cannot arrive from there — the guard exists because
   this function is `pub`, and this test is what stops the guard being
   deleted as unreachable by someone who checked only the one caller.
+
+### `const SUB_PIXEL_CONTENT_EXTENT`
+
+One unit of content space is one screen pixel, so the spacing between
+representable `f32` offsets **is** the positioning error. `2^20` puts one
+step at 0.125 px.
+
+# It gates HOLDING A POINT, not ADDRESSING A PIXEL
+
+The two requirements part company as the zoom rises, and reading this
+constant as the second is the mistake that sets it 16× too high:
+
+| | |
+|---|---|
+| the `f32` error, in PAGE POINTS | `page_pt × 2^-23` — **constant**, because the offset grows with the zoom and the division by zoom cancels |
+| what "holding the point under the cursor" allows | a fraction of the VIEWPORT in page points — `viewport_px / zoom` — which **shrinks** |
+
+So there is a crossing, it is far below the point at which an offset stops
+addressing every pixel, and past it the view drifts off the cursor while
+still addressing every pixel perfectly.
+
+Measured through the running binary rather than derived, on
+`SW41177.pdf` (1,224 pt tall):
+`zooming_does_not_throw_away_where_the_operator_panned` failed reproducibly
+at notch 7 of stage 5, between 292,415 % and 357,156 % — a content extent
+near **3.6 million**, where one `f32` step is 0.43 px and seven wheel
+notches had accumulated 19 px of drift against a tolerance of 8. `2^20` is
+3.4× finer than the point that failed, and hands over at 85,700 % on that
+sheet and 132,400 % on US Letter.
+
+Drawing is not what limits this. Driving to the top of the setting on a
+US Letter page drew at a content extent of 20.5 billion — a 2,048 px step —
+and stopped at 41 billion. Usability gives out four orders of magnitude
+earlier, and this is that point.
+
+`pub` because [`crate::canvas::geometry`] bounds the pasteboard against
+it as well. The pasteboard grows with the zoom (an overhang measured in
+points, multiplied by the scale), so without a bound tied to THIS number
+the scroll content could pass the hand-over point while the strip itself
+was still comfortably below the tier boundary — the position model would
+have handed over late, and silently. One constant, both uses.
+
+### `fn max_zoom_with_regions`
+
+# Why this is a different function rather than a flag on the old one
+
+[`max_zoom_for_page`] answers a question about a **pixmap**: how far can
+this page be magnified before its whole-page raster exceeds
+`MAX_PIXMAP_EDGE`? That question is real and its answer is a genuine
+ceiling — *for the whole-page tier*.
+
+It is simply **not the question** once the renderer can be asked for a
+region. There the pixmap is the size of the window, so the page's own
+size stops entering the arithmetic at all and the only remaining limit is
+whatever the operator has said they want. Two different questions with
+two different answers are two functions; adding a boolean to the first
+would have produced one function whose name describes only half of what
+it does.
+
+# It is dormant, and deliberately so
+
+Nothing calls this yet. It lands ahead of the canvas change that will,
+so that the arithmetic can be reviewed and tested while it cannot affect
+a running build — the same staging the render worker's `region` field
+took.
+
+`limit` is the operator's own maximum, which becomes a setting. Clamped
+to at least [`MIN_ZOOM`] so a nonsensical stored value cannot make the
+document unzoomable.
+
+### `fn zoom_ceiling`
+
+The ONE place the two tiers are reconciled, so the two call sites that
+need a ceiling — `app::actions::apply` and `canvas::zoom` — cannot answer
+the question differently. Their own comments already note that each derives
+this per action rather than caching it; deriving it *differently* is the
+failure that would follow.
+
+The rule is one sentence: **the whole-page raster limit binds only while the
+operator has not asked to go past it.** Below their maximum the pixmap
+ceiling is real and is what stops them; above it, the region tier takes over
+and the page's size stops entering the arithmetic at all.
+
+`limit_percent` is [`crate::app::prefs::Prefs::max_zoom_percent`]. Passing
+the shipped default reproduces the old behaviour exactly, which is what
+keeps a fresh install unchanged.
+
+# `learned_raster_scale` — the THIRD ceiling, and the only one that may
+override the operator — O186
+
+`None` on every page of every document until a render has actually been
+refused for a raster limit, and on that page it is
+[`crate::render::ceiling::RasterCeiling::for_page`]'s answer: **a raster
+scale, in device pixels per PDF point**, not a zoom. Converted here by
+[`zoom_for_raster_scale`], which is the exact inverse of
+[`crate::viewer::raster_scale`] because both run through one
+[`crate::viewer::raster_density`] — the display density **and** the
+operator's render quality. Dividing by the density alone is O218: on
+Sharper it returns a ceiling half again too high, so the clamp that exists
+to rescue him hands the engine another pixmap it refuses.
+
+It is applied as a hard `min` *after* everything above, and that ordering is
+the whole point. The two derived ceilings are predictions about what the
+renderer will accept; this one is a **measurement of what it refused**. The
+operator's `max_zoom_percent` deliberately has no upper bound — he asked for
+a trillion percent and got it — and above the region tier the page's size
+stops entering the arithmetic, so *nothing else in this function can stop a
+page that physically cannot be rasterized further*. That is O186: he met the
+wall, and the wall was reported to him as an error painted across his
+drawing.
+
+So this clause, uniquely, binds below a number the operator typed. That is
+not the shell overruling him — it is the shell declining to re-offer a zoom
+it has already watched fail. His own ruling: *"zoom should stop at the limit
+and not end up showing an error"*. The reason it stopped is disclosed on the
+bottom bar by `crate::app::status::rasterstop`, which is the other half of
+the same sentence and is why a silent clamp here is honest rather than
+mysterious.
+
+Floored at [`MIN_ZOOM`], so a learned ceiling can never make a document
+unzoomable. `max_zoom_with_regions` already makes that guarantee for the
+operator's setting and the same guarantee is owed here, for the stronger
+reason that this value was not chosen by anyone.
+
+### `fn deep_position_needed`
+
+True exactly where an `f32` scroll offset stops placing the view to within a
+screen pixel, which is [`SUB_PIXEL_CONTENT_EXTENT`]. Below it the scroll
+area is authoritative and nothing about the canvas changes; above it
+[`super::deep::DeepAnchor`] is.

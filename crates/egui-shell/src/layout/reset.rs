@@ -68,10 +68,6 @@ pub enum ResetScope {
 
 impl ResetScope {
     /// Every scope, in the order a menu should offer them.
-    ///
-    /// Narrowest first. A destructive command's least destructive form
-    /// should be the one nearest the pointer, and the one an operator
-    /// reaches by accident.
     pub const ALL: [ResetScope; 3] = [ResetScope::Left, ResetScope::Right, ResetScope::All];
 
     /// A stable key, for a command id or a diagnostic.
@@ -103,14 +99,6 @@ impl std::fmt::Display for ResetScope {
 }
 
 /// Restore `scope` of `layout` from `default`.
-///
-/// The sides outside the scope are **not read, not written, and not
-/// normalized** — untouched is stronger than unchanged, and it is what
-/// makes the guarantee in this module's header checkable by inspection.
-///
-/// Returns whether anything actually changed, so an application can skip
-/// a redundant save and can tell the operator *"that was already the
-/// default arrangement"* rather than silently doing nothing.
 pub fn reset(layout: &mut DockLayout, scope: ResetScope, default: &DockLayout) -> bool {
     let before = layout.clone();
     for side in DockSide::ALL {

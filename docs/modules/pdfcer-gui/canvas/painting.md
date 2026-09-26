@@ -82,3 +82,16 @@ It draws nothing at the Object rung. An object's anchors are not the
 operator's subject there — the object is — and painting thousands of hollow
 squares over a selection they are about to *move as a whole* would be noise
 with a rendering cost.
+
+### `struct Frame`
+
+A struct rather than sixteen parameters, and the grouping is a statement:
+**every member is a product of the decision half.** It also removes the
+failure a long parameter list invites — five of them are `Option`s and
+several are adjacent, so a swap would compile.
+
+### `fn draw`
+
+Takes `ui` and `doc` alongside [`Frame`] because both are borrows the caller
+still owns and neither is a *product* of the decision half — putting them in
+the struct would make it a bag rather than a grouping.

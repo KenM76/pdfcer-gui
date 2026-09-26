@@ -120,10 +120,6 @@ impl Check for DraggingAChunkShowsWhereItIsGoing {
 }
 
 /// What a step measured, or the sentence a FAIL should carry.
-///
-/// The outer `Result` is this harness's: its `Err` is a SKIP, *the check could
-/// not run*. The inner one separates *the assertion did not hold* from *here is
-/// the number it read*.
 pub(crate) type Step<T> = Result<std::result::Result<T, String>>;
 
 /// Drag from `from` by [`DRAG_PX`] on both axes, resting halfway, and read the

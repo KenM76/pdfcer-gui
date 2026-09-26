@@ -6,12 +6,6 @@ use super::{PdfcerApp, Status};
 use crate::app::actions::Action;
 
 /// Whether `id` belongs to this module.
-///
-/// Spelled as a `matches!` over the literals rather than a
-/// `starts_with("file.export")` prefix test, which would be shorter and wrong
-/// twice over: it would swallow a future `file.export_settings` that has
-/// nothing to do with page content, and it would miss the imports, which do
-/// not start with `export` and are the reason this module is not called that.
 pub(crate) fn claims(id: &str) -> bool {
     matches!(
         id,
@@ -27,14 +21,6 @@ pub(crate) fn claims(id: &str) -> bool {
 
 impl PdfcerApp {
     /// Route one Export-band command.
-    ///
-    /// Every arm here is either *open a window* or *pick a file, then open a
-    /// window* — never *do the thing*. That is the band's shape and it is worth
-    /// stating once: each of these verbs has at least one decision that cannot
-    /// be recovered from a picker, so none of them can be a bare command, and
-    /// the two that look like exceptions (`export_form_data`,
-    /// `import_form_data`) carry their own note about why the file's
-    /// **extension** is the decision.
     pub(in crate::app) fn dispatch_exchange(&mut self, id: &str, actions: &mut Vec<Action>) {
         match id {
             "file.export_dxf" => self

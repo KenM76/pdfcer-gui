@@ -170,3 +170,54 @@ that makes an operator fight their tool.
 Different from off-the-page because the instruction is different — *give
 it a size* rather than *move it back* — and one message covering both
 would tell half the operators the wrong thing to do.
+
+### `const REGION_PLACE`
+
+Published on every frame the dialog draws, which is every frame it is NOT
+hiding for a placement — so its absence from a trace means the window has
+stepped aside, which is exactly the state a driven check needs to observe.
+
+### `fn open`
+
+# The box is seeded at the picture's NATURAL size, centred
+
+Natural size is what the file asks for — its pixels at the resolution it
+declares, or one pixel per point when it declares none — so an operator
+who presses Insert immediately gets the placement the picture was made
+for. Seeding at some fraction of the page would be pdfcer choosing a
+scale nobody asked for, and the operator would have no way to tell that
+from the picture's own size.
+
+It is **clamped to the sheet** on both axes, because a 300-pixel-wide
+logo at 72 dpi is bigger than an A4 page and a window that opened
+refusing its own default would be a window that looks broken. The clamp
+preserves the aspect ratio, so a clamped default is still the picture's
+shape.
+
+### `fn take_place_request`
+
+One function, read by the validity check, the landing preview and the
+action. Three separate conversions is how a window comes to promise one
+rectangle and produce another — the same argument
+`dialogs::new_document::sheet_pt` makes for its own single derivation.
+Drain the operator's request to point at the page — O66.
+
+### `fn place`
+
+Through the INVERSE of [`rect_pt`], not through a second conversion.
+That function's own doc comment exists to keep one arithmetic for
+millimetres and points; a placement that converted separately would be
+the second, and the two would drift by a rounding rule nobody chose.
+
+A **degenerate** rect — what a click produces — writes the corner and
+leaves the size alone. The dialog already has a width and a height, typed
+or defaulted from the picture's own aspect, and a click is a statement
+about *where*, not about *how big*. Overwriting the size with zero would
+throw away the one thing the operator did not ask to change.
+
+### `fn open_for`
+
+Applies the two guards every dialog in [`super`] applies at the one place it
+is built. The no-document guard is real here rather than ceremonial: the
+window's box is seeded from a page's extent, and a window over an empty
+canvas would open on a zero-sized sheet and refuse its own default.

@@ -15,44 +15,9 @@ use crate::render::worker::RenderKey;
 /// The most texels this cache will hold when the operator has expressed no
 /// preference — the value `crate::app::prefs::PageCache::default()` resolves
 /// to, kept here beside the code that spends it.
-///
-/// **It was 48 million and a backstop; it is now 256 million and the actual
-/// limit**, and the change of role matters more than the change of number.
-///
-/// The old doc comment said, correctly for the code as it then stood: *"a
-/// backstop rather than a working limit: the wanted set is already bounded by
-/// what fits in the viewport."* [`StripRasters::retain`] pruned to the visible
-/// set on every frame, so the budget could not bite: two or three fit-width
-/// pages are ~8 M texels against a 48 M ceiling, and the eviction loop had
-/// never run on any document this operator had opened. **Raising the number
-/// alone would have changed nothing.**
-///
-/// With `retain` no longer discarding what scrolled off screen, this is what
-/// bounds the cache — so it is now sized to *hold a working set* rather than to
-/// catch a runaway.
-///
-/// 256 million texels is about **1 GB** of RGBA: roughly 25 fit-width A1 sheets
-/// on a 4K display, or well over a hundred pages of a report. Counted in texels
-/// rather than pages because a page is not a unit of memory — a thumbnail and
-/// an Annex C sheet differ by four orders of magnitude, and a page count that
-/// admitted six of the latter would admit 1.5 GB without saying so.
-///
-/// It is a **default**, not a constant, as of 2026-08-19: the operator asked
-/// for the maximum and the honest answer to *"how much of this machine's memory
-/// may pdfcer spend on page pictures"* is that only they know. See
-/// `crate::app::prefs::PageCache`, whose four steps each state their cost in
-/// megabytes, because "Large" is not a number anybody can budget against.
 pub const MAX_CACHED_TEXELS: u64 = 256_000_000;
 
 /// Either a page's raster, or the reason there will not be one.
-///
-/// A failure is cached alongside a success **on purpose**: a page whose
-/// content streams will not decode fails deterministically — same bytes, same
-/// code — so retrying it on every frame would peg a core producing the same
-/// error while the operator sits still. This is the same posture
-/// `crate::app::state::PdfcerApp::settle_and_rasterize` takes towards the
-/// current page's `render_error`, and holding the reason is what lets the page
-/// say *why* rather than sitting undrawn forever with no explanation.
 #[derive(Debug)]
 pub enum PageRaster {
     /// The page drew, and here are its pixels.
@@ -79,14 +44,6 @@ struct Entry {
 
 /// **The rasters for the pages a continuous strip is showing, other than the
 /// current one.**
-///
-/// Bounded by the operator's texel budget, whose default is
-/// [`MAX_CACHED_TEXELS`], and ordered by distance from the page being read:
-/// what leaves is always the furthest entry, never simply the invisible one.
-/// Empty, and therefore free, under [`crate::viewer::PageDisplay::Single`] —
-/// which is the mechanical form of "continuous is an option, not a
-/// replacement": a single-page session allocates nothing here and runs the
-/// same code path it ran before Phase 4.
 #[derive(Debug, Default)]
 pub struct StripRasters {
     /// Newest first. A `Vec` rather than a map because it holds a handful of
@@ -98,15 +55,6 @@ pub struct StripRasters {
 
 impl StripRasters {
     /// The raster for `page`, if there is a current one.
-    ///
-    /// **Contract: `page` is never the current page.** The current page's
-    /// raster lives in `OpenDoc::page_texture` — see the module header for
-    /// why — and asking here for it would always miss, which would be a
-    /// silent second render of the one page that is definitely already
-    /// rendered.
-    ///
-    /// A miss on any of page, key or epoch is a miss, and the caller's answer
-    /// to a miss is to draw the page's state rather than to draw nothing.
     #[must_use]
     pub fn get(&self, page: usize, key: RenderKey, epoch: u64) -> Option<&PageRaster> {
         self.entries
@@ -117,26 +65,12 @@ impl StripRasters {
 
     /// Whether a *current* entry exists for `page` — a texture or a recorded
     /// refusal.
-    ///
-    /// The predicate the render scheduler asks, and it is deliberately true
-    /// for a **failure** as well as a success: a page that will not draw must
-    /// not be requested again on the next frame, or the strip spends every
-    /// frame re-failing it. See [`PageRaster`].
     #[must_use]
     pub fn has(&self, page: usize, key: RenderKey, epoch: u64) -> bool {
         self.get(page, key, epoch).is_some()
     }
 
     /// Record a finished render.
-    ///
-    /// Replaces any previous entry for the same page, whatever key it carried:
-    /// a page has one raster, and keeping the old one at a stale zoom would be
-    /// memory held for a picture nothing will ever ask for.
-    ///
-    /// `texels` is the raster's pixel count, supplied by the caller because it
-    /// is knowable for a *failure* too (zero) and because deriving it from the
-    /// texture handle would tie this type to egui's texture metadata for a
-    /// number the caller already has.
     pub fn insert(&mut self, page: usize, key: RenderKey, epoch: u64, raster: PageRaster) {
         let texels = match &raster {
             PageRaster::Ready(texture) => {
@@ -158,46 +92,6 @@ impl StripRasters {
     }
 
     /// **Drop the current page's entry, then prune to the budget.**
-    ///
-    /// Called once per frame with the current page and the budget the operator
-    /// chose. Two passes, and the order matters:
-    ///
-    /// 1. **drop the current page**, whose raster belongs in
-    ///    `OpenDoc::page_texture` and must not be duplicated here;
-    /// 2. **while over `budget`, drop the entry furthest from the current
-    ///    page** — furthest in page-index terms, which on a vertical strip is
-    ///    furthest in scroll terms.
-    ///
-    ///
-    /// The first pass read
-    /// `self.entries.retain(|e| e.page != current && visible.contains(&e.page))`,
-    /// so **the cache held exactly what was on screen and nothing else.**
-    ///
-    /// That makes the name a misnomer and the budget decorative. A cache whose
-    /// contents are the visible set is not a cache — it is a frame buffer with
-    /// extra steps. Scroll a page off the top and it is gone; scroll back and it
-    /// is rendered again from the content stream, which on a dense A1 sheet is
-    /// `BENCHMARK.md`'s 691 ms. Do that in a 36-sheet set and every sheet is
-    /// re-rendered every time it comes back into view, for ever.
-    ///
-    /// The operator's words, 2026-08-19: *"increase cache to maximum for page
-    /// view so they don't constantly redraw with larger files."* He had
-    /// diagnosed it exactly. **The budget was never the limit** — 48 M texels is
-    /// ~18 fit-width pages and the visible set is two or three, so the eviction
-    /// loop below had never run on any document he had ever opened. Raising the
-    /// number without this change would have done nothing at all.
-    ///
-    /// # What bounds it now
-    ///
-    /// The budget, which is now the operator's (`crate::app::prefs`), and the
-    /// distance rule below. Together they mean *"keep what you have rendered,
-    /// nearest to where I am, until the memory runs out"* — which is what a
-    /// page cache is for and what every other viewer does.
-    ///
-    /// `visible` is no longer a parameter. It had one other job — proving a
-    /// page had been *wanted* — and nothing needed that: an entry only exists
-    /// because something rendered it, and something only renders a page the
-    /// strip asked for.
     pub fn retain(&mut self, current: usize, budget: u64) {
         self.entries.retain(|e| e.page != current);
 
@@ -228,17 +122,6 @@ impl StripRasters {
     }
 
     /// **Remove and return** the raster for `page`, if it is current.
-    ///
-    /// The other half of the rehoming `crate::render::settle` performs when a
-    /// scroll makes a different page current: the incoming page's texture
-    /// leaves this cache and takes up the current page's dedicated slot, so
-    /// scrolling never re-renders a page whose picture is already in memory.
-    ///
-    /// A stale key or epoch is left in place rather than removed. It costs
-    /// nothing to keep — the next [`Self::retain`] drops it if it is not
-    /// wanted, and [`Self::insert`] replaces it if it is — and removing it
-    /// here would silently discard a raster that is still a perfectly good
-    /// answer for the zoom the operator is about to return to.
     #[must_use]
     pub fn take(&mut self, page: usize, key: RenderKey, epoch: u64) -> Option<PageRaster> {
         let index = self
@@ -249,11 +132,6 @@ impl StripRasters {
     }
 
     /// Forget everything.
-    ///
-    /// For a mode change back to a single-page arrangement, where the strip's
-    /// extra pages are not merely unwanted but cannot be reached at all — so
-    /// holding their textures would be memory kept for a picture nothing can
-    /// draw.
     pub fn clear(&mut self) {
         self.entries.clear();
     }
@@ -279,12 +157,6 @@ impl StripRasters {
 }
 
 /// Why a page has no picture on it.
-///
-/// Four states rather than a boolean, because the operator's response to each
-/// differs: *wait*, *wait*, **zoom out**, and *there is something wrong with
-/// this page*. Collapsing the first two would be tolerable; collapsing any of
-/// them with the last would tell somebody to wait for a picture that is never
-/// coming, or to look for damage that is not there.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PageState {
     /// A render for this page is running now.
@@ -310,26 +182,6 @@ pub enum PageState {
 }
 
 /// **Draw a page that has no raster — honestly.**
-///
-/// See the module header for the argument. In one sentence: a white rectangle
-/// would be a claim that the sheet is blank, so this draws the page's real
-/// boundary, a fill that is visibly not paper, and a sentence naming the page
-/// and its state.
-///
-/// `rect` is the page's rect **on screen**. `page_number` is 1-based, because
-/// this string is read by an operator and the UI is 1-based everywhere — the
-/// conversion happens at the call site's edge, exactly as the status bar's
-/// page box does it.
-///
-/// # Why the sentence can be omitted and the frame cannot
-///
-/// At a zoom that fits twenty pages in the viewport, a page rect is a
-/// thumbnail and a sentence would not fit in it. A *truncated* sentence is
-/// worse than none — "Page 1…" reads as a label, not as a state — so the text
-/// is drawn only when the laid-out galley fits inside the rect with room to
-/// breathe. The fill and the boundary are always drawn, and between them they
-/// already say "there is a page here and it has no picture yet", which is the
-/// load-bearing half.
 pub fn draw_page_state(
     painter: &Painter,
     visuals: &Visuals,
@@ -417,18 +269,6 @@ const TEXT_MARGIN: f32 = 8.0;
 
 /// **The fill an undrawn page is painted with, and why it is not
 /// `faint_bg_color`.**
-///
-/// It was, and a screenshot of a driven scroll is what corrected it: in the
-/// light theme `faint_bg_color` is a hair off white, so an undrawn page read as
-/// **a blank sheet of paper** — which is precisely the claim about the
-/// operator's document this function exists not to make. Every gate was green
-/// and every test passed; the failure was only visible in a picture.
-///
-/// `widgets.inactive.bg_fill` is the theme's *button face*: a surface the
-/// operator already reads as chrome rather than as content, distinct from paper
-/// in the light theme and from the canvas surround in the dark one. Taken from
-/// the visuals rather than written as a literal —
-/// `tools/gates/check-theme-colors.sh` — so a restyle carries it.
 #[must_use]
 pub fn undrawn_fill(visuals: &Visuals) -> Color32 {
     visuals.widgets.inactive.bg_fill

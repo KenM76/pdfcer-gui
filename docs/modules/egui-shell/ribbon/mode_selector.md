@@ -51,3 +51,80 @@ With no font data every label measures zero, the track is always
 3 × `MIN_ITEM_WIDTH + SEGMENT_PADDING`, and no realistic row is
 ever narrower than that — which is why this needed a *pure* test
 rather than only a rendered one.
+
+### `struct SegmentCues`
+
+The same shape as [`super::tabs::TabCues`] and for the same reason:
+R84 is a property of the *set* of cues, and a property of a set cannot
+be asserted about expressions scattered through drawing code.
+
+### `fn move_index`
+
+See the module header on why this clamps rather than wraps. `len == 0`
+is answered with `0` rather than a panic: an empty selector is not
+drawn at all, so the value is never used, and a `panic!` in the paint
+loop for an empty manifest would be a poor trade.
+
+### `fn selected_index`
+
+An unknown id resolves to the first position rather than to "nothing
+selected", because a segmented control with no segment selected shows
+the operator a state that is not one of the states the control offers.
+
+### `fn segment_widths`
+
+Every segment is the width of the widest label, so the control reads
+as evenly divided track rather than as a row of differently sized
+buttons — which is what makes it look like one control with positions
+rather than like three buttons that happen to be adjacent.
+
+### `fn measure_track`
+
+Returns `(segment_width, natural_total_width)` — the *uncompressed*
+numbers. [`fit_track`] applies the compression, and it does so inside
+[`render`] against the room the row actually granted.
+
+This exists because the reservation and the rendering must agree.
+[`super::plan::plan_strip_row`] subtracts this figure from the row
+before the tabs are planned; if the selector then measured itself
+differently it would either overhang the tabs or leave a gap, and the
+tab plan would be wrong by the difference.
+
+### `fn fit_track`
+
+# Why this exists — the same failure mode as the overflow affordance
+
+Two things on this ribbon must never be squeezed out by content: the
+mode selector and the overflow affordance ([`super`]'s module header
+owns that rule). Laying the selector out first, from the right edge,
+achieves it against **content**. It does nothing about the case where
+the selector alone is wider than the row.
+
+`egui` answers `allocate_exact_size` on a right-to-left layout by
+extending **leftwards past the edge of the container**. So a track that
+does not fit is not clipped, not shrunk and not warned about: it is
+placed with its left portion off screen. At a 180 pt viewport with real
+font metrics, a three-position *Read · Review · Edit* selector measures
+189 pt and the first position lands at x = −9 — present in the layout,
+unreachable with a mouse, and invisible in every test that measured
+text as zero-width.
+
+So the shortfall is spent on the **segments' width** instead of on
+their position: every position stays on screen and stays clickable,
+and the labels crowd. That is the same trade the overflow affordance
+makes (see [`super::band`]) and it is made for the same reason — a
+control the operator cannot reach has failed completely, whereas a
+control whose label is tight has failed cosmetically.
+
+`room` that is not finite or not positive means "no constraint known";
+the natural size is returned unchanged, because clamping to a bogus
+number would shrink a control that had plenty of space.
+
+Returns `(segment_width, total_width)`, and the caller discloses a
+shrink through the verification channel — see [`render`].
+
+### `fn render`
+
+Returns `None` when nothing changed, or when there are no modes at all
+— an application with no modes gets no selector, rather than a control
+with one position that does nothing.

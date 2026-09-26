@@ -107,3 +107,13 @@ The second half of the same argument: a hand-written label would drift
 from the ribbon's the day one of them was reworded, and an operator
 reading two different names for one command has to work out that they
 are one command.
+
+### `struct ShortcutsDialog`
+
+**It holds nothing.** Every row is derived from the keymap and the
+registry on each frame, which is the whole point — see the module header.
+A cached list would be a second copy, and a second copy is D5.
+
+The unit struct exists because [`super::DialogsState`]'s idiom is one
+`Option<T>` per dialog, whose `Some` *is* the open state. A `bool` would
+work and would be the one dialog here shaped differently.

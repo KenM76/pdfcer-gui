@@ -31,16 +31,6 @@ pub const fn window_title() -> &'static str {
 }
 
 /// The paragraph under the title.
-///
-/// **The most important sentence in this window**, and it is a disclosure
-/// rather than an instruction: it says what the numbers mean *right now*.
-///
-/// A fresh group's scale is the tri-state's *never-set* value, so every label
-/// a dimension tool has placed reads in PDF points — a measurement of the
-/// **paper**, not of the thing drawn on it. An operator who has placed
-/// dimensions and read numbers has been given plausible answers to a question
-/// they did not ask, which is worse than no answer, and this is where they find
-/// that out.
 #[must_use]
 pub const fn intro() -> &'static str {
     "Until a scale is set, the dimensions you draw are measured in the page's \
@@ -50,18 +40,6 @@ pub const fn intro() -> &'static str {
 }
 
 /// Why the ratio path is what a cold-opened dialog offers.
-///
-/// **This string used to say the other path could not be armed at all**, and
-/// it was accurate until 2026-08-17: *"needs a reference line drawn on the
-/// page, which this build cannot arm yet."* That was exactly the gap the
-/// operator reported — *"still missing the feature where we set the scale by
-/// selecting two lines or points and defining what that distance
-/// represents"* — and the gesture exists now.
-///
-/// Kept as a sentence rather than deleted, because a cold dialog really does
-/// have only one path that can produce a scale: no line is drawn yet. What
-/// changed is that it points at the button instead of apologising for an
-/// absence.
 #[must_use]
 pub const fn ratio_only_note() -> &'static str {
     "With no line drawn yet, the scale is given as a ratio. To set it by pointing at a dimension the drawing already states, measure it first."
@@ -74,11 +52,6 @@ pub const fn ratio_label() -> &'static str {
 }
 
 /// What sits between the two ratio numbers.
-///
-/// A catalog entry rather than a literal for the reason the settings window's
-/// degree sign is one: the ui-strings gate looks for exactly this, and a
-/// translator must be able to see that a separator exists — several languages
-/// write a scale with something other than a colon.
 #[must_use]
 pub const fn ratio_separator() -> &'static str {
     " : "
@@ -92,49 +65,12 @@ pub const fn ratio_hint() -> &'static str {
 }
 
 /// **The group picker's label** -- `OPERATOR_REQUESTS.md` O193.
-///
-/// # Why the window needs one at all
-///
-/// The operator's report was *"there is no group dropdown"*, and the reason it
-/// is a defect rather than a missing convenience is that this window changes
-/// **one** group's scale and never said which. It was opened either from the
-/// ribbon (the group being drawn into) or from the Manage-groups panel's *Set
-/// scale...* button (the row that was selected), and those are frequently
-/// different groups -- inspecting a detail group's settings while still
-/// drawing into the plan group is an ordinary thing to want, and the panel
-/// keeps the two deliberately separate for that reason. So a window with no
-/// name on it could be, and sometimes was, aimed somewhere the operator was
-/// not looking.
-///
-/// "Set the scale of" rather than "Group", because the row then reads as a
-/// sentence with the picker as its object, and the one thing the operator must
-/// not have to infer is which drawing this number lands on.
 #[must_use]
 pub const fn group_label() -> &'static str {
     "Set the scale of"
 }
 
 /// **The current-scale line** -- `OPERATOR_REQUESTS.md` O192.
-///
-/// The operator's report was that the window *"does not show me the scale that
-/// is already set"*. This is the half of the answer he can read; the other
-/// half is that the entry controls are now seeded from it, so the live preview
-/// under them reads the same number back (see
-/// `crate::canvas::measure::scale::ScaleEntryFields::for_group`).
-///
-/// Deliberately phrased as a statement of fact about the document and not as
-/// a warning. The scale that is set is not a problem, it is the context; a
-/// window that greeted an operator with a caution every time they opened it
-/// would be the nagging the ribbon spec forbids, and he has said as much about
-/// the old GUI by name.
-///
-/// The `phrase` argument comes from
-/// [`crate::text::dimension_groups::scale_phrase`] rather than being formatted
-/// here, so this window and the Manage-groups panel cannot come to describe
-/// the same group's scale in two different ways -- including the `NeverSet`
-/// arm, which that function renders as the engine's own
-/// `NO_SCALE_DISCLOSURE` verbatim because a shell is not permitted to
-/// paraphrase it.
 #[must_use]
 pub fn current_scale(phrase: &str) -> String {
     format!("Currently: {phrase}")
@@ -159,25 +95,6 @@ pub const fn fraction_label() -> &'static str {
 }
 
 /// A unit's name, spelled out.
-///
-/// Full names rather than `Unit::abbrev`'s two letters. The abbreviation is
-/// right on a *dimension label*, where space is scarce and the reader already
-/// knows what they are looking at; it is wrong in a picker, where the reader is
-/// choosing and `in` versus `ft` is two characters apart in a list they are
-/// scanning once.
-///
-/// # Exhaustive, deliberately — and this is the one place that is safe
-///
-/// `pdfcer_core::dimension::Unit` is **not** `#[non_exhaustive]`, unlike most
-/// of the engine's public enums, so a variant added there is a compile error
-/// here rather than a silently unnamed row in a picker.
-///
-///
-/// Contrast `crate::text::settings::theme_preset_label`, which *does* carry a
-/// catch-all, because `egui_shell::theme::Preset` IS `#[non_exhaustive]` — the
-/// whole point of the shell crate is that another application may ship presets
-/// pdfcer has never heard of. The two are opposite situations and get opposite
-/// treatment; neither is a style preference.
 #[must_use]
 pub fn unit_name(unit: Unit) -> &'static str {
     match unit {
@@ -194,20 +111,6 @@ pub fn unit_name(unit: Unit) -> &'static str {
 }
 
 /// A number style's name, including the *"use the unit's own default"* state.
-///
-/// The `None` entry is a **real choice**, not an absence, and its wording
-/// says so. It is what an operator who never opens this control gets, and the
-/// field stores `Option<FractionMode>` rather than re-deriving from the unit
-/// precisely so that an explicit choice survives a unit change — somebody who
-/// asked for eighths does not want them silently reverted by switching from
-/// inches to feet.
-///
-/// The fraction entries say `1/8` rather than "eighths" because that is how a
-/// drawing writes it, and matching the drawing's own notation is the whole
-/// reason this control exists — the operator's ask was *"also want to be able
-/// to choose the units and display type - rounding, fraction, etc."*, made
-/// after a drawing dimensioned in inches always read `55.63"` and could never
-/// read `55 5/8"`.
 #[must_use]
 pub fn fraction_name(fraction: Option<FractionMode>) -> &'static str {
     match fraction {
@@ -234,13 +137,6 @@ pub fn fraction_name(fraction: Option<FractionMode>) -> &'static str {
 }
 
 /// The live preview of what the entry back-calculates to.
-///
-/// Takes the engine's own `ratio_label` rather than formatting the scale
-/// here. `ScalePreview::ratio_label` is documented as the `/R`-style label —
-/// `1:100`, or `25 ft = 42.3 pt` — and it is DISPLAY-ONLY, which is exactly
-/// what this line is. Formatting a scale in the GUI would be a second
-/// implementation of a string the engine already produces, and the two would
-/// eventually disagree about rounding on a number the operator is checking.
 #[must_use]
 pub fn preview(ratio_label: &str, unit: Unit) -> String {
     format!(
@@ -250,10 +146,6 @@ pub fn preview(ratio_label: &str, unit: Unit) -> String {
 }
 
 /// The entry does not describe a scale.
-///
-/// Reachable by typing a zero into either side of the ratio. Worded as what is
-/// wrong rather than as "invalid", because the operator can see the fields and
-/// the useful half is which one pdfcer could not use.
 #[must_use]
 pub const fn degenerate() -> &'static str {
     "Both sides of the scale have to be more than zero."
@@ -266,11 +158,6 @@ pub fn parse_failed(detail: &str) -> String {
 }
 
 /// The commit control.
-///
-/// **"Set scale", not "OK".** The button says what it does, because what it
-/// does is larger than it looks: it re-propagates every member's appearance,
-/// so dimensions already on the page change. An "OK" would be a button whose
-/// blast radius the operator has to have read the intro to know.
 #[must_use]
 pub const fn accept() -> &'static str {
     "Set scale"
@@ -301,11 +188,6 @@ pub const fn cancel_tooltip() -> &'static str {
 //
 
 /// The button that starts the two-point pick.
-///
-/// Not "Calibrate". That is a word from our side of the fence — it names
-/// the operation rather than the action — and an operator scanning this
-/// window is looking for a way to avoid computing a ratio. This says what the
-/// click does.
 #[must_use]
 pub const fn calibrate_button() -> &'static str {
     "Measure it on the drawing..."
@@ -318,26 +200,12 @@ pub const fn calibrate_tooltip() -> &'static str {
 }
 
 /// Why the button is worth pressing, under it.
-///
-/// Names the case it saves the operator from — working the ratio out by hand —
-/// because a button whose advantage is unstated reads as a longer route to the
-/// same place.
 #[must_use]
 pub const fn calibrate_note() -> &'static str {
     "Easier than a ratio if the drawing already states a dimension: point at it, type what it says, and pdfcer works the scale out."
 }
 
 /// What pdfcer measured, once the two points are picked.
-///
-/// The number is shown, and that is a disclosure rather than decoration.
-/// It is the half of the equation pdfcer contributed, and an operator checking
-/// their work needs to see that pdfcer measured the line they meant to pick —
-/// a snap that landed on the wrong endpoint is visible here and nowhere else
-/// once the dialog is up.
-///
-/// Points, because that is the unit the measurement is in and inventing a
-/// friendlier one would mean picking a scale, which is the thing not yet
-/// known.
 #[must_use]
 pub fn calibrated_note(measured_pt: f64) -> String {
     format!(
@@ -361,11 +229,6 @@ pub const fn real_length_hint() -> &'static str {
 }
 
 /// What the field accepts, under it.
-///
-/// The grammar lives in `pdfcer_core::dimension::parse_length` and is shared
-/// with the CLI, so this describes it rather than defining it — two
-/// descriptions of one grammar is how the GUI and the CLI come to disagree
-/// about what `55 5/8"` means.
 #[must_use]
 pub const fn real_length_hint_long() -> &'static str {
     "Feet and inches, fractions, or a plain number with a unit. Leave the unit off and pdfcer uses the one selected below."

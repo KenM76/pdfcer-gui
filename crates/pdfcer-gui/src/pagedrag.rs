@@ -4,15 +4,6 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/pagedrag.md`.
 
 /// **A page drag in flight.**
-///
-/// Cheap to clone — a slot number, a short vector of page indices and a label
-/// — because every reader clones it out of memory rather than holding a
-/// borrow across a closure that draws.
-/// `Default` is derived for one reason: `egui::IdTypeMap::remove_temp` demands
-/// it of anything it can take back out. A defaulted `PageDrag` — slot 0,
-/// carrying nothing — is never constructed here and is not a state the
-/// application can reach; [`current`] answers `Option`, so "no drag" is
-/// `None` and never an empty drag.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct PageDrag {
     /// **Which document the pages came from**, as a tab position.
@@ -43,13 +34,6 @@ pub struct PageDrag {
 
 /// **Where the drag would land**, as resolved by whichever surface the pointer
 /// is over this frame.
-///
-/// Written every frame by exactly one surface — the pages panel or the canvas,
-/// whichever the pointer is inside — and cleared by both when the pointer is
-/// over neither. Read one frame later by the caption, for
-/// `PagesUi::drag_landing`'s reason: *a gap has no position until the rows have
-/// been placed, and the rows are placed below the header*.
-/// `Default` is derived for [`PageDrag`]'s reason and means as little.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct DropLanding {
     /// The document the drop would land in, as a tab position.
@@ -70,22 +54,6 @@ pub struct DropLanding {
 
 /// **Which document every surface is drawing this frame**, published once by
 /// the application.
-///
-/// ## Why this is in memory rather than a parameter
-///
-/// Because three surfaces need it and none of them is given it: the Pages
-/// panel is handed a `&OpenDoc` and no idea which tab it belongs to, the
-/// canvas the same, and the status bar reads a `&Status`. Threading a slot
-/// number and a label through `panels::Panel::show`, `canvas::show` and
-/// `status::show` would put a document-tab concept into three signatures that
-/// have nothing else to do with tabs, and every panel that does not care would
-/// carry it anyway.
-///
-/// The precedent is `egui_shell::theme::Theme::of`, which does exactly this
-/// for exactly this reason — a fact the whole application needs, published
-/// once per frame into the context, read wherever it is wanted. The property
-/// that makes it safe in both cases is that there is **one writer**, at a
-/// known point in the frame, before anything reads.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ActiveDocument {
     /// Its tab position.
@@ -117,17 +85,6 @@ pub fn active(ctx: &egui::Context) -> Option<ActiveDocument> {
 }
 
 /// **Turn a gap between pages into the engine's own insertion vocabulary.**
-///
-/// `gap` counts boundaries: `0` is before the first sheet, `page_count` is
-/// after the last. `pdfcer_core::pageops::InsertPosition` counts pages, so the
-/// two ends have their own names.
-///
-/// `Start` and `End` rather than `Before(0)` and `Before(count)`, even
-/// though `InsertPosition::slot` clamps both to the same answer. The named
-/// variants say *"at the beginning"* and *"at the end"* — which is what the
-/// operator meant and what survives the document changing length between the
-/// gesture and the edit. `Before(12)` on an eleven-page document is a request
-/// that has to be repaired; `End` is one that cannot go wrong.
 #[must_use]
 pub fn insert_position(gap: usize, page_count: usize) -> pdfcer_core::pageops::InsertPosition {
     use pdfcer_core::pageops::InsertPosition;
@@ -189,11 +146,6 @@ pub fn in_flight(ctx: &egui::Context) -> bool {
 }
 
 /// **End the drag and take it**, leaving nothing behind.
-///
-/// Returns what was in flight so the caller can act on it. Also clears the
-/// landing, because a landing that outlived its drag would be a caret nobody
-/// can get rid of — the exact failure `panels::pages::settle_drag` documents
-/// for the same reason.
 pub fn end(ctx: &egui::Context) -> Option<PageDrag> {
     let taken = ctx.data_mut(|d| d.remove_temp::<PageDrag>(key()));
     ctx.data_mut(|d| {
@@ -233,28 +185,6 @@ pub fn landing(ctx: &egui::Context) -> Option<DropLanding> {
 }
 
 /// **Is the operator asking for a MOVE rather than a copy?**
-///
-/// Shift, read live — so the answer changes as the key goes down and up, the
-/// caption follows it, and the state **at the moment of release** is what the
-/// drop uses. That is what Windows does: the modifier is not latched at the
-/// press, it is sampled at the drop, which is why Explorer's cursor badge
-/// changes under your hand mid-drag.
-///
-/// ## Why Shift, and not Ctrl
-///
-/// Because on this desktop Ctrl means *copy* and Shift means *move*, and has
-/// since the mid-nineties. `crate::text::doctabs::drag_landing_move` carries
-/// the table. Copy is already the unmodified behaviour here — two documents
-/// are two files with two undo stacks, which is the "different volumes" case —
-/// so Ctrl is a no-op that asks for what it already gets, and Shift is the one
-/// that changes the verb.
-///
-/// ## It means nothing within one document
-///
-/// A drag that begins and ends in the same document is a reorder, which is
-/// already a move; there is nothing for a modifier to select between. Callers
-/// consult this only on the cross-document branch, and the caption only offers
-/// the hint there.
 #[must_use]
 pub fn wants_move(ctx: &egui::Context) -> bool {
     ctx.input(|i| i.modifiers.shift)
@@ -262,17 +192,6 @@ pub fn wants_move(ctx: &egui::Context) -> bool {
 
 /// **The sentence describing what this drag is about to do**, or `None` when
 /// no drag is in flight.
-///
-/// Here rather than in the status bar because it is the one place that has
-/// both halves — the drag and the landing — and because putting it in the
-/// caller would mean writing it twice, once for the Pages panel's header and
-/// once for the status row.
-///
-/// R8b rule 4: this is **off-canvas disclosure**. The caret drawn into the
-/// page list and the page view is a *pre-commit affordance* — a cursor — which
-/// that rule explicitly welcomes. What it forbids is styling content that has
-/// already been applied, and nothing here does that: the moment the drop is
-/// made, the arrived pages render exactly as pages that were always there.
 #[must_use]
 pub fn caption(ctx: &egui::Context) -> Option<String> {
     let drag = current(ctx)?;

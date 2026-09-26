@@ -202,3 +202,36 @@ which would make every new document carry bytes the operator did not
 ask for and would quietly move this directory out of the own-work
 provenance it is declared under. Two kilobytes is roughly four times
 the honest size and nowhere near a single embedded face.
+
+### `const TEMPLATE`
+
+443 bytes: one A4 page with an empty content stream, a classic
+cross-reference table, and nothing else. `assets/PROVENANCE.md` documents
+every object in it and why each is shaped the way it is.
+
+`include_bytes!` rather than a read at start-up, for two reasons that both
+bite in the field: a portable folder whose template file was deleted would
+produce a New that fails on a machine nobody can see, and a template that
+can be replaced on disk is a template whose bytes are not the bytes the
+tests pinned.
+
+### `const WIDTH_PT`
+
+Public so the test below can assert the *asset* matches the *decision*
+rather than merely matching itself. A constant compared against nothing is
+documentation; compared against the parsed `MediaBox` it is a check.
+
+### `fn document`
+
+The same two steps `PdfcerApp::open_path` performs on a file, in the same
+order, so a created document reaches `OpenDoc` through the identical
+pipeline an opened one does. Nothing here is a shortcut around the engine.
+
+# Errors
+
+The engine's own message, ready to be shown by
+`crate::text::open_failed`. **Unreachable in a correct build** — the bytes
+are compiled in and [`tests::the_template_parses_and_holds_exactly_one_page`]
+pins that they parse — but returned rather than unwrapped, because the
+state it would describe is "this binary was built with a corrupt asset",
+and an operator meeting that deserves a sentence rather than a stack trace.

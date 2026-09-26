@@ -243,3 +243,208 @@ the button and can drop the gesture by moving off, or by letting Ctrl go.
 What is an event is releasing on a refusal, and that is the one frame that
 writes a sentence. Recording per frame would rewrite the same slot sixty
 times a second and would fire on gestures the operator abandoned.
+
+### `const TRACE`
+
+An in-flight placement and a committed one are the same screenshot at the
+moment of release, which is defect 8's lesson: the harness needs a line that
+distinguishes *"the preview followed the pointer"* from *"the release
+reached the verb"*, and no pixel can carry that.
+
+### `fn selected`
+
+Returns the record's id together with its geometry, because every caller
+needs both and a second lookup could resolve differently after an edit.
+
+# Why the whole model is walked rather than indexed
+
+An annotation selection carries an *object* id — the annotation in the file
+— and a dimension record carries a [`DimensionId`]. The sidecar holds the
+mapping one way only (`record.annot`), so the reverse lookup is a scan. It
+is a scan over the dimensions on the document, which is a handful even on a
+heavily dimensioned sheet, and it runs once per press rather than per frame.
+
+### `fn grab_box`
+
+The annotation's `/Rect`, projected. That is the same rectangle
+`canvas::overlay::draw_selection` already strokes when a dimension is
+selected, which is the property that matters: **the drawn outline and the
+live target are the same shape.** An operator aims at what they can see.
+
+# Why this is not `overlay::grip_box`
+
+### `fn placed`
+
+Returns the placed geometry together with the two scalars `place_dimension`
+takes, so the preview and the commit are derived from one calculation rather
+than two that could disagree. That pairing is the point of the return type:
+a caller cannot draw one placement and commit another without going out of
+its way.
+
+`None` when the delta cannot be resolved — an **angular** dimension (see the
+module header: its placement is a radius and an angle, and this delta is in
+points), a **circular** one (which the engine refuses outright, having no
+axis to place along), or a degenerate `Aligned` linear one whose two picks
+coincide and which `axis_frame` refuses rather than fabricating.
+
+# TODO — angular placement
+
+`place_dimension` accepts an angular dimension, taking an arc radius and a
+position in degrees. Dragging one is a genuinely different calculation
+(radial distance from the apex; angle subtended) rather than this one with
+different names, and it needs its own preview and its own tests. Filed
+rather than approximated.
+
+### `fn drag`
+
+Returns the **page-space segments** the dimension would be drawn as, if the
+operator released now, or `None` when the drag reaches no verb.
+
+# The honesty contract, restated because it is the same one everywhere here
+
+The preview is `Some` if and only if a release would commit, and it is
+derived from the *same* [`placed`] result the commit uses. So the operator
+cannot be shown a dimension standing off by 40 points and then get one
+standing off by something else — the two numbers are literally the same
+`f64`.
+
+# Rule 4, and why this preview is allowed to exist at all
+
+Rule 4 forbids marking *applied* content as provisional. This draws
+something that has not been applied yet: it is the rubber-band of a drag in
+flight, which the rule names explicitly as a pre-commit affordance — *"a
+snap indicator, a hover highlight, a rubber-band … these are the cursor"*.
+It disappears on release, and what replaces it is the annotation itself,
+rendered by `pdfcer-render` with no marking of any kind.
+
+### `const VERTEX_HANDLE_PT`
+
+The same 7 pt the Bézier handles use (`canvas::handles::GRIP_SIZE_PX`'s
+neighbourhood), because they are the same affordance to a hand: a small
+square you grab. Zoom-invariant — it is a screen-space control, so it does
+not grow with magnification, and a corner on a plan at 20 % is as grabbable
+as one at 400 %.
+
+### `fn vertices`
+
+Empty for every other selection and for every other dimension kind, which is
+what makes both the painter and the hit test one call with no branch of
+their own.
+
+### `fn vertex_at`
+
+# The comparison is in SCREEN space, and that is the whole of why this
+function converts rather than the caller
+
+A handle is a screen-space affordance of a fixed size. Comparing in canvas
+or page space would make the target shrink as the operator zooms out —
+exactly when a plan's corners are closest together and precision matters
+most — and balloon as they zoom in, so that at 800 % a press anywhere near a
+corner would grab it. The conversion has to happen on the side of the
+boundary where the tolerance is meaningful, and that is here.
+
+# Ties go to the LAST vertex, deliberately
+
+Two coincident vertices are legal — [`super::measure::perimeter`] does not
+de-duplicate, on the argument that a repeated point is invisible rather than
+wrong. If the operator has made one and wants it gone, the one they can
+reach is the one they can drag away, and the later index is the one they
+just placed.
+
+### `fn drag_vertex`
+
+Returns the page-space segments the shape would be drawn as if the operator
+released now, or `None` when the drag reaches no verb.
+
+# This one RE-MEASURES, and that is the difference from every other
+gesture in this module
+
+[`drag`] writes `offset` and `text_along` — two fields the value function
+does not read — so no label drag can alter the printed number. This one
+moves a corner of the measured shape, so it changes the number **by
+design**. The engine says so plainly: `move_dimension_vertex` is *"the first
+ce-dimension verb that deliberately changes what a ce dimension measures"*.
+
+The consequence for this shell is a disclosure obligation the label drag does
+not have. `VertexOutcome` carries `previous_label` and `label` precisely
+because **the old value cannot be reconstructed afterwards** — the geometry
+it came from is gone — and a status line reading `12.40 m → 13.85 m` is a
+disclosure where one reading `13.85 m` is just the number the operator can
+already see on the page.
+
+# No guard, no probe, no first-move check — the engine ruled on it
+
+I asked whether the verb could refuse mid-drag, so that the preview could be
+withheld. The answer was that it cannot, and it was a ruling rather than an
+omission: a self-intersecting polyline has a perfectly well-defined total
+length (a figure-eight is a real fence run), and a zero-length segment
+contributes 0.0 and disappears the moment the vertex moves again. Every
+remaining refusal is structural and knowable before the drag begins.
+
+**⇒ Draw the preview. Always.**
+
+### `struct VertexFrame`
+
+A struct rather than eleven parameters — `canvas::resizing::Frame`'s own
+argument, and this one crossed clippy's arity limit the moment snapping
+arrived. Three of the members are `Option`s of borrowed things and two are
+`Pos2`s in the same space, both of which a positional list would let a
+caller swap silently.
+
+### `fn intent`
+
+# The Points tool is a gate and not a shortcut
+
+With any other tool armed this returns [`VertexIntent::Move`] whatever is
+held, so a Ctrl that the operator was using for something else — subtracting
+from a selection, say, which is what `canvas::marquee::Combine` spells it as
+everywhere else on this canvas — cannot destroy a corner of a shape they
+were merely nudging. Changing how many corners a measured shape has is a
+deliberate act and it costs one deliberate arming.
+
+It is also what gives the Points tool a subject in a mode that cannot edit
+page content. See [`crate::canvas::tool::retire_forbidden`]'s Node arm.
+
+# Why `command` and not `ctrl`
+
+On Windows they are the same key and on macOS `command` carries this
+meaning; `canvas::interact` reads the same field for the same reason and
+says so at its own call site.
+
+### `struct VertexDrag`
+
+Two fields rather than one, because the preview and the snap indicator are
+different pictures with different lifetimes: the polyline is drawn in page
+space through the dimension painter, and the marker is a screen-space glyph
+at the candidate. Folding them would make the caller unpack a tuple whose
+members it uses in two different places, forty lines apart.
+
+### `fn annot_shapes`
+
+# Why this exists: a bounding box is not a shape
+
+A click selects what is under the cursor, not what merely encompasses it.
+A ce dimension's `/Rect` is the box around two witness lines, a dimension
+line, two arrowheads and a label — mostly empty air for anything but a
+perfectly horizontal one, and for a perimeter traced round a building it is
+the entire footprint. Hit-testing that box meant the operator could not
+select the drawing underneath their own dimensions.
+
+The segments come from `measure::pick::dimension_preview_segments` — **the
+same function the dimension is previewed and drawn from**. That is this
+module's standing rule applied to hit testing: what is clickable and what is
+visible are one derivation, so they cannot drift apart. A second "where is
+the ink" calculation would be a second thing to keep right.
+
+# What it costs, and why it is per-click rather than cached
+
+One pass over the sidecar's dimension records, projecting each one's
+segments. A heavily dimensioned sheet carries tens of these, not thousands —
+the 129,758 objects on the benchmark drawing are page CONTENT, and none of
+them is here. It runs on a click, not on a frame.
+
+The label is deliberately NOT included. It is drawn by `pdfcer-render` from
+the appearance stream and this shell does not know its box; a dimension is
+selected by its lines, which is the part an operator points at. If that
+proves too strict in use, the fix is to ask the engine for the label's box
+rather than to guess one here.

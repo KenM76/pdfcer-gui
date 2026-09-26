@@ -50,11 +50,6 @@ pub fn form_noun_radio() -> String {
 }
 
 /// The noun for a drop-down or list box, in a sentence.
-///
-/// "Drop-down list" rather than "choice field", which is the PDF spec's word
-/// (`/Ch`) and means nothing to anyone who has not read it. The operator's
-/// standing tie-breaker — *make it work the way other programs do* — applies to
-/// vocabulary as much as to behaviour, and every program calls this a drop-down.
 #[must_use]
 pub fn form_noun_choice() -> String {
     "Drop-down list".to_owned()
@@ -67,25 +62,12 @@ pub fn form_noun_push_button() -> String {
 }
 
 /// **The field was authored.** The one line every placement produces.
-///
-/// It names the kind rather than saying "field added", because five commands
-/// place five different things and a generic confirmation cannot tell an
-/// operator that the button they pressed was not the one they meant.
 #[must_use]
 pub fn form_field_added(noun: &str) -> String {
     format!("{noun} added.")
 }
 
 /// **The name matched an existing field, so this widget joined it.**
-///
-/// The single most important sentence in this file, and the one with the least
-/// visible cause. In PDF a fully-qualified name *is* the field's identity: two
-/// widgets carrying the same one are one field with two appearances on the
-/// page, and typing into either changes both.
-///
-/// The page looks exactly as it would if they were independent. So this is
-/// stated plainly, with what it means rather than with the word "merged" —
-/// which is the engine's word and describes the mechanism, not the consequence.
 #[must_use]
 pub fn form_field_merged() -> String {
     "That name already existed, so this control shows the same value as the \
@@ -95,11 +77,6 @@ pub fn form_field_merged() -> String {
 }
 
 /// **No tooltip was given**, and what that costs.
-///
-/// Not a scolding and not a warning: leaving it blank is a legitimate decision
-/// and the engine accepts it as one. What the operator may not know is the
-/// consequence, which is entirely invisible on screen — a screen reader has
-/// nothing to announce for this control but its type.
 #[must_use]
 pub fn form_field_no_tooltip() -> String {
     "It has no tooltip, so a screen reader will announce only what kind of \
@@ -108,24 +85,12 @@ pub fn form_field_no_tooltip() -> String {
 }
 
 /// **A drop-down with no options in it.**
-///
-/// Authorable, and empty. Worth saying because an empty list renders as a
-/// control that opens and shows nothing, which reads as a broken field rather
-/// than an unfinished one.
 #[must_use]
 pub fn form_field_no_options() -> String {
     "It has no options yet, so it will open empty.".to_owned()
 }
 
 /// **The document is tagged, and this control is not in the tag tree.**
-///
-/// Covers both `tagged_document` and `structure_tab_order` in one sentence,
-/// deliberately: they are two symptoms of one situation, and an operator who
-/// gets two lines about the same thing reads the second as a separate problem.
-///
-/// It says what is true rather than what to do, because pdfcer cannot yet fix
-/// it and a line that recommended an action it does not offer would be worse
-/// than one that reports a fact.
 #[must_use]
 pub fn form_field_tagged_document() -> String {
     "This document is tagged for accessibility, and the new control is not in \
@@ -134,14 +99,6 @@ pub fn form_field_tagged_document() -> String {
 }
 
 /// **The field was renamed.**
-///
-/// It names `descendants_renamed` when there are any, and that is the whole
-/// reason this takes two arguments. Renaming a field that has children renames
-/// their fully-qualified names too — `Address` becoming `Postal` turns
-/// `Address.Line1` into `Postal.Line1` — because a qualified name is built from
-/// the parent chain. The operator renamed one thing and several changed, and
-/// every one of those is a name an FDF import or a filling script keys on.
-/// Nothing on the page says so.
 #[must_use]
 pub fn form_field_renamed(to: &str, descendants: usize) -> String {
     if descendants == 0 {
@@ -156,33 +113,6 @@ pub fn form_field_renamed(to: &str, descendants: usize) -> String {
 
 /// Rule-4 disclosure: **pdfcer rewrote other people's buttons** so they keep
 /// pointing at the field the operator just renamed.
-///
-/// # Why a rename owes a sentence at all
-///
-/// Renaming a field looks like a local act. It is not: `/ResetForm` and
-/// `/SubmitForm` name their targets in `/Fields`, and `/Hide` names its in
-/// `/T`, all as fully-qualified **name strings**. A rename that did nothing
-/// else would leave every button naming the old name pointing at nothing — so
-/// `rename_field` rewrites them.
-///
-/// **That repair is correct, invisible, and not what the operator pressed.**
-/// Buttons elsewhere in the document now hold different bytes because of a
-/// rename, and no view in this shell shows an action's target list. It is the
-/// canonical rule-4 case: an inference the operator cannot see.
-///
-/// ⚠ **The number is ACTIONS, not buttons, and the sentence must not imply
-/// otherwise.** The engine says so at the field: one button naming a field
-/// three times counts three, and one field named by three buttons also counts
-/// three — *"pdfcer does not distinguish them"*. So this says *"places"*,
-/// which is true under both readings, rather than *"buttons"*, which is true
-/// under only one.
-///
-/// **JavaScript is not repaired and is not counted.** `R55` requires every
-/// script carrier to round-trip byte-identical, so a form whose logic lives in
-/// a script is not fixed by this — and a sentence claiming the rename was
-/// handled everywhere would be false on exactly the documents most likely to
-/// carry scripts. The clause is one short sentence because the operator cannot
-/// act on the detail; what they can act on is knowing to check.
 #[must_use]
 pub fn form_field_actions_retargeted(count: usize) -> String {
     format!(
@@ -193,28 +123,6 @@ pub fn form_field_actions_retargeted(count: usize) -> String {
 
 /// Rule-4 disclosure: **buttons elsewhere now name a field that is gone**, and
 /// pdfcer did not repair them.
-///
-/// # The asymmetry with a rename is the whole point
-///
-/// A rename can repair an action, because the field still exists under a new
-/// name and that name is known. A **deletion** cannot: there is no name left to
-/// point at. So the engine counts the broken references and repairs nothing,
-/// and its own comment is blunt about what that leaves — *"each one is a button
-/// that will do less than it says when pressed."*
-///
-/// ⚠⚠ **This is the more serious of the two, and it is the one the operator
-/// meets later, on somebody else's screen.** A form whose Reset button quietly
-/// stopped resetting one field is not a form anybody notices until it matters,
-/// and nothing in the saved file records that pdfcer knew.
-///
-/// ⇒ So the sentence names a **consequence**, not a count of internals: the
-/// buttons will do less than they say. A bare number would read as bookkeeping
-/// about pdfcer rather than as a fact about the operator's document.
-///
-/// It does **not** offer to fix them, because pdfcer cannot — repairing would
-/// mean deciding what a Reset button that named a deleted field should now
-/// reset, and that is the operator's judgement rather than a default. Naming
-/// the problem and stopping is the honest end of this.
 #[must_use]
 pub fn form_field_actions_orphaned(count: usize) -> String {
     format!(
@@ -245,28 +153,12 @@ pub fn form_widget_deleted() -> String {
 
 /// **The last box went, so the field went with it** — which is not what the
 /// operator pressed.
-///
-/// `delete_widget` removes the field when its last widget goes, and that is
-/// right: a named field nothing draws is a field nothing can fill. It is still
-/// a larger outcome than the button promised, so it is said.
 #[must_use]
 pub fn form_widget_deleted_last() -> String {
     "That was the field's last box, so the field was removed from the form too.".to_owned()
 }
 
 /// **The `Sort` flag was set over a list nobody has sorted.**
-///
-/// pdfcer will not reorder an `/Opt` list it was not given, and this
-/// sentence is why that is the right refusal rather than an omission.
-/// `Sort` *"intended for use by writers, not by readers"* and requires a
-/// conforming reader to display the options *"in the order in which they occur
-/// in the Opt array"* — so `Sort` is a **claim about provenance**, not an
-/// instruction. Setting it over an unsorted list makes the file say something
-/// untrue; silently sorting would change what the operator sees in a
-/// drop-down without being asked.
-///
-/// So the operator gets the flag they asked for and the sentence that says what
-/// it now claims. Both, which is Rule 4's *render normally, report separately*.
 #[must_use]
 pub const fn field_sort_claim_unmet() -> &'static str {
     "The Sort flag now says this list was sorted by whoever wrote the file, and it is not in \
@@ -274,39 +166,12 @@ pub const fn field_sort_claim_unmet() -> &'static str {
 }
 
 /// **pdfcer put the list in a different order from the one it was sent.**
-///
-/// A tripwire rather than an everyday disclosure. `edit_field` sorts an `/Opt`
-/// list when the same edit supplies the list and sets the Sort flag, and the
-/// properties pane sorts with the engine's own exported comparator before
-/// sending — so the engine finds nothing to move and this never fires.
-///
-/// It fires if the two orderings come apart, which is the failure the
-/// comparator was exported to prevent and which neither side's tests can see,
-/// because each stays internally consistent. Worded for the operator anyway:
-/// the thing they can act on is that the list on screen was not the list
-/// written, and Rule 4 owes them that off-canvas whether or not the cause is
-/// theirs.
 #[must_use]
 pub const fn field_options_reordered() -> &'static str {
     "pdfcer put the options in a different order from the one shown when you pressed. The list in the file is sorted; what you saw was not."
 }
 
 /// **One field's flag changed and several boxes on the page followed.**
-///
-/// The engine's scope table, taken verbatim from Acrobat's own scripting
-/// model: some properties *"apply to all widgets that are children of that
-/// field"* and others *"are specific to individual widgets"*. Required,
-/// read-only, the tooltip and the type flags are all in the first group — one
-/// write, every placement.
-///
-/// The operator is looking at **one** box. A field drawn in three places has
-/// just changed in three places, two of which may be on other pages, and
-/// nothing on screen would otherwise say so. `widgets_affected` is reported by
-/// the engine *"to be shown"*, in its own words.
-///
-/// Said only when the count is above one. On the overwhelming majority of
-/// fields it is exactly one, and a bar that narrated that would stop being
-/// read.
 #[must_use]
 pub fn field_widgets_affected(widgets: usize) -> String {
     format!(
@@ -316,26 +181,6 @@ pub fn field_widgets_affected(widgets: usize) -> String {
 }
 
 /// **The engine recorded the edit and could not repaint the box.**
-///
-/// The one disclosure here that is about something the operator can SEE
-/// and will misread — [`AppearanceOutcome::RecordedNotPainted`], the state the
-/// two older outcome fields could not name. The value is in the file and what
-/// is on screen has not changed.
-///
-/// # `resized` picks the sentence, and getting it wrong CONTRADICTS the engine
-///
-/// This function said *"This box was resized and its artwork could not be
-/// redrawn, so it will look stretched"* for every unpaintable outcome, because
-/// until `Pass 308.0` a resize was the only edit that could produce one. A
-/// colour-only edit now can, and for that case the engine's own string ends
-/// *"The geometry did not change, so nothing is stretched."* — so the shell was
-/// prefixing a denial with its own assertion of the same claim, in one
-/// sentence, on the operator's status line.
-///
-/// ⇒ §12.5.5 derives the appearance matrix from the appearance box's corners
-/// and the `/Rect` corners, so only a changed **extent** makes the old stream
-/// stretch. Where the extent did not change, the artwork is exactly as correct
-/// as it was; what is wrong is that it does not reflect the edit.
 #[must_use]
 pub fn field_appearance_not_repainted(resized: bool, why: &str) -> String {
     if resized {
@@ -352,11 +197,6 @@ pub fn field_appearance_not_repainted(resized: bool, why: &str) -> String {
 }
 
 /// **A widget was moved or resized.**
-///
-/// It names which of the two happened, because the engine distinguishes them
-/// and the consequences differ: a move keeps the baked artwork exact and free,
-/// a resize rebuilds it. An operator who dragged a corner and one who dragged
-/// the middle have done different things to the file.
 #[must_use]
 pub fn field_widget_moved(resized: bool, regenerated: bool) -> &'static str {
     match (resized, regenerated) {
@@ -406,21 +246,6 @@ pub fn field_widget_moved(resized: bool, regenerated: bool) -> &'static str {
 }
 
 /// **A widget property other than its geometry changed.**
-///
-/// The line [`field_widget_moved`] was giving for every non-geometry edit,
-/// and it said **"The box was moved."** A border style, a caption, a visibility
-/// flag and — since O202 — a colour all reached it, because the caller pushed
-/// that sentence unconditionally and `resized` is `false` for all of them. The
-/// receipt named an act the operator had not performed.
-///
-/// `touched` is the control they actually pressed, carried from the panel for
-/// the same reason a refusal carries it: after the fact nothing else can say
-/// which one it was.
-///
-/// `regenerated` is added rather than assumed. A colour change rebuilds the
-/// appearance stream and a visibility flag does not, and an operator who just
-/// watched a check box redraw itself is owed the difference from one who did
-/// not.
 #[must_use]
 pub fn field_widget_property_changed(touched: &str, regenerated: bool) -> String {
     if regenerated {
@@ -431,12 +256,6 @@ pub fn field_widget_property_changed(touched: &str, regenerated: bool) -> String
 }
 
 /// **The other placements of this field were left where they are.**
-///
-/// The mirror of [`field_widgets_affected`], and the reason the two exist as a
-/// pair: a *field* edit changes every box and a *widget* edit changes one, so
-/// an operator working on a field drawn in three places needs to know which
-/// kind of control they just used. `siblings_untouched` is the engine's own
-/// count, reported *"to be shown"*.
 #[must_use]
 pub fn field_siblings_untouched(siblings: usize) -> String {
     format!(

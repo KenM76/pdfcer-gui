@@ -64,24 +64,6 @@ pub const REGION_FORMAT: &str = "export-image.format"; // ui-text-exempt: trace 
 
 /// The region ONE format's radio publishes, so a driven check can press a
 /// named format rather than a coordinate.
-///
-/// # Why the group region was not enough, and what it cost to find out
-///
-/// [`REGION_FORMAT`] is the union of the whole group ([`ExportImageDialog::
-/// format_group`] takes `start.union(ui.cursor())`), which is exactly right for
-/// *"where is the format chooser"* and useless for *"press EMF"*. A harness
-/// holding one union rectangle can only guess at a radio inside it by dividing
-/// the height by the number of radios — which is a guess that silently selects
-/// the wrong format the day a hint wraps onto a second line.
-///
-/// ⇒ **A driven check that clicks a computed offset inside a container is a
-/// check that will one day pass while pressing something else.** So each radio
-/// declares its own rectangle, named after the format, and the harness clicks
-/// what it asked for.
-///
-/// The names are trace identifiers rather than prose — they are matched by
-/// `tools/ui-verify`, never displayed — and they are `const` per variant rather
-/// than formatted, so the harness's string and this one cannot drift.
 #[must_use]
 pub const fn region_for_format(format: ImageFormat) -> &'static str {
     match format {
@@ -97,16 +79,6 @@ pub const fn region_for_format(format: ImageFormat) -> &'static str {
 /// The region the resolution field publishes.
 pub const REGION_DPI: &str = "export-image.dpi"; // ui-text-exempt: trace region name, never displayed
 /// The region ONE page-scope radio publishes.
-///
-/// Same argument as [`region_for_format`], which states it in full and is
-/// not repeated here: a check that presses the group's rectangle plus an
-/// offset is a check that presses the wrong control the day a hint gains a
-/// line.
-///
-/// These exist for O196. Until the export windows remembered anything, a
-/// driven check had nothing to assert about a radio beyond "it is drawn";
-/// now the question is which one is *selected on open*, and that cannot be
-/// asked of a group.
 #[must_use]
 pub const fn region_for_scope(scope: PageScope) -> &'static str {
     match scope {
@@ -123,10 +95,6 @@ pub const REGION_PAGES: &str = "export-image.pages"; // ui-text-exempt: trace re
 /// The region the transparency checkbox publishes.
 pub const REGION_TRANSPARENT: &str = "export-image.transparent"; // ui-text-exempt: trace region name, never displayed
 /// The region the JPEG quality field publishes.
-///
-/// ⚠ Published only while JPEG is selected, because the control is drawn
-/// only then — see [`ExportImageDialog::quality_group`]. A driven check that
-/// cannot find it has not found a defect; it has found a PNG.
 pub const REGION_QUALITY: &str = "export-image.quality"; // ui-text-exempt: trace region name, never displayed
 /// The keep-text checkbox, published only while SVG or EMF is selected.
 pub const REGION_KEEP_TEXT: &str = "export-image.keep-text"; // ui-text-exempt: trace region name, never displayed
@@ -183,22 +151,6 @@ pub struct ExportImageDialog {
 impl ExportImageDialog {
     /// Open the window for the document on screen, seeded from what the last
     /// export asked for.
-    ///
-    ///
-    /// > *"the export windows forget everything. every time I export a dxf I
-    /// > have to set it up again."*
-    ///
-    /// Five of the fields below were literals until that day. The membership
-    /// rule — **a setting is remembered only if it would still be the right
-    /// answer for a different document** — and the argument for every
-    /// inclusion and every omission live on
-    /// [`crate::app::prefs::ExportImagePrefs`]. Read that first; this is only
-    /// the seeding.
-    ///
-    /// ⚠ `range_text` is NOT seeded and is not a preference. A typed range
-    /// is a statement about *this document's* page numbering, and restoring
-    /// "12-40" onto a nine-page file would open the window in a state whose
-    /// Export button is already dead for a reason the operator did not cause.
     #[must_use]
     pub fn open(doc: &OpenDoc, remembered: &crate::app::prefs::ExportImagePrefs) -> Self {
         let page_index = doc.view.page_index;
@@ -281,11 +233,6 @@ impl ExportImageDialog {
     }
 
     /// Draw it. Returns `false` when it should close.
-    ///
-    /// Takes `&mut Prefs` for O196 alone: the Export press writes this
-    /// window's habits to the preferences file before the action is pushed.
-    /// See [`crate::dialogs::export_remembered`] for why it happens at the
-    /// press and not at the close.
     pub fn show(
         &mut self,
         ctx: &egui::Context,
@@ -617,10 +564,6 @@ impl ExportImageDialog {
 }
 
 /// Open the window for `status`, or decline.
-///
-/// The `doc.pages` guard is the command's too, and it is real rather than
-/// ceremonial: every control in the window is a statement about a page, and the
-/// largest-page measurement has nothing to fold over on an empty document.
 #[must_use]
 pub fn open_for(
     status: &Status,

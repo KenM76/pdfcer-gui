@@ -84,3 +84,159 @@ moved."*
 operator opens in a text editor should say `1000000000000`. The file is
 his to read and edit; a machine-shaped number there is a small rudeness
 with a real cost, because he cannot tell at a glance what he set.
+
+### `mod cache`
+
+Its header carries the part a reader would otherwise carry out wrongly: the
+cache prunes itself to the VISIBLE SET on every frame, so raising the budget
+on its own changes nothing at all.
+
+### `const DEFAULT_MAX_ZOOM_PERCENT`
+
+**The maximum, on the operator's instruction of 2026-08-22** — *"Also
+set the default to be able to hit the maximum zoom."*
+
+It was 800 % for one build, chosen so a fresh install behaved exactly as
+the shell had before the setting existed. That was the cautious call and he
+overruled it, consistently with his earlier one: *"it is up to the user to
+determine how much of a performance hit they want to take."* A capability
+he has to find a preferences file to switch on is a capability most of its
+users never have.
+
+What this does NOT change is the behaviour he cares about. The ceiling is
+permission, not policy: `viewer::zoom_ceiling` still lets the whole-page
+raster bind wherever it can, so **panning stays instant at every zoom that
+could render whole-page before** — the region path engages only above it,
+where the alternative is not a slower zoom but no zoom at all.
+
+### `const MAX_MAX_ZOOM_PERCENT`
+
+⚠ **It is past the range the page has been confirmed to draw in, and that
+is `DEFECTS.md` D27.** Read the units carefully, because this constant is a
+*percentage* and the measurement below is a *factor*: a trillion percent is
+a zoom factor of 1×10^10. Driving the real binary found the page **drawn**
+at 8.6×10^9× (859 billion percent) and **not drawn** at 1×10^10× — so this
+value is the first rung measured to fail, not a margin inside the working
+range.
+
+What fails is not the raster: at a trillion percent the strip renders
+cleanly with no failed tiles and simply shows no page. The limit is no
+longer the scroll offset — tier 3's `f64` anchor fixed that — it is the
+**strip's own extent**, still computed as `page × zoom` in `f32`, which
+reaches 6×10^12 points at that zoom on US Letter.
+
+Two ways out, and they are a choice for the operator rather than a cleanup:
+lower this to the confirmed range, or stop building the strip in
+`page × zoom` space at deep zoom — the move tier 3 made for the offset, one
+layer out. Until one of them happens the shell offers a rung that accepts a
+number and then misbehaves, which is the defect this feature has otherwise
+refused throughout.
+
+None of this is a judgement about what is sensible. The operator was
+explicit that the performance trade is his to make (*"it is up to the user
+to determine how much of a performance hit they want to take"*); the
+question here is only what the shell can put on the screen.
+
+### `fn auto_hide`
+
+One conversion, named, rather than an `if … { OnHover } else { Off }` at
+each of the two call sites. The two settings are stored as `bool` because
+`settings.txt` is a `key = true | false` file an operator edits by hand and
+a third spelling of the same fact would be a third thing to get wrong; the
+shell's [`egui_shell::peek::AutoHide`] is an enum because it has room to
+grow a third position (Office has three). This function is the seam where
+that difference is absorbed, and it is the place a third position would be
+mapped.
+
+### `struct Prefs`
+
+## `PartialEq` but not `Eq` — and it was `Eq` until [`Self::ui_scale`] landed
+
+A scale is a continuous quantity and `f32` has no total equality, so the
+derive cannot be kept. Nothing is lost: the only thing that compares two
+`Prefs` is `dialogs::settings::Draft::is_dirty`, which asks *"has the
+operator changed anything?"* — and `PartialEq` answers that exactly. `Eq`
+would additionally promise reflexivity, which the one field that could
+break it (a `NaN` scale) cannot reach, because [`chrome::normalise_ui_scale`]
+clamps every value that enters the struct.
+
+### `enum PrefNote`
+
+The same shape as `pdfcer_core::settings::SettingNote` and for the same
+reason: the file is hand-editable, so a mistake in it must be findable, and
+**at its line number**. A message saying only "something was wrong" sends
+the operator to read the whole file.
+
+### `fn path`
+
+Derived from the same `pdfcer_core::settings::resolve_store()` the
+settings and the layout use, so the three cannot drift apart — which is
+the failure this project already found once, when two callers in one
+process disagreed about which home was live and put two files that
+belong together in two places.
+
+### `fn load`
+
+A missing file, an unreadable one, a broken line or a value out of range
+all yield usable preferences with a reason in the returned notes. **A
+missing file produces no note**, deliberately: a first run is the
+expected state, not a fault, and reporting it would train the operator
+to ignore the channel that carries the real problems.
+
+### `fn save`
+
+Unlike loading, saving fails **loudly**: the operator asked for
+something to be remembered and is owed the truth if it was not. Same
+asymmetry the engine's store holds itself to.
+
+# Errors
+
+The path could not be resolved, its directory could not be created, or
+the write was refused. Carried as a `String` because the caller's only
+use for it is a trace line — the operator-facing half is a fixed
+sentence, for the reason `text::status::settings_not_saved` documents.
+
+### `fn seed_view`
+
+Called once per document, from `PdfcerApp::adopt`, and from nowhere else.
+
+# Why this is a method here rather than a field read in `ViewState::default`
+
+Because `ViewState::default()` cannot see the application. `OpenDoc::assemble`
+builds a document without a `PdfcerApp` in reach — its own comment says
+so — which is the same constraint that put `adopt_settings` in the open
+path rather than in the constructor. Seeding here keeps `ViewState`'s
+`Default` the **conservative** answer, which is what every test that
+builds one without a configuration relies on.
+
+# The remembered-guides override still wins, and that is not a
+coincidence of ordering
+
+`OpenDoc::assemble` may already have set `view.guides = true`, because
+`canvas::guides::opening` turns the layer on for a document that has
+guides saved against it — *"the presence of the work is the
+preference"*. This function therefore **ORs** rather than assigns for
+that one field:
+
+| remembered guides | preference | result |
+|---|---|---|
+| yes | on | shown |
+| yes | off | **shown** — the work outranks the default |
+| no | on | shown, and empty until the first is placed |
+| no | off | hidden |
+
+Row two is the one that matters and it is the reason this is not three
+plain assignments. A preference is a statement about documents in
+general; a document that carries guides is a statement about *that*
+document, and the specific beats the general. Assigning would hide work
+the operator did, on the document they did it on, because of a switch
+they set weeks earlier about something else.
+
+Rulers and grid have no per-document memory at all, so they assign.
+
+# What it deliberately does not touch
+
+[`crate::viewer::ViewState::display`] — the single/continuous/facing
+arrangement. That has its own per-document store and its own operator
+requirement; see [`opening`]'s header for why a global default for it
+would be a second axis colliding with the one that was asked for.

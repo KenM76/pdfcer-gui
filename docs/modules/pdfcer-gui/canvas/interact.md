@@ -111,3 +111,103 @@ consider reopening one should have to read what it cost.
    zoom or a pan with the Objects panel closed still decomposes nothing.
    Drawing needs no provider at all — the outlines are cached in canvas
    space, which is zoom-independent.
+
+## Item notes
+
+### `struct Frame`
+
+A struct rather than three parameters, and the reason is the same one that
+made [`PageMapping`] a struct: these are facts about one frame, they are
+settled together once the scroll area has laid out, and passing them
+separately invites a call site to compute one of them for itself. `tool` is
+the newest member and the most dangerous to re-derive — two readings of
+"is the hand active?" within one frame that disagreed would be a drag that
+panned **and** marquee'd, which is exactly what Phase 3.2 must not ship.
+
+### `fn interact`
+
+# The order of the steps, and why it is this order
+
+1. **Read the pointer**, converting once through `map` — the boundary.
+   Escape rides in on the same frame, so a drag in flight can abort.
+2. **Decide what a press would land on**, from the *previous* frame's
+   selection. A grip is a target because it is already on screen.
+3. **Advance the gesture machine.** A press produces nothing; only a
+   completed click, a released marquee, a move drag or an Escape-abort
+   produces an outcome.
+4. **Build a decomposition only if something needs one.** A click, a
+   released marquee, **a right-click**, **a move drag**, or a
+   `(page, epoch)` that moved. Never merely because the view changed — that
+   is the invariant, and it is this `if`.
+5. **Apply the outcome**, then **the right-click**, then **re-resolve**,
+   then **draw** (outlines, then the marquee, then the move ghost).
+6. **Keys**, guarded by `text_edit_focused()` — `DEFECTS.md` D1 — and by
+   whether step 3 already spent the Escape on a drag.
+
+Step 4 sitting *after* step 3 is what makes the whole thing affordable:
+the expensive work is behind the gesture, not in front of it.
+
+# Why Escape is read in step 1 and honoured in step 6
+
+Two things want the key and exactly one may have it per press: a drag in
+flight wants to abandon itself, and the selection ladder wants to ascend a
+rung. The gesture machine gets first refusal because it is the only thing
+that knows whether there *is* a drag under the press — it takes the key only
+when there is, and reports [`gesture::GestureOutcome::Cancelled`] when it
+does. Step 6 passes that on to [`canvas_keys`], so a cancelled drag does not
+also cost the operator the rung they were working in. With no drag in
+flight, nothing is consumed and Escape ascends exactly as it always did.
+
+# Where the right-click sits, and why it is not step 5's business
+
+The secondary button never reaches [`gesture`]: that machine reads
+`PointerButton::Primary` throughout, deliberately, because the middle
+button pans and the primary button owns press/drag/release. A right-click
+is not a gesture with a beginning and an end — it is a single event that
+asks a question — so it is read straight off the `Response` in step 5b,
+*after* the primary gesture has been applied and *before* the resolve.
+
+Before the resolve matters: a right-click over an unselected object
+**selects it** ([`menus::select_under_right_click`]), and the outlines
+drawn in step 8 have to be the new selection's or the highlight would lag
+the menu by a frame — the operator would see a menu about an object that
+is not yet outlined, which is the "which of these is it about?" ambiguity
+the select-first rule exists to remove.
+
+# Why the selection is moved out of the document and back again
+
+The selection now lives on [`OpenDoc`], and the decomposition it resolves
+against is a [`std::cell::Ref`] **borrowed from the same `OpenDoc`**. Those
+two cannot be held at once through one `&mut` — a `Ref` keeps a shared
+borrow of the whole document alive, and mutating the selection in place
+would need a mutable one.
+
+So the selection is taken by value at the top and put back at the bottom.
+That is not a workaround for the borrow checker so much as an honest
+statement of what this function does: it computes *the next* selection from
+the previous one and the frame's input, and stores it. Two further
+properties fall out, both of which the `egui::Memory` version relied on and
+documented:
+
+* **nothing is cloned.** A marquee over a dense sheet can select thousands
+  of entries, and cloning that per frame at 60 Hz would be a real cost for
+  no reason;
+* **a frame that panicked between the take and the put leaves an empty
+  selection**, not a half-updated one — a state the operator can see and
+  recover from with one click.
+
+# The hand tool suppresses the whole of step 1, and that is the fix
+
+When [`tool::active`] reports `Hand` — chosen, or borrowed by a held space
+bar — the primary button pans, and a `PointerFrame` describing that drag
+would make it marquee **as well**. So the frame is built **blank** apart
+from Escape: no press, no drag, no click, no position. Not "the marquee arm
+checks the tool", not "the selection is restored afterwards" — the gesture
+simply is not offered, which is the only version of this that cannot leave
+a half-applied selection behind if a future arm forgets to ask.
+
+A drag already in flight when the space bar goes down is therefore
+*interrupted*, and [`gesture::GestureState::update`]'s last branch already
+knows what to do with that: abandon it, commit nothing. An operator who
+starts a marquee and then reaches for space has changed their mind, and the
+worst outcome available is that nothing happened.

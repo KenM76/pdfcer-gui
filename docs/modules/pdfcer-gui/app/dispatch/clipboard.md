@@ -200,3 +200,9 @@ refusing there; that is visibility doing the work, which is the rule
 `edit.paste_in_place` is the trap this test exists for: it is a
 registered ABSENCE, and a prefix rule would claim it the day it became
 real, routing it here with no body and no failure.
+
+### `fn handles`
+
+Listed rather than prefix-matched. `edit.paste_in_place` is a *registered
+absence* (`shell::manifest::registers`) and a prefix rule would silently
+claim it the day someone made it real, routing it here with no body.

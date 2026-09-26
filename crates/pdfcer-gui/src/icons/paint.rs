@@ -93,38 +93,6 @@ pub fn paint_ribbon_icon(painter: &egui::Painter, request: &IconRequest<'_>) {
 }
 
 /// Draw one known icon into `rect`, tinted `tint`.
-///
-/// The primitive [`paint_ribbon_icon`] is built from, exposed because menus,
-/// the status bar and any hand-drawn control need the same thing and must
-/// not re-derive the DPI arithmetic.
-///
-/// # Rasterized at the physical pixel size, drawn at the logical one
-///
-/// This is the load-bearing decision of the whole pipeline, and the reason
-/// the set is SVG path data rather than pre-baked PNGs.
-///
-/// `rect` is in **logical points**. The raster is built at
-/// `side * ctx.pixels_per_point()` **physical pixels** and then drawn back
-/// into the logical rect. Rasterizing at the logical size instead would make
-/// every icon visibly soft on any HiDPI display — a 16 px raster stretched
-/// over 32 device pixels at 200% Windows scaling — and a pre-baked PNG has
-/// that stretch permanently baked in, wrong again for any future "larger
-/// toolbar icons" accessibility option.
-///
-/// Because the physical size is part of the cache key, dragging the window
-/// between a 100% and a 150% monitor re-rasterizes automatically rather than
-/// reusing a stale, wrongly-sized texture. Nothing has to notice the change
-/// and tell the cache about it; asking for the right size *is* the
-/// invalidation.
-///
-/// # Geometry
-///
-/// The glyph is drawn into the largest centred **square** that fits `rect`.
-/// The shell always reserves a square (`Vec2::splat(metrics.icon_pts)`), so
-/// in practice this is the identity — but the assets are authored in a
-/// square viewBox and a non-square rect would stretch them, which is the
-/// kind of thing that shows up as "the magnifier looks like an egg" and gets
-/// attributed to the artwork.
 pub fn paint_icon(
     painter: &egui::Painter,
     icon: Icon,
@@ -161,34 +129,6 @@ fn paint_glyph(
 }
 
 /// Draw the "there is no glyph for this key" mark into `rect`.
-///
-/// A rounded square with a diagonal slash, stroked in `tint` at the set's
-/// own weight so it sits at the same optical density as the real glyphs
-/// beside it.
-///
-/// # Why this shape
-///
-/// It has to satisfy three constraints at once, and the intersection is
-/// small:
-///
-/// 1. **Not confusable with any real icon.** The set has squares
-///    ([`Icon::ShapeRect`]) and it has diagonals
-///    ([`Icon::ShapeArrow`], [`Icon::Close`]), but nothing is a square with
-///    a single diagonal through it, and nothing else is drawn to the slot's
-///    full extent.
-/// 2. **Legible at 16 px.** Two strokes, no interior detail, no text — a
-///    "?" glyph would be the obvious choice and is rejected: at 16 px it is
-///    a blob, and it would have to come from a font, which is exactly the
-///    dependency on glyph coverage that half this icon set exists to escape.
-/// 3. **Reads as a report, not as art.** Deliberately geometric and
-///    deliberately plain. An operator who sees one should think "something
-///    is missing here", which is true, rather than "what does that mean".
-///
-/// It is drawn in the ordinary foreground tint rather than in an alarm
-/// colour. A missing icon is a defect in the *application's* wiring, not an
-/// error the operator caused or can act on; colouring it as danger would put
-/// an alarm in their interface about somebody else's mistake, and the
-/// colour would have to be a raw one anyway.
 pub fn paint_missing_mark(painter: &egui::Painter, rect: egui::Rect, tint: egui::Color32) {
     let square = centred_square(rect);
     if square.width() <= 0.0 {

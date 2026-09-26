@@ -104,3 +104,43 @@ following. An `IconData` whose buffer does not match its dimensions is
 rejected by winit with a log line nobody reads, so a wrong size would
 present as "the icon silently stopped working" — the same class of quiet
 failure the encoding bug in the `.rc` was.
+
+### `mod pagedrag`
+
+In `egui::Memory` rather than on `PdfcerApp` because switching documents
+resets the panels' state, and switching documents is exactly what a
+cross-document drag has to do on its way. See the module header.
+
+### `mod protect`
+
+The headless half of the two Security controls: what the document says
+today, which jobs it may be offered, which of the engine's three encryption
+verbs a choice reaches, and the atomic write at the end. The window is
+`crate::dialogs::protect`; the split is `crate::redact`'s, and for the same
+reason — every rule on this surface is a rule about the operator's file, and
+a rule that can only be exercised by driving a window is one that gets
+asserted once, by hand, and then drifts.
+
+### `mod sign`
+
+**THE ONE `#[cfg]` IN THIS FILE, AND IT IS WHERE R8 SAYS IT BELONGS.**
+`SHELL_FRAMEWORK.md` §5b's rule is that *a capability's presence is
+expressed by registering its command, and by nothing else* — no `#[cfg]` in
+the ribbon, no panel asking whether signing exists. A module declaration is
+not the ribbon: it is the boundary the capability is compiled in or out at,
+and the engine draws the same one (`pdfcer_core::sign` does not exist
+without the feature, so nothing here could reference it if it wanted to).
+The ribbon item naming `file.sign` is unconditional and is dropped by the
+ordinary merge, with a `CapabilityAbsent` skip reason.
+
+### `mod stamps`
+
+A stamp collection is an ordinary PDF — one file per category, one page
+per stamp, names in the catalog's `/Names` → `/Pages` tree — which is why
+the operator's ask for *"the same import/export"* Acrobat has has no
+serialiser anywhere in here: **Acrobat has no interchange format**, and
+handing someone the PDF is the export. This module turns a document into a
+plan he can correct, and the plan into that file.
+
+Consumed by `crate::dialogs::stamp_collection` and
+`crate::panels::docprops`.

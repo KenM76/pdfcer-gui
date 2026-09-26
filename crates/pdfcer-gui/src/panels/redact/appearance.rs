@@ -15,30 +15,9 @@ pub const REGION_FILL: &str = "redact.appearance.fill"; // ui-text-exempt: trace
 pub const REGION_OVERLAY: &str = "redact.appearance.overlay"; // ui-text-exempt: trace region name, never displayed
 
 /// The longest overlay caption offered.
-///
-/// **64 characters.** Not a format limit — `/OverlayText` is a PDF string and
-/// has none worth naming — but a legibility one: the engine lays the caption
-/// out inside the marked box and auto-sizes it into a 4–12 pt clamp, so a
-/// sentence over a one-line mark becomes unreadably small or is clipped. 64 is
-/// comfortably longer than every caption anybody actually writes (*REDACTED*,
-/// *Exemption 5*, a case number) and short enough that the operator meets the
-/// bound while typing rather than in the applied document.
 pub const MAX_OVERLAY_CHARS: usize = 64;
 
 /// The operator's choice of how an applied redaction looks.
-///
-/// Held on [`super::RedactUi`] — the panel's own state, not the document's —
-/// because it is a property of *what the operator is about to author*, exactly
-/// like `canvas::markup::Pen`. It is read at the moment a mark is created and
-/// never afterwards.
-///
-/// # Why the fill is an enum and not an `Option<Color>`
-///
-/// Because the engine's `Option<Color>` has three operator-facing meanings and
-/// only two of them are colours: *black*, *some other colour*, and *no box at
-/// all*. An `Option` in the UI would put "transparent" and "the operator has
-/// not picked yet" into the same value, and this is the feature where that
-/// ambiguity is least affordable.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Appearance {
     /// What fills the redacted region on apply.
@@ -100,27 +79,6 @@ impl Fill {
     }
 
     /// Whether a caption drawn over this fill would be legible.
-    ///
-    /// # This exists because the engine told us it would not be
-    ///
-    /// `a7210a4`'s reply carries the warning verbatim:
-    ///
-    /// > **Black-on-dark is illegible, and it is our gap, not yours.** The
-    /// > `/DA` we author hard-codes black text. Wire a fill-colour picker, let
-    /// > someone choose a dark red, and the caption will be black on dark red
-    /// > — we saw it in our own verification render. **There is no
-    /// > overlay-text colour on the API yet.**
-    ///
-    /// So the panel must not let an operator walk into it silently. The
-    /// predicate is deliberately crude — relative luminance against a
-    /// mid-point — because the failure it guards is crude: black text on
-    /// anything dark. A precise WCAG ratio would imply a precision the engine
-    /// cannot honour, since the text colour is not ours to set.
-    ///
-    /// **Black fill with a caption is the loudest case** and is not special-
-    /// cased away: black on black is invisible, and an operator who chooses
-    /// the default fill and types a caption deserves to be told before they
-    /// apply rather than after.
     #[must_use]
     pub fn caption_would_be_legible(self) -> bool {
         let Some(colour) = self.to_core() else {
@@ -183,21 +141,6 @@ impl Appearance {
 }
 
 /// **Draw the appearance controls**, editing the panel's own state in place.
-///
-/// # It edits in place and raises nothing
-///
-/// No `Action` and no return value, exactly as `canvas::markup::swatch` does
-/// for the pen. The funnel's invariant is that no path runs from a widget to a
-/// **document**, and this touches none: it sets what the *next* mark will be
-/// authored with. There is nothing to undo and nothing to order against.
-///
-/// # Collapsed by default
-///
-/// The shipped appearance — a plain black box, no caption — is what almost
-/// every redaction wants, so these controls should cost nothing until an
-/// operator asks for them. This panel has already shipped its primary verb
-/// below the bottom of its own pane once, and everything added to it now is
-/// measured against that.
 pub fn show(ui: &mut egui::Ui, state: &mut crate::panels::PanelsState) {
     egui::CollapsingHeader::new(egui::RichText::new(t::appearance_heading()))
         .default_open(false)

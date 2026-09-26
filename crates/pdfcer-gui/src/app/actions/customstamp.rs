@@ -17,23 +17,6 @@ use crate::stamps::library::CustomStamp;
 use crate::text::stamps as t;
 
 /// **Place `stamp`'s artwork on `page`, inside `rect`.**
-///
-/// `rect` is in **PDF user space** — the rectangle the canvas resolved from
-/// the operator's drag, exactly as [`super::textannot::commit`] receives it.
-/// The engine normalises it per §7.9.5 and hands back what it stored, so a
-/// caller that passed corners in the other order is not surprised later.
-///
-/// # What can go wrong, and where each failure is reported
-///
-/// - **The collection will not open.** Reported here, by name, before any edit
-///   starts — [`crate::text::stamps::place_source_unreadable`]. Nothing is
-///   mutated, so there is no undo entry and no epoch bump.
-/// - **The stamp's page is not in the collection.** `EditError::
-///   SourcePageOutOfRange`, reported by the funnel as an ordinary decline.
-///   The library recorded that index from the file's own name tree, so this
-///   means the file changed under us between the scan and the press.
-/// - **The document is encrypted, or certified against annotation.** The same
-///   guard every annotation-authoring verb takes, and the same sentence.
 pub(super) fn place(doc: &mut OpenDoc, stamp: &CustomStamp, page: usize, rect: Rect) {
     // ── 1. The collection, loaded outside the funnel ─────────────────────
     let source = match pdfcer_core::document::Document::load(&stamp.file) {

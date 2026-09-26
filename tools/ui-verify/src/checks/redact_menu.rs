@@ -89,13 +89,6 @@ pub(super) struct Marked {
 }
 
 /// Right-click at `at`, press the redaction row, and read what it requested.
-///
-/// `what` names the selection standing at the time, in the operator's terms
-/// ("the whole block", "one line"), and is quoted in every refusal so a reader
-/// knows which press failed without counting them.
-///
-/// `Ok(Err(..))` is a finding about the program; `Err(..)` is a finding about
-/// the run and is reported as SKIPPED.
 pub(super) fn mark_through_the_menu(
     session: &Session,
     driver: &Driver,

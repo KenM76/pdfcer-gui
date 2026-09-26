@@ -78,11 +78,6 @@ impl Default for DefaultAppDialog {
 
 impl DefaultAppDialog {
     /// Open it.
-    ///
-    /// The checkbox starts **unticked**. A pre-ticked *"don't ask me again"*
-    /// is a dialog that suppresses itself if the operator dismisses it without
-    /// reading, which is the same defect as a pre-ticked consent box and is
-    /// worse here because there is no way to notice it happened.
     #[must_use]
     pub const fn new() -> Self {
         Self {

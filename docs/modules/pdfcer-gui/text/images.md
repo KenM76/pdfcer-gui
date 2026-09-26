@@ -101,3 +101,138 @@ what makes the preview trustworthy.
 
 The soft case is asserted in both, because that is the one where a
 difference in phrasing would read as a difference in verdict.
+
+### `fn source_size`
+
+The **displayed** size, which for an EXIF-rotated photograph is not the
+stored one — the engine transposes it and this reads the transposed value,
+because the stored shape is not on screen anywhere.
+
+### `fn format_name`
+
+`ImageFormat` is `#[non_exhaustive]`, so a match here could not be
+exhaustive and could never fail to compile when a format is added: the
+wildcard the compiler forces is the wildcard that silences it for ever
+(recorded in `D:/dev/rag/rust/` under that name). This function was first
+written as four arms plus a fallback, and it did not need to be — the enum
+carries `ImageFormat::name()`, which is `const`, is what the engine's own
+refusal messages use, and gains a new format the moment `sniff` does.
+
+Deriving the string from the value rather than from a table beside it is the
+first of that finding's four remedies, and where an upstream accessor exists
+it is the only one needed.
+
+### `fn natural_size`
+
+**The provenance is half the fact.** `ImportNotes::dpi_source`
+distinguishes *"the file said 300 dpi"* from *"pdfcer assumed 72"*, and the
+engine keeps them apart deliberately. A natural size derived from an assumed
+72 dpi is not a claim about the picture — it is one pixel per point, which
+is the PDF default and nothing the file asked for.
+
+### `fn placement_page_hint`
+
+The image goes on the page the operator is looking at, which is the answer
+every other page-scoped verb in this application gives, and stating it is
+what makes that checkable — the window is centred over a document they may
+have scrolled. The same reasoning the Insert-from-file dialog gives for
+naming its destination by number.
+
+### `fn placement_y`
+
+**From the BOTTOM**, because PDF user space has its origin at the
+bottom-left and y increases upward (§8.3.2.3). Measuring from the top here
+would be friendlier for one field and would disagree with every coordinate
+the Properties panel, the object tree and the rulers report — and an
+operator comparing two numbers that mean different things is worse off than
+one learning a convention their drawing package already uses.
+
+### `fn fit_name`
+
+Named by **what happens to the picture**, not by the engine's identifier.
+"Contain" and "Stretch" are precise and are words about a box; an operator
+deciding this is thinking about their photograph.
+
+### `fn dpi_preview`
+
+The number `pdfcer-core` insists is *"not a warning — a number"*, shown
+beside the spinners that decide it rather than after the commit that fixes
+it. Both mistakes it can report look perfect on screen at editing zoom: a
+4000-pixel photo in a 2-inch box wastes megabytes, and a 100-pixel logo
+across a page plots soft.
+
+### `fn placed_note`
+
+`NewImage::placed_rect()` is public *for this*, and its doc says why:
+*"a front end drawing a preview must draw the same rectangle the edit will
+produce, and re-deriving the arithmetic in the GUI is how a preview and a
+result drift apart."* Nothing here computes a rectangle.
+
+Shown only when it differs from what was asked for — under `Stretch` it
+never does, and a line restating the two numbers above it would be noise.
+
+### `fn off_the_page`
+
+Refused rather than clamped. A picture silently moved back onto the sheet
+is a placement the operator did not make, and they would find it by looking
+at the drawing rather than at this window. The same posture
+`Tolerance::validate` takes: *"a corrected value the operator never saw is
+exactly the sneaky case."*
+
+### `fn recompress_reason`
+
+`RecompressReason` carries no `Display`, and that absence is a decision
+rather than an omission: these are *pdfcer's* reasons, in pdfcer's vocabulary
+— an alpha channel split out into an `/SMask`, a TIFF codec with no encoder
+on this side — and the engine leaves the English to the front end because
+only the front end knows who is reading it.
+
+The engine draws one distinction this catalog keeps, because it is the one
+that changes what an operator should do:
+
+| class | variants | how it reads |
+|---|---|---|
+| **your file forced this** | `AlphaSplit`, `NoCompressedSource`, `SourceCodecNotReusable` | a fact, nothing to decide |
+| **you asked for this** | `LosslessRequested`, `JpegRequested` | *"a chosen reason is not a substitution, so a front end should not apologise for it"* — the engine's own words |
+
+`SourceCodecNotReusable` is kept apart from `NoCompressedSource` for the
+reason its own doc gives: conflating them *"tells a TIFF owner their file
+was uncompressed"*. There were bytes; they were simply not reusable.
+
+# The wildcard is forced, not chosen
+
+`RecompressReason` is `#[non_exhaustive]`, so this match cannot be
+exhaustive and can never fail to compile when pdfcer grows a sixth reason —
+see `D:/dev/rag/rust/`'s finding of that name. There is no upstream
+accessor to delegate to here (unlike `ImageFormat::name`), so the fallback
+is a true sentence that says a re-encode happened without inventing a
+reason for it, and the test below asserts none of the five known variants
+reaches it.
+
+### `fn import_failed`
+
+Passed through, unlike a `TwoLineRefusal`, and the difference is worth
+stating because the two look like the same case. `ImageImportError`'s
+messages **name the operator's file** — *"pdfcer does not place GIF images —
+it places PNG, JPEG, BMP and TIFF"*, *"this image uses {feature}, which
+pdfcer cannot place"* — so the specific half is the whole value and a
+catalog sentence would have to discard it. `crate::text::canvas_render_failed`
+makes the same call for the same reason.
+
+### `fn placement_disclosures`
+
+Every one of these is a fact the operator **cannot see on screen at editing
+zoom**, which is the rule-4 test in its purest form for this feature: the
+picture looks identical whether it was stored at 12 dpi or 2000, whether its
+bytes passed through unchanged or were re-encoded, and whether a lossy
+source was re-compressed lossily a second time.
+
+Returns them in the order they matter to a drawing:
+
+1. **resolution**, because it decides whether the sheet plots acceptably;
+2. **shape**, because it decides whether the picture is honest;
+3. **bytes**, because it decides how big the file got and why.
+
+A clause is emitted only when it has something to say. `letterboxed` on a
+box the operator drew to the picture's own shape is false, and a sentence
+about it would be noise on the commonest path.

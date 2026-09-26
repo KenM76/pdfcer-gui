@@ -81,3 +81,112 @@ selecting an object highlighted nothing at all.
 `on layer ""` is the shape of a placeholder, and R9 forbids one. The
 unnamed case is a different sentence, not the same sentence with a hole
 in it.
+
+### `enum RowOfAnswer`
+
+# Why this is not simply `Option<&str>`
+
+Because a highlight that lands on a row nobody can see is
+indistinguishable from no highlight at all, and this panel has **two**
+independent ways for that to happen:
+
+| | what the operator sees | what they conclude |
+|---|---|---|
+| the row is on screen and plated | the answer | correct |
+| the row exists but the **search** has filtered it out | nothing | *"selecting an object does not highlight the layer"* |
+| there is **no row** — an OCMD (§8.11.2.2), or an OCG the default configuration omits | nothing | the same, and wrongly |
+
+The second and third were both silent before this type existed. They are
+different facts with different remedies — clear the search; or accept that
+the document's own configuration does not list this group — so they get
+different sentences rather than one apology covering both.
+
+### `fn layer_selection_unlayered`
+
+Shown for `Membership::None` and for nothing else.
+
+## Why this sentence exists, when silence would be simpler
+
+It is the disambiguating half of a pair. A selection either highlights a
+row or does not, and "does not" has several causes the operator cannot
+otherwise tell apart — genuinely unlayered, unresolvable, nested too deep,
+spanning two layers. This line is said only in the first case, so its
+*presence* is the answer and its absence is not a claim.
+
+## "Not on a layer", not "on no layer"
+
+The operator's mental model is that things are *put on* layers. "Not on a
+layer" describes the mark; "on no layer" describes a set, and reads like
+the beginning of a fault report. The sentence is a statement about the
+document, as ordinary as a layer's name, so it is phrased as one.
+
+## It says "selected", not "this object"
+
+Because it covers an annotation — a stamp, a cloud, a note, a dimension —
+as well as a content object, and the two need one sentence rather than two
+nearly identical ones.
+
+### `fn layer_selection_report`
+
+# The two states that owe nothing, and they owe nothing for opposite
+reasons
+
+* `NothingSelected` — there is no question. A status bar or a panel that
+  narrates the absence of a thing spends a permanent line on the most
+  common state in the program.
+* `Group` **with its row on screen** — the plate has already said it.
+  Repeating it in prose would make the panel narrate its own highlight, and
+  the operator would read the sentence as a *second* fact.
+
+# Every other state owes one, including the unknowns
+
+That is a reversal, and it is deliberate. `Unknown` used to be silent, on
+the argument that a line reading *"pdfcer cannot tell you which layer this
+is on"* would be a **permanent apology** — true, while `pdfcer-core` could
+not answer for any content object at all. `Pass 250.0` retired that
+premise: the unknowns below are now rare, specific and individually
+actionable, and withholding them would be hiding an inference the operator
+cannot see. See `Unresolved`'s own doc comment for the full argument.
+
+### `fn layer_clause`
+
+`None` when nothing is owed, on exactly the one state that owes nothing
+there: nothing selected. Unlike the panel, the bar **does** speak when the
+row is on screen, because the bar is the surface reached with no panel open
+and it cannot lean on a plate the operator may not be looking at.
+
+# `name` and the `Membership` are not independent
+
+`Some(name)` is meaningful only alongside `Group`, and a caller with a
+group it could not name passes `None` — which is the OCMD and
+unregistered-OCG case, and gets its own words rather than an empty pair of
+quotes.
+
+### `fn selection_with_layer`
+
+Appended rather than given a line of its own, because it is a fact about
+**the same selection** — the same reasoning `status::selected` applies to
+its depth clause. A second label would read as a second subject.
+
+### `fn layer_selection_granularity`
+
+He measured it on his own drawing — *one PDF path object holds 6,681
+anchors across half his sheet* — and the largest object on `SW41177.pdf`
+p1 holds **1,194 subpaths** over 550 × 500 pt. He clicks a circle; pdfcer
+selects the object the circle is one subpath of.
+
+# Why the layer answer is still exact, and why that is not enough
+
+`/OC` membership belongs to a marked-content section, which wraps *paint
+operators*. A `BDC /OC` cannot begin in the middle of a subpath, so every
+part of one object shares one membership by construction. The relation has
+**no finer form to be exact at** — descending to the Part or Point rung
+cannot refine it.
+
+So the sentence *"this is on layer Grid"* is true. Said about something the
+operator believes is a single circle, it is a claim he will apply to the
+circle, and on his files it is a claim about a thousand other curves too.
+
+⇒ This line states the granularity as a **measurement** rather than
+implying a precision that does not exist. It is off-canvas, per Rule 4, and
+it is silent on the overwhelmingly common object that holds one part.

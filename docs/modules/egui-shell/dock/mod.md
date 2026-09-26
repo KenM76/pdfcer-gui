@@ -59,3 +59,32 @@ pointer is elsewhere), and `solid()` alone draws the handle in
 near-white. Either alone hides the bar, so fixing one of them looks
 exactly like no fix at all. Both are settled here, once, for every
 panel body, and asserted so they stay settled.
+
+### `fn new`
+
+Usable as-is: with no registry every tab is labelled with its own
+id, which is ugly and truthful. See `ctx::Ctx::describe` on why the
+fallback is a fallback rather than a skip.
+
+### `fn with_id_salt`
+
+Only needed by an application hosting two independent docks — a
+document window and a preview window, say. Without it every
+interactive element in both would share ids, and `egui` would
+treat a click on one as a click on the other.
+
+### `fn show`
+
+# The order of the three phases, and why it is that order
+
+1. **Snapshot.** The layout is cloned. Everything drawn this frame
+   is drawn from the snapshot, so one frame shows one truth.
+2. **Draw**, recording `Intent`s. No `&mut` to the layout exists
+   anywhere in this phase, which is what makes it structurally
+   impossible for a resize pass to write a *computed* span back
+   into a stored share — failure mode #6, closed by construction
+   rather than by care. See `ctx`'s header for the full argument.
+3. **Apply.** The intents are applied, in order, in one place.
+
+The cost is one frame of latency on a splitter drag, during a
+gesture `egui` is already repainting continuously for.

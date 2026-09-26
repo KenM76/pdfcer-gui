@@ -9,39 +9,6 @@ use crate::app::state::OpenDoc;
 use crate::canvas::target::TargetId;
 
 /// **Why pdfcer cannot name the layer**, when it cannot.
-///
-/// # Why the reason is carried rather than collapsed
-///
-///
-/// **That justification expired with `Pass 250.0`.** Every variant below is
-/// now rare and specific — a malformed document, a nesting depth, a stale
-/// index — and each one means something different for what the operator should
-/// do next. A document whose `/OC` sections pdfcer cannot resolve is a fact
-/// about *their file*; a leaf three forms deep is a fact about *pdfcer*. One
-/// hedge covering both teaches them to ignore the line.
-///
-/// ⇒ **The reason to be silent was that the answer was always the same.**
-/// When that stops being true, silence stops being honesty and becomes
-/// withholding.
-///
-/// # The declaration order is a PRIORITY order, and `Ord` is derived
-///
-/// Two selected objects can be unanswerable for two different reasons, and the
-/// panel prints one sentence. Which one is not arbitrary: [`Membership::join`]
-/// takes the **smaller**, so the variant declared first wins, and the order
-/// below is *"which reason does the operator most need to read?"*
-///
-/// * **Nothing could be read at all** dominates every finer reason, because
-///   none of the finer ones was even reached.
-/// * **A nesting pdfcer cannot see through** outranks a malformation, because
-///   it is specific to the thing they clicked and it is actionable — ungroup
-///   the form.
-/// * **A malformed page** outranks the two bookkeeping states, because it is a
-///   fact about their file rather than about pdfcer's cache.
-///
-/// Deriving `Ord` rather than writing a `rank()` is deliberate: a hand-written
-/// ranking and a variant list are two places to state one order, and they drift.
-/// Moving a variant is the whole edit.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Unresolved {
     /// The page's content would not decompose at all, so there is no object
@@ -102,10 +69,6 @@ impl Unresolved {
 }
 
 /// Which optional-content group the current selection belongs to.
-///
-/// Five-valued on purpose — see the module header's table for the states an
-/// `Option` would merge and why merging them produces a false statement rather
-/// than a missing one.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Membership {
     /// **Nothing is selected**, so there is no question to answer.
@@ -283,18 +246,6 @@ impl Membership {
 }
 
 /// **The answer for one page object**, from its `/OC` and the page's honesty.
-///
-/// A pure function over the two values that decide it, so the rule can be
-/// tested without a document, a decomposition or an egui frame — and so that
-/// the leaf rule beside it is visibly the *same* rule plus its two extra
-/// clauses rather than a second, similar one.
-///
-/// `page_malformed` is
-/// [`pdfcer_core::vector::DecomposeDiagnostics::oc_unresolved`]` > 0`. It
-/// demotes a `None` and leaves a `Some` alone, which is the asymmetry the
-/// counter's own doc comment describes: an unresolvable section produces `oc
-/// == None`, never a wrong group, so a positively named group is unaffected by
-/// one existing elsewhere on the page.
 #[must_use]
 pub const fn for_object(oc: Option<ObjId>, page_malformed: bool) -> Membership {
     match oc {
@@ -306,29 +257,6 @@ pub const fn for_object(oc: Option<ObjId>, page_malformed: bool) -> Membership {
 
 /// **The answer for one object inside a form XObject** — the repair for
 /// divergence D1.
-///
-/// # The three clauses, and what each is worth
-///
-/// 1. **The leaf's own `/OC` wins outright.** It is the innermost membership,
-///    which is what `current_oc` resolves and what the renderer honours. Depth
-///    is irrelevant to it.
-/// 2. **At depth 1, an absent one falls back to the enclosing form object's.**
-///    That object is `PageObjects::objects[leaf.paint_order]`, decomposed by
-///    the page walk, and its `oc` was resolved by the same engine code that
-///    resolved every other object on the page — including the `xobject_oc`
-///    §8.11.3.3 case. Composing the two is not a second implementation; it is
-///    reading an answer the engine already computed and did not thread through.
-/// 3. **Deeper than that, say so.** `collect_form_leaves` drops the nested
-///    form *container* from the leaf list on purpose (it would otherwise put a
-///    second page-sized hit target back into the list built to remove the
-///    first), so an intermediate form's own `/OC` has no representative
-///    anywhere in `PageObjects`. There is nothing to compose, and guessing
-///    with the outermost would name a group an inner `/OC` may have overridden.
-///
-/// `outermost` is deliberately named for what it *is* rather than "parent":
-/// `paint_order` is the **outermost** enclosing form's index in the page's own
-/// list, carried unchanged down the recursion. At depth 1 outermost and parent
-/// coincide, which is exactly why clause 2 is fenced to depth 1.
 #[must_use]
 pub const fn for_leaf(
     own: Option<ObjId>,
@@ -370,46 +298,6 @@ fn for_target(model: &PageObjects, target: TargetId) -> Membership {
 }
 
 /// **Which layer is the current selection on?**
-///
-/// # The order of the arms, which is the whole of the routine
-///
-/// 1. **An annotation is selected** → ask the engine. `Annotation::oc` is the
-///    §8.11.3.3 reference, and `None` there means *on no layer* — the engine
-///    has read the annotation and the entry is absent, which is a fact rather
-///    than an inability.
-/// 2. **Content is selected** → fold [`for_target`] over every selected target
-///    on the page whose model this shell holds, and join
-///    [`Unresolved::OtherPage`] if any entry names another page.
-/// 3. **Nothing is selected** → [`Membership::NothingSelected`].
-///
-/// `SelectionState` enforces that 1 and 2 are mutually exclusive — its `annot`
-/// field exists *"because the two are mutually exclusive and that must be
-/// enforced by a type, not remembered"* — so the order between the first two
-/// arms cannot decide anything, and it is written annotation-first only
-/// because it is the shorter arm.
-///
-/// # The empty-target guard, which is not redundant with `is_empty`
-///
-/// `is_empty()` is false while entries exist on **another** page, and
-/// `targets_on(current)` is then empty. Folding an empty iterator yields
-/// [`Membership::NothingSelected`], which would report *"nothing is
-/// selected"* about a selection that exists — the shape of wrong answer this
-/// whole type is built to make unrepresentable. So the off-page entries are
-/// counted and joined explicitly.
-///
-/// # Cost
-///
-/// For an annotation: one `page_annotations` read of its page, per frame,
-/// while one is selected — the same call the Comments panel makes for *every*
-/// page on every frame.
-///
-/// For content: a borrow of `OpenDoc`'s existing decomposition cache and an
-/// index per selected object. **No new decomposition**; `page_objects()` is
-/// the model the canvas overlay, the Objects panel and the status bar already
-/// read on the same frame, keyed on the engine's own
-/// `page_content_generation` digest. It is deliberately not cached further: a
-/// cache keyed on a selection plus an edit epoch is a third thing to keep in
-/// step for a vector index.
 #[must_use]
 pub fn resolve(doc: &OpenDoc) -> Membership {
     let Some(annot) = doc.selection.annot() else {
@@ -477,35 +365,6 @@ fn resolve_content(doc: &OpenDoc) -> Membership {
 
 /// **How many parts the one selected object holds**, when that number is a
 /// reason to distrust the word "selected".
-///
-/// `Some(n)`, `n > 1`, only when exactly one object is selected and it is a
-/// path with several subpaths. `None` otherwise — including for a
-/// multi-object selection, where the mismatch is already obvious from the
-/// count in the status line.
-///
-/// # Why a readout owes this at all
-///
-/// The operator, on his own drawing: **one PDF path object holds 6,681
-/// anchors across half his sheet.** `pdfcer object-list` on `SW41177.pdf` p1
-/// reports three objects of 4,405, 4,972 and 6,681 anchors, the largest
-/// holding **1,194 subpaths** over 550 × 500 pt. He clicks a circle; pdfcer
-/// selects the object the circle is a subpath of.
-///
-/// The layer named is that object's, and it is **correct** — `/OC` wraps paint
-/// operators, so every subpath of one object shares one membership by
-/// construction (module header). But *"this is on layer Grid"* said about
-/// something the operator believes is a single circle is a true sentence he
-/// will read as a claim about the circle, and on his files it is a claim about
-/// a thousand other curves as well.
-///
-/// ⇒ **The precision is real and the granularity is not his.** Stating the
-/// part count is how the sentence stops over-promising, and it is stated
-/// **off-canvas** — Rule 4 forbids marking the drawing to express it.
-///
-/// It is a count and not a hedge. *"This may be part of a larger object"*
-/// would be a permanent disclaimer; *"this object holds 1,194 parts"* is a
-/// measurement he can act on, and it is silent on the overwhelmingly common
-/// object that holds one.
 #[must_use]
 pub fn parts_in_selected_object(doc: &OpenDoc) -> Option<usize> {
     if doc.selection.annot().is_some() {

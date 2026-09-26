@@ -94,3 +94,48 @@ The situation is real: delete a page, undo the delete. The page comes
 back, and whatever number its slot held before is meaningless — the
 caller raises `bump_all` for a renumbering, and this asserts the resize
 itself does not hand back a stale value.
+
+### `fn get`
+
+`max(all, per_page[page])`, which is the invariant the whole design
+rests on: a document-wide bump raises every page at once and **cannot
+be undercut** by a per-page counter that happens to be lower, whatever
+order the two were written in. A cache comparing this number against the
+one its entry was built at is therefore correct without knowing anything
+about which verbs are narrowed and which are not.
+
+A page index past the end answers `all`. That is not a bounds-check
+convenience — it is the conservative answer, chosen because the
+alternative (`0`) would look *older* than any real page and would keep a
+cache entry the caller has no evidence for.
+
+### `fn bump`
+
+Only call this where the confinement is a *property of the verb*, not
+an observation about the last time it ran. The two narrowings that ship
+today are named at their call sites, each with its own argument.
+
+Grows `per_page` if the page is past the end, so a caller never has to
+sequence this against [`Self::resize`]. The pages it grows through
+start at the current `all`, so a page that has never been named
+individually reports the document-wide floor rather than zero — the
+same conservative choice [`Self::get`] makes, made once here so the two
+cannot disagree.
+
+The number it issues comes from [`Self::next`], shared with
+[`Self::bump_all`] — see that field for why a second counter here would
+let a document-wide bump fail to move a recently narrowed page.
+
+### `fn resize`
+
+Called from `actions::pages::resync`, which is the one place that knows
+the page vector was replaced. **Growth fills with `all`**, so a newly
+inserted page reports the document-wide floor and no cache mistakes it
+for a page it has a picture of.
+
+It does **not** bump anything. A page count changing is not by itself
+an edit to any page's content, and the caller that knows the pages were
+*renumbered* raises `bump_all` separately — two facts, two calls, so
+neither is inferred from the other. A document that gains a page at the
+end has not changed page 0, and a rail that redrew page 0 for it would
+be this module's own defect.

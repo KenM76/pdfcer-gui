@@ -45,11 +45,6 @@ pub const fn window_title() -> &'static str {
 }
 
 /// The paragraph under the title.
-///
-/// Load-bearing rather than decorative: it is the sentence that tells an
-/// operator why this window is full of questions instead of being full of
-/// answers. Without it, thirteen radio groups read as thirteen things pdfcer
-/// could not decide.
 #[must_use]
 pub const fn intro() -> &'static str {
     "The PDF standard leaves some things genuinely undefined, so different \
@@ -60,18 +55,6 @@ pub const fn intro() -> &'static str {
 }
 
 /// Where the settings file lives, said in the operator's terms.
-///
-/// # Why this line is always shown
-///
-/// An operator who does not know which of the two homes is live cannot follow
-/// the update instructions, and those instructions are the one place a wrong
-/// guess costs them their configuration: *"replace the program files, keep
-/// your `userdata` folder"* means nothing if the settings are not in it.
-///
-/// [`StoreKind`] is `#[non_exhaustive]`, so the catch-all arm is required by
-/// the compiler — and it still says something useful rather than falling
-/// silent, because a variant this build does not know about is still a home
-/// the operator's settings are in.
 #[must_use]
 pub fn store_location(store: &StoreLocation) -> String {
     match (store.kind, store.path.as_deref()) {
@@ -107,11 +90,6 @@ pub const fn save() -> &'static str {
 }
 
 /// Why Save is greyed.
-///
-/// Greyed rather than absent, which is the one place this window departs from
-/// the no-placeholders rule and is entitled to: Save is *temporarily*
-/// unavailable — one radio click makes it live — and greying with a reason on
-/// hover is exactly what that rule reserves greying for.
 #[must_use]
 pub const fn save_disabled_tooltip() -> &'static str {
     "Nothing has changed yet."
@@ -124,12 +102,6 @@ pub const fn cancel() -> &'static str {
 }
 
 /// What Cancel promises, said plainly and unconditionally.
-///
-/// Not a courtesy. Four of the thirteen settings change **saved bytes**, so an
-/// operator who has been clicking radio buttons for a minute needs to know
-/// that none of it has taken effect — and needs to know it *before* they
-/// decide whether to click Cancel, which is why it is a tooltip on an
-/// always-enabled control rather than a confirmation after the fact.
 #[must_use]
 pub const fn cancel_tooltip() -> &'static str {
     "Close without changing anything. Nothing you have clicked here has taken \
@@ -149,10 +121,6 @@ pub const fn restore_defaults_disabled_tooltip() -> &'static str {
 }
 
 /// What *Restore defaults* actually does, on hover when it is live.
-///
-/// It replaces the **draft** and does not save. Said out loud because the
-/// button's name suggests otherwise: "restore defaults" in most programs is
-/// immediate and irreversible, and this one is neither.
 #[must_use]
 pub const fn restore_defaults_tooltip() -> &'static str {
     "Sets every choice below back to pdfcer's own answer. Nothing is written \
@@ -166,11 +134,6 @@ pub fn saved(path: &str) -> String {
 }
 
 /// The status-bar line after a failed save.
-///
-/// Loud, and deliberately not softened: the operator asked for something to be
-/// remembered and it was not. The session still honours the choice — see the
-/// dispatch arm — so the sentence has to carry the distinction between "this
-/// did not happen" and "this will not survive a restart".
 #[must_use]
 pub fn save_failed(reason: &str) -> String {
     format!(
@@ -197,22 +160,12 @@ pub const fn group_colour() -> &'static str {
 
 /// The group holding the one control about the PERSON rather than the document
 /// or the program.
-///
-/// *"Comments"*, not *"Annotations"* or *"Markup"*. Every reviewer UI the
-/// operator has used calls them comments; *annotation* is the PDF's word for
-/// the object and *markup* is ours for the tool. The heading is where somebody
-/// looks, so it takes their word.
 #[must_use]
 pub const fn group_comments() -> &'static str {
     "Comments"
 }
 
 /// The Forms group's caption.
-///
-/// *"Forms"*, not *"Tab order"*. The caption names the subject an
-/// operator is looking for; both controls inside it name the property.
-/// It also leaves room for a second forms setting to join without the
-/// caption turning into a list.
 #[must_use]
 pub const fn group_forms() -> &'static str {
     "Forms"
@@ -225,11 +178,6 @@ pub const fn group_images() -> &'static str {
 }
 
 /// The Fonts group's caption.
-///
-/// *"Fonts"*, not *"Font folders"*. A group caption names the subject and the
-/// control inside it names the property — the same call `text::ribbon`'s
-/// `group_format_font` makes, and it leaves room for a second font setting to
-/// join without the caption becoming a list.
 #[must_use]
 pub const fn group_fonts() -> &'static str {
     "Fonts"
@@ -243,12 +191,6 @@ pub const fn font_folders_label() -> &'static str {
 
 /// The hint states the **consequence of leaving it empty**, which is the
 /// one fact an operator cannot discover from an empty list.
-///
-/// pdfcer does not search the system font directory and will not: embedding
-/// whatever a machine happens to hold into somebody's document is a licensing
-/// decision, and it is not pdfcer's to make silently. So an empty list is not a
-/// default that works — it is embedding switched off, and the sentence says so
-/// before the operator meets it at the far end of a failed embed.
 #[must_use]
 pub const fn font_folders_hint() -> &'static str {
     "When a document names a font it does not carry, pdfcer looks here to embed it. It \
@@ -256,23 +198,12 @@ pub const fn font_folders_hint() -> &'static str {
 }
 
 /// Shown in place of an empty list.
-///
-/// Its wording changed on 2026-08-28 when the OS-fonts checkbox landed:
-/// "no folders" stopped meaning "nothing to embed from", because the box may be
-/// ticked. An empty-state sentence that contradicts a control four rows below it
-/// is worse than none -- an operator who has ticked the box and reads *"nowhere
-/// to take one from"* has been told their setting does not work.
 #[must_use]
 pub const fn font_folders_none() -> &'static str {
     "No folders of your own yet."
 }
 
 /// The same empty state when the OS-fonts box is **not** ticked either.
-///
-/// Two sentences for two states rather than one that hedges. This is the only
-/// configuration in which embedding genuinely cannot take a font from anywhere,
-/// and it is worth saying plainly at the moment it is true -- not at the far end
-/// of an embed, which is where the operator would otherwise meet it.
 #[must_use]
 pub const fn font_folders_none_at_all() -> &'static str {
     "No folders yet and this computer's fonts are switched off, so embedding a missing \
@@ -280,24 +211,12 @@ pub const fn font_folders_none_at_all() -> &'static str {
 }
 
 /// The checkbox the operator asked for, in his own words.
-///
-/// `OPERATOR_REQUESTS.md` **O50**: *"just a simple checkbox to include fonts
-/// from the OS installed font folders."* "Installed on this computer" rather
-/// than "system fonts" or "OS fonts", because that is what the thing IS to the
-/// person ticking it -- they installed them, or their IT did, and either way
-/// "OS" is a word about implementation.
 #[must_use]
 pub const fn use_os_fonts_label() -> &'static str {
     "Use the fonts installed on this computer"
 }
 
 /// What ticking it means, including the part pdfcer cannot answer for them.
-///
-/// It states the **licensing** consequence, and that is not legal throat-
-/// clearing: it is the reason this is a checkbox and not the default. The
-/// operator is being handed a decision, and a control that hands somebody a
-/// decision without saying what the decision is about is a control that took it
-/// for them.
 #[must_use]
 pub const fn use_os_fonts_hint() -> &'static str {
     "Embedding puts a font's outlines inside a document you may send to somebody else, \
@@ -305,23 +224,12 @@ pub const fn use_os_fonts_hint() -> &'static str {
 }
 
 /// The heading over the folders the checkbox resolves to.
-///
-/// The folders are DRAWN, greyed, under the tick. A checkbox whose effect is
-/// invisible is one nobody can verify -- and the per-user folder in particular
-/// is somewhere most operators do not know exists, so listing it is the
-/// difference between a setting they trust and one they re-tick to see if it
-/// took.
 #[must_use]
 pub const fn use_os_fonts_folders() -> &'static str {
     "pdfcer will also search:"
 }
 
 /// Shown when the box is ticked and the machine reports no font folder at all.
-///
-/// A real state and not a defensive one: `%WINDIR%` and `%LOCALAPPDATA%` are
-/// read from the environment rather than assumed, and a stripped or unusual
-/// image can leave both unset. Saying so beats a tick with nothing under it,
-/// which reads as the list still loading.
 #[must_use]
 pub const fn use_os_fonts_none_found() -> &'static str {
     "pdfcer could not find a font folder on this computer."
@@ -340,11 +248,6 @@ pub const fn font_folder_add_hover() -> &'static str {
 }
 
 /// The per-row remove button.
-///
-/// A word rather than a `×`. This list is at most sixteen rows and every row
-/// is a path an operator typed or picked; a glyph that means *delete* on a row
-/// whose other content is a file path is one mis-click from removing the wrong
-/// one, and the word is two characters wider.
 #[must_use]
 pub const fn font_folder_remove() -> &'static str {
     "Remove"
@@ -375,17 +278,6 @@ pub const fn group_text() -> &'static str {
 }
 
 /// Group 5.
-///
-/// **New in this port.** In the old shell `parallel_epsilon_degrees` sat
-/// under *Copying and extracting text* — where it has nothing to do with
-/// either — purely because it happened to be a slider like the word-gap one
-/// beside it. The operator symptom is *"my dimension came out as an angle"*,
-/// and nobody with that symptom looks under a heading about copying.
-///
-/// The group headings are the whole navigation model of this window: an
-/// operator arrives with a symptom and the headings are how a symptom finds
-/// its setting. A setting filed under the wrong one is not untidy, it is
-/// unreachable.
 #[must_use]
 pub const fn group_measuring() -> &'static str {
     "Measuring and dimensioning"
@@ -404,16 +296,6 @@ pub const fn group_saving() -> &'static str {
 }
 
 /// Group 8 — the only one that is not about the PDF standard.
-///
-/// **Named for what it is about, not for where its values are stored.** These
-/// two settings live in `preferences.txt` rather than `settings.txt`, which is
-/// an implementation fact the operator has no business meeting: they opened one
-/// window, they press one Save, and one Cancel discards the lot.
-///
-/// *"Drawing"* rather than *"Rendering"* or *"Performance"*. "Rendering" is a
-/// word from our side of the fence; "Performance" promises a tuning panel and
-/// there are two controls. What both settings actually change is how the page
-/// gets drawn, which is what the heading says.
 #[must_use]
 pub const fn group_display() -> &'static str {
     "Drawing the page"

@@ -89,3 +89,28 @@ shows `Received`, not `#Received`.
 
 ⚠ Stripping it here is presentation only. [`CustomStamp::dynamic`] carries
 the fact, so nothing downstream has to re-derive it from a string.
+
+### `struct CustomStamp`
+
+# Why the whole thing travels rather than an index
+
+This is carried on `Action::CommitTextAnnot` and therefore has to survive
+the dialog that produced it. An index into a [`Library`] would be a handle
+into a list that is rescanned on the next gallery, which is the exact shape
+of bug where the operator places *Ken* and gets *Savy* because a file
+landed in the folder in between. Three `String`s and a `PathBuf` per
+placement is not a cost worth that risk.
+
+### `fn scan`
+
+Never fails: a missing folder, an unreadable file and a PDF that is not a
+stamp collection are all ordinary outcomes, and each is *counted* rather
+than raised. The caller draws whatever came back.
+
+# Cost, because this runs when a dialog opens
+
+One `read_dir` plus one [`Document::load`] per `.pdf` in the folder. A
+stamp collection is a handful of kilobytes; the operator's own is one file
+with two stamps. If that folder ever holds something large this is the
+place that will show it, and the answer then is a cache with an mtime, not
+a background thread.

@@ -105,3 +105,21 @@ inserted-`Td` sentence per run it had to place an operator for, and a line
 of nine pieces would otherwise report the same fact nine times — which
 reads as nine separate things having happened. First-seen order is kept, so
 the sentences still arrive in the order the engine produced them.
+
+### `enum VectorAction`
+
+Carried by [`super::action::Action::Vector`]. Every variant names a page and
+paint-order indices into it; see the module header for why both travel
+rather than being re-derived.
+
+### `fn apply`
+
+Routed here from `super::apply` rather than living there, which is the shape
+[`super::dimensions::apply`] already sets: the family module owns both the
+vocabulary and what the vocabulary does. `super::apply` stays a routing
+table.
+
+Every arm goes through `super::apply::vector_edit` — the four-step protocol
+(cancel the render worker, mutate through `Arc::get_mut`, bump the epoch,
+drop the texture) whose whole reason for existing is that seven hand-written
+copies would be seven chances to omit a step.

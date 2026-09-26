@@ -19,11 +19,6 @@ const MENU_MEMORY_KEY: &str = "pdfcer-canvas-menu"; // ui-text-exempt: internal 
 const MENU_SLOT: &str = "canvas-menu"; // ui-text-exempt: trace slot name, never displayed
 
 /// Which of the canvas's two menus a right-click asked for.
-///
-/// An enum rather than a `&'static str` in `Memory`, so the only two
-/// answers are the two that exist and a typo cannot store a context id no
-/// menu is defined for — which would silently degrade into "right-clicking
-/// the canvas does nothing", the exact symptom this whole change removes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CanvasMenu {
     /// The pointer was over an object: act on it.
@@ -133,16 +128,6 @@ impl CanvasMenu {
 
 /// **Make the selection agree with what the pointer is over, and say which
 /// menu that is.**
-///
-/// Pure but for the selection it is handed: no `egui`, no geometry, no
-/// provider. The hit test has already happened; what is decided here is the
-/// *policy*, and the policy is the part that can be wrong in a way an
-/// operator would notice. See the module header for the three rules and
-/// what each one prevents.
-///
-/// `object` is the front-most object under the pointer, or `None` for blank
-/// page — the same answer `CanvasTargetProvider::hit_test` gives a left
-/// click.
 pub fn select_under_right_click(
     selection: &mut SelectionState,
     page: usize,
@@ -200,23 +185,6 @@ pub fn select_under_right_click(
 }
 
 /// **What a right-click landed on**, hit-tested at the object rung.
-///
-///
-/// **The OBJECT rung only** — `hit_test`, not `probe`. `probe` also asks for
-/// the nearest part and node so that a double-click can descend, and a
-/// right-click never descends: it names a whole object, because the verbs a
-/// context menu offers act on whole objects. Asking for the deeper rungs would
-/// pay for two extra provider queries on every right-click and discard both.
-///
-/// It takes the frame's **screen** position and the frame's **one** mapping,
-/// rather than a page point. The `PointerFrame` has been consumed by the
-/// gesture machine by the time a menu is attached, so re-deriving the page
-/// point through the same `map` is the frame's one conversion applied twice —
-/// not a second conversion, which is the distinction `canvas::mapping`'s header
-/// insists on.
-///
-/// `None` when there was no secondary click this frame, when nothing was
-/// decomposed, or when the pointer is off the page.
 #[must_use]
 pub fn right_clicked_object(
     secondary_clicked: bool,
@@ -234,11 +202,6 @@ pub fn right_clicked_object(
 }
 
 /// **Everything one frame's canvas menu needs.**
-///
-/// A struct rather than twelve arguments, and it crossed the threshold the way
-/// every other gesture type in this crate did — see [`attach`]'s note. What it
-/// buys beyond satisfying a lint is that each fact can carry the note that says
-/// *why it is here*, which twelve positional parameters cannot.
 pub struct Attach<'a> {
     /// The canvas response the popup attaches to.
     pub response: &'a egui::Response,
@@ -285,50 +248,6 @@ pub struct Attach<'a> {
 }
 
 /// Read, resolve and attach the canvas context menu for this frame.
-///
-/// Called on **every** frame, not only on the frame of the click: `egui`
-/// draws an open popup until it is dismissed, and the popup only exists
-/// while something is attached to the response.
-///
-/// # The order inside, and why it is this order
-///
-/// 1. **No host, nothing happens** — including no selection change. The
-///    select-first step exists to make the menu about the thing you pointed
-///    at; performed without a menu to follow it would be a right-click that
-///    silently moved the selection, which is a surprise and not a feature.
-///    `menus` is `None` only when the built-in manifest failed to validate,
-///    which `PdfcerApp::new` treats as "the ribbon does not render and the
-///    application stays usable for reading".
-/// 2. **The secondary click**, which may move the selection and does decide
-///    the context. Before the attach, so the conditions below describe the
-///    selection the operator is about to act on.
-/// 3. **The conditions, corrected.** `PdfcerApp::conditions()` was evaluated
-///    at the top of the frame, before any widget was drawn, so its
-///    `selection.any` predates step 2 by construction. Left stale,
-///    `format.delete` resolves disabled, the menu has nothing enabled, and
-///    the engine correctly refuses to open it — so the **first** right-click
-///    on an object would do nothing at all, and no later frame could
-///    recover because the popup is opened by the click.
-///    `MenuHost::with_condition` carries the full account.
-/// 4. **Attach**, which is also where *"a menu with nothing to offer never
-///    opens"* is enforced: the engine resolves the menu and asks
-///    `offers_anything` before it asks `egui` for a popup, and closes an
-///    already-open popup whose offer has evaporated — so a menu left open
-///    over a selection that is then deleted vanishes instead of lingering
-///    with a dead Delete in it.
-///
-/// Returns the handler tokens the operator chose, for the caller to hand to
-/// the application's one dispatch point. **Nothing here executes anything.**
-///
-/// It took eight positional arguments until 2026-09-06 under a
-/// `too_many_arguments` allow whose reason ended *"the resulting type would
-/// have no name that was true"*. The markup menu brought four more — the
-/// document, the mapping, the pointer and one capability, every one of them
-/// needed to answer *which corner* — and twelve is past the point where the
-/// argument holds: [`Attach`] does have a true name, it is *one right-click*,
-/// and every field can now carry the note that explains it. The same
-/// conversion `Press`, `Keys`, `Frame`, `Drag`, `Swept` and
-/// [`super::rightclick::Click`] all made.
 #[must_use]
 pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
     let Attach {

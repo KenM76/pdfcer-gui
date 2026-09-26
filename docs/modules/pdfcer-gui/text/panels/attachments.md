@@ -138,3 +138,286 @@ that ends in punctuation waiting for a clause that never came.
 A `/FileAttachment` is destroyed with its page, this application can
 delete a page from three surfaces, and *"On page 3"* alone would leave
 an operator to discover that from a file that has lost something.
+
+### `fn count`
+
+Singular is spelled out rather than reached by a plural rule, matching
+[`super::bookmarks_count`]'s shape: *"1 attached files"* is the tell that a
+program is filling in a template.
+
+### `fn empty`
+
+**Worded as a fact about the document, not as an absence of a feature.**
+The overwhelming majority of PDFs have no attachments and are perfectly
+ordinary; an operator reading this must not be left wondering whether pdfcer
+failed to look.
+
+### `fn unnamed`
+
+`NameSource::None` is reachable — a filespec may carry no `/F`, `/UF`,
+`/DOS`, `/Mac` or `/Unix`, and a page annotation has no name-tree key to
+fall back on — and the row must still exist, because the operator can still
+save the bytes out. A blank line where a name belongs reads as a rendering
+fault.
+
+### `fn where_document`
+
+The distinction this states is the one `pdfcer_core::attachments`' module
+docs say *"bites hardest at save time and at page-delete time"*: this kind
+belongs to the document and survives the deletion of every page.
+
+### `fn where_page`
+
+The clause about page deletion is the whole reason this string is not
+simply *"On page 3"*. A `/FileAttachment` annotation (§12.5.6.15) is
+**destroyed when its page is deleted**, and this application can delete a
+page from three different surfaces. An operator who has been told is one
+who can decide; one who has not finds out from a file that used to have
+their supplier's spreadsheet in it.
+
+### `fn kind_claimed`
+
+*"claims"* is load-bearing and is not softened. `/Subtype` on an embedded
+file stream is a **claim by the document about its own payload, never a
+measurement** — `pdfcer-core` does not sniff the bytes, and `/text#2Fplain`
+on a Windows executable is trivially authorable. A caller that presented
+this as a safety signal would be turning an unverified assertion into an
+assurance, which is exactly the shape of the mistake that gets somebody to
+double-click.
+
+### `fn size`
+
+# Four different sentences, because there are four different facts
+
+Collapsing them would put a number on screen with no way to tell an
+agreed measurement from an unchecked declaration — and it is the *third*
+case that makes the collapse dishonest rather than merely lossy:
+
+| state | what pdfcer actually knows |
+|---|---|
+| `NotDeclared` | the document said nothing. §7.11.4 makes `/Size` optional, so this is ordinary. |
+| `NoStream` | there are no bytes at all — an external file reference (§7.11.3), legal and not extractable. |
+| `Unverified` | a size was declared and the stream is **filtered**, so its raw byte count is not its decoded byte count. Comparing them would manufacture a false verdict in both directions. |
+| `Agrees` / `Disagrees` | pdfcer counted. Only here is a comparison honest. |
+
+The `Disagrees` wording states both numbers and passes no judgment; see
+this module's header for why that is a requirement rather than a courtesy.
+
+### `fn dates`
+
+Printed verbatim. See the module header: `pdfcer-core` stores these raw
+because it has no shared §7.9.4 date type, and a parser written here would
+be a second one that disagrees with whichever is written next.
+
+### `fn date_tooltip`
+
+On hover rather than on the row, exactly as
+[`super::comments::comment_row_modified_tooltip`] is and for its reason: it
+answers a question most operators will never ask, and the ordinary value is
+legible enough to compare two rows by.
+
+### `fn name_is_approximate`
+
+`Attachment::name_exact` is `false` when decoding needed at least one
+U+FFFD substitution — an undefined PDFDocEncoding code, an odd trailing byte
+after a UTF-16BE BOM, an unpaired surrogate. That is **pdfcer's own
+lossiness**, and rule 4 requires disclosing it exactly as much as it
+requires disclosing an inference about the document.
+
+### `fn name_is_the_index_key`
+
+A name-tree key is **not** a filename and has no declared encoding.
+Table 31 describes `/EmbeddedFiles` as mapping name strings to file
+specifications and stops there — the sibling `/Renditions` row in the same
+table *does* require Unicode, so the omission is deliberate — and §7.9.6
+says outright that *"any encoding of the keys may be used as long as it is
+self-consistent"*. Producers routinely mangle these with numeric suffixes
+and portfolio folder prefixes, so a key shown as a name is a guess twice
+over, and this sentence is how both are disclosed.
+
+### `fn no_bytes`
+
+**Not necessarily a defect.** §7.11.3 file specifications also describe
+*external* files, which legitimately have nothing embedded — so this is
+worded as a fact about what the row can do, not as damage.
+
+### `fn broken_stream`
+
+Distinct from [`no_bytes`], and the distinction is the whole reason both
+exist: `AttachmentNotes::unresolvable_streams` is documented as *"always a
+defect"* — an `/EF` entry that exists and does not resolve to a stream —
+while `filespecs_without_stream` is ordinary. One sentence for both would
+either call a legal document damaged or let real damage pass unremarked.
+
+### `fn may_be_encrypted`
+
+See this module's header for why over-warning is the correct error here:
+the flag is set from the presence of `/Encrypt` alone, which is cheap and
+deliberately over-broad, and the failure it guards against is *silent* —
+a successful-looking extraction of garbage.
+
+### `fn listing_notes`
+
+# Why this is a function over the whole struct rather than a string per flag
+
+Because the panel must show **all** of them, and the failure mode of a
+string-per-flag catalog is a caller that renders four of the seven. The
+disclosure obligation here is not per-flag; it is *"is this list
+complete?"*, and that question has one answer assembled from the whole
+struct. Written as a pure function so [`tests`] can hold it to that without
+a `Ui`.
+
+An all-default `AttachmentNotes` returns an **empty vector**, which is the
+property the panel relies on to draw nothing: *"all-zero/false means the
+listing is complete and everything parsed."*
+
+`page_tree_unwalkable` is reported even though the document-level list is
+still complete, because the operator cannot tell the difference between
+*"there are no page attachments"* and *"pdfcer could not go and look"* — and
+those are the two answers that matter when a file has gone missing.
+
+### `fn attach_description_hint`
+
+*"optional"* is in the hint rather than in a sentence beside it, because
+it is the answer to the only question the field raises and an operator who
+reads it in the box has been answered before they wonder.
+
+### `fn attach_description_note`
+
+The second half is a **capability disclosure**, not a nicety.
+`EditSession::attach_file` takes the description at attach time and
+`pdfcer-core` has no verb that edits one afterwards, so an operator who
+leaves the box empty has made a decision they cannot revisit without
+removing the file and attaching it again. R9 forbids drawing a control for
+the edit that does not exist; it does not forbid saying so.
+
+### `fn attached`
+
+Three clauses, and each one is a thing the operator has no other way to
+learn:
+
+1. **the file is embedded, and a copy** — the original is untouched, which
+   is the first thing anybody wonders and the thing that decides whether
+   they go and delete it;
+2. **it is not on any page** — a document-level attachment (§7.11.4.1
+   route 2) appears nowhere in the rendering, so an operator looking for a
+   visual confirmation will not find one and must not conclude the attach
+   failed;
+3. **the document has grown** — the bytes are now inside the PDF, and on a
+   large attachment that is the difference between a file that emails and
+   one that does not.
+
+### `fn attach_refused_multi_node_tree`
+
+# Why this refusal is surfaced and the other three are not
+
+`attach_file` refuses four ways. Three of them —
+`DocumentEncrypted`, the certification gate and
+`ObjectCreationWouldExposeHiddenObjects` — are properties of the *document*
+that every other authoring verb in this shell shares, and this shell's
+settled answer for those is `super::super::apply::vector_edit`'s trace: they
+are conditions an operator cannot fix from this panel, and wording them here
+would put four sentences in the one status slot for states the Attachments
+panel did not create.
+
+`AttachmentTreeUnsupported` is different in kind, and that is the whole
+argument for this string. It is **specific to this feature**, it is
+**unreachable from any other surface**, and — the part that matters — the
+press produces *nothing at all*: no row appears, no error appears, and an
+operator has no way to distinguish it from a button that is broken.
+
+It is worded as a limit of pdfcer rather than as a fault in the file, because
+that is what it is: a `/Kids` name tree is entirely legal (§7.9.6), and the
+engine's refusal is a refusal to risk *"a document whose EXISTING
+attachments stop resolving"* by guessing at a `/Limits` repair.
+
+### `fn attach_source_unreadable`
+
+The detail is the operating system's own message, passed through: it names
+the file and says whether it was a permission, a lock or a missing path,
+and none of those is a distinction this catalog could redraw better.
+
+### `fn remove_tooltip`
+
+It names the **three objects** that go, because *"remove the row"* is what
+a careless implementation would do and it is the worst possible outcome:
+`detach_file`'s own docs say that removing only the tree entry leaves *"the
+bytes in the file with nothing pointing at them: invisible to every reader,
+still fully present on disk."* Saying what pdfcer does is how an operator can
+tell this implementation from that one.
+
+### `fn remove_lives_with_the_note`
+
+R9 says an absent capability renders nothing, and this is the sentence that
+makes the absence legible rather than mysterious. It is not that pdfcer
+cannot remove one; it is that a `/FileAttachment` is an **annotation**, is
+listed in the Comments panel as one, and is removed as one —
+`EditSession::detach_file` answers `AttachmentNotFound` for it by name,
+precisely so a shell can say which of the two kinds the operator is looking
+at.
+
+### `fn removed`
+
+# This sentence is required by `pdfcer-core`, in its own words
+
+> *"This is NOT a redaction verb and must not be described as one. If the
+> attachment was sensitive, the operator needs a full rewrite … Shells are
+> expected to say so rather than let 'delete' imply erasure."*
+
+
+And the second sentence **names the command that does it**. A disclosure
+that states a hazard and leaves the operator to find the remedy has done
+half the job; `file.save_compacted` is the full rewrite, it is on File ▸
+Save, and it is one control away.
+
+### `fn save_button`
+
+*"Save a copy"* rather than *"Extract"*: extraction is the engine's word for
+decoding a stream, and an operator's word for what this does is saving a
+copy. Nothing is taken out of the document.
+
+### `fn save_tooltip`
+
+The second clause is the disclosure the first invites: the bytes came from
+inside a file that arrived from somewhere, and `pdfcer-core`'s own module
+docs say it *"does not execute, open, or interpret them, and neither should
+a caller without its own gate."* pdfcer writes the file and stops; opening it
+is the operator's decision, and they should make it knowing that the
+document's declared type is a claim rather than a check.
+
+### `fn name_was_changed`
+
+# Why this is a required disclosure and not a nicety
+
+`sanitize_attachment_name`'s own docs record the design choice this string
+completes. pdfcer reports the **raw** name in the listing, because *"a
+forensic reader that quietly repairs its input is not a reader"* — the
+operator investigating a suspicious file must see the traversal that made it
+suspicious. And pdfcer refuses to *use* that raw name on a filesystem,
+because the failure mode is silent, remote and severe.
+
+Between those two correct decisions sits a gap: the row says one thing and
+the file on disk is called another. This sentence is the bridge, and
+`SafeName::hazards` exists — sorted and deduplicated, *"so a message can
+list them deterministically"* — for exactly this call.
+
+The hazard names are translated to plain English rather than printed. An
+operator seeing *"ParentTraversal"* has been shown a Rust identifier; one
+seeing *"it tried to climb out of the folder you chose"* has been told what
+happened to them.
+
+### `fn extract_failed`
+
+The detail is `AttachmentError`'s own `Display`, which distinguishes the
+four causes the engine went to the trouble of separating — an external
+reference, a missing stream, an unservable span, and a filter chain that
+failed or blew the decompression-bomb ceiling. Re-wording them here would
+be a second vocabulary for facts the engine already states precisely.
+
+### `fn gone`
+
+Reachable, and by the ordinary route rather than an exotic one: the queue
+drains **after** the frame, so an undo or a second removal raised earlier in
+the same frame can take the row away before this action is applied.
+Declining with a sentence beats declining in silence, and both beat acting
+on whatever moved into its place.

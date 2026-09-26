@@ -216,3 +216,86 @@ prove only that `matches!` works.
 A heading and an unresolved destination are both disabled rows. If
 they read the same, an operator cannot tell a perfectly ordinary
 document from one whose outline is damaged.
+
+### `mod add`
+
+Its header carries the `/Count` trap, which is the whole difficulty of the
+feature: a bookmark added under a **collapsed** parent does not change the
+document's total, so a surface reporting a diff reports zero for a correct
+save — and, more to the point for an operator, the bookmark is genuinely not
+visible until the parent is expanded.
+
+### `mod edit`
+
+Its header carries the two decisions a reader must not have to re-derive:
+why the delete is **undoable rather than confirmed** (one press is one
+engine command, so `Ctrl+Z` restores the whole subtree, and the sentence an
+operator needs is *"this takes the eleven underneath"* rather than *"are you
+sure?"*), and why reorder and re-parent belong to [`reorder`] rather than to
+another button in that block.
+
+### `mod reorder`
+
+Its header carries the three things a reader must not re-derive: why the
+gesture is copied from [`crate::panels::pages`] rather than invented, why a
+**tree** needs a depth at each landing where a grid needs only a gap — and
+the three-band split that supplies it — and why expansion is a **separate
+verb** rather than a flag on the move, which is the engine's own division:
+whether a move should reveal a collapsed destination has two defensible
+answers, so neither is built into the other.
+
+### `mod tree`
+
+Shared by [`add`], [`edit`] and [`reorder`], which is why it is not filed
+under any of them. Its header carries why both walks are generic over the
+tree (`OutlineItem` is `#[non_exhaustive]` and
+this crate cannot build one, so a recursion written over it directly is a
+recursion no test here can reach) and why the subtree count reads the
+**tree** rather than `/Count`.
+
+### `struct BookmarksUi`
+
+It lives at the panel's root rather than inside [`add`] because the row it
+holds is the row the **whole panel** is pointed at: [`edit`], [`clip`] and
+[`reorder`] all read it, and filing it under the module that writes new
+bookmarks would make three of them reach through a fourth to find the item
+they act on.
+
+**The selected bookmark is an `ObjId`, not a path through the tree.**
+`OutlineItem::id` exists for exactly this: identity is what a GUI needs and
+a tree walk cannot otherwise supply it. An index into the walk names a
+different bookmark after every add, because the indices shift — and the
+outline that results looks entirely plausible, so nothing downstream reports
+the error.
+
+### `fn select`
+
+Clears any rename draft held for a *different* bookmark on the way
+through, which is belt-and-braces beside [`Self::rename_draft_for`]'s
+staleness test: the draft is re-seeded on read anyway, and dropping it
+here means a stale name does not sit in memory being not-shown.
+
+### `fn clear_selection`
+
+Raised by the add row's *Move to top level* - where it means *"file the
+next one at the top"* - and by [`edit`] the instant a removal is raised,
+so the block does not spend one frame describing a bookmark that has
+gone. See that call site for why one frame matters.
+
+### `fn rename_draft_for`
+
+*Stale* means **held for a different bookmark** - see [`Self::rename`].
+
+**The draft does NOT follow the document while it is being typed**,
+deliberately, and that differs from `panels::docprops`'s
+epoch-reseed. The difference is what the two fields are: a metadata box
+commits on focus loss and is otherwise idle, so re-seeding it costs
+nothing; a rename box is typed into and then committed, and an epoch
+bump from an unrelated edit - placing a dimension, moving a page -
+would wipe a half-typed name mid-keystroke.
+
+The narrow cost is that undoing a rename leaves the old name in the box
+until the operator selects another bookmark and comes back. The button
+re-appears, because the draft now differs from the document, so the
+state is legible rather than wrong. Same trade, same wording, as
+`panels::dimension_groups::identity::rename_draft_for`.

@@ -13,12 +13,6 @@ use pdfcer_render::tiny_skia::Pixmap;
 
 /// One entry on the clipboard: a name Windows knows it by, and what the bytes
 /// under that name are for.
-///
-/// A shell enum rather than a `u32` format id, because a format id cannot be
-/// matched on, cannot be printed in a disclosure, and — for the three
-/// registered names — does not exist until `RegisterClipboardFormat` has been
-/// called at run time. What is *stable* about a clipboard format is its name
-/// and its position in [`ORDER`], and those are what this type carries.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ClipFormat {
     /// Registered `"image/svg+xml"` — UTF-8 SVG plus one trailing NUL.
@@ -49,16 +43,6 @@ pub enum ClipFormat {
 
 impl ClipFormat {
     /// The name Windows knows this format by.
-    ///
-    /// For [`Self::Svg`] and [`Self::Png`] this is the string handed to
-    /// `RegisterClipboardFormat` **verbatim**, and it is case- and
-    /// byte-sensitive: `"PNG"` is the registered name every browser and Office
-    /// itself uses, and `"png"` would register a different, private format
-    /// that nothing reads.
-    ///
-    /// For the two predefined formats it is the Win32 constant's name, which
-    /// is not passed to any API and exists so a disclosure can say which
-    /// formats went on in words an operator can search for.
     #[must_use]
     pub const fn name(self) -> &'static str {
         match self {
@@ -75,11 +59,6 @@ impl ClipFormat {
     /// Whether this format's name must be registered at run time
     /// (`RegisterClipboardFormat`) rather than being a predefined `CF_*`
     /// constant.
-    ///
-    /// This is the whole of why `arboard` cannot do this job: it offers no
-    /// API for a registered format, and the two formats that return `true`
-    /// here are the two that make a Word paste editable and an Inkscape paste
-    /// vector.
     #[must_use]
     pub const fn is_registered(self) -> bool {
         matches!(self, Self::Svg | Self::Png)
@@ -87,40 +66,6 @@ impl ClipFormat {
 }
 
 /// **The placement order, and it is measured rather than chosen.**
-///
-/// # Why an order exists at all
-///
-/// A pasting application "typically retrieves … the first format it
-/// recognizes". So the order is not a preference — it *is* the design. Every
-/// application that can read two of these will take whichever pdfcer placed
-/// first, and there is no second chance to influence that at paste time.
-///
-/// # What each position buys, and who it buys it from
-///
-/// | # | format | the reader it is there for |
-/// |---|---|---|
-/// | 1 | [`ClipFormat::Svg`] | Word / PowerPoint / Excel, which store it as `svgBlip` and place the shape at the page's physical size; Inkscape, whose own `clipboard.cpp` ranks SVG above EMF above PDF; LibreOffice ≥ 25.2 |
-/// | 2 | [`ClipFormat::Emf`] | LibreOffice 24.x, which has no other vector route on Windows; Office *Paste Special ▸ Picture (Enhanced Metafile)*; Visio, CorelDRAW, CAD importers |
-/// | 3 | [`ClipFormat::Png`] | Paint.NET, GIMP, browsers, Snip & Sketch — and Office, when the operator deliberately pastes as a picture |
-/// | 4 | [`ClipFormat::DibV5`] | everything older than the `"PNG"` convention; Windows synthesises `CF_DIB` and `CF_BITMAP` from it |
-///
-/// # The property that makes a partial implementation harmful
-///
-/// **The two vector entries come first, and if they are absent Word's paste
-/// silently becomes a flat picture.** Not an error, not a warning — a picture
-/// that looks correct at 100% and cannot be scaled, recoloured or ungrouped.
-/// An operator would report that as *"pdfcer's copy doesn't paste as
-/// vectors"*, which is indistinguishable from the feature not existing, except
-/// that it costs them the time to discover it.
-///
-///
-/// # Why `application/pdf` is not here
-///
-/// The engine's note offers it as an optional fifth entry and says only
-/// Inkscape reads it — and Inkscape already takes the SVG from position 1, so
-/// it would be a payload for nobody. It is also the most expensive one to
-/// build (a one-page PDF through `ObjectClip::to_pdf`), which is a real cost
-/// on a copy the operator expects to be instant.
 pub const ORDER: [ClipFormat; 4] = [
     ClipFormat::Svg,
     ClipFormat::Emf,
@@ -129,13 +74,6 @@ pub const ORDER: [ClipFormat; 4] = [
 ];
 
 /// What a copy-out would put on the clipboard.
-///
-/// Every field is optional so that a caller which could not produce one
-/// payload still places the rest — but see [`ORDER`] on why "the rest" is a
-/// dangerous thing to place when the missing one is [`ClipFormat::Svg`] or
-/// [`ClipFormat::Emf`]. [`CopyPayload::degrades_word_to_a_picture`] is the
-/// predicate that answers it, and a caller is expected to refuse rather than
-/// place a payload for which it returns `true`.
 #[derive(Debug, Default, Clone)]
 pub struct CopyPayload {
     /// The SVG document, as `pdfcer_render::svg::export_svg_view` produced it.
@@ -162,11 +100,6 @@ pub struct CopyPayload {
 
 impl CopyPayload {
     /// The formats this payload can supply, **in [`ORDER`]**.
-    ///
-    /// Derived from `ORDER` by filtering rather than by a hand-written list,
-    /// so the order cannot be stated correctly in one place and wrongly in
-    /// another. A second list is a second answer, and the one that would go
-    /// stale is whichever is not the one being read at the time.
     #[must_use]
     pub fn formats(&self) -> Vec<ClipFormat> {
         ORDER
@@ -181,16 +114,6 @@ impl CopyPayload {
     }
 
     /// **Whether placing this payload would give Word a flat picture.**
-    ///
-    /// True when there is a raster to place and no vector to place before it.
-    /// A caller must refuse rather than place such a payload: the paste
-    /// succeeds, looks right, and is not what was asked for, and nothing in
-    /// the receiving application says so.
-    ///
-    /// ⇒ Stated as a predicate on the payload rather than as a comment on the
-    /// placement function, because it is a property of *what was produced* and
-    /// the producer is where it can still be fixed — by rendering the SVG
-    /// again, or by declining the copy with a sentence.
     #[must_use]
     pub fn degrades_word_to_a_picture(&self) -> bool {
         let has_vector = self.svg.is_some() || self.emf.is_some();
@@ -206,28 +129,6 @@ impl CopyPayload {
 }
 
 /// **The SVG payload exactly as Chromium writes it: UTF-8, plus one NUL.**
-///
-/// # Why a trailing NUL on a format whose length is already known
-///
-/// Because that is the byte shape Microsoft validated Office against. Chromium
-/// (≥ M127) writes the SVG to `"image/svg+xml"` NUL-terminated, and Office's
-/// importer was tested against Chromium's clipboard rather than against a
-/// specification — so the NUL is a compatibility fact, not a framing
-/// requirement. `HGLOBAL` clipboard entries carry their own size; nothing
-/// *needs* the terminator.
-///
-/// ⚠ The failure mode if it is omitted is the worst kind: it very likely works
-/// in most readers, and the one that reads past the end or refuses the entry
-/// does so on somebody else's machine, in a version of Office nobody here has.
-/// It costs one byte. It goes on.
-///
-/// # Why the NUL is added here and is not part of `CopyPayload::svg`
-///
-/// So the same `String` can be written to a `.svg` file, which must **not**
-/// have one. A NUL inside an XML document is not permitted by XML 1.0 §2.2 at
-/// all, and a file carrying one is refused by strict parsers. Keeping the
-/// terminator at the placement boundary means the file path and the clipboard
-/// path cannot accidentally share it in either direction.
 #[must_use]
 pub fn svg_payload(svg: &str) -> Vec<u8> {
     let mut out = Vec::with_capacity(svg.len().saturating_add(1));
@@ -237,40 +138,6 @@ pub fn svg_payload(svg: &str) -> Vec<u8> {
 }
 
 /// `CF_DIBV5` bytes for a premultiplied RGBA pixmap.
-///
-/// A `BITMAPV5HEADER` (124 bytes) followed by 32-bit-per-pixel BGRA rows,
-/// **top-down** (a negative height), `BI_BITFIELDS` with explicit channel
-/// masks, and the sRGB colour space.
-///
-/// # Premultiplied, and why the format below it is not
-///
-/// `CF_DIBV5`'s alpha convention is not written down anywhere normative — it
-/// is whatever the ecosystem settled on. Chromium writes premultiplied
-/// (`CreateDIBV5ImageDataFromN32SkBitmap`) and Mozilla settled on reading
-/// premultiplied, so a straight-alpha DIB looks wrong — dark haloes around
-/// anything soft-edged — in precisely the readers that fall back to this
-/// format at all.
-///
-/// ⇒ Which is why `"PNG"` is placed **before** it. A PNG's alpha is straight
-/// and unambiguous (ISO 15948 §6.1), so every reader that understands the
-/// registered `"PNG"` name gets the unambiguous answer, and only readers old
-/// enough to need `CF_DIBV5` are exposed to the convention.
-///
-/// `tiny_skia` stores premultiplied RGBA natively, so the per-pixel work here
-/// is a channel reorder and nothing else — no multiply, no divide, no
-/// rounding, and therefore no place for the conversion to lose a value.
-///
-/// # The header fields that are not obvious
-///
-/// * `bV5Height` is **negative**. A positive height means bottom-up, which is
-///   the DIB default and would paste every copy upside down.
-/// * `bV5Compression` is `BI_BITFIELDS` (3) rather than `BI_RGB` (0), because
-///   `BI_RGB` at 32 bpp leaves the fourth byte formally undefined and readers
-///   disagree about whether it is alpha or padding. The explicit masks remove
-///   the question.
-/// * `bV5CSType` is `LCS_sRGB` — the four bytes `'sRGB'` as a little-endian
-///   `u32`, which is `0x7352_4742`. The endpoint and gamma fields that follow
-///   are unused for a named colour space and are written as zero.
 #[must_use]
 pub fn dib_v5(pixmap: &Pixmap, pixels_per_metre: u32) -> Vec<u8> {
     let (width, height) = (pixmap.width(), pixmap.height());
@@ -328,18 +195,6 @@ const LCS_SRGB: u32 = 0x7352_4742;
 const LCS_GM_IMAGES: u32 = 4;
 
 /// Pixels per metre for a resolution in dots per inch.
-///
-/// One inch is exactly 0.0254 m (the international inch, fixed by definition
-/// since 1959), so this is a conversion rather than an approximation. Rounded
-/// to nearest because the DIB field is an integer and a truncation would put
-/// a 300 DPI copy at 11,810 rather than 11,811 pixels per metre — which is
-/// how a paste ends up a hair's breadth off the page size it should have had.
-///
-/// The 0.0254 itself now lives in [`crate::units`], beside every other
-/// length conversion in the program. What stays here is the part that is about
-/// the DIB and not about the inch: the guard against a nonsense DPI, the zero
-/// returned instead, and the rounding argument above. A conversions table
-/// should not know what a bitmap header does with a bad number.
 #[must_use]
 pub fn pixels_per_metre(dpi: f32) -> u32 {
     if dpi.is_finite() && dpi > 0.0 {

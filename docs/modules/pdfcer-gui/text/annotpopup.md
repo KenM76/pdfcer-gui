@@ -153,3 +153,190 @@ A build that spoke on every call would make the one sentence that
 carries information — *"there was nowhere to record this"* —
 indistinguishable from the two that carry none, which is the failure
 this project calls a confirmation nobody reads.
+
+### `fn popup_heading`
+
+No page number, unlike the panel's row heading — see the module header. The
+subtype is the file's own spelling (`Text`, `Square`, `Line`), because that
+is the word the operator used when they placed it and the word every other
+surface in this shell uses for it.
+
+### `fn popup_ce_dimension_heading`
+
+Project rule 15 at the point of use, and the same shape
+`comment_row_ce_dimension_heading` takes: a **ce dimension** is a `/Line`
+annotation, and the bracketed subtype is not decoration — the reason a
+dimension appears on this surface at all is that it *is* one, and a heading
+that hid that would quietly contradict the argument that let it in.
+
+### `fn popup_no_note`
+
+Worded as a fact about the document rather than as missing data. On markup
+pdfcer itself drew this is the **expected** state: `MarkupSpec` has no
+contents field on any variant, deliberately, so a shape this shell authored
+has no note until somebody writes one.
+
+### `fn popup_ce_dimension_note`
+
+Its `/Contents` is **regenerated from the measurement** by
+`author_dimension`, so it is never a remark somebody wrote and a note typed
+over it would be silently thrown away. Rule 15 and R9 together: the
+capability is not withheld with a greyed control, it is explained.
+
+### `fn popup_close_tooltip`
+
+# What changed, and why the wording had to change with it
+
+This entry used to justify itself with *"`pdfcer-core` v0.38.0 has no verb
+that can change an existing annotation's `/Open`."* `Pass 253.3` shipped
+`EditSession::set_annotation_open` and that reason expired. The behaviour
+did **not** change and must not: closing a bubble you were reading is a
+reading gesture, and wiring it to the document would give a reviewer one
+undo entry per comment they glanced at and a dirty file after a session in
+which they altered nothing. `crate::app::actions::annot::AnnotAction::SetOpen`
+carries the whole argument.
+
+⇒ But an unchanged behaviour with an expired reason needs a **new**
+sentence, because the old one now reads as a limitation that is not there.
+So this points at [`popup_open_default`], which is the explicit act that
+does write. Rule 4: the operator is told what this did *and* where the
+other thing lives, which is the difference between an honest boundary and
+a dead end.
+
+### `fn popup_add`
+
+Two labels rather than one, because *Add* and *Edit* are different acts and
+a reviewer scanning a sheet's pop-ups can tell at a glance which comments
+have been written on.
+
+### `fn popup_remove_tooltip`
+
+The distinction the engine draws by having two verbs:
+`clear_markup_note` *"does **not** delete the annotation — the shape stays
+and undo restores the words"*, while `delete_annotation` is the other
+thing. Both controls are on this pop-up, so the difference has to be
+legible without pressing either.
+
+### `fn popup_delete_tooltip`
+
+Three things, and each is required by `docs/core-api/03-capabilities.md`
+§3.4: what it removes, that **delete is not redaction**, and — implied by
+the second — that a previous revision of the file may still hold it.
+
+### `fn popup_replies`
+
+The count is in the heading rather than left to be counted, because a
+thread scrolled past its third entry is one an operator cannot count by
+eye — and the number is what tells them there is more below the fold.
+
+### `fn popup_reply_is_group_member`
+
+Rule 4, and it is the same disclosure `comment_row_is_group_member`
+makes for the same reason: for a group subordinate the standard says its
+own `/Contents`, `/M`, `/T` and the rest *"shall be ignored"* in favour of
+the group primary's. `pdfcer-core` deliberately does not apply that rule,
+so what is shown here is the raw dictionary value — and another conforming
+reader will legitimately show something else.
+
+### `fn popup_read_only`
+
+# The one place this catalog explains an absence, and why R9 allows it
+
+R9 reserves an explanation for a capability that is **temporarily**
+unavailable, and Read mode is the purest example of that in the whole
+program: the capability is not missing, the operator has *chosen a stance*,
+and the control that changes it is a labelled three-position selector on
+the ribbon. Saying so is not a placeholder; it is the answer to *"why can I
+read this and not fix the typo?"*, which has exactly one correct answer and
+it is short.
+
+It names the mode to switch to rather than the mode you are in. *"You are
+in Read mode"* is a fact the badge already states; *"Review lets you edit
+comments"* is the sentence that gets the operator to the thing they wanted.
+
+### `fn popup_locked`
+
+§12.5.3 Table 165 bit 8: the file says the user interface *"shall not"*
+allow the annotation's properties to be changed. R83 — the controls are
+omitted rather than offered and refused — and this sentence is why they are
+not there, because otherwise a locked comment is indistinguishable from a
+broken pop-up.
+
+### `fn popup_tooltip`
+
+# Why the tooltip exists when a click opens the whole window
+
+Because it is the cheap half of the same affordance and every reader in the
+class has it: hovering answers *"what is this?"* without committing to
+opening anything, which is what a reviewer skimming a sheet of forty marks
+is doing. Acrobat shows author and text on hover; so does this.
+
+# It truncates, and the truncation is visible
+
+A tooltip that grew to a paragraph would cover the drawing it is about — a
+note is arbitrary operator text and can be a page of it. The ellipsis is
+the disclosure: it says there is more, and clicking is how you get it. The
+pop-up itself never truncates.
+
+### `fn popup_note_hint`
+
+Escape **writes**, which is the opposite of what the key usually means, so
+the sentence has to say it and has to name the control that does discard.
+The ruling is at `crate::panels::comments::editor::escape_commits`; this
+surface's half of it is `crate::canvas::notepopup::controls::save_draft`.
+
+It announces a keyboard route at all because a reviewer typing has their
+hands on the keyboard, and a keyboard route that nothing announces is a
+keyboard route nobody finds.
+
+### `fn popup_open_default`
+
+# Why *Open by default* and not *Save open state*
+
+Because the second names the mechanism and the first names the effect. The
+operator's question is *"will this comment be showing when somebody else
+opens the drawing?"*, and the label is the answer to it. It also reads
+correctly as a checkbox caption in both states, which *Save* — a verb — does
+not.
+
+It is deliberately **not** worded as an instruction about the current
+bubble. Ticking it does not open or close anything on screen: the operator
+is already looking at the window, and moving it under them as a side effect
+of recording a preference would be the surface acting on a gesture nobody
+made.
+
+### `fn popup_open_default_tooltip`
+
+It names **the file** and it names **undo**, and both halves are
+required. The first because this is the only control in the pop-up whose
+effect is invisible on screen — nothing about the window changes when it is
+pressed. The second because it is the only control in the pop-up that
+*reads* like a view setting and is in fact a document edit, and an operator
+who pressed it expecting a preference would otherwise find an entry on their
+undo stack with no idea what put it there.
+
+### `fn open_state_written`
+
+# The one outcome an operator cannot tell from a defect
+
+`set_annotation_open` writes `/Open` on the annotation only when its subtype
+has one — Table 172 gives it to `/Text` and Table 183 to `/Popup`, and
+**nothing else in Table 169 carries the key** — and on the `/Popup`
+companion only when there is one. An annotation with neither is a legal,
+ordinary shape: the call succeeds, writes nothing, and pushes **no undo
+entry**.
+
+The affordance is gated on `crate::canvas::notepopup::model::can_record_open_state`
+under R83, so this should be unreachable from the control. It is worded
+anyway, because *"the button did nothing and said nothing"* is
+indistinguishable from a broken build, and because the gate is this shell's
+reading of the subtype rules while this sentence is the **engine's own
+answer** — if the two ever disagree, the operator hears about it rather
+than the disagreement being swallowed.
+
+# `None` on success, and that is not silence
+
+A write that landed needs no sentence: the tick is on screen, it is what
+the operator asked for, and a confirmation for every ordinary success is
+the noise that makes the exceptional message invisible. Same rule
+[`crate::text::panels::comments::reply_posted`] follows.

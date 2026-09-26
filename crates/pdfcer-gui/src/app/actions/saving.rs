@@ -11,17 +11,6 @@ use crate::app::PdfcerApp;
 use crate::dialogs::signature::PendingSave;
 
 /// Route one of the three saves. See the module header.
-///
-/// Takes the action by reference because it is matched and not consumed: the
-/// caller has already decided this is a save, and re-matching here is what keeps
-/// the routing in one place rather than split across two files.
-///
-/// # Panics
-///
-/// Never. The `_` arm is unreachable — `apply` matches the three variants before
-/// calling — and is written as a no-op rather than an `unreachable!` because a
-/// panic on the frame path is a worse answer to an impossible input than doing
-/// nothing, which is `crate::ribbon`'s standing rule for the same shape.
 pub(super) fn apply(app: &mut PdfcerApp, action: &Action) {
     match action {
         Action::Save => {

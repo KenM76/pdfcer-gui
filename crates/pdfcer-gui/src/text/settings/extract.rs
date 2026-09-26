@@ -24,6 +24,8 @@
 //! line also says *"and the saved file if pdfcer re-compresses the image"*. It
 //! is the only setting whose radius spans two of the three. It sits with the
 //! others in its dialog group, where an operator looks for it.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/text/settings/extract.md`.
 
 // ===========================================================================
 // Copying and extracting text — word gap
@@ -115,11 +117,6 @@ pub const fn unmappable_title() -> &'static str {
 }
 
 /// Unmappable codes: what the standard leaves open.
-///
-/// *"The standard's own sentence about what to do here is incomplete"* is not
-/// a figure of speech: §9.10.2's failure clause is grammatically broken — it
-/// says a reader *"may choose a character code of their choosing"* where a
-/// Unicode value is what is produced — and specifies no sentinel anywhere.
 #[must_use]
 pub const fn unmappable_silence() -> &'static str {
     "Some documents draw text without recording which characters it is. The \
@@ -128,13 +125,6 @@ pub const fn unmappable_silence() -> &'static str {
 }
 
 /// Unmappable codes: what changing it costs.
-///
-/// Names **redaction**, which the source's radius line did not. R35 is
-/// explicit that a redaction built under one value is not equivalent under
-/// another: the sentinel changes character offsets, which changes which runs a
-/// pattern matches. An operator who redacts by pattern needs to know that
-/// changing this setting invalidates the reasoning behind a redaction they
-/// have already reviewed.
 #[must_use]
 pub const fn unmappable_radius() -> &'static str {
     "Affects copied and extracted text — including which text a redaction by \
@@ -177,16 +167,6 @@ pub const fn unmappable_omit_label() -> &'static str {
 }
 
 /// **The disappearing-run consequence, which the old note omitted.**
-///
-/// The source warned that extracted text reads as complete when characters are
-/// missing. True, and the smaller half. The larger one is documented in
-/// `pdfcer-core` and was shown nowhere: the layout pass drops a run with no
-/// characters, so a run whose codes are *all* unmappable **vanishes entirely,
-/// glyph records included** — a page of `Identity-H` text with no `/ToUnicode`
-/// yields *zero runs* rather than runs of sentinels.
-///
-/// That is the more surprising failure and the one that breaks anything
-/// needing per-glyph positions.
 #[must_use]
 pub const fn unmappable_omit_note() -> &'static str {
     "Cleanest-looking output, and the most dangerous: text you extract will read \
@@ -206,11 +186,6 @@ pub const fn actual_text_title() -> &'static str {
 }
 
 /// Replacement text: what the standard leaves open.
-///
-/// Three ISO 32000-1 statements disagree and none dislodges the others. The
-/// only sentence addressing precedence is a *may*, and it sits in an
-/// informative note — which is why neither reading can be eliminated and why
-/// this is a setting rather than a decision.
 #[must_use]
 pub const fn actual_text_silence() -> &'static str {
     "A document can attach replacement text to a piece of content — used for \
@@ -261,10 +236,6 @@ pub const fn actual_text_glyphs_label() -> &'static str {
 }
 
 /// What it loses.
-///
-/// The second sentence is not in the source: `Glyphs` **loses genuinely
-/// unrecoverable text**, because a ligature whose only Unicode identity was
-/// its replacement text extracts as whatever can be made of the glyph.
 #[must_use]
 pub const fn actual_text_glyphs_note() -> &'static str {
     "Always uses the drawn characters. Useful when a document's replacement text \
@@ -274,19 +245,6 @@ pub const fn actual_text_glyphs_note() -> &'static str {
 }
 
 /// **A bound that is not a setting, disclosed because it is a fact.**
-///
-/// New in this port; the old window disclosed it nowhere despite `pdfcer-core`
-/// documenting it and calling it *"a fact to disclose, not a direction to
-/// pick"*.
-///
-/// There is **no length correspondence** between replacement text and the
-/// content it replaces — the standard's own example maps two shown characters
-/// to one — so character-level mapping back to glyph positions is *impossible*
-/// across such a run. That bounds search highlighting, selection and
-/// redaction-by-text to **sequence** granularity **whichever of the three
-/// options is chosen**, which is exactly why it belongs under the group rather
-/// than inside one option's note: an operator who reads it as an argument for
-/// picking *Ignore it* has been misled.
 #[must_use]
 pub const fn actual_text_bound() -> &'static str {
     "Whichever you choose: where a document supplies replacement text, pdfcer can \
@@ -307,11 +265,6 @@ pub const fn parallel_title() -> &'static str {
 }
 
 /// Parallel tolerance: what nobody defines.
-///
-/// Not a spec silence — the PDF standard has no view on dimensioning at all —
-/// but the same shape of silence, and worth saying because the operator would
-/// otherwise reasonably assume CAD practice had settled it. A search of the
-/// SolidWorks dimension corpus for a threshold found none.
 #[must_use]
 pub const fn parallel_silence() -> &'static str {
     "Dimensioning between two lines has to decide whether they are parallel — \
@@ -320,10 +273,6 @@ pub const fn parallel_silence() -> &'static str {
 }
 
 /// Parallel tolerance: what changing it costs.
-///
-/// A **third** radius category, which neither the preview settings nor the
-/// byte-changing ones cover: it affects *new authoring only*. Dimensions
-/// already placed do not move, and nothing in the file changes.
 #[must_use]
 pub const fn parallel_radius() -> &'static str {
     "Affects new dimensions you draw between two lines. Does not change \
@@ -337,27 +286,12 @@ pub const fn parallel_slider_label() -> &'static str {
 }
 
 /// The degree sign, as a catalog entry.
-///
-/// # Why one character has a function
-///
-/// `check-ui-strings.sh` requires every operator-visible string to come from
-/// this catalog, and a bare `"°"` in a `Slider::suffix` call is exactly what
-/// that gate looks for. The old shell solved it with a private constant in the
-/// panel, which satisfies the gate's letter; a catalog entry satisfies its
-/// reason, since a translator localising this window would otherwise never see
-/// that the suffix exists.
 #[must_use]
 pub const fn degree_suffix() -> &'static str {
     "\u{b0}"
 }
 
 /// How to choose a tolerance, and the escape hatch.
-///
-/// The last sentence is deliberate and was in the source for a stated reason:
-/// an operator reading this control needs to know that a wrong global value is
-/// a one-click per-dimension fix, not something they must come back here to
-/// adjust. Without it, the natural response to one bad classification is to
-/// change a global default on the strength of a single drawing.
 #[must_use]
 pub const fn parallel_note() -> &'static str {
     "Exported CAD geometry is usually exact, so a small value keeps a rounding \

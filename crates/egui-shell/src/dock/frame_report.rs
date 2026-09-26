@@ -16,15 +16,12 @@
 //! switch"* — and neither implies the other: a rail can be inline beside a
 //! stack that kept its tabs, and a hidden rail beside a stack that gave them
 //! up.
+//!
+//! Design and rationale: `docs/modules/egui-shell/dock/frame_report.md`.
 
 use super::{DockSide, PanelId};
 
 /// What one frame of the dock drew and what the operator did to it.
-///
-/// Returned by [`Dock::show`] and also kept on [`DockState`], because two
-/// different callers want it: the frame's own caller, and a diagnostic
-/// surface that runs later in the same frame and has no access to the
-/// return value.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct DockFrameReport {
     /// Every panel whose body was drawn — the active tab of every stack

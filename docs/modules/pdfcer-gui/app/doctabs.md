@@ -116,3 +116,10 @@ damaged file and loses the three documents they had open.
 Asserted rather than trusted because the whole argument for the prefix
 is about truncation, and a trailing marker would pass any test that
 merely looked for the character somewhere in the string.
+
+### `const SPRING_DWELL`
+
+600 ms. Windows' own spring-loaded folder delay is roughly this; browsers
+sit between 400 and 800 ms. Short enough not to feel stuck, long enough
+that sweeping the pointer across the strip on the way to the far tab does
+not open three documents in passing.

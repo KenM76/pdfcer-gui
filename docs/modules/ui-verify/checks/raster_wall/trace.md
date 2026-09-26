@@ -49,3 +49,74 @@ No geometry (that is `raster_wall::park`), no driving, no verdict. Nothing
 in this file may call `Session`, because a reader that can act is a reader
 whose answer depends on when it was called, and then a report cannot be
 reproduced from the trace file alone.
+
+## Item notes
+
+### `struct CanvasState`
+
+Read as one struct from one trace line on purpose. The alternative — a
+helper per field — re-reads the trace per question and can answer two
+questions from two different frames, which is how a check comes to report a
+zoom from after a clamp against a visible count from before it.
+
+### `fn unavailable_now`
+
+`canvas` and `canvas-unavailable` share one trace slot, so the channel
+emits whichever changed and the other's last line stays in the file for
+ever. Asking `events("canvas").last()` alone would read a fossil from before
+the canvas went empty and report a healthy frame over a blank screen. The
+comparison is by line number, which is the same property
+`driving::declared` relies on for retired regions.
+
+### `fn first_bad_raster_after`
+
+First rather than last: the first one is the one whose cause is still
+legible, because `absorb_render` learns a ceiling from it and everything
+after is a consequence of that.
+
+The line number is returned because the attribution depends on what came
+BEFORE the refusal — see [`went_blank_between`]. Three different defects can
+produce this one line and the only way to tell them apart is the order of the
+trace.
+
+### `fn went_blank_between`
+
+This is the discriminator between O186's third route and its first.
+`canvas-unavailable reason=nothing-visible` says no part of any page was on
+screen, which is upstream of everything: with nothing visible there is no
+region, with no region the request is the whole sheet, and above the pixmap
+ceiling a whole-sheet request is a refusal. A check that read only the
+refusal would name `fill_strip` — the wrong function — and the next reader
+would spend the investigation there.
+
+Restricted to `reason=nothing-visible` on purpose. The other reasons the
+canvas declines to draw (no document, a collapsed dock) are not this, and
+matching the event name alone would make the discriminator fire on them.
+
+### `fn last_two_visible_zoom`
+
+Read only when part A's window turns out to be empty, to say *when* the
+neighbour left rather than only that it was not there at the end. A climb
+whose answer is `None` never had a neighbour at all, which is a different
+fault from one that had it and lost it.
+
+### `fn unfillable_counts`
+
+⚠ These are **transitions, not frames.** `diag::trace_changed` writes only
+when the formatted line changes, so a climb that declined for two hundred
+consecutive frames counts 1. That is the right granularity for reading a
+regime change and the wrong one for reading a duration, and a report that
+called it a frame count would be overstating by two orders of magnitude.
+
+Both halves are wanted. A count of declines alone cannot be distinguished
+from a guard that never ran at all, which is why the guard traces both
+transitions rather than only the interesting one.
+
+### `fn last_learned_after`
+
+`moved=false` lines are ignored deliberately: the shell traces its decision
+either way, and a ceiling learned at a zoom the view was already below
+changes nothing the operator can see — so it is not the event part B is
+waiting for. A non-finite `to` is treated as no event at all rather than
+compared against, because every comparison with `NaN` is false and a
+silently-false assertion is worse than an absent one.

@@ -354,11 +354,6 @@ fn every_glyph_the_find_bar_draws_has_a_glyph() {
 
 /// A bar showing the answer to a search for `query` that found `hits`
 /// hits, all on page 0.
-///
-/// Built by writing `super`'s private fields directly, which a child
-/// module may do. The alternative — a constructor on `FindState` that only
-/// tests call — would be a second way to assemble a result set, and the
-/// currency key is exactly the thing that must have one.
 pub(super) fn searched(query: &str, hits: usize) -> FindState {
     let mut state = FindState::default();
     state.open();

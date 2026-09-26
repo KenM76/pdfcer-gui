@@ -169,3 +169,64 @@ by construction.
 A build that collapsed `CannotSplit` into `Commit` would compile, would
 pass a test that only checked the two authoring anchors, and would put
 the shell back exactly where the operator found it.
+
+### `fn enter_means`
+
+| draft | Enter | Ctrl+Enter |
+|---|---|---|
+| a dragged **box** | a line break | commit |
+| a clicked **point** | a line break | commit |
+| an existing **run** | a worded decline | commit |
+
+# Why this is a function rather than three branches in the arm
+
+Because *"decide the whole interaction, not half of it"* is a claim that has
+to be checkable, and a `match` buried inside a 200-line event loop is not.
+Every rule in the table above is proved by [`tests`] with no window, no
+document, no `egui::Context` and no keyboard — which is the same discipline
+`canvas::moving::eligible` and `SelectionState::click` are written to, and
+the reason those two have rules a reader can trust.
+
+It is also the trace's operand. `text-edit-enter means=NewLine` says which
+branch was taken; the line it replaced said `boxed=1 command=0` and left the
+reader to re-run the rule in their head against a build they were debugging.
+
+# What changed, and the argument that was retired to change it
+
+
+That argument is now retired rather than ignored. Enter means **one** thing:
+a new line. The anchors therefore no longer differ on this key at all, and
+what still separates them — the WIDTH, which a drag chooses and a click does
+not — is settled at the commit in `app::actions::addtext`, where the page's
+geometry is in scope.
+
+⇒ The variant stays, for the reason that outlived the one it was introduced
+with: `Anchor::Run` must be distinguishable *here*, and asking the TEXT
+(*"does it already contain a newline?"*) would make the first Enter behave
+differently from every one after it, which is the worst available answer.
+
+# [`EnterMeans::CannotSplit`] is the FILE's rule, not this shell's
+
+`EditSession::edit_text` replaces the string inside **one show operator**,
+re-encoding it into that run's own font. `\n` has no code in any standard
+encoding, so the engine refuses it by name — `Refusal { trigger:
+TargetAbsent, character: Some('\n') }` — rather than dropping it. A PDF has
+no paragraph: each visible line is its own operator at its own absolute
+position, so splitting a line in two is not an edit to that line, it is
+authoring a second one somewhere.
+
+Committing quietly, which is what this did before, hid that from an operator
+who had just asked the question with his fingers.
+
+### `fn typing`
+
+Returns `true` when the draft was committed by Enter, so the caller knows the
+caret is gone.
+
+# Why the events are read raw rather than through a `TextEdit` widget
+
+Because the caret is painted in PDF space, on the page, at the glyphs' own
+scale — which is what *"just edit the existing box"* means. An `egui`
+`TextEdit` would be a second box floating over the first, and the old shell's
+one virtue here is worth keeping: it had a real caret in the page, and no
+widget in the typing path.

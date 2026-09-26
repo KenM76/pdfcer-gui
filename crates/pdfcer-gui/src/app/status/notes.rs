@@ -21,23 +21,9 @@ use super::{NOTES_WIDTH_FRACTION, ROW_HEIGHT_PTS};
 const REGION_NOTES: &str = "status-group:notes"; // ui-text-exempt: trace region name, never displayed
 
 /// Whether the render-notes disclosure is open.
-///
-/// `pub(super)` because the parent's R128 test drives the flag directly — it
-/// measures the bar open and closed, and it can only do that by writing the
-/// same key this module reads.
 pub(super) const NOTES_OPEN_ID: &str = "pdfcer-status-notes-open"; // ui-text-exempt: widget id, never displayed
 
 /// The render-notes disclosure, and its one line when open.
-///
-/// Drawn only when a page has actually been rasterized: the notes describe a
-/// raster, and `page_texture` is `None` only before the first render and
-/// after a failure the canvas already reports in words.
-///
-/// **Opening this does not make the bar taller.** The line is drawn beside
-/// the triangle, inside the same row, elided at [`NOTES_WIDTH_FRACTION`] of
-/// the bar with the whole text on hover. See the R128 section of this
-/// module's header for why that is a requirement rather than a layout
-/// preference.
 pub(super) fn show(ui: &mut egui::Ui, doc: &OpenDoc) {
     let Some(texture) = doc.page_texture.as_ref() else {
         return;
@@ -118,42 +104,6 @@ fn annotations_not_drawn(d: &pdfcer_render::Diagnostics) -> usize {
 
 /// **The renderer's report as an ordered list of sentences**, one per finding
 /// that actually occurred.
-///
-///
-/// Empty is a real answer and means the page drew clean. Callers word that
-/// themselves, because the bar and the dialog have different room for it.
-///
-/// # What is reported, and what is deliberately not
-///
-/// Every field here changes **what the operator can see on the page**: text
-/// that was not drawn, images that were not drawn, glyphs whose shapes are
-/// not the document's, layers that were hidden, content the file does not
-/// actually contain. Those are facts an operator can act on — supply a font,
-/// turn a layer back on, go and find the missing stream.
-///
-/// `Diagnostics::tolerated` and `Diagnostics::compat_skipped` are **not**
-/// reported. Both count divergences that leave the picture correct: a
-/// tolerated structural oddity (an unbalanced `Q`, a mid-path `cm`) is
-/// something the renderer absorbed and drew right anyway, and a `BX`/`EX`
-/// skip is spec-sanctioned (§7.8.2 Table 32) — the file is *telling* readers
-/// to skip it. Listing them **here** would put two numbers that mean "nothing
-/// is wrong" in front of the seven that mean something is.
-///
-/// They are not lost: the Render-diagnostics dialog shows them, separately
-/// and with a sentence saying they are not faults
-/// ([`crate::text::diagnostics::absorbed`]). That is the distinction this
-/// exclusion has always rested on — *"this is a status bar, not a report"* —
-/// finally having a report to be distinguished from.
-///
-/// # Order
-///
-/// Most consequential first: content the file is missing, then whole
-/// surfaces that were not drawn, then glyph-level substitution, then the
-/// operator's own hidden layers, then operators pdfcer has not implemented. A
-/// line that opens with "3 unrecognised drawing operators" and buries "text
-/// from 2 fonts not drawn" is sorted by the renderer's interest rather than
-/// by the reader's. The dialog lists them top-down in the same order, for the
-/// same reason.
 pub(crate) fn findings(d: &pdfcer_render::Diagnostics) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
 

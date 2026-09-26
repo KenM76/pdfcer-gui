@@ -79,3 +79,22 @@ write the operator did not ask for, on every field they merely looked at.
 forbids the second and `check-plate-colour.sh` requires that an `on_accent`
 ink state the plate it is drawn on. Both are satisfied by taking the pair
 together, which is also the only way the contrast is gated.
+
+### `fn arrow_strip`
+
+Taken from the **height**, so the button is the square Acrobat draws and
+scales with the field rather than with the zoom. Capped at half the width
+so a wide-and-short field does not end up all button; floored at one unit
+so the arithmetic below never produces an inverted rectangle.
+
+Called on the **page** rectangle to decide what a click meant and on the
+**screen** rectangle to decide where to draw. Those two disagree slightly
+for a widget small enough that [`crate::canvas::forms::boxes::editor_rect`]
+grew it to the legible minimum, and that is accepted: the alternative is a
+hit region derived from a rectangle the operator cannot see.
+
+### `fn arrival`
+
+Called by [`super::focus_choice`] so the decision lives beside the
+arithmetic that defines the button, rather than being re-derived at the
+focus site.

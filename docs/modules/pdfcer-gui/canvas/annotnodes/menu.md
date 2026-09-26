@@ -159,3 +159,88 @@ row disappearing instead of explaining itself.
 Falsified: making `Node(0)` the default makes this fail, and would
 have offered *Remove this point* on the first vertex of every shape
 before the operator had pointed at anything.
+
+### `const TRACE_MENU`
+
+Distinct from [`super::TRACE_MOVE`] and its three siblings, which report a
+gesture that **changed the document**. This reports a *question being
+opened*, and a check that read only one of the two could not tell a menu
+that offered the wrong row from a command that acted on the wrong node.
+
+### `const TRACE_COMMAND`
+
+It carries the **pick**, not just the command id, because the whole class
+of defect this design can produce is *the right verb on the wrong corner*.
+A trace line has to carry the number a wrong build would get wrong.
+
+### `enum NodePick`
+
+Three answers and no `Option`, because "the pointer was nowhere near the
+shape" is a real state a menu has to render (both node rows absent, the rest
+of the markup menu intact) rather than an error, and an `Option<Pick>` would
+let a caller `unwrap_or_default` its way into treating it as node 0.
+
+### `struct Rows`
+
+Both default to [`RowState::Absent`], which is the honest answer for every
+selection that is not a reshapable markup shape and for a pointer that was
+nowhere near one: the rows are not drawn, and the rest of the markup menu —
+properties, the clipboard, delete — opens exactly as it would have.
+
+### `fn pick_at`
+
+# Precedence: a node beats a segment, always
+
+Every node lies on two segments, so within [`SEGMENT_SLACK_PT`] of a corner
+both answers are true and exactly one can be offered. The corner wins,
+because *"remove this point"* names a thing the operator can see and *"add a
+point here"* would insert a duplicate one grid-unit from a node they were
+plainly aiming at. It is also the safer error: an unwanted removal is one
+`Ctrl+Z`, and an unwanted insertion leaves a shape that looks unchanged
+with an extra vertex nobody can find.
+
+# The comparison is in SCREEN space
+
+[`super::node_at`]'s argument, unchanged and for the same reason: a
+tolerance in canvas or page space would shrink as the operator zooms out —
+exactly when a shape's segments are closest together — and balloon as they
+zoom in, so that at 800 % a click anywhere near a shape would claim one of
+its edges.
+
+### `fn rows`
+
+Asked of the shape's family's preview verb, per frame, with the exact
+[`super::Plan`] the row would commit. See the module header for why the
+*error variant* is what separates a greyed row from an absent one.
+
+The cost is one annotation walk per row per frame, and only while the
+popup is open — [`crate::canvas::menus`] calls this from inside its own
+"is a markup menu the one being drawn" branch. [`super`]'s header records
+the standing engine advice this obeys: *"ask the preview verb every frame
+rather than catching the error afterwards — a verb with no preflight makes
+the UI find out by pressing."*
+
+### `fn trace`
+
+Called by [`crate::canvas::menus`] on the frame of the secondary click, so a
+driven check can read *which corner the menu thinks it is about* without
+pressing anything — which is the only way to tell "the row was greyed
+correctly" from "the row was greyed because the pick was wrong".
+
+### `fn action_for`
+
+# Why the guard is re-asked here and not trusted from the menu
+
+The row was drawn from [`rows`] on some earlier frame, and everything
+between then and now is a frame in which the document could have changed —
+an undo, a background reflow, another surface's edit. Re-asking
+[`rows`] with the parked pick costs one annotation walk on a press and
+removes the whole class of *"the menu was right when it was drawn"*, which
+is the class `MenuHost::with_condition`'s own header is about in the
+opposite direction.
+
+⇒ So a row that has stopped being live raises **nothing**, and the trace
+says which. It does not raise a refusal sentence: the operator pressed a row
+that the engine now declines, which is the state R9 grey already describes,
+and a status line arriving after a menu closed would be a second explanation
+for a first-order rarity.

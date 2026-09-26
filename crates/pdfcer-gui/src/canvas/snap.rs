@@ -17,16 +17,6 @@ use super::mapping::screen_tolerance_to_page;
 /// The default screen-space snap catch radius, in egui logical points
 /// (decision 011 §2.2: "≈8–12 px"). Converted to a page-space tolerance each
 /// frame by [`screen_tolerance_to_page`] so the snap "feel" is zoom-invariant.
-///
-/// Deliberately a *sibling* of [`super::mapping::SELECT_SCREEN_TOLERANCE_PX`]
-/// rather than the same constant, and deliberately **looser** than it: snapping
-/// and selection answer different questions and are allowed to drift apart. A
-/// snap that grabs a nearby vertex is a helpful correction the operator can see
-/// and cycle through with <kbd>Tab</kbd>; a selection that grabs a neighbouring
-/// object is a silent wrong answer. The failure modes are not symmetric, so the
-/// tolerances are not either. (That asymmetry is stated from the selection side
-/// in `mapping`'s own docs; [`tests::the_snap_radius_is_looser_than_the_selection_radius`]
-/// pins the direction so a future tuning pass cannot invert it by accident.)
 #[allow(
     dead_code,
     reason = "the Pass 12.M1 snap default, salvaged ahead of its consumer; read by the Phase 7 measure tools in `canvas::measure`, which own the tool-mode frame the indicator draws in" // ui-text-exempt: clippy lint justification, never displayed
@@ -36,55 +26,15 @@ pub const SNAP_SCREEN_TOLERANCE_PX: f32 = 10.0;
 /// The overlay colour role a **live, uncommitted** snap indicator is tinted
 /// with: `"preview"` — *an uncommitted proposal*, per
 /// `egui-shell/src/theme/overlays.rs`.
-///
-/// A snap marker is drawn while the operator is still aiming, before any click
-/// has committed anything, so it is a proposal by definition. Naming the role in
-/// a constant rather than spelling it at each call site is not ceremony:
-/// [`egui_shell::theme::Overlays::get`] returns `Option` for an unknown role, so
-/// a typo does not fail — it draws nothing, on whichever preset the typo was
-/// written under.
 pub const SNAP_INDICATOR_ROLE: &str = "preview"; // ui-text-exempt: a theme role key, never displayed
 
 /// The overlay colour role a **committed** dimension is drawn with when
 /// selected: `"dimension_selected"`, per `egui-shell/src/theme/overlays.rs`.
-///
-/// Not used by [`snap_marker_shapes`] — a snap marker is never committed state —
-/// but named here beside its partner because the two form the **preview-vs-
-/// committed pair** that `overlays.rs` exists to keep distinct:
-///
-/// > the measurement preview and the committed dimension differ because one is
-/// > a proposal and one is document state […] a theme that merges two roles
-/// > removes a cue that was doing work, and it would do so silently.
-///
-/// The measure hosting owes `Overlays::assert_distinct(&[…])` over both, once,
-/// per preset — that is the test `overlays.rs` says the application owes and the
-/// shell cannot write for it.
 pub const SNAP_COMMITTED_ROLE: &str = "dimension_selected"; // ui-text-exempt: a theme role key, never displayed
 
 /// The page-space snap tolerance for `zoom` (logical points per PDF user-space
 /// unit) — the **zoom-invariance mechanism** (decision 011 §2.2; the page-space
 /// value `snap_candidates` takes).
-///
-/// A constant on-screen catch radius maps to a *shrinking* page-space tolerance
-/// as the operator zooms in, so the "feel" stays constant. The `1 / zoom`
-/// distance law itself, and its contract that a non-finite or non-positive
-/// `zoom` yields `0.0` (snapping disabled) rather than a NaN/∞ tolerance the
-/// engine would reject anyway, both live in
-/// [`super::mapping::screen_tolerance_to_page`] and are **not** re-implemented
-/// here — see this module's header on why a second divider by `zoom` in
-/// `canvas/` would be a defect.
-///
-/// # Why this takes a bare `zoom` and not a [`super::mapping::PageMapping`]
-///
-/// `PageMapping` has no `zoom()` accessor, on purpose: its docs record that
-/// *"the zoom's whole job here is to be divided by, and exposing it would be an
-/// invitation to divide by it at a call site"*, and its one tolerance method
-/// [`super::mapping::PageMapping::tolerance`] is the **selection** radius. So
-/// there are two honest options and this is the smaller one — a caller that has
-/// the frame's `ViewState::zoom` passes it. If the measure hosting turns out to
-/// hold only a `PageMapping`, the right fix is a `snap_tolerance()` method on
-/// `PageMapping` beside its selection sibling, which belongs to `mapping`'s
-/// owner rather than here; this function then becomes its body.
 #[allow(
     dead_code,
     reason = "the Pass 12.M1 zoom-invariance conversion, salvaged ahead of its consumer; called each frame by the Phase 7 measure tools in `canvas::measure` to build `SnapConfig::tolerance`" // ui-text-exempt: clippy lint justification, never displayed
@@ -165,18 +115,6 @@ pub fn snap_commit_clicks(kind: SnapKind) -> u8 {
 /// in points; `color` tints every stroke/fill. The measure tool paints these
 /// via the live-preview overlay painter (never a re-raster) and draws the label
 /// text as a separate galley beside them.
-///
-/// # The tint is an argument, and it must be a named role
-///
-/// `color` is supplied by the caller. The caller is the measure tool's overlay
-/// pass, and the colour it must supply for a
-/// pre-commit indicator is the `"preview"` role: [`SNAP_INDICATOR_ROLE`], via
-/// [`snap_indicator_tint`]. Nothing in this function chooses a colour, which is
-/// why `tools/gates/check-theme-colors.sh` has nothing to say about it.
-///
-/// The one `Color32::TRANSPARENT` below is the *absence* of a fill on an
-/// outline-only polygon, not a choice of colour — which is precisely why the
-/// gate's pattern deliberately excludes it.
 #[allow(
     dead_code,
     reason = "the Pass 12.M1 indicator rendering primitive, salvaged ahead of its consumer; painted by the Phase 7 measure tools' overlay pass in `canvas::measure`" // ui-text-exempt: clippy lint justification, never displayed
@@ -286,29 +224,6 @@ pub fn snap_marker_shapes(at: Pos2, kind: SnapKind, color: Color32, size: f32) -
 
 /// The tint a **live, uncommitted** snap indicator must be painted with: this
 /// frame's `"preview"` overlay role ([`SNAP_INDICATOR_ROLE`]).
-///
-/// # Why this returns `Option` and does not fall back
-///
-/// [`egui_shell::theme::Overlays::get`] returns `Option` on purpose, and its
-/// docs say why: *"a missing role is a programming error — a typo, or a role the
-/// preset forgot — and returning magenta or transparent would make it a
-/// rendering question the reader has to notice, on the frame where it happens,
-/// on the preset where it happens."* Substituting a fallback here would undo
-/// that, one layer further from the palette.
-///
-/// # The `Option` is load-bearing, and a `None` here is silent on screen
-///
-/// A context with no installed role map answers `None` for every role, and the
-/// snap marker then falls back to the selection stroke — the exact shape of
-/// failure an `Option` makes invisible, because nothing looks broken and the
-/// cue is simply not there.
-///
-/// `crate::canvas::overlays::install` runs beside `Theme::apply` in
-/// `crate::app::frame`, which is what makes the role resolve in the shipped
-/// binary. The `Option` stays, and stays meaningful: it is the honest answer
-/// for a role a preset forgets to define, and `overlays`' own test asserts that
-/// none of the roles this canvas reads is one of them, on every preset rather
-/// than on the default.
 #[must_use]
 pub fn snap_indicator_tint(ctx: &egui::Context) -> Option<Color32> {
     egui_shell::theme::Overlays::of(ctx).get(SNAP_INDICATOR_ROLE)

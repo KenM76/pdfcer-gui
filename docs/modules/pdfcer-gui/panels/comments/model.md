@@ -180,3 +180,127 @@ The index is fed straight to
 would be a navigation to nowhere. It cannot happen — the index is the
 enumeration of `pages` — and it is pinned anyway, because this is the
 one number in the row that leaves the panel.
+
+### `fn with_note_text`
+
+Counts [`Note::Text`] only. A [`Note::Description`] is the document's
+accessibility alternate for a control that displays no text of its own
+(§12.5.2, §14.9.3) — counting it here would make
+[`Self::every_row_lacks_note_text`] false on a document whose only
+"note" is a screen-reader label for a link, and the panel would then
+withhold the disclosure that stops the list reading as broken.
+
+### `fn every_row_lacks_note_text`
+
+`false` on an empty listing, deliberately: with no rows there is
+nothing for the sentence to explain, and the panel says
+`comments_none()` instead. A vacuous truth here would print a paragraph
+about note text under a heading that just said there is nothing at all.
+
+### `struct Excluded`
+
+Counted rather than discarded, because the panel discloses it. A reviewer
+looking at six rows on a drawing they know carries forty annotations needs
+the arithmetic; see `crate::text::panels::comments::comments_excluded`.
+
+### `struct CommentRow`
+
+Owned strings rather than borrows of the annotation. The annotations are
+modelled fresh from the graph inside [`collect`] and dropped when it
+returns, so borrowing would tie the listing's lifetime to a temporary; and
+the whole listing is a few hundred short strings at most, bounded by
+`pdfcer_core::annot::MAX_ANNOTS_PER_PAGE` per page.
+
+### `enum Note`
+
+# §12.5.2 gives the key two jobs, and they are not interchangeable
+
+*"Text displayed for the annotation, **or** (if the type does not display
+text) an alternate human-readable description"* for accessibility
+(§14.9.3). Which one it is depends on the subtype, and `pdfcer-core`
+deliberately models the raw value **without** that interpretation: a label
+reading "comment" is right for markup and wrong for a `/Link`, so the
+interpretation belongs to whoever displays it. This enum is this panel
+accepting that job.
+
+### `fn ce_dimension_annots`
+
+# Why this cannot be answered from the annotation alone
+
+A **ce dimension** is a `/Line` annotation carrying `/IT /LineDimension`, a
+baked `/AP` and a record in the document's `/PieceInfo` sidecar — and
+`pdfcer_core::annot::Annotation` models **none** of those three: `/IT` is
+among the per-subtype keys it deliberately does not carry, and the sidecar
+is a different structure entirely.
+The authoritative answer is the sidecar's own model, whose
+`DimensionRecord::annot` is the annotation each record was written for.
+
+# Why the panel bothers
+
+Project rule 15. A **ce dimension** and a **pdf dimension** have opposite
+properties — one pdfcer authors and can restyle, regroup and delete as a
+unit; the other is CAD-exported page content pdfcer reads and must not
+silently alter — and a row that showed the first as plain "Line" would be
+true about the file and useless to the operator.
+
+ce dimensions are **not** filtered out, because filtering by subtype would
+also hide a genuine `/Line` markup somebody drew. The sidecar is what lets
+the panel tell the two apart *without* filtering either.
+
+# Cost
+
+One catalog → `/PieceInfo` → `/pdfcer` → `/Private` walk and a
+deserialization of the sidecar, bounded by the number of ce dimensions in
+the document rather than by its size. Called **once** per frame by
+[`crate::panels::comments::body`], never per row. A document that has never
+been dimensioned has no sidecar and gets an empty set, which is the
+ordinary case and the cheapest one.
+
+### `fn collect`
+
+`graph` must be the **session view**, not the loaded file — see this
+module's header. `pages` is `OpenDoc::pages`, the flattened page vector
+resolved once at open, and its index is the page index every row carries.
+`ce_dimensions` comes from [`ce_dimension_annots`].
+
+# The exclusion rule
+
+[`crate::panels::comments`]' header states all four clauses and the reason
+for each.
+
+### `fn thread_root`
+
+Returns `id` itself for an ordinary comment, which is the overwhelmingly
+common case and costs one lookup.
+
+# What it is for
+
+`crate::canvas::notepopup` draws a window for a **comment**, and shows that
+comment's replies inside it. It draws none for a reply — see
+`notepopup::model::notes_on`'s exclusion table, and the reason is that a
+reply sits on its parent's own `/Rect`, so a bubble for it would cover the
+thing it answers. So *Go to* on a reply row has to ask for the **root's**
+window, or it asks for a window that will never be drawn and the operator
+presses a button that does nothing.
+
+⇒ The alternative — leaving replies drawable so Go to had something to open
+— is the worse trade by a distance, because it costs the *parent's* window
+on every comment anybody ever answers.
+
+# Bounded, because a `/IRT` cycle is legal syntax
+
+§7.3.10 makes a dangling reference not an error and says nothing at all
+about a circular one, and `pdfcer-core` surfaces `/IRT` unresolved: a
+dangling `/IRT` is modelled, not repaired.
+A file that says `a` replies to `b` and `b` replies to `a` is therefore a
+file this panel must survive, and an unbounded walk over one would hang the
+frame that is trying to draw. [`MAX_THREAD_DEPTH`] is the same bound
+`notepopup::model::replies_to` uses and for the same reason; when it runs
+out, the deepest annotation reached is returned, which is a real row in the
+document and therefore a Go to that lands somewhere rather than nowhere.
+
+A row whose parent is not in `rows` — a `/IRT` pointing at a `/Widget`,
+at a `/Popup`, or at nothing — also stops the walk and returns what it has.
+Same reason: this resolves a **destination**, and the honest failure of a
+destination resolver is the nearest real place, never a panic and never an
+`Option` the caller would have to invent a fallback for.

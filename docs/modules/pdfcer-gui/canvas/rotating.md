@@ -218,3 +218,82 @@ angle and there is nowhere for an increment to be rounded.
 from it and the commit from `Matrix::rotate`. This pins the half that can
 be checked without a document: a point rotated by the angle measured
 between two rays lands on the second ray.
+
+### `const STEP_DEGREES`
+
+Fifteen, which is PowerPoint's, Illustrator's, Inkscape's and Figma's. It
+divides 90 and 360 exactly, so the four right angles and the four diagonals
+are all reachable — which is what the operator actually wants from the key,
+and what a value like 10° would give them for 90 and take away for 45.
+
+### `fn angle`
+
+Positive is the direction the pointer went. Both rays are measured from
+`centre`, and the pointer's *distance* from it is discarded — see the module
+header for why that is the whole shape of the gesture rather than a detail.
+
+# Screen space in, screen space out, and the sign survives the hop
+
+`centre`, `from` and `at` are all screen positions, where y runs **down**.
+`atan2` therefore answers a bearing in a left-handed frame, so a clockwise
+drag comes back positive. PDF user space is y-**up**, and
+`Matrix::rotate(θ)` turns anticlockwise in it — so the caller negates once,
+at the one place it converts, exactly as `canvas::mapping` does for every
+other quantity that crosses.
+
+Doing the flip here would put a page-space fact in a function that has never
+seen a page, which is how a preview and a commit come to disagree about
+which way round something went.
+
+`None` when either ray is degenerate — the pointer exactly on the centre —
+because a bearing from a zero-length ray is not a number and
+`atan2(0.0, 0.0)` quietly answers zero rather than saying so.
+
+### `fn snap`
+
+It snaps the **total turn**, not the increment. Accumulating snapped
+increments would let a slow drag through 90° arrive at 87°, because each
+frame's small delta rounds to zero — the classic error, and the reason this
+takes the whole angle rather than a per-frame one.
+
+### `fn rotate_about`
+
+The ghost is drawn from **this** function and the commit from
+`Matrix::rotate(θ).about(centre)`, which are the same map in two spaces —
+and that is the one duplication in this module. It is not avoidable: the
+preview must be drawn in screen space before the page conversion, and the
+commit must be expressed in the engine's own type. What makes it safe is
+that both take **the same θ from [`angle`]**, so the two can differ only in
+the y-flip, which is a sign a unit test can pin.
+
+### `fn drag`
+
+Mirrors [`crate::canvas::resizing::drag`] deliberately, down to the return
+type, so a reader who has understood one has understood both. What it hands
+back is the **angle** for the ghost, where the resize hands back two factors
+and the move hands back a displacement.
+
+Returns `Some(radians)` only when a ghost should be drawn — which, by this
+project's honesty contract, is exactly when a release would commit.
+
+# The negation, and it happens exactly once
+
+[`angle`] measures in **screen** space, where y runs down, so a clockwise
+drag comes back positive. `Matrix::rotate` turns anticlockwise in PDF user
+space, where y runs **up**. The single `-` below is that crossing, and it
+lives here rather than in `angle` for the reason `canvas::mapping`'s header
+gives about every other conversion: one place, or the preview and the commit
+eventually disagree about which way round something went — which is a defect
+that looks like a deliberate feature.
+
+The ghost is drawn from the **un-negated** angle, in screen space, by
+`overlay::draw_rotate_ghost`. Both come from one call to [`angle`], so the
+only thing that can differ between them is this sign.
+
+### `struct Frame`
+
+The `Frame` shape `canvas::resizing` and `canvas::handledrag` already use,
+and for the reason they give: the members are read-only facts about one
+frame, so grouping them says what they are and removes the failure a long
+parameter list invites — `from` and `at` are both `Pos2` in the same space
+and swapping them would compile and turn the object backwards.

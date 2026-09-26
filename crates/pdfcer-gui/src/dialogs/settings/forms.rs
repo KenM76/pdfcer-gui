@@ -59,16 +59,6 @@ pub fn tab_tail(ui: &mut Ui, draft: &mut Draft) {
 }
 
 /// How far apart two fields' leading edges may be and still count as one row.
-///
-/// A slider rather than a typed number, and not because typing is hard: the
-/// useful range is a single inch and the useful resolution is coarse, so the
-/// control that shows the whole range at once is the one that answers the
-/// question *"is a point enough?"* without the operator having to know what
-/// the bounds are.
-///
-/// Linear, for [`super::measuring::parallel`]'s reason — half a point against
-/// one point matters exactly as much as ten against twenty, because both
-/// answer *how crooked may this form be before I stop calling it a row?*
 pub fn row_tolerance(ui: &mut Ui, draft: &mut Draft) {
     widgets::header(
         ui,

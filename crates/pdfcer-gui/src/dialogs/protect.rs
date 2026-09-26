@@ -809,13 +809,6 @@ fn file_name_of(path: &Path) -> String {
 }
 
 /// Open the dialog for the document in `status`, if there is one.
-///
-/// The dispatch target for `file.encrypt` and `file.permissions`. Lives here
-/// rather than in [`super::DialogsState`] only because it needs
-/// [`ProtectDialog::open`]'s private constructor; the guard it applies is the
-/// one `open_print` documents — the ribbon control is gated on `doc.open`, a
-/// chord bound to the same id is not, and both are fixed by refusing here at the
-/// one place the dialog is built.
 pub(super) fn open_for(status: &Status, task: Task) -> Option<ProtectDialog> {
     let Status::Open(doc) = status else {
         return None;

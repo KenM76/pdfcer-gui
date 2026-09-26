@@ -110,3 +110,13 @@ The arithmetic from the module header, asserted without touching the
 disk: A has three pages and goes in the gap before page 5, so B's own
 position has to be 8 rather than 5. Deriving each position at apply
 time would produce 5 twice and interleave the two documents.
+
+### `fn claim`
+
+`panel` is the panel body's rectangle in screen points, `gap` the boundary
+the grid resolved under the pointer (`None` when the pointer was over no
+tile — see the module header), and `page_count` this document's length.
+
+Returns `true` when the drop was claimed, which the caller does not need but
+a test does: it is the difference between *"this panel acted"* and *"the
+fallback will"*, and that is the property worth asserting.

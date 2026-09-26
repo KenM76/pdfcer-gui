@@ -66,3 +66,12 @@ every fact this module states about the verb: that it re-bakes the
 appearance, that pdfcer bakes an `/InkList` as a polyline, that `/Rect` is
 derived rather than preserved, and that `appearance_was_pdfces == false` (old-name-exempt: the engine's own field name)
 is *"the one disclosure you should not drop"*.
+
+## Item notes
+
+### `fn apply`
+
+Called from [`super::apply_action`]'s single or-pattern arm over
+`MoveInkPoint | InsertInkPoint | RemoveInkPoint`, and from nowhere else. The
+module header carries why the routing is split across two files and what
+the `_` arm means.

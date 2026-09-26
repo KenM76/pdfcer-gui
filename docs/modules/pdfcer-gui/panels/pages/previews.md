@@ -92,3 +92,10 @@ The clause that matters: it must NOT come back as `Some(0.0)`. Zero is
 *no limit at all*, so a parser that mapped a typo to zero would arm an
 unbounded render from a slipped keystroke — the worst outcome this
 control has, reached by the likeliest accident.
+
+### `fn row`
+
+Takes [`PagesUi`] rather than the cache alone so the call site reads the
+same as every other section of the panel, and so a future addition here (a
+second control, a second disclosure) does not change the signature and
+therefore the call site.

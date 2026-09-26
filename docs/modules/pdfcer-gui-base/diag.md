@@ -219,3 +219,166 @@ deleting them again.
 The test is written so it is meaningful in BOTH environments: if the
 harness itself runs under `PDFCER_DIAG`, the closure is expected to
 run, so the assertion follows `enabled()` rather than assuming it.
+
+### `fn enabled`
+
+Resolved once and cached: the check sits in a per-frame path, and re-reading
+the environment there would put a lock and an allocation in the frame loop
+to answer a question that cannot change after start-up.
+
+### `fn trace`
+
+Takes a closure rather than a `String` so a disabled build path performs no
+formatting — the call sites interpolate rects, pointer positions and hit
+counts, and doing that work every frame to throw it away would be a real
+cost in the one loop that must not get slower.
+
+### `fn trace_changed`
+
+# What this is for
+
+Frame-loop call sites. A value that is re-reported unchanged 60 times a
+second tells a consumer nothing it did not already know from the previous
+line, and buries the events that *are* news. See the module docs for the
+measured case (50 identical `canvas-pointer` lines in 9 seconds) and for
+why noise costs the harness real work rather than merely looking untidy.
+
+# The definition of "changed", and why it is the formatted line
+
+Not the underlying value: the **rendered text**. Two consequences, both
+wanted:
+
+* A difference too small to change the printed text is a difference the
+  consumer could not have read anyway, so suppressing it loses nothing.
+  The pointer trace prints `{:.2}`; sub-hundredth jitter is invisible to
+  the parser by construction.
+* A call site does not have to invent an epsilon, or keep a parallel copy
+  of its own state to compare against. There is one rule, in one place.
+
+# ⚠ A repeated value is silent, and a consumer must expect that
+
+Suppression is invisible from outside. A call site reporting the same
+result twice in a row writes ONE line, not two, so a consumer that marks
+a point in the trace and then reads the next line for this slot finds
+nothing at all when the second occasion produced an identical result.
+
+A driven check written that way reddens through its absence branch rather
+than through the branch comparing the value, and the two causes mean
+different things: the call site was never reached, or it produced exactly
+what it produced last time. An absence message must name both. A check
+that has to tell two occasions apart needs something in the formatted
+line that differs between them.
+
+# Slots
+
+A slot is the event name, plus a discriminator when one event has several
+independent subjects. Two call sites sharing a slot will each suppress the
+other's lines, which is a real bug and the reason the parameter is
+`&'static str` — it is meant to be a literal you can grep for.
+
+Costs nothing when tracing is off: the closure is not called and neither
+registry is touched.
+
+### `fn visible_enough`
+
+`true` when at least [`VISIBLE_FRACTION`] of `rect` survives `clip`.
+
+
+Because *a change to a diagnostic channel is exactly the kind that can be
+green and wrong*, and the only way to write a test that fails on the wrong
+behaviour is for the decision to be something a test can call. Everything
+else in this module writes to a global map and to `stderr` behind an
+environment variable, which is observable only by a driven run — and a
+driven run is precisely what cannot tell you that a check silently became a
+SKIP.
+
+So the rule the whole visibility channel turns on is one pure function, it
+is public, and `crates/pdfcer-gui/src/app/surfaces.rs`'s dock-sink test
+calls it against rectangles a **real** `egui_shell::dock::Dock` produced.
+
+Note what it does with a zero-area region: `false`. A rectangle with no
+area cannot be 60 % anything. Said outright rather than left to fall out of
+a division, because "a collapsed control is not visible" is a claim worth
+being able to read and to test.
+
+### `struct ViewportScope`
+
+Entered by `pdfcer_gui::dialogs::host::Host::show` around a dialog's body. A
+guard rather than a closure because the body needs `&mut` on the dialog it
+belongs to, and threading that through a closure parameter would push the
+borrow problem into every caller.
+
+# What this is for, and the defect it is a fix for rather than a nicety
+
+A region's rectangle is **relative to the viewport that drew it**, and a
+harness that adds the application window's client origin to every rect is
+right until a dialog opens in its own OS window — whose rectangles look
+exactly the same and name a different place on the desktop.
+
+A coordinate-space defect with plausible numbers is the one class this
+project keeps meeting: a marker off by the scroll origin, a drag tracking at
+`1/zoom`, a caret measured against the wrong font. Each presents only as
+*"it lands somewhere else"*, and none of them is visible to a test that does
+not drive the real window. The tag plus [`viewport_inner`] puts the fix in
+the instrument rather than in anybody's care.
+
+### `fn end_ui_frame`
+
+Called once at the end of every frame, from `pdfcer_gui::app::frame`. See
+[`UI_RECTS_THIS_FRAME`] for the defect this exists to remove — in one
+sentence: a change log that only reports appearances lets a consumer read a
+stale rect as a live one, and report a layout defect against a region that
+is no longer drawn.
+
+# What it emits
+
+One `ui-rect-gone name=…` line per region that was drawn last frame and was
+not drawn this frame. Nothing at all on a steady frame, which is the common
+case and keeps the channel as quiet as it was before.
+
+# It also forgets the region's last rect
+
+Deliberately, and it is the half that is easy to omit. Without it, a region
+that disappears and later comes back **at the same rect** would emit
+nothing on its return — `record_rect_if_changed` would compare against the
+remembered value and suppress it — leaving the trace saying the region went
+away and never saying it returned. Forgetting on retirement makes a
+reappearance always visible.
+
+### `fn reset_change_gates`
+
+Called when a document is opened. Without it, opening a second document
+whose layout happens to be identical to the first would emit **no** canvas
+line for the new document, and §4.3 requirement 1 is specifically *"at
+least once per document open"* — a guarantee the consumer is entitled to
+read as "there is a line for this document", not "there is a line for some
+document whose numbers still happen to apply".
+
+It is cheap and it is not per-frame, so it clears both registries rather
+than trying to decide which slots a document open could have invalidated.
+
+### `fn trace_on_change`
+
+# Why this exists beside [`trace`]
+
+Some facts are worth reporting and are only true per frame — whether a text
+draft exists, whether the keyboard is owned, how long the draft is. Tracing
+those with [`trace`] produces a line every frame at sixty hertz, which is
+not a diagnostic; it is a denial of service on the reader, and the reader is
+somebody already having a bad day.
+
+A change log is the honest shape for a *state* rather than an *event*, and
+this module already has one: [`ui_rect`] emits only when a rect moves. This
+is the same idea for a string, keyed so several callers can use it without
+interfering.
+
+**It has [`ui_rect`]'s known weakness, stated rather than left to be
+discovered.** A change log cannot report that something *stopped* — see
+[`end_ui_frame`], which exists to close that gap for regions. Here the
+equivalent is a state that ceases:
+the last line stands, and a reader must not take it for "still true". Where
+that matters, include the *ceasing* in the value — `draft=false` is a value,
+not an absence, which is why the text-edit line reports it that way.
+
+The closure is not called at all when tracing is off, exactly as [`trace`]'s
+is: the whole cost of a disabled diagnostic is one atomic read.

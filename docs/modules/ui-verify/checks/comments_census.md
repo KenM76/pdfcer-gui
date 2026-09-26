@@ -110,3 +110,38 @@ lost annotations it still has.
 Not the shell's `ribbon-mode-selected`, which says a segment was pressed.
 The distinction matters here: the anchor has to be the moment the dock this
 check reads was rearranged, not the moment the click landed.
+
+### `fn require_a_clean_fixture`
+
+Carried here from the two checks that each had their own copy of it. The
+arithmetic every caller performs is *"the census moves by exactly one"*,
+and on a drawing full of form fields that arithmetic is measuring the
+panel's editorial rules rather than the caller's subject.
+
+### `fn refresh`
+
+`Ok(None)` means the panel could not be put on screen at all, which every
+caller reports as SKIP: a check that could not see its own oracle has
+learned nothing about its subject.
+
+# The two routes, in the order they are tried
+
+### `fn baseline`
+
+The baseline every later comparison is measured against, and the reason it
+is a function rather than four lines at each call site: the two counts a
+round-trip check compares have to be produced by the identical sequence, or
+the comparison at the end is between two different measurements.
+
+# The anchor is the application's own `mode-changed` line
+
+
+So the anchor is `mode-changed … to=<mode>`, written by
+`crate::app::modes` at the moment the arrangement is applied. Every census
+after it was drawn by the dock this check is about, and nothing before it
+can be mistaken for one.
+
+⚠ Falls back to a pre-click mark if the application traced no such line,
+and **says so in the report** rather than silently weakening the anchor: a
+mode that changed without announcing it is a finding of its own, and
+`click_mode_segment` has already proved the *shell* saw the click.

@@ -144,13 +144,6 @@ impl MeasureState {
     }
 
     /// Build fresh tool state for `page_index` with `kind` already armed.
-    ///
-    /// What the canvas hosting actually calls, because the tool is armed
-    /// *before* the state exists: the operator presses a ribbon button, and the
-    /// first frame afterwards has to build a state that already agrees with it.
-    /// Going through [`Self::new`] and then [`Self::set_kind`] would work but
-    /// would fire the discard on a state with nothing to discard, which reads
-    /// as though something were being thrown away.
     #[must_use]
     pub fn for_kind(page_index: usize, kind: MeasureKind) -> Self {
         Self {
@@ -182,22 +175,6 @@ impl MeasureState {
 
     /// Switch which geometry the linear tool picks, discarding any in-progress
     /// gesture if the mode actually changed (`Pass 68.0`).
-    ///
-    /// # Why this is a method and not two lines at the call site
-    ///
-    /// Because the discard is the load-bearing half and it is easy to omit. A
-    /// half-finished point pick means nothing to the line gesture and vice
-    /// versa, so carrying one across the switch would leave the tool holding
-    /// state its current mode cannot interpret — and the failure would be
-    /// invisible until the operator's next click produced something strange.
-    /// Living here, it is unit-testable; living in `main.rs` it would not be
-    /// (that file is a compile-and-launch shell by design).
-    ///
-    /// Discarding is free, because nothing has committed. The same rule
-    /// `MarkupKind` follows on a kind change.
-    ///
-    /// A no-op when `mode` is already current — re-clicking the armed mode
-    /// button must not silently throw away a pick in progress.
     pub fn set_linear_pick_mode(&mut self, mode: LinearPickMode) {
         if self.linear_pick_mode == mode {
             return;
@@ -210,38 +187,6 @@ impl MeasureState {
 
     /// **Bring this state into line with the armed [`MeasureKind`], discarding
     /// any in-progress gesture if the kind actually changed.**
-    ///
-    /// # Why this exists, and the collision it resolves
-    ///
-    /// The old shell had **two** axes and this one has **one**. There, the
-    /// operator chose a `CanvasTool` (`MeasureLinear` / `MeasureCircular` /
-    /// `MeasureScale`) *and*, within the linear tool, a
-    /// [`LinearPickMode`] — so [`Self::set_linear_pick_mode`] guarded one axis
-    /// and the tool switch guarded the other. Here,
-    /// [`crate::canvas::measure::MeasureKind`] is the **only** axis: four
-    /// ribbon buttons, four kinds, and two-line is one of them rather than a
-    /// mode inside linear.
-    ///
-    /// That collapse is what makes this method necessary rather than
-    /// cosmetic. `set_linear_pick_mode`'s load-bearing half is the *discard*,
-    /// and if arming became the axis while the discard stayed attached to the
-    /// old one, a half-finished point pick would survive into two-line mode.
-    /// The original's docs are explicit about how that surfaces: not as an
-    /// error, but as *"something strange"* on the operator's **next** click,
-    /// which is the worst possible place to find it.
-    ///
-    /// So the rule is stated once, here, over the axis this shell actually
-    /// has:
-    ///
-    /// | from → to | discarded |
-    /// |---|---|
-    /// | same kind | **nothing** — re-clicking an armed button must not throw away a pick in progress |
-    /// | Linear ⇄ TwoLine | the linear and two-line picks, via [`Self::set_linear_pick_mode`], which already owns that pair |
-    /// | any other change | everything, via [`Self::clear_gesture`] |
-    ///
-    /// Discarding is free, because nothing has committed — the same argument
-    /// `MarkupKind` makes on a kind change, and the same one
-    /// [`Self::set_linear_pick_mode`] makes.
     pub fn set_kind(&mut self, kind: MeasureKind) {
         if self.kind == kind {
             return;

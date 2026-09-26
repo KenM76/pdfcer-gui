@@ -21,27 +21,6 @@ pub mod ceiling;
 pub mod deep;
 /// **Where the view is, when the scroll offset can no longer say** —
 /// O24 step 2.
-///
-/// A scroll offset is `f32` into a content space of `page × zoom`, and one
-/// unit of that space is one screen pixel — so at 1,000,000 % the offset can
-/// only address every other pixel, and at 10,000,000 % it moves in
-/// **sixteen-pixel jumps**. Its header carries the measured table.
-///
-/// `DeepAnchor` replaces it with a page point in `f64` plus where on screen
-/// that point sits, which is a statement whose precision does not decay with
-/// the zoom.
-/// **How far this page can actually be zoomed** — the three limits that
-/// bind at three different depths, reconciled in one place.
-///
-/// Its header carries which is which: the raster ceiling stops mattering
-/// once the region tier engages, the `f32` scroll offset's is what the shell
-/// can honestly offer today, and the operator's setting is the third.
-/// **The zoom levels the `+` and `−` buttons step through**, and the rule
-/// for what happens past the last named rung.
-///
-/// Split out under R2. Its header carries the one property that matters: the
-/// two steps must be exact inverses, **above** the ladder as well as on it —
-/// and above it is the half that is easy to get wrong (O24g).
 pub mod ladder;
 // What one canvas observed about itself on the previous frame, as distinct
 // from the stance it was put into. `ViewState` holds the choices; `ViewFrame`
@@ -89,25 +68,6 @@ pub const MIN_ZOOM: f32 = 0.10;
 pub const MAX_ZOOM: f32 = 8.0;
 
 /// Where the pointer was over the page when a Ctrl+wheel arrived.
-///
-/// Lives here rather than on `crate::app::state` — where it was declared
-/// until the rulers landed — because it is a fact about **zoom**, and this
-/// module already owns [`ViewState::zoom`], [`FitMode`], [`ZOOM_LADDER`],
-/// [`MAX_ZOOM`] and [`raster_scale`]. `app::state` re-exports it, so
-/// `canvas::zoom` still names it by its old path and the move cost that
-/// module nothing. See `app::state`'s re-export for the R2 argument that
-/// prompted it.
-///
-/// Recorded on the frame the wheel is seen, consumed on the next one, so
-/// the scroll offset can be moved to keep that point still. See
-/// [`crate::canvas::geometry::zoom_anchor_offset`].
-///
-/// **It has to span two frames**, and that is not an implementation
-/// detail: the new zoom is not known when the wheel is seen. The zoom is an
-/// [`crate::app::actions::Action`] applied after the UI is built, and it
-/// *clamps* — so the only honest source of "how big is the page now" is the
-/// next frame's own display size. Recording the *inputs* and solving later
-/// avoids predicting a clamp we do not control.
 #[derive(Debug, Clone, Copy)]
 pub struct ZoomAnchor {
     /// The pointer's position as a fraction of the page's drawn size.
@@ -147,22 +107,6 @@ pub struct ZoomAnchor {
 
 /// Which page is shown, at what scale, how that scale is chosen, and in what
 /// arrangement.
-///
-/// ## `PartialEq` is here for one test, and it is the right one
-///
-/// Derived for [`crate::app::prefs::Prefs::seed_view`], whose contract is
-/// *"seeding from the shipped preferences leaves a freshly opened view
-/// untouched"*. That property is only assertable as **whole-struct
-/// equality**: checking the fields the seeder writes would pass while a fifth
-/// field was silently clobbered, and checking the fields it does not write
-/// requires listing them, which is the same restatement drifting in a second
-/// place.
-///
-/// Deriving it over an `f32` is deliberate rather than overlooked. This struct
-/// is a *record of choices* — a zoom that was set, not a zoom that was computed
-/// — so two states that arrived at 1.0 by different routes genuinely are the
-/// same state. The float-comparison caution applies to accumulated arithmetic,
-/// and there is none here.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ViewState {
     /// **The page the operator is looking at**, 0-based into the flattened
@@ -421,21 +365,9 @@ pub struct ViewState {
 }
 
 /// Where the OCR slider lands when the ribbon toggle turns the mode **on**.
-///
-/// Not `1.0` and not `0.0`. Either stop shows exactly one of the two things
-/// the mode exists to let an operator compare, so arriving at one would make
-/// the first gesture *find the slider* rather than *read the page*. Two thirds
-/// puts the text clearly on top with the scan still legible beneath it, which
-/// is the position an operator checking a recognition against the paper
-/// actually wants.
 pub const OCR_OVERLAY_DEFAULT: f32 = 0.65;
 
 /// A slider position brought into `0.0..=1.0`, with a non-finite one refused.
-///
-/// The guard is `is_finite` **before** the clamp, not after: `f32::clamp`
-/// propagates a NaN rather than rejecting it, so a NaN that reached the veil's
-/// alpha would paint an undefined rectangle over the page. The same ordering
-/// `crate::app::prefs::normalise_ui_scale` uses, for the same reason.
 #[must_use]
 pub fn normalise_ocr_overlay(raw: f32) -> f32 {
     if raw.is_finite() {
@@ -487,30 +419,6 @@ impl Default for ViewState {
 impl ViewState {
     /// **[`Self::line_weights`] as the engine spells it** — the one place
     /// this shell's `bool` becomes a [`pdfcer_render::font::StrokeDisplay`].
-    ///
-    /// # Why the conversion is a named function and not an `if` at the call
-    /// site
-    ///
-    /// There are two call sites and they must not be able to disagree: the
-    /// **render key** ([`crate::app::state::OpenDoc::render_key_for`]) says
-    /// *what picture I want*, and the **render request** (built next to it, read
-    /// by `crate::render::worker::render_on_worker`) says *what picture this
-    /// is*. Two hand-written `if`s is exactly how a cache comes to serve a
-    /// raster drawn under the opposite answer — the failure mode that makes a
-    /// toggle look inert, which is the defect O137 reports about the button
-    /// this replaces.
-    ///
-    /// # Why the return type is the engine's ENUM and not a `bool`
-    ///
-    /// `StrokeDisplay` is `#[non_exhaustive]` with two variants today —
-    /// `Actual` and `Hairline` — and the engine made it an enum deliberately so
-    /// that Acrobat's *enhance thin lines* (the **opposite** convention: thin
-    /// things made thick) can arrive as a third variant. A `hairline: bool`
-    /// anywhere in this shell would, that day, come to mean *"one of the two"*.
-    /// So the boolean stops here and the engine's vocabulary starts here.
-    ///
-    /// `Hairline` is the **off** position. `true` means faithful widths; see
-    /// the field.
     #[must_use]
     pub const fn stroke_display(&self) -> pdfcer_render::font::StrokeDisplay {
         if self.line_weights {
@@ -521,20 +429,11 @@ impl ViewState {
     }
 
     /// Move to `index`, clamped into `0..page_count`.
-    ///
-    /// Clamping rather than erroring is right for a *view*: the only
-    /// ways to get an out-of-range index are a keyboard repeat past the
-    /// end and a page count that shrank, and in both cases the operator
-    /// wants the nearest valid page, not a message.
     pub fn go_to_page(&mut self, index: usize, page_count: usize) {
         self.page_index = clamp_page_index(index, page_count);
     }
 
     /// Step one page toward the end, stopping at the last page.
-    ///
-    /// Saturating rather than wrapping: wrap-around page navigation
-    /// silently teleports an operator from page 400 to page 1, which is
-    /// disorienting and is not what any document reader does.
     pub fn next_page(&mut self, page_count: usize) {
         self.go_to_page(self.page_index.saturating_add(1), page_count);
     }
@@ -546,10 +445,6 @@ impl ViewState {
 
     /// Pin the zoom to an explicit value, clamped to `[MIN_ZOOM, max]`,
     /// and drop out of any fit mode.
-    ///
-    /// `max` is the per-page ceiling from [`max_zoom_for_page`], passed
-    /// in rather than recomputed so this stays a pure state transition
-    /// with no page argument.
     pub fn set_zoom(&mut self, zoom: f32, max: f32) {
         self.zoom = clamp_zoom(zoom, max);
         self.fit = FitMode::None;
@@ -615,23 +510,12 @@ impl ViewState {
 
 /// Clamp a page index into `0..page_count`, mapping the empty-document
 /// case to `0`.
-///
-/// Returning `0` for an empty document rather than panicking keeps the
-/// "no pages" condition a *presentation* decision (the canvas shows
-/// [`crate::text::canvas_no_pages`]) instead of a crash, which matters
-/// because a valid PDF really can have `/Count 0`.
 #[must_use]
 pub fn clamp_page_index(index: usize, page_count: usize) -> usize {
     index.min(page_count.saturating_sub(1))
 }
 
 /// Clamp a zoom value into `[MIN_ZOOM, max]`, mapping NaN to `1.0`.
-///
-/// NaN is reachable in practice: a degenerate page whose CropBox has
-/// zero width makes `viewport_width / page_width` infinite or NaN, and
-/// an unclamped NaN would propagate into the render scale and then into
-/// a pixmap size, where it becomes a much less obvious failure. Mapping
-/// it to actual size fails visibly and harmlessly.
 #[must_use]
 pub fn clamp_zoom(zoom: f32, max: f32) -> f32 {
     if !zoom.is_finite() {
@@ -685,32 +569,6 @@ pub fn max_zoom_for_page(
 }
 
 /// The display density to actually use, given whatever egui reported.
-///
-/// Returns `pixels_per_point` when it is a usable density and `1.0` otherwise.
-///
-/// # Why this is a named function rather than a `.max()` at each site
-///
-/// Four places divide or multiply by the display density — [`raster_scale`],
-/// [`ceiling::zoom_ceiling`]'s learned clause, `render::settle`'s
-/// `learn_raster_ceiling`, and `app::status::rasterstop` — and they are not free
-/// to guard it differently, because they are three readings of *one* number
-/// (`crate::render::ceiling::RasterCeiling`'s stored raster scale) and a
-/// disagreement between them is a shell that clamps at one zoom and explains
-/// itself at another.
-///
-/// The tempting spelling is `pixels_per_point.max(f32::MIN_POSITIVE)`, and it
-/// is **wrong in the one case that matters**. `f32::max` returns the *other*
-/// operand when one is `NaN`, so a `NaN` density becomes `f32::MIN_POSITIVE` —
-/// and a division by it produces infinity, which is the most destructive
-/// possible answer rather than a conservative one. The consequence is not
-/// abstract: the sentence that explains a zoom limit would be switched off
-/// permanently and silently, in exactly the state it exists for. The `NaN` row
-/// of this function's unit test is what holds the guard to it.
-///
-/// `1.0` is the right fallback because it is the *identity*: a scale and a zoom
-/// are the same number at unit density, so a caller that cannot learn the
-/// density falls back to treating the two as interchangeable, which is what the
-/// shell did for its whole life before HiDPI was handled at all.
 #[must_use]
 pub fn sane_pixels_per_point(pixels_per_point: f32) -> f32 {
     if pixels_per_point.is_finite() && pixels_per_point > 0.0 {
@@ -721,13 +579,6 @@ pub fn sane_pixels_per_point(pixels_per_point: f32) -> f32 {
 }
 
 /// The device-pixel scale to rasterize at for a given logical `zoom`.
-///
-/// `zoom` is points per PDF user-space unit — what the operator sees as
-/// a percentage and what fit modes compute. The raster has to be made in
-/// *pixels*, so it is multiplied by the display's `pixels_per_point`.
-/// Getting this wrong is not a crash; it is a viewer that looks
-/// permanently slightly blurry on every HiDPI laptop and perfectly sharp
-/// on the developer's external monitor.
 #[must_use]
 pub fn raster_scale(
     zoom: f32,
@@ -739,38 +590,6 @@ pub fn raster_scale(
 
 /// The factor between a **zoom** and a **raster scale**, in device pixels per
 /// logical unit.
-///
-/// # Why this is a function and not two multiplications
-///
-/// A raster scale is `zoom × pixels_per_point × quality.multiplier()`, and four
-/// places in the shell need to run that conversion **backwards**:
-/// [`max_zoom_for_page`], [`ceiling::zoom_ceiling`]'s learned clause,
-/// `render::settle::absorb`'s `learn_raster_ceiling`, and `app::status::rasterstop`.
-/// Every one of them divided by the density alone, and the quality factor was
-/// simply absent — so on View ▸ Render ▸ Quality ≥ Normal the derived ceiling
-/// asked the engine for a pixmap over [`pdfcer_render::MAX_PIXMAP_EDGE`], the
-/// engine refused, and the clamp that exists to rescue the operator landed by
-/// the same factor too high and refused again. O218.
-///
-/// Routing both directions through this one function is what makes
-/// [`zoom_for_raster_scale`] the *exact* inverse of [`raster_scale`] rather than
-/// a second reading of the same rule that has to be kept in step by hand.
-///
-/// # What is in it
-///
-/// * `pixels_per_point`, through [`sane_pixels_per_point`], so the raster stays
-///   sharp on a HiDPI display.
-/// * `quality.multiplier()`. `Normal` is `1.0`: one raster pixel per device
-///   pixel, which is exactly `zoom × ppp` and is therefore what a build whose
-///   operator never opens the Settings window gets, byte for byte. The knob
-///   multiplies that, so the setting can only ever be a deliberate departure
-///   from the default — there is no compiled-in quality constant anywhere else
-///   for it to disagree with.
-///
-/// The result is finite and strictly positive without a guard, because
-/// `sane_pixels_per_point` guarantees that of its half and
-/// [`crate::app::prefs::RenderQuality::multiplier`] is a `const fn` over a
-/// closed enum whose three values are 0.75, 1.0 and 1.5.
 #[must_use]
 pub fn raster_density(pixels_per_point: f32, quality: crate::app::prefs::RenderQuality) -> f32 {
     sane_pixels_per_point(pixels_per_point) * quality.multiplier()
@@ -778,13 +597,6 @@ pub fn raster_density(pixels_per_point: f32, quality: crate::app::prefs::RenderQ
 
 /// The logical zoom that rasterizes at `scale` — the inverse of
 /// [`raster_scale`].
-///
-/// [`crate::render::ceiling::RasterCeiling`] stores what the engine refused as a
-/// **raster scale**, deliberately: a ceiling kept as a zoom would be wrong by the
-/// density ratio on a window dragged between two monitors, silently, and only on
-/// the machine it was not measured on. Every reader therefore has to convert,
-/// and this is the conversion — the whole of [`raster_density`], not the display
-/// density alone.
 #[must_use]
 pub fn zoom_for_raster_scale(
     scale: f32,
@@ -796,36 +608,6 @@ pub fn zoom_for_raster_scale(
 
 /// A page's on-screen extent in PDF user-space units, with `/Rotate`
 /// already applied (a 90°-rotated portrait page is landscape on screen).
-///
-/// # One definition of how big a page is
-///
-/// Delegates to [`crate::render::region::PageFrame::extent_pts`] rather than
-/// reading `page.crop_box` directly. That is the point, and it has not
-/// changed: a fit-page computed from an un-rotated `CropBox` against a rotated
-/// raster is the classic version of this bug, so the rotation table lives in
-/// exactly one place — the same place that holds the canvas↔user conversion
-/// this extent has to agree with.
-///
-/// # Why NOT [`pdfcer_render::page_device_geometry`]'s pixmap dimensions
-///
-/// Those are `u32` and therefore **ceiled**, which makes them the wrong
-/// measure of a page for a layout that translates in points. A page measuring
-/// 2383.937 × 1683.78 pt lays out as 2384 × 1684 — a canvas space 0.22 pt
-/// taller than the page whose coordinates it carries, because
-/// `PageFrame::user_to_canvas` puts that page's bottom edge at 1683.78.
-///
-/// **A rounding error in a layout is multiplied by the zoom.** At 100 % that
-/// gap is a fifth of a pixel and invisible; at 1040 %, against a page 17,509 pt
-/// tall on screen, it puts `render::region::region_on_screen`'s region raster
-/// **2.3 pt** away from where the page's own rect says it belongs. Measured by
-/// `ui-verify`'s `panning_at_deep_zoom_stays_where_it_was_put`, the only
-/// instrument in the project that compares a raster's *painted* rect against a
-/// rect recomputed independently from the page.
-///
-/// The full argument, including why the pixmap still being a fraction of a
-/// pixel larger than the page is harmless and why the ceiled extent's version
-/// of the same error was not, is on
-/// [`crate::render::region::PageFrame::extent_pts`].
 #[must_use]
 pub fn page_extent_pts(page: &Page) -> (f32, f32) {
     crate::render::region::PageFrame::of(page).extent_pts()

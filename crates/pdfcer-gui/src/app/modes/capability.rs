@@ -20,17 +20,6 @@ const TAB_MARKUP: &str = "markup";
 const TAB_MEASURE: &str = "measure";
 
 /// **What the active mode lets the canvas do to the document.**
-///
-/// Three independent facts rather than one ordered level, even though the
-/// three built-in modes happen to form a ladder. The ladder is a property of
-/// *that manifest*, not of the type: Review offers markup without content
-/// editing, so the two are already independent in the shipped product, and a
-/// customized manifest may offer any combination at all. An ordered
-/// `enum { Read, Review, Edit }` would have to be re-derived — wrongly —
-/// from any manifest that did.
-///
-/// Copied freely: three `bool`s, computed once per frame in
-/// [`crate::app::PdfcerApp`] and passed down by value.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Capabilities {
     /// Whether page **content** — paths, text objects, images — may be
@@ -67,10 +56,6 @@ impl Capabilities {
     };
 
     /// Nothing but navigation and form filling — what Read grants.
-    ///
-    /// Not used as a fallback anywhere. It exists so a test can name the
-    /// expected value rather than spell three fields, and so the Read row of
-    /// the module header's table has a name in code.
     pub const NONE: Self = Self {
         edit_content: false,
         author_markup: false,
@@ -78,11 +63,6 @@ impl Capabilities {
     };
 
     /// **What `mode_id` may do, according to `shell`.**
-    ///
-    /// The one place the derivation lives. `shell` is `Option` because
-    /// `PdfcerApp::shell` is: a build whose manifest failed to validate has
-    /// none, and that build gets [`Self::FULL`] along with every other
-    /// unknown case (module header §3).
     #[must_use]
     pub fn for_mode(shell: Option<&Shell>, mode_id: Option<&str>) -> Self {
         let (Some(shell), Some(mode_id)) = (shell, mode_id) else {
@@ -100,11 +80,6 @@ impl Capabilities {
     }
 
     /// Whether **any** authoring gesture is permitted.
-    ///
-    /// The predicate a surface asks when it wants to know "is this a reading
-    /// stance?" without caring which authoring verb it is about — the canvas
-    /// context menu uses it to decide whether it has anything to offer at
-    /// all.
     #[must_use]
     pub fn authors_anything(self) -> bool {
         self.edit_content || self.author_markup || self.author_measure
@@ -318,12 +293,6 @@ pub fn offers_command(shell: Option<&Shell>, mode_id: Option<&str>, command_id: 
 }
 
 /// Whether a gesture that acts on page **content** may proceed.
-///
-/// Free function rather than a method because it is the exact predicate the
-/// gesture machine needs at three call sites and it reads as a sentence
-/// there: `content_gesture(caps)`. The marquee is the interesting caller —
-/// a *zoom* band is not a content gesture even though it is the same rubber
-/// band, so the branch is on the release intent, not on the band.
 #[must_use]
 pub fn content_gesture(caps: Capabilities) -> bool {
     caps.edit_content
@@ -335,30 +304,11 @@ const EDIT_CONTENT_KEY: &str = "pdfcer.caps.edit-content"; // ui-text-exempt: a 
 
 /// **Publish whether this frame's mode edits page content**, for the canvas
 /// helpers that have no `Capabilities` to hand.
-///
-/// # Why a published value rather than a further parameter
-///
-/// `canvas::pressing::grabbable` decides which grips a selection offers, and
-/// per `OPERATOR_REQUESTS.md` O71 that answer depends on the mode: a content
-/// selection is reachable in **Read**, where every grip would commit an edit
-/// the mode forbids. Most of its callers hold no `Capabilities`, so the
-/// alternative is threading a boolean through call chains that have no other
-/// interest in it.
-///
-/// This is the same shape `canvas::tool` uses for the armed tool and
-/// `crate::pagedrag` for the active document, and it carries the same
-/// obligation: **one writer**. `app::frame` publishes it once per frame before
-/// any surface draws, so a reader cannot get last frame's answer.
 pub fn publish_edit_content(ctx: &egui::Context, on: bool) {
     ctx.data_mut(|d| d.insert_temp(egui::Id::new(EDIT_CONTENT_KEY), on));
 }
 
 /// Whether this frame's mode edits page content. Defaults to `false`.
-///
-/// `false` when nothing has been published — a unit test with a bare
-/// `egui::Context`, or a frame before the publication. That is the safe
-/// direction: the consequence of a wrong `false` is a selection that offers no
-/// grips, and of a wrong `true` is eight controls whose drag is refused.
 #[must_use]
 pub fn edit_content_now(ctx: &egui::Context) -> bool {
     ctx.data(|d| d.get_temp::<bool>(egui::Id::new(EDIT_CONTENT_KEY)))

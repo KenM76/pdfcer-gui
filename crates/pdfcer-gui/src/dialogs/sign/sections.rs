@@ -170,20 +170,6 @@ impl SignDialog {
     }
 
     /// **What kind of signature** — approval, or certifying as the author.
-    ///
-    /// `Pass 10.12`. §2d of [`crate::sign`]'s header argues why this is a radio
-    /// pair here rather than a second ribbon command.
-    ///
-    /// **The certifying option is ABSENT, not greyed, on a document that
-    /// cannot carry one** — and the sentence explaining why is drawn in its
-    /// place. R9's *explained* branch: both of the engine's certification
-    /// refusals are states of the document that are knowable when this window
-    /// opens, so meeting one by pressing rather than by reading is a failure
-    /// this surface can avoid outright.
-    ///
-    /// ⚠ And the sentence ends *"you can still add an ordinary signature"*,
-    /// which is the half that stops the note being read as a refusal of the
-    /// whole window.
     pub(super) fn kind_section(&mut self, ui: &mut egui::Ui, theme: &Theme) {
         ui.label(t::kind_heading());
         ui.add_space(6.0);

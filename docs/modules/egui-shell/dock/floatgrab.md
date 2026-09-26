@@ -83,3 +83,63 @@ move — clamped to a monitor edge, placed by a compositor that does not
 take instruction — gets asked again on the pass after. The failure mode
 this rules out is a carry that stops moving the window entirely and
 gives the operator no way to tell it apart from a hang.
+
+### `fn window_point`
+
+Both origins are the **content** (inner) origins of their windows, in
+monitor space at ui-point scale — [`egui::ViewportInfo::inner_rect`]'s
+`min`. A child viewport's widget coordinates are relative to its own
+content origin, so the desktop point is `child_origin + local` and the
+application-local point is that minus the application's content origin.
+
+⚠ **Inner on both sides.** [`egui::ViewportInfo::outer_rect`] is content
+*plus* decoration, so substituting it injects a constant error the size
+of a title bar — 31 points on Windows 11 — which is plausible enough to
+survive review and large enough to land a drop in the wrong compartment.
+
+⚠ A test that reads both origins from a bare [`egui::Context`] harness
+measures nothing: `show_viewport_immediate` falls back to an embedded
+window there, so the two origins are the same and every conversion —
+including omitting this one entirely — collapses to the identity. The
+tests below supply both origins themselves, and the wiring is verified by
+driving two real windows.
+
+### `fn carry_to`
+
+`grabbed` is where the button went down, `local` is where the pointer is
+now, both in the **window's own** coordinates; `outer` is the window's
+current outer origin. The window has to move by however far the pointer
+has got from the point it grabbed.
+
+`grabbed` does not go stale when the window moves, and that is the whole
+reason this is expressed as an absolute target. It is a point *on the
+window* — on the header strip — so it keeps the same window coordinates
+however far the window travels, while `local` is re-reported against the
+new origin every frame. Their difference is therefore the residual error
+and not a velocity: when the window has arrived, it is zero, and the
+command stops being sent.
+
+⚠ A per-frame `drag_delta` in its place oscillates. The delta that moved
+the window is re-reported next frame as an equal and opposite local
+movement, so the window is commanded back where it came from.
+
+### `fn carry`
+
+Called from inside the float window's viewport callback, where `ui` is
+the child's root and `header` is the strip's `Response`. Returns the
+report to hand to [`super::state::DockState::set_float_drag`], or `None`
+on any frame that is not part of a carry.
+
+# What makes it decline
+
+- The gesture is not a drag — an ordinary click on the strip opens the
+  menu and must not also offer a drop.
+- `class` is not [`ViewportClass::Immediate`]. An embedded fallback has
+  no window of its own, so moving it would move the application's, and
+  its origin coincides with the application's so the conversion would be
+  the identity rather than an answer.
+- Either window's content rectangle is unreported. Both are `Option` and
+  are `None` on Android and Wayland, where a window's position cannot be
+  obtained. There is no conversion without them, so the gesture degrades
+  to what a float window does anyway — it moves — and the panel still has
+  the menu's **Dock** row as a position-blind route home.

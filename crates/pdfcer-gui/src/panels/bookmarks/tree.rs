@@ -7,25 +7,12 @@ use pdfcer_core::object::ObjId;
 use pdfcer_core::outline::OutlineItem;
 
 /// Find an outline item by id, anywhere in the tree.
-///
-/// A depth-first walk rather than an index, for [`super::BookmarksUi::selected`]'s
-/// reason: an id survives an edit and a position does not. The engine hit that
-/// in its own CLI — *"the indices shift after every add … I got this wrong
-/// myself while driving the command and nested something two levels deeper than
-/// intended, and the output looked entirely plausible."*
-///
-/// One line, because the recursion — the part with something to get wrong —
-/// lives in [`find_in`], which **can** be tested. See the module header.
 #[must_use]
 pub fn find(items: &[OutlineItem], id: ObjId) -> Option<&OutlineItem> {
     find_in(items, id, |item| item.id, |item| item.children.as_slice())
 }
 
 /// Depth-first search of a tree, given the two things a tree is.
-///
-/// Generic for the reason the module header gives: `OutlineItem` is
-/// `#[non_exhaustive]` and cannot be constructed in this crate, so a search
-/// written over it directly is a search no test here can reach.
 pub fn find_in<'a, T>(
     items: &'a [T],
     id: ObjId,
@@ -44,25 +31,12 @@ pub fn find_in<'a, T>(
 }
 
 /// How many bookmarks are filed **under** `item`, at every depth.
-///
-/// Excludes `item` itself, which is the number the delete disclosure wants: the
-/// operator can see the row they clicked, and what they cannot see is what else
-/// goes with it. `EditSession::delete_outline_item` returns the *inclusive*
-/// count afterwards, and `crate::text::panels::bookmark_deleted` subtracts one
-/// to speak about the same quantity this does.
-///
-/// Reads the tree, never `/Count` — see the module header's table for why the
-/// two are different numbers on a collapsed item.
 #[must_use]
 pub fn descendants(item: &OutlineItem) -> usize {
     descendants_in(item, |i| i.children.as_slice())
 }
 
 /// Count every node below `node`, given how to read a node's children.
-///
-/// Generic for [`find_in`]'s reason. The arithmetic is *one per child plus that
-/// child's own descendants* — trivial, and trivially wrong in the two ways this
-/// module's tests pin: counting the node itself, and counting only one level.
 pub fn descendants_in<'a, T>(node: &'a T, children: impl Fn(&'a T) -> &'a [T] + Copy) -> usize {
     children(node)
         .iter()
@@ -71,10 +45,6 @@ pub fn descendants_in<'a, T>(node: &'a T, children: impl Fn(&'a T) -> &'a [T] + 
 }
 
 /// A bookmark's title, or the stand-in for one that has none.
-///
-/// An untitled bookmark is **legal** — `OutlineItem::title`'s own doc says a
-/// file may legitimately carry one — so naming it in a sentence needs the same
-/// stand-in the row does rather than an empty gap.
 #[must_use]
 pub fn display_title(title: &str) -> String {
     if title.trim().is_empty() {

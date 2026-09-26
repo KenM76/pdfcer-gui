@@ -76,10 +76,6 @@ use egui::{Response, WidgetInfo, WidgetType};
 
 /// The name an assistive technology should announce for a command
 /// control.
-///
-/// See the module header's table. `shows_label` is whether the control
-/// draws its text; when it does not, the tooltip is the only description
-/// of the glyph that exists.
 #[must_use]
 pub fn accessible_name(command: &Command, shows_label: bool) -> &str {
     let label = non_empty(&command.label);
@@ -114,12 +110,6 @@ fn non_empty(s: &str) -> Option<&str> {
 }
 
 /// Publish a command control's accessibility information.
-///
-/// Called for **every** control the ribbon draws, not only icon-only
-/// ones, because `Response::widget_info` is also what feeds `egui`'s
-/// output events — a labelled button that skipped this would be
-/// announced by `egui`'s own default, which is the label with no enabled
-/// state and no hint.
 pub(crate) fn describe_command(
     response: &Response,
     command: &Command,
@@ -153,11 +143,6 @@ pub(crate) fn describe_tab(response: &Response, label: &str, selected: bool) {
 }
 
 /// Publish a **mode-selector segment**'s accessibility information.
-///
-/// [`WidgetType::RadioButton`] is an honest match here: the segments are
-/// mutually exclusive, exactly one is current, and that is precisely what
-/// a radio button means. Unlike the tab strip, the selector loses nothing
-/// to the toolkit's vocabulary.
 pub(crate) fn describe_mode_segment(response: &Response, label: &str, selected: bool) {
     let label = label.to_owned();
     response.widget_info(|| {

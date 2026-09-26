@@ -26,10 +26,6 @@ const COMBO_REGION: &str = "form.button.action"; // ui-text-exempt: a trace regi
 const ROW_REGION: &str = "form.button.action.row"; // ui-text-exempt: a trace region name, never displayed
 
 /// Draw the chooser and its parameters into `ui`, editing `does` in place.
-///
-/// Returns nothing: the draft is the output, and the dialog reads
-/// [`ButtonDoes::blocker`] itself when it decides whether Add may be pressed.
-/// A `bool` return would be a second opinion about the same question.
 pub fn rows(ui: &mut Ui, does: &mut ButtonDoes) {
     ui.add_space(8.0);
     ui.label(t::does_label());

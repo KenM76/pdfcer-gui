@@ -41,3 +41,27 @@ application whatever the call sites look like: the code does not compile.
 The one thing the re-export costs is that a reader of `crate::diag` cannot
 see from the call site that it crosses a crate. `pdfcer-gui`'s crate root
 says so at the re-export.
+
+## Item notes
+
+### `mod diag`
+
+The instrument every other module is measured with, and the reason R1 can
+be satisfied at all: a GUI defect's only honest oracle is the running
+application, and what happens between the window manager and the first line
+of our code is unobservable from the source.
+
+Lowest thing in the stack by fan-in — sixteen modules report through it —
+which is exactly why it is the anchor of this crate.
+
+### `mod trust`
+
+The shell half of `pdfcer-core`'s `Pass 10.2`–`10.5`: locating the trust
+list an installed Acrobat/Reader has downloaded, reading it (read-only, no
+network, opt-in and off by default), and threading it into
+`signature::verify_all_with_trust`.
+
+Its header carries the rule that governs the whole subject — **this is the
+one place in the product where a wrong answer is worse than no answer** —
+and the consequence: integrity, coverage and trust are reported separately,
+never folded into one badge, and `NotChecked` renders as itself.

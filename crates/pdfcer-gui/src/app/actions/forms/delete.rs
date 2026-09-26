@@ -6,13 +6,6 @@
 use crate::app::state::OpenDoc;
 
 /// **Delete a whole field, with every widget it draws.**
-///
-/// The disclosure names the **widget count**, because that is the part the
-/// operator cannot see: a field drawn in three places disappears from three
-/// pages, and they are looking at one of them. A confirmation that said only
-/// "deleted" would be true and would leave two pages changed without mention.
-/// **The selection is cleared ON SUCCESS, never ahead of the call** — see
-/// [`clear_selection_if_edited`], which carries the whole argument.
 pub(in crate::app::actions) fn field(doc: &mut OpenDoc, field: &str) {
     if refused(doc, "delete-field", field) {
         return;
@@ -48,14 +41,6 @@ pub(in crate::app::actions) fn field(doc: &mut OpenDoc, field: &str) {
 }
 
 /// **Delete one widget, leaving the field.**
-///
-/// The engine may report that the field went too, and the disclosure has to
-/// follow it rather than assume: removing the last widget of a field leaves a
-/// name nothing draws and nothing can fill, so `delete_widget` removes the
-/// field as well. That is the right behaviour and it is **not** what the
-/// operator pressed, so it is said out loud.
-/// **The selection is cleared ON SUCCESS, never ahead of the call** — see
-/// [`clear_selection_if_edited`], which carries the whole argument.
 pub(in crate::app::actions) fn widget(doc: &mut OpenDoc, field: &str, widget: usize) {
     if refused(doc, "delete-widget", field) {
         return;

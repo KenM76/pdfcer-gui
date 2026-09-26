@@ -110,3 +110,130 @@ the serializer. A round-trip test cannot detect an ergonomics defect
 `IMPLICIT_SOME`, without which every one of these fields would
 require a `Some(…)` wrapper that no operator would think to type.
 See `D:/dev/rag/rust/ron_without_implicit_some_makes_every_optional_field_unwritable_by_hand.md`.
+
+### `struct Menu`
+
+Field-for-field the same shape as [`crate::manifest::Group`], for the
+reason the module header gives. In particular [`Self::items`] is
+`Option` rather than `Vec` for the *same* reason a group's is: the
+`Option` is what distinguishes **"this menu is now empty"** from **"do
+not mention this menu"**, and a customization layer needs to be able to
+say both.
+
+### `struct Menus`
+
+A `Vec` rather than a `BTreeMap` because the on-disk form must be
+hand-editable and a list of `Menu(context: "…", items: […])` reads far
+better in RON than a map whose key is repeated inside its own value.
+Lookup is linear, over a collection whose realistic size is under
+twenty, once per right-click.
+
+Duplicate contexts are refused by [`Self::validate`]; [`Self::get`]
+returns the **first** match, so an unvalidated document degrades to
+"the first definition wins" rather than to something order-dependent
+and invisible.
+
+### `fn overlay`
+
+This is the menu half of `SHELL_FRAMEWORK.md` §5's customization
+contract, and it follows [`crate::manifest::merge`]'s rules rather
+than inventing softer ones:
+
+| The layer says | The result |
+|---|---|
+| `Menu(context: "canvas.object", items: [...])` for a known context | that menu's items are **replaced** |
+| `Menu(context: "canvas.object")` — no `items` key | nothing changes; the entry is a reference |
+| `Menu(context: "new.thing", items: [...])` | the menu is **added** |
+
+Replacement rather than element-wise splicing, because an item list
+has no per-item key to merge on — `Separator` is not identified by
+anything, and an operator reordering a menu is expressing an order,
+not a set of moves. This is the same conclusion the manifest's
+group merge reaches for the same reason.
+
+**It is deliberately fail-soft and validates nothing.** A layer
+naming a command that this build does not have is not an error
+here: [`crate::menu::plan::resolve`] omits it at render time and
+discloses the omission, which is what
+`GUI_ROADMAP.md`'s no-placeholders rule requires anyway. Rejecting
+the layer instead would throw away an operator's whole
+customization over one stale id — the failure mode `merge`'s header
+exists to argue against.
+
+An application that wants the stale id reported at *load* time
+rather than at render time calls [`Self::validate_against`].
+
+### `fn validate_against`
+
+**Opt-in, and never a precondition of rendering.** The renderer's
+contract for an unregistered id is *omission with a disclosure*
+([`crate::menu::plan::resolve`]), because
+`GUI_ROADMAP.md`'s no-placeholders rule says a command that does not
+exist in this build must be absent, not greyed. This function
+exists for the application that would rather find its own typo at
+start-up than at right-click time, which is a different question
+from what the operator should see.
+
+# Errors
+
+[`MenuError::UnknownCommand`], naming the context and the id, so
+the message points at the line in the file rather than at the file.
+
+### `fn from_ron`
+
+The ordinary path is [`Shell::from_ron`], which reads the menus out
+of the same document as the ribbon. This is the escape hatch for an
+application that would rather keep its menus in a file of their own,
+or ship them without using the manifest at all.
+
+# Errors
+
+[`MenuError::Parse`], carrying RON's line and column.
+
+### `fn to_ron`
+
+# Errors
+
+[`MenuError::Serialize`] if RON refuses the value, which for this
+type's fields should not be reachable.
+
+### `fn to_ron_pretty`
+
+# Errors
+
+As [`Self::to_ron`].
+
+### `enum MenuError`
+
+Every variant carries the offending identifiers as fields rather than
+interpolated into prose, for the reason
+[`crate::manifest::ManifestError`] gives: the document is hand-edited,
+so an error must say *which line*, and an application must be able to
+act on it — offering "reset this one menu" rather than "your file is
+broken".
+
+### `trait MenuLookup`
+
+# Why the entry points take this rather than a `&Shell`
+
+[`Shell`] is where menus belong, and it is not the only place they can
+come from: an application may build a menu in code, or load one from a
+file of its own, and neither has a `Shell` to hand. A renderer that
+demanded one would force such an application to construct an otherwise
+empty manifest, and a rendering test to do the same — which is how a
+suite ends up green because there was nothing for it to fail against
+(the failure mode `ribbon/testfont.rs` exists to prevent).
+
+A trait removes the choice. [`Menus`], a single [`Menu`] and [`Shell`]
+all implement it, and every entry point in this module accepts whichever
+of the three the caller already has.
+
+### `fn menus_of`
+
+Everything in this crate that asks a `Shell` for a menu comes through
+here, so the field has exactly one reader and the absent case has
+exactly one answer.
+
+A manifest that declares no menus resolves to the empty catalog rather
+than to an error: no menu for a context is a right-click that does nothing,
+which is the correct behaviour and not a failure.

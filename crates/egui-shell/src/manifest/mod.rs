@@ -115,11 +115,6 @@
 mod item;
 mod merge;
 /// The left rail — the vertical strip down a dock side's outer edge.
-///
-/// A region carried as **manifest data**, for the reason [`Trailing`] is:
-/// `SHELL_FRAMEWORK.md` makes the shell one serializable document, and a
-/// region only the application knows about breaks that quietly — it cannot
-/// be overlaid, filtered or validated with the rest.
 pub mod rail;
 mod validate;
 
@@ -135,23 +130,12 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 /// Anything that can say whether a command id is real.
-///
-/// [`crate::commands::CommandRegistry`] implements it. The trait exists so
-/// this module does not depend on that one: a manifest must be parseable,
-/// mergeable and round-trippable by a tool that has no registry at all —
-/// a schema linter, a diff viewer, `tools/ui-verify` inspecting a `.ron`
-/// file without linking the application.
 pub trait CommandCatalog {
     /// Whether this id names a real command.
     fn contains(&self, id: &str) -> bool;
 }
 
 /// A catalog that accepts every id.
-///
-/// For tests, for tooling that has no registry, and for the first stage
-/// of an application's own bring-up. Using it in production would disable
-/// the check that makes an unknown id a disclosed skip, which is why it is
-/// a named type at a call site rather than a default.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct AnyCommand;
 
@@ -177,10 +161,6 @@ pub struct Shell {
     #[serde(skip_serializing_if = "is_zero")]
     pub schema: u32,
     /// Named workspaces. Each names the tabs it contains.
-    ///
-    /// `MODES_AND_PANELS.md`: *a mode is a named workspace layout*, and
-    /// Read/Review/Edit is a **configuration**, not a built-in. Nothing in
-    /// this crate knows those three names.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub modes: Option<Vec<Mode>>,
     /// The ordinary tabs, in display order.
@@ -244,10 +224,6 @@ fn is_zero(v: &u32) -> bool {
 
 impl Shell {
     /// The schema version this build writes and understands.
-    ///
-    /// Bump when a change would make an *older* build misread a newer
-    /// file — not for an added optional field, which an older build
-    /// already ignores safely.
     pub const SCHEMA: u32 = 1;
 
     /// An empty manifest stamped with the current schema.
@@ -319,10 +295,6 @@ impl Shell {
 
     /// Set the trailing controls — the far right of the tab-strip row. See
     /// [`Trailing`].
-    ///
-    /// Takes [`Item`]s rather than ids, unlike [`Self::with_qat`], because the
-    /// whole reason this region exists is that its controls carry a
-    /// `visible_when` — see [`Trailing`]'s note on R9.
     #[must_use]
     pub fn with_trailing<I>(mut self, items: I) -> Self
     where
@@ -334,12 +306,6 @@ impl Shell {
 
     /// Set the left rail — the vertical strip down a dock side's outer edge.
     /// See [`Rail`].
-    ///
-    /// Takes [`RailGroup`]s rather than bare items because the rail's whole
-    /// scaling behaviour is per **group**: what folds, in what order, and what
-    /// never folds. A flat list would have nowhere to say that, and the answer
-    /// would have to be derived from position — which is precisely the
-    /// derivation `RIBBON_SCALING.md` §3.2 measured Word *not* doing.
     #[must_use]
     pub fn with_rail<I>(mut self, groups: I) -> Self
     where
@@ -360,37 +326,16 @@ impl Shell {
     }
 
     /// Parse a manifest from RON.
-    ///
-    /// # Errors
-    ///
-    /// [`ManifestError::Parse`], carrying RON's own line and column. The
-    /// span is the useful part: this file is hand-edited, and "expected
-    /// `)` at 14:3" is the difference between a fixable typo and a file
-    /// the operator reverts wholesale.
-    ///
-    /// Parsing does **not** validate. A layer is not expected to be a
-    /// complete manifest, so refusing to parse one that is incomplete
-    /// would make the layered design unrepresentable. Call
-    /// [`Self::validate`] on the merged result.
     pub fn from_ron(text: &str) -> Result<Self, ManifestError> {
         Ok(ron_options().from_str(text)?)
     }
 
     /// Serialize to compact RON.
-    ///
-    /// # Errors
-    ///
-    /// [`ManifestError::Serialize`] if RON refuses the value, which for
-    /// this type's fields should not be reachable.
     pub fn to_ron(&self) -> Result<String, ManifestError> {
         Ok(ron_options().to_string(self)?)
     }
 
     /// Serialize to indented RON, for a file a human will open.
-    ///
-    /// # Errors
-    ///
-    /// As [`Self::to_ron`].
     pub fn to_ron_pretty(&self) -> Result<String, ManifestError> {
         Ok(tidy(
             &ron_options().to_string_pretty(self, pretty_config())?,
@@ -529,18 +474,6 @@ pub(crate) fn tidy(pretty: &str) -> String {
 }
 
 /// A named workspace: a label and the tabs it contains.
-///
-/// `MODES_AND_PANELS.md` Part 1 describes what a mode is for, and one
-/// rule from it binds anything rendering this type:
-///
-/// > **A mode changes what is *visible*. It never makes a visible control
-/// > silently inert.**
-///
-/// That is what separates a mode from a master enable/disable toggle. A
-/// toggle leaves the tools on screen and makes gestures quietly do nothing;
-/// a mode *removes* the tools it disables, so there is no click that
-/// mysteriously fails and no control whose appearance lies about what it
-/// will do.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Mode {
@@ -590,12 +523,6 @@ impl Mode {
 }
 
 /// One ribbon tab.
-///
-/// `RIBBON_IA.md` §4 keeps an idiom worth preserving: every tab carries a
-/// one-line **question** it exists to answer — *"What is on my screen, and
-/// how is the page laid out?"* That is what [`Self::question`] is, and it
-/// is not decoration: a tab whose question cannot be written in one line is
-/// a tab carrying two unrelated jobs, and the fix is to split it.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Tab {
@@ -696,10 +623,6 @@ impl Tab {
 }
 
 /// A captioned band of items within a tab.
-///
-/// The caption is required in a complete manifest. An uncaptioned group is
-/// a row of controls whose relationship the operator has to infer, and the
-/// caption is the only place that relationship is ever written down.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Group {
@@ -826,12 +749,6 @@ impl Group {
     }
 
     /// **Ask for this group to be laid out on `rows` rows even when one fits.**
-    ///
-    /// See [`Self::prefer_rows`] for what it does and does not promise. `rows`
-    /// below 2 is stored as given and ignored by the planner, which is the
-    /// honest handling: `1` means *"one row"*, which is already the default, and
-    /// silently rewriting it to `None` would make a manifest that round-trips
-    /// differently from the one that was written.
     #[must_use]
     pub fn with_prefer_rows(mut self, rows: u32) -> Self {
         self.prefer_rows = Some(rows);
@@ -846,11 +763,6 @@ impl Group {
 }
 
 /// The quick-access toolbar: command ids, in order.
-///
-/// `SHELL_FRAMEWORK.md` §5 states the one-command-one-tab rule so that this
-/// is allowed: a command may appear on exactly one **tab**, and the QAT and
-/// status bar may mirror it. A QAT that could not mirror would be a second
-/// place to hunt for a command rather than a shortcut to a known one.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct Qat(pub Vec<String>);
@@ -946,10 +858,6 @@ impl Trailing {
     }
 
     /// Whether there is nothing to draw.
-    ///
-    /// A present-but-empty `Trailing` is treated exactly as an absent one by
-    /// the renderer, so that an operator customization that removed the last
-    /// item reclaims the space instead of leaving a gap the width of nothing.
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
@@ -963,16 +871,6 @@ impl FromIterator<Item> for Trailing {
 }
 
 /// Key chord → command id.
-///
-/// The chord is an opaque string here — `"Ctrl+E"`, `"F11"`. Parsing it
-/// into modifiers and a key is the renderer's job, and doing it in this
-/// type would mean a manifest could not be read by a tool that does not
-/// link `egui`.
-///
-/// Ordered (`BTreeMap`) so a serialized manifest is byte-stable: an
-/// operator's customization file that reordered itself on every save
-/// would produce a diff on every run and make version control useless for
-/// exactly the file most worth versioning.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct Keymap(pub BTreeMap<String, String>);

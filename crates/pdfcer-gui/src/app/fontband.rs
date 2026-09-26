@@ -18,18 +18,6 @@ const FACE_WIDTH: f32 = 78.0;
 const SIZE_WIDTH: f32 = 46.0;
 
 /// Draw one Format ▸ Font custom item, or nothing.
-///
-/// Returns the command's handler token when the operator changed something, in
-/// which case `parked` holds the change. `None` means *nothing was invoked*,
-/// which is what the shell expects for a frame in which the operator merely
-/// looked at the control.
-///
-/// # `kind` is matched, not asserted
-///
-/// An unrecognised kind returns `None` and draws nothing, exactly as
-/// [`crate::app::PdfcerApp::ribbon_band`]'s renderer does for one it does not
-/// know. A manifest is data; the honest response to a kind nobody implements
-/// is a gap, not a panic in the paint loop.
 pub(super) fn draw(
     ui: &mut Ui,
     kind: &str,

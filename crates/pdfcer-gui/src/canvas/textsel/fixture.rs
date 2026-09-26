@@ -30,20 +30,12 @@ const LINES: &[(&str, [f32; 6])] = &[
 ];
 
 /// Where the fixture lives, relative to this crate.
-///
-/// `../../fixtures/` — **this** repository's, not the engine's. The engine's
-/// tree is read-only for this project, and a fixture written into it would be
-/// the one kind of write the governing rule forbids outright.
 #[must_use]
 pub fn path() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/rotated-text.pdf")
 }
 
 /// The whole file, as bytes.
-///
-/// Split out from [`regenerate`] so the assertion that the fixture on disk
-/// still matches the generator is a byte comparison rather than a rerun — see
-/// [`tests::the_committed_fixture_matches_its_generator`].
 #[must_use]
 pub fn bytes() -> Vec<u8> {
     let mut content = String::new();

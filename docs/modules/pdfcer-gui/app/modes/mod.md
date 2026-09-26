@@ -262,3 +262,117 @@ discoverability that is identical to not shipping it.
 Found by a driven check asking *what does a first frame show* — not by
 any of the tests of `adopt`, every one of which asked whether the panel
 was PRESENT. Presence was never in doubt.
+
+### `const MODE_WORKSPACE_PREFIX`
+
+A workspace name is free text an operator chooses, so a mode's own
+workspace has to be distinguishable from one the operator made and
+happened to call "Read". The prefix does that, and it does two more
+things worth having:
+
+- it is the **mode id**, not the label, so renaming or translating
+  "Review" does not orphan the arrangement behind it;
+- it makes the machine-owned entries filterable, so a future "load
+  workspace" menu can list the operator's own and leave these out — see
+  [`mode_of_workspace`].
+
+### `struct Modes`
+
+The ids come from the **manifest**, in the order it declares them, and
+this type has no opinion about how many there are or what they are
+called — see the module header. What it owns is the binding between a
+mode and its remembered arrangement.
+
+### `fn from_shell`
+
+`None` — a manifest that failed to validate — yields no modes, and
+every method below then declines rather than inventing one. A build
+whose ribbon could not be assembled must not silently acquire a
+three-position mode model from somewhere else.
+
+### `fn on_mode_changed`
+
+The whole feature, in five steps:
+
+1. A mode the manifest does not declare is declined — an unknown id
+   must not acquire a workspace, or a typo in a customized manifest
+   would quietly accumulate arrangements nothing can ever restore.
+2. Re-adopting the mode already in force does nothing, so a caller
+   may drive this straight from `RibbonState::mode()` every frame
+   without checking first.
+3. The **outgoing** mode's workspace is written from what is on
+   screen right now. This is what makes "each mode remembers your
+   arrangement of it" true without an explicit save.
+4. The **incoming** mode's workspace is restored if it has one, and
+   otherwise its built-in default is used — filtered through
+   `catalog`, so a saved-but-stale panel and a compiled-out one are
+   handled identically.
+5. The result is recorded, which arms the debounced write. A crash
+   after a mode change therefore costs nothing.
+
+Returns whether the arrangement was changed.
+
+**It cannot touch a document.** See the module header: the argument
+list is the proof, and a test asserts the consequence anyway.
+
+### `fn record_layout`
+
+Called when the dock reports
+[`egui_shell::dock::DockFrameReport::layout_changed`].
+
+**Both, and that is the point.** The document's `active` is the
+arrangement in force; the mode's workspace is the arrangement to
+come back to. Writing only the first would mean a crash mid-session
+cost the operator every rearrangement they had made since the last
+mode change, which is the "only saved at exit" failure wearing a
+different hat. Writing only the second would leave `active` stale in
+a file an operator may read.
+
+Idempotent: recording an arrangement that is already recorded arms
+no write, so a caller that calls it unconditionally costs nothing.
+
+### `fn reset`
+
+`RIBBON_IA.md`'s rule is why this has a scope at all: *"an operator
+who only wanted the right dock back must not lose their left one."*
+The scoping itself is `egui-shell`'s; what this adds is the one
+thing the shell cannot know — **which** default, given that the
+right default depends on the mode in force.
+
+Saved workspaces are untouched, including the current mode's, which
+is then immediately overwritten by [`Self::record_layout`] with the
+reset arrangement. That is the intended reading of "reset this
+mode": the mode goes back to its default and remembers that it did.
+
+Returns whether anything changed.
+
+### `struct Startup`
+
+Returned as a struct rather than a tuple because three values whose
+types are `Modes`, `LayoutStore` and `DockState` are easy to bind in the
+wrong order and hard to notice having done so.
+
+### `fn start`
+
+The whole start-up sequence, in one call, because its order is
+load-bearing and getting it wrong is silent:
+
+1. The mode list comes from the manifest.
+2. The **fallback** handed to the loader is the opening mode's default,
+   so a first run — or a file that could not be parsed at all — starts
+   from an arrangement that suits the mode the application opens in
+   rather than from some other mode's.
+3. The document is loaded, fail-soft, with `catalog` deciding which
+   saved mounts this build can honour.
+4. The opening mode is adopted, which restores its remembered
+   arrangement if it has one.
+
+## Why step 4 may discard the file's `active` arrangement
+
+The document's `active` is *"the arrangement in force"* — in force in
+whichever mode was showing when the application last closed, which is
+not necessarily the one it now opens in. The mode's own workspace is the
+better answer to "what should Read look like", so it wins. `active` is
+still kept current by [`Modes::record_layout`], because it is what a
+person reading the file expects to find and what the loader falls back
+to if a workspace has to be dropped.

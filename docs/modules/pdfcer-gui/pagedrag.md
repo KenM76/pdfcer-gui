@@ -116,3 +116,98 @@ that had already happened.
 The ends matter more than the middle: `End` survives the document
 changing length between the gesture and the edit, and `Before(count)`
 does not.
+
+### `struct PageDrag`
+
+Cheap to clone — a slot number, a short vector of page indices and a label
+— because every reader clones it out of memory rather than holding a
+borrow across a closure that draws.
+`Default` is derived for one reason: `egui::IdTypeMap::remove_temp` demands
+it of anything it can take back out. A defaulted `PageDrag` — slot 0,
+carrying nothing — is never constructed here and is not a state the
+application can reach; [`current`] answers `Option`, so "no drag" is
+`None` and never an empty drag.
+
+### `struct DropLanding`
+
+Written every frame by exactly one surface — the pages panel or the canvas,
+whichever the pointer is inside — and cleared by both when the pointer is
+over neither. Read one frame later by the caption, for
+`PagesUi::drag_landing`'s reason: *a gap has no position until the rows have
+been placed, and the rows are placed below the header*.
+`Default` is derived for [`PageDrag`]'s reason and means as little.
+
+### `struct ActiveDocument`
+
+## Why this is in memory rather than a parameter
+
+Because three surfaces need it and none of them is given it: the Pages
+panel is handed a `&OpenDoc` and no idea which tab it belongs to, the
+canvas the same, and the status bar reads a `&Status`. Threading a slot
+number and a label through `panels::Panel::show`, `canvas::show` and
+`status::show` would put a document-tab concept into three signatures that
+have nothing else to do with tabs, and every panel that does not care would
+carry it anyway.
+
+The precedent is `egui_shell::theme::Theme::of`, which does exactly this
+for exactly this reason — a fact the whole application needs, published
+once per frame into the context, read wherever it is wanted. The property
+that makes it safe in both cases is that there is **one writer**, at a
+known point in the frame, before anything reads.
+
+### `fn insert_position`
+
+`gap` counts boundaries: `0` is before the first sheet, `page_count` is
+after the last. `pdfcer_core::pageops::InsertPosition` counts pages, so the
+two ends have their own names.
+
+`Start` and `End` rather than `Before(0)` and `Before(count)`, even
+though `InsertPosition::slot` clamps both to the same answer. The named
+variants say *"at the beginning"* and *"at the end"* — which is what the
+operator meant and what survives the document changing length between the
+gesture and the edit. `Before(12)` on an eleven-page document is a request
+that has to be repaired; `End` is one that cannot go wrong.
+
+### `fn end`
+
+Returns what was in flight so the caller can act on it. Also clears the
+landing, because a landing that outlived its drag would be a caret nobody
+can get rid of — the exact failure `panels::pages::settle_drag` documents
+for the same reason.
+
+### `fn wants_move`
+
+Shift, read live — so the answer changes as the key goes down and up, the
+caption follows it, and the state **at the moment of release** is what the
+drop uses. That is what Windows does: the modifier is not latched at the
+press, it is sampled at the drop, which is why Explorer's cursor badge
+changes under your hand mid-drag.
+
+## Why Shift, and not Ctrl
+
+Because on this desktop Ctrl means *copy* and Shift means *move*, and has
+since the mid-nineties. `crate::text::doctabs::drag_landing_move` carries
+the table. Copy is already the unmodified behaviour here — two documents
+are two files with two undo stacks, which is the "different volumes" case —
+so Ctrl is a no-op that asks for what it already gets, and Shift is the one
+that changes the verb.
+
+## It means nothing within one document
+
+A drag that begins and ends in the same document is a reorder, which is
+already a move; there is nothing for a modifier to select between. Callers
+consult this only on the cross-document branch, and the caption only offers
+the hint there.
+
+### `fn caption`
+
+Here rather than in the status bar because it is the one place that has
+both halves — the drag and the landing — and because putting it in the
+caller would mean writing it twice, once for the Pages panel's header and
+once for the status row.
+
+R8b rule 4: this is **off-canvas disclosure**. The caret drawn into the
+page list and the page view is a *pre-commit affordance* — a cursor — which
+that rule explicitly welcomes. What it forbids is styling content that has
+already been applied, and nothing here does that: the moment the drop is
+made, the arrived pages render exactly as pages that were always there.

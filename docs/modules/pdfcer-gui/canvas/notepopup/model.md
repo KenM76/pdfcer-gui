@@ -256,3 +256,200 @@ every shape an operator commented on and gave a pop-up — which is what
 for a highlight. A build that asked only *"does it have a `/Popup`?"*
 withholds it from a `/Text` whose companion another producer left out,
 where the annotation's own `/Open` is the entire answer.
+
+### `struct NoteView`
+
+Deliberately **not** `pdfcer_core::annot::Annotation` passed through: that
+type carries sixteen fields of which four matter here, its `/Rect` is in
+PDF user space rather than canvas space, and it cannot answer the `/Open`
+question at all. A projection with a name is what lets [`under`] and
+[`super`] agree about what they are talking about.
+
+### `mod ified`
+
+The same ruling `crate::text::panels::comments::comment_row_byline`
+records at length and it is not re-argued: §12.5.2 gives `/M`'s type as
+*"date **or** text string"* and requires a conforming reader to accept
+any format, so formatting it here would mean writing a parser whose
+failure mode is either rejecting a legal value or mangling one. Two
+surfaces, one rule — and if this module formatted while the panel did
+not, the operator would see two different dates for one comment.
+
+### `fn notes_on`
+
+# What is excluded, and why each one
+
+The same list `crate::canvas::selection::annot::selectable_on` uses, with
+one addition and one deliberate difference, because this surface answers a
+different question — *what did somebody write here* rather than *what may I
+restyle*.
+
+| excluded | why |
+|---|---|
+| `/Widget` | a form field is not a comment; the Forms panel owns it, and its `/Contents` is a tooltip rather than a remark |
+| `/Popup` | §12.5.6.14 is a `shall`: a pop-up *"shall not appear alone but is associated with a markup annotation, its parent annotation."* It is the window, not the note |
+| `/Link`, `/Movie`, `/PrinterMark`, `/TrapNet` | nobody wrote them. `/TrapNet` in particular is prepress output state a RIP applied |
+| **not drawn on screen** (§12.5.3 bit 2 `Hidden` **or** bit 6 `NoView`) | nothing is painted there, so a pop-up would hang off a point on blank paper with no visible anchor. The Comments panel is where such an annotation is reached, and it marks it as hidden — the same split the canvas already makes for an undrawn form field |
+
+### This is STRICTER than the selection's exclusion, and the difference
+is a finding
+
+`crate::canvas::selection::annot::selectable_on` excludes `flags.hidden()`
+alone. `pdfcer_core::annot::AnnotFlags::suppressed_on_screen` — used here —
+is `hidden() || no_view()`, and §12.5.3 Table 165 bit 6 (`NoView`) means
+*"do not display on screen, but do print"*. So a `/NoView` annotation is
+**selectable on the canvas today with nothing drawn under the pointer**:
+the operator gets a selection outline round blank paper.
+
+Found by building this door, which is the second time in this project a new
+route onto an existing capability has exposed a divergence the old one was
+hiding. **Not fixed here** — `canvas/selection/**` belongs to a concurrent
+track — and reported instead. This module takes the stricter reading
+because a pop-up window is a much louder wrong answer than an outline.
+| **no object id** | there would be nothing for Edit or Delete to name — see [`NoteView::id`] |
+| **no usable `/Rect`** | §12.5.5's placement target is missing, so there is no anchor and the renderer drew nothing either |
+
+**A `/FreeText` is NOT excluded**, and that is worth stating because it
+is the one case where a pop-up duplicates what is already on the page: a
+free-text annotation paints its own words. Acrobat still gives it a
+pop-up — the words on the page are the *appearance*, which a producer may
+have styled, clipped or rotated, while `/Contents` is what was typed — and
+a reviewer correcting a typo needs the second one.
+
+# Ordering
+
+`/Annots` order, which is paint order: later entries draw on top. [`under`]
+takes the **last** match so the topmost note wins a click, which is the
+rule page content and annotation selection both already follow.
+
+### `fn has_something_to_read`
+
+# The defect this closes
+
+Until 2026-09-05 a click opened a pop-up for *every* annotation that **could**
+carry a note, not for those that **do**. So clicking a revision cloud you
+only meant to select produced an empty window over the drawing — and, until
+the placement fix landed the same day, one that sat on top of the shape and
+swallowed the drag as well. It was recorded as a known limit in [`super`]'s
+header and on `OPERATOR_REQUESTS.md` O133 as *"a question about WHEN a pop-up
+opens rather than where it goes"*. This is that question, answered.
+
+# The rule, and why it is not simply "has words"
+
+**A sticky note is a note whether or not anybody typed in it.** Opening it
+empty is not noise — it is the annotation's entire purpose, it is what
+Acrobat does, and an operator who placed one and has not written in it yet
+needs the window in order to write. The same is true of a free-text box,
+whose words *are* its appearance.
+
+⇒ So the subtype decides for the two whose **purpose** is the note, and the
+**content** decides for everything else. A square, a circle, a line, a
+cloud, a polygon, freehand ink and a text-markup highlight are all *marks
+on a drawing* that may additionally carry a comment; where they carry none,
+there is nothing to show and the click belongs to selection.
+
+A byline with no words is deliberately **not** enough. Knowing that
+B. Reviewer drew this cloud is a fact about the drawing, and the Comments
+panel lists it — putting a window over the page to say only that would be
+the noise this function exists to remove. The panel is where facts live;
+the pop-up is where a *message* lives.
+
+⚠ Whitespace does not count. A `/Contents` of `"   "` renders as an empty
+window just as surely as an absent one, and a file that carries it was not
+trying to say anything.
+
+### `fn can_record_open_state`
+
+`EditSession::set_annotation_open` writes `/Open` on **up to two objects**
+and nowhere else:
+
+| object | when the key is written | authority |
+|---|---|---|
+| the annotation itself | its `/Subtype` is `/Text` (or `/Popup`, which this shell never addresses directly) | §12.5.6.4 Table 172. Table 169 gives no other annotation the key, and the engine refuses to invent it: *"writing it onto a `/Square` would add a key the standard does not define there, which is noise a later reader could mistake for meaning"* |
+| the `/Popup` companion | there is one | §12.5.6.14 Table 183 |
+
+With neither, the call **succeeds and does nothing** — no keys, no undo
+entry — and the engine is explicit that this is a report rather than a
+refusal, so that a caller acting over a mixed selection need not filter by
+subtype. That is the right contract for the engine and the wrong affordance
+for a shell: R83 says a control that cannot be honoured is not drawn, and a
+tick box whose entire effect is a sentence explaining that it had none is
+exactly the control that rule exists to remove.
+
+# It does NOT manufacture the companion, and that is the engine's line
+
+`set_annotation_open` *"does not create a `/Popup`. An annotation without
+one has no window to open, and manufacturing the companion — with a `/Rect`
+the caller did not choose — is authoring, not a state change."* This shell
+agrees and does not work around it: a `/Square` an operator commented on
+with no `/Popup` in the file is a shape whose window state is not
+expressible, and the honest response is to offer nothing rather than to
+author a rectangle nobody asked for at coordinates nobody chose.
+
+⚠ The `/Popup` half is a fact about the **file**, read through
+`Annotation::popup`. It is not a fact about whether pdfcer is drawing a
+bubble right now — this shell draws one beside the note when the file gives
+no rectangle, which is a placement fallback and emphatically not a `/Popup`
+the document contains.
+
+### `fn under`
+
+The **last** match in paint order, exactly as
+`crate::canvas::selection::annot::hit` takes the last: a sticky dropped on
+top of a cloud is the thing the operator sees and therefore the thing they
+mean.
+
+# The tolerance is the frame's, not a number of this module's own
+
+Handed in from `crate::canvas::mapping::PageMapping::tolerance`, which is
+the same click tolerance content and annotation selection both use. A note
+icon must be exactly as easy to hit as the shape beside it, and a
+separately chosen constant here would drift from that the first time either
+was tuned.
+
+# Rectangle containment, not ink
+
+Unlike the selection hit test, which narrows a ce dimension to its drawn
+segments, this claims the whole `/Rect`. That is deliberate and it is the
+convention: in every reader in the class, clicking anywhere on a
+highlight's span or inside a cloud's box opens its note. Narrowing to ink
+would make the note on a hollow rectangle reachable only by clicking its
+hairline border.
+
+### `struct Reply`
+
+Flattened deliberately: §12.5.6.2 permits a reply to a reply, but every
+reader in the class draws a comment thread as a **flat chronological list**
+under its root rather than as a nested tree, and a tree drawn in a 260 pt
+window would be four indents of two words each.
+
+### `fn replies_to`
+
+# Every page, because a reply need not be on the parent's page
+
+§12.5.6.2 puts no page constraint on `/IRT`, and `pdfcer-core` reaches the
+same conclusion where it plans a deletion: `plan_annotation_deletion` is
+handed every annotation on every page because *"a reply may live on a
+**different page** from the annotation it replies to — nothing in §12.5.6.2
+binds a thread to one page — so a per-page scan would under-report"*.
+Scanning the current page alone would silently drop replies on a
+forty-sheet drawing set, which is the shape of document this program is
+for.
+
+# Replies to replies are flattened onto the root
+
+One transitive pass: anything whose `/IRT` chain reaches `root` is in the
+thread. `MAX_THREAD_DEPTH` bounds it, because a file may legally contain a
+cycle (`a` replies to `b`, `b` replies to `a`) — §7.3.10 says a dangling
+reference is not an error and says nothing at all about a circular one, and
+`pdfcer-core` surfaces `/IRT` in `Annotation::in_reply_to` *"unresolved,
+same as `popup`: a dangling `/IRT` is modelled, not repaired"*. A depth bound is the
+only thing standing between that and a hang.
+
+# Order
+
+Document order — page order, then `/Annots` order. The same ordering
+`crate::panels::comments` uses, **reused rather than re-decided**, and for
+its reason: a second GUI-only rule is a second thing that can disagree with
+`pdfcer list-annotations`. There is deliberately no sort by date, because
+`/M` is not reliably a date (see [`NoteView::modified`]).

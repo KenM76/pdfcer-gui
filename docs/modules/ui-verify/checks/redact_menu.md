@@ -50,3 +50,12 @@ project has been wrong about most often.
 The trace publishes one decimal place, and the boxes compared by callers are
 computed from the same outlines, so this absorbs rounding and nothing else.
 A real containment failure is tens of points, not tenths.
+
+### `fn mark_through_the_menu`
+
+`what` names the selection standing at the time, in the operator's terms
+("the whole block", "one line"), and is quoted in every refusal so a reader
+knows which press failed without counting them.
+
+`Ok(Err(..))` is a finding about the program; `Err(..)` is a finding about
+the run and is reported as SKIPPED.

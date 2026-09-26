@@ -41,55 +41,6 @@ const CHORD_GAP_FRAMES: u64 = 20;
 
 /// **Deliver the chords named in the environment — the seam for a window that
 /// OS input cannot reach.**
-///
-/// `PDFCER_DIAG_KEYS="Ctrl++,Ctrl++,Ctrl+-"`, spelled in [`super::parse_chord`]'s
-/// grammar, one chord every [`CHORD_GAP_FRAMES`] frames, gated on
-/// [`crate::diag::enabled`].
-///
-/// # Why this exists when `PDFCER_DIAG_INVOKE` already does
-///
-/// That seam dispatches a **registered command id**, and the verbs this seam
-/// is for have no command id. `view.zoom_in`, `view.zoom_out`, `view.next_page`
-/// and `view.prev_page` are not registered — deliberately, because
-/// `RIBBON_IA.md` assigns them to the status bar and the keyboard rather than
-/// to the ribbon, and `app::dispatch::zoom`'s header states the position.
-/// Registering them so a harness could reach them would change what the
-/// product offers in order to make it testable, which is a ribbon decision
-/// wearing a test's clothes.
-///
-/// ⇒ this seam substitutes for the **gesture the harness cannot make**, and
-/// changes nothing about what the operator can reach.
-///
-/// # Where it enters, and why nowhere else would do
-///
-/// Into `RawInput`'s event stream, before [`super::collect`] reads it, so the
-/// synthetic press goes through every line a real one does: the D1 typing
-/// guard, the modifier match, the action push, the dispatcher. A seam that
-/// called `Action::ZoomIn` directly would pass on a build where `Ctrl` `+`
-/// was broken, which is the one thing it is here to detect.
-///
-/// # ⚠ The standing modifier state is set too, and it must be
-///
-/// `egui` carries the modifiers twice — on the event, and as the frame's
-/// standing state fed from `RawInput::modifiers`. Any reader of the second
-/// kind is blind to an event that carries `Ctrl` only on itself. Setting one
-/// and not the other would make this seam a source of silent no-ops that look
-/// exactly like a dead handler.
-///
-/// # It keeps the application awake until the list is finished
-///
-/// `egui` draws on demand. A quiescent viewer requests no repaint, so a seam
-/// that waited for frame twenty in a window nobody is touching would wait
-/// forever — and the symptom would be a harness that hangs and then reports
-/// the *last* rung as the one that failed. While chords remain, this asks for
-/// the next frame itself. The cost is a spinning viewer, which is exactly what
-/// a driven run wants and is confined to `PDFCER_DIAG` runs.
-///
-/// # What is deliberately absent
-///
-/// No repeat count, no syntax, no state. A ladder of thirty rungs is thirty
-/// commas, built by the harness; the argument `scripted_invoke` gives against
-/// growing a grammar applies here word for word.
 pub fn scripted_press(ctx: &Context) {
     use std::sync::atomic::{AtomicUsize, Ordering};
     /// How many chords of the list have been delivered.

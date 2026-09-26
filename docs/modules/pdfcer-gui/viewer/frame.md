@@ -29,3 +29,17 @@ limitation but a defect: the second pane's scroll overwrites the first
 pane's settled offset, and the first pane then pans from a position it was
 never at. The same goes for the zoom anchor, which would put pane A's
 zoom-to-cursor over pane B's cursor.
+
+## Item notes
+
+### `struct ViewFrame`
+
+Written by [`crate::canvas`] at the end of a frame, read by it at the
+start of the next. Nothing outside the canvas and the render settle logic
+has a reason to write any of it.
+
+### `fn new`
+
+`observed_zoom` takes that zoom rather than a sentinel so the first
+frame does not read as "the zoom just changed" and schedule a
+rasterization the opening render is already doing.

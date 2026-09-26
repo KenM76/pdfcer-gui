@@ -42,22 +42,10 @@ pub mod icons;
 /// **A page drag in flight** — the state four surfaces share while the
 /// operator is carrying pages from one document's page list to another's, or
 /// onto the page view.
-///
-/// In `egui::Memory` rather than on `PdfcerApp` because switching documents
-/// resets the panels' state, and switching documents is exactly what a
-/// cross-document drag has to do on its way. See the module header.
 pub mod pagedrag;
 pub mod panels;
 /// Putting a password on a document, changing what it allows, and taking the
 /// protection off — `OPERATOR_REQUESTS.md` **O119**, approved 2026-09-04.
-///
-/// The headless half of the two Security controls: what the document says
-/// today, which jobs it may be offered, which of the engine's three encryption
-/// verbs a choice reaches, and the atomic write at the end. The window is
-/// `crate::dialogs::protect`; the split is `crate::redact`'s, and for the same
-/// reason — every rule on this surface is a rule about the operator's file, and
-/// a rule that can only be exercised by driving a window is one that gets
-/// asserted once, by hand, and then drifts.
 pub mod protect;
 // Redaction: the apply pipeline and its absence proof, salvaged whole from the
 // old shell — the ONE place that proof exists anywhere, `pdfcer-core` included.
@@ -76,30 +64,10 @@ pub mod shell;
 /// signed"*, which `pdfcer-core` answered with `pdfcer_core::sign` and which
 /// this build then failed to compile in for three days because the manifest
 /// stripped the engine's default-on `signing` feature.
-///
-/// **THE ONE `#[cfg]` IN THIS FILE, AND IT IS WHERE R8 SAYS IT BELONGS.**
-/// `SHELL_FRAMEWORK.md` §5b's rule is that *a capability's presence is
-/// expressed by registering its command, and by nothing else* — no `#[cfg]` in
-/// the ribbon, no panel asking whether signing exists. A module declaration is
-/// not the ribbon: it is the boundary the capability is compiled in or out at,
-/// and the engine draws the same one (`pdfcer_core::sign` does not exist
-/// without the feature, so nothing here could reference it if it wanted to).
-/// The ribbon item naming `file.sign` is unconditional and is dropped by the
-/// ordinary merge, with a `CapabilityAbsent` skip reason.
 #[cfg(feature = "signing")]
 pub mod sign;
 /// **Acrobat-compatible custom stamp collections** — the shell half of
 /// engine `Pass 288.0`, and the answer to `OPERATOR_REQUESTS.md` **O169**.
-///
-/// A stamp collection is an ordinary PDF — one file per category, one page
-/// per stamp, names in the catalog's `/Names` → `/Pages` tree — which is why
-/// the operator's ask for *"the same import/export"* Acrobat has has no
-/// serialiser anywhere in here: **Acrobat has no interchange format**, and
-/// handing someone the PDF is the export. This module turns a document into a
-/// plan he can correct, and the plan into that file.
-///
-/// Consumed by `crate::dialogs::stamp_collection` and
-/// `crate::panels::docprops`.
 pub mod stamps;
 pub mod text;
 

@@ -27,69 +27,6 @@ const TRACE_GATES: &str = "form-field-gates";
 const REGION_DELETE_REFUSED: &str = "properties.form_field.delete_refused";
 
 /// **Would deleting the selected form field be refused right now?**
-///
-/// THE ONE DERIVATION. Four readers, and the whole point of it being a
-/// function is that they cannot disagree:
-///
-/// | reader | what it does with the answer |
-/// |---|---|
-/// | [`section`] | withholds both delete buttons and draws a sentence in their place |
-/// | `crate::app::conditions` | publishes `selection.delete_permitted`, which withholds `format.delete` on the `canvas.field` menu |
-/// | `crate::canvas::keys` (via `crate::canvas::interact`) | declines rung 0 of the Delete ladder |
-/// | `crate::app::dispatch::format` | declines the `format.delete` arm's form-field branch |
-///
-/// Two further readers ask [`document_refuses_delete`] instead, and only
-/// because they hold a field that is **not** `doc.selected_field`:
-/// `crate::canvas::rightclick`, correcting the menu's condition on the frame
-/// the right-click lands, and `crate::app::actions::forms::delete`, the verb
-/// itself. That entry point's doc carries why the scope split is real and not
-/// a second derivation.
-///
-/// # It is the FORMS query, not the annotation one, and that was the defect
-///
-/// `crate::app::conditions` published `selection.delete_permitted` from
-/// `annotdelete::refuses_selected` alone, guarded by
-/// `doc.selected_field.is_none()`. With a field selected the guard is false, so
-/// the condition was set **unconditionally for every selected field on every
-/// document** — a gate that is a no-op by construction. The `canvas.field`
-/// menu carried no `visible_when` at all, and `canvas::keys`' rung 0 raised
-/// `DeleteWidget` with no gate and returned six lines above the annotation
-/// branch that does ask one.
-///
-/// ⇒ On an ordinary certified fillable form: right-click a widget, Delete is
-/// drawn live and undimmed, press it, the box stays, the selection vanishes,
-/// nothing is said, **and the sentence in this very panel that was correctly
-/// explaining the refusal goes blank with it.** A refused gesture that destroys
-/// its own explanation — the exact shape R83 exists to remove, reproduced one
-/// `/Subtype` along from the annotation fix that removed it.
-///
-/// `EditSession::deletion_refusal` is the right question and
-/// `annotation_deletion_refusal` is not, for the reason core's own doc comment
-/// gives about `fill_refusal`: *"a shell that reused `fill_refusal` to gate a
-/// delete control would offer deletion on a document that refuses it."* The
-/// same sentence holds with the annotation query substituted. They agree on a
-/// certified document today and are answers to different questions — an
-/// annotation gate additionally consults §12.5.3 Table 165's per-annotation
-/// `Locked` bit, which no form field has, and §12.8.2.2 Table 254 puts
-/// annotation editing on a different `/P` line from form-structure editing.
-///
-/// # `false` when nothing is selected, and the direction of the safe error
-///
-/// This answers *would the engine refuse?*, never *is there anything to
-/// delete?* — the second question is `selection.actionable`'s, and conflating
-/// them would make an empty selection look like a refusal. The false answer it
-/// must never give is `false`-when-refused; the false answer it must never give
-/// **either** is `true`-when-permitted, because a control withheld where it
-/// would have worked leaves the operator no gesture that reports it. Both
-/// directions are covered by asking the engine and nothing else: there is no
-/// local rule here to drift.
-///
-/// # Cost
-///
-/// A **pure query** — core's own words — reading the signature census and the
-/// trailer and mutating nothing, *"safe to call every frame from a UI"*. The
-/// `is_some()` short-circuit means a document with no field selected pays one
-/// `Option` test.
 #[must_use]
 pub fn refuses_delete(doc: &OpenDoc) -> bool {
     doc.selected_field.is_some() && document_refuses_delete(doc)
@@ -97,62 +34,12 @@ pub fn refuses_delete(doc: &OpenDoc) -> bool {
 
 /// **Would deleting ANY form field of this document be refused?** —
 /// [`refuses_delete`] with the selection question taken out of it.
-///
-/// Not a second derivation: the **same** engine query at a different scope,
-/// and the scope split is written down rather than left to the reader because
-/// it is exactly the thing a caller gets wrong.
-///
-/// `EditSession::deletion_refusal` is a property of the **document** —
-/// `/Encrypt`, then the strict certification gate — and names no field. So
-/// there is nothing per-field to ask, and the two entry points differ only in
-/// whether they additionally require a selection:
-///
-/// | | asks | for |
-/// |---|---|---|
-/// | [`refuses_delete`] | *would deleting the **selected** field be refused?* | the four readers that offer a control **about a selection**, where "nothing selected" must read as `false` — an empty selection is nothing to refuse, and answering `true` there would take `format.delete` off the `canvas.object` menu for a reason about forms |
-/// | this | *does this **document** refuse form deletion?* | the two callers holding a field that is **not** (yet) `doc.selected_field` |
-///
-/// # The two callers, and why each genuinely cannot use the other
-///
-/// 1. **`crate::canvas::rightclick`**, deciding whether the `canvas.field`
-///    menu may draw Delete. `menus::attach` corrects two conditions locally
-///    because `PdfcerApp::conditions()` ran at the **top of the frame**, before
-///    the right-click could move the selection — and `field_menu()` opens that
-///    menu for a widget merely **under the pointer**
-///    (`right_click_hits_a_field`), which on a first right-click is not yet
-///    selected. `refuses_delete` would answer `false` on that frame and the
-///    row would be drawn, for one frame, on a document that refuses it. R9
-///    says a permanently refused control renders nothing, and "for one frame"
-///    is not nothing.
-/// 2. **`crate::app::actions::forms::delete`**, which takes a field **by
-///    name** and can be reached with no selection at all — a chord that fired
-///    after the selection moved, an action queued a frame earlier — where
-///    `refuses_delete` would wave through the very press it exists to stop.
-///
-/// A **pure query**, core's own words: it reads the signature census and the
-/// trailer and mutates nothing, *"safe to call every frame from a UI"*.
 #[must_use]
 pub fn document_refuses_delete(doc: &OpenDoc) -> bool {
     doc.session.deletion_refusal().is_some()
 }
 
 /// Draw the selected form field's properties, if one is selected.
-///
-/// Returns whether anything was drawn, so [`super::body`] can decide whether a
-/// separator is wanted — the same protocol its three sibling sections use.
-///
-/// ## Three early returns, and the middle one is the interesting one
-///
-/// 1. **Nothing selected** — the common case, and the panel says nothing at
-///    all rather than "no field selected". R9: an unavailable capability
-///    renders nothing.
-/// 2. **A selection naming a field the document no longer has.** Reachable
-///    despite every verb clearing the selection, because **undo and redo do
-///    not**: an operator who deletes a field and presses Ctrl+Z has a document
-///    whose form changed under a selection nobody touched. Rendering nothing is
-///    right — the alternative is a panel describing a field that is not there.
-/// 3. **No `/AcroForm` at all** — the same case one step earlier, after a
-///    flatten or an undo past the form's creation.
 pub fn section(
     ui: &mut Ui,
     doc: &OpenDoc,

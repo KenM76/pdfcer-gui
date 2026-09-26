@@ -45,11 +45,6 @@ impl ObjectModelProvider {
     // had ever needed.
 
     /// **The decomposed object a target names**, from either list.
-    ///
-    /// `None` for an index the page does not have, which is the contract
-    /// every accessor here inherits: a selection can outlive an edit that
-    /// removed what it named, and the honest answer is to drop the entry
-    /// rather than to panic on the frame that is trying to draw it.
     #[must_use]
     pub fn object_for(&self, target: TargetId) -> Option<&VectorObject> {
         match target {
@@ -75,24 +70,6 @@ impl ObjectModelProvider {
     /// **Would moving run `run` of the text object `target` be refused, and
     /// why** — asked BEFORE the drag, so the ghost never promises a move the
     /// engine is going to decline.
-    ///
-    /// # The engine's own guard, called rather than copied
-    ///
-    ///
-    /// **It does not promise success.** A singular `Tm` or CTM is
-    /// discovered during planning, from geometry, not from the run's
-    /// structure, so `None` here means *"the move will be planned"* and not
-    /// *"the move will land"*. The residual failure arrives as an ordinary
-    /// engine refusal through the edit funnel, which is the right place for a
-    /// condition nothing could have known in advance.
-    ///
-    /// # Returns
-    ///
-    /// `None` when the move would be planned — **and also** for a target that
-    /// is not a text object at all, because there is no run-move to refuse.
-    /// The caller has already established the kind through
-    /// [`Self::part_kind_of`]; this is not the function that decides whether a
-    /// run is what was selected.
     #[must_use]
     pub fn text_run_move_refusal_of(&self, target: TargetId, run: usize) -> Option<RunMoveBlock> {
         let Some(VectorObject::Text(text)) = self.object_for(target) else {
@@ -140,12 +117,6 @@ fn run_move_block(refusal: pdfcer_core::vector::VectorEditError) -> RunMoveBlock
 
 impl ObjectModelProvider {
     /// [`Self::subpath_hits`], for either index space.
-    ///
-    /// Through `hit_test_subpaths_of` rather than `hit_test_subpaths`: the
-    /// first takes the path, the second takes the model and an index into its
-    /// page list. The engine published both, and the object-taking form is the
-    /// one a leaf can use — the geometry is identical, only the addressing
-    /// differs.
     #[must_use]
     pub fn subpath_hits_of(&self, target: TargetId, point: Pos2, tolerance: f64) -> Vec<usize> {
         let Some(VectorObject::Path(path)) = self.object_for(target) else {
@@ -164,12 +135,6 @@ impl ObjectModelProvider {
     }
 
     /// [`Self::subpath_node_points`], for either index space.
-    ///
-    /// The indices are **object-scoped** — the space `vector::anchor_count`
-    /// reports and the node verbs take — and they are computed by the same
-    /// running-offset walk the page-object form uses, because the two must
-    /// agree about what anchor 7 is or a drag would move a different point
-    /// from the one drawn.
     #[must_use]
     pub fn subpath_node_points_of(&self, target: TargetId, subpath: usize) -> Vec<(usize, Point)> {
         let Some(VectorObject::Path(path)) = self.object_for(target) else {
@@ -205,10 +170,6 @@ impl ObjectModelProvider {
     }
 
     /// [`Self::nearest_node`], for either index space.
-    ///
-    /// Ties resolve to the lower index, exactly as the page-object form does —
-    /// the rule is restated in one place by delegating the point list, so the
-    /// two cannot answer differently for the same geometry.
     #[must_use]
     pub fn nearest_node_of(
         &self,
@@ -232,17 +193,6 @@ impl ObjectModelProvider {
     }
 
     /// [`Self::node_handles`], for either index space.
-    ///
-    /// The Bézier control points of one anchor: the incoming one is the second
-    /// control of the segment **before** it, the outgoing one the first control
-    /// of the segment **after**. Only cubics have them, so a polyline answers
-    /// empty and no handle is drawn — which is the honest answer rather than a
-    /// grab target for a gesture with nothing to move.
-    ///
-    /// The object-scoped anchor index is brought back into the subpath's own
-    /// space with the SAME running offset [`Self::subpath_node_points_of`]
-    /// computes. Two walks that disagreed about which subpath anchor 7 falls in
-    /// would draw a handle on one curve and move another.
     #[must_use]
     pub fn node_handles_of(
         &self,
@@ -283,13 +233,6 @@ impl ObjectModelProvider {
     }
 
     /// [`Self::subpath_bounds_canvas`], for either index space.
-    ///
-    /// Computed from the subpath's own anchors rather than through
-    /// `vector::subpath_bounds`, which takes a model and a page index. Anchors
-    /// alone under-report a curve whose control points bow outside them — the
-    /// same approximation the page-object form inherits from the engine on a
-    /// Bézier, and the box is a selection outline rather than a measurement.
-    /// `None` for an empty subpath, which has no box to draw.
     #[must_use]
     pub fn subpath_bounds_canvas_of(&self, target: TargetId, subpath: usize) -> Option<Rect> {
         let points = self.subpath_node_points_of(target, subpath);

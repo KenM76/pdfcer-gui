@@ -267,3 +267,101 @@ its nearest RGB would write that RGB back on the next press — converting
 the operator's ink without being asked. `pdfcer-core` deliberately does not
 force-convert to DeviceRGB the way Acrobat does, and this control must not
 undo that on its behalf.
+
+### `struct TextStyleDraft`
+
+# The stamp is three parts and every one is load-bearing
+
+* **page** — a run ordinal means nothing without one;
+* **first run** — the operator moved the selection to different text;
+* **edit epoch** — the text is the same text and its style changed, which is
+  what happens on every press of a control in this section. Without this
+  term the panel would show the pre-edit size for ever after the first
+  change, which is the failure that makes a properties panel untrustworthy.
+
+### `fn operand`
+
+The one question both font surfaces ask before anything else, delegated
+to [`crate::app::textoperand`] so that the ribbon band, this panel, the
+five commands' `enabled_when` and `app::dispatch::format`'s operand
+derivation cannot answer it four ways. See that module's header for the
+deadlock this widening exists to break.
+
+— `&mut self` because the object rung is stamped — the resolution runs
+once per `(page, object, edit epoch)` and is remembered, misses
+included. See [`crate::app::textoperand::Cache`].
+
+### `fn size`
+
+Not [`Self::typed_size`]. This is what was **read**; that is what the
+operator is **typing**, and the difference between them is what decides
+whether a release is an edit or a no-op.
+
+### `fn faces`
+
+**Empty means no face on this page can show this run's characters** —
+a real state, and one a chooser must render as a sentence rather than as
+an empty list. It is not the same as "the pre-flight was not read":
+[`Self::sync`] clears it on every re-read and fills it from the engine.
+
+### `fn section`
+
+Returns whether it drew, so [`super::body_sections`] knows the panel is
+already saying something about a selection.
+
+
+`OPERATOR_REQUESTS.md` O198: *"the properties area is uneditable too. This
+is true even when I add a new line of text."* Until then this section
+required `doc.text_selection` — a range swept with the Text tool — which
+is unreachable in Edit mode, so the operator clicking his own text found
+four controls that were simply not there. The operand now comes from
+[`crate::app::textoperand`], which answers with a sweep if there is one and
+otherwise with the single selected text object.
+
+**The Colour row is the one control that does NOT follow.** For a clicked
+object it stays with [`super::textobject`], which draws the row immediately
+below this section, because a whole object can hold runs painted in
+different inks and that section is the one that classifies them —
+`Mixed` gets an indeterminate swatch and a `/Separation` gets **no swatch at
+all**, which is the finding its header calls *"a click away from a destroyed
+plate"*. This section's colour row reads the FIRST run and would report a
+nine-run object's ink from one of them.
+
+⚠ So exactly one of the two draws a Colour control in any frame, and the
+separator is drawn by whichever section is last: this one for a sweep, and
+[`super::textobject`] for an object.
+
+### `fn shorten`
+
+Display only, and the distinction matters: the **value** pushed on the
+action is the full name, because `set_font` accepts either and handing it
+the full one keeps the shell from having to know the stripping rule. What
+an operator gains from `ABCDEF+ArialMT` being shown as `ArialMT` is the
+ability to read the list at all.
+
+### `fn rgb_of`
+
+# Why CMYK is `None` rather than converted
+
+A conversion here would be a **one-way** trip the operator never asked for.
+The swatch would show DeviceCMYK ink as its nearest RGB; the next press
+would write that RGB back through `set_fill`; and the run would leave its
+original space for ever, on a document heading for a printer that cares.
+
+`pdfcer-core` deliberately does not force-convert to DeviceRGB the way
+Acrobat does — it stores the space the caller chose — and a control that
+undid that on the operator's behalf would make the engine's care pointless.
+Gray round-trips exactly, so it is offered.
+
+
+[`super::textobject`] asks the same question about a **whole text object**,
+and it asks it **here** rather than deciding for itself which spaces are
+safe. This function IS the spot-ink guard for text: it is what makes a
+`TextColor::Other` or a `TextColor::Cmyk` produce no swatch, on either
+surface.
+
+A second copy would be two answers to *"may pdfcer overwrite this ink with a
+screen colour?"*, and the two would drift the first time a space was added
+to the safe list — with the drift showing up as a colour picker opening over
+a `/Separation` on one surface and not the other. There is one answer, in one
+place, with one doc comment stating why.

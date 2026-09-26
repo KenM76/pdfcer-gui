@@ -387,3 +387,50 @@ and it is not blocking and not positioned relative to the page.
 `palette.text_muted` for its neighbours' stated reason — this is a
 statement about the search, not a control, and it must not compete
 with the readout one row up.
+
+### `const BAR_WIDTH_PTS`
+
+**Fixed, and load-bearing.** The box is anchored by its top-right corner,
+so its left edge is `right − width`; a width that varied with the readout's
+text would move every control on the bar every time a search ran.
+
+Deliberately a little generous: a row that overflows its allocation *wraps*
+in egui, and a wrapped Find bar is two rows tall with its close button
+underneath its own search field.
+
+### `const ROW_HEIGHT_PTS`
+
+Layout tidiness rather than R128 — see the module docs on why that rule
+does not reach a surface which consumes no layout. What it does buy is that
+the box does not change shape as the readout changes, which matters for the
+same reason the width does.
+
+### `fn show`
+
+Call it from `PdfcerApp::ui` **after** the canvas and **before** the modal
+dialogs. Both halves are ordering decisions:
+
+- **after the canvas**, because the box is positioned from the canvas
+  viewport's own rect, which `crate::canvas::show` records through
+  `zoom::remember_frame` as the last thing it does. Drawing first would
+  position this frame's box from last frame's layout, which is visible as a
+  one-frame lag every time a dock is resized;
+- **before the dialogs**, because a modal takes the frame and must be on
+  top of everything, this included.
+
+# Two states draw nothing at all, and neither is an oversight
+
+- **Closed.** No area, no widgets, no hit-test region over the page.
+- **Open with no document.** `edit.find` is gated on `doc.pages`, so the
+  bar cannot be *opened* without one; but a document can be closed while it
+  is open, and a search box over nothing is a control whose every input is
+  refused. The flag survives, so reopening a document brings the bar back
+  exactly as the operator left it — the same courtesy the recent list
+  extends, for the same reason.
+
+### `fn word_rule_label`
+
+A free function rather than a method on [`WordBoundary`] because that type
+belongs to `pdfcer-core` and its operator-facing wording belongs to this
+crate's catalog. `pub(crate)` so [`super`]'s test can assert that every rule
+the chooser offers has one.

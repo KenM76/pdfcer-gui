@@ -45,10 +45,6 @@ pub const TEXT_SIZE_REGION: &str = "properties.field_edit.text_size";
 pub const TEXT_COLOUR_REGION: &str = "properties.field_edit.text_colour";
 
 /// Draw the editable properties of the selected field.
-///
-/// Returns whether it drew, which is always `true` when a field is selected:
-/// **every** field type has required, read-only and a tooltip, so there is no
-/// field for which this section is empty. The type-specific rows come and go.
 pub fn section(
     ui: &mut Ui,
     field: &Field,
@@ -718,13 +714,6 @@ fn swatch_rgb(ink: TextColor) -> Option<[u8; 3]> {
 const ALL_QUADDINGS: [Quadding; 3] = [Quadding::Left, Quadding::Center, Quadding::Right];
 
 /// What the typed controls hold, and the field they were read for.
-///
-/// # Why only two properties have a draft
-///
-/// Because only two take typing. Every checkbox reads `field.flags` straight
-/// from the session each frame, which is what makes a refused press leave the
-/// box where it was — see [`flag_row`]. A draft for a boolean would show the
-/// operator's intent while the document disagreed with it, silently.
 #[derive(Default)]
 pub struct FieldPropsDraft {
     /// `(fully-qualified name, edit epoch)` the values below were read at.

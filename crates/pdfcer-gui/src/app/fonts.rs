@@ -9,22 +9,12 @@ use std::path::{Path, PathBuf};
 use pdfcer_render::FontEnvironment;
 
 /// The largest font file this will read, in bytes.
-///
-/// Sixteen mebibytes, matching `pdfcer`'s own ceiling. It is not about
-/// memory — it is that a "font file" above this size is nearly always
-/// something else that happens to have a font extension, and reading it costs
-/// an operator a visible pause for an answer that will be *"not a usable
-/// font"*. The skip is reported rather than silent.
 pub const MAX_FONT_FILE_BYTES: u64 = 16 * 1024 * 1024;
 
 /// The extensions this will attempt.
 const FONT_EXTENSIONS: [&str; 4] = ["ttf", "otf", "pfb", "cff"];
 
 /// One font program that can stand in for a face a document is missing.
-///
-/// Borrows from the [`Library`] that resolved it. The bytes are held once, in
-/// the environment; a donor that owned a copy would clone a whole face on every
-/// lookup, for a value most callers only read a name out of.
 #[derive(Debug, Clone)]
 pub struct Donor<'a> {
     /// The file it came from, or `None` for one of pdfcer's **own** faces.
@@ -52,10 +42,6 @@ pub struct Donor<'a> {
 }
 
 /// How a donor was matched to a face.
-///
-/// `pdfcer_render::font::EmbedMatch`'s three rungs minus its bundled one, plus
-/// a distinction of this shell's own. See the module header for why `Stem`
-/// exists here and not there.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Match {
     /// A file advertising the name the document spells, tag stripped.
@@ -84,12 +70,6 @@ pub enum Match {
 impl<'a> Donor<'a> {
     /// Where this donor came from, for the engine's `SuppliedFont::source` and
     /// for the operator's row.
-    ///
-    /// A path, or the words for a bundled face. `pdfcer` writes
-    /// `"bundled: FoxitSans"` for the same value and the engine's own field doc
-    /// says the string is *"never parsed; only reported"* — so it is prose, and
-    /// prose the operator reads belongs in [`crate::text`]. This is the join,
-    /// not the wording.
     #[must_use]
     pub fn source(&self) -> String {
         self.path.map_or_else(
@@ -108,11 +88,6 @@ impl Match {
 }
 
 /// Everything the configured folders offer.
-///
-/// The names live in a `FontEnvironment` — which owns the bytes and answers
-/// the three-rung question — and the **paths** live here, because the
-/// environment has no notion of where a face came from and the operator is owed
-/// exactly that.
 #[derive(Debug, Default)]
 pub struct Library {
     /// The engine's resolver, populated by [`Self::scan`].
@@ -139,20 +114,6 @@ pub struct Library {
 
 impl Library {
     /// Read every font file in `folders`, in order, and index what they offer.
-    ///
-    /// # Later folders do NOT win
-    ///
-    /// The first folder holding a name keeps it, which is the opposite of the
-    /// renderer environment's own precedence (*"duplicate-name precedence: last
-    /// wins"*) and is deliberate. That environment is built once per render and
-    /// the last registration is simply the surviving one; **this** list is the
-    /// operator's, in an order they typed, and the Settings hint promises
-    /// *"searched in the order they appear here"*. First-wins is what makes
-    /// that sentence true.
-    ///
-    /// Enforced by [`Self::offer`] rather than by registration order, because
-    /// `FontEnvironment::insert_named` is last-wins and would silently reverse
-    /// it.
     #[must_use]
     pub fn scan(folders: &[PathBuf]) -> Self {
         Self::scan_with(folders, false)
@@ -160,20 +121,6 @@ impl Library {
 
     /// [`Self::scan`], and whether pdfcer's **own** faces may answer when the
     /// folders cannot.
-    ///
-    /// # The operator asked for this, and the licensing argument survives
-    ///
-    /// `OPERATOR_REQUESTS.md` **O47**, answered *"yes"* on 2026-08-28. The
-    /// module header's argument — that pdfcer must not choose a font program on
-    /// somebody's behalf, silently, in a file that outlives the decision — is
-    /// not overruled by this. It is satisfied the same way **O50**'s checkbox
-    /// satisfies it: the operator decided, once, explicitly.
-    ///
-    /// And it is the **last** rung, which is what makes it safe to leave on.
-    /// `resolve_for_embedding` consults the bundled table only after an exact
-    /// name match and after a standard-14 family equivalence have both failed,
-    /// so a machine with real fonts configured reaches a real face first and
-    /// this never fires. It is a floor, not a preference.
     #[must_use]
     pub fn scan_with(folders: &[PathBuf], allow_bundled: bool) -> Self {
         // `bundled()` rather than an empty environment, and it is safe: the
@@ -281,17 +228,6 @@ impl Library {
     }
 
     /// The donor for a document's `/BaseFont`, if the folders hold one.
-    ///
-    /// The subset tag is handled by the engine — `resolve_for_embedding`
-    /// strips it on its second rung — and it has to be: a §9.6.4 tag is six
-    /// uppercase letters and a `+`, minted per subset, so `ABCDEF+ArialMT` and
-    /// `GHIJKL+ArialMT` are the same face and neither is a name any font file
-    /// advertises. Matching without stripping would find nothing, ever, on
-    /// exactly the documents that need embedding most.
-    ///
-    /// Whether pdfcer's own faces may answer is [`Self::scan_with`]'s
-    /// argument, carried on the library rather than passed here — the decision
-    /// is the operator's and belongs to the whole scan, not to one lookup.
     #[must_use]
     pub fn donor_for(&self, base_font: &str) -> Option<Donor<'_>> {
         let hit = self
@@ -357,17 +293,6 @@ fn has_font_extension(path: &Path) -> bool {
 }
 
 /// A `/BaseFont` without its §9.6.4 subset tag.
-///
-/// Exactly six uppercase letters and a `+`, per the standard. Anything else
-/// before a `+` is part of the name and is kept — `Foo+Bar` is a legal, if
-/// unusual, font name, and treating it as a tag would look for a face called
-/// `Bar`.
-///
-/// Kept even though [`Library::donor_for`] no longer calls it: the
-/// **display** side needs it, because a row reading `ABCDEF+ArialMT` shows an
-/// operator a tag that is an artefact of subsetting and means nothing to them.
-/// Resolution and presentation happen to want the same rule, and only one of
-/// them is the engine's.
 #[must_use]
 pub fn strip_subset_tag(base_font: &str) -> &str {
     match base_font.split_once('+') {

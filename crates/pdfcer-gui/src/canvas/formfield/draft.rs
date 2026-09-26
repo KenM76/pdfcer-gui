@@ -13,11 +13,6 @@ use super::FormFieldKind;
 
 /// How many characters a field name may run to before the dialog stops
 /// accepting more.
-///
-/// Not a PDF limit — the format allows a long name — but a name is a `/T`
-/// string that appears in the Forms panel, in tab order and in a screen
-/// reader's announcement, and one that runs past this stops being readable in
-/// all three. The number is generous enough that no reasonable name reaches it.
 pub const NAME_MAX: usize = 120;
 
 /// The settings a form field is authored with.
@@ -114,11 +109,6 @@ pub struct Draft {
 
 impl Draft {
     /// The options, one per line, with blanks discarded and ends trimmed.
-    ///
-    /// A trailing newline is what a text box has after the last line the
-    /// operator typed, so discarding empties is not tidying — without it every
-    /// choice field would carry a final option that is the empty string, which
-    /// renders as a selectable blank row.
     #[must_use]
     pub fn options(&self) -> Vec<String> {
         self.options
@@ -130,21 +120,12 @@ impl Draft {
     }
 
     /// Whether **comb** may be switched on: a text field with a maximum length.
-    ///
-    /// The rule is the format's, not a preference — comb divides the width into
-    /// `max_len` cells. Offered as a predicate so the dialog and the commit
-    /// cannot disagree about it.
     #[must_use]
     pub fn comb_ok(&self) -> bool {
         matches!(self.kind, FormFieldKind::Text) && self.max_len.is_some_and(|n| n > 0)
     }
 
     /// Whether this draft can be authored at all.
-    ///
-    /// A name is the only genuinely required thing: it is the field's identity,
-    /// and the engine has nothing to key a field on without one. Everything
-    /// else has a defensible default, including the tooltip — empty means
-    /// *declined*, which is a decision the engine accepts.
     #[must_use]
     pub fn is_authorable(&self) -> bool {
         !self.name.trim().is_empty()
@@ -193,12 +174,6 @@ impl Draft {
 }
 
 /// The last settings the operator accepted, per session.
-///
-/// Per **session**, deliberately not persisted to `userdata`. A remembered
-/// setting is a convenience within one sitting — "I am placing a row of
-/// identical check boxes" — and one that survived a restart would silently
-/// govern a different document days later, which is the shape of a setting
-/// nobody can find the source of.
 #[derive(Debug, Clone, Default)]
 pub struct Remembered {
     /// The last accepted draft, whatever kind it was.
@@ -208,19 +183,6 @@ pub struct Remembered {
 impl Remembered {
     /// The draft to open the dialog with, for a field of `kind` about to be
     /// placed on a document that already has `existing` field names.
-    ///
-    /// ## The three rules, in the order they apply
-    ///
-    /// 1. **The shared settings carry over** from whatever was placed last,
-    ///    even across kinds — border width, both `/MK` colours, required
-    ///    and read-only. That is the operator's *"remember last settings"*.
-    /// 2. **The kind-specific settings carry over only within a kind.** A
-    ///    check box does not inherit a text field's multiline flag, because it
-    ///    has none; but the *next* check box inherits the previous one's export
-    ///    value, which is exactly what placing a column of them wants.
-    /// 3. **The name never carries over — except for a radio.** See the
-    ///    header: sharing a name merges two widgets into one field, and for
-    ///    radio buttons that merging *is* the group.
     #[must_use]
     pub fn next(&self, kind: FormFieldKind, existing: &[String]) -> Draft {
         let mut draft = match &self.last {

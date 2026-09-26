@@ -25,104 +25,6 @@ fn signature_note(doc: &OpenDoc) -> Option<String> {
 }
 
 /// **Ask where the copy goes, write it there, and say what happened.**
-///
-/// The whole of the `Action::SaveCopy` arm. Takes `&OpenDoc` rather than `&mut`
-/// — see §2: the engine's write verb takes `&self`, so nothing about the open
-/// document changes and the type says so.
-///
-/// The three answers the picker can give are treated exactly as
-/// `crate::app::files::raise` treats them for Open, and for the same reasons:
-/// a path is the ordinary case; a cancel is a complete outcome and is silent;
-/// and *this build cannot ask* is a **build** limitation rather than an
-/// operator choice and gets a trace naming the gap, because a reader of a trace
-/// from a machine they cannot see most needs that told apart from "the click
-/// never arrived".
-///
-/// Not reachable from a unit test, and that is [`crate::app::files`]' rule 3
-/// applied to the save side: with `PDFCER_DIAG_SAVE_PATH` unset this opens a
-/// **real modal dialog** and blocks until a human dismisses it, so a
-/// `cargo test` that applied `Action::SaveCopy` would hang the suite behind an
-/// invisible window. Everything below the picker is therefore reachable with
-/// the answer supplied directly — [`write_copy`] and [`suggested_path`] are
-/// both pure of any dialog and both are tested — and the join is proven by
-/// `tools/ui-verify`'s `save_copy_round_trip`, which answers the dialog through
-/// the seam and then re-opens the file that came out.
-///
-/// **Returns whether a file was actually written.**
-///
-/// The caller that needs the answer is `crate::dialogs::unsaved`'s *Save a
-/// copy…* button, which **only proceeds with the close or open it is standing
-/// in front of if the save succeeded.**
-///
-/// The three false cases are not the same thing and it is worth saying so,
-/// because a future hand will be tempted to distinguish them:
-///
-/// * the operator **cancelled the picker** — they changed their mind
-///   mid-transaction, and the least surprising reading is *"leave my document
-///   alone"*;
-/// * the picker is **unavailable** in this build;
-/// * the write **failed** — already reported on both channels by
-///   [`write_and_report`].
-///
-/// All three answer `false` and all three mean the same thing to that caller:
-/// *do not destroy the document*. Returning a richer type so it could tell
-/// them apart would invite a branch that proceeded on one of them, and there
-/// is no member of that set it would be safe to proceed on.
-/// **Save As** — write the document somewhere new, and *keep editing THAT file*.
-///
-/// # Why this is a different command from [`save_copy`], and not a flag
-///
-/// Operator, `OPERATOR_REQUESTS.md` O95:
-///
-/// > *"we need a Save As option so that we are then making edits in the save as
-/// > file instead of the original just like other programs have it."*
-///
-/// **The second half is the whole request.** `save_copy` already writes the
-/// bytes wherever he points it — what it does not do is *move the document*.
-/// The session stays bound to the original, so the next `Ctrl+S` goes straight
-/// back to the file he was trying to leave, which is the opposite of what he
-/// asked for and is a way to overwrite something by doing nothing wrong.
-///
-/// So the two are different **acts**, and every editor he uses has both:
-///
-/// | | writes | afterwards you are editing |
-/// |---|---|---|
-/// | **Save a copy** | a snapshot, somewhere else | **the original** |
-/// | **Save As** | the document, somewhere else | **the new file** |
-///
-/// Keeping both is deliberate. *Save a copy* is the right verb for "send
-/// this to somebody" and collapsing it into Save As would take that away; a
-/// single command with a checkbox would make the destructive difference a
-/// setting nobody reads.
-///
-/// # What this function does NOT do, and why the caller does it
-///
-/// It does not touch [`OpenDoc`]. It picks a path, writes there, and reports
-/// **where it wrote**. The rebinding — `doc.path`, `doc.saved_epoch`, the tab
-/// label, the window title, the recent list — happens in the caller, which
-/// holds `&mut` and can see all of them.
-///
-/// That split is not tidiness. Rebinding is the dangerous half: a document
-/// whose path moved while its bytes did not is a document whose next `Ctrl+S`
-/// writes the wrong file. Keeping the write pure and the rebinding in one
-/// visible place means there is exactly one statement to read to know when the
-/// binding moves.
-///
-/// # Returns
-///
-/// `Some(path)` when the bytes reached that path, `None` when the operator
-/// cancelled, the picker is unavailable, or the write failed — the same three
-/// outcomes [`save_copy`] flattens to `false`, and flattened here for the same
-/// reason: **there is no member of that set on which it would be safe to
-/// rebind the document.**
-///
-/// # The undo stack survives, and that is a decision
-///
-/// Nothing is closed and nothing is reopened, so the session, its history and
-/// the operator's selection all continue. That is what every other editor does
-/// and it is what he would expect: Save As is a save, not a round trip. The
-/// alternative — write, close, reopen the new file — would silently discard
-/// every undo step, which is a data loss with no warning attached to it.
 pub fn save_as(doc: &OpenDoc) -> Option<std::path::PathBuf> {
     let suggested = suggested_path(doc);
     match files::pick_save_path(&suggested, crate::text::files::save_as_dialog_title()) {
@@ -175,33 +77,6 @@ pub fn save_copy(doc: &OpenDoc) -> bool {
 }
 
 /// **Does the active document have a real file behind it?**
-///
-/// The question `file.save` asks before deciding between saving in place and
-/// opening the picker, and it is answered by **asking the file system**, not by
-/// inspecting the path.
-///
-/// # Why "does this file exist" and not "is this path absolute" or a flag
-///
-/// A blank document created in this shell is given a path like `Untitled 3.pdf`
-/// — a name with no directory, and no file anywhere. A document opened from
-/// disk has a path that names a file that is there. Those are the two cases,
-/// and *"is there a file at this path"* separates them exactly.
-///
-/// The alternatives are worse in specific ways. A `created_here: bool` flag is
-/// a second source of truth that has to be maintained through save-a-copy,
-/// re-open and the document-tab machinery, and the failure mode when it drifts
-/// is **writing over the wrong file**. "Is the path absolute" answers a
-/// different question and would treat a relative path to a real file as
-/// unsaved.
-///
-/// # The race, acknowledged rather than defended against
-///
-/// A file can be deleted between this check and the write. If that happens the
-/// rename in [`save_in_place`] creates the file, which is the same thing every
-/// other editor does and is the harmless direction: the operator gets their
-/// document back where they expect it. The dangerous direction - writing over
-/// something they did not choose - cannot be reached from here, because a path
-/// that names no file goes to the picker.
 #[must_use]
 pub fn has_a_file(doc: &OpenDoc) -> bool {
     doc.path.is_file()
@@ -209,111 +84,6 @@ pub fn has_a_file(doc: &OpenDoc) -> bool {
 
 /// **Does this document have edits that are not on disk?** — the one
 /// question, in the one place.
-///
-/// `OPERATOR_REQUESTS.md` row **O65**, the operator:
-///
-/// > *"I can't edit it unless I save the document first, at which point it
-/// > closes the document after saving."*
-///
-/// # What actually happened, because Save does NOT close the document
-///
-/// A successful in-place save records `doc.saved_epoch = doc.edit_epoch`, and
-/// until today **nothing in production read that number**. It was written
-/// once, traced once, and asserted in a single test. Every surface that asked
-/// *"does this document have unsaved edits?"* asked a different question that
-/// a save cannot answer:
-///
-/// | surface | asked | why a save could not clear it |
-/// |---|---|---|
-/// | `dialogs::unsaved::ask_for` | `edit_epoch == 0` | *"has anything EVER been edited"* — permanently true after the first edit |
-/// | the document tab strip | `session.is_modified()` | the engine's *"differs from the BASE revision"*, and an incremental save takes `&self` so the base never moves |
-/// | the close arm | `session.is_modified()` | same |
-///
-/// So after a perfectly good `Ctrl+S` the shell still believed the file was
-/// dirty. The tab kept its unsaved marker, and the very next Close raised the
-/// unsaved-edits question — whose only save button is *"Save a copy…"*, which
-/// opens a picker and, on success, proceeds with the pending intent. From the
-/// operator's chair: press a Save button, get asked for a filename, and watch
-/// the document close. Exactly what he reported, arrived at without Save ever
-/// closing anything.
-///
-/// Driven, not inferred: with `PDFCER_DIAG_INVOKE="mode.edit,pages.rotate_right,file.save,file.close"`
-/// the shipped build traces `save-in-place outcome=ok` → `save-epoch-recorded
-/// epoch=1` → `diag-invoke id=file.close` → `unsaved-asked`, and no `close
-/// slot=` line anywhere.
-///
-/// # Both halves are load-bearing
-///
-/// - **`session.is_modified()`** is the engine's precise *"differs from the
-///   base revision"*, and it is what makes edit-then-undo come out **clean**.
-///   A pure epoch comparison would call an undone edit dirty, because an undo
-///   bumps the epoch like everything else.
-/// - **`edit_epoch != saved_epoch`** is the only term that can see an
-///   in-place save, for the reason above: `to_incremental_bytes` takes
-///   `&self`, so the session's own answer cannot change when bytes are
-///   written.
-///
-/// | state | `is_modified` | epochs differ | answer |
-/// |---|---|---|---|
-/// | opened, untouched | no | no | clean |
-/// | edited | yes | yes | **dirty** |
-/// | edited, then saved | yes | no | clean |
-/// | edited, saved, edited again | yes | yes | **dirty** |
-/// | edited, then undone | no | yes | clean |
-///
-/// # What this must NOT be confused with
-///
-/// [`save_pending`](crate::app::PdfcerApp::save_pending) asks *"is a save in
-/// flight"*, which is a different question with a different consumer, and
-/// `dialogs::unsaved`'s own header explicitly forbids gating Open / New /
-/// Close on dirtiness through it.
-///
-/// And `saved_epoch` must never be reset to make an answer come out right:
-/// `edit_epoch` is the cache key for the decomposition, the page text, the
-/// texture and every live rule-4 disclosure. Two numbers, one question each.
-/// # The third term, and the silent loss it closes
-///
-/// **`session.has_pending_redaction()` — and it must be the *pending* verb,
-/// never `has_applied_redaction()`.** [`crate::redact::stage_into_session`]
-/// leaves base, overlay and undo untouched and sets one flag, so
-/// `has_applied_redaction()` is **`false` for the life of every session this
-/// shell creates**: a term that can never be true, which is worse than an
-/// absent one because it reads as a guard.
-///
-/// **What the term is for at all.** A redaction that reaches the session
-/// without passing through the edit stacks leaves `is_modified()` answering
-/// **`false`** — correctly, on its own terms, because the session does not
-/// differ from its base. With two terms this predicate then answers **clean**
-/// on a document whose most consequential edit has not been written: no tab
-/// marker, no question on Close, no question on Quit. Arm a removal, close the
-/// document, and it is gone with nothing asked.
-///
-/// **And the hole it closes is a real, reachable state**, not a
-/// theoretical one: open a drawing that already carries `/Redact` marks from an
-/// earlier session, press *Review & apply*, choose *this document*. Nothing is
-/// edited — the marks were already in the file — so `is_modified()` is `false`;
-/// the funnel bumps `edit_epoch`, so the epochs differ. With two terms that is
-/// **clean**, and the operator closes a document with an armed removal on it
-/// and is asked nothing.
-///
-/// `session.has_pending_redaction()` is the term that sees it. It is an OR
-/// beside `is_modified()` rather than a replacement for it; the
-/// `edit_epoch != saved_epoch` term is what turns it off again once the
-/// redaction has actually been written.
-///
-/// **It is the better behaved of the two terms in the one way that
-/// matters.** `has_applied_redaction()` is permanently sticky — once true,
-/// true for the life of the session — so `redact → save → edit → undo` answers
-/// **dirty** on a document that matches its file, costing a spurious prompt
-/// that can never be cleared. `has_pending_redaction()` is turned off
-/// by [`crate::redact::cancel_staged_redaction`], so a document whose staging
-/// the operator called off goes genuinely clean again.
-///
-/// ⚠ **It is not a save gate**, and the distinction is an easy one to lose.
-/// Saving while a redaction is staged is not merely permitted, it is
-/// the *only* way the redaction ever happens — [`write_copy`] routes it through
-/// `save_applying_redaction`. This predicate asks whether there is something to
-/// save, never whether saving is permitted.
 #[must_use]
 pub fn has_unsaved_edits(doc: &OpenDoc) -> bool {
     (doc.session.is_modified() || doc.session.has_pending_redaction())
@@ -321,63 +91,6 @@ pub fn has_unsaved_edits(doc: &OpenDoc) -> bool {
 }
 
 /// **Save. In place. The one every other program has.**
-///
-/// The operator:
-///
-/// > *"can I please have a save button like every other program in existence
-/// > has? We're on week two of this and just have a save as button."*
-///
-/// There is no defence for the shape he is describing: `Ctrl+S` bound to
-/// [`save_copy`], which asks where to put it every single time, with
-/// overwrite-in-place written down as *"an operator scope decision"* and then
-/// nobody's problem. It is the same failure as an unbound `Ctrl+P` or a text
-/// caret with no index: **the basics have to be audited as basics**, because a
-/// suite that asks *"does the thing I built work?"* never asks *"does the thing
-/// everyone expects exist?"*.
-///
-/// # It writes to a TEMPORARY FILE and renames, and that is not ceremony
-///
-/// `std::fs::write` truncates the target and then streams into it. Everything
-/// between those two acts is a window in which **the operator's only copy of
-/// the document is a partial file** - and the payload here is the whole PDF,
-/// which for a CAD sheet is megabytes and takes real time. A crash, a full
-/// disk, or a sync client holding a lock in that window destroys the original
-/// and leaves nothing to fall back to.
-///
-/// Save-as does not have this problem, because its target is a file that did
-/// not exist. Save-in-place is the one verb in this application that can
-/// destroy the operator's work, so:
-///
-/// 1. write the new bytes to `<name>.pdfcer-tmp` beside the target,
-/// 2. `fs::rename` it over the target — which either happens or does not,
-/// 3. on any failure, remove the temporary and leave the original untouched.
-///
-/// This is the same lesson as the portable-build packager, which destroyed the
-/// fallback build **twice in one day** by clearing a directory before filling
-/// it, and whose message asserted nothing had been replaced both times. Written
-/// up in `D:/dev/rag/rust/`. The rule that came out of it applies here without
-/// modification: *never destroy the current good state until the replacement is
-/// fully materialised somewhere else on the same volume.*
-///
-/// The temporary sits **beside the target**, deliberately, not in the system
-/// temp directory: a rename across volumes is a copy, and a copy has the unsafe
-/// window back again.
-///
-/// # Why it returns the same `bool` as [`save_copy`]
-///
-/// So `crate::dialogs::unsaved`'s buttons can treat the two identically: the
-/// question that dialog is asking is *may I now destroy this document*, and
-/// only a successful write answers yes. See [`save_copy`]'s own note on why
-/// distinguishing the failure modes there would invite a caller to proceed on
-/// one of them.
-///
-/// # What it does NOT do
-///
-/// Fall back to Save-as. A document opened from a path always has one, and a
-/// blank document created in this shell is given a path when it is first saved
-/// — the dispatcher routes that case to [`save_copy`] before reaching here,
-/// because *"where does this go?"* is a question only the operator can answer
-/// and answering it silently is how a file lands in a folder nobody expected.
 pub fn save_in_place(doc: &OpenDoc) -> bool {
     let target = doc.path.clone();
     let temporary = target.with_extension("pdfcer-tmp");
@@ -823,30 +536,6 @@ fn suggested_path(doc: &OpenDoc) -> PathBuf {
 }
 
 /// **Write an already-serialised compacted copy to a file the operator picks.**
-///
-/// `OPERATOR_REQUESTS.md` **O48**, and the counterpart to [`save_copy`] one
-/// question along: that one asks *where*, this one has already asked *whether*.
-///
-/// # Why this does not serialise
-///
-/// `crate::dialogs::compact` did, before it opened, and its headline number is a
-/// measurement of the result rather than an estimate. Serialising again here
-/// would put a second computation between the number the operator accepted and
-/// the file they receive — see `Action::SaveCompacted`, which carries the bytes
-/// for exactly that reason.
-///
-/// # Why it never writes in place
-///
-/// Because it destroys things the original still has: the earlier revision, and
-/// every digital signature (§12.8.1). A command that could overwrite the
-/// operator's file with a copy that has lost both is one keystroke from a loss
-/// nothing can undo — so this offers only [`files::pick_save_path`], and the
-/// window says *"this always writes a new one"* before the picker opens.
-///
-/// The suggested name is [`suggested_path`]'s, shared with save-a-copy: the
-/// operator's own file with a suffix, in its own folder. A second naming scheme
-/// for the same act is how two commands come to disagree about what a copy is
-/// called.
 pub fn compacted(doc: &OpenDoc, bytes: &[u8], before: u64) -> bool {
     let suggested = suggested_path(doc);
     let Picked::Path(target) =

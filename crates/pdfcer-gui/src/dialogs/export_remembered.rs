@@ -7,10 +7,6 @@ use crate::app::prefs::exporting;
 use crate::app::prefs::{ExportDxfPrefs, ExportImagePrefs, ExportTextPrefs, Prefs};
 
 /// Persist the Export-image window's habits.
-///
-/// Takes the group **by value** rather than by reference: the caller has just
-/// built it out of its own fields and has no further use for it, and a move is
-/// what makes the assignment below a store rather than a clone.
 pub(super) fn remember_image(habits: ExportImagePrefs, prefs: &mut Prefs) {
     if prefs.export.image == habits {
         return;
@@ -59,14 +55,6 @@ pub(super) fn remember_text(habits: ExportTextPrefs, prefs: &mut Prefs) {
 }
 
 /// Persist the Export-DXF window's habits.
-///
-/// ⚠ **No `scale=` here, and its absence is the design rather than an
-/// oversight.** The DXF scale is derived per open from the page's own
-/// dimension groups and is deliberately not a remembered preference — see
-/// [`crate::app::prefs::ExportDxfPrefs`] for the argument. A trace key naming
-/// a value this function does not store would be the first place somebody
-/// looked when the scale failed to survive a restart, and it would tell them
-/// the opposite of the truth.
 pub(super) fn remember_dxf(habits: ExportDxfPrefs, prefs: &mut Prefs) {
     if prefs.export.dxf == habits {
         return;

@@ -35,18 +35,6 @@ const REGION_APPLY: &str = "redact-apply"; // ui-text-exempt: trace region name,
 const APPLY_COMMAND: &str = "edit.redact_apply"; // ui-text-exempt: a command id, never displayed
 
 /// The operator's own state in this panel.
-///
-/// Not document state and not derived from anything — a half-typed search
-/// query and which way the mode switch is set — but it has to outlive a frame.
-/// It lives on [`PanelsState`] for the reason that struct's header gives about
-/// the Pages panel's: `&mut PanelsState` is already threaded to every body, so
-/// a panel's own state needs no interior mutability and the forgetting is free.
-///
-/// **The query is deliberately cleared with the document** (through
-/// `PanelsState::forget_document`, which resets this struct whole). A search
-/// term left over from a previous file is one an operator could run against a
-/// document it was never meant for, and on this feature that authors marks over
-/// whatever it happens to hit.
 #[derive(Default)]
 pub struct RedactUi {
     /// How a redaction authored from this panel will look once applied.
@@ -77,10 +65,6 @@ pub struct RedactUi {
 }
 
 /// Draw the panel.
-///
-/// The standard body signature: `&OpenDoc` is **shared**, so the
-/// actions-not-mutations invariant is a compile-time fact here rather than a
-/// convention, and every verb below is an [`Action`] pushed for the apply phase.
 pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: &mut Vec<Action>) {
     crate::diag::ui_rect(REGION_PANEL, ui.max_rect());
 
@@ -350,68 +334,6 @@ fn mark_rows(
 }
 
 /// **Build the specification for a whole-page mark.**
-///
-/// Pure, and separate from the action arm for the reason every geometry rule in
-/// this crate is: it is the part that could be wrong in a way an operator would
-/// notice, and a `&mut EditSession` is not available to a test that only wants
-/// to ask what rectangle was chosen.
-///
-/// # The crop box, not the media box
-///
-/// `Page::crop_box` is what a reader **displays** (ISO 32000-1 Table 30:
-/// content is clipped to it at display time), and it defaults to the media box
-/// when the document does not state one — so this is the larger of the two
-/// answers in every case where they differ *for what the operator can see*, and
-/// identical otherwise.
-///
-/// Marking the media box instead would cover area the operator has never been
-/// shown, which sounds harmless and is not: the whole-page control's tooltip
-/// promises to mark *"this entire page"*, and a mark extending past what the
-/// page displays is a claim about content nobody reviewed. Where the two
-/// genuinely differ — a trimmed drawing sheet, an imposed signature — content
-/// outside the crop box is content the operator did not know was there, and
-/// telling them it is covered by a mark they made deliberately would be the
-/// same false-confidence failure the whole feature exists to prevent. That is a
-/// **sanitise** verb, and `crate::shell::manifest`'s own note keeps the two
-/// apart: *"strip metadata, scripts and hidden content. Distinct from
-/// redaction."*
-///
-/// # Why an engine field is not evidence of a consumer
-///
-/// `fill`, `overlay_text` and `quadding` are the operator's choice, made in
-/// [`appearance`] and carried to every marking route by the engine's `_styled`
-/// verbs (`EditSession::mark_redactions_by_search_styled` and its pattern and
-/// page-level siblings). Routing all three routes through one appearance is
-/// the invariant; the rule behind it is the part worth keeping:
-///
-/// **An engine field that exists, is documented, and is written into the PDF
-/// is not evidence that anything reads it.** A field can reach the file with
-/// nothing rendering it, and a field honoured on the whole-page path can be
-/// hard-coded `None` on the search path — which makes a swatch work on
-/// whole-page marks and vanish silently on searched ones. The only check that
-/// separates *supported* from *accepted and discarded* is following the value
-/// to its consumer.
-///
-/// The same rule one layer up, about disclosure: rustdoc is not a disclosure
-/// surface. A deferral described in a doc comment is a claim about a backlog,
-/// never evidence that the operator will be told.
-///
-/// # `fill: None` means TRANSPARENT, which is the dangerous half
-///
-/// `RedactAppearance::fill`'s `None` is transparent, per Table 192 — not a
-/// black box. So a shell that passes `None` removes the content and draws
-/// **nothing over it**: not a security failure, but an operator seeing no
-/// evidence that anything happened, on the operation they cannot undo.
-///
-/// [`appearance::Appearance::default`] therefore passes an **explicit**
-/// `Color::Gray(0.0)`, and its own test asserts that against the engine's type
-/// rather than against the shell's enum.
-///
-/// Inventing a default overlay caption would still put words on the operator's
-/// page that they did not write, which was the original reason for
-/// `overlay_text: None` and stands unchanged — the field is empty until they
-/// type in it.
-///
 #[must_use]
 pub fn whole_page_spec(
     page: &pdfcer_core::page_tree::Page,
@@ -429,10 +351,6 @@ pub fn whole_page_spec(
 
 /// The ids of marks currently in `session`, for a caller that needs to know
 /// what a marking verb added.
-///
-/// One walk, exposed so `crate::app::actions` can report *how many* marks a
-/// search created without the panel and the action arm deriving the census two
-/// different ways.
 #[must_use]
 pub fn mark_ids(session: &pdfcer_core::edit::EditSession) -> Vec<ObjId> {
     pdfcer_core::redact::redaction_marks(&session.graph())

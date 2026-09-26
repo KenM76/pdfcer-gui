@@ -113,3 +113,28 @@ choice a refusal makes is never "a glyph *or* a findable word" — the word is
 there either way, and what a missing glyph costs is recognition at a glance,
 not reachability. Reasoning as though the label were at stake is what keeps
 a control bare longer than any decision would.
+
+## Item notes
+
+### `fn command`
+
+The two are always fetched together, from one catalog entry, so a
+command cannot end up with one command's label and another's tooltip —
+which is not a hypothetical: the salvage source's two adjacent Content
+buttons both read `Aa`, and only their tooltips distinguished them.
+
+### `fn all`
+
+# Why the registry is assembled from one band per tab
+
+The registry is a flat namespace and this ordering mirrors the ribbon, so
+the two can be read against `RIBBON_IA.md` §5 side by side — and the
+concatenation below preserves both: one namespace, ribbon order.
+
+⚠ **A per-tab split does NOT hide a handler-token collision**, which is the
+argument most likely to be raised against it.
+[`super::tests::every_handler_token_is_unique`] sweeps the whole registry
+and [`super::tests::every_handler_token_is_in_its_tabs_block`] asserts each
+token sits inside its own tab's hundred. A collision is a red test in either
+arrangement, so it is not a reason to keep every command and its prose in
+one file.

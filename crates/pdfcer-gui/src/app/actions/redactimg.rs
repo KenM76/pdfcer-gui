@@ -33,10 +33,6 @@ fn image_count(
 }
 
 /// **Does anything the operator just selected sit on a raster image?**
-///
-/// Used by the selection route, where the answer needs no geometry at all: the
-/// operator picked the objects, so their classes are already known and asking
-/// the decomposition a second question could only produce a second answer.
 #[must_use]
 pub fn images_in_selection(doc: &OpenDoc) -> usize {
     let page_index = doc.view.page_index;
@@ -45,10 +41,6 @@ pub fn images_in_selection(doc: &OpenDoc) -> usize {
 }
 
 /// **How many raster images are anywhere on `page_index`.**
-///
-/// The whole-page route's question, and it is the simple one: a mark that
-/// covers the page covers every image on it, so any image at all means an apply
-/// will destroy raster samples somewhere on that sheet.
 #[must_use]
 pub fn images_on_page(doc: &OpenDoc, page_index: usize) -> usize {
     let Some(provider) = doc.page_objects() else {

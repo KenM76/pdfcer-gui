@@ -9,42 +9,6 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/text/unshare.md`.
 
 /// **Why this page did not get its own copy of the shared drawing.**
-///
-/// # A `Copy` enum rather than the engine's own `Display`
-///
-/// [`crate::text::status::TextStyleRefusal`]'s reason, adopted unchanged and
-/// for the third time: a `format!` of an `EditError` would route **diagnostic
-/// prose into the UI**, which `tools/gates/check-ui-strings.sh`'s exclusion 3
-/// names in as many words — *"this exclusion is not permission to route UI text
-/// through an error type."* An enum keeps
-/// [`crate::app::status::decline::Declined`] `Copy`, keeps its `line()`
-/// returning `&'static str`, and keeps every operator-visible word in this
-/// file under **R1**.
-///
-/// # The one variant that carries no number, and why that is deliberate
-///
-/// [`Self::WouldExposeHiddenObjects`] is raised by the engine with a `count` —
-/// how many cross-reference entries the file's `/Size` is currently hiding —
-/// and this enum drops it. Two reasons, either sufficient:
-///
-/// 1. Carrying it would make this type non-`Copy`-friendly in the sense that
-///    matters: `Declined::line()` returns `&'static str`, and a counted
-///    sentence needs a `String` and an allocation on a path that runs while a
-///    status bar is being laid out.
-/// 2. **The number is not actionable and is barely meaningful to the reader.**
-///    "17 hidden cross-reference entries" tells an operator nothing they can
-///    do. What they can act on is *this file is damaged in a way that makes it
-///    unsafe to add anything to*, and that is what the sentence says. The count
-///    goes to the trace, where evidence belongs — the same split
-///    `canvas::textedit::report` makes for `followers_repositioned`.
-///
-/// # Ordering
-///
-/// The variants are in **the order the engine checks them**, which is also the
-/// order of decreasing "this is about the whole document" and increasing "this
-/// is about what you just clicked". A reader comparing this enum against
-/// `EditSession::unshare_form`'s body should be able to walk both top to bottom
-/// together.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UnshareRefusal {
     /// The document carries `/Encrypt` (§7.6).
@@ -213,35 +177,6 @@ pub enum UnshareRefusal {
 
 impl UnshareRefusal {
     /// The sentence.
-    ///
-    /// # Every one of them ends by saying the sharing is unchanged
-    ///
-    /// That clause is not padding, and it is the clause that took the longest
-    /// to get right. The operator pressed this button **because they are about
-    /// to edit something**, and the thing they need to know after a refusal is
-    /// not "it failed" — it is ***do not now go and type into that title
-    /// block***, because doing so will change thirty-six sheets.
-    ///
-    /// A refusal that says only "pdfcer could not do that" leaves them believing
-    /// the safe state might have been reached. Every sentence below therefore
-    /// closes the loop explicitly: the page still shares the drawing.
-    ///
-    /// **[`Self::NotShared`] is the one exception, and it is the same rule
-    /// rather than a break from it.** The clause exists to tell the operator
-    /// *what is true about the sharing before they type*. For every other
-    /// variant that fact is "you still share it"; for that one it is "there was
-    /// never anything to share", which is the same clause with the opposite
-    /// value and is exactly as load-bearing. What is forbidden is a sentence
-    /// that leaves the question open, not a particular answer to it — and the
-    /// test below (`every_refusal_says_where_the_sharing_stands`) asserts the
-    /// property that way rather than pinning one of the two answers.
-    ///
-    /// # Remedy first where there is one
-    ///
-    /// [`crate::text::resizing`]'s rule, inherited: the operator is looking at
-    /// something that did not happen, and the useful half is *what to do now*.
-    /// [`Self::Nested`] and [`Self::NothingInAForm`] both name a next act;
-    /// the rest have none, and none is invented for them.
     #[must_use]
     pub const fn line(self) -> &'static str {
         match self {
@@ -346,70 +281,6 @@ impl UnshareRefusal {
 }
 
 /// **Disclosure: this page now has its own copy, and here is what moved.**
-///
-/// # Why a SUCCESS owes a sentence at all, which is unusual
-///
-/// Most disclosures in this crate exist because a consequence is invisible.
-/// This one exists because **the whole act is invisible, by design**.
-///
-/// `EditSession::unshare_form` clones the form stream verbatim — the engine's
-/// own comment says the copy *"carries the ORIGINAL's value verbatim, span and
-/// all"*, so unsharing costs no duplicated bytes until the copy is actually
-/// edited. The page therefore renders **pixel-for-pixel identically** before and
-/// after. Nothing moves, nothing changes colour, nothing appears or disappears.
-///
-/// ⇒ Without a sentence, the operator's evidence that the command worked is
-/// indistinguishable from their evidence that it did nothing — which is the
-/// same state as an unworded refusal, arriving through the success path. R8b
-/// rule 4 as narrowed by pdfcer's decision 059 (*render normally, report
-/// separately*) applies with unusual force: there is nothing to render.
-///
-/// # What the engine asked a shell to say, verbatim
-///
-/// [`pdfcer_core::edit::UnshareFormReport`] is documented as naming the copy and
-/// how many references moved *"so a shell can say what happened rather than
-/// only that it worked"*. This is that sentence.
-///
-/// # What it does NOT say: the object numbers
-///
-/// `UnshareFormReport::original` and `::copy` are `ObjId`s, and neither reaches
-/// the status row. That is the split `canvas::textedit::report` states as a
-/// rule and this file follows: *a number about a content stream is evidence, not
-/// a disclosure.* An operator cannot act on "object 47"; a driven check can, and
-/// a regression then names itself. Both numbers go to the trace from
-/// `app::actions::xobject`, where the object-clipboard and text-edit arms
-/// already send theirs.
-///
-/// # The plural, and why it is a branch rather than a format string
-///
-/// `references_moved` is *"usually 1. Greater than 1 when the page invoked the
-/// same form under several names"* — a real case on CAD output, where one title
-/// block is drawn once per view. The two sentences are genuinely different
-/// statements, not one sentence with a number in it:
-///
-/// - at 1, the operator needs to know the change is now local to this page;
-/// - above 1, they additionally need to know that **all** the places this page
-///   draws it moved together, because the alternative reading — "one of the
-///   three title blocks on this sheet is now private and two are not" — would be
-///   a genuinely alarming and genuinely wrong thing to infer, and it is exactly
-///   what an operator who knows the page draws it three times will infer from
-///   silence.
-///
-/// That plurality is the engine's decision, stated in the verb's own docs: *"the
-/// unit of this operation is the PAGE"*. The sentence says so.
-///
-///
-/// The sentence used to end *"every other page still shares the original"* in
-/// both branches, unconditionally, on a command that had never asked how many
-/// other pages there were. On a single-invocation form that clause was **false
-/// about the operator's own file**; on a genuinely shared one it was
-/// indistinguishable from the false version, so the operator who *did* have a
-/// thirty-six-sheet title block learned nothing from it either. One
-/// unconditional clause managed to be both a lie and useless.
-///
-/// [`Fanout`] carries the measurement, and every claim about other pages is now
-/// made from it or not made at all. See its docs for the three shapes and for
-/// why "at least" is not a hedge.
 #[must_use]
 pub fn unshared(references_moved: usize, fanout: Fanout) -> String {
     // Two independent clauses, assembled rather than nested, because they
@@ -436,50 +307,6 @@ pub fn unshared(references_moved: usize, fanout: Fanout) -> String {
 }
 
 /// **How widely the drawing was drawn, measured before the copy was made.**
-///
-/// # Why this type exists rather than two loose parameters
-///
-/// Because the two fields are only ever meaningful **together**, and read apart
-/// they produce the exact sentence this type was introduced to delete. `3`
-/// alone says *"three other pages draw it"*; `3` with `lower_bound` says *"at
-/// least three, and pdfcer could not finish looking"*. A caller handed two bare
-/// arguments eventually passes them in the wrong order or forgets the second,
-/// and the symptom of forgetting the second is **an under-count presented as a
-/// total** — which `pdfcer_core::text_edit::invocation_set`'s own documentation
-/// calls *"the same class of defect as a silent edit"*.
-///
-/// It is the same argument [`crate::app::status::decline::History`] makes for
-/// pairing undo and redo: *"a caller that had to pass two loose booleans in the
-/// right order would eventually pass them in the wrong one."*
-///
-/// # Where the numbers come from, and what they are NOT
-///
-/// `crate::app::actions::xobject::fanout` walks the document once, on the
-/// press, through `pdfcer_core::text_edit::invocation_set`. Both fields are read
-/// off the returned `InvocationSet`:
-///
-/// | field | source | measured **before** or **after** the copy |
-/// |---|---|---|
-/// | [`Self::other_pages`] | `set.pages`, minus this page | **before** |
-/// | [`Self::lower_bound`] | `InvocationSet::is_lower_bound()` | **before** |
-///
-/// *Before* is load-bearing and is not an implementation detail. After the
-/// copy is made, this page's invocations name the copy, and a walk run then
-/// would report the original's fan-out with this page already subtracted. The
-/// number the operator needs — *how many sheets are still on the original* — is
-/// the same either way only because the subtraction is done here rather than by
-/// the file. Measuring after would give the right answer for the wrong reason
-/// and would break the moment the verb's granularity changed.
-///
-/// # "At least" is a statement of fact, not a hedge
-///
-/// `InvocationSet::is_lower_bound()` is true when some page's scan hit the
-/// depth guard or a form pdfcer could not decode. Those pages may or may not
-/// draw this form; nothing in the count knows. Printing the bare number would
-/// present an under-count as a total, and an operator who reads *"2 other pages
-/// keep the original"* on a document where the true answer is nine will not
-/// check the other seven. So the sentence says *at least*, and it is the
-/// **honest** wording rather than the cautious one.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Fanout {
     /// Distinct pages **other than the one that got the copy** that draw the
@@ -510,61 +337,6 @@ impl Fanout {
 
 /// **Disclosure appended to a text edit that changed shared content: how to
 /// avoid it next time.**
-///
-/// # Why the shell adds a sentence to the engine's own list
-///
-/// `pdfcer-core` already puts a `"SHARED CONTENT: …"` sentence into
-/// `text_edit::EditReport::disclosures`, worded for direct display, and
-/// `canvas::textedit::report`'s header rules — correctly — that **re-wording it
-/// here would be a second account of one fact, free to drift**. Nothing below
-/// re-words it. This is a second, *different* fact, and it is one the engine
-/// cannot state: **pdfcer-core does not know what this shell's commands are
-/// called.**
-///
-/// The engine's sentence says *what happened* — the edit changed every place
-/// this form is drawn, because the standard binds a form to no page and there is
-/// exactly one stream holding those glyphs. Complete, and true. What it cannot
-/// say is *what to do about it*, because the answer is the name of a control in
-/// a program it has never seen.
-///
-/// ⇒ The precedent for appending is already in the same apply arm:
-/// `crate::text::textedit::pinned_tail_disclosure` is a shell-authored sentence
-/// pushed onto the engine's list, for the same shape of reason — the engine says
-/// nothing about a pinned tail because from its side pinning is what was asked
-/// for, and the operator still owes it.
-///
-/// # The sequence is UNDO first, and getting that wrong would be a lie
-///
-/// This is the sentence's load-bearing clause and it is worth the paragraph.
-///
-/// The naive remedy — *"press Unshare now"* — **does not work, and would make
-/// things worse.** The edit has already been written into the one shared stream
-/// object; every page that draws it already shows the change. Unsharing at that
-/// point copies the **already-edited** stream to this page and re-points this
-/// page at it. The other thirty-five sheets keep the original object, which is
-/// the one that was edited. The operator would end up with the change on every
-/// sheet **and** a redundant private copy, and a sentence that told them to do
-/// that would have caused the damage it was warning about.
-///
-/// The order that works is **undo, unshare, edit again**, and it is stated in
-/// that order with no room to read it otherwise.
-///
-/// # Why it is worded as a future-tense offer, not a warning
-///
-/// Because at the moment it is read, the fan-out has already happened and may
-/// well have been wanted — §8.10.1's whole purpose for the feature is that one
-/// component appears on many sheets, and a drawing-office correction to a title
-/// block is *supposed* to reach all of them. This shell must not imply the
-/// operator has made a mistake. It names the option they did not know they had.
-///
-/// # Why it is appended rather than replacing the engine's sentence
-///
-/// The engine's sentence carries `InvocationSet::describe()` — the actual
-/// counts, "3 pages, 5 places" or whatever this document is — and that is the
-/// fact that makes the disclosure *startling*, which is the property
-/// `canvas::textedit::report` says it is meant to have. Dropping it to make room
-/// for a remedy would trade the alarming half for the useful half. Both, in the
-/// engine's order: what happened, then what to do.
 #[must_use]
 pub fn shared_content_remedy() -> String {
     "To change this page on its own instead, undo, then use Give this page its own copy, then \

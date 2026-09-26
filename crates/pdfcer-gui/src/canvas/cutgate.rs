@@ -11,12 +11,6 @@ use pdfcer_core::object::Object;
 use crate::app::state::OpenDoc;
 
 /// Why a cut would not survive, for the sentence and for the trace.
-///
-/// A `&'static str` naming the **subtype** rather than an enum, because that is
-/// what the engine's own `CutWouldNotSurvive { subtype }` carries and because
-/// the set is the file format's, not this shell's. An enum here would be a
-/// second taxonomy to keep in step with a first that lives in another crate —
-/// decision 058's failure mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Blocker {
     /// The PDF subtype, without the slash: `Redact`, `Widget`, `Popup`.
@@ -24,14 +18,6 @@ pub struct Blocker {
 }
 
 /// **What, if anything, stops the current selection being cut.**
-///
-/// `None` — the overwhelmingly common answer — means *let them press it*.
-///
-/// # Cost
-///
-/// One `session.value()` on the selected annotation, or nothing at all when no
-/// annotation is selected. Safe to call every frame; see the module header for
-/// why it is not `copy_selection`.
 #[must_use]
 pub fn blocker(doc: &OpenDoc) -> Option<Blocker> {
     let selected = doc.selection.annot()?;

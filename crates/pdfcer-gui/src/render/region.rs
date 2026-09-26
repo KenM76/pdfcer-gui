@@ -10,25 +10,6 @@ use pdfcer_core::page_tree::{Page, Rect};
 
 /// Everything about a page that the canvas ⟷ PDF-user-space conversions need:
 /// its crop box and its `/Rotate`.
-///
-/// # Why a struct rather than two arguments
-///
-/// Because they are only meaningful together, and because the pair is what
-/// makes a *page* — the same reason `pdfcer_render::RegionGeometry` is a struct
-/// rather than five positional values. A caller that passed a crop box and
-/// forgot the rotation would get the pre-O174 behaviour back, compiling
-/// cleanly, on the exact pages where it is wrong.
-///
-/// # The crop box is narrowed through `f32` on the way in
-///
-/// `pdfcer_render::region_base_geometry_of` does this — deliberately, with a
-/// comment saying why: the whole-page path truncates the crop box to `f32`
-/// before it multiplies, and computing from the `f64` box instead lands on a
-/// different pixel for some pages, which broke the engine's own poster-tiling
-/// reassembly test. This module's job is to be the **exact inverse** of that
-/// function, so it must start from the same numbers. Narrowing here rather
-/// than at each use keeps that a property of the type instead of a rule
-/// someone has to remember four times.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PageFrame {
     /// The crop box, already narrowed through `f32` exactly as the engine
@@ -50,14 +31,6 @@ impl PageFrame {
 
     /// The crop box **as this type holds it** — already narrowed through
     /// `f32` the way the engine narrows it.
-    ///
-    /// Exposed so [`super::halo::region`] — and `canvas::present`, which
-    /// calls it — union the content box against the *same* numbers
-    /// [`Self::canvas_box_of`] maps against. Reading `page.crop_box` there
-    /// instead would be a second source for one value, and the two differ by
-    /// up to an `f32` ulp — enough for a halo that is exactly the crop box to
-    /// come back as a one-ulp overhang and flip a whole document into a bigger
-    /// raster for nothing.
     #[must_use]
     pub const fn crop(self) -> Rect {
         self.crop
@@ -207,20 +180,6 @@ impl PageFrame {
 
     /// The bounding box in **canvas space** of a rectangle given in PDF user
     /// space, as `(x0, y0, x1, y1)` with `x0 ≤ x1` and `y0 ≤ y1`.
-    ///
-    /// A bounding box of the two mapped corners, not a corner-by-corner
-    /// copy: under 90° and 270° the axes swap and under 180° both mirror, so
-    /// the mapped "lower-left" is not the canvas's top-left. Every rotation
-    /// here is a multiple of 90°, so the box of the two opposite corners is
-    /// the exact image of the rectangle — no rotation-of-a-rotated-rect
-    /// inflation is possible.
-    ///
-    /// Visible to the rest of `render` rather than private, because
-    /// [`super::halo::reach`] needs the same mapping for the content bounding
-    /// box and O174 is exactly the class of defect that a second hand-written
-    /// copy reproduces. Deliberately **not** `pub`: PDF-user-space geometry is
-    /// this module's subject, and a caller outside `render` that wants canvas
-    /// coordinates wants [`region_on_screen`] instead.
     #[must_use]
     pub(in crate::render) fn canvas_box_of(self, region: Rect) -> (f64, f64, f64, f64) {
         let (ax, ay) = self.user_to_canvas(region.llx, region.lly);
@@ -274,20 +233,6 @@ pub fn exact_region(canvas: (f64, f64, f64, f64), frame: PageFrame) -> Rect {
 
 /// Where a region's raster belongs on screen, given where the whole page would
 /// have been drawn.
-///
-/// `page_screen` is the rect the page occupies on screen — what the whole-page
-/// texture would have filled. The returned rect is the sub-rectangle of it that
-/// `region` covers, and it is routinely **larger than the screen and partly
-/// negative**, because the region carries overscan beyond the viewport. That is
-/// correct and must not be clamped: the texture covers that area, and clamping
-/// the destination without cropping the source would stretch the image.
-///
-/// `page_pts` is the page's **canvas** extent as
-/// [`crate::viewer::page_extent_pts`] reports it — rotation already applied,
-/// and rounded the way the engine rounds its pixmap. It is what `page_screen`
-/// was laid out from, so the two scales are derived from it and not from
-/// `frame`'s crop box; a page whose extent rounded is then still placed exactly
-/// on itself.
 #[must_use]
 pub fn region_on_screen(
     region: Rect,

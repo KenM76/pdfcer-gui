@@ -29,10 +29,6 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/text/unsaved.md`.
 
 /// The window title.
-///
-/// A statement, not a question. The question is in the body and varies by
-/// intent; a title that also asked one would put two questions on screen, and
-/// an operator answering the wrong one is answering about their document.
 #[must_use]
 pub const fn title() -> &'static str {
     "Unsaved edits"
@@ -45,10 +41,6 @@ pub const fn question_close() -> &'static str {
 }
 
 /// The question, when the operator is opening another document.
-///
-/// Names **the document they are leaving**, not the one they are opening.
-/// The operator's attention is already on the file they picked; the whole
-/// purpose of this interruption is to move it back for one sentence.
 #[must_use]
 pub const fn question_open() -> &'static str {
     "The document you have open has edits that are not in any file yet. Opening \
@@ -64,20 +56,6 @@ pub const fn question_new() -> &'static str {
 
 /// The question, when the operator is re-reading this same file under the
 /// other reading of a key it names twice.
-///
-/// # It says the edits cannot survive it, because they cannot
-///
-/// Every other sentence here is about *leaving* a document. This one is about
-/// **the same document coming back**, which is a distinction an operator will
-/// draw on their own and get wrong: re-reading sounds like refreshing, and
-/// refreshing sounds like something edits survive.
-///
-/// They do not. The engine's own words for why the intervention is a re-load
-/// rather than an edit — *"a decision made during parsing is not a value that
-/// can be edited afterwards"* — mean the document that comes back is a new
-/// parse of the bytes on disk, with an empty undo stack. So the sentence spends
-/// its second clause saying exactly that rather than leaving the operator to
-/// infer it from the word *close*.
 #[must_use]
 pub const fn question_reread() -> &'static str {
     "Reading this file again is a fresh start from what is on disk, so the \
@@ -85,20 +63,6 @@ pub const fn question_reread() -> &'static str {
 }
 
 /// How much is at stake, in the operator's units rather than the engine's.
-///
-/// # Why this counts EDITS and says so, rather than saying "changes"
-///
-/// `OpenDoc::edit_epoch` counts applied edits — one per action that reached the
-/// document — so the number is real and is the only quantity this shell has.
-/// Rendering it turns a contentless warning into a decision an operator can
-/// actually make: *"1 edit"* is a misplaced click they will happily discard,
-/// and *"48 edits"* is an afternoon.
-///
-/// It deliberately does **not** claim to be a count of *things on the page*.
-/// An edit that was undone still bumped the epoch, so the number is an upper
-/// bound on work rather than an inventory — which is why the sentence says
-/// *"edits made"* rather than *"changes to this document"*. Overstating what a
-/// number means is the same defect as inventing one.
 #[must_use]
 pub fn edits_at_stake(edits: u64) -> String {
     if edits == 1 {
@@ -110,65 +74,24 @@ pub fn edits_at_stake(edits: u64) -> String {
 
 /// **The button that writes the file the operator opened** —
 /// `OPERATOR_REQUESTS.md` O65.
-///
-/// Drawn only when the document HAS a file to be written over
-/// (`app::save::has_a_file`). A never-saved document renders no Save button at
-/// all and keeps [`save_copy_button`] alone — R9: an unavailable capability
-/// renders nothing, and "this document has never been written anywhere" is not
-/// a temporary condition a hover could explain away.
-///
-/// # Why this did not exist until today
-///
-/// Because this module was written when it was TRUE that pdfcer had no Save,
-/// and it said so in as many words: *"pdfcer cannot yet save over the file it
-/// opened."* `file.save` landed on 2026-08-20 and this window was never
-/// revisited, so the one prompt an operator meets when they are about to lose
-/// work went on offering a file picker as its only way of not losing it. He
-/// pressed the save button here, got asked for a filename, and the document
-/// closed — which is what he reported as *"it closes the document after
-/// saving."*
-///
-/// # No ellipsis, and that is the point of the pair
-///
-/// [`save_copy_button`]'s ellipsis promises a picker. This one promises the
-/// opposite — a write to a destination already decided — and the two labels
-/// have to be told apart at a glance by an operator who is one click from
-/// discarding their work.
 #[must_use]
 pub const fn save_button() -> &'static str {
     "Save"
 }
 
 /// **Save all** — `OPERATOR_REQUESTS.md` O102.
-///
-/// The count is **in the label**, not implied. *"Save all"* over a modal
-/// asking about one document is ambiguous — all of what? — and the operator is
-/// being asked this while trying to leave. *"Save all 4"* answers the question
-/// the button raises, in the button.
-///
-/// Drawn only when the count is above one, so the singular case never occurs
-/// and is not worded for. `UnsavedDialog::body` carries that decision.
 #[must_use]
 pub fn save_all_button(count: usize) -> String {
     format!("Save all {count}")
 }
 
 /// The non-destructive button.
-///
-/// The ellipsis is doing real work: it promises a file picker, which is exactly
-/// what happens next, and it distinguishes this from a Save that would write
-/// somewhere already decided.
 #[must_use]
 pub const fn save_copy_button() -> &'static str {
     "Save a copy…"
 }
 
 /// What "a copy" actually means for the file they came from.
-///
-/// The most important sentence on the surface, and the one an operator would
-/// otherwise have to discover by looking at their file system afterwards.
-/// Written in two halves on purpose: what pdfcer will do, then what it will
-/// **not** do. The second half is the part that is surprising.
 #[must_use]
 pub const fn save_copy_note() -> &'static str {
     "A copy is written to a new file that you name. The document you are working \
@@ -176,10 +99,6 @@ pub const fn save_copy_note() -> &'static str {
 }
 
 /// The note under the pair, when both buttons are offered.
-///
-/// Says which of the two touches the file they opened, because that is the
-/// whole difference between them and it is not deducible from four words of
-/// button text.
 #[must_use]
 pub const fn save_choice_note() -> &'static str {
     "Save writes over the file you opened. Save a copy writes a new file that \
@@ -205,22 +124,12 @@ pub const fn discard_new() -> &'static str {
 }
 
 /// The destructive button, when the operator is re-reading the same file.
-///
-/// *Read* rather than *Reread*, and *lose the edits* in the same words the
-/// two buttons above use. The verb changes; the consequence clause does not,
-/// because an operator reading only the buttons — which is most operators,
-/// most of the time — is scanning for the consequence.
 #[must_use]
 pub const fn discard_reread() -> &'static str {
     "Read it again, lose the edits"
 }
 
 /// The button that changes nothing.
-///
-/// Last, and named *Cancel* rather than *Go back* or *Keep editing*, because it
-/// is the one label in this window an operator does not have to read to
-/// understand. Every convention they have is on its side; spending novelty here
-/// would buy nothing and cost the one word they can recognise at a glance.
 #[must_use]
 pub const fn cancel_button() -> &'static str {
     "Cancel"

@@ -21,16 +21,6 @@ pub(super) const REGION_READ_MODE_EXIT: &str = "status-group:read-mode-exit"; //
 const EXIT_SLOT: &str = "read-mode-exit"; // ui-text-exempt: trace slot name, never displayed
 
 /// Draw the exit statement, if read mode is on.
-///
-/// Returns nothing: like the rest of the left half this is a readout, and the
-/// one case that is not — the unbound button — acts on `egui::Memory` rather
-/// than raising an action (see the module header).
-///
-/// **Called before [`super::show`]'s `Status::Open` guard**, deliberately. Read
-/// mode is per *window*, not per document (`app::window` §3), so an operator can
-/// close their last file while in it — and a bar that only explained the way out
-/// when a document happened to be open would go silent in the state where the
-/// window has the least in it.
 pub(super) fn show(ui: &mut egui::Ui) {
     let ctx = ui.ctx().clone();
     if !crate::app::window::read_mode(&ctx) {

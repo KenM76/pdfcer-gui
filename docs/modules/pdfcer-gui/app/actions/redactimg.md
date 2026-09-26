@@ -48,3 +48,15 @@ module makes, and because it is the part that could be wrong in a way an
 operator would notice: over-counting invents a warning about a page that
 would have redacted cleanly, and under-counting is the silence this module
 exists to end.
+
+### `fn images_in_selection`
+
+Used by the selection route, where the answer needs no geometry at all: the
+operator picked the objects, so their classes are already known and asking
+the decomposition a second question could only produce a second answer.
+
+### `fn images_on_page`
+
+The whole-page route's question, and it is the simple one: a mark that
+covers the page covers every image on it, so any image at all means an apply
+will destroy raster samples somewhere on that sheet.

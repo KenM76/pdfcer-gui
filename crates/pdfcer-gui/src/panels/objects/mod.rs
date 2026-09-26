@@ -17,30 +17,9 @@ use egui_shell::HandlerToken;
 use provider::ObjectModelProvider;
 
 /// How many point rows one part may contribute to the tree.
-///
-/// **This number is a measurement, not a guess.** One path object on a
-/// real CAD export holds **6,681 anchors**, and that number is why the point
-/// rung is scoped to a part at all
-/// ([`provider::ObjectModelProvider::subpath_node_points`] carries the same
-/// figure and the same reasoning for the *canvas* pick set).
-///
-/// Virtualization makes a wall of rows cheap to *draw* and no more useful to
-/// *read*, and materialising 6,681 `ObjectTreeRow`s to find one costs a
-/// frame on exactly the sheet where the panel matters most. 200 is enough to
-/// see the shape of a part's point list and to read off an index for
-/// `node-move`.
-///
-/// The cap is **disclosed with both numbers** by
-/// [`crate::text::panels::objects::object_tree_points_capped`]. A quietly
-/// shortened list is indistinguishable from a short one — the same defect
-/// `bookmarks_truncated` exists to prevent one panel over.
 pub const POINT_ROWS_PER_PART: usize = 200;
 
 /// One visible line of the object tree.
-///
-/// A row's `(object, part, point)` triple **is** an address into the level
-/// ladder, so a canvas descent will have an exact row to land on when the
-/// two are connected at S4.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ObjectTreeRow {
     /// A page object, at paint-order `index`.
@@ -82,11 +61,6 @@ pub enum ObjectTreeRow {
 
 /// Draw the Objects panel, and report any command an operator invoked from
 /// an object row's context menu.
-///
-/// The returned `egui_shell::HandlerToken`s are **intent**: this function
-/// executes nothing, exactly as it mutates nothing. See
-/// [`crate::panels::Panel::show`] for why a panel hands tokens on rather
-/// than translating them.
 #[must_use]
 pub fn body(
     ui: &mut egui::Ui,
@@ -532,14 +506,6 @@ fn row_description(provider: &ObjectModelProvider, row: ObjectTreeRow) -> Option
 }
 
 /// Materialise the visible rows for one frame, front-most first.
-///
-/// Only expanded parents contribute children, so a fully-collapsed tree
-/// costs exactly the object count — the same row budget a flat list would
-/// have.
-///
-/// `point_cap` is a parameter rather than a constant read from
-/// [`POINT_ROWS_PER_PART`] so the tests can drive the capping path with two
-/// points instead of two hundred. The panel always passes the constant.
 #[must_use]
 pub fn build_rows(
     provider: &ObjectModelProvider,
@@ -593,17 +559,6 @@ pub(crate) mod test_support {
     use std::path::PathBuf;
 
     /// Resolve a fixture under the **engine's** synthetic fixture tree.
-    ///
-    /// `D:\Dev\pdfcer\fixtures\synthetic\…`, reached by the same relative
-    /// walk this crate's `Cargo.toml` uses to reach `pdfcer-core` — so if the
-    /// crate compiles at all, this path resolves. That is why the failure
-    /// below is an `assert!` and not a skip: a skip would silently turn
-    /// every fixture-backed test in this tree into a no-op, which is the
-    /// "gate that guards nothing" failure the ui-strings gate's own header
-    /// spends four paragraphs on.
-    ///
-    /// `D:\Dev\pdfcer` is **read-only** for this project. These tests read
-    /// from it and write nothing.
     pub fn engine_fixture(rel: &str) -> PathBuf {
         // BOTH spellings of the engine's directory are tried, newest first,
         // and that is the temporary rename shim reaching one more place.

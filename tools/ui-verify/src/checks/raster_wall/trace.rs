@@ -11,11 +11,6 @@ use crate::geom::LRect;
 use crate::trace::Trace;
 use std::collections::BTreeSet;
 /// Everything the canvas said about its last drawn frame.
-///
-/// Read as one struct from one trace line on purpose. The alternative — a
-/// helper per field — re-reads the trace per question and can answer two
-/// questions from two different frames, which is how a check comes to report a
-/// zoom from after a clamp against a visible count from before it.
 #[derive(Clone, Debug)]
 pub(super) struct CanvasState {
     /// The zoom factor, as the canvas used it (1.0 = 100 %).
@@ -52,13 +47,6 @@ pub(super) fn latest_canvas(trace: &Trace) -> Option<CanvasState> {
 
 /// The reason the canvas is drawing **nothing**, if that is the verdict that
 /// currently stands.
-///
-/// `canvas` and `canvas-unavailable` share one trace slot, so the channel
-/// emits whichever changed and the other's last line stays in the file for
-/// ever. Asking `events("canvas").last()` alone would read a fossil from before
-/// the canvas went empty and report a healthy frame over a blank screen. The
-/// comparison is by line number, which is the same property
-/// `driving::declared` relies on for retired regions.
 pub(super) fn unavailable_now(trace: &Trace) -> Option<(String, usize)> {
     let line = trace.events(UNAVAILABLE_EVENT).last()?;
     let drew_at = trace.events(CANVAS_EVENT).last().map_or(0, |l| l.lineno);
@@ -82,15 +70,6 @@ pub(super) fn beyond_after(trace: &Trace, after: usize) -> Option<usize> {
 
 /// The **first** engine refusal of the operator's kind after `after`, as
 /// `(page, whole line, line number)`.
-///
-/// First rather than last: the first one is the one whose cause is still
-/// legible, because `absorb_render` learns a ceiling from it and everything
-/// after is a consequence of that.
-///
-/// The line number is returned because the attribution depends on what came
-/// BEFORE the refusal — see [`went_blank_between`]. Three different defects can
-/// produce this one line and the only way to tell them apart is the order of the
-/// trace.
 pub(super) fn first_bad_raster_after(
     trace: &Trace,
     after: usize,
@@ -103,18 +82,6 @@ pub(super) fn first_bad_raster_after(
 
 /// Did the canvas report itself EMPTY between `after` and `before`, and on which
 /// line?
-///
-/// This is the discriminator between O186's third route and its first.
-/// `canvas-unavailable reason=nothing-visible` says no part of any page was on
-/// screen, which is upstream of everything: with nothing visible there is no
-/// region, with no region the request is the whole sheet, and above the pixmap
-/// ceiling a whole-sheet request is a refusal. A check that read only the
-/// refusal would name `fill_strip` — the wrong function — and the next reader
-/// would spend the investigation there.
-///
-/// Restricted to `reason=nothing-visible` on purpose. The other reasons the
-/// canvas declines to draw (no document, a collapsed dock) are not this, and
-/// matching the event name alone would make the discriminator fire on them.
 pub(super) fn went_blank_between(trace: &Trace, after: usize, before: usize) -> Option<usize> {
     trace
         .events(UNAVAILABLE_EVENT)
@@ -126,11 +93,6 @@ pub(super) fn went_blank_between(trace: &Trace, after: usize, before: usize) -> 
 
 /// The highest zoom at which the canvas said it had drawn **two or more** pages
 /// after `after`.
-///
-/// Read only when part A's window turns out to be empty, to say *when* the
-/// neighbour left rather than only that it was not there at the end. A climb
-/// whose answer is `None` never had a neighbour at all, which is a different
-/// fault from one that had it and lost it.
 pub(super) fn last_two_visible_zoom(trace: &Trace, after: usize) -> Option<f32> {
     trace
         .events(CANVAS_EVENT)
@@ -142,16 +104,6 @@ pub(super) fn last_two_visible_zoom(trace: &Trace, after: usize) -> Option<f32> 
 
 /// How many times the shell recorded the current page's raster order as
 /// unfillable, and as fillable, after `after`: `(declined, placed)`.
-///
-/// ⚠ These are **transitions, not frames.** `diag::trace_changed` writes only
-/// when the formatted line changes, so a climb that declined for two hundred
-/// consecutive frames counts 1. That is the right granularity for reading a
-/// regime change and the wrong one for reading a duration, and a report that
-/// called it a frame count would be overstating by two orders of magnitude.
-///
-/// Both halves are wanted. A count of declines alone cannot be distinguished
-/// from a guard that never ran at all, which is why the guard traces both
-/// transitions rather than only the interesting one.
 pub(super) fn unfillable_counts(trace: &Trace, after: usize) -> (usize, usize) {
     let mut declined = 0usize;
     let mut placed = 0usize;
@@ -195,13 +147,6 @@ pub(super) struct Learned {
 }
 
 /// The last ceiling learned after `after` that moved the view.
-///
-/// `moved=false` lines are ignored deliberately: the shell traces its decision
-/// either way, and a ceiling learned at a zoom the view was already below
-/// changes nothing the operator can see — so it is not the event part B is
-/// waiting for. A non-finite `to` is treated as no event at all rather than
-/// compared against, because every comparison with `NaN` is false and a
-/// silently-false assertion is worse than an absent one.
 pub(super) fn last_learned_after(trace: &Trace, after: usize) -> Option<Learned> {
     trace
         .events(LEARNED_EVENT)

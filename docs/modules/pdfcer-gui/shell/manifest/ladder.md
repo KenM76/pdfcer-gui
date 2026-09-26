@@ -80,3 +80,13 @@ which it is a row of identical chevron buttons and nothing else: the
 operator can still reach every command, and the band has stopped
 telling them anything. Word never does this — Clipboard is expanded at
 460 pt, the narrowest width measured.
+
+### `fn apply`
+
+Called once, at the end of `built_in`, so the tab modules stay lists of
+commands and this file stays the only place a ranking is stated.
+
+Silently ignores an entry naming a group that does not exist — the test
+below is what makes that safe, and it is the right split: a typo should
+fail the build, not the running application, and a *layer* that removed a
+group at runtime should not panic the ribbon.

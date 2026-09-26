@@ -113,3 +113,60 @@ The one assertion this type exists for. If [`Value`] ever gained a way
 to represent "mixed, and here is a colour anyway", the next caller would
 pass the first member's — which is precisely the flattening O89 refused
 to ship, and it would look completely normal while it happened.
+
+### `enum Value`
+
+Two variants and not three: *"there is no colour to show"* is not a value
+this widget can draw, so it is not a value this widget accepts. See the
+module header on why the sentence for that case belongs to the caller.
+
+### `fn show`
+
+`id_salt` must be unique within the `Ui` — the fill and the line swatches on
+one panel are two controls and must not share a popup. `region` is published
+for a driven check.
+
+# `mixed_hint` is a PARAMETER, and it was a hard-coded string for about
+# twenty minutes
+
+The sentence shown at the top of the picker over a disagreeing selection
+names its subject — *"These **words** are not all one colour"* — and this
+widget serves two subjects. The first draft read
+`crate::text::panels::textobject::mixed_hint()` inline, which put a sentence
+about words over a selection of **paths** on the vector row. It was caught
+by reading the call sites rather than by any test, and no test could have
+caught it: both strings compile, both render, and the wrong one is grammatical.
+
+⇒ Same rule this module's header already states for the ink refusal: **the
+sentence belongs to whoever knows what the selection is made of.** The widget
+draws controls; it does not name subjects.
+
+### `enum MkValue`
+
+Deliberately **not** [`Value`], and the difference is the subject.
+[`Value`] models a *selection of document objects*, which has exactly two
+states — they agree or they do not. One widget's `/MK` `/BG` is one key on
+one dictionary, and Table 189 gives it four: absent, the empty array that
+states *no colour*, a DeviceGray or DeviceRGB value, and a DeviceCMYK
+separation. Two of those four are colours no swatch can draw, and one of
+them is not a colour at all.
+
+So this enum carries the one state a swatch CAN draw and defers the rest to
+the caller, exactly as the module header requires: *"the sentence that
+stands in its place belongs to whoever knows what the ink is."* Which of the
+three unshowable states a widget is in is a fact about `/MK`, and `/MK` is
+not a thing this file knows about.
+
+### `fn show_mk`
+
+Returns `Some` **only** on the frame a choice was made: the picker closed
+after the operator moved it, or the *no colour* entry was pressed. The
+commit rule is [`show`]'s, for [`show`]'s reason — the module header's
+sixty-content-stream-rewrites-a-second defect — and the two functions share
+[`Editing`] so there is one implementation of it rather than two that drift.
+
+The *no colour* entry commits **immediately** rather than on close, and
+that is not an inconsistency: it is a discrete press, not a drag, so there
+is no run of intermediate values for a close-edge to collapse. It closes the
+popup itself, because `PopupCloseBehavior::CloseOnClickOutside` would
+otherwise leave a picker open over a widget that no longer has a colour.

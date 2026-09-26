@@ -13,20 +13,6 @@ const REGION_CANCEL: &str = "redact-apply-cancel-staged"; // ui-text-exempt: tra
 
 /// **Draw the staged phase. Returns `true` when the operator asked to call the
 /// removal off.**
-///
-/// A `bool` out rather than an `&mut` flag in, so the whole body is a pure
-/// function of the theme and the caller owns every piece of mutable state —
-/// `crate::viewer`'s standing split, applied to the one control in this window
-/// that changes what the next `Ctrl+S` does.
-///
-/// # The order: heading, then the paragraph, then the control
-///
-/// The control is last and it is the only thing on screen that acts, so there
-/// is no gate on it and none is wanted. Calling a removal off **loses nothing**
-/// — the marks stay, the content stays, and it can be armed again in two clicks
-/// — which is the opposite of every other control in this window, and a
-/// checkbox in front of it would teach the operator that this dialog's
-/// acknowledgements are ceremony rather than consequence.
 pub(super) fn body(ui: &mut egui::Ui, theme: &Theme) -> bool {
     ui.label(t::staged_heading());
     ui.add_space(6.0);

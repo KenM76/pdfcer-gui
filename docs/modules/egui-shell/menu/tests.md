@@ -91,3 +91,41 @@ Its documented weakness is asserted here too: it cannot decline to
 open, because by the time it runs the popup exists. What it *can* do is
 draw nothing, which is what an application that skips
 [`Menu::would_open`] gets.
+
+### `fn announced`
+
+# Why the *last* one
+
+One click produces **two** `OutputEvent::Clicked`. `egui::Button`
+publishes its own default info from inside `atom_ui` — the atoms
+flattened into text, which for a menu row reads `"Copy Ctrl+C"` —
+and the shell then publishes the real one
+([`super::a11y::describe_item`]) immediately afterwards.
+
+The shell's is the one that counts, and not only by being second:
+`Response::widget_info` also calls `register_widget_info`, whose
+later value **replaces** the earlier one, so the accesskit node an
+assistive technology actually reads carries the shell's name. The
+duplicated output *event* is `egui`'s behaviour for any widget that
+refines its own info; the ribbon's band has it too.
+
+### `fn open_menu`
+
+# Why the settle frame is not optional
+
+An `egui::Area` that has never been shown runs a **sizing pass**: it is
+laid out invisibly, at a provisional size, purely to measure its
+content (`egui-0.35.0/src/containers/area.rs`, `Area::begin`). Two
+consequences bite a test that skips it:
+
+- the row rectangles reported on the opening frame are the sizing
+  pass's, so a click aimed at one of them lands somewhere else and
+  nothing is invoked;
+- `cross_justify` is switched off during a sizing pass
+  (`egui-0.35.0/src/ui.rs`), so the rows are at their intrinsic widths
+  and the chord column is not yet where it will end up.
+
+This is not a defect in the menu; it is how `egui` sizes any
+auto-sizing area, and the operator never sees the pass because it is
+painted invisibly. But a test that asserted against it would be
+asserting against a frame that is never shown to anybody.

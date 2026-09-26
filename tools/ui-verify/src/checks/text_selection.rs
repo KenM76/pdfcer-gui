@@ -39,37 +39,6 @@ const PAGE_TEXT_EVENT: &str = "page-text";
 
 /// **Where to sweep, as fractions of the page box** — the two ends of each
 /// candidate band.
-///
-/// # Why bands rather than points
-///
-/// [`crate::checks::read_mode`]'s ladder looks for a *point* with an object
-/// under it. This needs a **horizontal run** with glyphs along it, which is a
-/// different target and a more forgiving one: a sweep only has to *cross* text
-/// somewhere along its length. Neither end has to land on a glyph —
-/// `EditableTextModel::hit_test` answers over a band one line-height deep
-/// around each line, and `canvas::textsel::clamp_to_text` carries the far end
-/// of a sweep back to the furthest point that was in reach.
-///
-/// ⚠ That reach is **bounded**, so a full-width band only works because of the
-/// clamp: a band that crosses no text at all selects nothing, which is why the
-/// ladder has eight of them and why the three title-block fractions below are
-/// measured rather than estimated.
-///
-/// # Why these, in this order
-///
-/// Ordered for the drawing fixtures this project uses. A SolidWorks sheet keeps
-/// its dense text in the **title block, bottom
-/// right**, and its sparse text in view labels across the middle — so the title
-/// block is tried first here, where `read_mode`'s object ladder tries the middle
-/// first. Each band is a wide sweep, because a narrow one on a sparse sheet is
-/// a coin toss.
-///
-/// `pub(crate)` because [`crate::checks::text_markup`] sweeps the same
-/// ladder for the same reason — it needs a selection before it can mark one —
-/// and a second copy of a *calibration* is the thing this crate's
-/// [`crate::profile`] module exists to prevent: the numbers are tuned to this
-/// project's two fixtures, and two tunings drift apart silently, each check
-/// SKIPping on a different sheet.
 pub(crate) const BANDS: [((f64, f64), (f64, f64)); 8] = [
     // The title block, bottom right — three sweeps at different heights,
     // because its rows are close together and a single y can fall between them.
@@ -135,22 +104,6 @@ fn selections(trace: &Trace) -> Vec<&crate::trace::TraceLine> {
 /// `canvas-text-selection` line, empty or not, paired with the number of such
 /// lines so a caller can tell a gesture that said nothing from one that said
 /// `chars=0`.
-///
-/// # Why this exists beside [`selections`], which looks like it answers
-///
-/// [`selections`] filters on `chars > 0`, so its `.last()` is *the last
-/// non-empty state the gesture passed through* — which is **not** the state the
-/// operator is left holding, and a band loop that reads it can report a live
-/// selection that is not there.
-///
-/// That is not hypothetical. A sweep traces every distinct range it passes
-/// through, so a drag whose far end leaves the text traced `chars=26` in the
-/// middle and `chars=0` at rest; three checks read the 26, clicked a control
-/// that was correctly greyed, and reported the application dead. The
-/// application defect was real and separate (`canvas::textsel::clamp_to_text`
-/// now stops a sweep cancelling itself) — but the instrument could not have
-/// told the two apart, and a check that cannot distinguish the failure it
-/// names from the one it does not is not measuring either.
 pub(crate) fn settled(trace: &Trace) -> (Option<&crate::trace::TraceLine>, usize) {
     let all: Vec<_> = trace.events(TEXT_EVENT).collect();
     (all.last().copied(), all.len())
@@ -165,17 +118,6 @@ pub(crate) fn settled_selection(trace: &Trace, before: usize) -> Option<&crate::
     line.filter(|l| count > before && l.get_usize(CHARS_FIELD).unwrap_or(0) > 0)
 }
 /// Aim a document point at the canvas as it is laid out **right now**.
-///
-/// Re-derived per use rather than cached, and that is required rather than
-/// careful: Read defaults to a continuous strip and Edit to a single page
-/// (`viewer::display::default_for_mode`), so the same `DocPoint` is a different
-/// screen pixel in the two modes. That is exactly why this crate writes document
-/// coordinates and never screen ones.
-///
-/// `pub(crate)` for [`crate::checks::text_markup`], which sweeps in a third mode
-/// and would otherwise carry a fourth copy of the same three lines. The mode
-/// sensitivity above is precisely why it must be a *function* rather than a
-/// value either check could cache.
 pub(crate) fn aim(
     ctx: &CheckContext,
     session: &Session,

@@ -32,31 +32,6 @@ use crate::text::panels::properties as t;
 
 /// **Which RUNG of the engine's style ladder one of the two weight buttons
 /// would take**, said before the press.
-///
-///
-/// Until that afternoon this came from `preview_style_resolution` joined
-/// against `preview_font_resources`. `preview_style_resolution` previews the
-/// **R90 synthesis gate**, whose answer `StyleOutcome::WouldSynthesize` means
-/// exactly *"no real face on THIS PAGE claims that style and covers this
-/// run"*. That stopped being the same question as *"what will pressing Bold
-/// do?"* the moment `Pass 179.0` added rung 2, because **the standard-14
-/// sibling is by construction not on the page** — `Helvetica-Bold` needs no
-/// font file at all — so the gate cannot see it and neither could this.
-///
-/// The visible effect was two instruments disagreeing by construction: the
-/// tooltip promised thickened letters and the status line afterwards reported a
-/// real `Helvetica-Bold`, on a CAD title block, which is the commonest page in
-/// the operator's working set.
-///
-/// `EditSession::preview_style_ladder` (`Pass 295.0`) runs **the same planner
-/// `format_text` runs**, walks the page's content once, and stages nothing. So
-/// these variants are the engine's own rungs rather than a shell's inference
-/// from an adjacent answer, and the preview and the commit are two readings of
-/// one computation instead of two answers kept in agreement by hand.
-///
-/// ⇒ No rule is re-implemented here and none ever was: engine invariant R74
-/// forbids `pdfcer-gui` re-deriving `family_stem`, `name_claims_bold` or
-/// `name_claims_italic`, and this asks a question rather than answering one.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum StyleOutlook {
     /// **Rung 1**, same family: the page already carries the bold or italic
@@ -104,29 +79,6 @@ pub(crate) enum StyleOutlook {
 }
 
 /// One real face the ladder will try and pass over, in the operator's words.
-///
-/// # The feature `passed_over` being prose cost outright
-///
-/// `StyleLadder::passed_over` was a `Vec<String>` of `"BaseFont (reason)"`
-/// until `Pass 295.0`. Saying *"pdfcer will try `Times-Bold` and it has no
-/// `o`"* in this shell's own voice would have meant splitting on `" ("` and
-/// stripping a `")"` — a locator for `pdfcer-core`'s message format, living in
-/// a GUI, breaking silently the first time a reason sentence gained a
-/// parenthesis. A shell disciplined about not re-deriving engine facts keeps
-/// quiet instead, so **the sentence was never written at all**: the operator
-/// was told which rung bound and never which faces were tried and rejected,
-/// which is the half he asks about.
-///
-/// `PassedOver` is now `{ base_font, reason, refusal }`, and
-/// `Refusal::character` gives **the offending character**. That is what makes
-/// this worth a type of its own here: the engine's `reason` is accurate and
-/// technical (*"R-INV-1: character U+006F 'o' has no code in font
-/// 'Times-Bold'"*), and the hover wants *"no 'o'"*. The character is carried;
-/// the prose is not.
-///
-/// `character` is `Option` because a face can be passed over for a reason
-/// that is not one character — it could not be planned at all, say. The
-/// sentence degrades to naming the face, which is still more than nothing was.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct TriedFace {
     /// The `/BaseFont` that claimed the style, shortened for reading.
@@ -136,12 +88,6 @@ pub(crate) struct TriedFace {
 }
 
 /// What one weight button would do, and what it will step over on the way.
-///
-/// Two fields rather than a sixth [`StyleOutlook`] variant, because they
-/// answer different questions and are independently present: a rung-2 bind can
-/// pass over two page faces on the way, and a rung-1 bind can pass over none.
-/// Folding them together would make the passed-over list a property of the
-/// outcome, which it is not.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct StyleForecast {
     /// The rung the ladder will take.
@@ -152,37 +98,6 @@ pub(crate) struct StyleForecast {
 
 impl TextStyleDraft {
     /// One axis's [`StyleForecast`], or `None` when the probe did not answer.
-    ///
-    /// # One engine call, and it is the SAME computation the press will run
-    ///
-    /// `EditSession::preview_style_ladder` runs `plan_style_ladder` — the
-    /// function `format_text` runs — against the session's *staged* content, so
-    /// the preview and the commit that follows it are two readings of one
-    /// answer rather than two answers that have to be kept in agreement by
-    /// hand. It walks the page's content once, plans, and stages, commits and
-    /// caches nothing.
-    ///
-    /// ⇒ Nothing is re-derived here. Engine invariant R74 forbids `pdfcer-gui`
-    /// re-deriving `family_stem`, `name_claims_bold` or `name_claims_italic`,
-    /// and this function asks a question and maps the reply onto sentences.
-    /// The previous shape — joining `preview_style_resolution`'s `selector`
-    /// against `preview_font_resources`' accepted list to reconstruct an answer
-    /// neither call gave — is deleted; see [`TextStyleDraft::sync`].
-    ///
-    /// # `options` is not optional, and passing the wrong one is a lie
-    ///
-    /// `StylePolicy::Refuse` changes the answer: under it a ladder that reaches
-    /// rung 4 is a **refusal**, not a synthesis. The engine says so at the
-    /// method — *"pass the same `FormatOptions` the commit will use"* — and
-    /// this passes the operator's own posture out of the settings store, the
-    /// same value `crate::app::actions::textstyle` puts on the commit. A
-    /// preview run under a default posture would promise thickened letters to
-    /// an operator who had ticked *never fake it*, which is the exact defect
-    /// the deleted `Refuse`-pinned probe used to cause from the other side.
-    ///
-    /// A single axis per call, because the two buttons issue two separate
-    /// single-axis requests; see [`TextStyleDraft::italic_outlook`] for why
-    /// neither may borrow the other's answer.
     pub(super) fn forecast(
         &self,
         doc: &OpenDoc,
@@ -270,44 +185,6 @@ impl TextStyleDraft {
 }
 
 /// The Bold button's hover text, given what the engine says would happen.
-///
-/// # Seven sentences, and the last is the one that was there before
-///
-/// | outlook | what the operator reads |
-/// |---|---|
-/// | [`StyleOutlook::AlreadyStyled`] | *this text is already bold* |
-/// | [`StyleOutlook::SiblingOnPage`] | *this page already carries **Arial-Bold**, the bold form of this text's own typeface* |
-/// | [`StyleOutlook::OtherFamilyOnPage`] | *pdfcer will use **Arial-Bold**, a real bold face from a different typeface* |
-/// | [`StyleOutlook::StandardSibling`] | *pdfcer will add **Helvetica-Bold**, a standard PDF face, without embedding a font file* |
-/// | [`StyleOutlook::Synthesized`] | *no real bold face can show this text, so pdfcer will thicken the letters* |
-/// | [`StyleOutlook::Declined`] | *your settings say never fake it, so Bold will be refused here* |
-/// | `None` — the probe did not answer | the conditional hint, unchanged |
-///
-/// Plus, appended to any of the six, the **passed-over addendum** when the
-/// ladder stepped over a face on the way: *"It will pass over Times-Bold (no
-/// 'o'), which cannot show this text."* That clause is the reason
-/// [`StyleForecast`] carries `tried` alongside the outlook — the rung says what
-/// will happen, and `tried` says what was rejected to get there, and an
-/// operator staring at a title block full of `Times-Bold` wants the second.
-///
-/// The last row is not a fallback that should have been designed away. A probe
-/// returns `None` for a page whose content cannot be planned, for an
-/// `#[non_exhaustive]` rung this build has never seen — rung 3, the
-/// `--font-dir` donor, is exactly that — and for an encrypted document; and in
-/// every one of those the honest thing to say is the mechanism rather than a
-/// prediction. That is what
-/// [`crate::text::panels::properties::text_bold_hint`] already said, which is
-/// why it stays.
-///
-/// # None of the seven greys the button, and that is still the engine's ruling
-///
-/// *"Do not grey out a bold button. Offer it, and surface the disclosure when
-/// synthesis fires."* [`StyleOutlook::Declined`] is the row where greying could
-/// now be argued — it is a **measured** prediction of a refusal, not a guess —
-/// and it is still a sentence, because the thing that produces it is a setting
-/// the operator can change. R9 reserves greying for the *temporarily*
-/// unavailable and demands the reason on hover; this is the reason on hover,
-/// and pressing it produces a refusal that names the same setting.
 pub(super) fn bold_hint(draft: &TextStyleDraft) -> String {
     hint(draft.bold_outlook(), true)
 }
@@ -315,12 +192,6 @@ pub(super) fn bold_hint(draft: &TextStyleDraft) -> String {
 /// The Italic button's hover text. See [`bold_hint`] for the whole argument;
 /// this is the same seven rows with *slant* in place of *thicken*, from the
 /// draft's separately-probed italic axis.
-///
-/// It reads [`TextStyleDraft::italic_outlook`] and never the bold one. The
-/// two are genuinely different answers on an ordinary page — one holding a real
-/// `Arial-Bold` and no `Arial-Italic` gives `SiblingOnPage` for one button and
-/// `Synthesized` for the other — and a shared sentence would be wrong on
-/// exactly the pages an operator is most likely to be working on.
 pub(super) fn italic_hint(draft: &TextStyleDraft) -> String {
     hint(draft.italic_outlook(), false)
 }

@@ -18,10 +18,6 @@ use super::{PrintDialog, preview, verdicts};
 pub(super) const HOST_ID: &str = "print-preview";
 
 /// The popped window's body rect, for the driven harness.
-///
-/// Published inside the child viewport, so its `ui-rect` line carries the
-/// `viewport=` suffix `diag::ViewportScope` adds — which is how a check tells
-/// *"the preview drew in its own window"* from *"the preview drew"*.
 pub(super) const REGION_POPPED_BODY: &str = "print.preview.window";
 
 /// The size the pop-out window opens at, in egui points.
@@ -32,35 +28,6 @@ const MIN_SIZE_PTS: egui::Vec2 = egui::vec2(320.0, 320.0);
 
 impl PrintDialog {
     /// **Draw the preview in its own window, if it is out there.**
-    ///
-    /// Called from [`PrintDialog::show`] *before* the print dialog's own host,
-    /// and the order is deliberate rather than incidental.
-    ///
-    /// # Why before, and not after
-    ///
-    /// The commit button's label carries how many sheets will lose content, and
-    /// that number is corrected by what the preview has actually **examined** —
-    /// `verdicts::Verdicts::claim` reads verdicts the preview records while it
-    /// paints. The footer reads the claim after the body has drawn, so that the
-    /// button and the picture beside it describe the same frame.
-    ///
-    /// With the preview in another window that ordering has to be restated
-    /// here, because "the body" no longer contains it. Drawing the popped
-    /// window first keeps the invariant exactly as it was: everything the
-    /// preview learned this frame is in the cache before anything reads it.
-    /// Drawing it afterwards would make the button lag the picture by one
-    /// frame — a contradiction that flickers rather than one that persists,
-    /// which this dialog's footer already records as the worse of the two.
-    ///
-    /// # The arguments are the frame's, not the dialog's
-    ///
-    /// `job`, `page_sizes` and `context` are computed once per frame in
-    /// [`PrintDialog::show`] and passed down to both homes of the preview, so
-    /// the two cannot be drawn from different plans. `context` is `Some`
-    /// exactly when `job` is, and they are zipped rather than unwrapped
-    /// separately for the reason `body` gives: a job drawn against a context
-    /// from a different device is the staleness `verdicts::Context` exists to
-    /// prevent.
     pub(super) fn popped_preview(
         &mut self,
         ctx: &egui::Context,

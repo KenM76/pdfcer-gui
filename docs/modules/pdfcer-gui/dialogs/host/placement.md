@@ -121,3 +121,94 @@ The conflicting case named in [`onto_window`]'s doc comment. It is not a
 programming error — a window dragged down to a few hundred points
 reaches it with any of these dialogs — so the arithmetic has to have an
 answer rather than an assertion.
+
+### `const OPEN_INSET_PT`
+
+Not centred on the parent, and not at the OS's own default. Centring puts a
+dialog exactly over the thing it is asking about, which is the one place it
+must not be for a *print* dialog whose preview the operator is comparing
+against the page behind it. A small inset reads as "this belongs to that
+window" without covering its middle.
+
+### `const CHROME_RESERVE_PTS`
+
+# What it protects, and why it is generous
+
+The application's own chrome lives in that band: the native title bar, the
+quick-access strip, the ribbon's tab row and the two-row band beneath it.
+A dialog that opens over it hides the control that opened it — which is not
+a hypothetical, it is written down as a defect the Settings window already
+met: *"egui's own default position put it top-left, over the quick-access
+toolbar and the ribbon tabs — so opening Settings hid the control that
+opened it."*
+
+180 pt is a deliberate over-estimate of that band, summed from the parts:
+a native title bar (~32), the quick-access strip (~30), the tab row (~28)
+and a two-row band, which `mockups/ribbon.html` specifies at
+`min-height:86px` and which this shell renders from the theme's own metrics
+so it varies with the preset.
+
+It is a **constant and not a measurement**, and that is the decision
+rather than a shortcut. The real band height is `ribbon::band::band_height`,
+which needs a live `Ui` and changes with the theme preset — so reading it
+would make where a dialog opens depend on how tall the ribbon laid itself
+out this frame, which is precisely the class of feedback `Host::fit`'s
+doc comment records an unbounded growth loop for. Over-estimating costs a
+dialog that opens a few points lower than it asked for; under-estimating
+costs the operator the control they just pressed.
+
+In the common case this floor is never reached. The note dialog's chosen
+position on an 800 pt window is roughly 290 pt down, and only a window
+squeezed to a few hundred points brings the two into contact.
+
+### `struct AppWindow`
+
+A struct rather than three loose arguments, because the three are only
+ever meaningful together and two of them are rectangles in **different
+coordinate spaces** — a pair that is very easy to swap at a call site and
+impossible to notice afterwards, since both are plausible-looking numbers
+that differ by the width of a window border.
+
+### `fn app_window`
+
+All three rectangles are read in **one** `input` closure. Reading them
+separately would take three locks and — much worse — could straddle a frame
+boundary during a resize, producing an outer rect from before the drag and a
+client rect from after it. The clamp would then be computed against a window
+that never existed.
+
+`outer_rect` is the one that decides: without it there is no desktop
+coordinate to place against at all, and the caller lets the platform choose.
+`inner_rect` is documented as `None` on exactly the same platforms (Android,
+Wayland), so it falls back to the outer rect rather than refusing — a
+placement off by the width of a window border is still enormously better
+than the corner.
+
+### `fn opening`
+
+# The two cases, and why only one of them clamps
+
+* `preferred == None` — the thirteen dialogs that never asked. They get
+  [`OPEN_INSET_PT`] from the application window's corner, **exactly as
+  before and deliberately unclamped**. Clamping them would change where
+  every one of them opens for the sake of a degenerate case none of them can
+  reach: a fixed 48 pt inset is inside any window big enough to have raised
+  the dialog, and driven checks aim at those windows.
+* `preferred == Some(at)` — a caller that computed a position in the
+  application's own screen coordinates. It is converted to the desktop and
+  then clamped by [`onto_window`], because a caller's arithmetic knows the
+  application window's size and nothing about the desktop's.
+
+The conversion is `inner.min + (at - screen_min)` and not
+`outer.min + at`. The application's egui coordinates start at its **client**
+area, so measuring from the outer corner would slide every chosen position
+down and right by the window's decoration — about thirty points on Windows,
+which is exactly the size of the discrepancy nobody notices and everybody
+blames on something else.
+
+The result positions the dialog's **outer** corner while the caller was
+thinking about its content, so the dialog lands one title bar higher than
+the caller's arithmetic imagined. That is accepted rather than corrected: a
+child window's decoration height is not knowable before the window exists,
+and this is a "roughly here" placement whose whole job is to not be the
+corner.

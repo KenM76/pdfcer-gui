@@ -6,22 +6,6 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/textedit/lines.md`.
 
 /// **Where each line of `text` starts and ends**, as character offsets.
-///
-/// The one decomposition every other function here is built on, so *"what is a
-/// line"* is answered once. A line runs from just after the previous `\n` to
-/// just before the next one; the `\n` itself belongs to neither, which is what
-/// makes [`end_of_line`] land *before* the break rather than on the first
-/// character of the next line.
-///
-/// Always at least one entry, including for an empty draft: a draft with no
-/// characters still has one line, the empty one the caret is sitting on.
-/// Returning an empty `Vec` there would make every caller write the same
-/// `if lines.is_empty()` guard, which is the shape a function should absorb.
-///
-/// A trailing `\n` produces a **final empty line**, and that is correct
-/// rather than tolerated: an operator who has just pressed Enter is standing on
-/// a new, empty line and expects Home, End, Up and Backspace to behave as if
-/// they are on it — because they are.
 #[must_use]
 pub fn spans(text: &str) -> Vec<(usize, usize)> {
     let mut out = Vec::new();
@@ -38,12 +22,6 @@ pub fn spans(text: &str) -> Vec<(usize, usize)> {
 
 /// **Which line `caret` is on, and how far along it.** `(line, column)`, both
 /// zero-based and both in characters.
-///
-/// Clamped to the end of the text, so a caret index left over from a longer
-/// draft answers the last line rather than panicking. That is the same choice
-/// [`super::caret::backspace`] makes for the same reason: a draft is edited
-/// from several places in a frame and an index can legitimately be one step
-/// behind the string it addresses.
 #[must_use]
 pub fn locate(text: &str, caret: usize) -> (usize, usize) {
     let spans = spans(text);
@@ -66,15 +44,6 @@ pub fn locate(text: &str, caret: usize) -> (usize, usize) {
 }
 
 /// **The character offset of `column` on `line`**, clamped both ways.
-///
-/// The inverse of [`locate`], and the reason the two exist as a pair: a
-/// vertical move is *"read the column here, write the same column there"*, and
-/// a second derivation of either half is how a caret comes to land one
-/// character out on lines containing a wide glyph.
-///
-/// Clamping the column to the target line's length is what makes Up and Down
-/// behave the way every editor does when the line above is shorter: the caret
-/// goes to its end rather than past it.
 #[must_use]
 pub fn offset_of(text: &str, line: usize, column: usize) -> usize {
     let spans = spans(text);
@@ -83,11 +52,6 @@ pub fn offset_of(text: &str, line: usize, column: usize) -> usize {
 }
 
 /// **Press Up.** The same column on the line above, or `None` at the top.
-///
-/// `None` rather than "stay put", so the caller can tell *"the caret moved
-/// nowhere"* from *"there is nothing above"* — the distinction
-/// [`super::blocks::step`] had to add a whole second trace line for, and the
-/// one that decides whether a key event has been consumed.
 #[must_use]
 pub fn up(text: &str, caret: usize) -> Option<usize> {
     let (line, column) = locate(text, caret);
@@ -102,10 +66,6 @@ pub fn down(text: &str, caret: usize) -> Option<usize> {
 }
 
 /// **Press Home.** The first character of the line the caret is on.
-///
-/// The LINE's start, not the draft's, which is the whole difference this
-/// module makes to that key. On a one-line draft the two are the same answer,
-/// so the behaviour the operator already had is unchanged by construction.
 #[must_use]
 pub fn start_of_line(text: &str, caret: usize) -> usize {
     let (line, _) = locate(text, caret);
@@ -121,12 +81,6 @@ pub fn end_of_line(text: &str, caret: usize) -> usize {
 }
 
 /// **Does this draft hold more than one line?**
-///
-/// The predicate the key handler branches on, named rather than spelled
-/// `text.contains('\n')` at four call sites. One statement of *"multi-line"*
-/// means the four keys cannot come to disagree about when they are in it — the
-/// same argument `canvas::tool::space_held` makes about a predicate with two
-/// claimants, which cost this shell its space bar for two days.
 #[must_use]
 pub fn is_multi_line(text: &str) -> bool {
     text.contains('\n')

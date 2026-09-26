@@ -24,14 +24,6 @@ use super::pick::LinearPick;
 /// [`ScalePick`] dialog and the group-panel inline editor (ui-spec §5.2: ONE
 /// scale-entry UI in the whole app). Two co-equal paths, one clearly
 /// recommended:
-///
-/// - **Real length (recommended, default):** the operator typed the drawn
-///   reference line's real length + unit; back-calc `scale = real /
-///   drawn_pdf_length` — needs a drawn line, so it is offered only where one
-///   exists ([`ScalePick`]).
-/// - **Direct ratio:** `paper : real` on a disclosed paper-unit basis;
-///   needs no drawn line, so it is the path the group panel uses to set a
-///   scale by typing alone (ui-spec §7.2 accessibility win).
 #[derive(Debug, Clone, PartialEq)]
 pub struct ScaleEntryFields {
     /// `true` ⇒ the real-length path is selected (the recommended default);
@@ -100,26 +92,6 @@ impl Default for ScaleEntryFields {
 impl ScaleEntryFields {
     /// Re-read [`Self::real_length_text`], updating the parsed value and
     /// (when the text named one) the unit.
-    ///
-    /// Returns the parse error for display, or `None` when it parsed. Called
-    /// on every keystroke, so the operator sees what pdfcer understood while
-    /// they are still looking at the field rather than after committing.
-    ///
-    /// # Why a failed parse leaves the previous value alone
-    ///
-    /// Mid-typing, `55 5/` is not a length. Zeroing the value on every
-    /// intermediate keystroke would make the live scale preview flicker
-    /// through garbage, and — worse — would leave a *stale* preview looking
-    /// authoritative if the operator stopped typing at that moment. Instead
-    /// the last good value is held and the error is shown, so the preview and
-    /// the message never disagree about whether the input is usable.
-    ///
-    /// # Why the unit dropdown moves only when the text names a unit
-    ///
-    /// Typing `55 5/8"` says inches; the dropdown should follow, or the
-    /// operator has to say the same thing twice. Typing a bare `55.625` says
-    /// nothing about units, and moving the dropdown then would be the tool
-    /// second-guessing a choice the operator already made.
     pub fn sync_real_length(&mut self) -> Option<LengthParseError> {
         match parse_length(&self.real_length_text, self.unit) {
             Ok(p) => {

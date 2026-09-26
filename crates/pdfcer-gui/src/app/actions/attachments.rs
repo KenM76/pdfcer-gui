@@ -11,35 +11,6 @@ use crate::app::state::OpenDoc;
 use crate::text::panels::attachments as t;
 
 /// **Which attachment**, addressed the only two ways a PDF makes possible.
-///
-/// # Why this is not an index, and not an `ObjId` either
-///
-/// `super::bookmarks`' header argues at length that an outline row must be
-/// addressed by `ObjId` rather than by a position, because every edit to a tree
-/// renumbers it. Both halves of that argument apply here and neither one
-/// finishes the job:
-///
-/// - **A position is wrong for the same reason.** The `/EmbeddedFiles` name
-///   tree is sorted (§7.9.6: keys *"shall be sorted lexically in ascending
-///   order"*), and `attach_file` re-sorts the whole array on every insert. So
-///   *"the third row"* names a different file after any attach — and the queue
-///   drains **after** the frame, so a second action raised in the same frame is
-///   resolved against an already-moved list.
-/// - **An `ObjId` is not available for the verb that needs one.**
-///   `EditSession::detach_file` takes *"its `/EmbeddedFiles` name-tree key"* —
-///   the raw bytes — and nothing else. The filespec's object id, which the
-///   listing does report, is not what that function accepts, and §7.9.6 makes
-///   the key a **byte string** with no declared encoding, so it cannot even be
-///   carried as a `String` without deciding an encoding the standard declines
-///   to.
-///
-/// ⇒ Hence `Vec<u8>` for the document-level case: it is what the engine takes,
-/// and `AttachmentKind::DocumentLevel::tree_key` exists to hand it over
-/// *"exactly as the tree spells them"*.
-///
-/// The page-level case gets the annotation's `ObjId` instead, because that kind
-/// has no key at all — it lives in one page's `/Annots` — and because the id is
-/// what stays stable across a page reorder, which `page_index` does not.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AttachmentRef {
     /// An entry in the catalogue's `/Names /EmbeddedFiles` name tree, by its
@@ -210,28 +181,6 @@ pub enum AttachmentAction {
 }
 
 /// Apply one attachment verb.
-///
-/// The dispatch half of this module, reached from `PdfcerApp::apply`'s single
-/// [`super::action::Action::Attachment`] arm. A free function taking
-/// `&mut OpenDoc` rather than a method, exactly like [`super::bookmarks::apply`]
-/// and [`super::pages::apply`], because the caller is the one place that owns
-/// the borrow and the arm should be one line.
-///
-/// **Two of the three do not go through [`super::apply::vector_edit`]**, and
-/// the exception is principled rather than convenient: that function is the
-/// cancel–mutate–bump–invalidate protocol for an edit, and
-/// [`AttachmentAction::SaveCopy`] performs no edit. Running it through anyway
-/// would cancel the render worker and bump the epoch for an operation that
-/// changed nothing, which is how a status bar comes to retire a disclosure that
-/// is still true. [`AttachmentAction::Attach`] and
-/// [`AttachmentAction::Detach`] **do** mutate and **do** go through it.
-///
-/// The `page` argument passed to `vector_edit` is `0` for both mutating
-/// verbs, and that is honest rather than lazy: a document-level attachment
-/// belongs to the catalogue and to no page. [`super::bookmarks::apply`] passes
-/// `0` for the identical reason, and its comment records that the parameter
-/// exists so the diagnostic trace can say which sheet a *geometry* edit
-/// touched.
 pub(super) fn apply(doc: &mut OpenDoc, action: AttachmentAction) {
     match action {
         AttachmentAction::Attach { description } => attach(doc, description.as_deref()),

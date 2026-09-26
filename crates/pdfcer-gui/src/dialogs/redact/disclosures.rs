@@ -16,19 +16,6 @@ const REGION_ENGINE_NOTES: &str = "redact-apply-engine-notes"; // ui-text-exempt
 // ---------------------------------------------------------------------------
 
 /// **The whole-file sweep's own counts**, drawn with the other removal counts.
-///
-/// Placed immediately after `info_scrubbed` in the body, because the two answer
-/// the same question about two different halves of the file: that one says what
-/// the trailer's document-information dictionary carried, this one says what
-/// everything else carried. The engine counts them separately for exactly that
-/// reason, and its own words on the field are *"A single total would hide the
-/// fact that the second number is the one nobody expected to be non-zero."*
-///
-/// Drawn only when the sweep actually edited something. `objects` is the
-/// engine's total — dictionaries scrubbed, plus metadata packets blanked, plus
-/// content streams blanked — so it is zero exactly when the sweep changed
-/// nothing, and a "0 objects will be scrubbed" line on an ordinary redaction
-/// would be noise in a report whose warnings have to keep their force.
 pub(super) fn sweep(ui: &mut egui::Ui, report: &RedactionReport) {
     if report.residual_sweep_objects_scrubbed == 0 {
         return;
@@ -47,23 +34,6 @@ pub(super) fn sweep(ui: &mut egui::Ui, report: &RedactionReport) {
 
 /// **The diligence census** — every carrier the engine looked inside and found
 /// nothing in.
-///
-/// Drawn with the proof, under [`crate::text::redact::verified_line`], because
-/// it is the same kind of statement: evidence that a check happened. It is
-/// muted rather than plain, one step below the verification line, because the
-/// verification line is this shell's own sweep of the finished bytes and this
-/// is the engine's sweep of the carriers — related, and not equally strong.
-///
-/// The whole argument for its existence is the engine's, on the variant:
-///
-/// > *"a shell that tells an operator 'nothing to do' when the truth is
-/// > 'checked, clean' has taken away the one thing that distinguishes a
-/// > diligence sweep from a no-op."*
-///
-/// The derivation is [`checked_clean_names`], separated from the painting so a
-/// test can observe it: a `&mut Ui` is not an oracle, and a check that had to
-/// read pixels to prove a filter reads the right variant would be measuring the
-/// wrong thing.
 pub(super) fn checked_clean(ui: &mut egui::Ui, theme: &Theme, report: &RedactionReport) {
     let names = checked_clean_names(report);
     if names.is_empty() {
@@ -100,28 +70,6 @@ pub(super) fn checked_clean_names(report: &RedactionReport) -> Vec<&'static str>
 // ---------------------------------------------------------------------------
 
 /// **The matches a narrower redaction reach declines to act on.**
-///
-/// [`CarrierAction::FoundNotScrubbed`] — the carrier holds a copy of the marked
-/// text, pdfcer can remove it, and the operator's reach setting says not to.
-/// This block is what makes offering a narrow reach honest: the setting changes
-/// what pdfcer may *change*, never what it *finds* or *reports*, so the operator
-/// sees the full census either way and chooses with it in front of him.
-///
-/// **Notice weight, and the choice of colour is the substance of the block.**
-/// Not muted like the clean census, because this is live text surviving into
-/// the saved file rather than evidence that a check ran. Not
-/// `palette.danger` like the residual section, because nothing failed — the
-/// engine keeps this verdict apart from `DisclosedNotScrubbed` precisely so a
-/// deliberate scope does not read as a fault, and painting both red would
-/// collapse in the product the distinction the engine maintains in the report.
-///
-/// Drawn **above** the residual section so the danger colour stays last and
-/// closest to the confirm control.
-///
-/// It gates nothing. It cannot enter [`crate::redact::residual_count`], cannot
-/// be acknowledged, and cannot block the confirm control — an operator who set
-/// a narrow reach and is then refused the save he asked for has been given a
-/// setting that does not work.
 pub(super) fn left_by_choice(ui: &mut egui::Ui, theme: &Theme, report: &RedactionReport) {
     let names = left_by_choice_names(report);
     if names.is_empty() {
@@ -134,12 +82,6 @@ pub(super) fn left_by_choice(ui: &mut egui::Ui, theme: &Theme, report: &Redactio
 
 /// **The carriers holding a copy that the reach setting leaves alone**, already
 /// in the operator's words.
-///
-/// An `==` filter for the same reason [`checked_clean_names`] is one:
-/// `CarrierAction` is `#[non_exhaustive]`, a `match` here could only be written
-/// with a catch-all, and a catch-all is how a new verdict becomes invisible.
-/// The tripwire for a new variant is `tools/gates/check-engine-api-drift.sh`,
-/// not this file.
 #[must_use]
 pub(super) fn left_by_choice_names(report: &RedactionReport) -> Vec<&'static str> {
     report
@@ -155,23 +97,6 @@ pub(super) fn left_by_choice_names(report: &RedactionReport) -> Vec<&'static str
 // ---------------------------------------------------------------------------
 
 /// **`RedactionReport::notes`, at the foot of the report, collapsed.**
-///
-/// These were being discarded, and one of them is load-bearing: when the
-/// residual sweep cannot scrub a stream object, the **object numbers** exist
-/// only in a note. [`crate::text::redact::residual_sweep_line`] tells the
-/// operator to look here for them, which is a promise this function keeps.
-///
-/// **Collapsed by default**, and the reason is `OPERATOR_REQUESTS.md` O160 —
-/// his report that this dialog's warnings had become something to click past.
-/// These notes are the engine's prose: they cite ISO 32000-1 by table number
-/// and there can be a dozen on one sheet. Open by default they would bury the
-/// residual section under spec citations, which is the same failure in a new
-/// place. Closed, they cost one line and lose nothing.
-///
-/// **Not styled as a warning**, even though some of them are about residuals.
-/// The residuals that matter are already lifted out into the danger-coloured
-/// section above by their own derivations; painting this section red as well
-/// would double-count them and dilute the colour that means "read this".
 pub(super) fn engine_notes(ui: &mut egui::Ui, theme: &Theme, report: &RedactionReport) {
     if report.notes.is_empty() {
         return;
@@ -202,12 +127,6 @@ pub(super) fn engine_notes(ui: &mut egui::Ui, theme: &Theme, report: &RedactionR
 const REGION_REMOVED_TEXT: &str = "redact-apply-removed-text"; // ui-text-exempt: trace region name, never displayed
 
 /// What [`removed_text_lines`] decided, and the lines it decided on.
-///
-/// The state is carried out of the derivation rather than re-derived by the
-/// painter, so the trace reports what this function chose rather than what a
-/// second reading of the same report would choose. Those are the same value
-/// only while the two readings agree, and a trace that can disagree with the
-/// screen is worse than none.
 pub(super) struct RemovedText {
     /// `listed`, `no-text` or `unreported` — the trace's word for the branch.
     pub state: &'static str,
@@ -283,17 +202,6 @@ pub(super) fn removed_text(ui: &mut egui::Ui, theme: &Theme, report: &RedactionR
 }
 
 /// Every line [`removed_text`] will draw, in order, and which branch drew them.
-///
-/// **It always returns at least one line.** An empty return would collapse
-/// three different states — text found, no text present, and codes removed with
-/// no text reported — into one blank area, which reads as *"pdfcer has nothing
-/// to say about this"* in all three. The first two are findings and the third
-/// is a disclosure; none of them is silence.
-///
-/// Neither cap cuts silently: [`t::MAX_ENTRIES`] is followed by
-/// [`t::removed_text_more`] naming the remainder, and [`t::MAX_CHARS`] is
-/// applied inside [`t::removed_text_entry`], which says how many characters of
-/// that one region it did not print.
 pub(super) fn removed_text_lines(report: &RedactionReport) -> RemovedText {
     // Counted over the whole vector rather than over `lines`, so that a report
     // long enough to hit either cap still measures what is GOING rather than

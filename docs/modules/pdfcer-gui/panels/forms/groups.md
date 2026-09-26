@@ -220,3 +220,23 @@ A destructive confirmation the operator can only escape by pressing
 something else in the panel is one they can dismiss by accident and cannot
 dismiss on purpose. It raises `ArmGroupDeletion(None)`, which changes
 nothing and clears the block.
+
+### `fn section`
+
+Called from [`super::body`] with the `/AcroForm` it has already parsed —
+not re-derived here, because two parses of one form per frame is a cost with
+no benefit and because a second parse could in principle disagree with the
+one the rows above came from.
+
+# It renders NOTHING on a flat form, and that is R124 rather than an
+oversight
+
+`AcroForm::groups` is empty for a flat form, *"which is every file in the
+Pass 7.0 census"* — so on the overwhelming majority of real documents this
+section is not drawn, not collapsed-and-empty, not a heading over nothing.
+Core's own doc comment on that field states the obligation: *"a consumer
+that renders these must therefore render nothing when the list is empty
+rather than an empty section."*
+
+`actions` is pushed at most once per frame — see [`rows`] for why one press
+per frame is enforced rather than assumed.

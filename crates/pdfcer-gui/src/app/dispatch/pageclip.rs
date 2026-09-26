@@ -13,10 +13,6 @@ use crate::app::actions::pages::PageAction;
 use crate::app::state::Status;
 
 /// **Whether this module owns `id`.**
-///
-/// Listed rather than prefix-matched, for `dispatch::clipboard::handles`'
-/// reason: the `pages.` prefix also covers the verbs [`super::pages`] owns and
-/// the two that stay in [`super`], none of which belong here.
 #[must_use]
 pub fn handles(id: &str) -> bool {
     matches!(id, "pages.copy" | "pages.cut" | "pages.paste")

@@ -410,3 +410,25 @@ document. It cannot produce a false failure.
 `Ctrl+1` in a keymap that does not mention it must not fall back to
 some default this module remembers — there is no such memory, and the
 test is what keeps it that way.
+
+### `const OWNED`
+
+The manifest's keymap names these as deliberately absent, for the reason
+stated there: they are not ribbon commands, and binding them in two
+places would give them two owners. This table is what makes that
+statement *checkable* rather than a comment —
+[`tests::no_chord_has_two_owners`] walks it against the real keymap.
+
+Several spellings per key because the guard has to catch a conflict
+however the author of the keymap chose to write it: `Ctrl+Plus` and
+`Ctrl++` are the same chord, and a test that knew only one of them would
+pass while the defect it exists to prevent sat in the file.
+
+### `fn collect`
+
+Only the chords [`OWNED`] lists — the viewer's own. The chords the
+manifest binds are [`commands`]' job, and the two sets are disjoint by
+test rather than by good intentions.
+
+`page_count` is `None` when no document is open, in which case no
+binding is installed at all.

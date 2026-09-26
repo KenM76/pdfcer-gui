@@ -52,12 +52,6 @@ struct Channel {
 }
 
 /// Draw the colour section. `true` if anything was drawn.
-///
-/// Returns `false` for a selection this section has nothing to say about — an
-/// annotation, a form field, a selection with no path in it — rather than
-/// drawing an empty heading. `geometry::section` states the same rule and for
-/// the same reason: a heading with nothing under it reads as a control that
-/// failed to load.
 pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     if doc.selection.annot().is_some() {
         return false;

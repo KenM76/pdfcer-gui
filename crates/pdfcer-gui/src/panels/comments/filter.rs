@@ -8,12 +8,6 @@
 use crate::panels::comments::model::{CommentRow, Note};
 
 /// How the list is ordered.
-///
-/// An enum rather than a pair of booleans for the reason
-/// `crate::canvas::selection::annot::AnnotKind` is one: exactly one ordering
-/// is in force, and a type that could say *by author* and *by type* at once is
-/// a type whose illegal states are prevented by discipline instead of by
-/// construction.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Sort {
     /// Page order, then `/Annots` order — the document's own.
@@ -36,10 +30,6 @@ impl Sort {
 }
 
 /// What the reviewer has narrowed the list to.
-///
-/// `Default` is **everything**, which is the state the panel has always been
-/// in — so a fresh profile behaves exactly as this panel did before the filter
-/// existed, and nothing is hidden from an operator who never touches it.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Filter {
     /// Show only comments whose `/T` is this. `None` shows every author.
@@ -101,15 +91,6 @@ pub struct Filter {
 
 impl Filter {
     /// **Is this filter hiding anything?**
-    ///
-    /// The predicate the disclosure hangs off — see the module header. Note
-    /// that [`Self::sort`] is **not** part of it: reordering a list omits
-    /// nothing, and a "you have sorted this" notice would be noise attached to
-    /// a change the operator can see.
-    /// [`Self::status`] counts, even though [`Self::keeps`] cannot evaluate
-    /// it — see that field. This predicate answers *"is the operator being
-    /// shown less than the document holds"*, and where the answer is computed
-    /// has no bearing on it.
     #[must_use]
     pub fn is_narrowing(&self) -> bool {
         self.author.is_some()
@@ -119,14 +100,6 @@ impl Filter {
     }
 
     /// Does one row survive?
-    ///
-    /// Split out from [`apply`] so the rule can be asserted against a single
-    /// row without building a list — and so the three clauses are visible
-    /// together rather than spread through an iterator chain.
-    ///
-    /// ⚠ **It does not evaluate [`Self::status`]**, and cannot — a review
-    /// status is on other annotations, not on this row. See that field;
-    /// [`super::reviewstate::narrow`] is the second half of the pipeline.
     #[must_use]
     pub fn keeps(&self, row: &CommentRow) -> bool {
         if let Some(author) = &self.author
@@ -147,15 +120,6 @@ impl Filter {
 }
 
 /// **Narrow and order a listing's rows.**
-///
-/// Takes and returns owned rows rather than borrowing, because the caller
-/// draws from the result and a borrow would keep the whole `Listing` alive
-/// across the draw for no benefit — the rows are a handful of `String`s each
-/// and a document with enough comments for that to matter has a layout cost
-/// two orders of magnitude larger (see `crate::panels::comments`' cost note).
-///
-/// **Stable**, so an ordering by author or by kind preserves document order
-/// within each group. See the module header.
 #[must_use]
 pub fn apply(rows: Vec<CommentRow>, filter: &Filter) -> Vec<CommentRow> {
     let mut kept: Vec<CommentRow> = rows.into_iter().filter(|r| filter.keeps(r)).collect();
@@ -182,16 +146,6 @@ pub fn apply(rows: Vec<CommentRow>, filter: &Filter) -> Vec<CommentRow> {
 
 /// Every distinct author in a listing, in the order a chooser should offer
 /// them.
-///
-/// # Sorted and de-duplicated, and blank names dropped
-///
-/// A chooser is a list of *people*, so it is alphabetical rather than in
-/// document order — the operator is looking up a name, not walking the sheet.
-/// A `/T` of `"  "` is a byline nobody wrote (the commonest way for one to
-/// exist is a producer writing an empty string) and offering it would put a
-/// blank row in the menu that filters to comments credited to a space. The
-/// same trimming rule `crate::panels::comments::keeps_author_name` applies,
-/// which is what keeps *"has an author"* meaning one thing across the surface.
 #[must_use]
 pub fn authors(rows: &[CommentRow]) -> Vec<String> {
     let mut seen: Vec<String> = rows
@@ -207,10 +161,6 @@ pub fn authors(rows: &[CommentRow]) -> Vec<String> {
 }
 
 /// Every distinct `/Subtype` in a listing, alphabetically.
-///
-/// The **file's own spelling**, never a friendly relabelling: `Square` is the
-/// word every other surface in this shell uses for that annotation, and a
-/// chooser offering "Rectangle" would be a fourth name for one thing.
 #[must_use]
 pub fn subtypes(rows: &[CommentRow]) -> Vec<String> {
     let mut seen: Vec<String> = rows.iter().map(|r| r.subtype.clone()).collect();

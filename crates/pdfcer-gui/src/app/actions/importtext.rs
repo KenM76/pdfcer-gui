@@ -10,22 +10,6 @@ use crate::text::importtext as t;
 
 /// **What a File-tab command asks the document to do**, when the answer is an
 /// edit rather than a write.
-///
-/// # Why this enum exists, and it is R2 arriving on time for once
-///
-/// `Action` already carries four sub-enums — `Annot`, `Vector`, `Field` and
-/// the write family — and adds a fifth here. The pattern is the same one
-/// `AnnotAction`'s own note argues: a family of related verbs shares one
-/// dispatch arm, one apply arm and one module, so the shared files carry a line
-/// each and the family's reasoning lives with the family.
-///
-/// **It has one member, and that is the honest shape rather than premature
-/// structure.** Spelled directly on `Action` instead, one feature's argument
-/// would be written **three times in three files nobody owns** — `action.rs`,
-/// `apply.rs` and `dispatch.rs`, each already at R2's 1,500-line ceiling. The
-/// line count is the symptom; the duplication is the defect, and R2's rule is
-/// *"when a file approaches the limit, that is the signal to find the seam"*.
-/// This is the seam.
 #[derive(Debug, Clone, PartialEq)]
 pub enum FileAction {
     /// **Turn a plain text file into new pages** — `file.import_text`.

@@ -132,11 +132,6 @@ fn digest(bytes: &[u8]) -> (usize, u64) {
 }
 
 /// Click a ribbon band control by command id, and confirm the shell saw it.
-///
-/// The same shape as [`driving::click_mode_segment`], for the other half of the
-/// ribbon. Not folded into that module because it is the first check to need
-/// it: a second caller is the moment to move it, and moving it on the first
-/// would leave `driving` with an untested function.
 pub(super) fn click_command(
     session: &Session,
     driver: &Driver,

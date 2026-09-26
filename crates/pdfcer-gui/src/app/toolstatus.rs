@@ -14,30 +14,14 @@ use crate::text::tool as t;
 use crate::text::toolstatus as ts;
 
 /// The height the right dock reserves for the strip, in points.
-///
-/// One row of text plus the padding a button needs around it.
-/// [`egui_shell::dock::banner::resolve_height`] clamps this, so a window too
-/// short to afford it gets no strip rather than a sliver — see that function's
-/// section.
 pub const BANNER_HEIGHT_PTS: f32 = 26.0;
 
 /// The region the strip publishes when it has drawn.
-///
-/// Distinct from `egui-shell`'s own `dock.right.banner`, which reports the
-/// **compartment**. This one reports the **content**, and the two answer
-/// different questions: the dock's says *the strip is on screen*, this one says
-/// *the application put something in it*. A check that asserted only the former
-/// would pass against a build whose handler drew nothing at all.
 pub const REGION: &str = "toolstatus"; // ui-text-exempt: trace region name, never displayed
 /// The region the *Put this tool down* button publishes.
 pub const REGION_PUT_DOWN: &str = "toolstatus.put_down"; // ui-text-exempt: trace region name, never displayed
 
 /// Draw the strip into the banner `Ui` the dock reserved.
-///
-/// Draws **nothing at all** with no document open: the whole line is about a
-/// gesture on a page, and a strip that named a tool with nothing to use it on
-/// would be the placeholder R9 forbids, sitting in permanent chrome where it
-/// could never be dismissed.
 pub fn banner(ui: &mut Ui, doc: Option<&OpenDoc>, host: Option<&MenuHost<'_>>) {
     let Some(doc) = doc else {
         return;

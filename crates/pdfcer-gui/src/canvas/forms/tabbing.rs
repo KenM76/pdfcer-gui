@@ -20,11 +20,6 @@ const CROSS_PAGES: bool = true;
 const WHY_TAB: &str = "tab-field"; // ui-text-exempt: diagnostic token, never displayed
 
 /// **Spend this frame's Tab press**, if one was claimed for the field ring.
-///
-/// Called before anything else this module draws — see the header. Does
-/// nothing at all on the overwhelming majority of frames: `tabnav::take`
-/// answers `None` unless the hook claimed a press, which it does only while the
-/// canvas holds egui's keyboard focus.
 pub(super) fn advance(
     ctx: &egui::Context,
     doc: &OpenDoc,
@@ -158,21 +153,6 @@ fn move_focus(
 }
 
 /// **Hold a focus that this frame cannot draw, or settle it.**
-///
-/// [`super::editor`]'s two undrawable branches. A focus whose page is not in
-/// the strip, or whose box is outside the clip rect, is normally a focus the
-/// operator has scrolled away from — and committing it is the old spec's rule
-/// and the right one, because a half-typed value is something they typed on
-/// purpose.
-///
-/// A focus a **Tab** put there is the exception, and [`Focus::waiting`] is how
-/// the two are told apart: it names a box the ring chose, whose reveal is still
-/// in flight. Settling it on the frame the reveal was asked for would make Tab
-/// appear to do nothing whenever the next field was off screen, which on a form
-/// worth tabbing through is most of the time.
-///
-/// Returns `false` in both cases, because neither drew an editor and so neither
-/// claimed the frame's click.
 pub(super) fn hold_or_settle(
     ctx: &egui::Context,
     doc: &OpenDoc,
@@ -196,19 +176,6 @@ pub(super) fn hold_or_settle(
 }
 
 /// **The focus a check box or radio button holds**, and the keys it reads.
-///
-/// The button half of [`super::editor`]. There is no caret and no draft to
-/// edit: the whole of the state is *this box has the keyboard*, drawn as a ring
-/// and spent by Space or Enter.
-///
-/// # Why the ring is a cursor and not a mark on the content
-///
-/// pdfcer's rule 4 forbids styling applied content as provisional and admits
-/// the cursor in full. A focus ring says where the next keystroke goes; it
-/// states nothing about the document, disappears the moment focus leaves, and
-/// is drawn over the finished raster so it reaches no print, no export and no
-/// save. It is the same affordance as the I-beam this module already sets over
-/// a fillable field.
 pub(super) fn button_focus(
     ui: &mut Ui,
     doc: &OpenDoc,

@@ -89,10 +89,6 @@ impl DropZone {
 }
 
 /// **A rectangle divided into the five drop zones.**
-///
-/// Cheap enough to build per frame and per candidate; it holds two rects and
-/// derives everything else. See the module header for the mitre rule that
-/// makes [`Compass::zone_at`] and [`Compass::outline`] one definition.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Compass {
     /// The whole compartment body the zones divide.
@@ -103,11 +99,6 @@ pub struct Compass {
 
 impl Compass {
     /// Divide `area`.
-    ///
-    /// The edge bands are a fraction of each dimension so that a small
-    /// compartment's edges stay reachable, capped so that a large one's centre
-    /// stays dominant — the centre is the common release, and an edge split is
-    /// the deliberate one.
     #[must_use]
     pub fn new(area: Rect) -> Self {
         let centre = area.shrink2(egui::vec2(band(area.width()), band(area.height())));
@@ -193,16 +184,6 @@ pub struct DropLanding {
 
 impl DockLayout {
     /// **Resolve a pointer position over the dock into a landing.**
-    ///
-    /// `None` when the pointer is over no compartment this geometry recorded —
-    /// the canvas, a splitter, a side that drew nothing — which is the same
-    /// answer as *"a release here docks nothing"*.
-    ///
-    /// Reads both the geometry and this layout because the two halves of the
-    /// question need different sources: *which compartment* is a rect
-    /// question, and *which boundary within it* is a count question. The
-    /// centre zone appends, so it needs the tab count and cannot be resolved
-    /// from rects alone.
     #[must_use]
     pub fn resolve_drop(&self, geometry: &DockGeometry, pos: Pos2) -> Option<DropLanding> {
         let stack = geometry.stack_at(pos)?;
@@ -245,15 +226,6 @@ impl DockLayout {
 }
 
 /// The compartment less its tab strip, which the compass does not divide.
-///
-/// The strip spans the compartment's full width along its top, so subtracting
-/// it leaves no band that belongs to neither. A stack with no strip recorded —
-/// too narrow to draw one — is divided whole.
-///
-/// Visible to [`super::overlay`] because the rectangle the overlay fills must
-/// be the rectangle the resolution divided. Two spellings of "the compartment
-/// less its strip" would put the zones the operator sees a strip's height away
-/// from the zones the release is read against.
 pub(super) fn body_of(geometry: &DockGeometry, addr: StackAddr) -> Option<Rect> {
     let stack = geometry.stack_rect(addr)?;
     let Some(strip) = geometry.strip_rect(addr) else {

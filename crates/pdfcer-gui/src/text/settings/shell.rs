@@ -22,11 +22,6 @@ pub const fn theme_title() -> &'static str {
 }
 
 /// Theme: what the standard leaves open.
-///
-/// Nothing — and saying so is the point. This is the one setting in the window
-/// that is not a spec ambiguity, and letting it silently share the shape of
-/// the twelve that are would imply pdfcer thinks the standard has an opinion
-/// about window colours.
 #[must_use]
 pub const fn theme_silence() -> &'static str {
     "Changes the window only. It never alters a document, and nothing here is \
@@ -40,21 +35,6 @@ pub const fn theme_radius() -> &'static str {
 }
 
 /// One preset's name.
-///
-/// # The catch-all arm is required, and it is not a `todo!()`
-///
-/// `egui_shell::theme::Preset` is `#[non_exhaustive]` — deliberately, because
-/// the whole point of the shell crate is that another application may ship
-/// presets pdfcer has never heard of. So this catalog cannot be exhaustive over
-/// it and the compiler says so.
-///
-/// The fallback returns the preset's own **key** rather than a placeholder.
-/// That is the honest answer: a theme this catalog has no prose for still has
-/// a name the operator can recognise, since the key is what they would have
-/// typed into the settings file. A `todo!()` would crash the settings window
-/// on a preset the *shell* is entitled to add, and a literal like "Other"
-/// would tell them nothing and would be indistinguishable between two such
-/// presets.
 #[must_use]
 pub fn theme_preset_label(preset: Preset) -> &'static str {
     match preset {
@@ -68,15 +48,6 @@ pub fn theme_preset_label(preset: Preset) -> &'static str {
 }
 
 /// One preset's description.
-///
-/// Each says what it looks like *and* what it costs, because "which theme do I
-/// want" is not answerable from three adjectives. Airy's *"uses more screen"*
-/// and Dark's *"as CAD tools do it"* are the two facts that actually decide it
-/// for this audience.
-/// The catch-all returns an **empty** description rather than inventing one,
-/// and the window omits the line entirely when it is empty — an absent note is
-/// truthful about a preset this catalog cannot describe, whereas a generic one
-/// would be prose pdfcer made up about somebody else's theme.
 #[must_use]
 pub const fn theme_preset_note(preset: Preset) -> &'static str {
     match preset {
@@ -97,15 +68,6 @@ pub const fn theme_preset_note(preset: Preset) -> &'static str {
 }
 
 /// The settings file names a theme this build does not have.
-///
-/// # Why this is said out loud, with the name quoted
-///
-/// Without it the operator sees none of the three radios selected and no
-/// explanation, which reads as a rendering fault. And the likeliest cause is
-/// benign and worth knowing: a settings file written by a **newer** pdfcer,
-/// whose token this build is **preserving rather than overwriting**. Quoting
-/// the name is what makes that legible — and telling them it is kept is what
-/// stops them "fixing" it by picking one of the three, which would discard it.
 #[must_use]
 pub fn theme_unknown(token: &str) -> String {
     format!(
@@ -123,21 +85,12 @@ pub fn theme_unknown(token: &str) -> String {
 // the two that take effect before Save.
 
 /// UI scale: what it is.
-///
-/// **"pdfcer's own"** does the work in this title. The word an operator is most
-/// likely to arrive with is *"zoom"*, and zoom in this application means the
-/// page — so the title has to draw the line before the operator has read a
-/// word of the body, or they will set this expecting the document to change.
 #[must_use]
 pub const fn ui_scale_title() -> &'static str {
     "Size of pdfcer's own menus, buttons and text"
 }
 
 /// UI scale: what is open.
-///
-/// Says what it multiplies, because that is the fact that stops it being
-/// misread as an override. An operator who has already set Windows display
-/// scaling to 150 % needs to know this stacks on top rather than replacing it.
 #[must_use]
 pub const fn ui_scale_silence() -> &'static str {
     "Not a standards question. Windows already tells pdfcer how big to draw \
@@ -146,12 +99,6 @@ pub const fn ui_scale_silence() -> &'static str {
 }
 
 /// UI scale: what changing it costs.
-///
-/// Two disclosures in one line, and both are needed. It takes effect
-/// immediately — the exception to the whole window's draft-until-Save contract
-/// that this setting shares with the theme — and it does **not** resize the
-/// page, which is the thing an operator will most reasonably expect it to do
-/// given that the word "size" is in the title.
 #[must_use]
 pub const fn ui_scale_radius() -> &'static str {
     "Applies as soon as you drag it, so you can see it. Cancel puts it back. \
@@ -165,28 +112,12 @@ pub const fn ui_scale_slider_label() -> &'static str {
 }
 
 /// The slider's value, as a percentage of the system setting.
-///
-/// A percentage rather than the stored multiplier, because *"125 %"* is a
-/// quantity an operator can hold against the Windows display setting they
-/// already know, and *"1.25"* is one they have to interpret. Same value, and
-/// the unit is doing the explaining.
-///
-/// Rounded to whole percent: the step is 0.05, so every value the control can
-/// produce is a whole number of percent and no precision is lost. A decimal
-/// place would show `100.0 %` and imply a fineness the control does not have.
 #[must_use]
 pub fn ui_scale_percent(multiplier: f64) -> String {
     format!("{:.0} %", multiplier * 100.0)
 }
 
 /// How to choose one.
-///
-/// Names the two failure modes rather than recommending a number, as the
-/// zoom-settle note does — and for a stronger version of the same reason:
-/// which value is right depends on the operator's eyes and their monitor, so
-/// there is no number to recommend. What can be said is what going too far in
-/// each direction looks like, and an operator who knows that can find their
-/// value in two drags.
 #[must_use]
 pub const fn ui_scale_note() -> &'static str {
     "Larger is easier to read and leaves less room for the drawing, because \
@@ -212,12 +143,6 @@ pub const fn quality_title() -> &'static str {
 }
 
 /// Render quality: what is open.
-///
-/// Nothing, and it says so. This is a **preference**, a trade between sharpness
-/// and speed that depends on the machine and on how big the drawings are — not
-/// a question the standard leaves unanswered. Saying "the standard does not
-/// define…" here would be inventing a clause to fit a template, which is the
-/// dishonest version of consistency.
 #[must_use]
 pub const fn quality_silence() -> &'static str {
     "Not a question about the PDF standard — a trade between how sharp a page \
@@ -244,10 +169,6 @@ pub const fn quality_label(quality: crate::app::prefs::RenderQuality) -> &'stati
 }
 
 /// One quality's description.
-///
-/// Each names **what it costs**, not just what it does — which is the whole
-/// content of the choice. "Faster" without "softer" is half a sentence, and it
-/// is the half that makes the setting look free.
 #[must_use]
 pub const fn quality_note(quality: crate::app::prefs::RenderQuality) -> &'static str {
     use crate::app::prefs::RenderQuality as Q;
@@ -296,20 +217,12 @@ pub const fn settle_slider_label() -> &'static str {
 }
 
 /// The slider's unit.
-///
-/// A catalog entry rather than a literal, for the reason the degree sign and
-/// the point abbreviation are: the ui-strings gate looks for exactly this, and
-/// a translator has to be able to see that a unit exists.
 #[must_use]
 pub const fn settle_suffix() -> &'static str {
     " ms"
 }
 
 /// How to choose one.
-///
-/// Names both failure modes rather than recommending a number, because which
-/// one bites depends on the machine — and an operator who knows what going too
-/// far in each direction looks like can find their own value in two tries.
 #[must_use]
 pub const fn settle_note() -> &'static str {
     "Shorter feels more responsive and redraws the page more often, which on a \
@@ -340,10 +253,6 @@ pub const fn opening_fit_title() -> &'static str {
 }
 
 /// Opening fit: what is open.
-///
-/// As the two settings above it — nothing. The PDF standard has an opinion
-/// about page *size*; it has none about how a viewer chooses to fit that size
-/// to a window, which is why this is a preference rather than an ambiguity.
 #[must_use]
 pub const fn opening_fit_silence() -> &'static str {
     "Not a question about the PDF standard — the page has a size, and this is \
@@ -370,12 +279,6 @@ pub const fn opening_fit_label(fit: crate::app::prefs::OpeningFit) -> &'static s
 }
 
 /// One opening fit's description.
-///
-/// Each names what it costs on a **large sheet**, because that is the case
-/// where they differ and it is the case this shell exists for. On a letter page
-/// at a normal window size all three look much the same, and copy written
-/// against that case would tell the operator nothing about the choice they are
-/// actually making.
 #[must_use]
 pub const fn opening_fit_note(fit: crate::app::prefs::OpeningFit) -> &'static str {
     use crate::app::prefs::OpeningFit as F;
@@ -413,11 +316,6 @@ pub const fn wheel_paging_silence() -> &'static str {
 }
 
 /// What it costs, and what it does not affect.
-///
-/// The second sentence is the one that matters. Under a continuous display
-/// mode the wheel scrolls the whole document by definition, so this setting
-/// has nothing to change — and an operator who tried it there and saw no
-/// difference would reasonably conclude it was broken.
 #[must_use]
 pub const fn wheel_paging_radius() -> &'static str {
     "Applies at once, to every open document. Has no effect under a continuous page display, where the wheel scrolls the whole document anyway, and none on Ctrl+wheel, which always zooms."
@@ -434,10 +332,6 @@ pub const fn wheel_paging_label(paging: crate::app::prefs::WheelPaging) -> &'sta
 }
 
 /// One wheel-paging option's description.
-///
-/// The first names the case where today's behaviour is a **dead control**,
-/// which is the whole reason the choice exists: this shell opens documents at
-/// fit page, and a page that already fits has nothing to scroll.
 #[must_use]
 pub const fn wheel_paging_note(paging: crate::app::prefs::WheelPaging) -> &'static str {
     use crate::app::prefs::WheelPaging as W;
@@ -452,10 +346,6 @@ pub const fn wheel_paging_note(paging: crate::app::prefs::WheelPaging) -> &'stat
 }
 
 /// Which paste chord means which, for a form field: the setting's name.
-///
-/// It names the SUBJECT, not the keys. An operator scanning the pane for
-/// *"why did my copied field come out linked?"* is thinking about fields, not
-/// about `V`.
 #[must_use]
 pub const fn paste_chords_title() -> &'static str {
     "Copying a form field"
@@ -468,23 +358,12 @@ pub const fn paste_chords_silence() -> &'static str {
 }
 
 /// What it costs, and what it does not affect.
-///
-/// Three things, and the second is the one that stops the support question.
-/// Both pastes always exist — this only exchanges the keys — so an operator who
-/// picks the Acrobat order has lost nothing and can still reach either from the
-/// Edit tab. The third sentence forestalls the other reasonable worry: it is a
-/// keyboard preference, not a document one, so nothing already pasted changes.
 #[must_use]
 pub const fn paste_chords_radius() -> &'static str {
     "Applies at once. Both kinds of paste stay available either way — this only swaps which key does which, and both are on the Edit tab under their own names. Nothing already in a document changes."
 }
 
 /// One paste-order option's name.
-///
-/// The pdfcer entry does not say *"pdfcer's default"* the way `wheel_paging`'s
-/// does, because here the alternative is named after a **product** and the pair
-/// would read as an endorsement contest. Each names what its Ctrl+V does, which
-/// is the fact being chosen between.
 #[must_use]
 pub const fn paste_chords_label(order: crate::app::prefs::PasteChords) -> &'static str {
     use crate::app::prefs::PasteChords as P;
@@ -495,16 +374,6 @@ pub const fn paste_chords_label(order: crate::app::prefs::PasteChords) -> &'stat
 }
 
 /// One paste-order option's description.
-///
-/// Both notes lead with the CONSEQUENCE — whether typing in one box shows
-/// in the other — because that is the only difference an operator can observe,
-/// and it is invisible on the page. Two linked boxes and two independent boxes
-/// are pixel-identical until somebody types.
-///
-/// The Acrobat note says *why* Acrobat does it, rather than only that it does.
-/// An operator picking a compatibility setting deserves to know it is a real
-/// convention with a purpose — repeated page-number and date fields that must
-/// agree — and not merely a quirk being mimicked.
 #[must_use]
 pub const fn paste_chords_note(order: crate::app::prefs::PasteChords) -> &'static str {
     use crate::app::prefs::PasteChords as P;
@@ -525,11 +394,6 @@ pub const fn chrome_title() -> &'static str {
 }
 
 /// Page overlays: what is open.
-///
-/// Names the thing an operator is most likely to have come here about — that
-/// these are switches they have to flick on every single document — because the
-/// group headings are how a symptom finds its setting and this is the symptom.
-///
 #[must_use]
 pub const fn chrome_silence() -> &'static str {
     "Also not a standards question. These are the three switches in the View \
@@ -551,13 +415,6 @@ pub const fn chrome_rulers_label() -> &'static str {
 }
 
 /// What turning the rulers on costs.
-///
-/// It states the cost, and the cost is real rather than rhetorical: the
-/// gutters come off the drawing area, on every document, for as long as the
-/// preference is set. `ViewState::default`'s own comment calls this *"the one
-/// default that has a measurable cost"*, which is why it ships off — and an
-/// operator turning it on permanently deserves to be told what they are
-/// spending.
 #[must_use]
 pub const fn chrome_rulers_note() -> &'static str {
     "A measuring strip down the top and left edges. It takes that strip out of \
@@ -584,12 +441,6 @@ pub const fn chrome_guides_label() -> &'static str {
 }
 
 /// What the guides switch does, and what it does not.
-///
-/// **The second sentence is the whole reason this control has notes at all.**
-/// `canvas::guides::ruler_drag` registers nothing when the rulers are hidden,
-/// so an operator who switches guides on and cannot place one has met a
-/// coupling the program never told them about. Saying it here costs one line
-/// and saves the conclusion that the feature is broken.
 #[must_use]
 pub const fn chrome_guides_note() -> &'static str {
     "Guide lines you drag onto the page to line things up. You drag them out \
@@ -597,16 +448,6 @@ pub const fn chrome_guides_note() -> &'static str {
 }
 
 /// What pdfcer does about guides a document already has.
-///
-/// A [`crate::dialogs::settings::widgets::disclosure`] rather than a note under
-/// the guides switch, because it is true **whichever way that switch is set** —
-/// which is exactly the distinction that widget documents, and the same reason
-/// the replacement-text bound is one.
-///
-/// It exists because the alternative is silent surprise in the honest
-/// direction: an operator who sets this off will still see guides appear on the
-/// documents they placed guides on, and with nothing said that reads as the
-/// preference not working.
 #[must_use]
 pub const fn chrome_guides_bound() -> &'static str {
     "Whichever you choose, a document you have already placed guides on opens \
@@ -624,11 +465,6 @@ pub const fn page_cache_title() -> &'static str {
 }
 
 /// Page cache: what is open.
-///
-/// Nothing about the standard, and it says so — the same honesty
-/// [`quality_silence`] applies. What it says instead is the **symptom**, because
-/// that is how an operator finds this control: they came here because scrolling
-/// back to a sheet made them wait.
 #[must_use]
 pub const fn page_cache_silence() -> &'static str {
     "Not a question about the PDF standard — a trade between memory and waiting. \
@@ -648,15 +484,6 @@ pub const fn page_cache_radius() -> &'static str {
 }
 
 /// One cache size's name — the step, and what it actually costs.
-///
-/// The megabyte figure is **computed from the budget**, never written beside
-/// it. Two spellings of one quantity drift, and the drift here would be a
-/// settings window promising 512 MB while the cache spent 2 GB —
-/// `NO_SURFACE.md` §1's finding with a number instead of a colour.
-///
-/// "Large" is not something anybody can budget against. An operator with 8 GB
-/// and one with 64 GB are making different decisions and neither can make theirs
-/// from an adjective.
 #[must_use]
 pub fn page_cache_label(cache: crate::app::prefs::PageCache) -> String {
     use crate::app::prefs::PageCache as C;
@@ -670,10 +497,6 @@ pub fn page_cache_label(cache: crate::app::prefs::PageCache) -> String {
 }
 
 /// One cache size's description.
-///
-/// Each says **how much work it saves**, in sheets rather than in bytes, because
-/// a drawing set is what this operator has and "25 sheets" is a thing he can
-/// picture where "1 GB" is not.
 #[must_use]
 pub const fn page_cache_note(cache: crate::app::prefs::PageCache) -> &'static str {
     use crate::app::prefs::PageCache as C;
@@ -695,11 +518,6 @@ pub const fn page_cache_note(cache: crate::app::prefs::PageCache) -> &'static st
 }
 
 /// Title for the mesh patch-padding setting.
-///
-/// Filed by the SYMPTOM, not the mechanism. Nobody goes looking for
-/// *"type 6/7 mesh shading patch record byte alignment"*. Somebody whose
-/// gradient came out as garbage goes looking for *gradient*, so that is the
-/// first word.
 pub const fn mesh_padding_title() -> &'static str {
     "A gradient fill that comes out scrambled"
 }
@@ -740,10 +558,6 @@ pub const fn preset_title() -> &'static str {
 }
 
 /// What the presets row is for.
-///
-/// States the two facts an operator needs before clicking something that
-/// changes several settings at once: what it will do, and that it is not a
-/// lock. The second is the one that makes it safe to try.
 pub const fn preset_silence() -> &'static str {
     "Sets everything below in one go. You can still change any of them afterwards, and nothing is applied until you press Save."
 }
@@ -754,33 +568,11 @@ pub const fn preset_pdfcer_label() -> &'static str {
 }
 
 /// Note for the same.
-///
-/// Worded for the operator who has been experimenting and wants out. That is
-/// the reported use — *"touching some of our presets caused some test to show
-/// up as failed"* — and it is a person looking for a way back, not a person
-/// choosing a philosophy.
 pub const fn preset_pdfcer_note() -> &'static str {
     "What pdfcer ships with, including the two answers you chose personally: neutral black for line art, and smoothing pictures that are shrunk to fit. Use this to get back after experimenting."
 }
 
 /// **This standard's render answers are the same as N others'.**
-///
-///
-/// It exists because the operator asked for the control in order to *"see how
-/// far we are along with matching the [conformance suite's] tests"*, and
-/// switching to PDF/X-4
-/// will change nothing on screen. Finding that out by comparing two identical
-/// renders costs an hour and reads as the setting being broken.
-///
-/// It says **why**, and the why is the part that stops it sounding like a
-/// bug: the standards differ in what they demand of a *file* — fonts embedded,
-/// an output intent present, transparency allowed or not — and those are
-/// preflight questions. What they ask of a **renderer** is the same, so pdfcer
-/// giving them the same answers is agreement rather than laziness.
-///
-/// The number is counted at the moment of drawing, so if a standard's answers
-/// ever diverge this sentence corrects itself. See
-/// `crate::dialogs::settings::preset`'s `identical_siblings`.
 #[must_use]
 pub fn preset_same_as_others(others: usize) -> String {
     format!(
@@ -792,27 +584,12 @@ pub fn preset_same_as_others(others: usize) -> String {
 }
 
 /// What a standard does NOT specify, listed by name.
-///
-/// Named rather than left blank. Roughly a third of the grid is axes a
-/// standard does not reach — no PDF/X part contains a shading clause at all —
-/// and a blank cell reads as missing data, while a value would assert a
-/// requirement that does not exist.
 #[must_use]
 pub fn preset_leaves_alone(keys: &str) -> String {
     format!("This standard says nothing about: {keys}. Those keep whatever you have set.")
 }
 
 /// How much weight a standard's answers can bear.
-///
-/// The sentence that stops this feature being a dropdown. The engine grades
-/// every value it supplies, and its own framing is that *the interesting column
-/// is not the value, it is how much weight the value can bear.* For PDF/X-4,
-/// exactly one of six answers is a claim about the standard at all.
-///
-/// Worded so the weakest category is unmistakable. "pdfcer chose" is not a
-/// hedge — it is the honest description of an axis the standard is silent on,
-/// and an operator reading it should understand that switching standards will
-/// not change that answer for a reason the standard requires.
 #[must_use]
 pub fn preset_weight(sourced: usize, inferred: usize, chosen: usize) -> String {
     // A standard that specifies NOTHING gets a sentence, not three zeroes.
@@ -839,16 +616,6 @@ pub fn preset_weight(sourced: usize, inferred: usize, chosen: usize) -> String {
 /// of 2026-09-05, *"we should also add the capability to auto hide the ribbon
 /// until we hover over top of it… left rail should also have the option to auto
 /// hide as well."*
-///
-/// The radius line carries the fact that decides whether an operator dares
-/// turn this on: **the drawing does not move.** Every program in the class that
-/// gets this wrong reflows the document as the strip comes and goes, and an
-/// operator who has met that once will not try it again. Saying it here is what
-/// makes the setting choosable.
-///
-/// The title says *"getting out of the way"* rather than *"auto-hide"*,
-/// because the operator is looking for room on their drawing, not for a feature
-/// name.
 #[must_use]
 pub const fn auto_hide_title() -> &'static str {
     "Give the drawing more room"
@@ -969,10 +736,6 @@ pub const fn tab_tolerance_slider_label() -> &'static str {
 }
 
 /// Row tolerance: the slider's unit.
-///
-/// A catalog entry rather than a literal, for the reason the millisecond and
-/// degree suffixes are: the ui-strings gate looks for exactly this, and a
-/// translator has to be able to see that a unit exists.
 #[must_use]
 pub const fn point_suffix() -> &'static str {
     " pt"

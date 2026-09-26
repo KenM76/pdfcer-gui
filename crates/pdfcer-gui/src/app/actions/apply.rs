@@ -15,12 +15,6 @@ use crate::viewer;
 
 impl PdfcerApp {
     /// Apply every action raised during the frame just drawn.
-    ///
-    /// Applied in the order raised. `pixels_per_point` is passed in rather
-    /// than read from a context because the per-page zoom ceiling depends
-    /// on it — see [`viewer::max_zoom_for_page`] — and threading it makes
-    /// this function pure with respect to egui, which is what keeps it
-    /// reviewable.
     pub fn apply_actions(&mut self, actions: Vec<Action>, pixels_per_point: f32) {
         for action in actions {
             self.apply(action, pixels_per_point);

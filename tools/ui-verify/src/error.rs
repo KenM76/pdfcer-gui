@@ -62,10 +62,6 @@ impl Error {
     }
 
     /// Mark this as a failure of the subject, not a missing precondition.
-    ///
-    /// See the [`Error::fatal`] field. Use it only where the harness has
-    /// **observed** the program misbehave — a crash, an abort, a hang past a
-    /// stated bound — never for something the harness could not set up.
     #[must_use]
     pub fn fatal(mut self) -> Self {
         self.fatal = true;

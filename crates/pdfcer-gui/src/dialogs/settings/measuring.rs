@@ -12,48 +12,6 @@ use super::{Draft, widgets};
 use crate::text::settings as t;
 
 /// How close to parallel counts as parallel.
-///
-/// # Nobody defines this — not the standard, and not the CAD vendors
-///
-/// The PDF standard has no view on dimensioning at all, which is a different
-/// shape of silence from the twelve settings around it. More usefully: a search
-/// of the SolidWorks dimension corpus for an epsilon, a threshold, or a
-/// near-parallel snap rule **found none**, and the finding is recorded as
-/// unverified rather than as an absence. So the operator would reasonably
-/// assume CAD practice had settled it, and the silence line says it has not.
-///
-/// The shipped `0.5°` is a documented judgement: CAD-exported geometry is
-/// usually exact, so a pair a hair off parallel is far more likely an exporter
-/// rounding artefact than a deliberate shallow taper.
-///
-/// It exists as a setting because the operator asked for it on 2026-08-12 —
-/// *"We should have an option in our settings and allow the user to set the
-/// tolerance for nearly parallel lines"* — which is the standing ambiguity rule
-/// applied by the person it exists for.
-///
-/// # NOT logarithmic, unlike the word-gap slider
-///
-/// The two sliders in this window differ, and the difference is deliberate. The
-/// useful resolution here is **even across the range**: `0.5°` against `1.0°`
-/// matters exactly as much as `5°` against `10°`, because both answer the same
-/// question — *how wrong may this drawing be before I stop calling it
-/// parallel?* A log scale would compress the upper half of a range where the
-/// upper half is just as meaningful.
-///
-/// # Why zero is the floor rather than a rejected value
-///
-/// `0°` means *exactly parallel only*, which is a legitimate strict choice for
-/// exact CAD output rather than a degenerate one. And `45°` is the ceiling
-/// because above it the classification inverts in spirit — more pairs called
-/// parallel than angled — which is a different feature, not a tolerance.
-///
-/// # The escape hatch is in the note, on purpose
-///
-/// An operator reading this control needs to know that a wrong global value is
-/// a one-click per-dimension fix, not something they must come back here to
-/// adjust. Without that sentence, the natural response to one bad
-/// classification is to change a global default on the strength of a single
-/// drawing.
 pub fn parallel(ui: &mut Ui, draft: &mut Draft) {
     widgets::header(
         ui,

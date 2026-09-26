@@ -27,6 +27,8 @@
 //! not a failure — over a scan it is the common case, and an area highlight
 //! there is what a drawing office wants and is more than the reference
 //! application offers.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/canvas/markup/route.md`.
 
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
@@ -45,11 +47,6 @@ pub struct Previews {
 }
 
 /// One frame of a markup drag.
-///
-/// A struct because the list reached nine, and this module's whole subject is
-/// keeping three alternatives legible side by side — a nine-argument call would
-/// undo that at the one place a reader looks first. `gesture::Press`,
-/// `resizing::Frame` and `dragroute::Frame` all took the same shape.
 pub struct Drag<'a> {
     /// The egui context, for the freehand trail's own state.
     pub ctx: &'a egui::Context,

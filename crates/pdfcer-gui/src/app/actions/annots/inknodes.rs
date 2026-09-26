@@ -9,11 +9,6 @@ use crate::app::actions::annot::AnnotAction;
 use crate::app::state::OpenDoc;
 
 /// **Route one of the three ink point actions to its body.**
-///
-/// Called from [`super::apply_action`]'s single or-pattern arm over
-/// `MoveInkPoint | InsertInkPoint | RemoveInkPoint`, and from nowhere else. The
-/// module header carries why the routing is split across two files and what
-/// the `_` arm means.
 pub(super) fn apply(doc: &mut OpenDoc, action: AnnotAction) {
     match action {
         AnnotAction::MoveInkPoint {

@@ -12,45 +12,22 @@ use std::sync::Arc;
 use pdfcer_core::object::ObjId;
 
 /// The operator's explicit open/closed decisions for one document.
-///
-/// `Arc`-wrapped inside egui's store, so a read is a pointer clone rather than
-/// a map clone — this is read once per frame per visible note and written only
-/// on a click.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Overrides(BTreeMap<ObjId, bool>);
 
 impl Overrides {
     /// **Is this note's pop-up showing?**
-    ///
-    /// `authored` is what the file says — [`super::model::NoteView::authored_open`]
-    /// — and it is the answer whenever the operator has not spoken. See the
-    /// module header for why that is an argument rather than a fallback.
     #[must_use]
     pub fn is_open(&self, id: ObjId, authored: bool) -> bool {
         self.0.get(&id).copied().unwrap_or(authored)
     }
 
     /// Record a decision.
-    ///
-    /// Stores the value even when it equals `authored`: *"the operator closed
-    /// this and the file also says closed"* and *"the operator has not
-    /// touched it"* are the same on screen today and differ the moment
-    /// anything reads the file again, and a store that collapsed them would be
-    /// deciding that on the caller's behalf.
     pub fn set(&mut self, id: ObjId, open: bool) {
         self.0.insert(id, open);
     }
 
     /// **Has the operator spoken about this note?**
-    ///
-    /// The question the trace needs and nothing on screen can answer: a pop-up
-    /// that is open because the *file* said `/Open` and one that is open
-    /// because the operator *clicked* look identical, and the whole of this
-    /// module's contract is the difference between them. An implementation
-    /// that quietly defaulted `/Open` to `false` would look perfect right up
-    /// until somebody opened a document another product had authored, and
-    /// `note-popup from_file=` is the only oracle for it from outside the
-    /// process.
     #[must_use]
     pub fn touched(&self, id: ObjId) -> bool {
         self.0.contains_key(&id)
@@ -78,21 +55,12 @@ fn key(path: &Path) -> egui::Id {
 }
 
 /// Read this document's overrides.
-///
-/// Returns an owned `Arc` rather than borrowing out of the memory lock,
-/// because egui's `data` is behind a `RwLock` that must not be held while the
-/// caller draws — the same shape `crate::canvas::interact::load_gesture` takes.
 #[must_use]
 pub fn load(ctx: &egui::Context, path: &Path) -> Arc<Overrides> {
     ctx.data_mut(|d| d.get_temp::<Arc<Overrides>>(key(path)).unwrap_or_default())
 }
 
 /// Record one decision, in place.
-///
-/// Read-modify-write under one lock. The map is small — one entry per pop-up
-/// the operator has personally opened or closed in this sitting — so the clone
-/// is a handful of `(ObjId, bool)` pairs and the alternative (interior
-/// mutability inside the `Arc`) would buy nothing and cost a `Mutex`.
 pub fn set(ctx: &egui::Context, path: &Path, id: ObjId, open: bool) {
     ctx.data_mut(|d| {
         let key = key(path);

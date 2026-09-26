@@ -97,3 +97,59 @@ opened rather than the list of windows about to be drawn.
 
 The second frame here takes the empty-float-list early return, so this
 also pins the sweep to a position before it rather than after.
+
+### `const BODY_MARGIN_PTS`
+
+The `Ui` a viewport callback receives is the window's root and nothing
+pads it, so without this every control in the panel touches the frame.
+A constant rather than a theme metric because it participates in nothing
+that could feed back into it.
+
+### `struct FloatFrameReport`
+
+Deliberately a separate type from [`super::DockFrameReport`] rather
+than more fields on it: the two are produced by two calls at two points
+in the frame, and a single struct would have half its fields stale
+whichever of the two a caller happened to read.
+
+### `fn show_floating`
+
+Call this from the application's top-level frame, beside its
+dialogs — see the module header for why it cannot live inside
+[`Dock::show`].
+
+# What it does per open float, in order
+
+1. Decides the window's position, honouring a remembered one only
+   if it is still plausible ([`float::honour_position`]).
+2. Opens or updates the viewport, asserting the position only on
+   the frame the window opens.
+3. Paints the background, because nothing else will.
+4. Draws the header strip and offers its `Response` to the
+   application's tab-menu handler — the same seam a tab uses.
+5. Calls `body`.
+6. Reads the window's geometry back and records it as an intent.
+7. Applies every intent afterwards, in one place, exactly as
+   [`Dock::show`] does.
+
+### `fn split_header`
+
+A pure function so the arithmetic can be asserted without a window, and
+so the degenerate case has a named answer: a window too short to hold
+both gives the header nothing and the body everything. **The body
+wins**, because a header with no body is a window showing nothing at
+all, whereas a body with no header is still a panel — and the operator
+can still close it, because the OS window's close button is not drawn
+by us.
+
+### `fn viewport_id`
+
+Derived from the panel id rather than counted: `ViewportId` is what
+`egui` keys the OS window on, so two panels sharing one would be two
+panels in one window, and a counter would give a panel a different
+window depending on what else happened to be floating when it was
+floated.
+
+Salted with a prefix so a panel called `"print"` cannot collide with an
+application dialog of the same name — the two id spaces are independent
+and neither knows about the other.

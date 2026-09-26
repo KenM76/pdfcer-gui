@@ -34,3 +34,61 @@ the design.
 - **A display list.** `BENCHMARK.md`'s single biggest win, and
   explicitly post-fold-in work. It would replace what happens *inside*
   the worker, not the worker.
+
+## Item notes
+
+### `mod ceiling`
+
+Its header carries why this one ceiling cannot be derived the way the two in
+[`crate::viewer::ceiling`] are: the wall is inside `tiny-skia` and is
+content-dependent, measured 28x apart on two pages of the same document, so
+the only honest source of the number is a refusal that has already happened.
+
+### `mod halo`
+
+Its header carries the one-sentence cause — `render_page` sizes its pixmap
+to the `/CropBox`, so nothing culls the content, there are simply no pixels
+out there — and why a halo that would not fit is declined rather than
+clamped.
+
+### `mod ink`
+
+Its header is the record of an afternoon spent proving the shell innocent by
+hand: a near-uniform canvas has two causes, and until this module existed
+the harness could see only one of them.
+
+### `mod offpage`
+
+`render_page_region` accepts a rectangle outside the `/CropBox` by
+construction and is untested there; a shell feature built on an unexercised
+engine path is one whose first failure looks like a shell defect.
+
+### `mod pressure`
+
+A texture upload that fails for want of graphics memory raises
+`GL_OUT_OF_MEMORY` on a flag that `egui_glow` reads only under
+`debug_assertions`, so in a release build it is completely silent and
+presents as an empty rectangle drawn at full frame rate. Its header carries
+the frame boundary the whole module is built around — an upload ordered in
+one frame is performed at the end of it and its error is first readable at
+the top of the next — and why attribution refuses to guess.
+
+### `mod raster`
+
+Its header carries the y flip, which is the half that goes wrong: a missed
+flip shows the opposite end of the page, which at deep zoom looks like a
+blank raster rather than a coordinate error.
+
+### `mod region`
+
+Its header carries O174: this module handed `render_page_region` a
+canvas-space rectangle, which is right for an upright page at the origin and
+wrong for a turned one, so the operator's `/Rotate 270` sheet jumped and
+distorted above the whole-page → region crossover and nowhere below it.
+
+### `mod strategy`
+
+Its header carries the constraint that shaped it: panning at full detail is
+a property of rasterizing the WHOLE PAGE, and region rendering would cost
+it. So the region path engages only above the pixmap ceiling, where the
+whole-page path cannot work at all — nothing is taken away to pay for it.

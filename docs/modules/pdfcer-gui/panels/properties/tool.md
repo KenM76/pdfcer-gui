@@ -169,3 +169,71 @@ whatever the panel had just said about the selection, and — because
 `section_in` draws at most one block per call — the second would simply
 never appear. That is the `scale_switches` defect again in the other
 slot: a control that compiles, reads correctly and draws nothing.
+
+### `const REGION_MEASURE_POINT_PREFIX`
+
+Per ROW rather than one rect for the list, because the whole capability
+`OPERATOR_REQUESTS.md` O107 asks for is *removing a particular point*, and a
+check that could only find "the list" could not press one.
+
+### `enum Block`
+
+# A real function, not a `match` buried in a draw call
+
+The mapping *tool → controls* is the whole of what this module decides, and
+it is the thing that broke last time: the three scale switches were written
+into a branch `CanvasTool::Select` **cannot reach**, and *"an option row
+added there is dead code that compiles, reads correctly, and draws
+nothing."* Every unit test in that chain passed, because none of them could
+ask the question — the decision lived inside a function that needed a `Ui`.
+
+It does not any more. [`section`] dispatches on this and nothing else, so
+`each_moved_control_has_a_tool_that_reaches_it` is asserting the shipped
+decision rather than a copy of it.
+
+### `enum Slot`
+
+# Why placement is a per-block decision and not one rule
+
+*"An armed tool is the more immediate subject"* is true of the text pen and
+the circular measure and **false of the resize switches**, because
+[`block_for`] hands those back for `CanvasTool::Select` — the RESTING
+state — so they are on screen whenever an operator is doing the ordinary
+thing of clicking at objects.
+
+The cost of getting that wrong is measured. Put every block at the top and,
+in an 1100 x 800 window with one text object clicked, the panel's whole
+visible height is *When you resize something*, its three switches and its
+five-line note; the first two rows of the text editor are half clipped
+(`properties.text.bold … shown=0.46 floor=0.60`) and the Colour swatch sits
+at y 783-807 in a viewport ending at 766 — `shown=0.00`, off the bottom,
+reachable only by scrolling past a preference the operator did not ask
+about. `ui-verify clicking_text_offers_its_colour` is the check that holds
+this.
+
+The rule it enforces is `OPERATOR_REQUESTS.md` O75's, applied one block
+down: **a section that draws with no reference to the selection must not sit
+above the sections that describe it.** The operator's O198 sentence —
+*"the properties area is uneditable"* — is what the violation looks like
+from outside, when the editable part is below the fold.
+
+### `fn slot_of`
+
+A function rather than a `match` inside the draw call, for [`block_for`]'s
+reason stated again: the placement is a DECISION, and a decision that needs
+a `Ui` to observe is a decision no unit test can put a question to.
+
+### `fn armed_section`
+
+Returns `false` when the armed tool has no settings, or has some that belong
+at the foot of the panel — which is the honest shape rather than a heading
+with nothing under it (R9). See [`Slot`] for the split and why it exists.
+
+### `fn preferences_section`
+
+Called AFTER `object_section`, which is the only section that can say
+*"nothing is selected"*. That ordering is deliberate and is the one thing
+about this call that is easy to get backwards: these switches are not a
+description of a selection, so they must not be able to push one off the
+screen, and they must not read as though they were describing whatever the
+panel just said. Last is the only position that is true in both states.

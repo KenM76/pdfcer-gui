@@ -79,3 +79,55 @@ Escape leaves behind: four plain data types and one three-line
 [`SelectionLevel::ascend`]. Every behavioural question lives one level up,
 which is what lets that level be read as a state machine rather than as a
 state machine tangled with its own data definitions.
+
+## Item notes
+
+### `struct Selection`
+
+Four integers, and the shape is `GUI_ROADMAP.md`'s — *"page, object index,
+sub-path, node"*. Enough to re-resolve against a fresh decomposition, and —
+the point — containing nothing a zoom, a pan or a fit mode could
+invalidate.
+
+`Ord` so a selection set has a stable, reviewable order and so a
+[`BTreeSet`](std::collections::BTreeSet) can de-duplicate it. The ordering
+is `(page, object, subpath, node)`, i.e. document order first, which is also
+the order the outlines are painted in — a multi-select that painted in click
+order would re-stack its outlines whenever the operator shift-clicked, which
+reads as flicker.
+
+### `enum SelectionLevel`
+
+Three rungs, and the ladder is the vector-editor convention the operator
+asked for: double-click descends, Escape ascends **one rung per press**.
+
+The cap is structural rather than checked. A text object decomposes into
+runs, and a run has no anchors, so
+[`CanvasTargetProvider::nearest_node`](crate::canvas::target::CanvasTargetProvider::nearest_node)
+can never return a node for one — the ladder stops at two rungs for text
+without a special case anywhere.
+
+### `fn traced`
+
+Spelled out rather than left to `{:?}`, because `canvas::trace`'s header
+calls that line a contract with a consumer that does not compile against
+this crate: a variant renamed for a reason internal to this module would
+otherwise silently change what a driven check reads.
+
+### `enum EscapeOutcome`
+
+The caller traces it and, in the `Nothing` case, is free to let Escape
+fall through to whatever else owns the key. Returning a value rather than
+a `bool` is what keeps *"Escape ascends exactly one rung"* assertable:
+a test can press Escape three times and check the three outcomes in
+order, which a `bool` could not distinguish from one press that collapsed
+the whole ladder.
+
+### `struct ClickHit`
+
+Assembled by the canvas — which owns the provider and the coordinate
+conversion — and handed here as plain integers, so
+[`SelectionState::click`](super::SelectionState::click) is a pure function
+of "what is there" and "where am I" with no geometry in it. Every branch of
+the ladder is then testable without a document, a decomposition or an egui
+frame.

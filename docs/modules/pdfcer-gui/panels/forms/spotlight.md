@@ -60,3 +60,23 @@ Pinned because the two are adjacent in purpose and a shared key would be
 the worst kind of bug here: clicking a panel row would move the canvas's
 text caret into that field, which is a different act from pointing at it
 and one the operator did not ask for.
+
+### `struct Spotlight`
+
+Named by its fully-qualified name rather than by an index, for the reason
+[`crate::panels::forms::rows`] names everything that way: an index into a
+walk of the form is only valid for the revision it was taken from, and this
+value crosses a frame boundary.
+
+### `fn set`
+
+Called by a row that was clicked or whose value box holds focus. Writing the
+same value twice is free and is the common case — a focused box writes every
+frame it is focused, which is what keeps the spotlight alive without a timer.
+
+### `fn clear`
+
+Called by the panel when nothing in it is focused — *not* by the canvas.
+The writer owns the lifetime, because a reader that cleared what it read
+would race any other reader and would put the spotlight out on the first
+frame it was drawn.

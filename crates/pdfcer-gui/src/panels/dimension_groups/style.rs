@@ -16,13 +16,6 @@ use crate::text::dimension_groups as t;
 /// The region the appearance section publishes, so a driven check can find it.
 pub const REGION: &str = "dimension-groups.appearance"; // ui-text-exempt: trace region name, never displayed
 /// The region the text-height control publishes.
-///
-/// One driveable, non-popup control is named deliberately.
-/// `NO_SURFACE.md` §4 records what a colour picker costs a harness: *"the
-/// picker's popup publishes no regions, so a check can assert the swatch was
-/// drawn and driven but cannot aim at a hue inside it."* Any group of controls
-/// containing a colour picker therefore needs a numeric neighbour the harness
-/// **can** move, and this is it.
 pub const REGION_TEXT_HEIGHT: &str = "dimension-groups.text_height"; // ui-text-exempt: trace region name, never displayed
 
 /// The drag speed for the three point-valued properties.
@@ -37,35 +30,6 @@ const ARROW_LENGTH_RANGE: std::ops::RangeInclusive<f64> = 1.0..=30.0;
 
 /// Draw the appearance-defaults section for `group`, raising at most one
 /// [`DimensionAction::SetGroupStyle`].
-///
-/// # Read-modify-write, once per frame at most
-///
-/// The section starts from the group's **live** style, mutates a copy as the
-/// operator touches controls, and raises one action if the copy differs at the
-/// end. That is the CLI's own convention (`pdfcer group-style`: setting one
-/// property leaves the others alone) and it is what keeps a click here and a
-/// command-line invocation the same edit.
-///
-/// One action per frame rather than one per control is not an optimisation: two
-/// `SetGroupStyle` actions raised in the same frame would each carry a *whole*
-/// tier computed from the same starting point, so the second would silently
-/// undo the first. The queue drains in order and the last writer would win.
-///
-/// # Why tolerance is not drawn here
-///
-/// `GroupStyle` carries `tolerance` and `tolerance_places`, so a group *can*
-/// default them — and a group-level tolerance is the rarer half of the feature.
-/// A tolerance is a statement about **one manufactured feature**: two holes on
-/// the same drawing routinely carry different ones even though they share the
-/// drawing's units and precision, which is the ui-spec's own reasoning
-/// (§C.11.1) and the reference tool's.
-///
-/// So tolerance belongs on the **per-ce-dimension** surface, where it is drawn,
-/// and putting a second control for it here would invite an operator to set a
-/// group default that almost every member then overrides — the shape that makes
-/// the moving-count read *"no change on screen"* on nearly every press. It is
-/// reachable from the CLI for the drawing that genuinely wants one, and this
-/// paragraph is the record of that being a decision rather than an omission.
 pub fn show(ui: &mut Ui, model: &DimensionModel, group: &Group, actions: &mut Vec<Action>) {
     crate::diag::ui_rect(REGION, ui.max_rect());
     ui.label(t::appearance_hint());

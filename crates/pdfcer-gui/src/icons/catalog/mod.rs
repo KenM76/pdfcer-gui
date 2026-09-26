@@ -4,14 +4,11 @@
 //! comments spends R2's line budget without giving a compiler anything to
 //! check. **That file also carries the argument for the next split**, which
 //! this one is only a reprieve from: treat this file as full.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/icons/catalog/mod.md`.
 #![doc = include_str!("OVERVIEW.md")]
 
 /// Every icon pdfcer ships, one variant per drawn glyph.
-///
-/// Two roles deliberately share one asset: [`Icon::Open`] and
-/// [`Icon::FontFolders`] are both the plain folder glyph — Open is a
-/// top-level action and Font Folders is a labelled row three levels into a
-/// dock, and they are never on screen together.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum Icon {
     /// Open a file. ScripTree `icon-folder.svg`.

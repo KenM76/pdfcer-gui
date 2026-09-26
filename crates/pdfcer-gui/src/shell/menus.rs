@@ -37,70 +37,19 @@ pub const CANVAS_OBJECT: &str = "canvas.object";
 pub const CANVAS_EMPTY: &str = "canvas.empty";
 
 /// **Reading, over a picture** — `OPERATOR_REQUESTS.md` O71.
-///
-/// Two rows: take a copy, and look closer. Its own context rather than a
-/// filtered [`CANVAS_OBJECT`], because every other row of that menu edits and
-/// R9 says a mode that cannot edit renders nothing rather than a greyed list.
-/// `canvas::menus::CanvasMenu::ReadObject` carries the argument.
 pub const CANVAS_READ_OBJECT: &str = "canvas.read-object";
 
 /// Right-click on the page **with a caret placed in existing text**.
-///
-///
-/// ⇒ **Without this, reflow would be reachable only from the ribbon**, and the
-/// standing rule is that anything the engine can do to a thing on the page is
-/// reachable by clicking that thing on the page. A paragraph's "click" is the
-/// caret; its right-click is this.
 pub const CANVAS_TEXT: &str = "canvas.text";
 
 /// Right-click on the page **over a form field**.
-///
-/// The fourth canvas menu, added 2026-08-28. Keyed on `doc.selected_field`,
-/// which is neither a `SelectionState` entry nor a caret — a `/Widget` is
-/// deliberately not an annotation selection — so none of the other three ever
-/// resolved for one, and a right-click on a text box offered *"zoom to fit
-/// width"*.
-///
-/// ⇒ `OPERATOR_REQUESTS.md` **O53**: *"always always always I need objects on
-/// the canvas to be clickable and editable as one would expect."* A context
-/// menu is the fourth of the five gestures that sentence covers, after click,
-/// drag and Delete.
 pub const CANVAS_FIELD: &str = "canvas.field";
 
 /// Right-click on the page **over a selected markup shape**.
-///
-///
-/// # Why not just widen [`CANVAS_OBJECT`]
-///
-/// Because four of that menu's five rows are about **page content**, and an
-/// annotation is not page content:
-///
-/// | that menu's row | on a markup shape |
-/// |---|---|
-/// | `format.select_form` | meaningless — an annotation is never inside a form XObject |
-/// | `format.unshare_form` | meaningless, same reason |
-/// | `view.zoom_selection` | works, and is kept |
-/// | `format.properties` | works, and is the route to the Properties panel's markup section |
-/// | `format.delete` | works, and stays last |
-///
-/// Two rows that resolve, draw and do nothing is the *live and silently inert*
-/// class `DEFECTS.md` is made of, and R9's answer to *"this cannot apply"* is
-/// nothing rather than greying — the shape will not become page content while
-/// the operator looks at it.
-///
-/// ⇒ So a context of its own, carrying what a placed markup can actually
-/// answer for: what it is, its two node verbs, the clipboard, and Delete.
 pub const CANVAS_MARKUP: &str = "canvas.markup";
 
 /// **The right-click landed on a segment of a shape that can take a new
 /// point** — the `visible_when` of `markup.add_node`.
-///
-/// Set per right-click by [`crate::canvas::menus`], never by
-/// `PdfcerApp::conditions`, for [`PANEL_DOCKED`]'s reason one step further
-/// along: it is a fact about *one click on one edge*, and the frame's condition
-/// set describes the frame. [`crate::canvas::annotnodes::menu::rows`] is what
-/// answers it, and it answers it by **asking the engine**, so this name means
-/// *the engine did not refuse this on grounds of the shape's kind*.
 pub const NODE_INSERT_OFFERED: &str = "markup.node_insert_offered";
 
 /// **…and inserting there would actually be allowed** — the `enabled_when` of
@@ -118,37 +67,10 @@ pub const NODE_REMOVE_OFFERED: &str = "markup.node_remove_offered";
 
 /// **…and removing it would not breach the shape's vertex floor** — the
 /// `enabled_when` of `markup.remove_node`.
-///
-/// This is the one condition in the pair that is genuinely *temporary*: a
-/// closed shape keeps three points and an open one keeps two, and drawing
-/// another corner makes the row live again. That is precisely why the row is
-/// greyed rather than hidden, and why the command's tooltip states the floor.
 pub const NODE_REMOVABLE: &str = "markup.node_removable";
 
 /// **The right-click landed on one line of a MULTI-LINE text object** — the
 /// `visible_when` of `format.select_text_line`, and its `enabled_when` too.
-///
-/// O188(A). The Part rung on text — the rung at which *one line* is the
-/// operand, and therefore the only rung at which `delete_text_run` can be
-/// reached — was reachable by exactly one gesture: arm the Points tool by
-/// chord, *then* click. No surface named it. This condition is what lets a row
-/// name it instead. [`crate::canvas::runmenu`] carries the measurement of
-/// every other gesture and why each lands one rung up.
-///
-/// Set per right-click by [`crate::canvas::menus`], never by
-/// `PdfcerApp::conditions`, for [`NODE_INSERT_OFFERED`]'s reason: it is a fact
-/// about *one click on one line*, and the frame's condition set describes the
-/// frame.
-///
-/// **One name, carried on both the item and the command**, where the node
-/// pair above needs two each. That is not an inconsistency — it is R9 applied
-/// to a question with no recoverable state. A node can be un-removable *for
-/// now* (the shape is at its vertex floor; draw another corner and the row
-/// lives again), so that row is drawn and greyed and explains itself. There is
-/// nothing the operator can do, while this menu is open, that turns a
-/// single-run text object into a multi-run one or moves the pointer onto a
-/// line it is not on. So the row is **offered or absent**, and shown implies
-/// pressable — which also means a stale frame cannot press a dead row.
 pub const RUN_SELECT_OFFERED: &str = "canvas.run_select_offered";
 
 /// **The selection is two or more runs of one page text object** — the
@@ -168,13 +90,6 @@ pub const TEXT_MERGE_ALLOWED: &str = "selection.text_merge_allowed";
 pub const DOCK_TAB: &str = "dock.tab";
 
 /// **The panel under this tab is docked**, so it can be floated.
-///
-/// Set per drawn tab by `crate::app::surfaces`, never by
-/// `PdfcerApp::conditions` — because it is a fact about *one tab*, and the
-/// frame's condition set describes the frame. `MenuHost::with_conditions`
-/// is the sanctioned way to correct a condition to a value the caller has
-/// just computed, and its docs carry the argument for why that is not a
-/// second source of truth.
 pub const PANEL_DOCKED: &str = "panel.docked";
 
 /// **The panel under this tab is in a window of its own**, so it can be
@@ -186,29 +101,12 @@ pub const PANEL_FLOATING: &str = "panel.floating";
 pub const OBJECTS_ROW: &str = "objects.row";
 
 /// Right-click on a page tile in the Pages panel.
-///
-/// Spelled here **and** in `crate::panels::pages::PAGES_ROW`, which is the one
-/// duplication this module tolerates and only because the panel attaches the
-/// menu before this file could hand it a constant: the two are asserted equal
-/// by that panel's own test, so a rename that touches one fails rather than
-/// silently detaching every tile's menu.
 pub const PAGES_ROW: &str = "pages.row";
 
 /// **A document tab in the strip under the ribbon** — not a dock tab.
-///
-/// The two are deliberately different contexts because they name different
-/// things: [`DOCK_TAB`] names a *panel*, which is a tool, and this names a
-/// *document*, which is an operand. Sharing one menu between them would offer
-/// *Reset layout* on a drawing and *Close others* on the Bookmarks panel.
 pub const DOCUMENT_TAB: &str = "document.tab";
 
 /// Every context id this module defines, for the sweeps in [`tests`].
-///
-/// Hand-written, and pinned by
-/// [`tests::the_catalog_defines_exactly_the_documented_contexts`] against
-/// [`built_in`] itself, so a menu added to the document without an entry
-/// here — or an entry here with no menu — fails rather than silently
-/// halving a test sweep.
 pub const CONTEXTS: &[&str] = &[
     CANVAS_OBJECT,
     CANVAS_READ_OBJECT,
@@ -227,19 +125,6 @@ pub const CONTEXTS: &[&str] = &[
 // ===========================================================================
 
 /// **Every context menu pdfcer defines.**
-///
-/// Deterministic and side-effect free, exactly as
-/// [`super::manifest::built_in`] is, and called from the same place: once,
-/// at start-up, and from the tests. It is the **built-in layer** of
-/// `SHELL_FRAMEWORK.md` §4's three-layer merge, so it has to be complete
-/// and has to validate — it is what every other layer patches and what an
-/// operator gets back when they reset.
-///
-/// # Order is presentation
-///
-/// Items appear in the order they are written. Within a menu that order is
-/// argued at each site; between menus it does not matter, because a lookup
-/// is by key.
 #[must_use]
 pub fn built_in() -> Menus {
     Menus::new()
@@ -819,30 +704,6 @@ pub fn built_in() -> Menus {
 // ===========================================================================
 
 /// **The one seam between a right-click site and the menu engine.**
-///
-/// Carries the three things every `egui_shell::menu::Menu::attach` call
-/// needs — the document to look the context up in, the registry to resolve
-/// its ids against, and the conditions to evaluate their predicates
-/// against — so a call site names only *which* menu and *what* it was
-/// attached to.
-///
-/// # Why a borrowing struct rather than three arguments
-///
-/// Because it is passed through two layers that have nothing to do with
-/// menus. `canvas::show` and `panels::Panel::show` hand it on to the
-/// functions that actually right-click, and threading three parameters
-/// through each of them would make every one of those signatures a place
-/// the three could be mismatched — a registry from one frame with the
-/// conditions from another, say, which produces a menu that is *plausible*
-/// and wrong.
-///
-/// # Why it is `Option` at every call site
-///
-/// [`crate::app::PdfcerApp::shell`] is `Option<Shell>`: if the built-in
-/// manifest ever fails to validate, the ribbon does not render and the
-/// application deliberately stays usable for reading. A build in that state
-/// has no menus either, and `None` is the honest way to say so — not a
-/// stand-in for "menus are not wired yet".
 #[derive(Clone, Copy)]
 pub struct MenuHost<'a> {
     /// The document the menus live in. `Shell` implements
@@ -879,41 +740,12 @@ impl<'a> MenuHost<'a> {
 
     /// **The operator-visible label of `id`, from the one registry the ribbon
     /// reads.**
-    ///
-    /// # Why a panel is given this rather than a string of its own
-    ///
-    /// `crate::panels::tool` names the armed tool, and the only honest name for
-    /// it is **the name on the control that armed it**. A second string would
-    /// compile, would read identically on the day it was written, and would
-    /// drift the first time either was reworded — and the drift is invisible,
-    /// because nothing renders both at once.
-    ///
-    /// `NO_SURFACE.md` §1 records exactly that failure with a colour rather
-    /// than a label: a duplicate of a value that already existed, plus a test
-    /// that *"asserted the literal triple against a function returning the
-    /// literal triple. Two copies of one constant cannot disagree."* Reading
-    /// the registry makes the second copy unrepresentable instead of merely
-    /// unlikely.
-    ///
-    /// Returns `None` for an id this build does not register, which is a real
-    /// state rather than a defensive one: `SHELL_FRAMEWORK.md` §5b's whole
-    /// point is that a capability compiled out loses its command, and a caller
-    /// must render **nothing** for it rather than a name with no control behind
-    /// it.
     #[must_use]
     pub fn label(&self, id: &str) -> Option<&str> {
         self.registry.get(id).map(|c| c.label.as_str())
     }
 
     /// **The chord bound to `id` by the operator's own keymap**, if any.
-    ///
-    /// From the manifest's keymap, inverted, exactly as a menu row's accelerator
-    /// hint is — `egui_shell::menu::shortcut::Shortcuts::of`. So an operator who
-    /// rebinds a key sees every surface follow, with nothing to keep in step.
-    ///
-    /// A panel that hard-coded `"Ctrl+E"` would be telling an operator to press
-    /// a key their manifest may not bind, which is worse than telling them
-    /// nothing: a chord that does not work reads as the *feature* not working.
     #[must_use]
     pub fn chord(&self, id: &str) -> Option<String> {
         egui_shell::menu::shortcut::Shortcuts::of(self.shell)
@@ -928,52 +760,12 @@ impl<'a> MenuHost<'a> {
     }
 
     /// **This frame's conditions, with one condition corrected.**
-    ///
-    /// # The frame-ordering hazard this exists for, in full
-    ///
-    /// `PdfcerApp::conditions()` is evaluated **once**, at the top of the
-    /// frame, before the ribbon is drawn — so its `selection.any` describes
-    /// the selection as it stood *at the start of the frame*. The canvas is
-    /// composed last, and a right-click over an unselected object **selects
-    /// it** (see [`crate::canvas::menus`]). The click and the menu it opens
-    /// therefore happen on a frame whose snapshot still says nothing is
-    /// selected.
-    ///
-    /// Left uncorrected the consequence is total, not cosmetic:
-    /// `format.delete` is gated on `selection.any`, so it resolves disabled,
-    /// so `offers_anything` is false, so **the menu does not open at all** —
-    /// and it never opens later either, because `egui`'s popup is opened by
-    /// the secondary click and there is no second click. The first
-    /// right-click on an object would silently do nothing, which is
-    /// precisely the class of defect (`DEFECTS.md` D1) this whole stage
-    /// exists to end.
-    ///
-    /// # Why this is not a second source of truth
-    ///
-    /// It corrects **one named condition to a value the caller has just
-    /// computed**; it does not re-derive the condition set. The rule for
-    /// *when* `selection.any` holds still lives in exactly one place —
-    /// `PdfcerApp::conditions`, reading `OpenDoc::selection` — and the caller
-    /// here passes `!selection.is_empty()` read from the same field, one
-    /// frame later. The spelling of the condition comes from
-    /// [`super::manifest::SELECTION_ANY`], which is the same constant the
-    /// Format tab's `visible_when` and `format.delete`'s `enabled_when` are
-    /// built from.
-    ///
-    /// Returns an owned set, because the borrow it corrects is shared and
-    /// the correction lasts exactly as long as the one `attach` call that
-    /// wants it.
     #[must_use]
     pub fn with_condition(&self, condition: &str, holds: bool) -> ConditionSet {
         self.with_conditions(&[(condition, holds)])
     }
 
     /// The same correction, for **several** conditions at once.
-    ///
-    ///
-    /// ⇒ Both conditions the canvas corrects are *the same fact one frame
-    /// later*, and they should arrive by the same route. `with_condition`
-    /// delegates here so there is one implementation.
     #[must_use]
     pub fn with_conditions(&self, pairs: &[(&str, bool)]) -> ConditionSet {
         let mut set = self.conditions.clone();
@@ -989,19 +781,6 @@ impl<'a> MenuHost<'a> {
 
     /// Attach the menu for `context_id` to a widget's secondary click, and
     /// report the commands the operator chose.
-    ///
-    /// **Nothing is executed.** The returned tokens are *intent*; the
-    /// application dispatches them at the one choke point the ribbon
-    /// already uses, which is where the confirmation gate and the undo entry
-    /// belong.
-    ///
-    /// A context with no menu, a menu whose every command is missing from
-    /// this build, and a menu whose every command is disabled all produce
-    /// the same thing: **no popup, and an empty `Vec`**. The engine takes
-    /// that decision before `egui` is asked for a popup, and it also closes
-    /// an already-open popup whose offer has evaporated — so a menu left
-    /// open over a selection that is then deleted vanishes rather than
-    /// lingering with a dead Delete in it.
     #[must_use]
     pub fn attach(&self, response: &egui::Response, context_id: &str) -> Vec<HandlerToken> {
         self.attach_with(response, context_id, self.conditions)
@@ -1033,11 +812,6 @@ impl<'a> MenuHost<'a> {
     }
 
     /// **Whether right-clicking this context would produce a menu at all.**
-    ///
-    /// Pure and cheap, and the *same* question [`Self::attach`] asks itself
-    /// — so a caller that wants to draw a "⋯" affordance beside a row, or a
-    /// test that wants to assert the empty-menu rule without opening a
-    /// window, gets the answer the operator will actually get.
     #[must_use]
     pub fn would_open(&self, context_id: &str) -> bool {
         self.would_open_with(context_id, self.conditions)

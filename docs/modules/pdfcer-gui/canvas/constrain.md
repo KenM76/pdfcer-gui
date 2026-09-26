@@ -117,3 +117,78 @@ jump on the first frame Shift goes down.
 therefore can never win. This is the whole reason [`aspect`] takes no
 `Grip` — and a test for it, because the next reader's instinct will be
 to add one.
+
+### `enum Axis`
+
+Named for what the operator sees on screen, not for a vector component:
+`Horizontal` means the object slides left and right. The canvas is Y-down
+and PDF user space is Y-up, and a name like `X` would invite a reader to
+guess which of those this is about. It is about neither — a lock is a lock
+in every space, which is why this type can be computed in canvas space and
+remain true after `canvas::mapping` has done its one conversion.
+
+### `enum Lock`
+
+Two variants rather than a `bool`, because the sentence differs and because
+a future third constraint (centre-scaling on Alt, a 45° lock) is a variant
+here and a compile error in [`crate::text::constrain`] — which is the same
+exhaustive-match discipline `canvas::resizing::Refusal` uses to guarantee
+every refusal has words.
+
+### `fn dominant`
+
+Ties — a delta at exactly 45° — resolve to [`Axis::Horizontal`]. Arbitrary,
+deterministic, and documented so it is a decision: the alternative is a lock
+that flickers between axes while the pointer sits on the diagonal, which is
+visibly worse than picking one.
+
+### `fn axis`
+
+The other component is set to exactly zero — not damped, not scaled. A
+constrained drag that still creeps by a pixel on the locked axis is a
+constraint the operator cannot trust, and trust is the entire point of
+holding the key.
+
+### `fn aspect`
+
+Keeps the factor further from unity and applies it to both axes. See the
+module header for why that metric *is* relative pointer travel, and for why
+the mid-edge grips need no special case.
+
+Non-finite input is returned untouched: judging which of two `NaN`s is
+"further from unity" is meaningless, and [`crate::canvas::resizing::is_usable`]
+is the one place that decides a degenerate resize is refused. Two places
+deciding that would be two chances to disagree.
+
+### `fn reposition`
+
+For the drags whose outcome is a position — a perimeter vertex, measured
+from the press, and a Bézier handle, measured from its anchor. See
+[`toward`] for why the two reference points differ and why filtering the
+displacement rather than the position is what preserves the grab.
+
+### `fn resize`
+
+The odd one out, and deliberately so. A resize's factors are derived inside
+[`crate::canvas::resizing::drag`] from a grip and a box, and the ghost it
+returns must be the same pair it commits — so the lock has to be applied
+*there*, between the derivation and the branch. What the caller can do is
+announce, and hand the flag on.
+
+Returns `active` unchanged so the call reads as one expression at the call
+site, which is what stops a caller announcing one thing and passing another.
+
+### `fn announce`
+
+Called by the drag that applied the constraint, not by the modifier check —
+so a Shift held over an *unconstrainable* drag (a marquee, where Shift means
+"extend the selection") announces nothing, which is correct: nothing was
+constrained.
+
+### `fn caption`
+
+Self-retiring: the stamp must be this frame's or the one before it. One
+frame of slack because the status bar is composed before the canvas that
+writes the slot, so on any given frame the freshest value available *is* the
+previous frame's. Two frames would leave the sentence on screen after the
+key came up; zero would show it never.

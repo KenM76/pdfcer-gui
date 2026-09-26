@@ -23,19 +23,6 @@ use crate::text::print as t;
 
 /// What the shown sheet's overhang turned out to contain — the fact the hatch
 /// is drawn from, lifted out so the CAPTION can be drawn from the same one.
-///
-/// # Why this is a return value and not something the caption re-derives
-///
-/// Operator request O113 makes the hatch ink-aware, and a caption that kept
-/// announcing a clip over a preview showing no hatch would be the identical
-/// contradiction one level up: *"this sheet will lose content"* printed above a
-/// picture that visibly loses none. An operator resolving that disagreement
-/// resolves it by trusting neither.
-///
-/// The only way the two cannot disagree is for them to be the **same
-/// computation**, so [`paint`] reports what it found and [`column`] says it.
-/// A caption that asked the mask a second time would be a second call site for
-/// a question with a threshold in it, and the two would drift.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum Overhang {
     /// The placement reported no clip. The page fits the printable area.
@@ -96,25 +83,9 @@ const CANVAS_MIN_HEIGHT_PTS: f32 = 160.0;
 const CANVAS_MAX_HEIGHT_PTS: f32 = 1400.0;
 
 /// The Pop-out button's region, for the driven harness.
-///
-/// Declared with the **visibility-gated** publisher, unlike the preview
-/// column's own region next door, and the two are opposites on purpose: this
-/// one exists to be clicked, so a rect the operator cannot reach is worse than
-/// no rect at all; that one exists to be seen to disappear, so a rect that is
-/// merely scrolled out of view must still count as present.
 pub(super) const REGION_POP_OUT: &str = "print.preview.popout";
 
 /// The placed page's own rectangle inside the preview canvas.
-///
-/// Published so a driven check can start a drag INSIDE the page rather than on
-/// the paper around it — the two gestures share one mouse button and differ
-/// only by where the press landed, so a driver that guessed the rectangle
-/// would be measuring the pan half the time.
-///
-/// It is the page clipped to the canvas, i.e. the part that can actually be
-/// pressed, and it is absent rather than empty when there is none. See the
-/// publisher in [`paint`] for why neither the page nor `ui_rect_visible` of the
-/// page is the right thing to publish.
 pub(super) const REGION_PAGE: &str = "print.preview.page";
 
 /// The fraction of the canvas the fitted sheet occupies.
@@ -138,53 +109,6 @@ const ZOOM_STEP: f32 = 1.25;
 const PREVIEW_TEXTURE_ID: &str = "pdfcer-print-preview"; // ui-text-exempt: internal texture id, never displayed
 
 /// What a cached preview bitmap is a picture OF.
-///
-/// # Every field here is something that changes the pixels
-///
-/// A cache key is a claim: *"if these are equal, re-rendering would produce
-/// the same image."* Getting it wrong in the lax direction is the bug class
-/// `RenderKey`'s staleness fields were each added to close — a control that
-/// changes the render, does not change the key, and therefore silently does
-/// nothing.
-///
-/// **Orientation is deliberately absent, and the REASON is subtle enough to
-/// be worth stating.** Orientation *does* reach planning, so it does change
-/// [`crate::dialogs::print::spooler::Placement::scale`] and therefore the
-/// rectangle the preview draws. It still changes no pixel of **this bitmap**:
-/// the texture is rasterised at [`raster_scale`], which is derived from the
-/// page's own size and the preview's target DPI and never from the placement
-/// — the placement scales the drawn rectangle, not the raster. Nothing here
-/// rotates page content either: the driver turns the sheet, pdfcer does not
-/// turn the page. So the key stays as it is, and putting orientation in it
-/// would throw the cache away on every radio click for nothing.
-///
-/// ## The settings field, and the standing rule it satisfies
-///
-/// **A rendering knob and the key that invalidates its cache land in the same
-/// commit, or the control silently does nothing.** Every setting reaching
-/// [`crate::app::settings::SettingsExt::render_options`] changes these pixels,
-/// so the whole `Settings` value is in the key.
-///
-/// A **font-environment generation is absent**, and the reason is that there is
-/// nothing to key on rather than that it was forgotten: the preview rasterises
-/// through `pdfcer_render::render_page_with_view`, which takes no font
-/// environment at all. The operator's font folders reach *embedding*
-/// ([`crate::app::fonts`]) and do not reach a render. The day a render takes
-/// one, this key gains a field in the same commit — the rule above is the whole
-/// point of this paragraph.
-///
-/// ### Why the whole `Settings` and not the fields it reads
-///
-/// Because a list here would be a second statement of which settings affect a
-/// render — one in this key and one in `SettingsExt::render_options` — and the
-/// failure mode of the two disagreeing is silent: a rendering setting added to
-/// the funnel and not to this list produces a preview that never updates, with
-/// no error anywhere. Keying on the whole value cannot drift, and the cost is a
-/// `String` comparison on a cache hit against a rasterisation on a miss.
-///
-/// This is why the type is `Clone`/`PartialEq` rather than `Copy`/`Eq`: the
-/// settings carry the theme token, which is a `String`. The theme is not a
-/// rendering input, but excluding it would mean naming fields again.
 #[derive(Debug, Clone, PartialEq)]
 pub(super) struct PreviewKey {
     /// Which document page (0-based).
@@ -201,26 +125,6 @@ pub(super) struct PreviewKey {
 
 impl PreviewKey {
     /// Build the key for one page.
-    ///
-    /// # Called from exactly one place, and that place is the VERDICT
-    /// # cache's context
-    ///
-    /// [`super::verdicts::Context::preview_key`] is the sole caller, and the
-    /// inversion is the point rather than plumbing.
-    ///
-    /// That module remembers, per sheet, whether the overhang the preview
-    /// hatched turned out to be blank, so the commit button can subtract the
-    /// sheets known to lose nothing. A remembered verdict is a claim about
-    /// **these pixels**, and a cache key claims that equal keys would render
-    /// the same image. A verdict cached under a weaker key would be a verdict
-    /// about a page that has changed — and it would be confidently wrong,
-    /// because its whole purpose is to take a warning away.
-    ///
-    /// Deriving this key **from** the verdict cache's context makes "the
-    /// verdict is keyed on at least what the pixels are keyed on" a structural
-    /// fact rather than a promise held by two doc comments. Constructing it
-    /// here as well, from the same three values, would be the second reading of
-    /// one rule that this type's `settings` field already argues against.
     pub(super) fn new(
         page: usize,
         scope: pdfcer_render::AnnotationScope,
@@ -245,13 +149,6 @@ impl PreviewKey {
 }
 
 /// Everything the preview needs that is NOT the dialog's own state.
-///
-/// # Why a struct rather than five parameters
-///
-/// The preview reads from two different places — the open document and the
-/// planned job — and grouping them makes the borrow situation legible: the
-/// caller holds `&mut PrintDialog` and these are reads of *disjoint* values,
-/// which is the only reason the call compiles at all.
 pub(super) struct Inputs<'a> {
     /// The open document, for its pages and its edited view.
     pub(super) doc: &'a OpenDoc,
@@ -330,23 +227,6 @@ fn raster_scale(page_pt: (f64, f64)) -> f32 {
 }
 
 /// **Where this preview is being drawn** — operator request O112 ask 2.
-///
-/// # One function, two homes, and the difference is one button
-///
-/// The preview is the same picture and the same arithmetic in the print
-/// dialog's column and in its own OS window. What differs is a single control:
-/// the column offers *"pop this out"*, and the popped window does not, because
-/// the way back is its own close button. Passing that as a parameter rather
-/// than writing a second draw function is the whole reason this feature is
-/// cheap — and a second draw function is how the two copies of a preview come
-/// to disagree about a margin.
-///
-/// There is deliberately **no** "put it back" button in the popped window.
-/// The operator's own words were *"closing the window pops it back into place
-/// on the print window"*, and that is also the convention: a popped-out pane
-/// docks by being closed, everywhere this pattern appears. A second control
-/// that did the same thing as the title bar's X would be an invented
-/// interaction beside a conventional one.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum Placement {
     /// Inside the print dialog, in the column beside the options.
@@ -1021,10 +901,6 @@ fn strip(
 }
 
 /// Put the preview back to fit, centred.
-///
-/// Two fields, one place. The Fit button and both stepper buttons need
-/// exactly this, and three copies of `zoom = 1.0; pan = ZERO` is how a fourth
-/// caller ends up resetting only one of them.
 pub(super) fn reset_view(dialog: &mut PrintDialog) {
     dialog.preview_zoom = 1.0;
     dialog.preview_pan = Vec2::ZERO;

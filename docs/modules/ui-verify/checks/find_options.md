@@ -111,3 +111,66 @@ would be silently driving O180's gesture instead — and still passing,
 because a trimmed query searches for the same needle. A wrong default
 here is invisible in every outcome, which is exactly the class this
 project pins.
+
+### `struct ZoomOffHoldsTheViewOnAFindJump`
+
+# What was wrong, precisely
+
+`FindState::zoom_on_jump` was read in exactly one place. `reveal_current`
+armed `OpenDoc::find_reveal` unconditionally, and the canvas's reveal branch
+spends that by scrolling the hit to the centre of the viewport. So the tick
+named *Zoom* turned off the re-fit and left the page sliding under the
+operator on every hit — which is the visible half of "it zoomed" to anybody
+actually using it.
+
+# What is asserted
+
+1. **Control launch, option ON:** an armed `find-reveal page=N frac=(x,y)`
+   line exists. That proves the fixture has a hit and that the gesture
+   reached the application. Without it every assertion below is vacuous, so
+   its absence is a **SKIP**.
+2. **Subject launch, option OFF:** a `find-reveal page=N declined=zoom-off`
+   line exists — the guard was reached and took its branch.
+3. **And no `find-reveal-solved` line anywhere in that run.** Separate from
+   2 deliberately: a guard that traces its own decision and is then overruled
+   forty lines further down is a shape this project has met. The `-solved`
+   line is emitted where a reveal is actually *spent*, so it is evidence
+   about what the frame did rather than about what the guard decided.
+
+# What is deliberately NOT asserted
+
+That the scroll offset is byte-identical before and after. A page change is
+still owed — the whole point of going to a hit is to go to it — and under a
+continuous display mode the canvas performs a minimum scroll to bring the
+page into view. That is correct behaviour, and pinning the offset would
+forbid it.
+
+### `struct ATrailingBlankDoesNotChangeWhatASearchFinds`
+
+# What was reported
+
+*"trailing spaces/tabs/etc stops a search from finding text on the page that
+doesn't have these symbols … copy pasting from excel seems to give a
+trailing space that I have to remove to search."*
+
+# What is asserted, and why the hit COUNT is the load-bearing part
+
+1. **Control launch:** the bare needle finds some hits. `hits=0` is a
+   **SKIP** — whether a given PDF contains `e` is the fixture's business, and
+   everything below is a comparison against this number.
+2. **Subject launch:** the same needle *followed by a space* finds **the
+   same number of hits**, and the `find needle=` the application traced is
+   the **trimmed** one. That is the operator's own sentence turned into a
+   number. A check that only asserted the disclosure row appeared would pass
+   on a build that showed the row and still found nothing.
+3. **And `find-bar edge_blanks=true`** — the bar noticed, so the disclosure
+   row was drawn. Asserted last but owed just as much: a silent trim is the
+   same defect wearing the other coat. He would type a space, get hits, and
+   have no way to learn the space was discarded.
+
+# The trace fields are plain, not `{:?}`
+
+`find-bar` carries `trim=` and `edge_blanks=` as bare booleans specifically
+so this check can read them. A Debug-formatted field in a line a machine
+parses has already produced one driven check in this repo that reported the
+opposite of the truth while quoting the truth in its own message.

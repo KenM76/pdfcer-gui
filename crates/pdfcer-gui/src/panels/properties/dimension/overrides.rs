@@ -16,10 +16,6 @@ use crate::text::panels::dimension as t;
 pub const REGION: &str = "dimension-properties.overrides"; // ui-text-exempt: trace region name, never displayed
 /// The region the text-height control publishes, so a driven check has one
 /// numeric control it can move.
-///
-/// The same reasoning `dialogs::dimension_groups::style` records: a colour
-/// picker's popup publishes no regions, so any block containing one needs a
-/// driveable non-popup neighbour or a harness can prove nothing about it.
 pub const REGION_TEXT_HEIGHT: &str = "dimension-properties.text_height"; // ui-text-exempt: trace region name, never displayed
 
 /// The drag speed for the point-valued properties. See
@@ -38,16 +34,6 @@ const PLACES_RANGE: std::ops::RangeInclusive<u32> = 0..=6;
 const DENOMINATORS: [u32; 6] = [2, 4, 8, 16, 32, 64];
 
 /// Draw all eleven rows against `overrides`, mutating it in place.
-///
-/// `group` is the ce dimension's own group, needed for two things: the
-/// provenance query, and the **resolved** style that seeds a checkbox the
-/// operator has just ticked. Seeding from the resolved value rather than from
-/// the factory is what makes ticking a box a no-op until something is dragged —
-/// the value on screen does not jump the moment it becomes editable.
-///
-/// Returns `false` if any row is currently invalid, in which case the caller
-/// must not raise an action. Only the tolerance can be invalid; see
-/// [`super::tolerance`].
 pub fn show(ui: &mut Ui, group: &Group, overrides: &mut StyleOverrides) -> bool {
     crate::diag::ui_rect(REGION, ui.max_rect());
     let provenance = pdfcer_core::dimension::style_provenance(group, overrides);

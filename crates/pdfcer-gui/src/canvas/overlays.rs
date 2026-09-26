@@ -6,11 +6,6 @@
 use egui_shell::theme::{Overlays, Theme};
 
 /// Build the application's overlay roles from a resolved theme.
-///
-/// Pure, and takes the [`Theme`] rather than reading the context, so the test
-/// below can run it against every preset without a frame. That is the same
-/// shape `crate::panels::properties::font_embedded` takes and for the same
-/// reason: a rule stated as a function is a rule that can be asserted.
 #[must_use]
 pub fn overlays_for(theme: &Theme) -> Overlays {
     Overlays::new()
@@ -25,16 +20,6 @@ pub fn overlays_for(theme: &Theme) -> Overlays {
 }
 
 /// Publish the roles for this frame.
-///
-/// Called beside `Theme::apply` in `crate::app::frame`, and per frame rather
-/// than once at start-up for the theme's own reason: the operator can change
-/// the preset from the Settings window, and a one-time install would mean a
-/// restart to see the effect.
-///
-/// Cheap — a two-entry `BTreeMap` into an `Arc`, once per frame — and the
-/// alternative is a cached copy that can disagree with the theme that is
-/// actually applied, which is the class of bug `app::frame`'s own settings
-/// snapshot exists to prevent.
 pub fn install(ctx: &egui::Context, theme: &Theme) {
     Overlays::install(ctx, overlays_for(theme));
 }

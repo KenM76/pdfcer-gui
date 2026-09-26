@@ -16,27 +16,12 @@ use crate::text::sign as t;
 use std::path::{Path, PathBuf};
 
 /// Whether `action` is the one this module handles.
-///
-/// The predicate half of the guard/handler pair
-/// [`crate::app::dispatch::security::claims`] uses: a guard and a handler that
-/// disagree turn a raised action into one that silently does nothing, which is
-/// indistinguishable from the outside from an action nobody wired.
-///
-/// [`super::apply`] currently re-matches the variant itself rather than calling
-/// this, so the two can drift; a caller that routes on the predicate should use
-/// this one rather than spelling the pattern a second time.
 #[must_use]
 pub fn claims(action: &Action) -> bool {
     matches!(action, Action::SignDocument { .. })
 }
 
 /// **Sign the open document and write it where the operator chose.**
-///
-/// See §2 for the four steps and for why this arm does not go through
-/// `vector_edit`. Every exit hands an [`Outcome`] to the window; there is no
-/// path out of [`crate::dialogs::sign`]'s `Signing` phase but this one, so a
-/// `return` that said nothing would leave the operator looking at a window that
-/// never answers.
 pub fn apply(app: &mut PdfcerApp, action: &Action) {
     let Action::SignDocument {
         certificate,

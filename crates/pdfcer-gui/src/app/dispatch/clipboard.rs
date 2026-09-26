@@ -14,10 +14,6 @@ use crate::app::state::Status;
 use crate::canvas::fieldclip::PasteAs;
 
 /// **Whether this module owns `id`.**
-///
-/// Listed rather than prefix-matched. `edit.paste_in_place` is a *registered
-/// absence* (`shell::manifest::registers`) and a prefix rule would silently
-/// claim it the day someone made it real, routing it here with no body.
 #[must_use]
 pub fn handles(id: &str) -> bool {
     matches!(

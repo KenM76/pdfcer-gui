@@ -45,3 +45,19 @@ deliberately readable: Acrobat writes an opaque key there
 (`YTV_yyfVN1TzJ0_6oei-GB.pdf`, measured on this machine) and reads the
 category from `/Info` `/Title`, so nothing depends on the filename and a
 human browsing that folder gets `Signatures.pdf` instead.
+
+### `fn collection`
+
+The whole of `WriteAction::StampCollection`, and — like
+`super::extract::extract` — a verb that goes nowhere near `vector_edit`:
+nothing is mutated, so there is no worker to cancel, no epoch to bump and no
+texture to drop. It is a **read** of the session that happens to produce a
+file.
+
+# The view is the session's, not the loaded file's
+
+The same choice `extract` makes. An operator who rotates
+three sheets and then saves them as stamps must get the rotated sheets;
+writing the file as it was opened would be a silent, plausible-looking wrong
+answer, and this one would not surface until the stamp landed on somebody
+else's drawing.

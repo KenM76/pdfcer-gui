@@ -66,3 +66,14 @@ these four live on a locked mark and refuse with a sentence
 (`app::dispatch::arrange`). That is R9 read correctly: §12.5.3 bit 8 is a
 fact about one annotation rather than about the build or the mode, so it
 earns an explanation and not an absence.
+
+## Item notes
+
+### `fn band`
+
+**Front first, back last** — the order every reference application uses,
+and it is not arbitrary: read top to bottom the four are a single axis from
+nearest to furthest, so the list itself teaches what the words mean. Sorting
+them any other way (the two ends together, then the two steps) would group
+them by *how far* rather than by *which way*, and an operator scanning for
+"send it back" would have to read all four.

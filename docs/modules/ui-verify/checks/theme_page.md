@@ -257,3 +257,95 @@ taken. A page rect read before the click is a rectangle the sheet has slid
 out of, and sampling it would report a tinted page about a build that is
 fine. This is the single most likely way for this check to produce a false
 defect report, which is why the re-read is not an optimisation to fold away.
+
+### `struct EveryThemePresetKeepsThePageWhite`
+
+# The invariant, and why it is the one that matters
+
+pdfcer draws CAD drawings. A dark chrome is a preference; a **tinted sheet
+is an unreadable drawing**, because the linework carries all of the content
+and the paper is the reference the eye measures it against. Grey a drawing
+sheet by fifteen levels and every hairline on it loses the contrast it was
+drawn with — and unlike a chrome regression nobody files it as a bug,
+because a drawing that is merely *hard* to read still looks like a drawing.
+
+The shell already believes this. `Preset::Dark`'s own doc comment is *"Dark
+chrome against light content, as CAD tools do it"*, and it keeps
+`label_backdrop` and `label_text` light-plated with a stated reason —
+*"because they sit over CONTENT, whose colour the document decides and the
+theme does not."* A dark board that keeps the page white is the single
+invariant a dark theme in this product must hold.
+
+Stated in three places and enforced in none is the exact shape of every
+defect this suite exists for: **a rule cited in a comment near the code, and
+not enforced by a mechanism inside it.**
+
+# What it measures, and why two things rather than one
+
+Per preset, from **one capture of the application's own window**:
+
+| sample | region | the claim |
+|---|---|---|
+| the sheet | `page` | it did not move, and it is white |
+| the surround | a band of [`CANVAS_VIEWPORT`] outside `page` | it DID move |
+
+The second is not decoration; it is what stops the first being vacuous.
+*"The page stayed white"* is trivially true of a build in which the click
+never landed, the radio does nothing, the theme is not installed, or the
+window never opened. A check asserting only the page would pass on all four
+and report a property it had never exercised. So each preset must be shown
+to have **changed the surround** before its page reading is admitted as
+evidence, and a run where it did not is a SKIP naming
+[`SettingsThemeTakesEffect`] as the place that diagnosis lives.
+
+And the surround is the right witness rather than a convenient one: it is
+the pixel **immediately adjacent to the sheet**, in the same capture. A theme
+that reached the page would have had to reach it through there. Sampling the
+dialog instead would prove the theme changed *somewhere*; this proves it
+changed at the page's own edge and the page did not follow.
+
+Measuring it also found something nobody had looked for.
+`Palette::content_backdrop` exists precisely for this surface and says so —
+*"deliberately its own role rather than reusing `surface`, because the
+content must read as an object ON something, and a backdrop equal to the
+panel makes its edge disappear"* — and the surround measures `surface` under
+all three presets. **Nothing in either crate reads `content_backdrop` at
+all.** So the sheet sits on the same colour as the panels and its edge is
+exactly as invisible as that comment predicts. This crate reports that and
+does not assert on it: it is a finding about the theme, not about the
+invariant under test, and the fix is a call site in another crate.
+
+# It drives all three presets, and Airy is the point
+
+[`SettingsThemeTakesEffect`] clicks Dark and nothing else, so without this
+check **nothing in this repository clicks Airy** — and Airy is the preset
+most likely to be wrong, measured: two known contrast defects have luminance
+gaps of 28.2 and 5.0 under Airy against 45 and 18 under the presets that are
+driven, because Airy's panel is pure white and a 27 % wash barely darkens
+it. The preset nothing drives is the preset most likely to fail.
+
+Each preset must also measure **distinct from the others**
+([`MIN_PRESET_DISTINCTION`]), which is a real assertion in its own right: a
+radio that is drawn, publishes a rect, accepts a click and selects a preset
+whose palette is never installed is `DEFECTS.md` D10 confined to one preset,
+and Dark-only coverage structurally cannot see it.
+
+# What would make this vacuous, and what is done about each
+
+| vacuity | guard |
+|---|---|
+| the fixture's page is not white paper | measured under the light preset FIRST and SKIPPED, naming the file |
+| the clicks never landed | the surround must move per preset, else SKIP |
+| the sheet fills the viewport, so there is no surround | [`backdrop_band`] returns `None` and the check SKIPS |
+| a capture of the wrong window | the page is read from the APPLICATION's frame, re-raised per preset |
+| a stale rect after Airy re-flows the layout | every rect is re-read from the trace after every click |
+
+That last row is not hypothetical. Airy is the one preset that changes
+**metrics** as well as colours — `control_height` 24 → 28, `panel_padding`
+6 → 12, `gutter` 4 → 8 — so the ribbon grows, the docks resize and the canvas
+moves. A check that computed the page rect once and reused it would, under
+Airy and only under Airy, sample a rectangle the sheet had since slid out
+of. It would report a tinted page, confidently, about a build that is fine —
+the exact failure this project's own rule warns of: **ask what a failing
+pixel check SAMPLED before asking what is broken.** Six false defect reports
+were filed here from one wrong page index.
