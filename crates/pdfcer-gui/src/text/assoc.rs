@@ -156,7 +156,7 @@ pub fn refused(key: &str) -> String {
 /// The Windows settings page would not open.
 #[must_use]
 pub fn settings_page_refused() -> String {
-    // A plain `>` rather than a typographic separator. `icons::glyphs`
+    // A plain `>` rather than a typographic separator. `text::glyphs`
     // measures the shipped font stack and it can draw NEITHER `▸` nor
     // `→` - both were tried here, both would have reached the operator as
     // a substitution box in the middle of the one sentence that exists to

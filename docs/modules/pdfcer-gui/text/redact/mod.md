@@ -90,7 +90,7 @@ that asks a question before acting.
 One addition of this module's own: **`⚠` is the residual mark and the only
 non-ASCII character used here.** It is measured drawable — `DEFECTS.md` D12
 records the correction that established it — and
-`crate::icons::glyphs::tests::every_glyph_the_catalog_draws_has_a_glyph`
+`crate::text::glyphs::tests::every_glyph_the_catalog_draws_has_a_glyph`
 sweeps this file with the rest of the catalog, so a decorative glyph added
 later that the bundled fonts cannot draw fails a test rather than shipping
 as a box. That matters more on this surface than on any other: a residual

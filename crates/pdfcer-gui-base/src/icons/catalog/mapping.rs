@@ -14,7 +14,7 @@
 //! The doc comments — the rulings about what a glyph may not look like — stay
 //! with the enum, because that is where somebody choosing a glyph reads.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/icons/catalog/mapping.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/icons/catalog/mapping.md`.
 
 use super::super::assets;
 use super::Icon;

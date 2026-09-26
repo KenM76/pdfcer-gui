@@ -16,7 +16,7 @@ nothing about these assets reaches it automatically.
 to state terms.
 
 The format follows the sibling records in this tree
-(`crates/pdfcer-gui/src/icons/assets/PROVENANCE.md`,
+(`crates/pdfcer-gui-base/src/icons/assets/PROVENANCE.md`,
 `crates/pdfcer-gui/src/app/assets/PROVENANCE.md`) and `D:\Dev\pdfcer`'s own, so
 a reader moving between them meets one convention rather than three.
 

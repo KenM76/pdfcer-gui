@@ -171,14 +171,14 @@ substitution mark?"* — so every character whose first supporting face in the
 fallback chain is that face is reported missing and draws perfectly. The clinching
 reading is that `has_glyph(Monospace, 'A')` is `false`.
 
-`icons::glyphs::GlyphProbe` is the correct predicate: lay the character out and
+`text::glyphs::GlyphProbe` is the correct predicate: lay the character out and
 compare the glyph actually drawn against a fingerprint of the substitution mark.
 `GlyphProbe::new` fingerprints that mark from **three** mutually unrelated
 unassigned codepoints across three planes and panics unless all three agree, so a
 future font set covering one fails at construction rather than silently reporting
 everything drawable.
 
-The gate `icons::glyphs::tests::every_glyph_the_catalog_draws_has_a_glyph` reads
+The gate `text::glyphs::tests::every_glyph_the_catalog_draws_has_a_glyph` reads
 every `.rs` under `text/` **from source** and checks every codepoint in every
 operator-visible literal, so a string added tomorrow is covered. It skips the
 braced test item and **resumes** (see D13), and a file it cannot parse is a hard
@@ -235,7 +235,7 @@ fail-open shape, arriving through the tool rather than through the rule. A
 nonzero `awk` is now fatal, with a headline that says the fault is in the gate
 rather than in the tree.
 
-`icons::glyphs` has an independent implementation of the same job and asserts
+`text::glyphs` has an independent implementation of the same job and asserts
 the same property itself, in
 `a_mid_file_test_module_does_not_blind_the_scanner`.
 

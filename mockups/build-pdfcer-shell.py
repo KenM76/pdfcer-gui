@@ -62,7 +62,7 @@ INPUTS
 =====================================================================
 
     glyphs/shipped.json    One key per .svg in
-                           crates/pdfcer-gui/src/icons/assets/, plus one per
+                           crates/pdfcer-gui-base/src/icons/assets/, plus one per
                            live alias key that draws another role's art per
                            mapping.rs — of which there are currently NONE, the
                            last three having been given purpose-drawn assets on
@@ -129,7 +129,7 @@ from pathlib import Path
 HERE = Path(__file__).parent
 
 # The delivery's geometry contract, applied to every `p` path in proposed.json.
-# Identical to `crates/pdfcer-gui/src/icons/assets`'s own contract, which is why
+# Identical to `crates/pdfcer-gui-base/src/icons/assets`'s own contract, which is why
 # the two sets sit side by side on the glyph sheet without reading as two sets.
 STD = (
     'stroke="currentColor" stroke-width="2.5" '

@@ -292,7 +292,7 @@ pub const fn remove_lives_with_the_note() -> &'static str {
 pub fn removed(name: &str) -> String {
     format!(
         // The command is named in words rather than with the ribbon's ▸
-        // separator: `crate::icons::glyphs` records that U+25B8 is a codepoint
+        // separator: `crate::text::glyphs` records that U+25B8 is a codepoint
         // this build's font stack CANNOT DRAW, so a path written that way
         // reaches the operator as a substitution box in the middle of the one
         // sentence that has to be understood.

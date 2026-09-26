@@ -1,4 +1,4 @@
-# `pdfcer-gui/icons/catalog/mapping`
+# `pdfcer-gui-base/icons/catalog/mapping`
 
 ## Item notes
 

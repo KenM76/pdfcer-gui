@@ -5,7 +5,7 @@
 //! pixel** size. Nothing here knows what any icon means; it knows how to
 //! read a path `d` attribute and how to stroke it.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/icons/svg/mod.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/icons/svg/mod.md`.
 
 use std::fmt;
 

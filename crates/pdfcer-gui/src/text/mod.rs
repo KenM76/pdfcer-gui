@@ -9,6 +9,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/text/mod.md`.
 
 pub mod about;
+
 /// **Every word `OPERATOR_REQUESTS.md` O122 puts on screen** — the
 /// *Open in Acrobat* control beside the mode selector, the three things it can
 /// say before it acts, and the Settings field that says where Acrobat is. One
@@ -121,6 +122,9 @@ pub mod fonts;
 /// Every string the Forms panel shows. Consumed by `crate::panels::forms`.
 pub mod formfield;
 pub mod forms;
+/// Font-glyph coverage: *can the stack actually draw this character?*
+#[cfg(test)]
+pub mod glyphs;
 pub mod images;
 /// **The words of the Import-text window** — the return journey's chooser.
 /// Its header carries the one way it departs from `export_text`'s shape:

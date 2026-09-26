@@ -9,7 +9,7 @@
 //! only this file — and keeping them in one 1,400-line module was already
 //! within a hundred lines of the project's 1,500-line limit.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/icons/svg/path.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/icons/svg/path.md`.
 
 use pdfcer_render::tiny_skia::PathBuilder;
 

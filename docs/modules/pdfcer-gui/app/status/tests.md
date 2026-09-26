@@ -95,7 +95,7 @@ for the proportional family is `NotoEmoji-Regular`, the supplier of
 `DEFECTS.md` D12 records what believing that cost: thirteen shipped
 sentences recorded as rendering tofu when they render correctly.
 
-[`crate::icons::glyphs::GlyphProbe`] instead lays the character out and
+[`crate::text::glyphs::GlyphProbe`] instead lays the character out and
 looks at what was drawn. The full mechanism, the measurements and the
 three-sentinel fingerprint are in that module's header.
 
@@ -104,7 +104,7 @@ draws, it is in the bar, and re-opening a settled copy decision on the
 strength of a corrected diagnosis is churn, not a fix.
 
 This gate is the narrow, hand-listed one; the broad one is
-[`crate::icons::glyphs::tests::every_glyph_the_catalog_draws_has_a_glyph`],
+[`crate::text::glyphs::tests::every_glyph_the_catalog_draws_has_a_glyph`],
 which reads the whole catalog from source and needs no list.
 
 ### `mod disclosure_independence`

@@ -1,4 +1,4 @@
-# `pdfcer-gui/render/pressure`
+# `pdfcer-gui-base/pressure`
 
 **Graphics-memory pressure, made observable** — the blank page that
 nothing reports.

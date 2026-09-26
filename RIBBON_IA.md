@@ -130,7 +130,7 @@ Two corollaries:
   a mock of a command that no longer exists is how a deleted feature comes back.
 - **Distinct roles get distinct art.** Shared art is allowed only where the
   controls have the same *subject*, and even then the catalogue keeps a distinct
-  key over the shared art (`crates/pdfcer-gui/src/icons/catalog/mod.rs`), so that
+  key over the shared art (`crates/pdfcer-gui-base/src/icons/catalog/mod.rs`), so that
   two commands remain two commands. An icon key aliased onto art drawn for a
   different role is a gap wearing a solution's clothes — the same defect class as
   two commands sharing one glyph, one level down.

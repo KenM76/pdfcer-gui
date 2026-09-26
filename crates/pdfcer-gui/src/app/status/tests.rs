@@ -309,7 +309,7 @@ fn every_glyph_the_status_bar_draws_has_a_glyph() {
     let mut missing = Vec::new();
     let _ = ctx.run_ui(RawInput::default(), |ui| {
         let ctx = ui.ctx().clone();
-        let probe = crate::icons::glyphs::GlyphProbe::new(&ctx, egui::FontId::proportional(14.0));
+        let probe = crate::text::glyphs::GlyphProbe::new(&ctx, egui::FontId::proportional(14.0));
         for label in &labels {
             for c in label.chars() {
                 if !probe.can_draw(&ctx, c) {

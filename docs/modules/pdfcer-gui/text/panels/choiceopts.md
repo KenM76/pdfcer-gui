@@ -13,7 +13,7 @@ explanation reads as a mistake rather than as a capability.
 `\u{23f6}`, not `\u{25b2}` BLACK UP-POINTING
 TRIANGLE, and the reason is
 [`super::bookmarks::bookmark_collapsed_glyph`]'s: U+25B2 is in
-`icons::glyphs`'s genuinely-absent row, so it would draw as a
+`text::glyphs`'s genuinely-absent row, so it would draw as a
 substitution box in front of the operator. The U+23F4-U+23F7 block is
 supplied by `emoji-icon-font`, and taking both halves of the pair from
 one face is what stops a missing glyph reading as a direction.
@@ -22,7 +22,7 @@ one face is what stops a missing glyph reading as a direction.
 
 `\u{00d7}` MULTIPLICATION SIGN, for
 [`crate::text::find::close`]'s reason rather than a new one:
-`\u{2715}` MULTIPLICATION X is in `icons::glyphs`'s absent
+`\u{2715}` MULTIPLICATION X is in `text::glyphs`'s absent
 row, and U+00D7 is supplied by `Ubuntu-Light`.
 
 ### `fn row_remove_hover`

@@ -354,7 +354,7 @@ def _asset_dirs_under(crates: Path) -> list[Path]:
     """Every directory under `crates` that holds shipped asset files.
 
     PORT CHANGE — the engine scans `crates/*/assets/` only. This shell's own
-    art lives at `crates/pdfcer-gui/src/icons/assets/`, INSIDE the module that
+    art lives at `crates/pdfcer-gui-base/src/icons/assets/`, INSIDE the module that
     reads it, and `icons::assets`' header gives the reason. A gate that looked
     only one level under a crate root would find nothing at all in this
     repository and report it as clean — the exact shape of failure

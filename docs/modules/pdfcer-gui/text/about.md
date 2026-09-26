@@ -273,7 +273,7 @@ it is, so this sentence cannot become false without something failing.
   here by hand would create a second list that drifts, and the drift would
   be invisible — the crate list runs to well over a hundred entries and
   nobody re-reads it.
-- **The pdfcer icon set** (`crates/pdfcer-gui/src/icons/assets/`). It is the
+- **The pdfcer icon set** (`crates/pdfcer-gui-base/src/icons/assets/`). It is the
   operator's own art under the project's own MIT licence, confirmed by him;
   the `LICENSE` file already covers it and there is no third-party grant to
   reproduce. Listing it under a heading that says "third-party" would make

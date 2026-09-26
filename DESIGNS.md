@@ -1682,10 +1682,12 @@ Engine-reach instruments must scan base as well as `pdfcer-gui`, since base
 now calls the engine: `check-backlog-verdict-drift.py` and
 `security-coverage.py` walk both crates.
 
-`icons` looks like a Stage 2 candidate and is not: it is in a cycle with
-`shell` (`icons`→`shell` 1, `shell`→`icons` 4). One reference in one
-direction is the whole obstruction, which is the argument for the gate in
-Stage 1 — an edge that small is invisible to review and fatal to a split.
+`icons` is in base. Its one edge up to `shell` was a test duplicating
+`shell::commands::tests`' icon-key check, and its edge to `render` was the
+upload ledger, which is now `pressure` in base; `render::pressure` keeps the
+page-raster recorder and the per-frame GL poll. The glyph-coverage tests sweep
+the text catalogue, so they are `text::glyphs`. Base takes `egui-shell` and
+`native-gl`.
 `stamps` is in base on the `sign` pattern: `Plan::new` takes the default
 page name and `folder::suggested_file_name` the fallback stem, so both
 wordings stay in `text`. `protect` and `clipboard` hold an `app::state::OpenDoc`

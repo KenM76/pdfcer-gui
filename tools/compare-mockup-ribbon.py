@@ -361,9 +361,9 @@ def icon_by_id():
     return out
 
 
-ASSETS_RS = ROOT / 'crates' / 'pdfcer-gui' / 'src' / 'icons' / 'assets.rs'
-MAPPING_RS = ROOT / 'crates' / 'pdfcer-gui' / 'src' / 'icons' / 'catalog' / 'mapping.rs'
-ASSETS_DIR = ROOT / 'crates' / 'pdfcer-gui' / 'src' / 'icons' / 'assets'
+ASSETS_RS = ROOT / 'crates' / 'pdfcer-gui-base' / 'src' / 'icons' / 'assets.rs'
+MAPPING_RS = ROOT / 'crates' / 'pdfcer-gui-base' / 'src' / 'icons' / 'catalog' / 'mapping.rs'
+ASSETS_DIR = ROOT / 'crates' / 'pdfcer-gui-base' / 'src' / 'icons' / 'assets'
 
 
 def asset_by_icon_key():

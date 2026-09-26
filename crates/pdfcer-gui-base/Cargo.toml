@@ -39,6 +39,12 @@ license.workspace = true
 # in `[workspace.dependencies]`, like every other toolkit dependency here.
 egui.workspace = true
 
+# egui-shell: the ribbon icon request and theme accents the icon painter answers.
+egui-shell.workspace = true
+
+# native-gl: the GL error record the upload ledger attributes.
+native-gl = { path = "../native-gl" }
+
 # pdfcer-core — `units` converts against `pdfcer_core::dimension::Unit`, which
 # is what makes the GUI's unit table and the engine's agree by construction
 # rather than by a duplicated 25.4. Declared with the SAME git/branch/feature

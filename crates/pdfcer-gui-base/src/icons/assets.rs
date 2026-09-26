@@ -9,7 +9,7 @@
 //! distinguishable from, and a paraphrase would lose exactly the part that
 //! is expensive to re-derive.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/icons/assets.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/icons/assets.md`.
 
 /// `add-text.svg` — the art for [`super::Icon::AddText`].
 ///

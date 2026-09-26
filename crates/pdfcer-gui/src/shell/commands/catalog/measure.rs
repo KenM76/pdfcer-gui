@@ -220,7 +220,7 @@ pub(super) fn band() -> Vec<Command> {
         // and a long up-stroke — because evened out it reads as
         // [`crate::icons::Icon::ChevronRight`] or a bare `>` at 16 px. The
         // asymmetry is the cue, not styling. And it could not have been a text
-        // glyph in any case: `icons::glyphs` measures `✓` U+2713 **absent** from
+        // glyph in any case: `text::glyphs` measures `✓` U+2713 **absent** from
         // the shipped font stack, so this concept had no character fallback —
         // which is the deeper reason the refusal could not be worked around and
         // had to wait for an asset.

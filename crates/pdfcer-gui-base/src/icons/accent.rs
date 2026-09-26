@@ -20,7 +20,7 @@
 //!   [`enabled`]), because the ribbon's painter is handed a `Painter` and
 //!   nothing else.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/icons/accent.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/icons/accent.md`.
 
 use egui_shell::theme::IconAccents;
 

@@ -1,4 +1,4 @@
-//! Design and rationale: `docs/modules/pdfcer-gui/icons/catalog/tests.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/icons/catalog/tests.md`.
 #![cfg(test)]
 //! Catalogue-wide properties: exhaustiveness, key spelling, and the closed
 //! set of shared assets.

@@ -7,7 +7,7 @@
 //! turn a path `d` attribute into pixels, how not to do it twice, and how to
 //! report the one thing it cannot draw.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/icons/mod.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/icons/mod.md`.
 
 /// The optional two-colour icon set: which part of which glyph takes which
 /// accent, and the switch.
@@ -17,10 +17,6 @@ pub mod cache;
 pub mod catalog;
 pub mod paint;
 pub mod svg;
-
-/// Font-glyph coverage: *can the stack actually draw this character?*
-#[cfg(test)]
-pub mod glyphs;
 
 pub use cache::IconCache;
 pub use catalog::Icon;
@@ -430,29 +426,5 @@ mod tests {
                 icon.name()
             );
         }
-    }
-
-    /// Every icon key a shell command names has an icon behind it.
-    #[test]
-    fn every_command_icon_key_exists_in_the_catalogue() {
-        let mut registry = egui_shell::CommandRegistry::new();
-        crate::shell::commands::register(&mut registry);
-        assert!(
-            !registry.is_empty(),
-            "the command registry is empty — this test would pass vacuously"
-        );
-
-        let mut missing: Vec<(String, String)> = Vec::new();
-        for command in registry.iter() {
-            if let Some(key) = command.icon.as_deref()
-                && Icon::from_key(key).is_none()
-            {
-                missing.push((command.id.clone(), key.to_owned()));
-            }
-        }
-        assert!(
-            missing.is_empty(),
-            "commands name icon keys the set has no glyph for: {missing:?}"
-        );
     }
 }

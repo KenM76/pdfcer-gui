@@ -966,7 +966,7 @@ touched file and diff the remainder — rather than by reading the diff.
 
 pdfcer-gui is **MIT** (`LICENSE`), which covers everything in this repository
 including the icon set — the operator's own art, recorded in
-`crates/pdfcer-gui/src/icons/assets/PROVENANCE.md`.
+`crates/pdfcer-gui-base/src/icons/assets/PROVENANCE.md`.
 
 It does not cover everything `pdfcer-gui.exe` contains. The binary statically
 links `pdfcer-core` and `pdfcer-render`, which embed third-party font faces and

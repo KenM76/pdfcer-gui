@@ -10,7 +10,7 @@ automatically. `tools/gates/check-shipped-assets.py` is what requires this
 file to exist and to state terms.
 
 This note follows the format of the sibling record at
-`crates/pdfcer-gui/src/icons/assets/PROVENANCE.md`, which in turn follows
+`crates/pdfcer-gui-base/src/icons/assets/PROVENANCE.md`, which in turn follows
 `D:\Dev\pdfcer`'s own asset provenance records, so that a reader moving between
 the three meets one convention rather than three.
 

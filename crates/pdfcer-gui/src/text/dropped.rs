@@ -19,7 +19,7 @@ pub fn only_the_first(count: usize) -> String {
 #[must_use]
 pub const fn image_needs_a_document() -> &'static str {
     // "the File tab" rather than the ribbon-path spelling with a
-    // ▸ in it: `icons::glyphs` refused that codepoint here and was right
+    // ▸ in it: `text::glyphs` refused that codepoint here and was right
     // to. It runs through this project's COMMENTS and appears in no
     // operator-visible string, because the font stack cannot draw it — it
     // renders as a substitution box, which on a sentence whose whole job is

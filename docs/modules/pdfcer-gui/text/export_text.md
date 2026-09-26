@@ -182,7 +182,7 @@ export and 40 out of 400,000 is a stray glyph, and the two need different
 reactions from the operator.
 
 It **describes** the replacement character rather than printing one.
-`icons::glyphs` proves the font stack cannot draw U+FFFD, so a literal one
+`text::glyphs` proves the font stack cannot draw U+FFFD, so a literal one
 here would render as a substitution box — and a sentence explaining that
 unreadable characters became a box, in which the box is itself unreadable,
 is a joke at the operator's expense. The name is also what they can search

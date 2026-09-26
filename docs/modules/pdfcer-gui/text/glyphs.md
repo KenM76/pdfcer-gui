@@ -1,4 +1,4 @@
-# `icons::glyphs` — asking the font stack what it can actually draw
+# `text::glyphs` — asking the font stack what it can actually draw
 
 A test-only module holding two things and one gate:
 

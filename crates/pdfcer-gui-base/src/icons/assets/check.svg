@@ -14,7 +14,7 @@
        absence those two paragraphs are about.
 
        It could not have been a text glyph either way: `✓` U+2713 is MEASURED
-       ABSENT from the shipped font stack by icons::glyphs, so there is no
+       ABSENT from the shipped font stack by text::glyphs, so there is no
        fallback to fall back to.
 
        DISTINCT FROM chevron-right.svg by ASYMMETRY. A chevron's two limbs are

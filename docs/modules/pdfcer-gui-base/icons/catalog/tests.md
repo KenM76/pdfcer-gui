@@ -1,4 +1,4 @@
-# `pdfcer-gui/icons/catalog/tests`
+# `pdfcer-gui-base/icons/catalog/tests`
 
 ## Item notes
 

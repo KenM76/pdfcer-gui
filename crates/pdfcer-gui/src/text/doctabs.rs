@@ -247,7 +247,7 @@ pub const fn drag_over_nothing() -> &'static str {
 #[must_use]
 pub const fn drag_refused_self_copy() -> &'static str {
     // "the Pages tab" rather than the ribbon-path spelling with a U+25B8
-    // in it. `icons::glyphs` refuses that codepoint in operator-visible
+    // in it. `text::glyphs` refuses that codepoint in operator-visible
     // strings and is right to: the font stack cannot draw it, so it renders as
     // a substitution box — and this sentence's whole job is to give
     // directions. `text::dropped` carries the same note for the same reason.

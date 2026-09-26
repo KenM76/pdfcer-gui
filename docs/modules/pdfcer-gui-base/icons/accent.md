@@ -1,4 +1,4 @@
-# `pdfcer-gui/icons/accent`
+# `pdfcer-gui-base/icons/accent`
 
 ## Item notes
 

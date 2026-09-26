@@ -5,7 +5,7 @@
 //! check. **That file also carries the argument for the next split**, which
 //! this one is only a reprieve from: treat this file as full.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/icons/catalog/mod.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/icons/catalog/mod.md`.
 #![doc = include_str!("OVERVIEW.md")]
 
 /// Every icon pdfcer ships, one variant per drawn glyph.

@@ -142,7 +142,7 @@ change it.
 
 The obvious pair is `▶` U+25B6 / `▼` U+25BC — the Geometric Shapes
 triangles every style guide names. **The bundled font stack cannot draw
-U+25BC.** [`crate::icons::glyphs`]' coverage gate reads the four `.ttf`
+U+25BC.** [`crate::text::glyphs`]' coverage gate reads the four `.ttf`
 charmaps `epaint 0.35` ships, and it caught this the first time this module
 compiled, with the sentence that gate exists to produce: *"each renders as a
 substitution box in front of the operator."*

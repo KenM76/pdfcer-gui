@@ -141,13 +141,13 @@ pub fn edit_disclosure_line(notes: &[String]) -> String {
 //
 // `⊗` was chosen because it reads as *"this did not happen"* rather than as
 // *"look at this"*, and because it is drawable. That second half is measured,
-// not assumed: `crate::icons::glyphs`' header records which codepoints egui's
+// not assumed: `crate::text::glyphs`' header records which codepoints egui's
 // bundled proportional chain (Ubuntu-Light → NotoEmoji-Regular →
 // emoji-icon-font) actually supplies, and `⊗` is among those confirmed
 // present. It is checked twice on every run anyway — by
 // `crate::app::status::tests::every_glyph_the_status_bar_draws_has_a_glyph`,
 // which lists this bar's labels by hand, and by
-// `crate::icons::glyphs::tests::every_glyph_the_catalog_draws_has_a_glyph`,
+// `crate::text::glyphs::tests::every_glyph_the_catalog_draws_has_a_glyph`,
 // which reads every literal in this directory from source. A tofu box on a
 // decline would read as a rendering failure, which is exactly how an operator
 // decides a surface is broken and stops reading it.

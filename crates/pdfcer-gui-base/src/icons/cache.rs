@@ -5,7 +5,7 @@
 //! [`egui::TextureHandle`] per [`CacheKey`], so nothing is rasterized twice
 //! unless the display scale changes or a control becomes selected.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/icons/cache.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/icons/cache.md`.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -130,9 +130,9 @@ impl IconCache {
         // a zoom-dependent failure, and that is precisely why it is counted:
         // an unrecorded upload makes a two-upload frame look like a one-upload
         // frame, and the page raster left standing gets blamed for this.
-        crate::render::pressure::record_other(
+        crate::pressure::record_other(
             ctx,
-            crate::render::pressure::Surface::Icon,
+            crate::pressure::Surface::Icon,
             u32::try_from(image.width()).unwrap_or(u32::MAX),
             u32::try_from(image.height()).unwrap_or(u32::MAX),
         );

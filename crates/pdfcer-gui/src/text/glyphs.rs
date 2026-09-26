@@ -1,8 +1,8 @@
-//! # `icons::glyphs` — asking the font stack what it can actually draw
+//! # `text::glyphs` — asking the font stack what it can actually draw
 //!
 //! A test-only module holding two things and one gate:
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/icons/glyphs.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui/text/glyphs.md`.
 
 use egui::{Color32, Context, FontId};
 
@@ -656,6 +656,8 @@ pub fn after() -> &'static str { "after —" }
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/text");
         let mut out = Vec::new();
         walk(&root, &mut out);
+        // This scanner sits in the catalog directory and is not catalog.
+        out.retain(|p| *p != root.join("glyphs.rs"));
         out.sort();
         out
     }
@@ -816,7 +818,7 @@ pub fn after() -> &'static str { "after —" }
                 "these codepoints are in operator-visible catalog strings and \
                  the font stack CANNOT DRAW THEM — each renders as a \
                  substitution box in front of the operator:\n  {}\n\n\
-                 Choose a codepoint the stack can draw (`crate::icons::glyphs` \
+                 Choose a codepoint the stack can draw (`crate::text::glyphs` \
                  records which), or add font coverage. Do NOT add it to the \
                  quarantine unless it is genuinely someone else's file to fix.",
                 tofu.join("\n  ")

@@ -6,7 +6,7 @@
 //! (`Command::icon`, a `String`) and calls back into the application to draw
 //! it. [`paint_ribbon_icon`] is pdfcer's answer to that callback.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/icons/paint.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/icons/paint.md`.
 
 use egui_shell::ribbon::IconRequest;
 

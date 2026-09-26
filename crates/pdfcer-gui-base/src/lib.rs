@@ -52,6 +52,13 @@ pub mod stamps;
 /// of both. The tiling is `pdfcer_print::imposition::plan_poster`'s.
 pub mod poster;
 
+pub mod pressure;
+
+/// The icon set: SVG path data, a subset parser, a tiny-skia rasterizer and
+/// the painter `egui-shell`'s ribbon calls back into. Supplying that painter
+/// is what stops the ribbon falling back to text labels — see `icons::paint`.
+pub mod icons;
+
 pub mod redact;
 
 /// Putting the operator's own digital signature on a document.

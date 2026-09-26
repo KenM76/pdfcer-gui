@@ -71,7 +71,7 @@
 # A literal that genuinely needs the run of spaces — a test fixture holding
 # escaped Rust source, an aligned report column — says so with a comment
 # containing `string-gap-exempt:` and a reason. There is exactly one in the
-# tree today, in `icons/glyphs.rs`, and it holds the input to the glyph
+# tree today, in `text/glyphs.rs`, and it holds the input to the glyph
 # scanner's own test.
 #
 # ★ THE MARKER MAY SIT IN THE COMMENT BLOCK ABOVE, NOT ONLY ON THE LINE.

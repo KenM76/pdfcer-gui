@@ -337,7 +337,7 @@ scan_tree() {
             # raw_scan(line) — advance `rawhash` across one line.
             #
             # A Rust raw string can hold ANY text, including a bare `}` at
-            # column 0, and `icons/glyphs.rs` holds exactly that: its own
+            # column 0, and `text/glyphs.rs` holds exactly that: its own
             # fixture for this gate is a miniature source file embedded in an
             # `r#"..."#`. Without this, the test-module skip below resumed on
             # that brace and reported the fixture back as operator copy. So the

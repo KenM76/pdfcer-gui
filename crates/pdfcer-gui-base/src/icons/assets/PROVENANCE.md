@@ -2,7 +2,7 @@
 
 The SVG files beside this note are **redistributed** by pdfcer-gui: each is
 compiled into `pdfcer-gui.exe` by an `include_str!` in
-`crates/pdfcer-gui/src/icons/assets.rs`, so every operator handed a binary is
+`crates/pdfcer-gui-base/src/icons/assets.rs`, so every operator handed a binary is
 handed this art. `cargo-about` generates `THIRD_PARTY_LICENSES.md` from
 `Cargo.lock` and is structurally incapable of seeing a file that is not a Cargo
 dependency, so nothing about these assets reaches it automatically.
@@ -73,7 +73,7 @@ Two consequences bind every asset dropped into this directory:
    judgement call in a file nobody will re-examine.
 
 The full style contract is the module header of
-`crates/pdfcer-gui/src/icons/assets.rs` §1–§4, which is what a reader of the
+`crates/pdfcer-gui-base/src/icons/assets.rs` §1–§4, which is what a reader of the
 code meets first and is not duplicated here.
 
 ## What varies per file, and where it is recorded

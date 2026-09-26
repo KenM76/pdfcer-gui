@@ -12,7 +12,7 @@ program and hope. Checked in as the script that draws it, every choice is
 readable, every size is regenerated from one source of truth, and a change is a
 diff rather than a replacement.
 
-That also matters for **provenance**. `crates/pdfcer-gui/src/icons/assets/PROVENANCE.md`
+That also matters for **provenance**. `crates/pdfcer-gui-base/src/icons/assets/PROVENANCE.md`
 records the ribbon glyph set as the operator's own art, and `catalog.rs` states
 the standing rule that follows from it: *"a new glyph is not a build session's
 to add."* This icon is a different artefact — an application icon, asked for

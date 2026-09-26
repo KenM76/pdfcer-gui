@@ -15,7 +15,7 @@ crates/pdfcer-gui/src/dialogs/ocr.rs::each_named_refusal_says_something_differen
 crates/pdfcer-gui/src/dialogs/print/verdicts_tests.rs::each_claim_state_is_distinguishable_in_the_trace	ClipClaim	LOCAL	4
 crates/pdfcer-gui/src/dialogs/protect/tests.rs::each_failure_says_something_different	PrepareFailure	LOCAL	5
 crates/pdfcer-gui/src/dialogs/settings/signatures.rs::every_located_state_says_something_different	Located	LOCAL	3
-crates/pdfcer-gui/src/icons/svg/mod.rs::every_error_renders_a_non_empty_message	IconError	LOCAL	10
+crates/pdfcer-gui-base/src/icons/svg/mod.rs::every_error_renders_a_non_empty_message	IconError	LOCAL	10
 crates/pdfcer-gui/src/panels/forms/button.rs::every_modelled_action_names_a_real_chooser_entry	ButtonAction	FOREIGN	3
 crates/pdfcer-gui/src/panels/forms/edit.rs::every_form_edit_traces_under_its_own_name	FormEdit	LOCAL	8
 crates/pdfcer-gui/src/panels/forms/tab_order/mod.rs::every_tabs_state_has_its_own_sentence	TabsEntry	LOCAL	8

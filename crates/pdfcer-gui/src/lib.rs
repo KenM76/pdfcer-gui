@@ -32,10 +32,6 @@ pub mod dialogs;
 // own header for the `find_text` wildcard trap it exists to avoid, for why the
 // bar is docked rather than floating, and for what an edit does to a hit list.
 pub mod find;
-// The icon set: SVG path data, a subset parser, a tiny-skia rasterizer and
-// the painter `egui-shell`'s ribbon calls back into. Supplying that painter
-// is what stops the ribbon falling back to text labels — see `icons::paint`.
-pub mod icons;
 // The dock's panel bodies — Bookmarks, Layers, Signatures, Fonts, Objects and
 // the properties panel. See PANELS' own header for the reachability contract
 // every one of them has to satisfy.
@@ -76,7 +72,7 @@ pub mod viewer;
 #[cfg(feature = "signing")]
 pub use pdfcer_gui_base::sign;
 pub use pdfcer_gui_base::{
-    acrobat, diag, ocr, pagedrag, pagetree, poster, redact, secret, stamps, trust, units,
+    acrobat, diag, icons, ocr, pagedrag, pagetree, poster, redact, secret, stamps, trust, units,
 };
 
 use std::path::PathBuf;

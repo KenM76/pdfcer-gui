@@ -220,7 +220,7 @@ pub fn no_text_at_all(pages: usize) -> String {
     };
     // "Recognise text, on the File tab" rather than the ribbon-path
     // spelling with a `▸` in it. `crate::text::dropped` records the same
-    // refusal and the reason binds hardest here: `icons::glyphs` proves the
+    // refusal and the reason binds hardest here: `text::glyphs` proves the
     // font stack cannot draw that codepoint, so it renders as a substitution
     // box — and a box is the worst possible thing to put in the one sentence
     // whose entire job is to tell the operator where to go.

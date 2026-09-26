@@ -29,7 +29,7 @@ the delivery this tree is derived from. `GLYPH_ADOPTION.md` records it:
      itself in a document nobody re-checked against the code."
 
 So the glyph inventory in this mock is **not** a hand-kept list. It is read out
-of `crates/pdfcer-gui/src/icons/assets/*.svg` every time this script runs, which
+of `crates/pdfcer-gui-base/src/icons/assets/*.svg` every time this script runs, which
 means the mock's claim "this glyph is in the app today" is true by construction
 rather than by somebody remembering to update a table. If an asset is deleted
 from the product, the next rebuild of the mock loses it too, and the build
@@ -39,7 +39,7 @@ script reports it as a missing reference rather than drawing a stale picture.
 INPUT — read-only, and deliberately so
 =====================================================================
 
-    D:/Dev/pdfcer-gui/crates/pdfcer-gui/src/icons/assets/*.svg
+    D:/Dev/pdfcer-gui/crates/pdfcer-gui-base/src/icons/assets/*.svg
 
 Every `.svg` in that directory, however many there are — deliberately not a
 number in this prose, matching `assets/PROVENANCE.md`'s own ruling that a count
@@ -58,7 +58,7 @@ effect.
 ALIASES — keys that draw art belonging to another key. Currently EMPTY.
 =====================================================================
 
-`crates/pdfcer-gui/src/icons/catalog/mapping.rs` may map an `Icon` variant onto
+`crates/pdfcer-gui-base/src/icons/catalog/mapping.rs` may map an `Icon` variant onto
 an asset named for a different role. Such a key has no file of its own, so the
 directory sweep above cannot see it, and ALIASES is how it reaches the mock.
 
@@ -137,7 +137,7 @@ import re
 from pathlib import Path
 
 HERE = Path(__file__).parent
-ASSETS = HERE.parent / "crates" / "pdfcer-gui" / "src" / "icons" / "assets"
+ASSETS = HERE.parent / "crates" / "pdfcer-gui-base" / "src" / "icons" / "assets"
 
 # Key -> asset file, for keys whose art belongs to another key. See the header.
 # Empty since 2026-09-04, when the last three keys were given art of their own.
