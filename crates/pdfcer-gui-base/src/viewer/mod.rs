@@ -8,18 +8,18 @@
 //! frame, and the per-page raster ceiling that accounts for
 //! `pixels_per_point`; each is argued below.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/viewer/mod.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/viewer/mod.md`.
 
 // Which of the four page-display arrangements is active, the spread rule the
 // facing ones use, and the per-mode default that makes Read continuous.
 pub mod ceiling;
 pub mod display;
 // Where the view is, when the scroll offset can no longer say.
-pub use pdfcer_gui_base::deepanchor as deep;
+pub use crate::deepanchor as deep;
 pub mod ladder;
 // What one canvas observed about itself on the previous frame. `ViewState`
 // holds the choices; `ViewFrame` holds the measurements, one per canvas.
-pub use pdfcer_gui_base::viewframe as frame;
+pub use crate::viewframe as frame;
 // How the zoom is decided from the viewport: the three fitting modes, the
 // ratio each takes, and which axes each one PLACES the view on. Split out
 // under R2, this project's 1,500-line-per-file ceiling.
@@ -61,7 +61,7 @@ pub const MIN_ZOOM: f32 = 0.10;
 /// the pixmap is enormous.
 pub const MAX_ZOOM: f32 = 8.0;
 
-pub use pdfcer_gui_base::viewframe::ZoomAnchor;
+pub use crate::viewframe::ZoomAnchor;
 
 /// Which page is shown, at what scale, how that scale is chosen, and in what
 /// arrangement.
@@ -78,12 +78,12 @@ pub struct ViewState {
     ///
     /// Under a continuous mode the strip shows several pages at once, so
     /// "which page" is no longer a choice the view makes; it is a **reading of
-    /// where the operator has scrolled to**. [`crate::canvas::show`] therefore
+    /// where the operator has scrolled to**. `pdfcer_gui::canvas::show` therefore
     /// writes this field from [`strip::Strip::page_at_view`] on every frame,
     /// as a fourth item of documented per-frame view bookkeeping beside
     /// `last_scroll_offset`, `zoom_anchor` and `selection` — see that module's
     /// header for the whole argument, including why a scroll cannot be
-    /// deferred into an [`crate::app::actions::Action`].
+    /// deferred into an `pdfcer_gui::app::actions::Action`.
     ///
     /// It stays a single index rather than becoming a range because
     /// **everything downstream wants exactly one page**: the decomposition
@@ -106,7 +106,7 @@ pub struct ViewState {
     /// [`remembered`] — because a sheet set and a report want different
     /// answers and the operator should only have to say so once per document.
     ///
-    /// Changed through [`crate::app::actions::Action::SetPageDisplay`], like
+    /// Changed through `pdfcer_gui::app::actions::Action::SetPageDisplay`, like
     /// every other view stance the ribbon can reach.
     pub display: PageDisplay,
     /// **Whether the ruler gutters are drawn along the canvas edges.**
@@ -114,29 +114,29 @@ pub struct ViewState {
     /// `RIBBON_IA.md` §5.2's View ▸ Display row. It is here rather than in
     /// `egui::Memory` for the reason `view.tool_hand` is *not*: the pressed
     /// state of a toggle has to be published from
-    /// `crate::app::PdfcerApp::conditions`, which is handed `&self` and no
+    /// `pdfcer_gui::app::PdfcerApp::conditions`, which is handed `&self` and no
     /// `egui::Context` — so a toggle whose state lives in `Memory` cannot
     /// render pressed, which is exactly the gap the hand tool and the region
     /// zoom still carry. Living on the view state closes it for all three of
     /// these with no second mechanism.
     ///
     /// **This is what the ruler costs, and it is a constant.** Switching it on
-    /// takes [`crate::canvas::rulers::THICKNESS_PTS`] off each of two edges of
+    /// takes `pdfcer_gui::canvas::rulers::THICKNESS_PTS` off each of two edges of
     /// the viewport that [`Self::apply_fit`] divides by. A *variable*
     /// reservation there would be rule R128's fit-to-viewport feedback loop;
     /// see that module's header §3.
     pub rulers: bool,
     /// **Whether a drawing grid is drawn over each page.**
     ///
-    /// Per page and in page space — [`crate::canvas::rulers`]' header §2
+    /// Per page and in page space — `pdfcer_gui::canvas::rulers`' header §2
     /// carries the argument, which is the same one that makes a guide belong
     /// to a page.
     pub grid: bool,
     /// **Whether the operator's guides are drawn, and draggable.**
     ///
-    /// The guides *themselves* live on [`crate::app::state::OpenDoc::guides`]
+    /// The guides *themselves* live on `pdfcer_gui::app::state::OpenDoc::guides`
     /// and persist per document; this is only whether they are shown. The
-    /// split is deliberate and [`crate::canvas::guides`]' header §2 argues it:
+    /// split is deliberate and `pdfcer_gui::canvas::guides`' header §2 argues it:
     /// a switch is cheap to flick again and a placed guide is work, so one is
     /// remembered and the other is not — and a document that *has* remembered
     /// guides opens with this already `true`, because the presence of the work
@@ -158,7 +158,7 @@ pub struct ViewState {
     ///
     /// Default **off**, with the other three: it is a drafting aid, and an
     /// operator who has not asked for hollow squares over their drawing should
-    /// not get them. `crate::app::prefs` can make that an opening preference
+    /// not get them. `pdfcer_gui::app::prefs` can make that an opening preference
     /// the day somebody wants one.
     pub show_points: bool,
     /// **`view.line_weights` — are strokes drawn at the widths the file
@@ -209,8 +209,8 @@ pub struct ViewState {
     /// O137 reports about its predecessor.
     ///
     /// It is therefore a **staleness key**:
-    /// [`crate::app::state::OpenDoc::render_key_for`] feeds
-    /// [`Self::stroke_display`] into [`crate::render::worker::RenderKey::new`],
+    /// `pdfcer_gui::app::state::OpenDoc::render_key_for` feeds
+    /// [`Self::stroke_display`] into `pdfcer_gui::render::worker::RenderKey::new`,
     /// and `the_render_key_moves_when_line_weights_are_turned_off` is what
     /// stops that being forgotten.
     ///
@@ -219,8 +219,8 @@ pub struct ViewState {
     ///
     /// Print, print preview and **every** export — PDF, DXF, PNG, JPEG, SVG,
     /// EMF, form data, text — render the document's **real** widths. This field
-    /// is read by exactly one place, `crate::render::worker::render_on_worker`,
-    /// and `crate::app::settings::tests::only_the_canvas_worker_sets_stroke_display`
+    /// is read by exactly one place, `pdfcer_gui::render::worker::render_on_worker`,
+    /// and `pdfcer_gui::app::settings::tests::only_the_canvas_worker_sets_stroke_display`
     /// parses every file in the crate to keep it that way.
     ///
     /// > **The one thing worse than not having this feature is having it follow
@@ -244,8 +244,8 @@ pub struct ViewState {
     /// It lives here, beside `zoom` and `rulers`, so two open drawings can
     /// disagree: comparing a hairline read of a dense sheet against a faithful
     /// read of the sheet beside it is the actual job. There is deliberately no
-    /// persisted default in `crate::app::prefs` — see
-    /// `crate::text::commands::view_line_weights` for that decision and where a
+    /// persisted default in `pdfcer_gui::app::prefs` — see
+    /// `pdfcer_gui::text::commands::view_line_weights` for that decision and where a
     /// preference would go if he asks for one.
     pub line_weights: bool,
     /// **`view.off_page` — may the canvas show, and reach, the marks
@@ -259,7 +259,7 @@ pub struct ViewState {
     /// **`false` is not "hide it" — it is "do not grow for it".** The band
     /// is the cost: an operator who is only reading pays for it in scroll
     /// distance and in the grey gap it opens between one sheet and the next.
-    /// So the flag gates exactly two things, both in [`crate::canvas::tier`]:
+    /// So the flag gates exactly two things, both in `pdfcer_gui::canvas::tier`:
     /// the pasteboard **overhang** — off means no band and no gap, a layout
     /// byte-for-byte identical to one with no off-page support at all — and
     /// the **halo raster tier**, off meaning nothing outside the sheet is
@@ -268,7 +268,7 @@ pub struct ViewState {
     /// **Default `false` — but the mode decides.** Read opens with it off,
     /// Review and Edit with it on, and the operator's own answer is
     /// remembered per mode. All of that lives in
-    /// [`crate::app::prefs::offpage`], with the argument for the split.
+    /// `pdfcer_gui::app::prefs::offpage`, with the argument for the split.
     pub off_page: bool,
     /// **`view.ocr_layer` — the X-ray over a scanned page's invisible text,
     /// and how far it is slid.**
@@ -302,7 +302,7 @@ pub struct ViewState {
     ///
     /// At `1.0` the field behind the text is blank paper, not the scan at one
     /// percent: he asked to read the OCR output *without the paper arguing with
-    /// it*. [`crate::canvas::ocrlayer`] owns both halves and the reason the
+    /// it*. `pdfcer_gui::canvas::ocrlayer` owns both halves and the reason the
     /// raster is veiled rather than re-rasterized.
     ///
     /// # R8b
@@ -359,7 +359,7 @@ impl Default for ViewState {
             // named for the weights rather than for the hairline.
             line_weights: true,
             // Off, and this is the one default that is routinely
-            // *overridden* on the way in: `crate::app::prefs::offpage`
+            // *overridden* on the way in: `pdfcer_gui::app::prefs::offpage`
             // answers per ribbon mode (Read off, Review and Edit on) and
             // remembers the operator's own answer for each. Off here for
             // the same reason `display` is `Single` here — the path that
@@ -507,7 +507,7 @@ pub fn clamp_zoom(zoom: f32, max: f32) -> f32 {
 pub fn max_zoom_for_page(
     page_pts: (f32, f32),
     pixels_per_point: f32,
-    quality: crate::app::prefs::RenderQuality,
+    quality: crate::renderquality::RenderQuality,
 ) -> f32 {
     let longest = page_pts.0.max(page_pts.1);
     let density = raster_density(pixels_per_point, quality);
@@ -541,7 +541,7 @@ pub fn sane_pixels_per_point(pixels_per_point: f32) -> f32 {
 pub fn raster_scale(
     zoom: f32,
     pixels_per_point: f32,
-    quality: crate::app::prefs::RenderQuality,
+    quality: crate::renderquality::RenderQuality,
 ) -> f32 {
     zoom * raster_density(pixels_per_point, quality)
 }
@@ -549,7 +549,7 @@ pub fn raster_scale(
 /// The factor between a **zoom** and a **raster scale**, in device pixels per
 /// logical unit.
 #[must_use]
-pub fn raster_density(pixels_per_point: f32, quality: crate::app::prefs::RenderQuality) -> f32 {
+pub fn raster_density(pixels_per_point: f32, quality: crate::renderquality::RenderQuality) -> f32 {
     sane_pixels_per_point(pixels_per_point) * quality.multiplier()
 }
 
@@ -559,7 +559,7 @@ pub fn raster_density(pixels_per_point: f32, quality: crate::app::prefs::RenderQ
 pub fn zoom_for_raster_scale(
     scale: f32,
     pixels_per_point: f32,
-    quality: crate::app::prefs::RenderQuality,
+    quality: crate::renderquality::RenderQuality,
 ) -> f32 {
     scale / raster_density(pixels_per_point, quality)
 }
@@ -568,7 +568,7 @@ pub fn zoom_for_raster_scale(
 /// already applied (a 90°-rotated portrait page is landscape on screen).
 #[must_use]
 pub fn page_extent_pts(page: &Page) -> (f32, f32) {
-    crate::render::region::PageFrame::of(page).extent_pts()
+    crate::rasterregion::PageFrame::of(page).extent_pts()
 }
 
 #[cfg(test)]
@@ -639,41 +639,6 @@ mod tests {
         assert_eq!(clamp_zoom(f32::INFINITY, MAX_ZOOM), 1.0);
     }
 
-    #[test]
-    fn zoom_percent_rounds_rather_than_truncating() {
-        let mut v = ViewState::default();
-        v.set_zoom(0.999_97, MAX_ZOOM);
-        assert_eq!(crate::text::status::zoom_percent(v.zoom_percent()), "100%");
-        v.set_zoom(0.335, MAX_ZOOM);
-        assert_eq!(crate::text::status::zoom_percent(v.zoom_percent()), "34%");
-    }
-
-    /// O24j — **the readout must survive the whole ceiling the zoom offers.**
-    #[test]
-    fn the_readout_survives_the_whole_configured_range() {
-        let mut v = ViewState::default();
-        for (zoom, want) in [
-            (1.0_f32, "100%"),
-            (8.0, "800%"),
-            (1.0e6, "100000000%"),
-            // Not "1000000000000%", and the difference is not a defect.
-            // `ViewState::zoom` is an `f32`, so the nearest representable
-            // value to 10¹⁰ is 9,999,999,827,968 / 1000 — and the readout
-            // shows what the view IS rather than what was asked for. Pinned
-            // exactly, so a future change that starts rounding the display
-            // instead of reporting it has to be a deliberate one.
-            (1.0e10, "999999995904%"),
-        ] {
-            v.set_zoom(zoom, f32::MAX);
-            let shown = crate::text::status::zoom_percent(v.zoom_percent());
-            assert_eq!(shown, want, "zoom {zoom} showed {shown}");
-            assert!(
-                !shown.contains("4294967295"),
-                "the readout saturated at u32::MAX"
-            );
-        }
-    }
-
     // ---- raster-size ceiling -------------------------------------
 
     #[test]
@@ -716,7 +681,7 @@ mod tests {
     /// Shorthand for the quality that multiplies by one, so every test below
     /// that is not ABOUT the quality asserts the same number it did before the
     /// factor entered the arithmetic.
-    use crate::app::prefs::RenderQuality;
+    use crate::renderquality::RenderQuality;
     const NORMAL: RenderQuality = RenderQuality::Normal;
 
     #[test]

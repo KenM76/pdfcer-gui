@@ -86,16 +86,9 @@ pub(crate) use printing::PrintPrefs;
 pub use quality::{DEFAULT_SETTLE_MS, MAX_SETTLE_MS, MIN_SETTLE_MS, RenderQuality};
 pub use wheel::WheelPaging;
 
-/// The shipped maximum zoom, as a percentage.
-pub const DEFAULT_MAX_ZOOM_PERCENT: f32 = MAX_MAX_ZOOM_PERCENT;
-
-/// The lowest a maximum-zoom setting may be. Below this the operator could
-/// configure a document they cannot magnify at all.
-pub const MIN_MAX_ZOOM_PERCENT: f32 = 10.0;
-
-/// The highest a maximum-zoom setting may be — **a trillion percent**, the
-/// figure the operator named.
-pub const MAX_MAX_ZOOM_PERCENT: f32 = 1e12;
+pub use crate::viewer::ceiling::{
+    DEFAULT_MAX_ZOOM_PERCENT, MAX_MAX_ZOOM_PERCENT, MIN_MAX_ZOOM_PERCENT,
+};
 
 /// Format a percentage for the preferences file without an exponent or a
 /// trailing `.0`.

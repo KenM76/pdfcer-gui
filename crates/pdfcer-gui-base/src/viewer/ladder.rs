@@ -5,7 +5,7 @@
 //! real one — everything here answers that question and nothing here knows
 //! what a page, a viewport or a raster is.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/viewer/ladder.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/viewer/ladder.md`.
 
 use super::{MAX_ZOOM, MIN_ZOOM};
 
@@ -76,7 +76,7 @@ mod tests {
     // `ViewState` stays in the parent: it is the *state* the ladder is
     // applied to, not part of the ladder. One test drives a step through it
     // to check the clamp, which is the only coupling in either direction.
-    use crate::render::strategy::{Ink, Strategy, for_page};
+    use crate::rasterstrategy::{Ink, Strategy, for_page};
     use crate::viewer::ViewState;
 
     /// **The zoom the operator uses today does not change tiers.**

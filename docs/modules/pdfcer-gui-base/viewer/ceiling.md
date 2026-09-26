@@ -1,4 +1,4 @@
-# `pdfcer-gui/viewer/ceiling`
+# `pdfcer-gui-base/viewer/ceiling`
 
 ## Item notes
 

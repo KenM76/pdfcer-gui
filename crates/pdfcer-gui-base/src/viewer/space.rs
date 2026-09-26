@@ -4,7 +4,7 @@
 //! screen, the page raster and an authoring API goes through here.** A second
 //! formula anywhere else is a second thing to keep in sync with the renderer.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/viewer/space.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/viewer/space.md`.
 
 use egui::{Pos2, Rect};
 use pdfcer_core::page_tree::Page;

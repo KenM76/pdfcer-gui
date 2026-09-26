@@ -6,7 +6,7 @@
 //! screen" is not a fact the view *holds*, it is a fact that falls out of
 //! where the pages are and where the viewport is.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/viewer/strip.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/viewer/strip.md`.
 
 use egui::{Pos2, Rect, Vec2, pos2, vec2};
 use pdfcer_core::page_tree::Page;
@@ -38,7 +38,7 @@ pub fn row_metrics(
     display: PageDisplay,
     current: usize,
     pixels_per_point: f32,
-    quality: crate::app::prefs::RenderQuality,
+    quality: crate::renderquality::RenderQuality,
 ) -> RowMetrics {
     let current = super::clamp_page_index(current, pages.len());
     let range = display.pages_in_row(display.row_of(current), pages.len());
@@ -119,7 +119,7 @@ pub fn fit_metrics(
     display: PageDisplay,
     current: usize,
     pixels_per_point: f32,
-    quality: crate::app::prefs::RenderQuality,
+    quality: crate::renderquality::RenderQuality,
 ) -> RowMetrics {
     if !display.is_continuous() {
         return row_metrics(pages, display, current, pixels_per_point, quality);
@@ -378,7 +378,7 @@ impl Strip {
     pub fn row_max_zoom(
         &self,
         pixels_per_point: f32,
-        quality: crate::app::prefs::RenderQuality,
+        quality: crate::renderquality::RenderQuality,
     ) -> f32 {
         let Some(row) = self.rows.get(self.current_row) else {
             return super::MAX_ZOOM;
@@ -416,7 +416,7 @@ mod tests {
     /// The quality whose multiplier is one, so every test that is not ABOUT the
     /// render quality asserts the same number it did before the factor entered
     /// the ceiling arithmetic.
-    const NORMAL: crate::app::prefs::RenderQuality = crate::app::prefs::RenderQuality::Normal;
+    const NORMAL: crate::renderquality::RenderQuality = crate::renderquality::RenderQuality::Normal;
 
     use super::*;
     use pdfcer_core::object::{Dict, ObjId};
@@ -690,8 +690,8 @@ mod tests {
             for current in 0..pages.len() {
                 for &ppp in &[1.0_f32, 2.0] {
                     for quality in [
-                        crate::app::prefs::RenderQuality::Normal,
-                        crate::app::prefs::RenderQuality::Sharper,
+                        crate::renderquality::RenderQuality::Normal,
+                        crate::renderquality::RenderQuality::Sharper,
                     ] {
                         let strip = Strip::new(&pages, mode, current, 1.0);
                         let cheap = row_metrics(&pages, mode, current, ppp, quality);

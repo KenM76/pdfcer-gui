@@ -121,3 +121,6 @@ pub mod units;
 
 /// What one canvas remembers between frames.
 pub mod viewframe;
+
+/// Which page is shown, at what zoom, in what arrangement, and where.
+pub mod viewer;

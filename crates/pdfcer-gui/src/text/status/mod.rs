@@ -737,4 +737,39 @@ mod tests {
         assert!(t.contains("Enter"), "{t}");
         assert!(t.contains("while you type"), "{t}");
     }
+
+    #[test]
+    fn zoom_percent_rounds_rather_than_truncating() {
+        let mut v = crate::viewer::ViewState::default();
+        v.set_zoom(0.999_97, crate::viewer::MAX_ZOOM);
+        assert_eq!(zoom_percent(v.zoom_percent()), "100%");
+        v.set_zoom(0.335, crate::viewer::MAX_ZOOM);
+        assert_eq!(zoom_percent(v.zoom_percent()), "34%");
+    }
+
+    /// O24j — **the readout must survive the whole ceiling the zoom offers.**
+    #[test]
+    fn the_readout_survives_the_whole_configured_range() {
+        let mut v = crate::viewer::ViewState::default();
+        for (zoom, want) in [
+            (1.0_f32, "100%"),
+            (8.0, "800%"),
+            (1.0e6, "100000000%"),
+            // Not "1000000000000%", and the difference is not a defect.
+            // `ViewState::zoom` is an `f32`, so the nearest representable
+            // value to 10¹⁰ is 9,999,999,827,968 / 1000 — and the readout
+            // shows what the view IS rather than what was asked for. Pinned
+            // exactly, so a future change that starts rounding the display
+            // instead of reporting it has to be a deliberate one.
+            (1.0e10, "999999995904%"),
+        ] {
+            v.set_zoom(zoom, f32::MAX);
+            let shown = zoom_percent(v.zoom_percent());
+            assert_eq!(shown, want, "zoom {zoom} showed {shown}");
+            assert!(
+                !shown.contains("4294967295"),
+                "the readout saturated at u32::MAX"
+            );
+        }
+    }
 }

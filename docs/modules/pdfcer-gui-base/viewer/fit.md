@@ -1,4 +1,4 @@
-# `pdfcer-gui/viewer/fit`
+# `pdfcer-gui-base/viewer/fit`
 
 ## Item notes
 

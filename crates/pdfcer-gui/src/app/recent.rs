@@ -685,4 +685,17 @@ mod tests {
         assert!(recent.is_empty());
         let _ = std::fs::remove_dir_all(&dir);
     }
+
+    /// The per-document store shares a directory with the recent list.
+    #[test]
+    fn the_remembered_store_sits_beside_the_recent_list() {
+        assert_eq!(
+            crate::viewer::remembered::default_path()
+                .as_deref()
+                .and_then(std::path::Path::parent),
+            RecentFiles::default_path()
+                .as_deref()
+                .and_then(std::path::Path::parent),
+        );
+    }
 }

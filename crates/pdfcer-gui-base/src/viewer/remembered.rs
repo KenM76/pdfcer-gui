@@ -4,7 +4,7 @@
 //! > *"Mode persists **per document**, not globally — opening a drawing set
 //! > must not inherit a report's setting."*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/viewer/remembered.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/viewer/remembered.md`.
 
 use std::path::{Path, PathBuf};
 
@@ -338,13 +338,6 @@ mod tests {
             settings::resolve_store()
                 .directory()
                 .map(|d| d.join(REMEMBERED_FILE))
-        );
-        assert_eq!(
-            default_path().as_deref().and_then(Path::parent),
-            crate::app::recent::RecentFiles::default_path()
-                .as_deref()
-                .and_then(Path::parent),
-            "the per-document store must share a directory with the recent list"
         );
     }
 }

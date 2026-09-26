@@ -55,7 +55,7 @@ pub mod render;
 pub mod shell;
 pub mod text;
 
-pub mod viewer;
+pub use pdfcer_gui_base::viewer;
 
 // The floor of this crate's stack, re-exported so that `crate::diag::…`,
 // `crate::units::…`, `crate::secret::…` and `crate::acrobat::…` mean what

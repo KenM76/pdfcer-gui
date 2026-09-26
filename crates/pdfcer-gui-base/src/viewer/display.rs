@@ -4,7 +4,7 @@
 //! modes scroll, which modes pair pages into spreads, and what a fresh
 //! profile gets in each ribbon mode.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/viewer/display.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/viewer/display.md`.
 
 /// **How many pages the canvas shows, and how they are arranged.**
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash)]

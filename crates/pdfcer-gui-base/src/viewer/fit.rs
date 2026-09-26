@@ -25,7 +25,7 @@
 //! asks "which axes did the fit decide?" and does not need to know what a
 //! fitting mode is to act on the answer.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/viewer/fit.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/viewer/fit.md`.
 
 /// How `ViewState::zoom` is being decided.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

@@ -14,7 +14,7 @@
 //! it — the raster becomes window-sized and the page's size stops entering
 //! the arithmetic. The second is, and is the one that decides what the shell
 //! can honestly offer today; `viewer::deep::DeepAnchor` is what raises it,
-//! and [`crate::canvas::viewpos`] hands the position over to it at exactly
+//! and `pdfcer_gui::canvas::viewpos` hands the position over to it at exactly
 //! this extent.
 //!
 //! ## Why this is its own file
@@ -24,7 +24,7 @@
 //! this page be magnified?* — where the rest of [`super`] answers *where is
 //! the view and what is it showing?*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/viewer/ceiling.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/viewer/ceiling.md`.
 
 // `max_zoom_for_page` stays in [`super`] with the rest of the raster-side
 // arithmetic and its own tests, and is imported rather than moved: it answers
@@ -33,7 +33,7 @@
 // seam they do not belong on.
 use super::{MAX_ZOOM, MIN_ZOOM, max_zoom_for_page, zoom_for_raster_scale};
 /// The content extent at which the position model hands over from `egui`'s
-/// `f32` scroll offset to [`crate::canvas::deep::DeepAnchor`] — `2^20`.
+/// `f32` scroll offset to [`crate::deepanchor::DeepAnchor`] — `2^20`.
 pub const SUB_PIXEL_CONTENT_EXTENT: f32 = 1_048_576.0;
 
 // **A constant that changes what it gates has to be re-derived, not
@@ -57,7 +57,7 @@ pub fn max_zoom_with_regions(limit: f32) -> f32 {
 pub fn zoom_ceiling(
     page_pts: (f32, f32),
     pixels_per_point: f32,
-    quality: crate::app::prefs::RenderQuality,
+    quality: crate::renderquality::RenderQuality,
     limit_percent: f32,
     learned_raster_scale: Option<f32>,
 ) -> f32 {
@@ -146,6 +146,17 @@ pub fn deep_position_needed(page_pts: (f32, f32), zoom: f32) -> bool {
         && longest * zoom > SUB_PIXEL_CONTENT_EXTENT
 }
 
+/// The shipped maximum zoom, as a percentage.
+pub const DEFAULT_MAX_ZOOM_PERCENT: f32 = MAX_MAX_ZOOM_PERCENT;
+
+/// The lowest a maximum-zoom setting may be. Below this the operator could
+/// configure a document they cannot magnify at all.
+pub const MIN_MAX_ZOOM_PERCENT: f32 = 10.0;
+
+/// The highest a maximum-zoom setting may be — **a trillion percent**, the
+/// figure the operator named.
+pub const MAX_MAX_ZOOM_PERCENT: f32 = 1e12;
+
 /// # Tests — the three ceilings, and the ladder that has to be able to reach them
 #[cfg(test)]
 #[allow(clippy::float_cmp, reason = "ladder rungs are exact f32 literals")] // ui-text-exempt: clippy lint justification, never displayed
@@ -160,7 +171,7 @@ mod tests {
     // whose multiplier is 1.0 — so each of their assertions is the same number
     // it was before the quality factor entered the arithmetic, and a failure
     // here is a failure of the thing the test names.
-    use crate::app::prefs::RenderQuality;
+    use crate::renderquality::RenderQuality;
 
     /// **The ladder can actually REACH a configured maximum**, stepping.
     #[test]
@@ -256,7 +267,7 @@ mod tests {
                         page,
                         ppp,
                         quality,
-                        crate::app::prefs::DEFAULT_MAX_ZOOM_PERCENT,
+                        crate::viewer::ceiling::DEFAULT_MAX_ZOOM_PERCENT,
                         None,
                     );
                     // The default asks for the maximum and now GETS it, on every
@@ -265,7 +276,7 @@ mod tests {
                     // The default asks for the maximum and gets the deepest the
                     // strip can still place a page at — which is what the shell can
                     // actually deliver, on every page size.
-                    let wanted = crate::app::prefs::DEFAULT_MAX_ZOOM_PERCENT / 100.0;
+                    let wanted = crate::viewer::ceiling::DEFAULT_MAX_ZOOM_PERCENT / 100.0;
                     assert!(
                         (ceiling - wanted).abs() / wanted < 1e-6,
                         "page {page:?} at {ppp}x: ceiling {ceiling} should be {wanted}"
@@ -379,7 +390,11 @@ mod tests {
                     RenderQuality::Normal,
                     RenderQuality::Sharper,
                 ] {
-                    for percent in [300.0_f32, crate::app::prefs::DEFAULT_MAX_ZOOM_PERCENT, 1e12] {
+                    for percent in [
+                        300.0_f32,
+                        crate::viewer::ceiling::DEFAULT_MAX_ZOOM_PERCENT,
+                        1e12,
+                    ] {
                         let derived = max_zoom_with_regions(percent / 100.0)
                             .max(max_zoom_for_page(page, ppp, quality).min(MAX_ZOOM));
                         let actual = zoom_ceiling(page, ppp, quality, percent, None);
