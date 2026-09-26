@@ -1705,6 +1705,19 @@ crate recompiles it and everything above it. Put `canvas` beneath a 32,000-line
 `app` and a canvas edit still recompiles `app` — 18× on nothing. The top crate
 must end up thin, or Stage 3 buys a directory rearrangement and no seconds.
 
+**Where Stage 3 starts.** Stage 2 is exhausted: what remains in `pdfcer-gui`
+outside the cycles holds an `app::state::OpenDoc` (`protect`, `clipboard`). So
+the first cut is `OpenDoc` itself. Its fields name types from `render`
+(`strip`, `ceiling`, `worker`, `raster`), `viewer`, `find`, `canvas`
+(`destination`, `destscroll`, `minreveal`, `guides`, `textsel`), `app::prefs`
+and `app::state`'s own submodules. Three of those modules reach nothing else in
+the crate (`render::ceiling`, `render::worker`, `app::state::pageepoch`), so
+they move first. The rest are type definitions sitting in large behaviour modules (`viewer`,
+`find`, `app::prefs`): the move is the
+*type*, into a state module with its constructors, leaving the behaviour where
+it is. Measure with `python tools/module-graph.py` after each type; a type
+whose home still reaches `app` has an edge to cut first.
+
 ### A scheduling constraint that applies to every stage
 
 A stage that rewrites call sites touches every file that reaches the moved
