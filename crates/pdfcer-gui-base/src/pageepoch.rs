@@ -1,7 +1,7 @@
-//! # `app::state::pageepoch` — **which PAGE changed, not just that something
+//! # `pageepoch` — **which PAGE changed, not just that something
 //! did**
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/state/pageepoch.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/pageepoch.md`.
 
 /// **A revision number per page, plus a document-wide floor.**
 ///

@@ -1,4 +1,4 @@
-# `render::ceiling` — the zoom ceiling this document *taught* the shell
+# `rasterceiling` — the zoom ceiling this document *taught* the shell
 
 
 > *"If this error is caused by some other limitation that will always

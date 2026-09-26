@@ -1,4 +1,4 @@
-# `app::state::pageepoch` — **which PAGE changed, not just that something
+# `pageepoch` — **which PAGE changed, not just that something
 did**
 
 One type, [`PageEpochs`], and one rule that the whole thing exists to

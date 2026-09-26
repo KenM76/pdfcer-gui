@@ -1,4 +1,4 @@
-//! # `render::ceiling` — the zoom ceiling this document *taught* the shell
+//! # `rasterceiling` — the zoom ceiling this document *taught* the shell
 //!
 //!
 //! > *"If this error is caused by some other limitation that will always
@@ -7,7 +7,7 @@
 //! > still be shown on the bottom bar so the user has some idea as to why
 //! > zooming stopped short of 1 trillion percent."*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/render/ceiling.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/rasterceiling.md`.
 
 use std::collections::BTreeMap;
 

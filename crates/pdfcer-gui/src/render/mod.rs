@@ -34,7 +34,7 @@
 
 /// **The zoom ceiling this document TAUGHT the shell** — O186's
 /// *"zoom should stop at the limit and not end up showing an error"*.
-pub mod ceiling;
+pub use pdfcer_gui_base::rasterceiling as ceiling;
 
 /// **The pixel proof for O137's "line weights off" display mode** — that the
 /// mode really thins a drawing, and thins it in the direction the operator

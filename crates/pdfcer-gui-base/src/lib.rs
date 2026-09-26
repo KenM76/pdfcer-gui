@@ -29,11 +29,20 @@ pub mod diag;
 /// recognition reads the document as it was OPENED, and for the y-flip it
 /// deliberately does not perform.
 pub mod ocr;
+
+pub mod pagedrag;
+
+/// A revision number per page, so a change to one page repaints only it.
+pub mod pageepoch;
+
 /// Does a document's page tree still agree with itself: the raw `/Count`
 /// against the leaves actually reachable, audited on every save, and which
 /// refusal a disagreement owes. The wording lives in `pdfcer-gui`'s `text`.
-pub mod pagedrag;
 pub mod pagetree;
+
+/// The per-page raster scale this document has been measured unable to reach,
+/// so zoom stops there instead of showing an error.
+pub mod rasterceiling;
 
 /// A string the operator typed that must never reach a log — one type, and its
 /// whole reason for existing is its `Debug`. See its header: a `{:?}` on an

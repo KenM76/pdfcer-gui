@@ -86,7 +86,7 @@ mod identity;
 /// split out 2026-09-01 under R2. Its header carries why the ink question is a
 /// different subject from the document model around it.
 mod ink;
-pub mod pageepoch;
+pub use pdfcer_gui_base::pageepoch;
 /// **What this view is asking the renderer for** — the render key, the region
 /// and the request, split out 2026-09-10 under R2. Its header carries why the
 /// order placed with `pdfcer-render` is a different subject from the document
