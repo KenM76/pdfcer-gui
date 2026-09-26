@@ -10,7 +10,7 @@
 /// protocol; every refusal in it is a fall-through to the ordinary meaning of
 /// a drop rather than a message.
 pub mod import;
-pub mod ops;
+pub use pdfcer_gui_base::pageops as ops;
 pub mod previews;
 pub mod select;
 pub mod thumbnails;

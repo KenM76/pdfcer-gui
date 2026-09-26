@@ -1,4 +1,4 @@
-//! # `canvas::textannot` — the three markup kinds that carry WORDS
+//! # `wordmarkup` — the three markup kinds that carry WORDS
 //!
 //!
 //! ## Why they were left out, and why that was right at the time
@@ -6,7 +6,7 @@
 //! `shell::commands::reach`'s register carries the reason verbatim, quoting
 //! `canvas::markup`'s own table of kinds it deliberately does not handle:
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/textannot.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/wordmarkup.md`.
 
 use pdfcer_core::annot_author::{Color, StampName, StampStyle, StickyIcon, TextAnnotSpec};
 use pdfcer_core::fontdata::Std14;
@@ -283,7 +283,7 @@ pub fn spec(
             // would cover the drawing the note is about — and
             // `MODES_AND_PANELS.md`'s nothing-floats-over-the-canvas stance is
             // only relaxed for Find."* The first half stands. The second half
-            // is now out of date: `crate::canvas::notepopup` floats a window
+            // is now out of date: `pdfcer_gui::canvas::notepopup` floats a window
             // over the canvas, deliberately, and its header carries the
             // argument — a pop-up is **chrome**, the same class of thing as a
             // selection handle, and nothing about it reaches the page.

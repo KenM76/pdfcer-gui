@@ -1,4 +1,4 @@
-# `panels::pages::ops` — what a page verb acts on, and what a move means
+# `pageops` — what a page verb acts on, and what a move means
 
 The **rules** behind the six page verbs, with no `egui`, no document and no
 engine call anywhere in the file. Two questions, each with exactly one

@@ -1,4 +1,4 @@
-# `app::persistence` — the dock layout, on disk
+# `dockpersist` — the dock layout, on disk
 
 `egui-shell` can already read and write a [`LayoutDocument`]; what it
 deliberately does **not** do is decide *where* the file lives or *when*

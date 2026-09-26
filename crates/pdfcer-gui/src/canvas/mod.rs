@@ -299,7 +299,7 @@ pub mod tier;
 /// The three markup kinds that carry WORDS — text box, sticky note and
 /// stamp. A different gesture (place, then type) and a different engine spec
 /// from the seven geometric kinds; its header carries the argument.
-pub mod textannot;
+pub use pdfcer_gui_base::wordmarkup as textannot;
 pub mod textsel;
 // EDITING the page's own words, and placing new ones: the caret, the draft, and
 // — in its `disposition` submodule — the two cases `DEFECTS.md` D4b records as

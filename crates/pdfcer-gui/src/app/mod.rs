@@ -77,7 +77,7 @@ pub mod modes;
 /// header.
 mod ocrband;
 pub mod panels;
-pub mod persistence;
+pub use pdfcer_gui_base::dockpersist as persistence;
 /// The **selection filter**, on disk — where it lives, and why it is written
 /// immediately where the dock layout is debounced.
 pub mod pickstore;

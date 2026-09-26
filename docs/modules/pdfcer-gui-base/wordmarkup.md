@@ -1,4 +1,4 @@
-# `canvas::textannot` — the three markup kinds that carry WORDS
+# `wordmarkup` — the three markup kinds that carry WORDS
 
 
 ## Why they were left out, and why that was right at the time

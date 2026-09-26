@@ -8,7 +8,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/formfield.md`.
 
-pub mod action;
+pub use pdfcer_gui_base::pushbutton as action;
 pub mod draft;
 pub mod ghost;
 

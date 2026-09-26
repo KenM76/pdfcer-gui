@@ -144,3 +144,15 @@ pub mod viewframe;
 
 /// Which page is shown, at what zoom, in what arrangement, and where.
 pub mod viewer;
+
+/// What a page verb acts on, and what a page move means.
+pub mod pageops;
+
+/// What a push button does when it is pressed, and its translation to the engine type.
+pub mod pushbutton;
+
+/// The three markup kinds that carry words: text box, sticky note, stamp.
+pub mod wordmarkup;
+
+/// Where and when the dock layout is written to disk.
+pub mod dockpersist;

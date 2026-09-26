@@ -1,10 +1,10 @@
-//! # `app::persistence` — the dock layout, on disk
+//! # `dockpersist` — the dock layout, on disk
 //!
 //! `egui-shell` can already read and write a [`LayoutDocument`]; what it
 //! deliberately does **not** do is decide *where* the file lives or *when*
 //! it is written. Its own header says so in as many words:
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/persistence.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/dockpersist.md`.
 
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};

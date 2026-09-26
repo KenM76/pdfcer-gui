@@ -1,4 +1,4 @@
-# `canvas::formfield::action` — what a push button does when it is pressed
+# `pushbutton` — what a push button does when it is pressed
 
 The shell's model of `pdfcer_core::edit::ButtonAction`, and the one place it
 is translated into the engine's type.
