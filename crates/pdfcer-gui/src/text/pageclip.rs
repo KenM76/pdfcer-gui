@@ -20,6 +20,8 @@
 //!
 //! There is no screenshot that shows either. *Render normally; report
 //! separately.* **Both.**
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/text/pageclip.md`.
 
 /// **Form fields left behind by a page copy.**
 ///
@@ -140,10 +142,6 @@ mod tests {
     use super::*;
 
     /// Singular and plural are spelled out, never `field(s)`.
-    ///
-    /// A parenthesised plural is the tell of a program that could not be
-    /// bothered, and every one of these sentences is read by somebody who did
-    /// not expect it — which is the whole reason it exists.
     #[test]
     fn no_sentence_fakes_its_plural() {
         for s in [
@@ -159,11 +157,6 @@ mod tests {
     }
 
     /// Every disclosure names the REMEDY, not just the problem.
-    ///
-    /// The two invisible facts are the ones an operator cannot investigate for
-    /// themselves — a left-behind field and an orphaned box both look like
-    /// nothing at all — so a sentence that stopped at the diagnosis would send
-    /// them hunting for a defect.
     #[test]
     fn both_invisible_disclosures_say_what_to_do_about_it() {
         assert!(

@@ -118,3 +118,28 @@ would have made a change that could not be driven one assertion at a time.
 Nothing here is a **ce dimension**. The coordinates this module's decision
 leads to are **pdf dimensions** — points in the CAD-exported page's own
 space, which is exactly why they are allowed to be negative.
+
+## Item notes
+
+### `fn the_page_keeps_the_frame_while_its_own_menu_covers_the_pointer`
+
+The operator right-clicks an object, the menu opens over the sheet, and
+the operator moves the cursor down onto it. `contains_pointer` is
+layer-aware, so from that frame on the page reports that it does NOT
+contain the pointer — the menu is covering it. Every other input is
+false: no drag is in flight, and nothing has been clicked yet.
+
+Without the popup clause this frame answers [`Surface::Pasteboard`],
+`present` hands `interact` the other response, the menu is re-attached
+under a different id, and egui drops it as abandoned. The operator sees
+the menu vanish as they reach for it.
+
+### `fn a_page_menu_outranks_a_pasteboard_drag`
+
+This combination should not arise — the secondary click that opens a
+menu ends any drag — but the clause order decides it, so the decision
+is written down rather than left to whoever next reorders the function:
+**the popup wins.** A drag whose owner is the pasteboard while a page
+menu is open is a contradiction, and resolving a contradiction toward
+the surface that owns the visible pop-up is what keeps the pop-up
+alive, which is the failure mode that cost two days.

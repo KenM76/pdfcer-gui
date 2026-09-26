@@ -27,20 +27,10 @@ const APPLIED: &str = "edit-widget-applied"; // ui-text-exempt: a trace event na
 const PAGE_REGION: &str = "page"; // ui-text-exempt: a trace region name, never displayed
 
 /// The box dragged out for the check box, as page fractions.
-///
-/// Deliberately far larger than a check box ever is on paper. The subject is
-/// the appearance rebuild, not the size, and a box that is generous on screen
-/// is one whose eight grips do not overlap each other — see the header.
 const DRAG_FROM: (f64, f64) = (0.28, 0.58);
 const DRAG_TO: (f64, f64) = (0.40, 0.46);
 
 /// How far the corner grip is pulled, as a fraction of the page.
-///
-/// Outward on both axes, so every candidate grip in the corner — the corner
-/// itself or either neighbouring edge grip — enlarges rather than collapses the
-/// box. A drag that produced a rectangle with no area would be refused by the
-/// engine, correctly, and this check would report a redraw failure that was
-/// really an aim failure.
 const PULL: (f64, f64) = (0.10, -0.08);
 
 pub struct AResizedCheckBoxIsRedrawn;

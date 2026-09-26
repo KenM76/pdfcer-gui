@@ -119,10 +119,6 @@ pub struct Viewer {
 pub trait Registrations {
     /// The `App Paths` default value for `executable`, from any of the three
     /// roots, or `None` if no root registers it.
-    ///
-    /// Implementations return the value **as the registry holds it**: quoting,
-    /// surrounding whitespace and all. Cleaning it up is [`discover`]'s job,
-    /// so that the cleaning is tested.
     fn app_path(&self, executable: &str) -> Option<String>;
 
     /// The registered `.pdf` handler's `shell\open\command`, raw.
@@ -144,12 +140,6 @@ pub trait Registrations {
 /// stub the other.
 pub trait Launcher {
     /// Start `viewer` with `file` on its command line.
-    ///
-    /// # Errors
-    ///
-    /// Whatever the platform reports: the executable has been removed since
-    /// discovery, the operator lacks permission, the process table is full.
-    /// The caller words it; this trait does not.
     fn launch(&self, viewer: &Viewer, file: &Path) -> std::io::Result<()>;
 }
 

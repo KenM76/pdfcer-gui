@@ -42,3 +42,11 @@ SKIPPED. `Ok(Err(..))` is a finding about the **program** and is a failure.
 `Ok(Ok(..))` is a measurement. Collapsing the first two would make a broken
 harness indistinguishable from a broken build, which is the reading this
 project has been wrong about most often.
+
+## Item notes
+
+### `const CONTAINMENT_SLACK_PT`
+
+The trace publishes one decimal place, and the boxes compared by callers are
+computed from the same outlines, so this absorbs rounding and nothing else.
+A real containment failure is tens of points, not tenths.

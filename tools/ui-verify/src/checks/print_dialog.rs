@@ -19,14 +19,6 @@ const SUBJECT_ID: &str = "file.print";
 const SUBJECT: &str = "ribbon.item.file.print";
 
 /// The tab it lives on, and the region that activates it.
-///
-/// **File, and that is load-bearing rather than incidental.** `file.print`
-/// sits on the File tab, which is in *every* mode's tab list including Read's
-/// (`["file", "view"]`) — so unlike the render-diagnostics check, this one
-/// needs no mode change before it can find its control. If Print ever moved to
-/// a tab Read does not carry, this check would begin skipping with *"the tab
-/// strip is too narrow"*, which is a confident wrong diagnosis; the constant is
-/// spelled out here so the failure names the real cause.
 const TAB_ID: &str = "file";
 const TAB: &str = "ribbon.tab.file";
 

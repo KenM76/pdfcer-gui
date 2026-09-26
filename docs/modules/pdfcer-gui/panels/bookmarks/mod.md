@@ -100,3 +100,119 @@ Signatures caveat and the Fonts coverage note; three panels, one rule.
 different subtrees would collide in egui's id space — which shows up as
 the wrong row responding to a hover. The item's `ObjId` (`num`,
 `generation`) is unique across the document, so it cannot.
+
+## Item notes
+
+### `struct Harvest`
+
+# Why a struct rather than five `&mut` parameters
+
+[`rows`] is recursive, so every output it collects is threaded through every
+level. Five out-parameters would be five places to transpose two of the same
+type — and two of these *are* the same type
+(`Option<pdfcer_core::object::ObjId>`: the row that was clicked and the row a
+drag began on), which is exactly the pair a reader cannot check by eye at a
+call site.
+
+[`crate::panels::pages::grid_rows`] takes them loose under a
+`clippy::too_many_arguments` waiver, on the argument that a struct there
+would name a type whose only purpose is to be destructured immediately. That
+holds for a flat grid and not for a tree, and the difference is the
+recursion: a bundle passed down four levels is written once, and four loose
+parameters are written at every level.
+
+### `const DISCLOSURE_WIDTH_PTS`
+
+Reserved on a **leaf** as well, with `add_space`, so every title at one
+level starts at one x. A tree whose rows step in and out by the width of a
+triangle depending on whether they have children reads as a rendering fault,
+and it is the first thing an eye notices in a list of names.
+
+### `fn rows`
+
+Indentation carries the structure. See the module docs on why the indent
+is keyed by the item's object id rather than by its index.
+
+# It recurses only when the row is OPEN
+
+A walk that recursed unconditionally would draw every child of every
+bookmark whatever `/Count`'s sign said, which would leave the disclosure
+triangle writing the sign into the file and changing **nothing on screen** —
+a control that appears not to work, and the operator's next act is to press
+it again. Honouring the sign here is also what makes three sentences
+elsewhere in the panel literally true:
+[`crate::text::panels::bookmark_add_under_collapsed`], its move counterpart,
+and [`edit`]'s subtree warning are all about a branch the operator cannot
+see.
+
+**The count above the list is a different number.**
+`outline.diagnostics.items` is every item pdfcer read, at every level,
+collapsed branches included — the document's real size — and the number of
+rows drawn here is what is visible. They are allowed to differ: the panel's
+summary is about the document and its list is about the screen.
+
+# Every row is an enabled control, and only navigation is withheld
+
+A row has four jobs — navigate, select, drag, expand — and three of them work
+perfectly on a bookmark that leads nowhere. So the row is enabled and it is
+**navigation alone** that is withheld: the click raises no
+[`Action::GoToPage`], the label is drawn weak, and the tooltip says which of
+the two unclickable kinds it is. The three-state distinction the module
+header sets out is carried by the label's colour and its words rather than
+by a dead widget, because a disabled `egui::Button` reports no click at all
+and a **heading** that cannot be clicked cannot be selected as the parent
+for an add — which is the likeliest thing an operator wants of one.
+
+`enabled=` in the row's trace line means **navigable**, which is what every
+reader of it assumes and what `tools/ui-verify`'s `bookmark_edit` check
+skips on.
+
+### `fn disclosure`
+
+# A leaf gets no triangle, and that is R83 rather than tidiness
+
+§12.3.3 Table 153 requires `/Count` only of an item that has descendants,
+so an item without them carries none and has no open-or-closed state to set.
+`EditSession::set_outline_open` answers `Ok(false)` for a leaf rather than
+refusing — a *collapse all* sweep asks every row it walks, and refusing would
+make the sweep's caller filter first for no gain — so a triangle on a leaf
+would be a control that reaches the engine and correctly does nothing. Never
+offer a control for something that cannot work.
+
+The width is reserved anyway. See [`DISCLOSURE_WIDTH_PTS`].
+
+# The hover text says the state is saved into the document
+
+The one genuinely surprising fact about this control, and the reason it is
+disclosed **before** the press rather than after: every other tree an
+operator has used treats expand and collapse as a window setting, and here
+it is a byte in the file. See
+[`crate::text::panels::bookmarks::bookmark_expand_tooltip`].
+
+### `fn a_resolved_destination_navigates_zero_based_and_prints_one_based`
+
+The off-by-one that would otherwise be invisible: `page_index` is
+already 0-based into `pages`, and [`Action::GoToPage`] takes the same
+0-based index — so the raw value travels, and the `+ 1` happens only
+where a human reads it.
+
+Getting that backwards produces a panel that navigates one page past
+every bookmark, which looks like a document defect.
+
+### `fn any_destination_that_is_not_a_resolved_page_is_not_navigable`
+
+`Destination` is `#[non_exhaustive]`, so core can add a variant
+without this crate changing. The match must therefore *fail closed*:
+anything that is not a resolved page is a row pdfcer declines to
+offer, never a row it guesses at.
+
+Asserted against a real fixture whose destinations pdfcer genuinely
+cannot resolve, using the same expression the panel uses, so the two
+cannot come apart. Constructing `Destination` values by hand would
+prove only that `matches!` works.
+
+### `fn the_two_disabled_row_kinds_explain_themselves_differently`
+
+A heading and an unresolved destination are both disabled rows. If
+they read the same, an operator cannot tell a perfectly ordinary
+document from one whose outline is damaged.

@@ -143,10 +143,6 @@ mod tests {
 
     /// The invariant the design rests on: a document-wide bump raises
     /// every page, **whatever order the two kinds of bump arrived in**.
-    ///
-    /// This is the assertion that makes it safe to narrow a verb without
-    /// auditing every other verb: getting the ordering wrong cannot produce a
-    /// page that looks fresh.
     #[test]
     fn a_document_wide_bump_cannot_be_undercut() {
         for narrow_first in [true, false] {
@@ -212,11 +208,6 @@ mod tests {
     }
 
     /// **A document-wide bump moves a page that was JUST narrowed.**
-    ///
-    /// This is what pins the shared issuer [`PageEpochs::next`] documents: with
-    /// two independent counters, narrowing page 1 and then raising everything
-    /// leaves page 1 answering the number it already had, so a document-wide
-    /// invalidation skips exactly the page most recently edited.
     #[test]
     fn a_narrowed_page_is_still_moved_by_a_document_wide_bump() {
         let mut e = PageEpochs::default();
@@ -236,11 +227,6 @@ mod tests {
     }
 
     /// Shrinking and re-growing must not resurrect a page's old number.
-    ///
-    /// The situation is real: delete a page, undo the delete. The page comes
-    /// back, and whatever number its slot held before is meaningless — the
-    /// caller raises `bump_all` for a renumbering, and this asserts the resize
-    /// itself does not hand back a stale value.
     #[test]
     fn a_page_that_leaves_and_returns_does_not_bring_its_old_number_back() {
         let mut e = PageEpochs::default();

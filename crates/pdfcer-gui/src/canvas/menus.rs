@@ -13,18 +13,9 @@ use crate::shell::manifest::{DELETE_PERMITTED, SELECTION_ACTIONABLE, SELECTION_A
 use crate::shell::menus::{self, MenuHost};
 
 /// `egui::Memory` key for which canvas menu is open.
-///
-/// See the module header: the choice is made at the click and read on every
-/// frame the popup is drawn, so it has to outlive the click and must not
-/// outlive the session. One `Id`, per `egui::Context`.
 const MENU_MEMORY_KEY: &str = "pdfcer-canvas-menu"; // ui-text-exempt: internal memory id, never displayed
 
 /// Trace slot for what a right-click on the canvas resolved to.
-///
-/// Separate from `super::trace::SELECTION_SLOT`, which reports what the *selection*
-/// did. The two answer different questions and de-duplicate on different
-/// timescales — a right-click that lands on an already-selected object
-/// changes no selection at all and would otherwise be invisible.
 const MENU_SLOT: &str = "canvas-menu"; // ui-text-exempt: trace slot name, never displayed
 
 /// Which of the canvas's two menus a right-click asked for.
@@ -620,32 +611,6 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
 }
 
 /// **Is this right-click about a placed markup shape?**
-///
-/// Three conditions, and each of the last two is a case the one-line version
-/// gets wrong.
-///
-/// 1. **A markup annotation is selected.** [`AnnotKind::Markup`] and not a ce
-///    dimension — Rule 15. A ce dimension is also a `/Line`, its corners are
-///    [`crate::canvas::dimdrag`]'s, and its verb `move_dimension_vertex`
-///    **re-measures**. Routing one to this menu would offer *Add a point here*
-///    on a dimension, where the engine refuses by name
-///    (`EditError::AnnotationIsCeDimension`) and where the operator's next
-///    question would be why the measurement did not follow.
-/// 2. **The mode may author markup.** `author_markup`, not `edit_content`, so
-///    Review — whose whole subject is comments — gets the menu it exists for.
-/// 3. **The pointer is over the shape, or over nothing.** A markup selection
-///    plus a right-click on a path forty points away are about different
-///    things; taking the menu there would leave the operator with the shape's
-///    verbs over the object they had just pointed at. Over blank paper the
-///    shape wins, on `select_under_right_click`'s rule 3 reasoning — a
-///    right-click is the opening of a question, and an operator who aims a
-///    little wide of the shape they have selected meant the shape.
-///
-/// The containment test is on the annotation's own `/Rect` outline, in
-/// **canvas** space, which is the space both that outline and
-/// [`PageMapping::to_page`] speak. It is expanded by the mapping's own click
-/// tolerance rather than by a number invented here, so *"near the shape"* means
-/// the same distance a click means everywhere else on this canvas.
 fn markup_menu(
     selection: &SelectionState,
     author_markup: bool,
@@ -674,11 +639,6 @@ fn markup_menu(
 }
 
 /// Whether a caret is placed in text that is **already on the page**.
-///
-/// The one question that separates [`CanvasMenu::Text`] from the other two, and
-/// it is asked of the draft rather than of the tool: an *armed but unclicked*
-/// text tool has no paragraph, and an operator who has armed it and then
-/// right-clicked a rectangle wants the rectangle's menu.
 fn caret_in_existing_text(ctx: &egui::Context) -> bool {
     matches!(
         crate::canvas::textedit::read(ctx).map(|draft| draft.anchor),
@@ -724,11 +684,6 @@ mod tests {
     }
 
     /// **A right-click over an unselected object selects it first.**
-    ///
-    /// The rule that makes the menu about the thing the operator pointed at.
-    /// Without it, right-clicking B while A is selected and choosing Delete
-    /// destroys A — the pointer and the operand list disagreeing, with an
-    /// irreversible verb between them.
     #[test]
     fn a_right_click_over_an_unselected_object_selects_it() {
         let mut selection = selected(&[7]);
@@ -745,11 +700,6 @@ mod tests {
 
     /// **…and a right-click over an object that is already selected
     /// changes nothing.**
-    ///
-    /// The case the naive version gets wrong. A marquee over eight objects
-    /// followed by a right-click on one of them must still offer to delete
-    /// all eight; collapsing to the one under the pointer silently discards
-    /// seven and makes the menu about something nobody asked for.
     #[test]
     fn a_right_click_inside_a_multi_selection_keeps_it() {
         let mut selection = selected(&[1, 4, 9]);
@@ -764,11 +714,6 @@ mod tests {
     }
 
     /// **A right-click on blank page never clears the selection.**
-    ///
-    /// A left click on paper deselects, and that is right — it is an
-    /// unambiguous statement. A right-click is the opening of a question,
-    /// and an operator who aims slightly wide, gets the view menu and
-    /// presses Escape must still have their selection.
     #[test]
     fn a_right_click_on_blank_page_opens_the_view_menu_and_keeps_the_selection() {
         let mut selection = selected(&[2, 5]);
@@ -795,16 +740,6 @@ mod tests {
     }
 
     /// **Right-clicking the object you are inside keeps you inside it.**
-    ///
-    /// A descended rung is expensive to reach — one measured CAD export
-    /// holds a whole drawing view as a single path object with 1,194
-    /// subpaths, so finding the subpath you meant took aim. Re-selecting the
-    /// whole object because the operator right-clicked it would throw that
-    /// away, and the ascent is the one thing Escape is *for*.
-    ///
-    /// This falls out of rule 2 rather than being a special case, which is
-    /// why it is asserted: the object is already in
-    /// `object_indices_on`, so nothing runs.
     #[test]
     fn a_right_click_inside_an_entered_object_does_not_ascend() {
         use crate::canvas::selection::SelectionLevel;
@@ -835,11 +770,6 @@ mod tests {
 
     /// …but right-clicking a *different* object while inside one leaves,
     /// exactly as a left click would.
-    ///
-    /// The rule that stops an operator being stranded inside an object they
-    /// have forgotten they entered. It is `SelectionState::click`'s own
-    /// behaviour, reached rather than reimplemented, which is the point of
-    /// routing through it.
     #[test]
     fn a_right_click_on_a_different_object_leaves_the_entered_one() {
         use crate::canvas::selection::SelectionLevel;
@@ -865,12 +795,6 @@ mod tests {
 
     /// The two menus map to the two context ids the shell defines, and to no
     /// others.
-    ///
-    /// A `&'static str` in `Memory` could store a context id that no menu is
-    /// keyed by, which degrades into "right-clicking the canvas does
-    /// nothing" — the symptom this whole change removes. The enum is what
-    /// makes that unrepresentable; this is what proves the two arms point at
-    /// menus that exist.
     #[test]
     fn each_canvas_menu_names_a_context_the_shell_defines() {
         assert_eq!(CanvasMenu::Object.context_id(), CANVAS_OBJECT);
@@ -959,13 +883,6 @@ mod tests {
     }
 
     /// **A selected markup shape, right-clicked, opens the markup menu.**
-    ///
-    /// The whole point of the sixth context: the operator has a shape selected,
-    /// points at it, and gets the menu that carries its two node verbs.
-    ///
-    /// Falsified by returning `false` from `markup_menu` unconditionally —
-    /// which is the state before this change, where the same right-click
-    /// resolved to `canvas.empty` and offered four zoom levels.
     #[test]
     fn a_right_click_on_a_selected_markup_opens_its_own_menu() {
         let map = identity_map();
@@ -983,15 +900,6 @@ mod tests {
     }
 
     /// **Rule 15: a ce dimension is NOT routed here.**
-    ///
-    /// Its corners are `canvas::dimdrag`'s and its verb re-measures. Offering
-    /// *Add a point here* on one would name an engine verb that refuses by name
-    /// (`AnnotationIsCeDimension`) and would leave the operator asking why the
-    /// measurement did not follow.
-    ///
-    /// Falsified by dropping the `kind != Markup` clause: this test fails and
-    /// no other one does, which is exactly why it is written separately from
-    /// the one above rather than as a second assertion inside it.
     #[test]
     fn a_selected_ce_dimension_does_not_open_the_markup_menu() {
         let map = identity_map();
@@ -1010,10 +918,6 @@ mod tests {
 
     /// **A mode that cannot author markup gets no markup menu**, and the
     /// capability asked is `author_markup`.
-    ///
-    /// Falsified by passing `!reading` (i.e. `edit_content`) instead: Review
-    /// has `edit_content == false` and `author_markup == true`, so the mode
-    /// whose entire subject is comments would lose the comment's own menu.
     #[test]
     fn a_mode_that_cannot_author_markup_gets_no_markup_menu() {
         let map = identity_map();
@@ -1032,14 +936,6 @@ mod tests {
 
     /// **A right-click on a content object far from the selected shape is
     /// about the OBJECT.**
-    ///
-    /// The pointer and the operand must agree — `select_under_right_click`'s
-    /// rule 1, arriving from the other side. Taking the markup menu here would
-    /// leave the operator holding a shape's verbs over the path they had just
-    /// pointed at.
-    ///
-    /// Falsified by dropping the containment test and returning `true`
-    /// whenever a markup is selected.
     #[test]
     fn a_right_click_on_a_distant_object_is_about_the_object() {
         let map = identity_map();
@@ -1058,14 +954,6 @@ mod tests {
 
     /// …but a right-click on **paper** while a markup is selected still opens
     /// the shape's menu.
-    ///
-    /// `select_under_right_click`'s rule 3 reasoning: a right-click is the
-    /// opening of a question, and an operator who aims a little wide of the
-    /// shape they have selected meant the shape. It is also what stops the
-    /// commonest miss — a shape drawn thin, aimed at from just outside its box
-    /// — from silently becoming the zoom menu.
-    ///
-    /// Falsified by removing the `object.is_none()` early return.
     #[test]
     fn a_right_click_on_paper_beside_a_selected_markup_keeps_its_menu() {
         let map = identity_map();

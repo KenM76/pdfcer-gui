@@ -33,3 +33,31 @@ This file is where those four reasons are actually decided
 ([`crate::canvas::mapping::annot_canvas_rect`], which serves annotation
 selection too) and
 where the hit test lives ([`hit`]).
+
+## Item notes
+
+### `const MIN_EDITOR`
+
+A form field is whatever size its author made it, and at 25 % zoom a
+perfectly ordinary 12 pt field is three pixels tall. An editor that small
+is an editor nobody can read what they typed in, so the box is grown about
+its own centre until it reaches this — which means it can overhang the
+field it is editing.
+
+That overhang is the deliberate half. The alternative is an editor that
+sits exactly on a field the operator cannot see into, which trades a
+visible, self-explaining imprecision for an invisible, silent one. It also
+has an obvious operator-side remedy that needs no code: zoom in.
+
+### `const EDITOR_TEXT_RATIO`
+
+A glyph box is taller than its letters, and a font size equal to the box
+height clips descenders. 0.62 is the ratio at which an ascender-plus-
+descender line fits inside the box with the padding `egui` adds, measured
+against the theme's own text style rather than derived.
+
+### `const EDITOR_TEXT_RANGE`
+
+The lower bound is legibility; the upper bound stops a full-page field —
+a signature block, a comment box — from being typed into at 40 pt, which
+reads as a bug rather than as fidelity.

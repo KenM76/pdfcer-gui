@@ -548,10 +548,6 @@ impl Strip {
     }
 
     /// The pages of one row, placed.
-    ///
-    /// The single owner of the placement arithmetic — a row is centred
-    /// horizontally in the strip, and each page is centred vertically in its
-    /// row so a short page in a tall spread does not hang from the top edge.
     fn place_row(&self, row: &Row) -> impl Iterator<Item = Placement> + '_ {
         let row = *row;
         let zoom = self.zoom;
@@ -605,15 +601,6 @@ mod tests {
     }
 
     /// **Single page reproduces the pre-Phase-4 geometry exactly.**
-    ///
-    /// The operator's constraint, as an equality rather than an intention:
-    /// continuous is *an option, not a replacement*, and the way that survives
-    /// a refactor is that the single-page strip's size **is** the expression
-    /// `canvas::show` used before this feature existed — `extent × zoom`, with
-    /// the page at the origin and no gap anywhere.
-    ///
-    /// A change that gives `Single` a row gap, a margin or a scroll range it
-    /// did not have fails here.
     #[test]
     fn single_page_reproduces_the_pre_phase_4_geometry_exactly() {
         let pages = letter(5);
@@ -666,12 +653,6 @@ mod tests {
     }
 
     /// The strip's geometry is exactly linear in the zoom.
-    ///
-    /// The property the zoom anchor's "measure, then re-place" solve rests on:
-    /// [`crate::canvas::geometry::zoom_anchor_offset`] holds a *fraction* of
-    /// the content still across a zoom step, which is only correct if doubling
-    /// the zoom doubles every coordinate. A constant screen gap would break it
-    /// by the gap, cumulatively, down a long strip.
     #[test]
     fn strip_geometry_is_exactly_linear_in_the_zoom() {
         let pages = letter(6);
@@ -739,11 +720,6 @@ mod tests {
     }
 
     /// **The current page follows the scroll, by greatest visible area.**
-    ///
-    /// Phase 4.3. Asserted as the behaviour an operator sees — scroll down a
-    /// page and the reported page becomes the next one — rather than as the
-    /// arithmetic, and with the boundary case that would make a centre-based
-    /// rule twitch.
     #[test]
     fn the_current_page_follows_the_scroll_by_greatest_visible_area() {
         let pages = letter(4);
@@ -858,13 +834,6 @@ mod tests {
     }
 
     /// **The cheap row metrics agree with the laid-out strip.**
-    ///
-    /// [`row_metrics`] exists so a frame costs one O(n) pass rather than two,
-    /// and the price of that shortcut is a second derivation of two numbers a
-    /// fit mode depends on. Two derivations of a fit scale is exactly how "Fit
-    /// page" and the page it fits come to disagree, so the equality is
-    /// asserted over every mode, a mixed-size document and both spread
-    /// parities rather than left to review.
     #[test]
     fn row_metrics_agrees_with_the_laid_out_strip() {
         let pages = vec![
@@ -938,16 +907,6 @@ mod tests {
     // -----------------------------------------------------------------
 
     /// **The regression test for the continuous-scroll zoom oscillation.**
-    ///
-    /// A mixed-size document, asked for its fit metrics from two different
-    /// current pages. Under a continuous mode the answer must be the SAME —
-    /// because the current page is derived from the scroll, so an answer that
-    /// varies with it closes a loop between zoom and scroll position.
-    ///
-    /// Written as an equality between two calls rather than as an assertion
-    /// about a particular scale, because the bug is not "the zoom is wrong".
-    /// Either zoom was individually defensible; the defect is that the two
-    /// disagreed, so the frame's answer depended on the previous frame's.
     #[test]
     fn a_continuous_fit_does_not_depend_on_the_current_page() {
         let pages = vec![page(1190.0, 841.0), page(612.0, 792.0), page(842.0, 595.0)];
@@ -963,13 +922,6 @@ mod tests {
     }
 
     /// …and it is the TIGHTEST row, so every page fits.
-    ///
-    /// Scroll-independence alone would be satisfied by always fitting page 0,
-    /// which is stable and wrong: a later, larger sheet would overflow a
-    /// control called "Fit page". The per-axis maxima matter for the same
-    /// reason — with a portrait and a landscape sheet in one document neither
-    /// row is both the widest and the tallest, so fitting either whole row
-    /// would leave the other overflowing on one axis.
     #[test]
     fn a_continuous_fit_frames_the_largest_extent_in_each_axis() {
         // Widest is the landscape A3; tallest is the portrait Letter.
@@ -988,11 +940,6 @@ mod tests {
     }
 
     /// A one-page-size document is unaffected under **Continuous**.
-    ///
-    /// The property that makes this fix free in the common case: every row is
-    /// one page and every page is the same, so `fit_metrics` and `row_metrics`
-    /// agree exactly. Without it, the fix would be a silent behaviour change
-    /// for every ordinary document rather than a repair of a broken one.
     #[test]
     fn a_uniform_document_fits_exactly_as_it_did_before() {
         let pages = vec![page(612.0, 792.0); 8];
@@ -1007,19 +954,6 @@ mod tests {
 
     /// **Facing-continuous is different even on a uniform document, and it
     /// must be.**
-    ///
-    /// This assertion was written the other way round first — as "a uniform
-    /// document is unaffected in every continuous mode" — and it failed,
-    /// correctly. Under a facing mode **row 0 is a cover**: one page, while
-    /// every row after it is a two-page spread. So on eight identical Letter
-    /// pages the rows are genuinely 612 pt and 1,230 pt wide, and they are not
-    /// interchangeable.
-    ///
-    /// Fitting the cover would therefore make every spread in the document
-    /// overflow — from a control called "Fit page", on the second row. The
-    /// old per-row behaviour did exactly that whenever the operator's scroll
-    /// happened to leave page 0 current, which is another face of the same
-    /// bug rather than a separate one.
     #[test]
     fn facing_continuous_fits_the_spread_not_the_cover() {
         let pages = vec![page(612.0, 792.0); 8];
@@ -1039,10 +973,6 @@ mod tests {
     }
 
     /// Single and Facing still fit the row the operator is on.
-    ///
-    /// They show one row at a time and the operator chose it, so there is no
-    /// loop — and fitting the document's largest sheet there would shrink
-    /// every other page for no reason. The fix must not leak into them.
     #[test]
     fn a_paged_mode_still_fits_the_current_row() {
         let pages = vec![page(1190.0, 841.0), page(612.0, 792.0)];

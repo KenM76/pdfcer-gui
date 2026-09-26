@@ -33,10 +33,6 @@ const ESCAPE: &str = "canvas-escape"; // ui-text-exempt: a trace event name, nev
 const PAGE_REGION: &str = "page"; // ui-text-exempt: a trace region name, never displayed
 /// **The fixture this check opens**, relative to `CARGO_MANIFEST_DIR` — which
 /// is `tools/ui-verify`, so **two** levels up and not three.
-///
-/// `form_groups` records that trap: written with a third `../` it resolves to a
-/// `D:/Dev/fixtures/` that does not exist, and the check SKIPs on every run
-/// while telling the reader to run a generator that writes somewhere else.
 const FIXTURE: &str = "../../fixtures/form-xobject.pdf";
 /// The page, in points, as the generator writes it.
 const FIXTURE_PAGE: PageGeometry = PageGeometry {
@@ -44,11 +40,6 @@ const FIXTURE_PAGE: PageGeometry = PageGeometry {
     height_pt: 300.0,
 };
 /// Where to click: the middle of the horizontal bar inside the form.
-///
-/// The form is placed at `(40, 40)` and the bar runs at `y = 110` in the form's
-/// own space, so it is at `y = 150` on the page. `x = 100` is well clear of the
-/// vertical bar at `x = 200` and of the diagonal, so a click here can only mean
-/// one of the three strokes.
 const POINT: (f64, f64) = (100.0, 150.0);
 
 pub struct AClickSelectsTheWholeDrawing;

@@ -31,3 +31,33 @@ names are built from. Those are `/T` strings written into the file and keyed
 on by form-filling scripts and FDF imports; translating them would rename
 every field for an operator running a different language, invisibly, until an
 import failed. They are literals on `FormFieldKind::name_prefix`.
+
+## Item notes
+
+### `fn only_the_radio_asks_for_a_group_name`
+
+The wording that prevents the most common form-authoring mistake. Tested
+rather than left to review because "Name" is the obvious label, it is
+correct for four of the five kinds, and unifying them would look like a
+tidy-up rather than a regression.
+
+### `fn the_password_hover_does_not_imply_security`
+
+A masked box reads as secure to anyone not told otherwise, and the value
+really is plain text in the file. This is a false-claim guard, not a
+style test.
+
+### `fn no_string_here_claims_a_button_cannot_be_given_an_action`
+
+It said pdfcer *"cannot yet give it something to do"*.
+`set_button_action` shipped on 2026-08-30 and that sentence stayed on
+screen for two days, because **nothing in this repository fails when a
+capability lands**. The engine's own reply had warned in as many words:
+*"if your surface tells the operator that pdfcer never authors an action,
+it is now saying something untrue in the direction that matters."*
+
+The replacement is `text::buttonaction`, which says what the button WILL
+do. What is asserted here is the guard that would have caught the
+staleness: **no string a push button's rows draw may claim a button
+cannot be given an action.** A sentence that reintroduces the claim
+fails here rather than shipping.

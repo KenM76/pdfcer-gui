@@ -77,3 +77,20 @@ value is read by the canvas and written by a panel, neither of which owns
 the other, and it must survive a panel being closed. It is deliberately
 **not** persisted to `preferences.txt` — a per-drag modifier that came back
 set from last week would surprise somebody who has forgotten setting it.
+
+## Item notes
+
+### `fn the_defaults_are_the_arguments_that_were_accepted`
+
+Not a tautology over `Default::default()`: it asserts the three engine
+fields, through `to_options`, which is where an inverted mapping would
+show up. `keep_rect_differences` is the one that reads backwards —
+`false` means `/RD` **does** scale — and a shell that "fixed" that
+reading would leave an inset fixed while the rectangle doubled.
+
+### `fn each_switch_reaches_its_own_engine_field`
+
+The failure this guards is a mapping that drops a field: three
+checkboxes on the Tool row, two of which do something, and no error
+anywhere. It is asserted by turning them on **one at a time**, because
+all-three-on would pass on a build that ORed them together.

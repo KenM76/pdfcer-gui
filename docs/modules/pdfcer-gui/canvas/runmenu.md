@@ -129,3 +129,44 @@ labels these runs usually are on the operator's drawings are **pdf
 dimensions** — page content pdfcer reads and must not silently alter — and
 this module neither reads them as measurements nor alters them. It moves a
 selection.
+
+## Item notes
+
+### `const PICK_MEMORY_KEY`
+
+One `Id`, per `egui::Context`, for the module header's reason: the pick is
+taken at the click and read on every frame the popup is drawn, so it has to
+outlive the click and must not outlive the session. `Memory` rather than
+`PdfcerApp` state because this is frame-local interaction state with no
+meaning across a document — closing one starts the next frame with no pick
+and no popup in flight.
+
+### `fn only_a_line_pick_is_offered`
+
+Falsified: defining `offered` as `true` makes the second assertion
+fail, which is the regression that would draw the row over paths,
+images and blank paper.
+
+### `fn the_default_pick_names_no_line`
+
+Falsified: making a `TextLine` variant the default makes this fail, and
+would have offered the row on every right-click anywhere on the canvas
+before the operator had pointed at anything.
+
+### `fn a_pick_from_another_page_is_refused`
+
+The provider is `None` here, which is a second reason to decline — so
+the page guard is asserted where it is the FIRST reason, above the
+`targets?`. That ordering is load-bearing, which is why the second
+assertion exists: it shows the two refusals are independent rather than
+one of them covering for the other.
+
+Falsified: moving the page comparison below `let targets = targets?`
+leaves the first assertion passing for the wrong reason.
+
+### `fn an_elsewhere_pick_resolves_to_nothing`
+
+Falsified: an `_ =>` arm in [`resolved`] falling through to
+`Some((TargetId::Object(0), 0))` makes this fail — the shape of the
+*"unwrap_or_default into line 0"* defect the enum's two variants exist
+to prevent.

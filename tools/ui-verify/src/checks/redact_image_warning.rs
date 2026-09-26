@@ -26,23 +26,6 @@ const WITH_IMAGE: &str = "fixtures/synthetic-image-only.pdf";
 /// A real CAD sheet with no raster image on it at all.
 const WITHOUT_IMAGE: &str = "fixtures/a1-titleblock.pdf";
 /// The words the disclosure must carry when it fires.
-///
-/// Matched on the CONSEQUENCE rather than on "image", because the sentence has
-/// to tell the operator what will happen to him and not merely what is on the
-/// page. A build that said "this region covers 1 image(s)" and stopped would
-/// pass a looser check and leave him no wiser about what Apply will do.
-///
-/// **It read `"will be refused"` until 2026-09-03, and the words changed
-/// because the OUTCOME did.** `pdfcer-core` v0.26.0 (`Pass 245.0`) destroys
-/// image samples under a region instead of refusing the document, so the
-/// disclosure stopped being a warning about a failure and became a warning
-/// about an irreversible success. This constant is what made that a one-line
-/// edit: the check asserts *"the consequence is stated"*, and only the
-/// consequence moved.
-///
-/// ⇒ A check pinned to a whole sentence would have gone red here and read as a
-/// regression in the shell, when what had happened is that the engine got
-/// better.
 const CONSEQUENCE: &str = "destroyed, not hidden";
 
 /// See the module documentation.

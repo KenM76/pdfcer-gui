@@ -90,3 +90,13 @@ and by
 two gates, so it would be a second run of the same code path for no new
 fact. Review is the mode the defect was reported in and the mode where the
 grant and the refusal differ, which makes it the one worth a launch.
+
+## Item notes
+
+### `const FIXTURE`
+
+Pinned because `Ctrl+A` must find something: this check's subject is what
+happens to a **content** clip, and on a page with no page content
+`edit.select_all` copies nothing, the paste gate takes the markup branch,
+Review permits it, and the check would report a pass having exercised the
+opposite case. A real A1 CAD sheet cannot be empty.

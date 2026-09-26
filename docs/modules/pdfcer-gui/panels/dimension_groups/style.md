@@ -45,3 +45,92 @@ that are about to change.
 `pdfcer-core` pins that with a test named for the trap
 (`factory_sourced_properties_still_follow_a_group_edit`), and this module
 never re-derives the predicate: it calls `StyleSource::follows_group`.
+
+## Item notes
+
+### `const POINT_SPEED`
+
+Slow enough that a drag lands on a tenth rather than skating past it. These
+are typographic sizes — 10 pt text, a 0.75 pt line — where the difference
+between 0.7 and 0.8 is visible on a plot.
+
+### `const TEXT_HEIGHT_RANGE`
+
+Bounded here rather than in the engine because the engine does not bound
+it: `GroupStyle::text_height` is a bare `Option<f64>`. The floor is the
+smallest size that survives a 1:100 plot; the ceiling is where a label stops
+fitting between its own witness lines on an A3 sheet. Neither is a hard
+refusal — an operator who needs 60 pt can set it from the CLI, which is the
+right place for a value outside what a drawing normally uses.
+
+### `fn property_row`
+
+# Why the checkbox and the editor are one function
+
+
+# Why the editor is drawn only when the box is ticked
+
+R9: greying is for *temporarily* unavailable, and an inherited property is
+not unavailable — it has a value, supplied by a tier above. A greyed
+spinner showing the factory number would invite the operator to drag it and
+then decline, which is the affordance-that-cannot-be-honoured shape. The
+caption in its place states the inherited value in words instead, so the
+information is not lost with the control.
+
+# Why `reach` is one parameter and not two
+
+`(moving, total)` travel together into one sentence and are meaningless
+apart — *"3"* says nothing without *"of 40"*, and that is the whole point of
+the disclosure. Passing them as a pair also keeps this function inside
+clippy's argument budget without dropping the `describe` closure, which is
+what renders the inherited value in words when the editor is absent.
+
+### `fn will_move`
+
+`pick` selects the property out of the engine's own
+`StyleProvenance` — one field per property, and the struct is what
+`style_provenance` returns, so nothing here re-derives which tier supplied
+a value.
+
+# Why the predicate is the engine's and not `== StyleSource::Group`
+
+Because `StyleSource::follows_group()` is `true` for `Factory` as well, and
+that is the whole trap. A member that has never had the property set
+anywhere follows the group the moment the group speaks. Testing for `Group`
+alone would report zero on a fresh document — every member `Factory` — which
+is the case where the count matters most, because that is the press that
+changes everything on the sheet.
+
+### `fn color32_of`
+
+Opaque, because `/C` on an annotation has no alpha and a picker offering one
+would be a channel pdfcer silently ignores — the argument
+`canvas::markup::pen` already makes for the markup swatches, applied to the
+engine's `Rgb` rather than to the pen's own triple.
+
+### `fn rgb_of`
+
+Divides by `255.0` rather than `256.0`: the component range is inclusive at
+both ends, so `255` must map to exactly `1.0` or a pure red chosen in the
+picker would be written as `0.996` and round-trip to a slightly different
+swatch.
+
+### `fn a_member_that_overrides_nothing_is_counted_as_moving`
+
+This is the test that would have caught a hand-rolled
+`== StyleSource::Group` predicate, and it is written against a *fresh*
+model precisely because that is the case where the wrong predicate
+reports zero and the right one reports everything.
+
+### `fn an_override_is_excluded_from_its_own_property_and_no_other`
+
+The second half is the one worth having: a member overriding the text
+height still follows the group for the line width, and a count that
+excluded it from both would under-report the wider edit.
+
+### `fn a_colour_survives_the_round_trip_at_both_ends`
+
+`255 → 1.0 → 255` is the case the `/ 255.0` divisor exists for. With
+`256.0` a pure red would be written as `0.996` and the swatch an operator
+reopened would not be the one they chose — a difference small enough to
+dismiss and permanent once it is in the file.

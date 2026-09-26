@@ -49,3 +49,18 @@ the arithmetic has eight unit tests in `pdfcer-core` and a composability
 test in this repository, and a second copy of the expected numbers here
 would be a third place to maintain them. What this check owns is
 **which verb the button reached and with what number**.
+
+## Item notes
+
+### `const SCRUB_PX`
+
+`SPEED` in `panels::properties::geometry` is 0.5 units per pixel, so 60
+pixels is **30 degrees** — a round number a human can check by reading the
+trace, large enough to clear every tolerance here, and small enough that the
+pointer stays inside a panel of any reasonable width.
+
+### `const SCROLL_ATTEMPTS`
+
+The Properties panel is a scroll area whose slot is usually shorter than its
+content, and the Angle field made it one row taller. Six notches is what
+`geometry_fields` settled on.

@@ -58,3 +58,34 @@ queue would write the operator's password into `target/ui-verify/`, in plain
 text, in a directory whose purpose is to be kept and read.
 
 The trace lines below say the length and the outcome and never the value.
+
+## Item notes
+
+### `fn submit`
+
+The empty case is refused **here** rather than sent on, and the reason
+is [`Secret::is_empty`]'s: `Document::load(path)` already tried the empty
+password before this prompt existed — every conforming reader does that
+silently — so submitting it again asks the engine a question it has
+answered and returns an identical rejection, which the operator reads as
+*"my password was wrong"* about a password they never supplied.
+
+### `fn pressing_open_with_nothing_typed_raises_no_action`
+
+The whole of [`PasswordDialog::submit`]'s argument, asserted: pdfcer has
+already tried the empty password, so sending it again would produce a
+rejection the operator reads as *"my password was wrong"* about a
+password they never typed.
+
+### `fn the_action_that_carries_a_password_never_formats_it`
+
+`crate::secret` proves the type is safe; this proves the type is the one
+actually used on this path. A variant that took a bare `String` would
+pass every test in that module and write the password into the evidence
+file on the first `{:?}`.
+
+### `fn a_rejection_clears_the_field_and_counts_the_attempt`
+
+A wrong password left in the box is one an operator re-submits by
+reflex; and without the count, a second rejection is indistinguishable
+from a press that did not register.

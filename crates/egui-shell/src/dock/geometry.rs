@@ -42,6 +42,8 @@
 //! be a laid-out rect — the pointer is over it, so it is on screen by
 //! construction — but nothing here should be read as a reachability claim, and
 //! `report`'s clipped channel remains the surface that answers that.
+//!
+//! Design and rationale: `docs/modules/egui-shell/dock/geometry.md`.
 
 use egui::Rect;
 
@@ -280,10 +282,6 @@ impl DockGeometry {
 }
 
 /// The address whose rect contains `pos`, if any.
-///
-/// Last match wins: compartments are recorded in draw order and do not overlap,
-/// so the choice is immaterial for stacks — but a later entry is the one drawn
-/// on top, which is the answer a pointer gesture wants if that ever changes.
 fn hit<A: Copy>(entries: &[(A, Rect)], pos: egui::Pos2) -> Option<A> {
     entries
         .iter()

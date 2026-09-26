@@ -27,6 +27,8 @@
 //! `vector_edit`, like every other verb's. Nothing here paraphrases it: *one
 //! fact, one wording*, and the engine's version is the authoritative one because
 //! it reports what the operation **did** rather than what the shell intended.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/app/actions/forms/paste.md`.
 
 use crate::app::state::OpenDoc;
 
@@ -180,14 +182,6 @@ pub(super) fn paste(
 }
 
 /// Which widget of `fqn` the paste just added — the last one.
-///
-/// Re-read from the document rather than derived from the outcome's
-/// `widget_ids`, because the two address spaces differ: the outcome names
-/// `ObjId`s and `SelectedField` wants an **index within the field**. Reading
-/// the field back is the only thing that knows both.
-///
-/// Zero when the field cannot be found, which is unreachable on the success
-/// path and is a defensible index rather than a panic if it ever is not.
 fn widget_index_after_paste(doc: &OpenDoc, fqn: &str) -> usize {
     let view = doc.session.view();
     pdfcer_core::forms::parse_acroform(&view)

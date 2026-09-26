@@ -22,6 +22,8 @@
 //! reports every assertion message as a user-visible string that should live
 //! in `ui_text` — exclusion 2b in that gate. It is the same line every
 //! other split test file in this crate carries.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/app/prefs/exporting/tests.md`.
 #![cfg(test)]
 
 use super::*;
@@ -31,13 +33,6 @@ use super::*;
 // ---------------------------------------------------------------------------
 
 /// Every [`ImageFormat`], written out here rather than taken from the type.
-///
-/// Deliberately **not** `ImageFormat::ALL`. A round-trip test that draws its
-/// input from the same accessor the production code uses proves the two agree
-/// with each other; it does not prove either agrees with the file format. This
-/// list is the test's own statement of what the file must carry, so a variant
-/// added upstream goes red here — at the `match` in [`image_format_key`] — with
-/// a message about the file rather than silently expanding a sweep.
 const IMAGE_FORMATS: [ImageFormat; 4] = [
     ImageFormat::Png,
     ImageFormat::Jpeg,
@@ -78,10 +73,6 @@ fn the_image_default_is_what_the_dialog_used_to_hard_code() {
 }
 
 /// The Export-text window opens exactly as it did before O196.
-///
-/// The `AllPages` line is the one worth looking at: it disagrees with the image
-/// window's `CurrentPage` on purpose, and that disagreement is why the two
-/// scopes are separate keys.
 #[test]
 fn the_text_default_is_what_the_dialog_used_to_hard_code() {
     let prefs = ExportTextPrefs::default();
@@ -101,15 +92,6 @@ fn the_dxf_default_is_what_the_dialog_used_to_hard_code() {
 }
 
 /// Our DXF defaults are still the engine's.
-///
-/// [`ExportDxfPrefs::default`] writes literals rather than delegating to
-/// `DxfOptions::default()`, so that an engine change to a default cannot alter
-/// this window's behaviour on a `cargo update` with nothing in the diff. This
-/// test is the other half of that decision: the day the engine does change one,
-/// **this goes red** and somebody decides, in a commit, whether the window
-/// follows.
-///
-/// Without it the literals would be a silent fork rather than a deliberate one.
 #[test]
 fn the_dxf_defaults_still_match_the_engine_and_a_change_upstream_lands_here() {
     let engine = pdfcer_core::export::dxf::DxfOptions::default();
@@ -137,11 +119,6 @@ fn the_dxf_defaults_still_match_the_engine_and_a_change_upstream_lands_here() {
 
 /// Every token pair round-trips over every variant, and no two variants of one
 /// enum share a token.
-///
-/// The second half matters as much as the first: two values spelled the same
-/// way makes one of them unreachable from a hand-edited file, and the writer
-/// would keep producing a file the parser reads as the *other* value with no
-/// note raised anywhere.
 #[test]
 fn every_token_round_trips_and_is_distinct_within_its_enum() {
     /// Round-trip and distinctness for one enum, given its writer and reader.
@@ -202,10 +179,6 @@ fn every_token_round_trips_and_is_distinct_within_its_enum() {
 
 /// [`PageScope::Typed`] has no token, and degrades to the caller's own
 /// default rather than to a third behaviour.
-///
-/// The failure this prevents is specific and invisible from the code: a window
-/// restored into *Pages* with an empty range box, its Export button greyed, and
-/// nothing on screen saying why.
 #[test]
 fn typed_has_no_token_and_degrades_to_the_windows_own_default() {
     assert_eq!(page_scope_key(PageScope::Typed), None);
@@ -229,10 +202,6 @@ fn typed_has_no_token_and_degrades_to_the_windows_own_default() {
 }
 
 /// The two American spellings of `millimetres` are accepted on read.
-///
-/// The writer emits exactly one spelling — asserted here too, because a writer
-/// that started emitting a synonym would make the file teach a vocabulary its
-/// own comment block contradicts.
 #[test]
 fn the_dxf_units_synonyms_are_read_but_never_written() {
     assert_eq!(
@@ -251,11 +220,6 @@ fn the_dxf_units_synonyms_are_read_but_never_written() {
 // ---------------------------------------------------------------------------
 
 /// Parse one `pub name: Type,` struct body out of this module's own source.
-///
-/// Returns the field names in declaration order. The shape it depends on —
-/// every field on one line, `pub`, no trailing comment — is the same shape
-/// [`crate::app::prefs::printing`]'s equivalent depends on, and it is stated in
-/// that struct's doc comment for the same reason.
 fn fields_of(source: &str, decl: &str) -> Vec<String> {
     let (_, after) = source
         .split_once(decl)
@@ -272,21 +236,6 @@ fn fields_of(source: &str, decl: &str) -> Vec<String> {
 
 /// Every field of all three groups is both written to the file and read
 /// back out of it.
-///
-/// # Why a source-text check rather than a value round trip
-///
-/// A round trip over [`ExportPrefs`] — write, parse, compare — is also in this
-/// file and is the stronger check *for the fields it covers*. It cannot cover a
-/// field nobody wrote: a new field simply keeps its default on both sides of the
-/// comparison and the round trip stays green while the preference is inert.
-///
-/// This test closes that hole from the other direction. It proves only that the
-/// field is *mentioned* in both halves, which is weak — and is exactly the
-/// difference between a preference that is wired up and one that is not.
-///
-/// ⚠ It is blind in one direction by construction: it cannot see a field
-/// mentioned in the right place and used wrongly. That is what the round trip
-/// below and the driven `ui-verify` check are for.
 #[test]
 fn every_field_of_every_group_is_both_written_and_parsed() {
     let own = std::fs::read_to_string(
@@ -353,51 +302,6 @@ fn every_field_of_every_group_is_both_written_and_parsed() {
 }
 
 /// **Every remembered field is actually read back into its window.**
-///
-/// The half of O196 that no compiler and no other test in this file can see,
-/// and the half most likely to rot. Ported from `super::super::printing`'s
-/// `every_remembered_field_is_read_back_by_the_print_dialog`, which found the
-/// shape first for O166, and generalised over the three groups.
-///
-/// # Why the writing half is free and the reading half is not
-///
-/// Each window's `habits()` is a struct literal with **no
-/// `..Default::default()`**, so *writing* a new preference is compiler-enforced:
-/// add a field to one of these groups and that function stops building.
-///
-/// The *reading* side has no such property. A window's `open` is a struct
-/// literal of the **dialog's** fields, and a field of `ExportImagePrefs` that
-/// nothing over there mentions compiles perfectly. The window opens on its
-/// hard-coded value while the preferences file dutifully records, writes and
-/// reloads a number nobody ever looks at.
-///
-/// Every other test in this module would still pass: the round trip works, the
-/// tokens are unique, the defaults match, `write_block` and `parse_key` both
-/// name the field. The only symptom is the operator saying *"it still doesn't
-/// remember the DXF units"*, months later — which is, word for word, the
-/// complaint this module exists to answer.
-///
-/// # ⚠ The DXF row points somewhere else, and that is the design
-///
-/// [`crate::dialogs::export_dxf::ExportDxfDialog::open`] does not mention
-/// `remembered.units` at all. It calls
-/// [`crate::dialogs::export_dxf::seeded_options`], which is where the ordering
-/// rule lives — the operator's habit first, the page's own calibration second —
-/// lifted out precisely so that rule could have a unit test.
-///
-/// So this table names, per group, **the function that actually reads
-/// `remembered`**. The two alternatives were both worse. Pointing every row at
-/// `open` reports a false failure for DXF. Searching the whole file lets a
-/// mention in a doc comment satisfy every row, and this project has been caught
-/// by exactly that: a gate keyed on a name, discharged by prose.
-///
-/// # What it does not prove
-///
-/// ⚠ It is a source-text check, so it proves the name is *mentioned* in the
-/// right function, not that it is used correctly. That is still the whole
-/// difference between a preference that is wired up and one that is silently
-/// inert. The driven `ui-verify` check is what proves the value survives a
-/// restart, and it is the only thing that can.
 #[test]
 fn every_remembered_field_is_read_back_by_its_dialog() {
     let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
@@ -467,34 +371,6 @@ fn every_remembered_field_is_read_back_by_its_dialog() {
 
 /// The two number boxes in the Export-image window name these constants
 /// rather than repeating their numbers.
-///
-/// # The rule this makes structural
-///
-/// The four bound constants at the top of [`super`] carry an instruction in
-/// their own doc comment: *"if a control's range changes, change it here in the
-/// same commit — the round-trip is only honest while the two agree."* That was
-/// a thing to remember, and a thing to remember has no instrument. Both boxes
-/// did in fact repeat their literals — `1.0..=4800.0` and `1..=100` — while the
-/// constants sat beside the clamp, so the two halves could drift apart in a
-/// single edit and nothing in the toolchain would notice.
-///
-/// # What drifting apart would cost
-///
-/// The preferences file clamps a read value into these constants. If a box were
-/// widened and the constants were not, an operator could drag the resolution to
-/// a number the box accepts, close pdfcer, and reopen it to find a different
-/// number — because the file clamped on the way back in. That is O196's
-/// complaint arriving through a different door: the window forgot what it was
-/// told, and nothing anywhere said so.
-///
-/// # Why the source text and not the values
-///
-/// There is no value to compare. The range lives inside a builder call and is
-/// consumed by egui, which exposes it again to nobody. What *can* be measured
-/// is whether the call names the constant, and here that is the whole of the
-/// rule rather than a proxy for it: a literal and a constant cannot both be
-/// written in the same position, so naming the constant is exactly the property
-/// wanted.
 #[test]
 fn the_dragvalue_ranges_are_the_constants_the_file_clamps_to() {
     let dialog = std::fs::read_to_string(
@@ -545,11 +421,6 @@ fn everything_changed() -> ExportPrefs {
 
 /// Read a block back the way `prefs::file` does: split on `=`, trim both halves,
 /// skip comments and blanks, and hand each pair to [`parse_key`].
-///
-/// Returns the number of keys the parser **accepted**, so a caller can assert on
-/// it; a key that fell through as [`KeyOutcome::NotMine`] is counted separately
-/// and is a failure in every caller here, because everything in this block is
-/// by construction ours.
 fn parse_block(text: &str, into: &mut ExportPrefs) -> usize {
     let mut accepted = 0usize;
     for line in text.lines() {
@@ -601,10 +472,6 @@ fn every_export_preference_round_trips_through_the_file() {
 }
 
 /// The default set round-trips too, and is written unconditionally.
-///
-/// The second half is the point: a fresh profile must still find all thirteen keys
-/// in the file, with their comment blocks, because *a preference nobody can
-/// discover is a preference nobody has.*
 #[test]
 fn the_defaults_are_written_too_so_the_file_teaches_its_own_vocabulary() {
     let mut out = String::new();
@@ -685,11 +552,6 @@ fn out_of_range_numbers_clamp_and_unreadable_ones_are_reported() {
 }
 
 /// `inf` and `NaN` parse as `f32` and neither is a resolution.
-///
-/// This is the arm most likely to be written as a bare `.parse().ok()`, and a
-/// NaN is the worse of the two: it survives `clamp` unchanged, so it would be
-/// *stored*, handed to the window, and every comparison against it would answer
-/// `false`.
 #[test]
 fn a_non_finite_resolution_is_a_bad_value_and_never_reaches_the_window() {
     for spelling in ["inf", "-inf", "NaN", "infinity"] {
@@ -723,12 +585,6 @@ fn a_key_from_another_group_is_not_mine() {
 
 /// A resolution survives the file exactly, at every value the control can
 /// reach in one drag.
-///
-/// `f32::to_string` is shortest-round-trip, which is why the file can hold a
-/// float at all — but *"the standard library says so"* is a claim worth one
-/// cheap measurement, because a change to how this module writes the number
-/// (a format specifier, a rounding step) would break it silently and the
-/// operator's 150.5 would come back as 150.
 #[test]
 fn a_fractional_resolution_survives_the_file_exactly() {
     for dpi in [1.0_f32, 72.0, 96.5, 150.5, 300.0, 599.25, 4800.0] {

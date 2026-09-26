@@ -15,10 +15,6 @@ use crate::trace::Trace;
 /// 200 × 200 pt, one square on the sheet and one square 160 pt off its left
 /// edge. The halo union is therefore 360 pt wide against a 200 pt sheet — the
 /// 1.8 : 1 ratio that puts the halo's wall at a little over half the sheet's.
-///
-/// ⚠ Pinned, and `--pdf` is ignored. A document with no off-page content
-/// never enters the halo tier, so this check's entire subject would be absent
-/// and its controls would turn every run into a SKIP.
 const FIXTURE: &str = "off-page-object.pdf";
 
 /// The seam's environment variable.
@@ -35,13 +31,6 @@ const INVOKE: &str = "mode.edit";
 const ZOOM_IN: &str = "Ctrl++";
 
 /// How many rungs the ladder climbs.
-///
-/// The fixture's halo wall sits about four rungs above its fit zoom and its
-/// sheet's wall about one rung above that, so a dozen would prove the fix.
-/// Twice that is deliberate: the rungs past the wall are the ones that were
-/// silently doing nothing, and a check that turned round just after the
-/// boundary would pass on a build that recovered for one rung and stalled
-/// again.
 const CLIMB: usize = 24;
 
 /// The application's view-state line, carrying `zoom=`.
@@ -58,16 +47,6 @@ const KEYS: &str = "diag-keys";
 const HALO: &str = "canvas-halo";
 
 /// The preference seam's line, carrying `mode=` and `on=`.
-///
-/// ⚠ **A one-shot statement about start-up, not about the run.** It is emitted
-/// while the document is being opened, which is BEFORE a command from
-/// [`INVOKE_ENV`] has fired — so on a fresh profile it says `mode=read on=false`
-/// on a run that then enters Edit and displays off-page content perfectly well.
-/// Read as the current state it makes a working run look inert, which is
-/// exactly what it did here once. The authoritative reading is the `offpage=`
-/// field on the canvas' own per-frame [`HALO`] line, because that is the one
-/// the canvas acted on. This constant survives only to explain a genuinely
-/// off run.
 const SEED: &str = "off-page-seed";
 
 /// The mode seam's line, carrying `to=`. Reported, not asserted — [`HALO`]'s
@@ -89,11 +68,6 @@ const CEILING: &str = "raster-ceiling-learned";
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
 
 /// How long to wait for the last rung.
-///
-/// Generous on purpose. The seam paces its chords twenty frames apart and the
-/// last rungs of this ladder are drawn at magnifications where a frame is not
-/// free; the whole run measured about forty seconds on an idle machine.
-/// Exceeding this is reported as a finding rather than as a hang.
 const RUNG_DEADLINE: std::time::Duration = std::time::Duration::from_secs(180);
 
 /// See the module documentation.
@@ -163,10 +137,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 // ---------------------------------------------------------------------------
 
 /// A document is open and off-page display came up.
-///
-/// Both are reported as harness findings. This project has twice produced
-/// confident, detailed and entirely wrong defect reports out of a reading
-/// taken on a run where the subject was never present.
 fn preconditions(trace: &Trace) -> Result<()> {
     if trace.last(STATUS).is_none() {
         return Err(Error::new(format!(
@@ -518,11 +488,6 @@ fn launch_scripted(ctx: &CheckContext, exe: &Path) -> Result<Session> {
 }
 
 /// Wait until the seam has delivered the last chord, then let its effect land.
-///
-/// Not [`Session::settle`] as the primary wait: that polls the frame counter,
-/// and this application stops drawing the moment the seam stops asking it to.
-/// The thing being waited for is a trace line, so the trace line is what is
-/// waited for.
 fn wait_for_rung(session: &Session, index: usize) -> Result<Trace> {
     let deadline = std::time::Instant::now() + RUNG_DEADLINE;
     loop {

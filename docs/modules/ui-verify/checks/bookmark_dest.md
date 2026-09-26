@@ -38,3 +38,11 @@ which no page-only navigation can produce.
 Asserted as a RATIO against the zoom before the click rather than against
 an absolute number. The absolute depends on the window size, and a check
 that pinned it would fail on a different monitor while the feature worked.
+
+## Item notes
+
+### `const AT_LEAST`
+
+1.5×, deliberately loose. The point is to separate "framed a detail" from
+"did not move at all", and the exact ratio depends on the window; a tight
+bound would be a test of the monitor.

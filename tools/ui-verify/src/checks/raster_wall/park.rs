@@ -40,12 +40,6 @@ pub(super) fn window_closes_at(canvas: LRect, seam: f32) -> f32 {
     ((canvas.max.y - BOTTOM_DEAD_BAND_PT - seam) / ROW_GAP_PT).max(0.0)
 }
 /// A window-logical point inside the canvas, as a screen point.
-///
-/// Expressed as fractions of the published canvas rect rather than assembled
-/// from a window origin, because that is the crate's coordinate contract: a
-/// check that builds its own screen coordinates stops hitting anything the
-/// first time a panel width changes, and a stale coordinate is
-/// symptom-identical to a broken conversion.
 fn aim_at(session: &Session, canvas: LRect, x: f32, y: f32) -> Result<ScreenPoint> {
     let fx = (x - canvas.min.x) / canvas.width();
     let fy = (y - canvas.min.y) / canvas.height();

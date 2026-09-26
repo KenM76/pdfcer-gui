@@ -60,13 +60,6 @@ pub const OFFERED: [ReviewState; 7] = [
 ];
 
 /// How far a `/IRT` chain is walked before it is abandoned.
-///
-/// The engine's own bound, by the same number and for the same stated reason:
-/// *"a `/IRT` cycle is legal syntax (nothing in §12.5.6.2 forbids one) and this
-/// must terminate on a malformed file rather than hang"*
-/// (`edit.rs`, `deepest_state_for_author`). Matching it rather than picking a
-/// different number matters: a shell that walked further than the engine would
-/// show a history the engine will refuse to extend.
 const MAX_CHAIN: usize = 64;
 
 /// **What one `/State` + `/StateModel` pair says**, classified but never
@@ -438,22 +431,6 @@ pub fn read<G: ObjectGraph + ?Sized>(graph: &G, pages: &[Page]) -> Statuses {
 
 /// **One `/State`-carrying annotation**, reduced to the four facts the chain
 /// walk and the row need.
-///
-/// # Why the walk does not run over `pdfcer_core::annot::Annotation`
-///
-/// Two reasons, and the second is the one that matters.
-///
-/// 1. `Annotation` carries twenty-four fields, none of which but these four is
-///    read here, and it derives no `Default` — so every fixture would be a
-///    twenty-four-field literal that changes whenever the engine's read model
-///    grows a field. That is a test suite bound to the engine's *shape* rather
-///    than to its *behaviour*.
-/// 2. **The `/T` trim happens exactly once**, on the way in.
-///    `deepest_state_for_author` compares `/T` bytes as the file carries them,
-///    and this panel's `super::keeps_author_name` trims — so a chain rule
-///    written against the raw field and a display rule written against the
-///    trimmed one would disagree about whether `"Ken "` and `"Ken"` are one
-///    person. Normalising at the boundary makes that unrepresentable.
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct StateAnnot {
     /// The state annotation's own object id.
@@ -515,26 +492,11 @@ fn assemble(states: &[StateAnnot]) -> Statuses {
 }
 
 /// Whether two state annotations belong to the same reviewer's chain.
-///
-/// An absent `/T` is **never** equal to anything, including another absent one
-/// — `deepest_state_for_author` compares `a.title.as_deref() == Some(author)`,
-/// and `author` is a `&str`, so `None` can never match. Mirrored exactly rather
-/// than improved: a shell that chained unsigned statuses would show a history
-/// the engine will not extend.
 fn same_author(a: &StateAnnot, b: &StateAnnot) -> bool {
     a.who.is_some() && a.who == b.who
 }
 
 /// Walk a chain from its tip to the annotation it reviews.
-///
-/// Returns the reviewed annotation and the chain's depth (`1` for a lone
-/// status). `None` when the tip has no `/IRT` at all — a status that refers to
-/// nothing describes nothing, and §12.5.6.3 defines the state as living on an
-/// annotation *"that refers to the original annotation by means of its `IRT`
-/// entry"*.
-///
-/// The walk is depth-bounded at [`MAX_CHAIN`]: a bounded stop rather than a
-/// hang, on a `/IRT` cycle the standard does not forbid.
 fn walk_up(states: &[StateAnnot], tip: &StateAnnot) -> (Option<ObjId>, usize) {
     let mut current = tip;
     let mut depth = 1usize;
@@ -840,10 +802,6 @@ mod tests {
     }
 
     /// The classification under test, run over hand-built statuses.
-    ///
-    /// [`assemble`] is called rather than re-implemented, which is the point of
-    /// splitting it out of [`read`]: a helper that repeated the algorithm would
-    /// be a test of the helper.
     fn statuses(annots: &[StateAnnot]) -> Statuses {
         assemble(annots)
     }
@@ -870,17 +828,6 @@ mod tests {
     // ---------------------------------------------------------------------
 
     /// **THE CONTROL FOR THE NEGATIVE BELOW.**
-    ///
-    /// A test asserting *an unknown state is not normalised* is **vacuous if
-    /// nothing is ever recognised** — a `StateReading::of` that returned
-    /// `Unmodelled` for every input on earth would pass it. So every one of
-    /// the seven values pdfcer authors is round-tripped through the classifier
-    /// here, and this test is what gives the next one its meaning.
-    ///
-    /// The trailing count assertion is the one instrument this side of the
-    /// boundary that can notice [`OFFERED`] falling behind: `ReviewState` is
-    /// `#[non_exhaustive]`, so no `match` and no iteration over the array can
-    /// be made to fail when the engine adds a variant. See [`OFFERED`].
     #[test]
     fn every_authored_state_is_recognised_as_modelled() {
         for state in OFFERED {
@@ -901,11 +848,6 @@ mod tests {
 
     /// **An unrecognised value in a model pdfcer authors is SHOWN, not
     /// normalised** — and pdfcer still offers to continue that model.
-    ///
-    /// The `Unmodelled` half of `crate::text::buttonaction`'s table. Both
-    /// halves are asserted: the value survives verbatim, **and**
-    /// `authorable_model` is `Some`, because collapsing this into `Foreign`
-    /// would grey a row pdfcer writes happily.
     #[test]
     fn an_unknown_value_in_a_known_model_is_shown_verbatim() {
         let reading = StateReading::of("Deferred", Some("Review"));
@@ -950,10 +892,6 @@ mod tests {
     /// **A Review value in the Marked model is not modelled**, because
     /// `ReviewState::model` derives the pairing and pdfcer cannot express this
     /// one.
-    ///
-    /// Asserted because the obvious implementation matches `/State` alone and
-    /// would report `Modelled(Accepted)` for a file saying something pdfcer
-    /// would never write.
     #[test]
     fn a_state_paired_with_the_wrong_model_is_unmodelled() {
         assert_eq!(
@@ -985,10 +923,6 @@ mod tests {
 
     /// `None` is a **value**, not the absence of one, and the two are
     /// different entries the operator can act on.
-    ///
-    /// `Annotation::state`: *"`None` is a writable value, not a spelling of
-    /// 'the key is absent'."* A row carrying `/State (None)` must not be
-    /// selected by the **No status recorded** filter.
     #[test]
     fn a_state_of_none_is_recorded_and_not_unrecorded() {
         let doc = [annot(2, Some("Ken"), Some(1), "None", Some("Review"))];
@@ -1007,12 +941,6 @@ mod tests {
 
     /// **A SECOND STATUS DOES NOT REPLACE THE FIRST — it chains onto it,
     /// and the panel reports the depth.**
-    ///
-    /// The property the whole feature is shaped around. Annotation 1 is the
-    /// comment; 2 is Ken's first status; 3 replies to 2 with his second. Only
-    /// the tip is shown, and `depth` is 2 — which is what
-    /// `crate::text::reviewstate::row_status_history` prints so the operator
-    /// cannot mistake a log for a field.
     #[test]
     fn a_reviewers_second_status_chains_and_the_depth_is_reported() {
         let doc = [
@@ -1027,10 +955,6 @@ mod tests {
     }
 
     /// **Two reviewers are two entries, not one winner.**
-    ///
-    /// §12.5.6.3 chains per user, so the file genuinely holds both. A resolver
-    /// that picked one would be inventing the currency rule the engine
-    /// explicitly refused to ship.
     #[test]
     fn two_reviewers_are_both_reported() {
         let doc = [
@@ -1046,10 +970,6 @@ mod tests {
 
     /// **An unsigned status never chains**, mirroring the engine's own
     /// `title.as_deref() == Some(author)`.
-    ///
-    /// Both statuses stay tips and both are reported, because neither can be
-    /// the other's parent. A shell that chained them would show a history
-    /// `add_review_state` will not extend.
     #[test]
     fn an_unsigned_status_never_chains() {
         let doc = [
@@ -1068,18 +988,6 @@ mod tests {
 
     /// A `/IRT` **cycle** terminates rather than hanging, and the walk is
     /// what has to survive it.
-    ///
-    /// Legal syntax — nothing in §12.5.6.2 forbids one — and the engine bounds
-    /// its own walk at 64 for exactly this reason.
-    ///
-    /// **The obvious fixture does not test the bound**, which is worth
-    /// recording because the first attempt was that fixture: two statuses
-    /// pointing at each other are BOTH superseded, so [`assemble`] skips both
-    /// before [`walk_up`] is ever called and removing [`MAX_CHAIN`] leaves the
-    /// test green. Three are needed — 3 is a tip nobody replies to, and its
-    /// chain runs into a 4↔5 loop that only the bound stops. Delete
-    /// `depth < MAX_CHAIN` and this test does not fail; it **hangs**, which is
-    /// the failure it is asserting the absence of.
     #[test]
     fn an_irt_cycle_terminates() {
         let doc = [
@@ -1111,19 +1019,6 @@ mod tests {
 
     /// A status with **no `/IRT`** describes nothing, and is still named on
     /// its own row rather than dropped.
-    ///
-    /// **The first version of this test was VACUOUS, and the mutation
-    /// sweep is what found it.** It asserted `s.on(1).is_empty()` — that the
-    /// status did not reach annotation 1 — and stayed **green** when
-    /// [`walk_up`] was broken to return `Some(current.id)` for an `/IRT`-less
-    /// status, because that makes the status reach annotation *2* instead. A
-    /// negative assertion aimed at one address cannot see a wrong answer given
-    /// at another.
-    ///
-    /// ⇒ The assertion is now over the WHOLE index: this status reaches **no
-    /// target at all**. `by_target` is reached directly rather than through
-    /// [`Statuses::on`] for exactly that reason — `on` can only be asked about
-    /// an id somebody already suspects.
     #[test]
     fn a_status_with_no_irt_reaches_no_target_but_is_still_read() {
         let doc = [annot(2, Some("Ken"), None, "Accepted", Some("Review"))];

@@ -13,21 +13,11 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// The command, invoked through the harness seam.
-///
-/// `mode.edit` first. The command is drawn on the Tools tab, which every mode
-/// shows, but embedding is a content edit and driving from a known mode makes
-/// the run reproducible rather than dependent on whatever mode the last session
-/// left behind.
 const INVOKE: &str = "mode.edit,tools.embed_fonts";
 /// The variable that supplies a font folder without touching the preference.
 const FONT_DIR_ENV: &str = "PDFCER_DIAG_FONT_DIR";
 /// The operating system's own font directory — the one folder that certainly
 /// exists on the platform this ships for.
-///
-/// Deliberately not what the product searches. `Prefs::font_folders` starts
-/// empty and pdfcer never adds to it, for the licensing reason `app::fonts`
-/// records: which font goes into somebody's document is the operator's call. A
-/// harness may look where a product may not.
 const SYSTEM_FONTS: &str = r"C:\Windows\Fonts";
 /// The window body's region.
 const BODY: &str = "embed.body";
@@ -36,21 +26,8 @@ const BUTTON: &str = "embed.commit";
 /// The line the dialog writes when the button is pressed.
 const REQUESTED: &str = "embed-fonts-requested";
 /// The line the apply arm writes when the engine has embedded.
-///
-/// `-applied`, and the suffix is why this constant has a doc comment.
-/// `vector_edit` writes a **second** line for the same edit under the bare name
-/// — `embed-fonts page=0 n=3 epoch=1 disclosures=…` — and trace matching is on
-/// the exact event name, so `.last()` on the bare name would read the funnel's
-/// line, find no `embedded=` key, and report `embedded=0` about an embed that
-/// worked. That defect has been made twice in this project and the naming
-/// convention is what prevents the third.
 const APPLIED: &str = "embed-fonts-applied";
 /// The line the window writes when it opens, carrying its plan's counts.
-///
-/// The check reads `targets=` off this to tell a GREYED button from a broken
-/// one. Both look identical from outside - no click reaches anything - and
-/// exactly one of them is a fact about the fixture rather than about the
-/// program.
 const OPENED: &str = "embed-fonts-opened";
 /// The line the dispatcher writes when there is nothing to open.
 const DECLINED: &str = "embed-fonts-declined";

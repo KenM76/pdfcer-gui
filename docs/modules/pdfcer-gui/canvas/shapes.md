@@ -64,3 +64,55 @@ rectangle *is* all the shell knows about where an image is going.
 
 ⇒ So the preview is **exact where it exists and absent where it does not**,
 rather than approximate everywhere. A half-right glyph is worse than no glyph.
+
+## Item notes
+
+### `const MAX_OBJECTS`
+
+# Why there is a cap at all, and why it is disclosed rather than silent
+
+A marquee across a CAD sheet can select thousands of paths, each with
+thousands of segments. Painting all of them every frame would turn the
+gesture this feature exists to make smooth into the slowest thing in the
+program — the exact inversion of the point.
+
+Past the cap the preview is **absent**, and the bounding outline that was
+there before this module existed is what the operator sees. That is a
+graceful floor rather than a failure: it is what the shell did yesterday.
+
+`canvas-shape-preview` traces `capped=1` when it fires, because an absence
+with no account of itself is indistinguishable from a defect — the lesson
+`painting.rs`'s anchor census already carries.
+
+### `const MAX_SEGMENTS`
+
+The second half of the same guard, and the one that actually fires on this
+operator's drawings: `SW41177.pdf` carries a single object with **4,972
+anchors**. One object is under [`MAX_OBJECTS`] and would still cost five
+thousand line segments a frame.
+
+### `fn average_scale`
+
+`hypot` per axis rather than reading `a` and `d`, because a rotation puts
+scale into `b` and `c` and reading the diagonal alone would report a rotated
+object as having shrunk to zero width at 90°.
+
+### `fn trace`
+
+Written on **every** build, including the empty one. An absent preview and
+a preview nobody asked for are different states and a trace that only spoke
+when there was something to say could not tell them apart — the lesson
+`painting.rs`'s anchor census carries, applied before it can bite here.
+
+### `fn stroke_shape`
+
+Shared by the erase pass and the preview pass so the two cannot disagree
+about what the shape's outline *is*: an erase that traced a different path
+from the preview would leave part of the original showing, and the part left
+showing would look like the program had drawn it on purpose.
+
+### `fn screen`
+
+`measure::page_to_screen`, not arithmetic here. `coords`' standing rule is
+that a coordinate is produced by exactly one conversion in exactly one place,
+and the ce-dimension placement preview already goes through this door.

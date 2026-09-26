@@ -27,12 +27,6 @@ mod tests {
     }
 
     /// **A region entirely outside the page rasterizes.**
-    ///
-    /// The property O23's second half stands on. If this ever fails, the engine
-    /// has started clamping the region against the crop box and *"objects off
-    /// the page are reachable"* is no longer buildable in this shell without an
-    /// engine change — which is exactly the finding that would otherwise be
-    /// made by an operator staring at a blank rectangle.
     #[test]
     fn a_region_entirely_off_the_page_still_rasterizes() {
         let doc = open_fixture(FOUR_PAGES);
@@ -57,16 +51,6 @@ mod tests {
 
     /// **The pixmap is sized to the REQUESTED region, not to the overlap
     /// with the page.**
-    ///
-    /// The distinction that matters for a canvas. A build that quietly
-    /// intersected the region with the crop box would still return `Ok` and a
-    /// non-empty pixmap for a region that merely *touches* the page — and the
-    /// canvas would then draw a raster smaller than the rectangle it asked
-    /// for, which presents as content sliding rather than as an error.
-    ///
-    /// Asserted with a tolerance of one pixel per axis: `region_device_geometry`
-    /// floors the origin and ceils the extent, so an exact equality would be
-    /// pinning rounding rather than behaviour.
     #[test]
     fn the_pixmap_matches_the_region_asked_for_not_its_overlap_with_the_page() {
         let doc = open_fixture(FOUR_PAGES);
@@ -98,12 +82,6 @@ mod tests {
     }
 
     /// **A region larger than the page in every direction works too.**
-    ///
-    /// The shape a pasteboard actually asks for: the page plus a margin all
-    /// round, in one raster. Separate from the two above because it is the case
-    /// where the region *contains* the crop box rather than missing or
-    /// straddling it, and a clamp would be invisible in the other two if it
-    /// only triggered on containment.
     #[test]
     fn a_region_containing_the_whole_page_and_a_margin_works() {
         let doc = open_fixture(FOUR_PAGES);
@@ -129,18 +107,6 @@ mod tests {
 
     /// **`PageObjects::page_bbox()` includes off-page geometry**, which is
     /// what makes the scrollable extent computable in one call.
-    ///
-    /// Asserted here rather than taken from the engine's documentation because
-    /// O23's plan uses it as the source of *"what must I be able to scroll to in
-    /// order to reach everything"*. If the decomposer ever started culling
-    /// against the page box, this union would silently shrink to the page and
-    /// the shell would stop being able to reach the very objects the feature
-    /// exists for — with nothing failing.
-    ///
-    /// The fixture has no off-page content, so this asserts the weaker, stable
-    /// property: the union is non-empty and is not *narrower* than the ink it
-    /// contains. It is the guard rail, not the demonstration — a fixture with
-    /// deliberate off-page geometry is worth adding when the feature is built.
     #[test]
     fn the_content_union_is_available_and_non_empty() {
         let doc = open_fixture(FOUR_PAGES);

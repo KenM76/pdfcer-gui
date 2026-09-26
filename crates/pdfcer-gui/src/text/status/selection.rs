@@ -587,26 +587,6 @@ impl TextStyleRefusal {
 }
 
 /// The coverage refusal's sentence, with or without the engine's remedy list.
-///
-/// # Remedy first, which reverses the sentence when there is one
-///
-/// This module's rule is *remedy first in every arm that has one*, because the
-/// operator is looking at text that did not change and the useful half is what
-/// to do now. Without a list there is no remedy to lead with and the sentence
-/// opens on the diagnosis; with one it opens on the faces. That is two
-/// sentences rather than one with a clause bolted on, and it is deliberate: a
-/// sentence that opens *"That face has no shape…"* and ends *"… Times-Roman
-/// can"* buries the actionable half behind the explanation.
-///
-/// `"The face you picked"` rather than naming it. The name is in the face
-/// chooser the operator is looking at, and repeating it costs width on a bar
-/// that is already carrying up to fourteen face names in the first clause.
-///
-/// # Why `const WITHOUT` and not a second catalog function
-///
-/// Because it is the *same* refusal. Two catalog entries would be two
-/// sentences that must be kept consistent with each other by hand, and this
-/// project has a gate (`check-ui-strings`) that would be content with both.
 fn coverage_line(remedy: &[String]) -> std::borrow::Cow<'static, str> {
     const WITHOUT: &str = "That face has no shape for one or more characters in this text. pdfcer changed nothing rather than substitute a different letter or leave a blank.";
     if remedy.is_empty() {
@@ -619,13 +599,6 @@ fn coverage_line(remedy: &[String]) -> std::borrow::Cow<'static, str> {
 }
 
 /// `["a", "b", "c"]` → `"a, b or c"`.
-///
-/// `or`, not `and`: the faces are **alternatives**, and `join_and` in
-/// `crate::text::page_size` — whose subject is edges a drawing runs past, all
-/// of which are true at once — would read as though the operator needed all
-/// three. Copied rather than shared for exactly that reason: the two differ in
-/// the one word that carries the meaning, so a shared helper would need a
-/// parameter that is really a choice about a sentence.
 fn join_or(parts: &[String]) -> String {
     match parts {
         [] => String::new(),
@@ -987,11 +960,6 @@ mod tests {
     use super::{selection_part_of_path, selection_part_of_text};
 
     /// The clause counts what is held, and the noun agrees with the count.
-    ///
-    /// The wording carried a literal `1` for as long as one chunk was all the
-    /// rung could hold. A Shift-click now adds a second, and the drag that
-    /// follows moves the set — so a sentence that cannot say *2 lines of 27* is
-    /// a confident, wrong statement about the operand of the next keystroke.
     #[test]
     fn the_rung_clause_counts_what_is_held() {
         assert_eq!(selection_part_of_text("Text", 1, 27), "Text · 1 line of 27");

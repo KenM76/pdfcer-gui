@@ -73,3 +73,27 @@ route, because the raw carrier copies the dictionary — and that is asserted
 key by key in `canvas::clipboard::tests`, where the dictionary is readable.
 From out here the trace carries no dictionary and inventing an oracle for
 one would be a proxy.
+
+## Item notes
+
+### `const MODE`
+
+**Review, not Edit**, and the choice is an assertion in itself. A comment
+is markup, so pasting one needs `author_markup` — which Review grants —
+rather than `edit_content`, which only Edit does. A build that demanded the
+content capability for an annotation clip would leave the mode whose entire
+purpose is marking up somebody else's drawing unable to paste a comment,
+and driving in Edit would never notice.
+
+### `const NOTE_POINT`
+
+Hard-coded rather than taken from `--doc-point`, which this check ignores
+along with `--pdf`: the point and the fixture are one fact, and a suite-wide
+coordinate aimed at a different document would put the click on blank paper
+and report a defect about the hit test.
+
+### `const ANNOT_SELECT`
+
+**The annotation selection's own line**, and the only one that reports one:
+`canvas-selection` is silent for an annotation. See the precondition in
+[`drive`] for the incident that put it here.

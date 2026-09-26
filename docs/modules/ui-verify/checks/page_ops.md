@@ -173,3 +173,107 @@ evidence rather than an absence of evidence.
 * **the document already carries a `/Rotate` entry** — phase H's evidence
   would then be indistinguishable from the fixture's own;
 * a mode segment, a tab or a control was never declared, or took no click.
+
+## Item notes
+
+### `const MODE`
+
+`crate::app::modes::capability`'s own table records that the Pages tab is
+*"❌ in Read, ✅ in Review"*, and `crate::panels::pages`' header carries the
+operator's reason for that: *"Reviewing a set means rotating a sheet to read
+it and extracting the pages you were asked about … page operations do not
+alter content."* Driving the weaker of the two modes that offer these verbs
+is the stronger claim — what works in Review works in Edit.
+
+### `const EXTRACT`
+
+Driven first and its file thrown away, because `pages.extract` and
+`file.save_copy` reach the *same* `crate::app::files::pick_save_path` through
+the *same* `PDFCER_DIAG_SAVE_PATH` seam — one variable, one path — so the
+later of the two overwrites the earlier. See the phase for what that
+division does and does not buy.
+
+### `const RESYNC_EVENT`
+
+Emitted by `crate::app::actions::pages::resync` only when the page vector it
+held disagrees with the one `EditSession::pages()` now reports, so its
+*absence* after a page verb means the edit never reached the session and its
+`renumbered=` field is the shell's own answer to *did an index change
+meaning?*.
+
+### `const MIN_PAGES`
+
+Three, and each one is spoken for: one is rotated and must survive, one is
+deleted, and one is left over so the document is not reduced to a state where
+`EditSession::delete_pages`' *"§7.7.3.3 requires at least one page"* refusal
+is anywhere near.
+
+### `fn digest`
+
+The same function, for the same reason, as `save_copy`'s and `ocr`'s: the
+question is *"did this file change"*, the adversary is a bug rather than a
+forger, and the **length is part of the digest** so a truncation cannot hide
+behind a hash collision.
+
+### `fn occurrences`
+
+A count rather than a presence, because phase H's evidence is comparative:
+the interesting statement is *the copy has one and the source has none*, and
+a bare `contains` could not say the second half about a fixture that happened
+to carry the string in a comment.
+
+### `fn invokes`
+
+A **count**, never a presence: this check clicks five different controls in
+one run, and *"has it ever been invoked?"* would be answered `true` by a
+click made ten seconds earlier.
+
+### `fn opened_pages`
+
+From `open ok pages=N`, which `crate::app::lifecycle` builds from
+`doc.pages.len()` — the vector this whole check is about — at a moment when
+that vector has just come out of `page_tree::pages` on the file. In the
+second process that makes it a statement about **the file on disk**, made by
+the engine, in a process that never saw the first one.
+
+### `fn click_command`
+
+A SKIP rather than a failure when nothing was reported, on
+[`crate::checks::markup_rectangle`]'s rule: a check that could not deliver a
+click has learned nothing about the application, and naming a feature as the
+culprit when nothing was ever clicked at it is worse than no check at all.
+
+### `fn no_effect`
+
+One function for three phases, so the three read identically and none of
+them can quietly lose the `command-unimplemented` half — which is the single
+most informative line a reader of this failure can be handed, because it
+distinguishes *"there is no arm"* from *"the arm ran and the engine refused"*.
+
+### `fn resync_after`
+
+Split out because all three phases ask the same question and the *absence*
+of this line means something specific and worth spelling out once: the page
+vector the shell holds and the one the session reports still agree, which
+after a page verb means the verb did not change the document.
+
+### `fn the_selectors_match_the_shells_own_spelling`
+
+Pinned for the reason every sibling check pins its own: the two crates
+are joined by a **string** and nothing else, so a rename would leave both
+sides compiling while every assertion here quietly stopped matching — and
+a check that matches nothing passes vacuously.
+
+### `fn the_occurrence_counter_reads_both_directions`
+
+Phase H's whole verdict rests on this function in both directions: a
+counter that answered zero for a present needle would report a working
+rotate as missing, and one that answered non-zero for an absent needle
+would let a fixture's own `/Rotate` masquerade as this run's edit.
+
+### `fn the_digest_notices_a_single_changed_byte_and_a_truncation`
+
+Phase F's verdict rests on it, and phase F is this check's assertion that
+a **page delete** did not reach the file the operator opened. A digest
+that answered "unchanged" for a modified file would turn that into a
+formality that always passes.

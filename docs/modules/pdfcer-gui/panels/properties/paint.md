@@ -114,3 +114,94 @@ The recoloured objects render exactly as the saved file will render them.
 Which members were skipped, which are named inks and whether they disagreed
 is disclosed **off-canvas**: on this row, and in the status bar through
 `crate::app::actions::disclosure`. No badge, no tint, no outline on the page.
+
+## Item notes
+
+### `const REGION_SUBJECT`
+
+Its own region since the multi-object state shipped, because *"the section
+drew"* and *"the section told the operator how many things it is about to
+change"* are two different claims and a driven check has to be able to
+assert the second.
+
+### `struct Recolour`
+
+A named pair rather than a tuple of two options, because the two positions
+are not interchangeable and a tuple invites reading them the wrong way round
+exactly once — after which the fill control recolours the line. Clippy asked
+for the type; the naming is why it was worth asking.
+
+### `fn path_indices`
+
+Re-derived rather than collected in the walk above, because the walk's
+output is *paints* and pairing them with indices would make one `Vec` whose
+two halves have to be kept in step by hand. The provider read is cheap (a
+slice index per entry) and the alternative is the class of bug where a
+filter and its operand drift.
+
+### `fn channel`
+
+The ink check comes **before** agreement, not after, and that ordering
+is the guard. *"They all agree and one of them is a spot ink"* must never
+draw a swatch: agreement between two members of a named-ink selection is not
+permission to overwrite them.
+
+A member whose paint cannot be shown is excluded from the agreement
+question entirely rather than counted as a disagreement. It is not a colour
+this control can compare, and folding it in would report *"mixed"* for a
+selection of one red line and one PANTONE line — implying a value would
+unify them, which is exactly what will not happen.
+
+### `fn row`
+
+Returns the newly chosen colour, or `None` when nothing was committed this
+frame. *Committed*, not *changed*: [`super::swatch::show`] answers only on
+the frame the picker closes, so one drag through a colour wheel is one
+action and one undo entry.
+
+### `fn to_bytes`
+
+Rounded rather than truncated. Truncation makes 1.0 into 255 correctly and
+0.5 into 127 — half a step dark on every mid-tone, which over a round trip
+through the swatch would walk a colour steadily darker every time it was
+opened and closed without being changed.
+
+### `fn ink_name`
+
+Raw bytes, decoded loosely. A colour-space resource name is a PDF name
+object and carries no declared encoding; showing it as it is beats showing
+nothing, and beats a repaired version that no longer matches what the
+operator would find in the file.
+
+### `fn a_spot_ink_offers_no_colour_to_edit`
+
+The one assertion this module exists for. If `rgb()` ever answered
+`Some` for `Other`, this section would draw a swatch over a spot ink and
+the first click would convert it — invisibly, permanently, and looking
+entirely normal.
+
+### `fn two_different_colours_read_as_mixed`
+
+The whole of O89 piece 2. The fixture genuinely disagrees — red and
+green — because a fixture whose members all share one colour would pass
+against an implementation that simply showed the first one's.
+
+### `fn one_spot_ink_among_process_colours_keeps_the_swatch_and_names_the_ink`
+
+The decision the module header argues, asserted rather than left to the
+prose: the swatch survives (so the nine reachable strokes can be
+recoloured), and the ink is listed (so the operator knows before
+pressing that one of them will be left alone).
+
+### `fn a_selection_of_named_inks_offers_no_swatch`
+
+The single-object guard, unchanged by the selection size. This is the
+case where a swatch's only possible effect is destruction, and it is the
+reason the partial case above is safe to allow: the two are different
+states and this test is what keeps them different.
+
+### `fn a_spot_ink_does_not_make_the_process_colours_look_mixed`
+
+If it were, one red line plus one PANTONE line would read as "mixed" —
+which tells the operator that picking a colour will unify them, and it
+will not. The honest reading is "red, and one ink I will leave alone".

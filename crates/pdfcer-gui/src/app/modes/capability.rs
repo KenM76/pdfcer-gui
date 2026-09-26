@@ -122,22 +122,6 @@ impl Default for Capabilities {
 
 /// **The commands whose chord reaches every mode because their own
 /// dispatcher gates them.**
-///
-/// See [`offers_command`]'s §"The one class that escapes its tab" for the whole
-/// argument. In short: the tab gate is a *proxy* for *"may this mode do this?"*,
-/// and where a dispatcher asks the real question — of the operand, per press —
-/// the proxy is not merely redundant, it answers a **different** question and
-/// gets it wrong.
-///
-/// A named constant rather than literals in the comparison so the class has a
-/// name, and so a reader grepping for `edit.paste` finds the rule as well as
-/// the registration.
-///
-/// **Membership is not a decoration.** Every id here must be one
-/// `app::dispatch::clipboard` gates on `PdfcerApp::capabilities`, or this list
-/// hands a mode a verb nothing stops.
-/// [`tests::every_dispatcher_gated_command_is_one_the_clipboard_dispatcher_owns`]
-/// binds the two ends mechanically rather than by this paragraph.
 const GATED_BY_THEIR_DISPATCHER: [&str; 5] = [
     // ui-text-exempt: registered command ids, never displayed.
     "edit.copy",
@@ -393,11 +377,6 @@ mod tests {
 
     /// **The `MODES_AND_PANELS.md` gesture table, asserted against the
     /// shipped manifest.**
-    ///
-    /// This is the test that makes §2's claim true rather than merely
-    /// argued: the derivation is from tabs, so this asserts the *outcome*
-    /// for the three real modes. Change a mode's tab list and this fails,
-    /// which is correct — the canvas capability moved with it.
     #[test]
     fn the_built_in_modes_match_the_specified_gesture_table() {
         let shell = built_in();
@@ -435,10 +414,6 @@ mod tests {
     }
 
     /// **Every unknown case lands on `FULL`** — module header §3.
-    ///
-    /// Asserted as three separate routes to the same answer, because they
-    /// are three separate `return`s and a refactor could easily fix one and
-    /// break another.
     #[test]
     fn an_unknown_mode_gets_the_full_canvas() {
         let shell = built_in();
@@ -493,11 +468,6 @@ mod tests {
 
     /// **The commands whose chords must keep working in Read**, and the
     /// reason each one does: none of them lives on an ordinary tab.
-    ///
-    /// This is the test that makes the exception list unnecessary. If any of
-    /// these ever moves onto a tab, this fails and names it — which is the
-    /// warning you want, because moving `edit.undo` onto the Edit tab would
-    /// silently take undo away from Read.
     #[test]
     fn a_command_on_no_tab_is_offered_by_every_mode() {
         let shell = built_in();
@@ -522,28 +492,6 @@ mod tests {
 
     /// **Both text-copy commands are offered in every mode — the property
     /// the File-tab placement exists to secure.**
-    ///
-    /// > *Acrobat Reader copies text, and replacing Acrobat Reader is what Read
-    /// > is for. Copying is not authoring.*
-    ///
-    /// That sentence is the whole reason the two verbs are `file.` ids rather
-    /// than `edit.` ones. It is asserted here **directly**, for every mode
-    /// including the two where it is never in doubt, because the placement is
-    /// otherwise invisible to the suite in the direction that matters: nothing
-    /// else fails if a later edit puts these two back on the Edit tab, or
-    /// invents a `clipboard` group on a tab Read does not show. The registry
-    /// count would not move, the group count would, and both are numbers a
-    /// reverting change edits on its way past.
-    ///
-    /// `read_mode_refuses_exactly_these_bound_chords` covers the *chord* half
-    /// for the page-text command alone and only because a chord happens to be
-    /// bound to it; this covers **both commands**, chord or no chord, which is
-    /// the property the operator actually asked for. The document-text command
-    /// has no chord at all, so this test is the only thing standing under it.
-    ///
-    /// Deliberately asserted through `offers_command` rather than by looking the
-    /// ids up on the File tab: the tab is *how* it is true today, and the
-    /// requirement is that the mode offers them however that comes about.
     #[test]
     fn both_text_copy_commands_are_offered_by_every_mode() {
         let shell = built_in();
@@ -573,24 +521,6 @@ mod tests {
     }
 
     /// **Review offers the whole clipboard**, as a headless assertion.
-    ///
-    /// In the mode whose entire purpose is marking up somebody else's drawing,
-    /// an operator who can copy a comment and not paste it has nowhere to put
-    /// it. All four ids are asserted rather than paste alone, because the
-    /// failure is an **asymmetry**: a build that offered paste and left cut
-    /// behind would put the same trap one keystroke away.
-    ///
-    /// # The four ids are LITERALS here, and that is the whole test
-    ///
-    /// Written as `for id in GATED_BY_THEIR_DISPATCHER`, this test passes on a
-    /// build where that constant has shrunk to `["edit.copy"]`: it then asserts
-    /// "the one thing in the list is offered", which is true and worthless.
-    ///
-    /// ⇒ **A test that iterates the mechanism it is testing cannot fail by that
-    /// mechanism being narrowed**, which is the exact regression this test
-    /// exists to catch. The property is about *these four commands in this
-    /// mode*, so these four commands are written out; the constant is asserted
-    /// separately, below, so the two cannot drift without a named failure.
     #[test]
     fn review_offers_every_clipboard_chord() {
         let shell = built_in();
@@ -622,18 +552,6 @@ mod tests {
 
     /// **…and Read still refuses all four — but in `dispatch::clipboard`,
     /// not here.**
-    ///
-    /// The other half of the escape above, asserted at the layer that owns the
-    /// answer rather than at this one. `Capabilities::NONE` is what Read gets,
-    /// and that is what both of the dispatcher's gates read:
-    /// `edit_content` for content and a field, `author_markup` for markup and
-    /// for an empty clipboard. So every operand Read can present is refused.
-    ///
-    /// It asserts the **capability**, not the gate's code, because the gate is
-    /// a match on `Clipped` that this module cannot construct without a
-    /// document. What it pins is the premise the gate rests on: if Read ever
-    /// gained either flag, this fails and names it — which is the warning worth
-    /// having, since the dispatcher would then quietly permit the paste.
     #[test]
     fn read_mode_still_refuses_the_clipboard_verbs_it_should() {
         let shell = built_in();
@@ -655,12 +573,6 @@ mod tests {
     }
 
     /// **Every id that escapes its tab is one the clipboard dispatcher owns.**
-    ///
-    /// The list in [`super::GATED_BY_THEIR_DISPATCHER`] is safe only because
-    /// each member's effect is gated somewhere else. This binds the two ends
-    /// mechanically: an id added to that list that no dispatcher claims would be
-    /// a command handed to every mode with nothing standing under it, and the
-    /// symptom would be silence rather than a failure.
     #[test]
     fn every_dispatcher_gated_command_is_one_the_clipboard_dispatcher_owns() {
         for id in GATED_BY_THEIR_DISPATCHER {
@@ -674,13 +586,6 @@ mod tests {
 
     /// **…and it is not simply every id that dispatcher owns**, which is the
     /// direction that would make the list vacuous.
-    ///
-    /// `edit.copy_as_vector` is routed by the same dispatcher and is **not** on
-    /// the escape list, because it needs no escape: it takes no mode gate at all
-    /// (*copying is not authoring*) and it lives on the Edit tab, where its
-    /// button is absent outside Edit — visibility doing the work, which is the
-    /// rule `app::modes` states. A list that had simply been derived from
-    /// `handles` would have included it and would have been documenting nothing.
     #[test]
     fn the_escape_list_is_narrower_than_the_dispatchers_own() {
         assert!(
@@ -727,11 +632,6 @@ mod tests {
     /// Every chord the shipped keymap binds, resolved against every mode —
     /// so the *actual* consequence of the gate is visible in one place rather
     /// than inferred from two rules.
-    ///
-    /// It asserts the shape rather than a fixed list: every bound chord must
-    /// be offered by Edit, because Edit shows every tab. A binding that failed
-    /// that would be one pointing at a command on no tab of any mode, i.e. a
-    /// chord bound to something unreachable.
     #[test]
     fn every_bound_chord_is_offered_by_the_fullest_mode() {
         let shell = built_in();
@@ -768,20 +668,6 @@ mod tests {
     }
 
     /// **The whole consequence of the gate, in one table.**
-    ///
-    /// Every chord the shipped keymap binds, resolved against Read — the
-    /// mode that hides the most. Asserted as an exact set rather than a
-    /// spot-check, so that adding a binding, moving a command between tabs, or
-    /// changing a mode's tab list all fail here and print what changed.
-    ///
-    /// **No text-copy id appears below**, and that absence is the whole
-    /// visible consequence of File ▸ Export owning them: `file.copy_page_text`
-    /// and `file.copy_document_text` sit on a tab every mode shows, so
-    /// `Ctrl+Shift+C` reaches Read with nothing added to `offers_command` to
-    /// achieve it. Asserting an exact set rather than a spot check is what
-    /// makes that visible here. See [`super::offers_command`]'s header, and
-    /// [`both_text_copy_commands_are_offered_by_every_mode`] for the property
-    /// that has a test of its own.
     #[test]
     fn read_mode_refuses_exactly_these_bound_chords() {
         let shell = built_in();

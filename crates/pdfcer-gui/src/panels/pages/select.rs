@@ -218,10 +218,6 @@ mod tests {
     use super::*;
 
     /// A plain click picks exactly one page and navigates.
-    ///
-    /// The navigation half is asserted because it is the only gesture that
-    /// has it, and a regression that made every click navigate would cost a
-    /// canvas re-render per click — ~0.8 s each on the benchmark drawing.
     #[test]
     fn a_plain_click_replaces_the_selection_and_navigates() {
         let mut sel = PageSelection::default();
@@ -265,11 +261,6 @@ mod tests {
 
     /// **A second Shift+click adjusts the same range rather than growing
     /// it.**
-    ///
-    /// The property the anchor rule exists for, and the only one that is
-    /// invisible until somebody overshoots. If the anchor moved with each
-    /// Shift+click, correcting an overshoot from 5→20 back to 5→8 would leave
-    /// 8–20 selected with no gesture that removes them.
     #[test]
     fn correcting_an_overshoot_shrinks_the_range() {
         let mut sel = PageSelection::default();
@@ -298,10 +289,6 @@ mod tests {
     }
 
     /// **A right-click over an unpicked page picks it first…**
-    ///
-    /// Without this, right-clicking page 9 while 1–3 are picked and choosing
-    /// Delete destroys 1–3 — the pointer and the operand list disagreeing,
-    /// with an irreversible verb between them.
     #[test]
     fn a_right_click_over_an_unpicked_page_picks_it() {
         let mut sel = PageSelection::default();
@@ -327,10 +314,6 @@ mod tests {
     }
 
     /// **A page index is a position, not an identity.**
-    ///
-    /// The document shrinking must drop the picks that no longer name a
-    /// page. Keeping them would leave a selection pointing at a *different*
-    /// sheet, and the next `pages.delete` would remove one nobody chose.
     #[test]
     fn shrinking_the_document_drops_the_picks_that_fell_off_the_end() {
         let mut sel = PageSelection::default();
@@ -352,14 +335,6 @@ mod tests {
     }
 
     /// **A reorder carries the picked pages to their new positions.**
-    ///
-    /// The property that makes the reorder arrows usable more than once: move
-    /// four sheets up, and they are still the four sheets that are picked, so
-    /// the next press moves the same four. A build that cleared here — or, far
-    /// worse, one that left the indices alone — would leave the second press
-    /// acting on whichever sheets happen to sit at those positions now, which
-    /// is a *destructive* verb pointed at pages nobody chose the moment the
-    /// operator reaches for Delete instead.
     #[test]
     fn a_reorder_carries_the_picked_pages_with_it() {
         use crate::panels::pages::ops::{MoveDirection, move_order};

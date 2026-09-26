@@ -105,14 +105,6 @@ impl Context {
 }
 
 /// The per-sheet half of a verdict's key: **where the band falls**.
-///
-/// Not the plan's position in the send order. A job may print the same
-/// document page twice (uncollated copies) or in a reversed or filtered
-/// sequence, and the verdict is a fact about *this page under this placement*,
-/// not about a position in a list. Two plans naming the same page carry
-/// identical placements by construction — `super::spooler::plan` computes one
-/// placement per page — so the second one inherits the first's verdict
-/// legitimately: it is derived, not invented.
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct Sheet {
     /// Scale and offset within the printable area.
@@ -129,17 +121,6 @@ struct Sheet {
 impl Sheet {
     /// The identity of the sheet `plan` describes, or `None` when the plan
     /// names a page the document no longer has.
-    ///
-    /// One function, called by both the write path and the read path, so
-    /// the two cannot build the identity differently. A remembered verdict
-    /// that could never be found again would look exactly like a preview that
-    /// was never opened — a silent, permanent over-count with nothing to say
-    /// why.
-    ///
-    /// `page_sizes` is indexed by `plan.index`, the **document** page, and
-    /// never by a position in the plan list. That is the same defect
-    /// `super::preview::paint` carries a comment about, and it would be
-    /// re-introduced here by using the loop counter.
     fn of(plan: &PagePlan, page_sizes: &[(f64, f64)]) -> Option<Self> {
         Some(Self {
             placement: plan.placement,
@@ -206,15 +187,6 @@ impl Verdicts {
 
     /// What is known about `plan`'s overhang **right now**, or `None` when
     /// nothing is.
-    ///
-    /// Three ways to get `None`, and they are deliberately indistinguishable
-    /// to the caller because they mean the same thing — *no claim can be made
-    /// about this sheet*:
-    ///
-    /// 1. the context has moved on (different settings, scope or device);
-    /// 2. the plan names a page that is no longer there;
-    /// 3. the sheet was never previewed, or was previewed under a different
-    ///    placement or page size.
     fn verdict(
         &self,
         context: &Context,

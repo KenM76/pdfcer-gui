@@ -95,3 +95,37 @@ subset-tagged font names (`AAAAAA+SpaceGrotesk-Bold`). Those are the rows
 that get cut mid-character at 320 pt, and they are why the fixture has to be
 one whose text objects carry subset-tagged names. On a document of short
 rows this check could not fail.
+
+## Item notes
+
+### `const RESET`
+
+Fired before anything is measured — see the block in `run` for why. Named as
+a constant rather than inlined so the assertion that the reset landed and the
+invocation that performs it cannot drift apart.
+
+### `const DOC_METADATA`
+
+Named `properties.info` even though it belongs to
+`crate::panels::docprops` now: the region name was deliberately left alone
+when the section became a panel, and that module's `REGION` carries the
+reason. **This check is the one that would notice if it drifted**, so the
+constant is here and the string is written once.
+
+### `const DOC_PROPERTIES_TAB`
+
+The positive control for assertion 2b. A mounted tab publishes this whether
+or not it is the active one, which is what lets *"the metadata moved"* be
+asserted rather than only *"the metadata is not here"*.
+
+### `const STACK_SPLITTER`
+
+Column 0, boundary 0 — the only stack boundary Edit's right side has, and
+the name is structural rather than generated, which is what lets this check
+re-read it instead of remembering a coordinate.
+
+### `const EDGE_STRIP_PTS`
+
+Eight, not one. A single-point column can fall between two glyph stems and
+report clean on a row that is plainly running off the edge; eight is about
+one character and cannot.

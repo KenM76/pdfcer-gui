@@ -30,25 +30,12 @@ const IMPORTED: &str = "pages-import-dropped"; // ui-text-exempt: a trace event 
 const CANVAS: &str = "canvas"; // ui-text-exempt: a trace event name, never displayed
 
 /// How long the application waits before firing the simulated drop.
-///
-/// Long enough for the mode click, the panel, and the pointer to be in place —
-/// and it is a floor rather than a schedule, because the check then *waits for
-/// the trace line* rather than assuming the drop has happened by now.
 const DROP_AFTER_MS: u64 = 20_000;
 /// How long to keep the pointer parked, waiting for the drop to fire.
 const WAIT: Duration = Duration::from_secs(35);
 /// Where across the tile the pointer parks.
-///
-/// A quarter, so the LEFT half is unambiguous: the panel resolves the nearer
-/// vertical edge, and a point near the middle is where a rounding difference
-/// between the application's `f32` rectangle and this harness's reading could
-/// flip the answer — `pages_drag`'s reasoning, mirrored.
 const PARK_ACROSS: f32 = 0.25;
 /// The tile the drop is aimed at: the second page, so the resolved gap is 1.
-///
-/// Not tile 0. Its left edge is gap 0, which is also what a build that
-/// defaulted to `Start` would produce, and this check must not have a passing
-/// answer that a position-blind build can reach.
 const TILE_INDEX: usize = 1;
 /// The gap that must come out of it.
 const WANT_GAP: usize = 1;

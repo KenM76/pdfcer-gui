@@ -18,14 +18,6 @@ use crate::report::CheckReport;
 use crate::trace::Trace;
 
 /// The mode whose ribbon carries the File tab.
-///
-/// **Read**, deliberately, and it is itself an assertion. The File tab is in
-/// every mode's tab list, and `app::dispatch`'s arm for these two commands says
-/// in words why they are reachable from a reading stance: *protecting a drawing
-/// before sending it out is not an act of authoring, and an operator reading a
-/// document in Read mode is exactly the operator about to email it to
-/// somebody.* Driving from Read is how that claim gets checked rather than
-/// merely written.
 const MODE: &str = "read";
 
 /// The File tab.
@@ -164,21 +156,6 @@ fn click_tab(
 }
 
 /// **Find one of the two Security controls and press it.**
-///
-/// Through [`declared_or_in_overflow`] rather than a bare rect lookup, and
-/// this is the whole reason phase 1 of the module header's finding list is a
-/// finding at all. At the harness's 1,100 pt window the File band runs out of
-/// width, and a Security group added at the END of an already-full band is
-/// exactly the group that lands in a collapsed popup or past the overflow
-/// button. Neither publishes a rect until it is opened, so a plain `declared`
-/// would report *"the application declared no `ribbon.item.file.encrypt`
-/// region"* — which would be true, and would be reported as a missing feature
-/// when what is missing is a scroll.
-///
-/// The invoke count is read **before and after** rather than as a presence:
-/// this check presses three different controls across two processes, and *"has
-/// it ever been invoked?"* would be answered `true` by a press made a minute
-/// earlier.
 fn press(session: &Session, driver: &Driver, ui_rect: &str, id: &str) -> Result<()> {
     let name = format!("{ITEM_PREFIX}{id}");
     let found = declared_or_in_overflow(session, driver, ui_rect, &name)?;
@@ -217,22 +194,12 @@ fn invokes(session: &Session, id: &str) -> Result<usize> {
 }
 
 /// Whether the application declared `name` at a usable rectangle.
-///
-/// A degenerate rect counts as **absent**, not present. A region declared at
-/// zero area is not something an operator can see, so counting it as a presence
-/// would let a build satisfy phase A's instrument assertions with three
-/// invisible rectangles.
 fn drawn(trace: &Trace, ui_rect: &str, name: &str) -> bool {
     declared(trace, ui_rect, name).is_some_and(|r| r.is_substantial())
 }
 
 /// Close the window, so the next phase's press is not declined by
 /// `DialogsState::open_protect`'s already-open guard.
-///
-/// That guard is deliberate and documented — a second press must not discard
-/// a half-filled form — so this check has to close the window between phases
-/// rather than pressing twice and wondering why nothing changed. Escape is the
-/// host's own close, the same one the title-bar × reaches.
 fn close_window(session: &Session, driver: &Driver) -> Result<()> {
     driver.press(crate::sys::vk::ESCAPE)?;
     session.settle(16);
@@ -466,12 +433,6 @@ fn shell_rect_count(session: &Session, ui_rect: &str, name: &str) -> Result<usiz
 
 /// **Resolve a fixture from this repository**, via
 /// [`crate::checks::driving::repo_fixture`].
-///
-/// The `&CheckContext` parameter is gone, and its absence is the point. It
-/// existed because this function once resolved the path from `ctx.source_root`
-/// — the staleness root, which defaults to `crates` — and then kept the
-/// parameter alive with a `let _ = ctx;` after that was corrected. A parameter
-/// retained only to be discarded is an invitation to use it again.
 fn repo_fixture(name: &str) -> Result<PathBuf> {
     crate::checks::driving::repo_fixture(
         name,

@@ -15,16 +15,6 @@ use crate::report::CheckReport;
 /// Content selection needs Edit.
 const RIBBON_MODE: &str = "edit";
 /// Single page, fitted, BEFORE anything is aimed at.
-///
-/// The first run of this check drove a band to screen y=2 — above the canvas
-/// entirely — because the file is ten pages shown continuously and the view had
-/// been scrolled by the layout it inherited. `aim` faithfully computed where the
-/// table WOULD be and the drag went there, off the canvas, selecting nothing.
-///
-/// A region off the top of the canvas looks exactly like a hit test that
-/// excluded everything, which is the fourth instance of that shape in this
-/// harness. Fitting the page first makes the aim a statement about the document
-/// rather than about the scroll position the run happened to start from.
 const INVOKE: &str = "view.page_single,view.zoom_fit_page";
 /// The selection census the marquee writes.
 const SELECTION: &str = "canvas-selection"; // ui-text-exempt: a trace event name, never displayed
@@ -42,53 +32,13 @@ const FIXTURE_PAGE: PageGeometry = PageGeometry {
 };
 
 /// **Where the band STARTS, and it is on measured-empty paper.**
-///
-///
-/// The previous origin was `(14, 618)` — just outside the table, "comfortably
-/// inside the sheet", and **on top of an object**. Three runs of this check
-/// reported *"THE BAND SELECTED NOTHING AT ALL"*, which reads as a hit test
-/// that excluded everything. It was not. The trace carried
-/// `selection-set page=0 object=23 via=press` and **no marquee line of any
-/// kind**: the press had selected the object under it and the drag had become a
-/// MOVE.
-///
-/// `canvas::presspick` documents that behaviour and its first stated
-/// non-disturbance is the rule this check broke: *"A press on empty paper still
-/// marquees."* Pressing on ink does not.
-///
-/// And "empty" is a much larger radius than it looks. The pick tolerance is
-/// `SELECT_SCREEN_TOLERANCE_PX` converted to page units, so at the fitted zoom
-/// this check drives (about 0.38×) a **4-pixel** screen tolerance is over **ten
-/// page points**. The old origin sat 6 pt from the sheet border — visually in
-/// the margin, and inside the catch radius.
-///
-/// Chosen by rendering page 1 at scale 1.0 (1 px = 1 pt) and looking: this
-/// point is in the blank field below the INSPECTION STATUS table and left of
-/// the isometric view, about **80 pt** from the nearest ink in any direction.
 const BAND_FROM: (f64, f64) = (300.0, 560.0);
 
 /// Where it ENDS — up and to the **left**, inside the table.
-///
-/// Right-to-left, so this is a **crossing window** and takes anything it
-/// touches. That is the point: it is the gesture `OPERATOR_REQUESTS.md` O88
-/// added, and it is the only one that can reach this table at all.
-///
-/// An **enclosing** band cannot be driven here and the reason is the operator's
-/// own complaint rather than a harness limitation: to surround a table hard
-/// against the sheet edge the band must start outside the page, and every
-/// corner from which it could be started is on ink. So the window direction is
-/// deliberately **not** driven by this check, and that absence is reported
-/// rather than left for a reader of a PASS to assume away.
 const BAND_TO: (f64, f64) = (60.0, 765.0);
 
 /// `marquee-mode crossing=… mode=… hits=…` — the shell's record of WHICH
 /// rule the band was resolved by.
-///
-/// Asserted as well as the selection census, and the pair is the point. A
-/// build that ignored the drag direction and ran `Enclosed` for everything
-/// would select nothing here and fail on the count — but so would a build
-/// whose hit test was broken outright, and the two want opposite fixes. This
-/// line separates them.
 const MODE: &str = "marquee-mode";
 
 pub struct AMarqueeOverATableTakesItsTextAsWellAsItsLines;

@@ -56,3 +56,24 @@ end", and appending is what every position-blind build would do.
 
 Step E is the one that cannot be satisfied by wiring alone. A build that
 raised the action and never reached the engine passes A–D and fails here.
+
+## Item notes
+
+### `const DROP_AFTER_MS`
+
+Long enough for the mode click, the panel, and the pointer to be in place —
+and it is a floor rather than a schedule, because the check then *waits for
+the trace line* rather than assuming the drop has happened by now.
+
+### `const PARK_ACROSS`
+
+A quarter, so the LEFT half is unambiguous: the panel resolves the nearer
+vertical edge, and a point near the middle is where a rounding difference
+between the application's `f32` rectangle and this harness's reading could
+flip the answer — `pages_drag`'s reasoning, mirrored.
+
+### `const TILE_INDEX`
+
+Not tile 0. Its left edge is gap 0, which is also what a build that
+defaulted to `Start` would produce, and this check must not have a passing
+answer that a position-blind build can reach.

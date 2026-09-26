@@ -358,19 +358,6 @@ mod tests {
     use super::*;
 
     /// **The disclosure carries all three facts it exists to carry.**
-    ///
-    /// Asserted by content rather than by exact text, because the wording will
-    /// be improved and the facts must not be lost in the improving. Each of the
-    /// three is a separate obligation and each has its own way of going missing:
-    ///
-    /// 1. **The act** — that choosing the row writes to the file. Lost if the
-    ///    sentence is ever rewritten as a description of what the fourteen
-    ///    *are*.
-    /// 2. **Not embedded** — the fact `pdfcer-core` states and this shell relays.
-    ///    Lost first, because it is the least comfortable clause.
-    /// 3. **The reader's own copy** — the inference the operator cannot see, and
-    ///    the whole reason rule 4 puts this sentence on screen rather than in a
-    ///    doc comment.
     #[test]
     fn the_disclosure_states_the_act_the_omission_and_the_consequence() {
         let line = face_addable_disclosure();
@@ -380,12 +367,6 @@ mod tests {
     }
 
     /// **The two group headings are not paraphrases of each other.**
-    ///
-    /// They are the only thing distinguishing two rows that may read
-    /// identically — `Helvetica` the page carries and `Helvetica` pdfcer would
-    /// add are one string apart on screen and two different acts in the file.
-    /// A pair of headings differing by a word an operator skims past would put
-    /// the whole distinction back where it was before this change: nowhere.
     #[test]
     fn the_two_group_headings_say_different_things() {
         assert_ne!(face_group_on_page(), face_group_addable());
@@ -400,11 +381,6 @@ mod tests {
 
     /// **The empty-list sentence must account for BOTH sources** — the page's
     /// own fonts and the standard fourteen.
-    ///
-    /// *"No other font on this page can show these characters"* is exhaustive
-    /// only while the page is the only source. An operator reading that beside
-    /// a list which elsewhere offers `Times-Roman` out of thin air would
-    /// reasonably ask why it is not offered here.
     #[test]
     fn the_empty_sentence_accounts_for_the_standard_fourteen() {
         let line = text_face_none();
@@ -414,16 +390,6 @@ mod tests {
 
     /// **The offer names the character, every time, in every sentence that
     /// mentions it** — `OPERATOR_REQUESTS.md` O141.
-    ///
-    /// The whole of what the status bar cannot do. A block that said *"a
-    /// character in this text"* would have moved the refusal to a wider surface
-    /// and added nothing: the operator already knows they typed something, and
-    /// what they do not know is **which** keystroke the document refused — on a
-    /// pasted line it can be a character they never saw themselves type.
-    ///
-    /// Asserted over a character outside ASCII on purpose. A build that
-    /// formatted with `{:?}` or escaped for a byte-oriented surface would print
-    /// `'\u{20ac}'` and pass a test written against `'q'`.
     #[test]
     fn every_sentence_in_the_offer_names_the_character_itself() {
         for line in [
@@ -445,12 +411,6 @@ mod tests {
 
     /// **Both font-naming sentences name the font**, and they name two
     /// different ones.
-    ///
-    /// [`refused_char_named`] names the face that **refused**;
-    /// [`refused_char_swapped`] names the face that is **now in force**. A build
-    /// that fed either the wrong one would tell the operator that the font they
-    /// just chose is the font that cannot type their character — which reads as
-    /// the feature not working, on a swap that worked.
     #[test]
     fn the_offer_names_the_font_that_refused_and_the_font_that_replaced_it() {
         let refused = refused_char_named('q', "AAAAAA+Arimo-Bold");
@@ -465,16 +425,6 @@ mod tests {
 
     /// **The offer promises that pdfcer will finish the job, and neither
     /// sentence tells the operator to retype anything.**
-    ///
-    /// The block re-applies the operator's edit itself
-    /// ([`crate::panels::properties::refusedchar`]), so a *"type it again"*
-    /// instruction is not merely unnecessary — it is **harmful**: an operator
-    /// who follows it types the character into a document that already has it
-    /// and gets two.
-    ///
-    /// Asserted in the negative as well as the positive, because a build that
-    /// re-applied the edit *and* kept the old wording would pass a
-    /// promise-only test while producing exactly that double edit.
     #[test]
     fn the_offer_promises_pdfcer_finishes_the_job_and_never_asks_for_a_retype() {
         let offer = refused_char_offer('%');
@@ -498,16 +448,6 @@ mod tests {
     }
 
     /// **The third state names the face that IS in force and no cause at all.**
-    ///
-    /// The face swap landed and the character still would not go in, and
-    /// **pdfcer does not know why**: the block is reached by arithmetic — the
-    /// edit epoch not moving — rather than by recognising a refusal.
-    ///
-    /// ⚠ *Carrying no cause* is the harder property to hold, which is why it is
-    /// asserted rather than left to a comment. A later session improving the
-    /// wording will be tempted to put an explanation back, and the explanation
-    /// it reaches for will be one this surface cannot see. The negative
-    /// assertions below exist to stop exactly that.
     #[test]
     fn the_blocked_sentence_names_no_cause_it_cannot_see() {
         let line = refused_char_blocked('%', "Courier");
@@ -541,20 +481,6 @@ mod tests {
 
     /// **The dead end says the document survived it, and says what the
     /// operator can still do.**
-    ///
-    /// # Why the dead end is a sentence and not a caveat
-    ///
-    /// The offer is coverage-tested against the refused character itself, so no
-    /// row in the list can refuse it and there is nothing for a caveat to warn
-    /// about. What that exactness exposes instead is an **empty** offer, for any
-    /// character no standard-14 face can encode. This is the sentence drawn
-    /// there, and its load-bearing assertion is: **say that nothing was
-    /// changed.** A dead end that does not say so reads as a
-    /// failure the operator has to go and check.
-    ///
-    /// Plus the half the old sentence could not have: a dead end owes the
-    /// operator the *next* thing to try, even when that thing is not pdfcer's
-    /// to do.
     #[test]
     fn the_dead_end_says_the_document_is_unchanged_and_what_is_still_possible() {
         let line = refused_char_no_face('€');

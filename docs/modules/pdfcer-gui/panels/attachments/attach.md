@@ -50,3 +50,20 @@ after every panel and dialog has closed.
 That is also what gives the feature a **driver**:
 `crate::app::files::DIAG_ATTACH_PATH` answers the dialog without a human,
 and no synthetic input reaches a native dialog otherwise.
+
+## Item notes
+
+### `fn a_blank_description_becomes_no_description_at_all`
+
+The expression under test is the one the button arm uses, spelled the
+same way, so the two cannot come apart. What it defends: writing
+`Some("   ")` would put a `/Desc` key holding blanks into the file — a
+key a later reader has to interpret and that no operator asked for —
+while the row that shows it would appear to have a description and show
+nothing.
+
+### `fn the_two_regions_are_named_apart`
+
+A driven check clicks a region by name; two controls sharing one would
+make the harness click whichever was published last, and the failure
+would present as *"the button does nothing"* on whichever run lost.

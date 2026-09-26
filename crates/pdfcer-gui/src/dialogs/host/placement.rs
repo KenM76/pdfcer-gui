@@ -148,25 +148,6 @@ pub(crate) fn opening(app: AppWindow, size: Vec2, preferred: Option<Pos2>) -> Po
 
 /// Pull `desired` back until a dialog of `size` sits wholly on `parent`, and
 /// below its chrome.
-///
-/// # The order the bounds are applied, which is the whole of the decision
-///
-/// Horizontally there is nothing to choose: the window is pushed left until its
-/// right edge is on the parent, and never past the parent's left edge.
-///
-/// Vertically the two bounds can **conflict**, and which one wins is a
-/// judgement rather than arithmetic. On a parent window shorter than
-/// [`CHROME_RESERVE_PTS`] plus the dialog, there is no position that both
-/// clears the chrome and keeps the bottom edge on the window. This function
-/// clears the chrome and lets the bottom overhang, for one reason: the chrome
-/// holds the control the operator just pressed, and a dialog covering it is a
-/// dialog they cannot get back behind. An overhanging bottom edge costs a
-/// scroll or a drag; a hidden ribbon costs the way out.
-///
-/// Both `max` calls exist to keep the clamp total. `Pos2::clamp` panics on an
-/// inverted range, and an inverted range here is not a programming error — it
-/// is the ordinary consequence of a dialog larger than the window that raised
-/// it, which every one of these dialogs can be on a window dragged small.
 fn onto_window(desired: Pos2, size: Vec2, parent: Rect) -> Pos2 {
     let left = parent.left();
     let right = (parent.right() - size.x).max(left);
@@ -192,10 +173,6 @@ mod tests {
 
     /// **A dialog that expressed no preference is placed exactly as it was
     /// before**, which is what makes this change safe for the other thirteen.
-    ///
-    /// The inset path is the one every other dialog in the program takes and
-    /// the one the driven checks were written against. If it moved, this file
-    /// would have fixed one dialog's opening position by changing thirteen.
     #[test]
     fn a_dialog_with_no_preference_opens_inset_from_the_application_window() {
         let at = opening(app(), Vec2::new(420.0, 240.0), None);
@@ -204,12 +181,6 @@ mod tests {
 
     /// **A chosen position reaches the desktop, measured from the CLIENT
     /// area.**
-    ///
-    /// The regression test for A16c itself. A caller computed 390, 290 in the
-    /// application's own coordinates; the dialog must open there and not in the
-    /// corner. The client origin is used rather than the outer one, so a
-    /// version of `opening` that measured from `outer` — off by the border and
-    /// the title bar, which is the mistake that looks right — fails here.
     #[test]
     fn a_chosen_position_is_carried_into_desktop_coordinates() {
         let at = opening(
@@ -231,11 +202,6 @@ mod tests {
 
     /// **A chosen position that would hang off the window is pulled back onto
     /// it**, on both axes.
-    ///
-    /// The application window is on a monitor, so a dialog wholly inside the
-    /// application window is wholly on that monitor — which is the whole reason
-    /// the clamp is expressed against the parent rather than against a monitor
-    /// size that carries no origin.
     #[test]
     fn a_chosen_position_is_pulled_back_onto_the_application_window() {
         let size = Vec2::new(420.0, 240.0);
@@ -258,10 +224,6 @@ mod tests {
 
     /// **A chosen position never covers the ribbon**, however far up it asks to
     /// go.
-    ///
-    /// A dialog over the ribbon hides the control that raised it — the defect
-    /// the Settings window already met and recorded. Nothing in a caller's
-    /// arithmetic knows where the chrome ends, so the floor is applied here.
     #[test]
     fn a_chosen_position_never_covers_the_ribbon() {
         let app = app();
@@ -276,11 +238,6 @@ mod tests {
 
     /// **On a window too short to hold the dialog below its chrome, the
     /// chrome still wins**, and the clamp does not panic.
-    ///
-    /// The conflicting case named in [`onto_window`]'s doc comment. It is not a
-    /// programming error — a window dragged down to a few hundred points
-    /// reaches it with any of these dialogs — so the arithmetic has to have an
-    /// answer rather than an assertion.
     #[test]
     fn a_window_too_short_for_the_dialog_still_keeps_the_ribbon_clear() {
         let short = AppWindow {

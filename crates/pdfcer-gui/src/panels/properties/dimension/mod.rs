@@ -152,34 +152,6 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
 }
 
 /// **Say something other than the measurement**, without changing it.
-///
-///
-/// # It does NOT destroy the measurement, and that is the whole design
-///
-/// The engine's own note is titled for it: *"dimension text override ships and
-/// it does not destroy the measurement."* The override is a **caption**; the
-/// measured value stays underneath, so `None` restores it with **no
-/// re-measurement** — the number that comes back is the number that was always
-/// there, not a fresh calculation that might round differently.
-///
-/// ⇒ That is why this control is a text box with a Clear beside it rather than
-/// an editable value field. An editable value would imply the operator was
-/// changing what was measured, and on a drawing that is the difference between
-/// a note and a lie.
-///
-/// # Why the measured value is shown even while overridden
-///
-/// `DimensionLabelChange` carries `measured` and `printed` separately, and this
-/// shows both whenever they differ. An operator looking at a ce dimension that
-/// reads *"see detail B"* has no other way to find out what it actually
-/// measures — and the one place that fact must be available is beside the
-/// control that hid it.
-///
-/// # Committed on focus loss, not per keystroke
-///
-/// `super::widgetedit`'s rule: one control press is one undo entry. A caption
-/// typed a character at a time would author twelve commands and leave eleven
-/// intermediate states in the undo stack that the operator never saw.
 fn label_row(
     ui: &mut Ui,
     record: &pdfcer_core::dimension::DimensionRecord,
@@ -240,22 +212,6 @@ fn label_row(
 }
 
 /// The radius / diameter choice, for a circular ce dimension only.
-///
-/// # Why it is offered only for a circular kind
-///
-/// `set_dimension_display` refuses a non-circular target by name
-/// (`EditError::NotACircularDimension`) and refuses **before** mutating. R9's
-/// rule is that an affordance which cannot be honoured is not drawn, so a
-/// linear or angular ce dimension gets no control rather than a greyed one —
-/// and the engine's refusal stays as the backstop rather than as the path.
-///
-/// # Why the action is raised only on a CHANGE
-///
-/// `set_dimension_display` is documented as committing **even when nothing
-/// changes** — flagged in `02-editing-and-saving.md` §1.19 as *"the opposite of
-/// `set_info_field`"*. Pressing the option it is already on would therefore
-/// write an undo entry for a no-op, so the guard is here, in the surface, where
-/// what the operator pressed is known.
 fn display_toggle(ui: &mut Ui, record: &DimensionRecord, actions: &mut Vec<Action>) {
     let DimensionKind::Circular { show_diameter, .. } = record.kind else {
         return;

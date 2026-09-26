@@ -25,24 +25,9 @@ pub(super) const HOST_ID: &str = "print-preview";
 pub(super) const REGION_POPPED_BODY: &str = "print.preview.window";
 
 /// The size the pop-out window opens at, in egui points.
-///
-/// Taller than it is wide, because a print preview is a sheet and every sheet
-/// an operator of this program prints is either portrait or, rotated, still
-/// better served by height than by width — the fit takes the smaller of the two
-/// ratios either way. Larger than the 340 pt column it came out of, because
-/// making the preview bigger is the entire reason to pop it out; opening at the
-/// same size as the column would answer the request with a window that changed
-/// nothing.
 const DEFAULT_SIZE_PTS: egui::Vec2 = egui::vec2(560.0, 760.0);
 
 /// The smallest the pop-out window may be dragged to, in egui points.
-///
-/// A floor and not a preference, for `Host`'s stated reason: a resizable window
-/// with no minimum can be dragged down to a title bar, which is a state with no
-/// way back except closing it. Here that is milder than for a form — closing is
-/// the intended exit — but a preview squeezed under
-/// `CANVAS_MIN_HEIGHT_PTS + STRIP_HEIGHT_PTS` would show a smudge and a
-/// scrollbar, which is not a preview.
 const MIN_SIZE_PTS: egui::Vec2 = egui::vec2(320.0, 320.0);
 
 impl PrintDialog {

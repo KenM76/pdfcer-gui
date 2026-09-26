@@ -81,3 +81,24 @@ preview *looks* right, that the window opens at a sensible size on his
 monitors, and that the column visibly disappears are asserted by
 `ui-verify`'s `the_print_preview_pops_into_its_own_window` — **which has
 been written and registered and has not been run.**
+
+## Item notes
+
+### `const DEFAULT_SIZE_PTS`
+
+Taller than it is wide, because a print preview is a sheet and every sheet
+an operator of this program prints is either portrait or, rotated, still
+better served by height than by width — the fit takes the smaller of the two
+ratios either way. Larger than the 340 pt column it came out of, because
+making the preview bigger is the entire reason to pop it out; opening at the
+same size as the column would answer the request with a window that changed
+nothing.
+
+### `const MIN_SIZE_PTS`
+
+A floor and not a preference, for `Host`'s stated reason: a resizable window
+with no minimum can be dragged down to a title bar, which is a state with no
+way back except closing it. Here that is milder than for a form — closing is
+the intended exit — but a preview squeezed under
+`CANVAS_MIN_HEIGHT_PTS + STRIP_HEIGHT_PTS` would show a smudge and a
+scrollbar, which is not a preview.

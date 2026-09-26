@@ -42,36 +42,12 @@ const TEAR: &str = "dock-tear";
 const NONE: &str = "none";
 
 /// How long the pointer rests on the destination before the button comes up.
-///
-/// The offer is resolved on the frame the pointer arrives and the release is
-/// read on a later one; a gesture that let go on arrival would be releasing
-/// against an offer that did not exist yet. `Driver::drag_via` spends this as
-/// one-pixel nudges rather than one sleep, because a stationary pointer
-/// generates no input and a build is not obliged to repaint without it.
 const DWELL: std::time::Duration = std::time::Duration::from_millis(600);
 
 /// How far the window that opens may sit from the origin the outline promised.
-///
-/// The measured residual is **0.0 pt on both axes** — `dock-tear at=[1267.0
-/// 502.0]` and `viewport-outer rect=[[1267.0 502.0] - ...]` from the same run.
-/// The allowance is not slack for a wrong conversion: it covers only the round
-/// trip through the window manager, which is asked for a position in logical
-/// points and reports one back after snapping to whole physical pixels. At a
-/// `ppp` above 1 that rounding is a fraction of a point, so one point is the
-/// ceiling on a correct build at any scale this application runs at.
-///
-/// Sized deliberately far below the failure it is guarding against. A
-/// conversion that adds the wrong window origin, or none, is wrong by the
-/// application window's own position — hundreds of points. Anything between one
-/// point and that is a defect nobody has met yet and should be read, not
-/// tolerated, so widening this constant is the wrong response to it failing.
 const ORIGIN_TOLERANCE_PTS: f32 = 1.0;
 
 /// How far the window's client area may differ from the size the outline drew.
-///
-/// Same measurement, same reasoning: the outline is `DEFAULT_SIZE_PTS` and the
-/// window is built `with_inner_size` from the same value, so the two agree
-/// exactly (320x480 measured) and the allowance covers only pixel rounding.
 const SIZE_TOLERANCE_PTS: f32 = 1.0;
 
 /// **A drag over another compartment offers that compartment, and the release
@@ -139,22 +115,12 @@ struct Compartment {
 
 impl Compartment {
     /// The region name of this compartment's tab bar.
-    ///
-    /// Derived rather than looked up, so the two cannot drift: a compartment
-    /// and its strip are built from one address by the dock, and are rebuilt
-    /// from one address here.
     fn bar(&self) -> String {
         format!("dock.{}{TABBAR}", self.addr)
     }
 }
 
 /// Every compartment the run declared, in address order.
-///
-/// A compartment's region name is `dock.<side>.<column>.<stack>` and nothing
-/// else is: four dot-separated parts, of which the last two are numbers. The
-/// alternative — matching on the side words — would also catch
-/// `dock.right.0.1.tabbar` and every other suffix the dock hangs off the same
-/// stem.
 fn compartments(trace: &Trace, ui_rect: &str) -> Vec<Compartment> {
     let mut found: Vec<Compartment> = declared_names(trace, ui_rect, "dock.")
         .into_iter()
@@ -192,10 +158,6 @@ fn centre(r: LRect) -> Pt {
 }
 
 /// **A tab that can be picked up, and the compartment it is in.**
-///
-/// The first in region-name order whose rectangle lies inside a compartment
-/// that has a tab bar — which is the condition for the tab being *visible*,
-/// and this application has a dock side that draws none.
 fn a_draggable_tab<'a>(
     trace: &Trace,
     ui_rect: &str,
@@ -296,27 +258,6 @@ fn reset_landed(trace: &Trace) -> std::result::Result<(), String> {
 
 /// **What a slot was offering when the button came up, and whether the release
 /// cleared it.**
-///
-/// # Why this is the last *two* lines and not the last one
-///
-/// The affordance is gone the instant the button is — that is what makes it a
-/// pre-commit affordance rather than a mark on the document — so the release
-/// itself writes the no-offer control, and the terminal line of *every*
-/// completed gesture is `none`. A check that read only the last line would
-/// report a perfectly correct build as having offered nothing, which is the
-/// assertion inverted.
-///
-/// So the standing offer is the line **immediately before** the terminal
-/// control, and it counts only when the control is genuinely terminal.
-/// Requiring adjacency is what distinguishes *the pointer was over a
-/// compartment when it was released* from *the pointer was over one earlier in
-/// the gesture and had left by the end* — two histories whose last offer line
-/// is the same line.
-///
-/// Returns the standing offer, and whether the slot's last line is the
-/// control. The second is reported separately because an offer still standing
-/// after the release is its own defect: the affordance has outlived the
-/// gesture and is now marking the page.
 fn standing_at_release<'a>(
     trace: &'a Trace,
     slot: &'a str,
@@ -336,30 +277,11 @@ fn standing_at_release<'a>(
 }
 
 /// The trace line the drag begins after, for [`declared_since`].
-///
-/// # Why a pre-commit affordance cannot be read with `declared`
-///
-/// [`declared`] answers *is this region on screen now*, and honours the
-/// `ui-rect-gone` line that retires one. Every affordance this module measures
-/// is retired by the time the trace is read — the wash, the caret and the
-/// outline all vanish at the release, which is what makes them affordances
-/// rather than marks on the document — so `declared` reports each of them
-/// absent on a build that painted all three correctly, and the failure
-/// sentence it produces names the region in its own *"regions drawn"* list.
-///
-/// [`declared_since`] asks the right question, *was it published during this
-/// gesture*, and requires an anchor so that it cannot degrade into reading a
-/// fossil left by an earlier drag in the same run. This is that anchor: the
-/// last region line the application wrote before the pointer moved.
 fn gesture_start(before: &Trace, ui_rect: &str) -> usize {
     before.events(ui_rect).last().map_or(0, |l| l.lineno)
 }
 
 /// Whether a slot ever printed its no-offer control.
-///
-/// Asserted because a change-only slot that simply stops emitting looks
-/// exactly like a slot nothing writes to. The control line is what says the
-/// channel is alive.
 fn control_seen(trace: &Trace, slot: &str) -> bool {
     trace.events(slot).any(|l| l.raw.contains(NONE))
 }

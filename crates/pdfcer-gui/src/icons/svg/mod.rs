@@ -27,12 +27,6 @@ mod path;
 pub const VIEWBOX: f32 = 48.0;
 
 /// Stroke-width multiplier for [`IconWeight::Bold`].
-///
-/// 1.35 was chosen as the smallest factor that is unambiguously visible at
-/// 16 pt (2.5 → 3.375 viewBox units, ~1.1 physical px heavier at 100% scale)
-/// without the glyph starting to blob shut at its tightest interior features
-/// (`keyboard.svg`'s 3-unit key gaps, `shape-highlight.svg`'s hatch). It is
-/// a *cue*, not a redesign.
 const BOLD_STROKE_FACTOR: f32 = 1.35;
 
 /// Circular-arc-to-cubic magic constant: the control-point offset, as a
@@ -160,11 +154,6 @@ impl std::error::Error for IconError {}
 // ---------------------------------------------------------------------------
 
 /// One drawable element of an icon: geometry plus how to paint it.
-///
-/// Kept separate per element rather than merged into one path because the
-/// set mixes paint styles within a single icon — `redact.svg` has stroked
-/// outlines *and* one filled bar, and `shape-highlight.svg` deliberately
-/// mixes a 2.5-unit contour with a 1-unit hatch.
 #[derive(Debug)]
 struct Shape {
     /// Geometry in viewBox units (0..48).
@@ -469,12 +458,6 @@ fn find(haystack: &[u8], from: usize, needle: &[u8]) -> Option<usize> {
 }
 
 /// Read a double-quoted attribute value out of a tag body.
-///
-/// Matches on `name="` with a preceding delimiter check so that looking up
-/// `x` does not match `rx`, and `stroke` does not match `stroke-width` — the
-/// single most likely silent-wrongness bug in a scanner this simple, and the
-/// reason this is one shared helper rather than an inline `find` at each call
-/// site. `attribute_lookup_is_not_a_substring_match` pins it.
 fn attr<'a>(body: &'a str, name: &str) -> Option<&'a str> {
     let bytes = body.as_bytes();
     let pattern = format!("{name}=\"");
@@ -502,11 +485,6 @@ fn attr_f32(body: &str, name: &str) -> Option<Result<f32, IconError>> {
 }
 
 /// The paint attributes shared by every shape element.
-///
-/// Absent `stroke` means "not stroked" and absent `fill` means "not filled",
-/// matching the root `<svg fill="none">` the style contract mandates.
-/// `stroke-width` defaults to the contract's 2.5 so an asset that omits it
-/// still draws at the set's weight rather than at tiny-skia's 1.0.
 type PaintAttrs = (Option<f32>, LineCap, LineJoin, bool, Option<Vec<f32>>);
 
 fn parse_paint(body: &str) -> Result<PaintAttrs, IconError> {
@@ -657,12 +635,6 @@ fn parse_circle_element(body: &str) -> Result<Shape, IconError> {
 }
 
 /// Emit a rounded rectangle as an explicit path.
-///
-/// tiny-skia's `push_rect` has no corner radius, and the set uses `rx` on
-/// most rects, so the corners are drawn as four 90° cubic arcs. Radius is
-/// clamped to half the shorter side, which is what SVG requires and what
-/// stops a hand-edited `rx="99"` from turning into a self-intersecting mess
-/// instead of a stadium.
 fn push_round_rect(pb: &mut PathBuilder, x: f32, y: f32, w: f32, h: f32, rx: f32) {
     let r = rx.min(w / 2.0).min(h / 2.0).max(0.0);
     if r <= 0.0 {
@@ -794,27 +766,6 @@ mod tests {
 
     /// **A dashed stroke draws fewer pixels than a solid one** — the guard on
     /// `stroke-dasharray` reaching the rasterizer.
-    ///
-    /// # Why this test is a pixel count and not a parse assertion
-    ///
-    /// Because "the attribute parsed" is not the question. A build that parses
-    /// the file perfectly and ignores the dash draws a **solid** line, which is
-    /// a valid icon of a different thing: the glyphs that use a dash silently
-    /// become ones the set already has — `new-from-template` →
-    /// `new-document`, `unembed-fonts` → `embed-fonts`, `redact-selection` →
-    /// `redact`, `select-all` → a plain rectangle.
-    ///
-    /// A test that asserted `shape.dash == Some(vec![4.0, 4.0])` would pass on
-    /// a build that parsed the attribute and then dropped it before
-    /// `Stroke` — which is one line's slip away and is the whole failure
-    /// mode. **The only assertion that cannot be satisfied by a build which
-    /// forgets to USE it is one about the pixels.**
-    ///
-    /// Counted rather than compared to a reference image: a count is stable
-    /// against antialiasing, against tiny-skia's version, and against the
-    /// weight factor, where a golden image is not. The relationship — dashed
-    /// covers strictly less ink than solid, and both cover some — is what is
-    /// actually being claimed.
     #[test]
     fn a_dashed_stroke_draws_less_ink_than_a_solid_one() {
         let solid = r#"<svg viewBox="0 0 48 48"><path d="M4 24L44 24" stroke="currentColor" stroke-width="2.5"/></svg>"#;
@@ -841,11 +792,6 @@ mod tests {
     }
 
     /// An odd-length dash array is doubled, per SVG 1.1 §11.4.
-    ///
-    /// `stroke-dasharray="4"` means *4 on, 4 off*, not *4 on, nothing off*.
-    /// Getting it wrong draws a plausible dash at the wrong duty cycle — the
-    /// confidently-wrong outcome this module refuses everywhere else — so it
-    /// is pinned rather than left to the reader of the spec.
     #[test]
     fn an_odd_dash_array_is_doubled() {
         let odd = r#"<svg viewBox="0 0 48 48"><path d="M4 24L44 24" stroke="currentColor" stroke-dasharray="4"/></svg>"#;
@@ -866,10 +812,6 @@ mod tests {
     }
 
     /// A malformed dash array is refused, not ignored.
-    ///
-    /// The module's rule is *reject loudly, never skip*, and it applies to a
-    /// value as much as to an element: silently dropping `stroke-dasharray`
-    /// draws a solid line, and a solid line is a different icon.
     #[test]
     fn a_malformed_dash_array_is_refused() {
         let svg = r#"<svg viewBox="0 0 48 48"><path d="M4 24L44 24" stroke="currentColor" stroke-dasharray="4 wide"/></svg>"#;
@@ -916,12 +858,6 @@ mod tests {
     }
 
     /// The arithmetic precondition of the whole theming story.
-    ///
-    /// Every non-transparent pixel must be premultiplied WHITE, i.e.
-    /// `r == g == b == a`. That property is what makes a multiplicative tint
-    /// produce a correctly premultiplied tinted glyph for **any** tint
-    /// colour, which is in turn what lets one raster serve every theme
-    /// preset and every widget state (module header, "Theming").
     #[test]
     fn mask_is_white_so_tinting_is_exact() {
         let art = IconArt::parse(super::super::assets::SHAPE_RECT).expect("parses");

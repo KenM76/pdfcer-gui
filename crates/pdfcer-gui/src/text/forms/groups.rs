@@ -101,14 +101,6 @@ pub fn field_groups_refusal(error: &EditError) -> String {
 }
 
 /// Whether a refusal came from the certification gate.
-///
-/// A helper rather than a second match arm, because the certification refusal
-/// is not one variant. `check_certification` reports the document as certified
-/// by name, and which variant carries that has changed once already on the
-/// engine's side; matching on the *family* through the error's own rendering
-/// keeps this sentence correct across that. The rendering is never shown to the
-/// operator — see [`crate::text::status::save_copy_failed`] for why a `Display`
-/// impl's prose is not operator copy — it is only asked a yes/no question here.
 fn is_certification(error: &EditError) -> bool {
     let rendered = error.to_string().to_ascii_lowercase();
     rendered.contains("certif")
@@ -356,10 +348,6 @@ pub fn field_group_deleted(name: &str, fields: usize, boxes: usize, groups: usiz
 }
 
 /// `1 field` / `4 fields`, without a `{n} field(s)` in operator copy.
-///
-/// `(s)` is a form-filling convention that leaked into prose across this
-/// catalog, and it reads as a machine talking. One helper here rather than a
-/// conditional at each of the four call sites.
 fn plural(n: usize, one: &str, many: &str) -> String {
     if n == 1 {
         format!("1 {one}")

@@ -25,6 +25,8 @@
 //! sequence computed for a `/W` page names the reading that was applied.
 //! Changing it therefore cannot make pdfcer quieter about the ambiguity — it
 //! only chooses which side of it this machine takes.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/settings/forms.md`.
 
 use egui::Ui;
 use pdfcer_core::settings::{MAX_TAB_ROW_TOLERANCE, MIN_TAB_ROW_TOLERANCE, WidgetTabTail};
@@ -95,12 +97,6 @@ mod tests {
 
     /// **The slider's range is the STORE's, and a hand-edited legal value
     /// survives opening this window.**
-    ///
-    /// The regression test for the silent-edit hazard every slider in this
-    /// window carries: a control whose range is narrower than what the engine
-    /// accepts rewrites a value the operator chose deliberately, the moment
-    /// they open the window to look at something else. `egui::Slider` clamps
-    /// on draw, so the narrowing would be silent and the value would be gone.
     #[test]
     fn the_slider_spans_everything_the_store_accepts() {
         for text in [

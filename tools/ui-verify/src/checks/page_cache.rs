@@ -18,24 +18,6 @@ const MODE: &str = "read";
 /// `strip-prefetch-requested` and are deliberately not matched here.
 const REQUEST_EVENT: &str = "strip-raster-requested";
 /// How many wheel notches to send in each direction.
-///
-/// Enough to take **several** pages off screen and bring them back. 14 notches
-/// draw only three pages, measured, and a round trip over three pages is a weak
-/// sample for a claim about a 36-sheet drawing set.
-///
-/// Sent as a burst rather than one at a time because the question is what
-/// survives the round trip, not what happens during it.
-///
-/// **Falsified** against a planted defect: with `retain` cut down to keeping
-/// only the current page and its two neighbours, this check FAILS and names the
-/// pages drawn twice.
-///
-/// That falsification does not rescue the gesture. A continuous scroll
-/// rehomes every page it passes into the strip cache, so this check warms its
-/// own subject and evicts nothing — scrolling **further** makes that more true,
-/// not less. Both halves of the assertion rest on a precondition the gesture
-/// prevents. `DEFECTS.md` D52 names the repair: a discontinuity, then an
-/// assertion on `strip-raster-evicted`.
 const NOTCHES: i32 = 40;
 
 /// See the module documentation.

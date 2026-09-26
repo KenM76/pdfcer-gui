@@ -33,3 +33,13 @@ evidence at all.
    rather than a blank — which is why [`window`] raises first and why the
    check is for uniformity rather than for blankness specifically.
 3. **The application died** before the shot. Check its trace.
+
+## Item notes
+
+### `const RAISE_SETTLE_MS`
+
+700 ms, measured rather than guessed — and the number matters less than the
+note attached to it in the predecessor script, which briefly read 2500 ms
+with an invented explanation. Three consecutive captures at 700 ms produced
+identical non-blank content; the longer sleep bought nothing and cost 1.8 s
+per capture.

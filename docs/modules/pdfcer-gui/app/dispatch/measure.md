@@ -31,3 +31,15 @@ they must decline **alike**: a mode that cannot place a dimension has no
 business calibrating the group they live in, creating one, or ending a fit.
 Differing refusals for one capability read as arbitrary, so every arm below
 traces `reason=mode-cannot-author-measure` and nothing else.
+
+## Item notes
+
+### `fn active_group`
+
+See the module header: `None` means the measure tool has never been armed
+this session, and substituting the default group is right for an operator
+who has drawn nothing and wrong for anybody whose state was lost. The two
+are indistinguishable afterwards, so the substitution says so.
+
+`id` is in the trace line so a reader can tell which command fell back.
+Without it the trace says a substitution happened and not what asked for it.

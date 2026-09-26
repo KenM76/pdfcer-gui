@@ -123,3 +123,72 @@ refused on, which is why the mistake cost thirty seconds. A phase that has
 only ever been seen green is indistinguishable from one that cannot go red;
 these two have a red to their name and it was the check's fault, not the
 application's.
+
+## Item notes
+
+### `const PLANTED_AS`
+
+Deliberately **not** the fixture's own stem. `library::read_collection`
+falls back to the file stem only when the document has no `/Info` `/Title`,
+and this fixture has one — *Site Review*. Giving the copy an unrelated name
+means the category can only have come from the title, so a build that
+stopped reading `/Title` fails phase C instead of passing it by accident. A
+copy called `Site Review.pdf` would pass either way.
+
+### `const BOX_PT`
+
+Square, against a 200 × 60 pt source page, so the placement is distorted by
+construction. Matched to `stamp_size`'s magnitude for its reason too: large
+enough that the gesture machine reads a drag rather than rounding it to a
+click.
+
+### `const SECOND_OFFSET_PT`
+
+It has to miss the first stamp's rectangle. A drag that STARTS inside an
+annotation that already exists is a different gesture -- the canvas reads it
+as grabbing that object -- so the dialog would never open and phase H would
+report a memory failure that never happened. Borrowed, with its reason, from
+`stamp_dialog_reopen`, which learned it the hard way.
+
+### `fn plant`
+
+Returns the directory to hand the child process as `APPDATA`.
+
+The generation folder is called `DC` because that is the one the operator's
+own machine has, and because `folder::pick_generation`'s first rule — *a
+folder that already holds `Stamps` wins outright* — makes the choice
+unambiguous the moment this function creates the `Stamps` directory. There
+is exactly one candidate, so the shortest-name heuristic never runs and this
+check is not secretly a test of it.
+
+# Errors
+
+If the fixture is missing, or the scratch tree cannot be written.
+
+### `fn arm_stamp`
+
+⚠ **Second copy, deliberately not folded yet.** `driving`'s own rule is that
+a third copy is the point at which folding becomes worth doing *on its own
+rather than in the change that happens to need it*. This is the second.
+
+# Errors
+
+If the ribbon item is not on the tab, or the click armed nothing.
+
+### `fn click_until_traced`
+
+The same rule [`crate::checks::driving::press_until_traced`] encodes for
+keys: *nothing measured after a click is evidence about the program until
+the click is shown to have arrived.* A gallery radio that is never hit and a
+gallery radio that is hit and does nothing are opposite findings, and one
+message standing for both aims the fix at the wrong half.
+
+⚠ **This is the third copy of the click half** — `read_mode_chrome`'s
+`press_until_invoked`, and this. By `driving`'s own rule the fold is now
+due, **as its own change**. Filed rather than done here, because folding
+three call sites inside a feature commit is how a feature commit becomes
+unreviewable.
+
+# Errors
+
+If the trace cannot be read, or the pointer cannot be driven.

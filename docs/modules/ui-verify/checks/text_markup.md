@@ -86,3 +86,72 @@ model chosen: select-then-press is two clicks and a drag.
   not describe the page it would be sweeping;
 * **no band had text under it** — phase B never succeeded, so there is no
   selection for phase C to mark and phase A's silence would prove nothing.
+
+## Item notes
+
+### `const MODE`
+
+Marking text needs two things that do not overlap the way anyone expects:
+the ability to *select* text, which `canvas::textsel::takes_the_press`
+grants where the mode cannot select content (Read and Review), and
+`author_markup`, which the mode's tab list grants where it contains
+`markup` (Review and Edit). The intersection is **Review alone** — Read has
+no Markup tab, and in Edit the primary button is the content marquee so no
+text selection can be made and the three controls are permanently greyed.
+
+See `canvas::markup::text` §2. That inversion is a known gap with a known
+fix (`CanvasTool::Text`), and it is the reason this check does not carry an
+Edit control phase the way [`crate::checks::text_selection`] does: in Edit
+the controls are correctly dead, and a phase asserting so would be asserting
+the gap rather than the feature.
+
+### `const SUBJECT`
+
+Underline rather than Strikeout or Squiggly because it is the one an
+operator reaches for first and because the three are the same code path with
+one `match` arm between them — `shell::commands::text_mark_command` maps all
+three and the mapping's own test walks `TextMarkKind::ALL`. Driving all three
+here would cost three more clicks and three more edits to prove what that
+test already proves, while the *join* this check exists for is per-command
+only in its id.
+
+### `const SIBLING`
+
+Not a pixel differential here (see the module header on why the invoke is
+the better oracle for enablement), but its presence is still worth
+asserting: a build that registered one of the three and not the others would
+otherwise pass this check completely.
+
+### `const DECLINE_EVENT`
+
+Read to *improve failure messages*: `reason=Stale` and `reason=NoSelection`
+send a reader to two different places, and both are different again from a
+command that never reached dispatch at all.
+
+### `const APPLY_EVENT`
+
+The line that makes this check about a document rather than about an intent.
+[`COMMIT_EVENT`] says the shell decided to author one; this says
+`EditSession::add_markup` returned `Ok` and the revision moved.
+
+### `fn invokes`
+
+A **count**, not a presence, and for the reason
+`driving::click_mode_segment` counts its mode events: this check clicks the
+same control three times, and "has it ever been invoked?" would be answered
+`true` by a click made ten seconds earlier.
+
+### `fn the_selectors_match_the_shells_own_spelling`
+
+Pinned here for the reason [`crate::checks::markup_rectangle`]'s twin
+test states: the two crates are joined by a **string** and nothing else,
+so a rename would leave both sides compiling while every assertion here
+quietly stopped matching — and a check that matches nothing passes
+vacuously.
+
+### `fn a_sweep_that_ends_cleared_has_selected_nothing`
+
+The two traces differ only in which line is last, and that is the whole
+point: reading the last *non-empty* line instead of the last line is
+what made this check report a correctly-greyed control as a dead
+feature.

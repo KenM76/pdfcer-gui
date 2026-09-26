@@ -8,6 +8,8 @@
 //!
 //! Four sentences, and one of them is load-bearing in a way the others are not
 //! — see [`armed_instruction`].
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/text/placing.md`.
 
 /// The button inside the dialog.
 ///
@@ -70,11 +72,6 @@ mod tests {
     use super::*;
 
     /// The return is promised in BOTH places an operator can be.
-    ///
-    /// Before they press, in the tooltip; and after they press — when the
-    /// tooltip is off screen with the window — on the Tool panel. A version
-    /// that promised it only once would be correct in the source and useless in
-    /// whichever of the two moments it was missing from.
     #[test]
     fn the_window_coming_back_is_promised_before_and_after() {
         assert!(
@@ -91,11 +88,6 @@ mod tests {
 
     /// The armed instruction names the way OUT, which is the sentence that
     /// stops an operator being stranded.
-    ///
-    /// `canvas::placing`'s header records that the precedent this arm
-    /// generalises — the Set-scale calibration — strands an operator on Escape
-    /// today, with no window and no route back. The mechanism here makes that
-    /// unrepresentable; this assertion makes sure he is also TOLD.
     #[test]
     fn the_armed_instruction_names_escape() {
         assert!(
@@ -106,11 +98,6 @@ mod tests {
     }
 
     /// Both gestures are offered, in both sentences.
-    ///
-    /// A click and a drag do different things — a corner versus a box — and an
-    /// operator who is told only about the click concludes the drag is not
-    /// offered, which is the exact failure `panels::tool::armed` records for
-    /// the form-field instruction.
     #[test]
     fn both_gestures_are_offered_wherever_the_gesture_is_described() {
         // Case-insensitively: one of the two sentences begins with the

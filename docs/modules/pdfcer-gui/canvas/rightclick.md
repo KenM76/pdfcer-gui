@@ -48,3 +48,19 @@ rather than a precedence anybody has to enforce.
 `egui` draws an open popup until it is dismissed, and the popup exists only
 while something is attached to the response. On a frame with no secondary
 click and nothing open this does nothing at all.
+
+## Item notes
+
+### `fn field_menu`
+
+A **hit test**, not a read of `doc.selected_field`, and the module
+header's table says why: the selection this very click raises is applied
+at the end of the frame, and the popup opens now.
+
+OR'd with the state, deliberately. A right-click on a field that is
+*already* selected still opens its menu, and on that frame the two
+answers agree anyway. The disjunction is what keeps the menu available
+when the pointer is a few points outside the box of the field the
+operator selected a moment ago — the same forgiveness
+[`menus::select_under_right_click`]'s rule 3 gives an object selection,
+where a mis-aimed right-click must not destroy work.

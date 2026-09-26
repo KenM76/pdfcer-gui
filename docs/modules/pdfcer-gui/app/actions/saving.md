@@ -38,3 +38,20 @@ has to resume *this* save rather than raise the action again into its own
 guard — which would ask the question a second time and never write anything.
 `crate::app::lifecycle::resume_after_signature` is the other end of that, and
 its header carries the rule the arrangement enforces.
+
+## Item notes
+
+### `fn save_as_and_save_copy_ask_the_same_question_and_save_does_not`
+
+Pinned because it reads like a mistake and is not. Save As moves the
+document, so the instinct is that it is the more consequential of the
+two — but the signature question is about **the bytes being written**,
+and Save As writes a *new* file while leaving the original alone. Asking
+`InPlace` would warn the operator about damage to a file this command
+does not touch.
+
+What the body asserts is only that `PendingSave` distinguishes the two
+questions; it does not read `apply`, so it cannot fail if somebody
+"fixes" the `SaveAs` arm to `InPlace`. The durable part of this test is
+this comment — the sentence explaining why not — and a reader who wants
+the arm itself pinned has to drive `apply` and observe the pending save.

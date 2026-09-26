@@ -169,12 +169,6 @@ fn probe(
 }
 
 /// Put the Properties panel on screen, or SKIP.
-///
-/// A dock tab header, never a ribbon toggle: a toggle would *unmount* a panel
-/// that is already mounted, and this check would then report absent controls
-/// about a panel it closed itself. Every mode's default arrangement mounts
-/// Properties, so an absence here means the operator's persisted layout removed
-/// it — a dock question, not this check's subject.
 fn raise_properties(
     session: &Session,
     driver: &Driver,

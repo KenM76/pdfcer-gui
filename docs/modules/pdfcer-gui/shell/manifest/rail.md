@@ -75,3 +75,52 @@ turns its row into a blank, and nothing else in the build would notice.
 ⇒ The lasso's seam is therefore a **one-line** change in a group that is
 already on screen: add `Item::command("edit.lasso")` beside Select all when
 the tool exists. It is marked in the code below.
+
+## Item notes
+
+### `fn every_rail_id_is_a_registered_command`
+
+`Shell::validate` enforces this at start-up and would refuse the whole
+manifest; this test says so at `cargo test` time instead, because a
+rail typo's symptom — a hole in permanent chrome — is one an operator
+meets before a developer does.
+
+### `fn every_rail_id_names_an_icon`
+
+The rail's row is a picture with an *optional* word under it, and at
+`Rung::Tight` and below there is no word left. A command with no icon
+would draw a blank rectangle there, so an iconless command cannot be a
+rail row at all.
+
+⚠ This test is what stops that objection from lapsing in the other
+direction: an icon *removed* from any rail command turns a row into a
+blank, and nothing else in the build would notice.
+
+### `fn only_the_panel_tabs_are_marked_never_folding`
+
+Pinned as data rather than trusted to the planner, because the planner
+honours whatever this file declares — a `fold` typo here would be a
+silent downgrade of the rail's only structural promise.
+
+### `fn the_two_selection_toggles_are_the_last_rows_of_navigate`
+
+His instruction of 2026-09-05 — *"our smart selector should be visible
+with the other navigate controls in our left rail"* — pinned as data.
+The position matters and is not cosmetic: [`RailFold::PinArmed`] takes
+the **first** selected row, so a toggle placed ahead of the four tools
+would take the pin away from the tool the operator is holding whenever
+the preference was on. See the module-level note beside this group.
+
+### `fn at_the_floor_the_pinned_row_is_the_armed_tool_and_the_toggle_is_merely_folded`
+
+This is the assertion that carries the decision recorded in the module
+header, and it is written against the real fold planner rather than
+against the list, because the property is a consequence of
+[`RailFold::PinArmed`]'s first-match rule and the list's *order*. A
+future edit that moved the smart selector up the list would leave every
+other test in this file green and would silently make the strip answer
+*"smart select is on"* where the operator asked *"what am I holding?"*.
+
+The folded set is asserted too: the toggle must be **behind the
+chevron**, not gone. A row that is neither drawn nor folded is the
+unreachable-control defect this whole surface was built against.

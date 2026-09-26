@@ -17,13 +17,6 @@ use crate::report::CheckReport;
 use crate::trace::Trace;
 
 /// **Review**, and the choice is load-bearing rather than conventional.
-///
-/// `crate::app::modes::capability`'s own table records that the Pages tab is
-/// *"❌ in Read, ✅ in Review"*, and `crate::panels::pages`' header carries the
-/// operator's reason for that: *"Reviewing a set means rotating a sheet to read
-/// it and extracting the pages you were asked about … page operations do not
-/// alter content."* Driving the weaker of the two modes that offer these verbs
-/// is the stronger claim — what works in Review works in Edit.
 const MODE: &str = "review";
 
 /// The tab carrying every verb under test. Shown in Review and Edit, not Read.
@@ -45,12 +38,6 @@ const MOVE_DOWN: (&str, &str) = ("ribbon.item.pages.move_down", "pages.move_down
 const DELETE: (&str, &str) = ("ribbon.item.pages.delete", "pages.delete");
 
 /// **Phase A2's control.**
-///
-/// Driven first and its file thrown away, because `pages.extract` and
-/// `file.save_copy` reach the *same* `crate::app::files::pick_save_path` through
-/// the *same* `PDFCER_DIAG_SAVE_PATH` seam — one variable, one path — so the
-/// later of the two overwrites the earlier. See the phase for what that
-/// division does and does not buy.
 const EXTRACT: (&str, &str) = ("ribbon.item.pages.extract", "pages.extract");
 
 /// `extract path=… pages=… bytes=… asked=…` — the extraction reached a write.
@@ -79,12 +66,6 @@ const DELETE_APPLIED: &str = "delete-pages";
 
 /// `pages-resync was=… now=… renumbered=… page=… epoch=…` — **this check's
 /// sharpest in-process oracle.**
-///
-/// Emitted by `crate::app::actions::pages::resync` only when the page vector it
-/// held disagrees with the one `EditSession::pages()` now reports, so its
-/// *absence* after a page verb means the edit never reached the session and its
-/// `renumbered=` field is the shell's own answer to *did an index change
-/// meaning?*.
 const RESYNC_EVENT: &str = "pages-resync";
 
 /// `save-copy path=… bytes=… appended=… …`
@@ -104,11 +85,6 @@ const ROTATED_90: &[u8] = b"/Rotate 90";
 const ANY_ROTATE: &[u8] = b"/Rotate";
 
 /// The fewest pages this check can run against.
-///
-/// Three, and each one is spoken for: one is rotated and must survive, one is
-/// deleted, and one is left over so the document is not reduced to a state where
-/// `EditSession::delete_pages`' *"§7.7.3.3 requires at least one page"* refusal
-/// is anywhere near.
 const MIN_PAGES: usize = 3;
 
 /// See the module documentation.
@@ -137,11 +113,6 @@ impl Check for PageOpsRoundTrip {
 }
 
 /// A cheap content digest — length plus FNV-1a over the bytes.
-///
-/// The same function, for the same reason, as `save_copy`'s and `ocr`'s: the
-/// question is *"did this file change"*, the adversary is a bug rather than a
-/// forger, and the **length is part of the digest** so a truncation cannot hide
-/// behind a hash collision.
 fn digest(bytes: &[u8]) -> (usize, u64) {
     let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
     for b in bytes {
@@ -152,11 +123,6 @@ fn digest(bytes: &[u8]) -> (usize, u64) {
 }
 
 /// How many times `needle` occurs in `haystack`.
-///
-/// A count rather than a presence, because phase H's evidence is comparative:
-/// the interesting statement is *the copy has one and the source has none*, and
-/// a bare `contains` could not say the second half about a fixture that happened
-/// to carry the string in a comment.
 fn occurrences(haystack: &[u8], needle: &[u8]) -> usize {
     if needle.is_empty() || haystack.len() < needle.len() {
         return 0;
@@ -168,10 +134,6 @@ fn occurrences(haystack: &[u8], needle: &[u8]) -> usize {
 }
 
 /// How many times the shell has reported `id` invoked.
-///
-/// A **count**, never a presence: this check clicks five different controls in
-/// one run, and *"has it ever been invoked?"* would be answered `true` by a
-/// click made ten seconds earlier.
 fn invokes(session: &Session, id: &str) -> Result<usize> {
     Ok(shell_trace(session)?
         .events(INVOKE_EVENT)
@@ -180,12 +142,6 @@ fn invokes(session: &Session, id: &str) -> Result<usize> {
 }
 
 /// The page count the application reported when it opened its document.
-///
-/// From `open ok pages=N`, which `crate::app::lifecycle` builds from
-/// `doc.pages.len()` — the vector this whole check is about — at a moment when
-/// that vector has just come out of `page_tree::pages` on the file. In the
-/// second process that makes it a statement about **the file on disk**, made by
-/// the engine, in a process that never saw the first one.
 fn opened_pages(trace: &Trace) -> Option<usize> {
     trace.last(OPEN_EVENT)?.get_usize(PAGES_FIELD)
 }
@@ -251,11 +207,6 @@ fn control(trace: &Trace, ui_rect: &str, name: &str) -> Result<LRect> {
 }
 
 /// Click a band control and confirm the **shell** reported the invoke.
-///
-/// A SKIP rather than a failure when nothing was reported, on
-/// [`crate::checks::markup_rectangle`]'s rule: a check that could not deliver a
-/// click has learned nothing about the application, and naming a feature as the
-/// culprit when nothing was ever clicked at it is worse than no check at all.
 fn click_command(
     session: &Session,
     driver: &Driver,
@@ -285,11 +236,6 @@ fn click_command(
 }
 
 /// Build the failure text for a page verb that was invoked and did nothing.
-///
-/// One function for three phases, so the three read identically and none of
-/// them can quietly lose the `command-unimplemented` half — which is the single
-/// most informative line a reader of this failure can be handed, because it
-/// distinguishes *"there is no arm"* from *"the arm ran and the engine refused"*.
 fn no_effect(session: &Session, (region, id): (&str, &str), applied: &str) -> Result<String> {
     let trace = session.trace()?;
     let unimplemented = trace
@@ -322,11 +268,6 @@ fn no_effect(session: &Session, (region, id): (&str, &str), applied: &str) -> Re
 }
 
 /// The most recent resync line, or a failure sentence explaining its absence.
-///
-/// Split out because all three phases ask the same question and the *absence*
-/// of this line means something specific and worth spelling out once: the page
-/// vector the shell holds and the one the session reports still agree, which
-/// after a page verb means the verb did not change the document.
 fn resync_after(session: &Session, since: usize) -> Result<Option<crate::trace::TraceLine>> {
     Ok(session.trace()?.events(RESYNC_EVENT).nth(since).cloned())
 }
@@ -828,11 +769,6 @@ mod tests {
 
     /// The names this check greps for are the ones `egui-shell` builds, and the
     /// ids are the ones the application registers.
-    ///
-    /// Pinned for the reason every sibling check pins its own: the two crates
-    /// are joined by a **string** and nothing else, so a rename would leave both
-    /// sides compiling while every assertion here quietly stopped matching — and
-    /// a check that matches nothing passes vacuously.
     #[test]
     fn the_selectors_match_the_shells_own_spelling() {
         for (region, id) in [ROTATE, MOVE_DOWN, DELETE, EXTRACT, SAVE] {
@@ -858,11 +794,6 @@ mod tests {
 
     /// **The occurrence counter really counts, and really finds nothing when
     /// there is nothing.**
-    ///
-    /// Phase H's whole verdict rests on this function in both directions: a
-    /// counter that answered zero for a present needle would report a working
-    /// rotate as missing, and one that answered non-zero for an absent needle
-    /// would let a fixture's own `/Rotate` masquerade as this run's edit.
     #[test]
     fn the_occurrence_counter_reads_both_directions() {
         assert_eq!(occurrences(b"a/Rotate 90 b/Rotate 90", ROTATED_90), 2);
@@ -883,11 +814,6 @@ mod tests {
     }
 
     /// **The digest notices a single changed byte and a truncation.**
-    ///
-    /// Phase F's verdict rests on it, and phase F is this check's assertion that
-    /// a **page delete** did not reach the file the operator opened. A digest
-    /// that answered "unchanged" for a modified file would turn that into a
-    /// formality that always passes.
     #[test]
     fn the_digest_notices_a_single_changed_byte_and_a_truncation() {
         let a = b"%PDF-1.7 four sheets";

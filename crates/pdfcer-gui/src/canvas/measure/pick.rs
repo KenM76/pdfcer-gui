@@ -448,10 +448,6 @@ impl TwoLinePick {
 }
 
 /// How many chords approximate a previewed dimension arc.
-///
-/// Twenty-four over the full turn is smooth at any zoom pdfcer offers, and an
-/// angular ce dimension's wedge is a fraction of that — so the drawn arc is
-/// visually smooth while staying a handful of segments.
 const ARC_PREVIEW_STEPS: usize = 24;
 
 /// The page-space line segments that draw a ce dimension's live preview.
@@ -635,11 +631,6 @@ mod tests {
     // ---- LinearPick A→B state machine (ui-spec §2.1) --------------------
 
     /// **Three clicks: what, to what, WHERE.**
-    ///
-    /// SolidWorks dimensions in three steps, and the third is what says how
-    /// far off the drawing the dimension sits. Committing on the second click
-    /// would land every ce dimension on top of the geometry it measures, at a
-    /// zero standoff, to be dragged clear afterwards.
     #[test]
     fn linear_pick_needs_a_third_placing_click_then_resets() {
         let mut lp = LinearPick::new();
@@ -687,10 +678,6 @@ mod tests {
     }
 
     /// A scale reference line still commits on the SECOND click.
-    ///
-    /// `ScalePick` reuses this state machine for a line that is never drawn as
-    /// a dimension, so asking where to place it would be ceremony with no
-    /// meaning. The opt-out is what keeps one state machine serving both.
     #[test]
     fn a_reference_line_pick_still_commits_on_the_second_click() {
         let mut lp = LinearPick::reference_line();
@@ -978,14 +965,6 @@ mod tests {
     }
 
     /// The override SURVIVES a clear, like `snap_master` and the group.
-    ///
-    /// The instinct is the opposite — it is an assertion about two specific
-    /// lines. What settles it is the friction the override exists to remove:
-    /// `linepick.rs` documents that without it the remedy would be changing a
-    /// global setting per dimension, *"which is how a setting becomes a thing
-    /// people fight"*. Resetting per pair recreates that at smaller scale for
-    /// anyone dimensioning a whole drawing out of a sloppy exporter, and it is
-    /// safe to persist because the verdict says "forced" before any Accept.
     #[test]
     fn the_override_survives_a_clear_like_the_other_tool_preferences() {
         let mut pick = TwoLinePick::new();
@@ -1083,12 +1062,6 @@ mod tests {
 
     /// **A circular preview is the fitted circle itself**, and every point
     /// of it lies on that circle.
-    ///
-    /// The assertion is on the **radius of every drawn point**, not on the
-    /// segment count: a count would be satisfied by twenty-four segments of
-    /// any shape at all, which is the trap of checking a relation rather than
-    /// a magnitude. A circle drawn at the wrong radius, or centred on the
-    /// origin instead of on the fit, fails here.
     #[test]
     fn a_circular_preview_is_the_fitted_circle() {
         const R: f64 = 10.0;

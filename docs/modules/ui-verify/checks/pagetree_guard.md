@@ -70,3 +70,34 @@ the wording, the harness owns the reachability.
 **That Acrobat shows blank pages.** That claim is the diagnosis, it was made
 with `pdfcer dump-object` and an independent page-tree walk, and it is
 recorded in the engine request. Nothing in this repository can drive Acrobat.
+
+## Item notes
+
+### `const INVOKE`
+
+`mode.edit` first, for the reason every driven check in this suite gives:
+driving from a named mode makes the run reproducible rather than dependent
+on whatever mode the last session left behind. It is also load-bearing here
+rather than merely tidy — `pages.delete` changes page content, and Read's
+posture is that the document is not the operator's to alter.
+
+`pages.delete` with nothing picked acts on the **current page**, which is
+page 1 — a defined answer rather than a disabled state
+(`app::dispatch::pages`' own note). Page 1 hangs from node `A1` under `A`
+under the root, so removing it leaves two ancestors stale and not one, which
+is what makes `bad=2` below a stronger assertion than `bad>=1`.
+
+### `const MIN_LEVELS`
+
+Root, an intermediate node, another intermediate node, leaves = 4 levels in
+the fixture. Three is the floor at which an ancestor **above** the immediate
+parent exists at all, and below it a build with no upward walk produces a
+correct file.
+
+### `fn field`
+
+The trace is `key=value` pairs separated by spaces, and every value this
+check reads is a bare integer or `true`/`false` — no quoting, no spaces. A
+field that is absent returns `None` rather than a default, because a build
+whose trace line lost a field must be distinguishable from one whose field
+is zero.

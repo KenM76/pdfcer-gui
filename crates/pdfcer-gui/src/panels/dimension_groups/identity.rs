@@ -159,13 +159,6 @@ impl super::DimensionGroupsUi {
 
     /// Raise the deletion, and put the selection somewhere that will still
     /// exist.
-    ///
-    /// The selection move is not tidiness. `body` falls back to the default
-    /// group when the selected one has gone, which is correct and arrives **one
-    /// frame late** — for that frame the lower half of the panel would draw
-    /// against a group the document no longer has. Moving it here means the
-    /// operator never sees the flicker, and the fallback stays as the guard it
-    /// is for every path that is not this one.
     fn raise_delete(
         &mut self,
         group: GroupId,
@@ -190,24 +183,6 @@ impl super::DimensionGroupsUi {
     }
 
     /// The rename draft for `group`, seeded from the document when it is stale.
-    ///
-    /// Stale means *"held for a different group"* — see the module header. It
-    /// is also what makes the field follow an **undo**: a rename undone bumps
-    /// the epoch and changes `group.name`, and the next frame's draft is
-    /// re-seeded because... it is not, and this is the honest limitation.
-    ///
-    /// **The draft does NOT follow the document while it is being typed**,
-    /// deliberately, and that differs from `panels::docprops`'s
-    /// epoch-reseed. The difference is what the two fields are: a metadata box
-    /// commits on focus loss and is otherwise idle, so re-seeding it costs
-    /// nothing; a rename box is typed into and then committed by a button, and
-    /// an epoch bump from an unrelated edit — placing a dimension, moving a
-    /// page — would wipe a half-typed name mid-keystroke.
-    ///
-    /// The narrow cost is that undoing a rename leaves the old name in the box
-    /// until the operator selects another group and comes back. The button
-    /// re-appears, because the draft now differs from the document, so the
-    /// state is legible rather than wrong.
     fn rename_draft_for(&self, group: &Group) -> String {
         match &self.rename {
             Some((id, text)) if *id == group.id => text.clone(),

@@ -11,18 +11,6 @@ use egui::{Color32, Context, FontId};
 // ===========================================================================
 
 /// The three unassigned codepoints used to fingerprint the substitution mark.
-///
-/// Chosen from three different Unicode planes so that no single font's
-/// coverage decision can plausibly cover more than one of them:
-///
-/// - `U+0870` — Arabic Extended-B, unassigned at the time of writing.
-/// - `U+2FFFF` — plane 2 (SIP), permanently unassigned (a noncharacter-
-///   adjacent tail position no CJK font allocates).
-/// - `U+10FFFD` — plane 16, the last Private Use Area codepoint.
-///
-/// They are only ever *laid out*, never asserted to be absent — the assertion
-/// is that they **agree with each other**, which is the property that makes
-/// the fingerprint trustworthy. See the module header.
 const SENTINELS: [char; 3] = ['\u{0870}', '\u{2FFFF}', '\u{10FFFD}'];
 
 /// A "can the font stack draw this?" predicate for one font family and size.
@@ -39,13 +27,6 @@ pub struct GlyphProbe {
 }
 
 /// A glyph's rectangle in the font atlas, reduced to comparable primitives.
-///
-/// `epaint`'s own `UvRect` is not publicly re-exported (its module is
-/// private, and `Glyph::uv_rect` is private-in-public), so its four fields
-/// are copied out rather than named. `min`/`max` alone would identify the
-/// glyph — the atlas allocates one rectangle per distinct glyph — but the
-/// offset and size are carried too so that a future atlas that reused
-/// rectangles could not collapse two glyphs into one answer.
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct AtlasRect {
     min: [u16; 2],
@@ -101,10 +82,6 @@ impl GlyphProbe {
     }
 
     /// Lay `c` out alone and return the atlas rectangle of the glyph drawn.
-    ///
-    /// Control characters lay out to zero glyphs; they are reported as the
-    /// substitute so a stray `\u{7}` in a catalog string is caught rather
-    /// than panicking on an empty row.
     fn uv_rect_of(ctx: &Context, font: &FontId, c: char) -> AtlasRect {
         ctx.fonts_mut(|f| {
             // NOT A THEME COLOUR: this galley is never painted. It is laid
@@ -397,10 +374,6 @@ fn starts_with(b: &[char], i: usize, pat: &str) -> bool {
 }
 
 /// Parse a character literal at `i` (which must be `'`).
-///
-/// Returns `None` for a lifetime, which is the ambiguity this has to resolve:
-/// `'a` is a lifetime, `'a'` is a literal, and only the closing quote tells
-/// them apart.
 fn char_literal(b: &[char], i: usize) -> Option<(String, usize)> {
     let n = b.len();
     if i + 1 >= n {
@@ -420,11 +393,6 @@ fn char_literal(b: &[char], i: usize) -> Option<(String, usize)> {
 }
 
 /// Resolve a backslash escape beginning at `i`.
-///
-/// Returns `(resolved char, index after the escape)`. The char is `None` for
-/// escapes that produce nothing renderable on their own (`\n`, `\t`, `\0`,
-/// and a line continuation), which keeps them out of the glyph check without
-/// dropping the rest of the literal.
 fn escape(b: &[char], i: usize) -> Option<(Option<char>, usize)> {
     let n = b.len();
     if i + 1 >= n {
@@ -495,12 +463,6 @@ mod tests {
     }
 
     /// **The probe disagrees with `egui`, and the disagreement is the point.**
-    ///
-    /// This is D12's finding as an executable statement. `⚠` is asserted
-    /// **drawable** — which is the claim the defect entry denied — and
-    /// `epaint`'s own `has_glyph` is asserted to say the opposite, so the
-    /// day upstream fixes its false negative this test fails and says so
-    /// rather than quietly agreeing.
     #[test]
     fn the_probe_finds_the_warning_sign_that_has_glyph_denies() {
         in_a_frame(|ctx| {
@@ -527,10 +489,6 @@ mod tests {
     }
 
     /// The genuinely-absent characters are still reported absent.
-    ///
-    /// Without this the probe could be trivially satisfied by a predicate
-    /// that returns `true` for everything, which is the failure mode a
-    /// widened gate is most likely to acquire.
     #[test]
     fn genuinely_absent_codepoints_are_still_reported_absent() {
         in_a_frame(|ctx| {
@@ -569,10 +527,6 @@ mod tests {
     }
 
     /// The one irreducible false negative, recorded rather than discovered.
-    ///
-    /// The substitution mark cannot be told apart from itself. Nothing in the
-    /// catalog uses `◻`, and this test is what makes that a known limit
-    /// instead of a surprise.
     #[test]
     fn the_substitution_mark_is_the_one_case_the_probe_cannot_judge() {
         in_a_frame(|ctx| {
@@ -606,12 +560,6 @@ fn f() -> &'static str { "kept —" }
     }
 
     /// **A mid-file test module must not hide the rest of the file.**
-    ///
-    /// The shape that once defeated `check-ui-strings.sh`: a test module in
-    /// the middle, with an operator-visible literal after it. This scanner is
-    /// a different implementation of the same job, so it is asserted here
-    /// independently — a literal after the module must be found, and nothing
-    /// inside the module may be.
     #[test]
     fn a_mid_file_test_module_does_not_blind_the_scanner() {
         let src = r#"
@@ -701,13 +649,6 @@ pub fn after() -> &'static str { "after —" }
     }
 
     /// A `\` line continuation must still advance the line counter.
-    ///
-    /// Found by this gate's first real run: the counter was incremented as
-    /// characters were *pushed*, and a continuation's newline is swallowed
-    /// inside `escape` without being pushed. Every line number after the
-    /// first wrapped string was therefore too low — 30 lines adrift by the
-    /// middle of `text/panels/objects.rs`. A wrong line number in a failure
-    /// message is worse than none: it sends the reader somewhere plausible.
     #[test]
     fn a_line_continuation_still_counts_its_newline() {
         // string-gap-exempt: this literal IS escaped Rust source, and the runs
@@ -724,11 +665,6 @@ pub fn after() -> &'static str { "after —" }
     }
 
     /// `#[cfg(test)]` on an unbraced item must not disarm the next function.
-    ///
-    /// `#[cfg(test)] use super::*;` is the idiom that would do it: the
-    /// attribute arms the skip, the `use` never opens a brace, and the next
-    /// `{` in the file — an ordinary operator-visible function — would be
-    /// swallowed. A silent hole in coverage that prints clean.
     #[test]
     fn a_cfg_test_use_does_not_swallow_the_next_function() {
         let src =
@@ -745,11 +681,6 @@ pub fn after() -> &'static str { "after —" }
     }
 
     /// A byte string is not a raw string, and must not be refused.
-    ///
-    /// `text/panels/objects.rs` builds a content stream from `b"…"` inside
-    /// its test module. Rust forbids non-ASCII in a byte string, so it can
-    /// never carry a codepoint this gate cares about — refusing the whole
-    /// file over one would have taken a real catalog module out of scope.
     #[test]
     fn a_byte_string_is_scanned_rather_than_refused() {
         let src = "fn f() { let _ = b\"0 0 1 rg re f\".to_vec(); let _ = \"kept —\"; }";
@@ -953,20 +884,6 @@ pub fn after() -> &'static str { "after —" }
     }
 
     /// **The gate has been observed failing.**
-    ///
-    /// This project requires it: a gate that has only ever passed is not
-    /// evidence of anything (`check-ui-strings.sh` PORT CHANGE 3, and the
-    /// D12 post-mortem). The gate above cannot be made to fail on demand
-    /// without editing the catalog, so its two halves — the scanner and the
-    /// probe — are driven here against a **planted** unrenderable codepoint
-    /// in a synthetic catalog file, through exactly the same code path.
-    ///
-    /// The plant is `✓` U+2713, measured absent, placed in an
-    /// operator-visible position in a file that otherwise looks like a
-    /// catalog module — including a decoy `▸` inside a doc comment and a
-    /// decoy CJK string inside a test module, both of which must be ignored,
-    /// so this proves the gate fires on the real thing rather than on
-    /// anything that merely looks exotic.
     #[test]
     fn the_gate_catches_a_planted_unrenderable_codepoint() {
         const PLANTED: &str = r####"

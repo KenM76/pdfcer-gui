@@ -771,16 +771,6 @@ mod tests {
     use super::*;
 
     /// **Asking for a transparent JPEG is refused BY NAME.**
-    ///
-    /// The assertion this catalog exists for, and the operator's own
-    /// parenthesis — *"(including transparency where supported!)"* — is what
-    /// makes it a requirement rather than a nicety. The engine's note is
-    /// imperative: *"refuse a 'transparent' JPEG by name in your UI, never
-    /// flatten silently."*
-    ///
-    /// Both halves are asserted, because they are two different mechanisms:
-    /// the window's prevention and the writer's refusal. A build that lost one
-    /// must still not flatten anybody's page in silence.
     #[test]
     fn a_transparent_jpeg_is_refused_by_name() {
         let window = jpeg_has_no_alpha();
@@ -807,11 +797,6 @@ mod tests {
     }
 
     /// **A PNG's receipt states the resolution that went INTO the file.**
-    ///
-    /// The engine's note names the defect: *"without `pHYs` Word places a 300
-    /// DPI page four times too large."* An operator who is told only "300 DPI"
-    /// learns what was asked for; one who is told it is recorded in the file
-    /// learns that the paste will be the right size.
     #[test]
     fn a_raster_receipt_says_the_resolution_is_in_the_file() {
         let note = wrote_raster("C:\\d\\a.png", 2, 2550, 3300, 300.0);
@@ -826,11 +811,6 @@ mod tests {
 
     /// **An exact SVG reports nothing lost — but still says text became
     /// outlines.**
-    ///
-    /// The trap this asserts against is a disclosure that only lists counted
-    /// things. Text-as-outlines has no counter and never will, so a tally-only
-    /// implementation would go completely silent on the single largest
-    /// surprise the format has.
     #[test]
     fn an_exact_svg_still_discloses_that_text_became_outlines() {
         let tally = ExportTally::default();
@@ -874,12 +854,6 @@ mod tests {
     }
 
     /// **A native gradient is fidelity and is not confessed as a loss.**
-    ///
-    /// `ExportTally::is_exact` zeroes `shadings_as_gradients` before comparing,
-    /// on the engine's own reasoning — *"a native gradient is exact; it is
-    /// counted, not confessed"* — and this catalog must agree with it. A
-    /// disclosure that listed the good outcome beside the bad ones would train
-    /// the operator to skim, which is how a disclosure stops working.
     #[test]
     fn a_gradient_that_went_out_natively_is_not_reported_as_a_loss() {
         let mut tally = ExportTally::default();
@@ -925,11 +899,6 @@ mod tests {
 
     /// **Every format has a name, a hint and a resolution hint, and no
     /// two formats share a name.**
-    ///
-    /// The sweep that makes adding a fifth format safe. A `match` arm that
-    /// fell through to another format's wording would compile, would draw a
-    /// radio, and would describe somebody else's file — and nothing but this
-    /// test would notice.
     #[test]
     fn every_format_is_named_and_described_in_its_own_words() {
         let mut names: Vec<&str> = Vec::new();
@@ -959,10 +928,6 @@ mod tests {
     }
 
     /// **The EMF radio spells out what the acronym means.**
-    ///
-    /// Unlike PNG, JPEG and SVG, "EMF" is a name almost no operator has met,
-    /// and a radio reading only "EMF" is a radio nobody presses. The long form
-    /// is the one the Windows *Paste Special* list itself uses.
     #[test]
     fn the_metafile_radio_does_not_read_as_a_bare_acronym() {
         let name = format_name(ImageFormat::Emf);
@@ -980,11 +945,6 @@ mod tests {
 
     /// **An exact metafile reports nothing lost — and still says text
     /// became outlines.**
-    ///
-    /// `svg_fidelity`'s clause 3, restated for EMF because the always-true
-    /// loss is the same and the sentence is not: the SVG's names the SVG, and
-    /// a receipt about somebody else's format is a receipt about somebody
-    /// else's file.
     #[test]
     fn an_exact_metafile_still_discloses_that_text_became_outlines() {
         let counts = EmfCounts {
@@ -1011,12 +971,6 @@ mod tests {
 
     /// **Every one of the five reasons a part became a bitmap is named,
     /// with its own number, in one sentence.**
-    ///
-    /// The engine's note is imperative about this: *"`EmfOutcome` carries what
-    /// became a bitmap (translucent solids, blend modes, gradients, images,
-    /// groups) — **disclose those**"*. A disclosure that gave only the total
-    /// would tell an operator that thirteen things went wrong and nothing
-    /// about which knob to turn.
     #[test]
     fn a_rasterised_metafile_names_all_five_reasons_with_their_counts() {
         let counts = EmfCounts {
@@ -1055,15 +1009,6 @@ mod tests {
 
     /// **A metafile whose RECORDING was exact but whose ALPHA was not is
     /// reported as inexact.**
-    ///
-    /// The trap `EmfCounts::is_exact` exists for. `ExportTally` describes the
-    /// recording, which is shared with the SVG writer and knows nothing about
-    /// EMF's missing per-primitive alpha — so a page that recorded perfectly
-    /// and then had forty translucent rectangles turned into bitmaps has an
-    /// **exact tally** and an **inexact metafile**.
-    ///
-    /// ⇒ Asking the tally alone is how a disclosure comes to say *"nothing had
-    /// to be approximated"* over a file that is half pictures.
     #[test]
     fn an_exact_tally_does_not_make_a_rasterised_metafile_exact() {
         let counts = EmfCounts {
@@ -1089,12 +1034,6 @@ mod tests {
 
     /// **The LibreOffice hole warning names the program AND the version,
     /// and says what will look wrong.**
-    ///
-    /// `nonzero_fills_multi_subpath` is the only entry in the EMF disclosure
-    /// that is not a loss — the metafile records the fill rule correctly. It
-    /// is a warning about one named reader, and that reader is the entire
-    /// reason this format is offered. The failure it predicts (a solid shape
-    /// drawn with holes) is the kind an operator blames on pdfcer.
     #[test]
     fn the_libreoffice_hole_warning_names_the_program_and_the_versions() {
         let counts = EmfCounts {
@@ -1118,11 +1057,6 @@ mod tests {
     }
 
     /// **The recording's own losses are worded exactly as the SVG's are.**
-    ///
-    /// They are the same losses arriving by the same route — the shared export
-    /// recording — and an operator who has read one receipt should recognise
-    /// the other. Divergent wording for an identical fact reads as two
-    /// different problems.
     #[test]
     fn the_shared_recording_losses_read_the_same_in_both_formats() {
         let mut tally = ExportTally::default();
@@ -1148,11 +1082,6 @@ mod tests {
     }
 
     /// **The EMF receipt gives the geometry AND the picture count.**
-    ///
-    /// An SVG's `ops` is the whole file; a metafile's is only the part that
-    /// stayed lines. A receipt reporting `ops` alone would describe a file
-    /// that is half `EMR_ALPHABLEND` in exactly the same words as one that is
-    /// all geometry.
     #[test]
     fn the_metafile_receipt_reports_what_stayed_lines_and_what_did_not() {
         let mixed = wrote_emf("C:\\d\\a.emf", 3, 400, 12);
@@ -1172,10 +1101,6 @@ mod tests {
     }
 
     /// **The two always-true outline sentences name their own formats.**
-    ///
-    /// They describe the same loss and must not be the same string: a receipt
-    /// that told an operator about "an SVG" after they exported a metafile is
-    /// a receipt about a file they do not have.
     #[test]
     fn each_vector_format_confesses_its_outlines_in_its_own_name() {
         let svg = svg_text_is_outlines();

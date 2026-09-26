@@ -216,3 +216,159 @@ inference owes an off-canvas report.
 
 The grid is [`super::grid`], drawn one per visible page in that page's own
 space and off the [`Ladder`] here.
+
+## Item notes
+
+### `const MINOR_TICK_PTS`
+
+Deliberately well under half [`MAJOR_TICK_PTS`] rather than a little under:
+the two lengths are the *only* thing distinguishing a labelled tick from an
+unlabelled one wherever the label has been clipped by the gutter's end, so
+the difference has to survive a glance.
+
+### `const PAGE_SPAN_ALPHA`
+
+Low, because it is a *band the ticks and labels are drawn on top of* — see
+[`draw`] on why it is a tint rather than the line it started as. High enough
+that the paper's edge is findable at a glance on both shipped themes, which
+is the whole job: at a fit zoom that edge is a one-pixel difference in fill
+and the ruler is the only place it can be stated plainly.
+
+### `const REGION_RULER_TOP`
+
+Published so a screenshot oracle can crop the ruler out of a window capture
+and ask the question a trace cannot answer — *is this legible, and is it
+aligned with the page it is measuring?* See [`crate::diag::ui_rect`] on
+naming: names are matched literally by checks, so renaming one silently
+un-aims whatever was measuring it.
+
+### `fn default`
+
+The unit carried alongside `NeverSet` is millimetres, not "points":
+`pdfcer-core` has no `Unit::Point`, because points are what a
+measurement is *before* a unit is chosen. `format_measurement` ignores
+the unit entirely in the never-set branch and renders ` pt`, so the
+value here is unobservable — it is `Millimeter` only because
+`DimensionModel::new` seeds its default group that way and agreeing
+with core costs nothing.
+
+### `fn positive`
+
+The one guard both [`Ladder`] constructors take against a degenerate zoom.
+Written once because the two answer it identically and a version that
+forgot would produce a ladder of NaN — which paints nothing at all, and is
+therefore indistinguishable from the feature being switched off.
+
+### `fn minor_divisions`
+
+Chosen so a minor tick always lands on a number the operator can name: 100
+divides into ten tens, which keeps the halfway point on a tick; 200 divides
+into four fifties, because 200/10 = 20 would put ticks at 20, 40, 60 …
+under a label reading 200, and counting those is harder than not having
+them at all.
+
+### `fn from_major`
+
+The one place the display-unit → point conversion happens, so the two
+constructors cannot disagree about which side of the division the scale
+goes on — a mistake that is invisible at 1:1, where `upp` is 1.
+
+### `fn first_index`
+
+An index rather than the value, because [`Self::steps`] multiplies an
+integer index for the exactness reason that function documents. It is
+still split out because it is the one place a `ceil` could be a `floor`
+and nobody would notice: the ticks would simply start one step outside
+the view, which is invisible on a ruler and is a missing first line on a
+grid.
+
+### `fn ticks`
+
+Walks the **minor** ladder once and promotes a tick to major when
+[`Ladder::is_major`] says so, rather than walking two ladders separately.
+One walk means a major tick and the minor tick that would have coincided
+with it can never land at two different positions through a rounding
+difference — which is exactly the sort of half-point disagreement that
+reads as a blurry ruler.
+
+### `fn the_gutters_are_a_constant_bite_out_of_the_viewport`
+
+The property the whole of §3 is about, asserted rather than argued: the
+content rect's size depends only on the outer rect and
+[`THICKNESS_PTS`], never on anything that could vary with what is
+drawn. The test drives it across a range of outer sizes because the
+failure mode is a reservation that is *nearly* constant — one that
+scales with the canvas, say — which a single-size check would pass.
+
+### `fn the_two_rulers_do_not_overlap_each_other_or_the_canvas`
+
+The corner exists precisely so the two rulers do not both draw into it
+— see [`Gutters::corner`] — and an overlap would be two ticks at two
+alphas at the place the eye starts reading.
+
+### `fn gutters_for`
+
+The rects are a pure function of the outer rect and the toggle, and
+`reserve`'s only other effect is advancing the parent's cursor — so a
+headless twin can assert the whole of the geometry. Written as a
+re-derivation rather than by calling `reserve` because constructing an
+`egui::Ui` in a unit test needs a `Context` and a full frame, and a
+geometry test that needs a window is a geometry test nobody runs.
+
+### `fn the_tick_ladder_is_one_two_or_five_times_a_power_of_ten`
+
+The property: the answer is always of the form 1, 2 or 5 times a power
+of ten, and it is always at least the minimum asked for. Both halves
+matter — a ladder that rounded *down* would put labels closer together
+than [`MIN_MAJOR_PITCH_PTS`] allows, which is the overlapping-labels
+failure that constant exists to prevent.
+
+### `fn a_degenerate_ladder_still_produces_finite_ticks`
+
+A ruler with the wrong spacing is a visible mistake; a ruler whose
+ticks are all at NaN paints nothing, which is indistinguishable from
+the feature being switched off.
+
+### `fn labelled_ticks_keep_a_readable_pitch_at_every_zoom`
+
+The law the whole feature rests on, and the one a screenshot cannot
+check across fourteen zoom levels: labels never come closer than
+[`MIN_MAJOR_PITCH_PTS`], and — because the 1-2-5 sequence never jumps
+by more than 2.5× — never spread further than 2.5 times that either. A
+ruler whose labels drift apart until only two are visible is as useless
+as one whose labels overlap.
+
+### `fn the_ruler_reads_points_until_the_document_says_otherwise`
+
+Asserted through [`Scale::label`] rather than through
+`units_per_point`, because the operator's question is what the *label
+says*, and the label is core's. A change in core's spelling should fail
+here rather than surprise someone reading a drawing.
+
+### `fn a_calibrated_sheet_gets_round_numbers_in_its_own_unit`
+
+This is the whole point of §1 and it is the part a reader is most
+likely to doubt: at a 1:50 metric scale the ruler must label metres,
+not the awkward point values that happen to correspond to them.
+
+### `fn the_origin_is_never_labelled_minus_zero`
+
+The ruler's zero is the page's top-left corner, and a view scrolled so
+that the paper starts a little way into the gutter walks the ticks up
+from a negative value. Accumulating `value += minor` from there lands on
+`-1.8e-15` rather than on zero; core's formatter is fixed-place and
+prints the sign, so the operator reads *minus zero* at the origin of
+their drawing.
+
+Both halves are asserted, because the second is the one that surprises:
+an exact `0.0` is not enough — `(-0.15f64).ceil()` is **negative zero**,
+which multiplies to negative zero and formats with the sign — so
+[`Ladder::steps`] normalises it, and this catches a future refactor that
+drops the normalisation.
+
+### `fn a_long_tick_walk_stays_exact`
+
+`index × step` rather than repeated addition. Asserted over a thousand
+steps because the error accumulates linearly and a dozen would not show
+it: at 1,000 minor ticks a naive walk is already off by enough for
+[`Ladder::is_major`]'s tolerance to start missing labels.

@@ -836,24 +836,6 @@ impl ObjectTreeUi {
 
 impl PanelsState {
     /// Drop anything that no longer describes `doc`'s current page.
-    ///
-    /// Called once per frame, before any panel body runs, so no two panels
-    /// can disagree about which revision they are describing — which is the
-    /// whole point of doing it here rather than in each body.
-    ///
-    /// **A page or revision change clears the focus and the expansion sets.**
-    /// Paint-order indices are positions, not identities: deleting one object
-    /// renumbers every object after it, so a retained focus would silently
-    /// describe a *different* object with the same number, and a retained
-    /// expansion set would open the wrong rows. Forgetting is the only honest
-    /// response, and it is cheap.
-    ///
-    /// The key is `(page index, edit epoch)` and nothing else. It does not
-    /// need to say *which document* — a different document reaches
-    /// [`Self::forget_document`] through `PdfcerApp::open_path` before any
-    /// panel draws, so there is nothing left to confuse it with. That is what
-    /// let the old four-field `DocKey`, with the `Arc` address in it, be
-    /// deleted rather than repaired; see this struct's own header.
     fn sync(&mut self, doc: &OpenDoc) {
         let key = (doc.view.page_index, doc.edit_epoch);
         if self.tree_key != Some(key) {

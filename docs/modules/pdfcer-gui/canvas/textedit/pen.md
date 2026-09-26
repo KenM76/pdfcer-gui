@@ -65,3 +65,33 @@ away.
   describe a *paragraph*. This gesture places a caret and takes keystrokes;
   there is no box to align inside, and inventing one would be inventing the
   text-box tool, which is `markup.text_box` and is a different command.
+
+## Item notes
+
+### `fn default`
+
+Matching it exactly is what makes this addition invisible to anybody
+who does not touch the controls. A shell whose default differed from the
+engine's would change what every existing operator's next Add-text
+produced, silently, on the release that added a control they had not
+asked for.
+
+### `fn the_default_is_the_engines_default`
+
+A shell whose default differed would silently change what every
+operator's next Add-text produced, on a release that added a control
+they had not asked for. Asserted against the values `AddTextRequest::new`
+documents — Helvetica, 12 pt, black — because that is the claim.
+
+### `fn black_ink_is_written_as_black`
+
+One operator and one byte instead of four, for the same ink. The
+property is worth a test rather than a comment because a colour picker
+hands back `[0, 0, 0]` and the obvious implementation forwards it.
+
+### `fn every_bundled_face_is_offered_once`
+
+The count is the claim: `Std14` has fourteen members, and a list that
+quietly held thirteen would be a face an operator could never reach
+with no error anywhere. Asserted as a set as well as a length, so a
+duplicate cannot make up the number.

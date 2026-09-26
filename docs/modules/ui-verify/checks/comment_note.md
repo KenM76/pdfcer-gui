@@ -86,3 +86,30 @@ Four letters, all of them already in the closed `vk` list (`T`, `A`, `I`,
 deliberately closed and grown one key at a time with a reason; spelling a
 word out of what is already there is cheaper than adding two constants to
 type something prettier.
+
+## Item notes
+
+### `const INVOKE`
+
+The panel opens **before** the shape is drawn, deliberately. A dock
+appearing between the frame a check takes its coordinate mapping from and
+the frame it clicks in changes the canvas width and puts the click somewhere
+else — a fault this project has already recorded twice, and one that reads
+as a broken feature rather than as a stale coordinate.
+
+### `const CENSUS`
+
+This file carried a third copy of the pattern and passed that sweep only
+because the layout happened to be favourable. Its phase F would otherwise
+have printed *"THE WORDS WENT INTO THE DOCUMENT AND THE PANEL CANNOT SEE
+THEM"* about a panel that had merely gone behind another tab. The two reads
+that compare now go through [`crate::checks::comments_census`], which
+requires the line to postdate a named cause and brings the panel forward
+when it has stopped speaking.
+
+### `const APPLIED`
+
+`-applied`, per the convention this project adopted after making the
+same-name mistake twice: `vector_edit` writes its own bare `set-markup-note`
+line for the identical edit, and `.last()` on the bare name reads that one
+and finds no keys.

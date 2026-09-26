@@ -49,6 +49,8 @@
 //! is disclosed before it happens, by the outline, and it is reversible from
 //! the window's own header. When a collapsed side learns to accept a drop, this
 //! predicate tightens and the case disappears.
+//!
+//! Design and rationale: `docs/modules/egui-shell/dock/tear.md`.
 
 use egui::{Rect, Stroke, Vec2};
 
@@ -155,13 +157,6 @@ pub(super) fn draw(ui: &egui::Ui, ctx: &mut Ctx<'_>) {
 }
 
 /// **Whether `pointer` is clear of every side the dock drew.**
-///
-/// Each side is grown by [`super::plan::SPLITTER_THICKNESS`] before the test,
-/// because [`super::geometry::DockGeometry::side_rect`] holds the side's
-/// *columns*, and the side's width handle sits outside them on the edge facing
-/// the document. Without the growth the handle would be a few points of tear
-/// zone lying along the whole height of the dock's inner edge — the one place a
-/// drag crossing between two compartments passes through.
 fn outside_the_dock(ctx: &Ctx<'_>, pointer: egui::Pos2) -> bool {
     !DockSide::ALL.iter().any(|&side| {
         ctx.geometry
@@ -171,10 +166,4 @@ fn outside_the_dock(ctx: &Ctx<'_>, pointer: egui::Pos2) -> bool {
 }
 
 /// Where the pointer sits inside the window it is about to make, on both axes.
-///
-/// The window's top-left goes this far up and to the left of the release, which
-/// leaves the cursor on the platform's own title bar — the window's outer frame
-/// begins above its inner rectangle by about this much. So the gesture ends with
-/// the pointer holding the thing it just made, and an operator who keeps the
-/// button down can carry on dragging the window itself.
 const GRAB_PTS: Vec2 = Vec2::splat(24.0);

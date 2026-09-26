@@ -15,10 +15,6 @@ use crate::report::CheckReport;
 use crate::sys::vk;
 
 /// How wide and tall the placed box is, in PDF points.
-///
-/// Big enough that the drag is unambiguously a drag rather than a click the
-/// gesture machine might round to one, and small enough to stay on the page
-/// from any `--doc-point` that is itself on it.
 const BOX_PT: f64 = 220.0;
 
 /// See the module documentation.
@@ -286,22 +282,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 }
 
 /// How many text annotations this session has authored so far.
-///
-/// Counted from the application's own `add-text-annot` trace lines — the label
-/// `vector_edit` stamps on the commit — rather than from the file, because the
-/// annotation has not been saved and only the session knows about it. That is
-/// the same reason `panels::redact`'s census reads the session graph.
-///
-/// It counts COMMITS, which is exactly the question this check asks: "did
-/// the release author?" and "did Accept author?" are both about whether the
-/// funnel ran, not about what the page contains. A page census would also
-/// answer, and would additionally move if some unrelated arm authored
-/// something — a looser oracle for no gain.
-///
-/// Returns `0` when the trace cannot be read, which is safe here: every
-/// comparison is a *difference* between two reads taken the same way, so a
-/// build that reports nothing produces equal counts and FAILS the assertions
-/// rather than passing them.
 fn annot_count(session: &Session) -> usize {
     session
         .trace()

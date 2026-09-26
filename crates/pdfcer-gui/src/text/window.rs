@@ -122,15 +122,6 @@ mod tests {
     use super::*;
 
     /// **No string in this catalog names a key.**
-    ///
-    /// The rule this module exists to hold, asserted rather than trusted — and
-    /// the probe list is the one `crate::text::shortcuts` uses, because the
-    /// habit being caught is the same one.
-    ///
-    /// A hand-written `"press Ctrl+H"` here would look entirely reasonable in
-    /// review, would be correct on the day it was written, and would become a
-    /// sentence that names a dead key the first time anybody rebinds anything —
-    /// on the one surface an operator reaches for when they are already stuck.
     #[test]
     fn no_string_here_names_a_key() {
         let strings = [
@@ -155,10 +146,6 @@ mod tests {
     }
 
     /// **Each chord reaches the sentence, exactly once.**
-    ///
-    /// The vacuous failure this forbids: a format string that drops its
-    /// parameter still compiles, still returns a plausible sentence, and would
-    /// pass any test that only asserted the sentence is non-empty.
     #[test]
     fn every_chord_handed_in_reaches_the_sentence() {
         assert_eq!(title_read_mode("Ctrl+H").matches("Ctrl+H").count(), 1);
@@ -174,10 +161,6 @@ mod tests {
     }
 
     /// **The status line names what comes back**, in the command's own words.
-    ///
-    /// An operator in this state has noticed two things missing and does not
-    /// necessarily know the mode's name. A sentence that only said *"leave read
-    /// mode"* would require them to have made that connection first.
     #[test]
     fn the_status_line_names_the_ribbon_and_the_panels() {
         for text in [
@@ -208,10 +191,6 @@ mod tests {
 
     /// The unbound wordings never promise a key, and the bound ones never
     /// suggest there is not one.
-    ///
-    /// Two states, two sentences, and an operator seeing one message for both
-    /// cannot tell which they have — `crate::text::shortcuts`' own rule about
-    /// its two empty states.
     #[test]
     fn the_bound_and_unbound_wordings_are_different_sentences() {
         assert_ne!(status_read_mode("Ctrl+H"), status_read_mode_unbound());

@@ -54,19 +54,6 @@ mod tests {
     use super::*;
 
     /// **Save As asks the copy question, not the in-place one.**
-    ///
-    /// Pinned because it reads like a mistake and is not. Save As moves the
-    /// document, so the instinct is that it is the more consequential of the
-    /// two — but the signature question is about **the bytes being written**,
-    /// and Save As writes a *new* file while leaving the original alone. Asking
-    /// `InPlace` would warn the operator about damage to a file this command
-    /// does not touch.
-    ///
-    /// What the body asserts is only that `PendingSave` distinguishes the two
-    /// questions; it does not read `apply`, so it cannot fail if somebody
-    /// "fixes" the `SaveAs` arm to `InPlace`. The durable part of this test is
-    /// this comment — the sentence explaining why not — and a reader who wants
-    /// the arm itself pinned has to drive `apply` and observe the pending save.
     #[test]
     fn save_as_and_save_copy_ask_the_same_question_and_save_does_not() {
         // `PendingSave` is `PartialEq` for exactly this kind of assertion.

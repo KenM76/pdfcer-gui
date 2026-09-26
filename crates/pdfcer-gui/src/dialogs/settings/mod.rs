@@ -736,17 +736,6 @@ mod tests {
     use pdfcer_core::settings::CmykIntent;
 
     /// Every file in this directory, paired with its module name.
-    ///
-    /// HAND-WRITTEN, AND THEREFORE AUDITED — see
-    /// [`every_source_in_this_directory_is_listed`].
-    ///
-    /// A file missing from this list is not a gap in coverage, it is a **false
-    /// report of a gap**: the completeness test below searches only what is
-    /// listed here, so a control written in an unlisted file reads as a setting
-    /// with no control at all. A check that cannot see a file reports its
-    /// contents as absent, which is indistinguishable from the defect it exists
-    /// to find — and sends the next session to write a control that already
-    /// exists.
     const SOURCES: &[(&str, &str)] = &[
         ("mod", include_str!("mod.rs")),
         ("appearance", include_str!("appearance.rs")),
@@ -783,17 +772,6 @@ mod tests {
     ];
 
     /// EVERY MODULE THIS DIRECTORY DECLARES IS IN [`SOURCES`].
-    ///
-    /// Unlike the catalog's own version of this guard, there is **no
-    /// exclusion list**: this search is for *"is there a control bound to this
-    /// setting anywhere in the window"*, and a control could legitimately be
-    /// written in any file here — including `widgets.rs`, if a helper ever
-    /// bound a field directly. Every file counts, so every file is listed.
-    ///
-    /// The failure this prevents is the quiet one. A missing file does not
-    /// make the completeness test fail loudly; it makes it **report the
-    /// missing file's settings as uncontrolled**, sending the next session to
-    /// write a control that already exists a few lines away.
     #[test]
     fn every_source_in_this_directory_is_listed() {
         let file = syn::parse_file(include_str!("mod.rs")).expect("mod.rs did not parse");
@@ -823,48 +801,6 @@ mod tests {
     }
 
     /// **Every setting `pdfcer-core` carries has a control in this window.**
-    ///
-    /// `NO_SURFACE.md` is a kept inventory — it says what is missing when
-    /// somebody looks. This is a build failure, and it fires when somebody
-    /// *adds*. They are not substitutes, and without this one the engine can
-    /// gain a setting that reaches no operator and nothing says so.
-    ///
-    /// # Where the list of settings comes from, and why it is not the struct
-    ///
-    /// From [`Settings::write_to_string`] — the engine's own settings-file
-    /// writer, at **runtime**, against the shipped default. Every setting the
-    /// store round-trips appears there as a `key = value` line, because that is
-    /// what the file is; a setting missing from it could not be persisted at
-    /// all, which is a different and larger defect the engine's own tests own.
-    ///
-    /// Reading the store's **source** instead would need a relative path into
-    /// another crate's tree. `pdfcer-core` is a **git dependency** here and its
-    /// source is on no path this crate can name — and the runtime reading is
-    /// the stronger instrument anyway, not merely the available one:
-    ///
-    /// * it reads the **compiled dependency**, so it is answering about the
-    ///   engine this build actually links, not about a file on disk that may be
-    ///   from a different revision;
-    /// * it cannot be fooled by a field that is `pub` and not persisted, or by
-    ///   one persisted under a key that differs from its field name;
-    /// * it needs no path into another repository, which is what makes it
-    ///   survive the fold-in in either direction.
-    ///
-    /// # The crude half, kept crude deliberately
-    ///
-    /// Coverage is asserted by reading **this directory's own source** and
-    /// looking for `working.<key>`. That is a text search and it can be
-    /// defeated — by a control that names the field in a comment and never
-    /// binds it, say. It is kept anyway, because the alternative is a
-    /// hand-maintained list of which settings have controls, and a
-    /// hand-maintained list is exactly the thing that goes stale silently. A
-    /// crude check that fails when a setting is added beats an exact one that
-    /// nobody updates.
-    ///
-    /// **When this fails, the fix is a control, not an edit to this test.** The
-    /// failure message says which setting, and the group it belongs in is
-    /// decided by the symptom that brings an operator looking for it — see this
-    /// module's header.
     #[test]
     fn every_setting_the_store_carries_has_a_control_in_this_window() {
         let file = Settings::default().write_to_string();
@@ -911,18 +847,6 @@ mod tests {
 
     /// The shell's own preferences are **not** covered by the sweep above, and
     /// this records why rather than leaving the gap implied.
-    ///
-    /// [`crate::app::prefs::Prefs`] lives in a different file, is written by the
-    /// shell rather than by the engine, and reaches the window through
-    /// `draft.working_prefs` rather than `draft.working`. The sweep is
-    /// deliberately scoped to the ENGINE's store, because that is where the
-    /// asymmetry it exists to catch comes from: `pdfcer-core` gains settings on
-    /// its own schedule and this project finds out by reading a note.
-    ///
-    /// A preference added to `Prefs` is added by this project, in the same
-    /// session that would add its control, so the failure mode is not the same
-    /// one. If that ever stops being true — if the shell's preferences start
-    /// arriving from elsewhere — this is the test to widen.
     #[test]
     fn the_sweep_is_scoped_to_the_engines_store_on_purpose() {
         let draft = Draft::new(&Settings::default(), &crate::app::prefs::Prefs::default());
@@ -963,11 +887,6 @@ mod tests {
     }
 
     /// The dirty flag does not latch.
-    ///
-    /// A radio click and a click back is not an edit, and a Save button that
-    /// stayed live afterwards would be telling the operator they have unsaved
-    /// changes when they have none — which is the same lie as a Save button
-    /// that is always live, arrived at by a different route.
     #[test]
     fn changing_a_value_back_makes_it_clean_again() {
         let mut draft = Draft::new(&Settings::default(), &crate::app::prefs::Prefs::default());
@@ -983,12 +902,6 @@ mod tests {
     }
 
     /// The two predicates must not collapse into one.
-    ///
-    /// A draft opened from non-default settings is **clean** (nothing has been
-    /// edited) and **not all-default** (something is not pdfcer's answer).
-    /// Collapsing them would grey *Restore defaults* for the operator who
-    /// changed something last week and wants it back — which is most of the
-    /// people who will ever press it.
     #[test]
     fn a_draft_started_from_non_default_settings_is_clean_but_not_all_default() {
         // `Settings` is `#[non_exhaustive]`, so a struct expression is illegal

@@ -84,3 +84,70 @@ both. The wording is asserted in `crate::app::status::anomalies`' own tests,
 against the same fixture, through the same engine call — deliberately,
 because a string is exactly what a unit test CAN see. What it cannot see is
 the window, and that is what is here.
+
+## Item notes
+
+### `const CONTRADICTS`
+
+Built by `fixtures/contradicts-itself.PROVENANCE.py`, which computes its own
+xref offsets so that the file's cross-reference table is **sound** — that
+matters, because a scanned-and-rebuilt file lights `Document::recovery()`
+instead, which is a different disclosure with a different status region, and
+a check reading the wrong one would be green about a surface it never
+touched.
+
+### `const CLEAN`
+
+⚠ Asserted clean through the engine by the shell's own
+`the_control_fixtures_a_driven_run_uses_are_genuinely_clean`. Do not swap it
+for another fixture without adding the new name there; an absence assertion
+against an unverified control is an assertion about nothing.
+
+### `const REREAD_REQUESTED`
+
+**Two events and not one, because they are two different claims.** The
+first says a button was hit; the second says a re-load actually started.
+Between them sit both of `apply_reread_with_duplicate_keys`' guards, and a
+build where those guards mis-fire — a stale `save_pending`, an unsaved
+dialog raised over a document with nothing to save — traces the first and
+never the second. That gap is precisely what a unit test on the arm cannot
+see, and it is why this check exists at all.
+
+### `const KEEP_FIRST`
+
+⚠ Asserted as a **string**, against `crate::app::state::policy_token`'s
+output, and that function exists so this comparison is against a contract
+rather than against `{:?}` on somebody else's `#[non_exhaustive]` enum.
+A `Debug` rendering is not a machine-readable field and this project has
+already had one driven check report the opposite of the truth while
+quoting the truth in its own message.
+
+### `const OFFSCREEN`
+
+**Off the desktop, on purpose.** Neither status-bar launch reads a single
+pixel — the whole verdict comes from the trace — so the window does not need
+to be anywhere a human could see it, and putting it where a human cannot
+means this check can run while the operator is working. Every on-screen
+alternative either covers his window or races him for it.
+
+
+The size is the harness's usual 1400x900 and is not arbitrary: a narrower
+window folds status-bar groups away, and a folded group publishes no region
+— which would read as "the disclosure is missing" when it is merely elided.
+The `SAFE_ORIGIN + size` arithmetic that binds an on-screen check does not
+bind here precisely because nothing is ever aimed at this window.
+
+### `fn repo_fixture`
+
+The shared resolver carries the whole account of why the path comes from
+`CARGO_MANIFEST_DIR` and never from `--source-root`. What stays here is the
+sentence that is about THIS check: why its two documents are not
+substitutable for whatever `--pdf` happened to name.
+
+### `fn open_properties`
+
+Reuses `properties_metadata`'s opener rather than spelling the two clicks
+again. It is the same ribbon item and the same toggle hazard — pressing
+`file.document_properties` while the panel is up CLOSES it — and two copies
+of that guard would be two places for the next ribbon move to have to be
+applied.

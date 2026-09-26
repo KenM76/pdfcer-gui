@@ -170,3 +170,102 @@ coordinates, and `ui_rect` tags every region it publishes with the viewport
 that drew it. The harness then has both halves and can convert; it is also
 the only way a check can *tell* that a dialog opened in its own window,
 which is what makes G1 assertable rather than a matter of looking.
+
+## Item notes
+
+### `mod placement`
+
+Declared here rather than in `dialogs/mod.rs`, so it lives at
+`dialogs/host/placement.rs`. That is not a stylistic choice: `dialogs/mod.rs`
+stands at 1,496 lines against R2's limit of 1,500 and has no room for a
+module declaration and its doc comment.
+
+### `const ENGAGED`
+
+**The real terminator of the focus request**, with [`FOCUS_FRAMES`] as
+its backstop rather than the other way round. *"Keep asking for the keyboard
+until the operator has used this window"* is the rule that matches intent;
+a pass count is only there so a dialog nobody touches stops asking.
+
+Once set it is never cleared for the life of that opening, so a dialog the
+operator clicked into and then left never re-seizes the foreground.
+
+### `fn explained`
+
+An empty hover is the two-button caller's way of saying "no tooltip", which
+is not the same as an empty tooltip: `on_hover_text("")` still opens a
+box, and an empty box under the cursor reads as a surface that failed to
+load rather than one that had nothing to say.
+
+### `const BODY_MARGIN_PTS`
+
+# Why a constant, and why it lives on the host
+
+The operator's 2026-09-03 report — *"the print button that is so far off
+in the corner it is touching the edge the window"* — was true of all
+fourteen dialogs, because the `Ui` egui hands a viewport callback is the
+window's root and nothing pads it. The main window never showed it: its
+`CentralPanel` brings egui's own inner margin.
+
+One number, owned here, so that fourteen dialogs cannot pick fourteen
+values and so that nobody has to remember to pad theirs.
+
+12 pt rather than egui's default 8: this shell's own `Metrics` use
+`panel_padding` of 8-12 depending on preset, and a **dialog** is the one
+surface where the window edge is a hard boundary rather than a seam onto
+the next panel. Windows' own dialogs are roomier at the frame than at
+internal gutters for the same reason.
+
+It is deliberately NOT read from `Theme::of(ctx).metrics`, and that
+is a real decision. This value is fed into [`Self::fit`], which sizes the
+window; a metric that changes with the preset would change the window
+size on a theme switch, and `fit` is the function whose doc comment
+records an unbounded growth loop. A constant cannot participate in a
+feedback loop.
+
+### `fn field_focus_key`
+
+Salted off [`Self::key`] so it cannot collide with the remembered
+position even though the two live in different `Context`s. Read
+[`Self::show`]'s Escape rung for why the fact has to be carried across a
+pass at all.
+
+### `fn each_dialog_gets_its_own_viewport`
+
+A shared `ViewportId` is a shared OS window: the second dialog would
+draw into the first one's frame, and which one you saw would depend on
+draw order. Cheap to assert, and the failure is invisible until two
+dialogs are open at once.
+
+### `fn a_position_is_remembered_per_dialog`
+
+The second half is the one worth a test. Two dialogs sharing a memory
+key would drag each other around the desktop, and the key is derived
+from the same string as the viewport id, so a mistake there is a
+mistake in both places at once and invisible in either.
+
+### `fn a_status_label_after_a_right_to_left_block_overflows_the_row`
+
+The test above models the consequence; this one reproduces the CAUSE,
+which is the part a reader will not believe on assertion alone:
+
+> A `Layout::right_to_left` child inside a left-to-right `horizontal`
+> is anchored to the RIGHT EDGE of the space it was offered, and its
+> `min_rect` reaches that edge **whether or not it needed the room**.
+> Anything appended after it is therefore placed past the edge.
+
+Both orderings are laid out here in the same width, and the assertion is
+on the resulting row width against the width the row was given. Buttons
+first overflows; the status label first does not. That difference is the
+entire fix, and this is where it is proved rather than argued.
+
+Run it against the pre-fix ordering — swap the two blocks in
+[`super::super::print`]'s `footer` — and the first assertion fails. That
+is the falsification, and without it this test would only be describing
+the code it sits next to.
+
+Measured, so the size of the thing is on the record: in a 400 pt row
+the pre-fix ordering produces **481.9 pt** and the fixed ordering
+produces **exactly 400.0**. That 81.9 pt is the step the window grew by
+on every single frame the dialog was open after a print — which is what
+"little steps to infinity" was.

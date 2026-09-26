@@ -53,3 +53,24 @@ saves and re-rasters.
 The run index is shared between the two extractions, which is safe and is
 worth stating: `capture_provenance` populates a field and changes no
 segmentation, so `runs[i]` names the same run under both options.
+
+## Item notes
+
+### `fn operator_is_inside`
+
+The cheap half of the join ([`engine_places_in`] is the authority), kept
+because it bounds the engine call to candidates. Two conditions, and dropping either one is a defect
+with no symptom on the page it was written against:
+
+1. **The buffer must be the page's own.** A byte offset is meaningless
+   without the buffer it indexes, and a page that paints a form XObject has
+   two buffers whose offsets overlap freely. [`target_of`]'s doc comment
+   carries the same argument for the same reason, and names the case: on the
+   operator's benchmark sheet the page stream holds 3,007 single-character
+   show operators, so *"an arbitrary offset happens to name something in the
+   wrong buffer"* is a dense field of near-misses rather than a theoretical
+   collision.
+2. **Containment, not overlap.** A show operator is wholly inside one text
+   object or wholly outside it; a partial overlap would mean the
+   decomposition and the extraction disagree about where an operator ends,
+   which is a fault worth declining on rather than rounding into a hit.

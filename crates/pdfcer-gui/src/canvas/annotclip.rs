@@ -383,11 +383,6 @@ mod tests {
     use super::*;
 
     /// The fixture every assertion in this module is aimed at.
-    ///
-    /// Not a `state::fixtures` constant, deliberately: those name fixtures
-    /// several modules share, and this one has exactly one subject and one
-    /// consumer. Its generator, `tools/gen-annots-with-everything-fixture.py`,
-    /// carries the argument for every key in it.
     const FIXTURE: &str = "annots-with-everything.pdf";
 
     /// Open the fixture and select the annotation at `index` in `/Annots`.
@@ -415,24 +410,6 @@ mod tests {
     }
 
     /// **The engine's own carrier choice, asserted rather than assumed.**
-    ///
-    /// This is the test that pins the module header's rule, and it is written
-    /// against `pdfcer-core`'s behaviour rather than against a sentence about
-    /// it, because a sentence about another crate is a claim with a shelf life
-    /// measured in hours (`RESUME.md`).
-    ///
-    /// Three annotations, three questions:
-    ///
-    /// | `/Annots` index | subtype | expected carrier |
-    /// |---|---|---|
-    /// | 0 | `/Square` | `Markup` — modelled, and carried **whole** because the carrier holds `MarkupCarry` |
-    /// | 1 | `/Text` | not modelled, so the clip carries it **whole** |
-    /// | 2 | `/FreeText` | not modelled, so the clip carries it **whole** |
-    ///
-    /// Every index must read `whole`. One reading `thin` means a lossy
-    /// carrier is back and the disclosure on [`Plan::thin`] has a subject
-    /// again — the moment this project most needs to notice and is worst at
-    /// noticing.
     #[test]
     fn the_engine_models_a_square_and_carries_a_sticky_note_whole() {
         let doc = crate::app::state::open_local_fixture(FIXTURE);
@@ -489,31 +466,6 @@ mod tests {
 
     /// **The lossless route is lossless — asserted key by key against the
     /// SOURCE dictionary, not against a list written here.**
-    ///
-    /// The vacuous shape to avoid: a fixture annotation carrying only the keys
-    /// a `MarkupSpec` can already express makes *"the copy is lossless"* pass
-    /// under a plant that still re-authors from the spec. So the subject is the
-    /// `/Text` sticky note, which carries `/CA 0.4`, `/T`, `/M`, `/Contents`,
-    /// `/Name`, `/C` **and a baked `/AP`** — none of which any authoring verb
-    /// in `pdfcer-core` would reproduce — and the assertion iterates the source
-    /// dictionary rather than an expected list.
-    ///
-    /// # Why the six exceptions are the engine's list and not ours
-    ///
-    /// `EditSession::CLIP_STRIPPED_ANNOT_KEYS` drops `/P`, `/Parent`,
-    /// `/StructParent`, `/NM`, `/Popup` and `/IRT`, each because it names
-    /// something that exists only in the source document. This fixture
-    /// deliberately carries **none** of the six except `/P`, so the exception
-    /// list needed here is one key long — which is the difference between an
-    /// assertion and a hand-maintained allow-list, and is why the generator
-    /// refuses to put a `/Popup` on it.
-    ///
-    /// # What it does NOT assert
-    ///
-    /// Byte equality of the `/AP` stream's contents. The engine renumbers the
-    /// appearance object on import, so the *reference* legitimately differs;
-    /// what is asserted is that `/AP` is present and resolves to a stream, which
-    /// is the property whose absence renders a sticky note as nothing at all.
     #[test]
     fn a_sticky_note_survives_the_clipboard_key_by_key() {
         use pdfcer_core::graph::ObjectGraph;
@@ -594,12 +546,6 @@ mod tests {
 
     /// **An annotation the engine carries WHOLE duplicates through the clip
     /// route**, with its baked appearance.
-    ///
-    /// The `/Text` sticky note at index 1 is not modelled by `spec_from_dict`,
-    /// so the engine carries its whole dictionary and baked `/AP`, and the
-    /// duplicate must travel as that clip. The assertion is on the *action
-    /// kind*, so any second route added beside the clip — one that re-authors
-    /// from a spec, say — has to pass it too.
     #[test]
     fn duplicating_an_unmodelled_annotation_takes_the_whole_carrier() {
         let doc = with_annot_selected(1);
@@ -620,10 +566,6 @@ mod tests {
     }
 
     /// Nothing selected refuses by name and raises nothing.
-    ///
-    /// The `actions` emptiness is half the assertion. A verb that refuses and
-    /// still pushes is worse than one that does neither, because the refusal
-    /// sentence then contradicts the undo entry beside it.
     #[test]
     fn duplicating_nothing_refuses_and_raises_nothing() {
         let doc = crate::app::state::open_local_fixture(FIXTURE);
@@ -658,17 +600,6 @@ mod tests {
 
     /// **The duplicate does not touch the clipboard**, which is the whole
     /// reason the command exists.
-    ///
-    /// Asserted **structurally** rather than by reading `egui` memory: this
-    /// function takes no `&egui::Context`, so it *cannot* read or write the
-    /// clipboard — `canvas::clipboard::store` and `read` both require one. A
-    /// test that opened a context and compared before/after would pass equally
-    /// well against a signature that could reach it, and would stop being
-    /// evidence the day somebody threaded a context through "for the trace".
-    ///
-    /// ⇒ So what is pinned here is the signature. If this stops compiling
-    /// because `duplicate` grew a `ctx` parameter, that is the review this note
-    /// is asking for, not a test to update.
     #[test]
     fn the_duplicate_cannot_reach_the_clipboard() {
         let _: fn(&crate::app::state::OpenDoc, &mut Vec<Action>) -> Result<(), Refusal> = duplicate;

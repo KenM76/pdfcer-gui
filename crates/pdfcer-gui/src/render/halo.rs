@@ -103,10 +103,6 @@ pub fn region(crop: Rect, content: Option<Rect>, raster_scale: f32) -> Option<Re
 }
 
 /// Whether every corner of `r` is a finite number.
-///
-/// Its own function because `Bounds::EMPTY` is built from infinities on
-/// purpose — see [`region`]'s case 1 — so "is this box real?" is a question
-/// this module asks twice and must answer the same way both times.
 #[must_use]
 fn finite(r: Rect) -> bool {
     r.llx.is_finite() && r.lly.is_finite() && r.urx.is_finite() && r.ury.is_finite()

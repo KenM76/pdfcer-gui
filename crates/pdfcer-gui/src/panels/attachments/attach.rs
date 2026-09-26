@@ -90,13 +90,6 @@ mod tests {
     use super::*;
 
     /// **An all-whitespace description is no description.**
-    ///
-    /// The expression under test is the one the button arm uses, spelled the
-    /// same way, so the two cannot come apart. What it defends: writing
-    /// `Some("   ")` would put a `/Desc` key holding blanks into the file — a
-    /// key a later reader has to interpret and that no operator asked for —
-    /// while the row that shows it would appear to have a description and show
-    /// nothing.
     #[test]
     fn a_blank_description_becomes_no_description_at_all() {
         for blank in ["", " ", "\t", "\n  \t"] {
@@ -116,10 +109,6 @@ mod tests {
     }
 
     /// **The two published regions are distinct names.**
-    ///
-    /// A driven check clicks a region by name; two controls sharing one would
-    /// make the harness click whichever was published last, and the failure
-    /// would present as *"the button does nothing"* on whichever run lost.
     #[test]
     fn the_two_regions_are_named_apart() {
         assert_ne!(REGION_DESCRIPTION, REGION_ATTACH);

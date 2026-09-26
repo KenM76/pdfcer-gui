@@ -101,3 +101,24 @@ nothing; that has one oracle, a rendered screenshot, and it is
 6. **Require the `[FAIL]` line**, not the exit code — a SKIP exits the way a
    PASS does.
 7. **Restore from the byte copy**, rebuild, confirm the PASS returns.
+
+## Item notes
+
+### `const AIMS`
+
+**A, B, A** — the alternation the header argues for. The first two entries
+are two chunks apart so an aim off by a few points still lands on the
+intended line.
+
+### `const AIM_SEPARATION_PT`
+
+Stated rather than recomputed in a message: it is the number that makes
+*the two lines report the same chunk* a finding about the hit test rather
+than about the aim.
+
+### `fn click_and_read`
+
+`Ok(None)` means the application wrote no `canvas-selection` line since the
+mark taken here — which, because every click in this check is meant to
+change the selection, is itself a finding. It is returned rather than
+reported so each step can say what that silence means where it happened.

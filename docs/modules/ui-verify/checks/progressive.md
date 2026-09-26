@@ -63,3 +63,44 @@ about twenty frames. That is the operator's blank, quantified.
 | A | zoom in past the whole-page tier | region rendering is in force |
 | B | pan a long way, capture **at once** | the canvas is not near-uniform |
 | C | zoom out, capture **at once** | the canvas is not near-uniform |
+
+## Item notes
+
+### `const MIN_COVERED`
+
+Not 100 %. A gesture legitimately passes through frames where the held
+picture is being re-placed, and demanding perfection would fail on rounding.
+Half the view is far above anything a working stand-in produces and far
+below the measured failure, which was **0.000**.
+
+### `const CLIMB_TO`
+
+Deep enough that a raster is slow — which is what creates the interval
+under test — and no deeper. The first run climbed to 3590 %% and found 52 ink
+pixels on the whole canvas: at that magnification a technical drawing is
+mostly the space BETWEEN lines, so there was nothing whose disappearance
+could be measured. A check about losing sight of the drawing needs the
+drawing in sight.
+
+### `enum Gesture`
+
+An enum rather than a closure because the two arms need different driver
+calls with different argument shapes, and a boxed closure per gesture would
+be ceremony around a two-case match.
+
+### `fn coverage_samples`
+
+`trace_on_change` collapses runs of identical values, so this is the
+sequence of DISTINCT states the canvas passed through rather than one entry
+per frame. That is what makes a minimum over it meaningful: a blank held for
+twenty frames appears once, and so does a blank held for one.
+
+### `fn ink`
+
+## Why ink and not uniformity, and what the first version got wrong
+
+
+So "blank" here does not mean "uniform", it means **the drawing is not
+there**. Counting ink is what distinguishes them: a band of a CAD sheet with
+its lines missing has near-zero ink, and the same band with its lines has
+thousands of pixels of it, on the same white background.

@@ -13,11 +13,6 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// The mode this runs in.
-///
-/// **Read**, as `export_dxf` runs in, and for the reason that check states: an
-/// export reads the document and writes elsewhere, so there is no mode in which
-/// it should be refused. If a capability gate ever creeps onto this command,
-/// this is where it shows up.
 const MODE: &str = "read";
 /// The window's own region.
 const WINDOW: &str = "dialog:export-image";
@@ -31,37 +26,9 @@ const OPENED: &str = "export-image-open";
 const REQUESTED: &str = "export-image-requested";
 /// The value [`REQUESTED`] carries in its `format=` field when the EMF radio
 /// is the one selected.
-///
-/// **Lowercase, and sourced rather than chosen.** It is the FILE TOKEN,
-/// `pdfcer_gui::app::prefs::exporting::image_format_key(ImageFormat::Emf)` —
-/// the same string the preferences file stores, which is exactly why the
-/// emitter uses it: a check reading this trace and a check reading
-/// `preferences.txt` then cannot disagree about what EMF is called.
-///
-/// ⚠ **This constant was `"Emf"` until 2026-09-14 and the check was RIGHT to
-/// say so when it was written.** On 2026-09-04 the emitter read
-/// `format={:?}` — `Debug` on `ImageFormat`, which prints `Emf`. On
-/// 2026-09-13 commit `28f5389` replaced that with the token, correctly and
-/// for this project's own standing reason (*never `Debug`-format a field a
-/// machine reads*), and **broke the only machine reading the field without
-/// anything going red** — because this check had never been run. The first
-/// sweep to run it, on 2026-09-14, duly reported *"the radio drew and did not
-/// bind"* while quoting `format=emf` in the same sentence.
-///
-/// The lesson generalises past this file: **changing a trace field's
-/// spelling is an edit to every reader of that field**, and an unrun check is
-/// a reader that cannot object to it.
 const EMF_KEY: &str = "emf";
 /// What the `format=` field held *before* 2026-09-13, i.e. `Debug` on the
 /// enum.
-///
-/// Kept as a SEPARATE diagnosis rather than folded into the comparison.
-/// Seeing this spelling again would mean the emitter had regressed to
-/// `{:?}` — a real defect, with a real one-line remedy, and **not remotely
-/// the same thing as a radio that failed to bind**. An assertion that lumps
-/// the two together produces the message this check produced today: a
-/// confident accusation against the program, quoting the evidence that
-/// clears it.
 const EMF_KEY_DEBUG_SPELLING: &str = "Emf";
 /// The trace the apply arm emits per file written.
 const WROTE: &str = "export-image";

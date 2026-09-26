@@ -42,52 +42,20 @@ const SAVED_EVENT: &str = "save-copy";
 const SIZE_COMBO: &str = "page-size.size";
 
 /// The entry to click, indexed into `pdfcer_core::paper::PaperSize::ALL`.
-///
-/// **6 is A6**, the seventh entry: `A0, A1, A2, A3, A4, A5, A6, …`. An index
-/// because that is what the region name carries — the window publishes
-/// `page-size.size.item.<N>` — and because this crate deliberately cannot ask
-/// the engine: `ui-verify` has exactly one dependency, and a verification
-/// harness that pulls in the crate under test fails to build for reasons
-/// unrelated to the thing it is verifying, on the day it is most needed.
-///
-/// ⚠ **So the index is checked at RUN TIME instead**, against
-/// [`EXPECTED_SIZE_ID`] on the commit line. `PaperSize::ALL` is
-/// `#[non_exhaustive]` and its own doc comment says the table will grow (ARCH,
-/// JIS B, ISO B/C are all named as plausible); a size inserted before A6 would
-/// silently make this check click A5 and then assert A6's dimensions — a red
-/// run whose message would blame the application for a table that moved.
 const A6_INDEX: usize = 6;
 
 /// What the window must say it picked — `pdfcer_core::paper::PaperSize::id`,
 /// which the engine documents as *"ASCII, lowercase, hyphenated, and must not
 /// change once shipped"*.
-///
-/// Read from `size_id=` and **never** from the `choice=` field beside it.
-/// That one is a `Debug` spelling, present for a human reading a trace;
-/// Debug-formatting a domain type and then parsing it produced two false
-/// failure reports in this project in a single week.
 const EXPECTED_SIZE_ID: &str = "a6";
 
 /// Points per millimetre — 72 points per inch ÷ 25.4 mm per inch.
 const PT_PER_MM: f64 = 72.0 / 25.4;
 
 /// A6 portrait, in points: 105 × 148 mm.
-///
-/// Converted from the **defining millimetres** rather than written out as
-/// `297.64 x 419.53`, for the reason `dialogs::new_document`'s own test states:
-/// a hand-rounded number looks right, is wrong in the fourth significant
-/// figure, and will not compare equal to what the engine writes. Pinned against
-/// `PaperSize::A6.size_pt()` by [`tests::a6_is_where_this_check_thinks_it_is`],
-/// so the two cannot drift.
 const A6_PT: (f64, f64) = (105.0 * PT_PER_MM, 148.0 * PT_PER_MM);
 
 /// How close the read-back must be, in points.
-///
-/// A tenth of a point. The numbers are written by the engine and read by the
-/// engine, so the only slack that has to be absorbed is the two-decimal
-/// formatting of the trace line itself — 0.005 pt. A tolerance three orders of
-/// magnitude tighter than the smallest gap between any two entries in
-/// `PaperSize::ALL` cannot mask a wrong size.
 const TOLERANCE_PT: f64 = 0.1;
 
 /// The Portrait radio, clicked explicitly rather than assumed.
@@ -130,13 +98,6 @@ struct Sheet {
 }
 
 /// Every `page-size-document` line in `trace`, by page index.
-///
-/// Reads the LAST line per index rather than the first. The window can be
-/// opened more than once in a run — phase B opens it, phase D opens it again —
-/// and the census is republished each time. Taking the first would hand phase D
-/// a fossil from phase B, which is the *"`.last()` returns a fossil"* trap
-/// `driving::declared` exists to solve for `ui-rect` and which applies to any
-/// republished line.
 fn sheets(trace: &crate::trace::Trace) -> std::collections::BTreeMap<usize, Sheet> {
     let mut out = std::collections::BTreeMap::new();
     for line in trace.events(SHEET_EVENT) {
@@ -155,13 +116,6 @@ fn sheets(trace: &crate::trace::Trace) -> std::collections::BTreeMap<usize, Shee
 }
 
 /// Open the sheet-size window and return the census it publishes.
-///
-/// Used **twice** — once on the fixture in process 1 and once on the saved copy
-/// in process 2 — which is the whole reason it is a call rather than eight
-/// lines inline: the two censuses must be produced by the identical sequence,
-/// or the comparison at the end is between two different measurements. That is
-/// `save_copy`'s own `comments_count` lesson, which it learned by carrying two
-/// copies of a census reader that were both wrong in the same way.
 fn open_and_census(
     session: &Session,
     driver: &Driver,
@@ -609,24 +563,6 @@ mod tests {
 
     /// **A6 is 105 × 148 mm, and this check's constant is that conversion
     /// rather than a rounded copy of it.**
-    ///
-    /// The failure this exists for is the one `dialogs::new_document`'s own
-    /// test names: a hand-rounded `297.64 × 419.53` looks right, is wrong in
-    /// the fourth significant figure, and will not compare equal to what the
-    /// engine writes. The engine converts from the defining millimetres for
-    /// exactly that reason, and this pins that the harness does the same
-    /// arithmetic rather than a similar-looking one.
-    ///
-    /// ⓘ It cannot assert against `PaperSize::A6.size_pt()` directly, and that
-    /// is deliberate: this crate has **one** dependency, `windows-sys`, and its
-    /// own manifest argues at length that a verification harness with a large
-    /// dependency tree is one that fails to build for reasons unrelated to the
-    /// thing under test. The agreement between this constant and the engine's
-    /// table is asserted at run time instead, from
-    /// [`EXPECTED_SIZE_ID`] on the window's own commit line, which is a
-    /// stronger check than a compile-time one anyway: it verifies the size the
-    /// **running program** committed rather than the one this file believes it
-    /// will.
     #[test]
     fn a6_is_its_own_millimetres() {
         assert!(
@@ -645,15 +581,6 @@ mod tests {
 
     /// **The fixture can carry the defect**, which is the property that
     /// makes this check able to fail at all.
-    ///
-    /// Two requirements, and each is a way this check silently stops meaning
-    /// anything: it needs **at least two pages**, or there is no negative
-    /// control; and page 0 must not **already** be A6, or the positive arm
-    /// passes on a build that writes nothing.
-    ///
-    /// Asserted from the fixture's bytes rather than from a remembered number,
-    /// because the fixture is regenerated and a check that pinned 2383.94 would
-    /// go red for a reason that has nothing to do with sheet sizes.
     #[test]
     fn the_fixture_can_carry_the_defect() {
         let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))

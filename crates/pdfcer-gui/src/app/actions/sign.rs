@@ -67,12 +67,6 @@ pub fn apply(app: &mut PdfcerApp, action: &Action) {
 }
 
 /// The body, returning the outcome rather than reporting it.
-///
-/// Separate from [`apply`] so that every exit is a `return` of a value the
-/// compiler counts, rather than a `return` after a call somebody has to
-/// remember to make. Every early exit here leaves the window stuck in
-/// `Phase::Signing` until its outcome is handed back, and the compiler is what
-/// guarantees one exists.
 fn run(
     app: &mut PdfcerApp,
     certificate: &Path,
@@ -177,38 +171,6 @@ fn run(
 }
 
 /// **Which operator-facing sentence an engine refusal gets.**
-///
-/// Pure, so every arm is asserted headlessly rather than by driving a window —
-/// which matters more here than usual, because some of these arms are only
-/// reachable on documents this repository does not commit.
-///
-/// # 5. The one decision in this function: whose rule refused
-///
-/// `SignApplyError` has a distinct, already-written sentence per variant, and
-/// [`crate::text::sign::engine_refused`] frames them all as *"pdfcer did not
-/// sign the document: …"*. That framing is right for most of them and **wrong
-/// for the seed-value pair**, and the wrongness is expensive rather than
-/// cosmetic.
-///
-/// The engine enforces a signature field's `/SV` dictionary (Table 234) **in
-/// full** and is deliberately **stricter than Acrobat**: a required constraint
-/// unmet is refused by name, and a constraint pdfcer cannot evaluate is refused
-/// **rather than skipped**. So an operator will meet refusals here on documents
-/// Acrobat signs — and *"pdfcer did not sign the document"* beside one of those
-/// tells him, in plain English, that pdfcer is broken. He would be right to
-/// conclude that from the sentence and wrong about the program, and a working
-/// feature would be reported as a defect.
-///
-/// So [`crate::text::sign::author_imposed`] puts **the person who prepared the
-/// document** in the subject position, quotes the engine's message verbatim
-/// (because it names the constraint AND the satisfying values, which are the
-/// actionable half), states the strictness as a deliberate choice, and gives two
-/// remedies that do not require pdfcer to change.
-///
-/// A few other variants get their own wording for smaller reasons, each noted
-/// at its arm. Everything else keeps the general form: the engine's sentence is
-/// already an operator-facing one and re-wording it here would be a second
-/// spelling of a fact with one author.
 fn worded(error: &pdfcer_core::sign::apply::SignApplyError) -> String {
     use pdfcer_core::sign::apply::SignApplyError as E;
     let detail = error.to_string();
@@ -274,17 +236,6 @@ mod tests {
 
     /// **A seed-value refusal is worded as the author's rule, and every
     /// other refusal is not.**
-    ///
-    /// The whole of §5, asserted rather than argued. The engine enforces
-    /// `/SV` in full and is deliberately stricter than Acrobat, so the operator
-    /// will meet these on documents another reader signs — and the general
-    /// wording, *"pdfcer did not sign the document: …"*, would tell him in
-    /// plain English that pdfcer is broken.
-    ///
-    /// The negative half matters as much: a refusal that is genuinely
-    /// pdfcer's (the fixed reservation) must NOT be dressed up as somebody
-    /// else's rule. Blaming the document's author for a pdfcer limit is the
-    /// same defect pointed the other way.
     #[test]
     fn only_a_seed_value_refusal_blames_the_documents_author() {
         let authors_rule = [
@@ -316,11 +267,6 @@ mod tests {
     }
 
     /// **A field that cannot be used sends the operator back to the form.**
-    ///
-    /// Reachable even though the window filters its list, because the list is
-    /// read once when the window opens and the document can change under it.
-    /// The engine's message says what is wrong; this adds the remedy that
-    /// exists on the screen the operator is still looking at.
     #[test]
     fn an_unusable_field_offers_the_other_two_routes() {
         let sentence = worded(&E::FieldAlreadySigned {
@@ -332,11 +278,6 @@ mod tests {
 
     /// **The appearance-overflow refusal does not repeat advice this shell
     /// cannot take.**
-    ///
-    /// The engine's message ends *"enlarge --visible, or drop
-    /// --reason/--location"*, and there is no control here that enlarges the
-    /// box — `crate::sign::default_rect` fixes it. So the engine's sentence is
-    /// shown and the remedy offered is one the operator can actually perform.
     #[test]
     fn the_overflow_refusal_offers_a_remedy_this_window_has() {
         let sentence = worded(&E::AppearanceOverflow {

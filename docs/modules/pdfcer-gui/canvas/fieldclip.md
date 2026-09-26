@@ -108,3 +108,61 @@ which is part of the group's meaning.
 On `AdditionalWidget` exactly **one** widget is placed even from a
 multi-widget clip, because adding all N would give one field several views
 with duplicate export values — radio buttons that select together.
+
+## Item notes
+
+### `fn unique_name`
+
+`Text1` → `Text2` → `Text3`, and `Drawn By` → `Drawn By2`. The spelling is
+[`crate::text::fieldclip::candidate_name`]'s — a field name is
+operator-facing text — and the *numbering* is [`split_trailing_number`]'s,
+which is logic and belongs here.
+
+The convention is Acrobat's, sourced rather than invented: its bulk
+duplication auto-names copies `Date1`, `Date2`, `Date3`, and the separator is
+load-bearing rather than cosmetic. `candidate_name`'s header carries both the
+scripting rationale and the reason a **dot** is refused even though one
+Acrobat account uses it.
+
+The name is generated here rather than by the engine, at the engine's own
+insistence: *"an engine-invented name is a name nobody chose."* `paste_field`
+refuses a taken name with `FieldNameTaken` and never auto-suffixes, so this
+is the only place a candidate comes from.
+
+Falls back to the base itself past a thousand tries, which then hits
+`FieldNameTaken` and surfaces as a refusal. Unreachable in practice, and
+written as a bounded loop because an unbounded loop over a document is a
+hang.
+
+### `fn split_trailing_number`
+
+`Text1` → `("Text", 2)`, not `("Text1", 2)`. **Continuing an existing
+number is the whole point**, and getting it wrong is what produced `Text1 2`.
+
+This shell's own placement dialog names a new text field `Text1` — Acrobat's
+convention, already numbered — so a base *with* a trailing number is the
+ordinary case here, not the exotic one. A rule that only appended would
+produce `Text12` from `Text1`, which reads as "field twelve" and sorts
+nowhere near its source.
+
+A base with no trailing number starts at **2**, because the source itself is
+the unwritten 1: `Drawn By` and `Drawn By2` are a pair, `Drawn By1` beside a
+bare `Drawn By` is not.
+
+The digits are parsed as `u32` and a name whose trailing run does not fit —
+`Rev99999999999` — falls back to treating the whole thing as the stem. That
+is a name nobody has, and it is a branch rather than an `unwrap` because a
+panic here would land on the operator's paste.
+
+### `fn a_numbered_base_continues_its_number_and_a_bare_one_starts_at_two`
+
+It produced `Text1 2` from `Text1`: a space separator and no awareness
+that the base was already numbered. Both halves are fixed here and both
+are sourced from the Acrobat reference rather than chosen.
+
+### `fn a_paste_with_a_target_centres_the_field_on_it_and_keeps_its_size`
+
+`OPERATOR_REQUESTS.md` O73. Asserted against BOTH fallback cases —
+same page and cross page — because the target arm has to win in each,
+and a fix that only reached one of them would look right in whichever
+case the author happened to try.

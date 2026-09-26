@@ -61,3 +61,64 @@ The preview drawn while a placement is armed is a **pre-commit affordance**
 — the cursor — and is explicitly allowed. Nothing here marks applied
 content, and the moment the placement commits it is an ordinary insert that
 renders exactly as a saved one will.
+
+## Item notes
+
+### `const PLACING_MEMORY_KEY`
+
+Beside `canvas::tool`'s own `TOOL_MEMORY_KEY`, and for the same reason: it
+is per-window state with no meaning outside the frame loop, and putting it
+on `OpenDoc` would make a *gesture* a property of the *document*.
+
+### `const CANCELLED_MEMORY_KEY`
+
+Separate from the result rather than an `Option` inside it. *"The
+operator placed nothing"* and *"the operator has not finished yet"* are
+different states, and a single slot would make them the same absence — the
+distinction `crate::app::files::Picked` exists to preserve, applied here.
+
+### `struct PlacedRect`
+
+A named function rather than two inline casts, and not only for tidiness:
+the narrowing happens at exactly one boundary — where `markup::band`'s
+`f64` endpoints meet `egui`'s `f32` geometry — so a reader asking *"where
+does the precision go?"* gets one answer instead of two identical ones with
+an attribute apiece.
+
+The loss is not material here. These are page coordinates on a sheet
+measured in points, where `f32` carries about seven significant figures
+against a largest sensible magnitude in the low hundreds of thousands.
+
+### `struct PlacedRect`
+
+A newtype rather than four `f64`s in the slot: the four numbers have an
+order and a meaning, and a tuple of them is a thing three call sites could
+each get subtly wrong.
+
+### `fn a_cancellation_is_not_an_absent_result`
+
+The property `Picked` exists to preserve, asserted here because the
+tempting simplification — one `Option<Rect>` slot where `None` means
+cancelled — makes "they pointed nowhere" and "they have not pointed
+yet" the same observation, and the second is true on almost every frame.
+
+### `fn cancelling_nothing_reports_nothing`
+
+Load-bearing: Escape consults this on every press, and a `cancel` that
+reported success unconditionally would swallow the key from the three
+claimants below it in `canvas::keys`.
+
+### `fn a_click_places_a_corner_and_a_drag_places_a_box`
+
+The regression test for the defect the driven check found on its first
+run: `click` took the canvas point it was handed and wrote it into a
+`page_tree::Rect` unconverted, so a placement near the TOP of the sheet
+was recorded near the BOTTOM. Nothing refused it — a mirrored
+coordinate is a perfectly ordinary number on a perfectly ordinary page.
+
+Note what the previous version of this test asserted: that the rect
+carried the numbers passed in. That is true of the broken build and of
+the fixed one, because it was a test of the *plumbing* on a function
+whose defect was the *space*. This one asserts the flip by magnitude —
+canvas y 200 on an 800 pt page is PDF y 600 — which no unconverted
+build can satisfy.

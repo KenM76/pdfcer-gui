@@ -18,14 +18,6 @@ use crate::viewer::FitMode;
 
 /// How many frames a pending [`Reveal`] waits for its page to arrive before
 /// it is abandoned.
-///
-/// A page change raised during the apply phase lands on the *next* frame, so
-/// one would very nearly do. Four, because a reveal that is never spent is
-/// worse than one that is spent late: it would sit on the document waiting
-/// for the page index to coincide by accident, and would then scroll the view
-/// somewhere the operator did not ask for, minutes later, in response to an
-/// unrelated page step. This is the same hazard `canvas::zoom`'s
-/// [`crate::canvas::zoom::AnchorStep::Drop`] exists for, and the same answer.
 const REVEAL_GRACE_FRAMES: u8 = 4;
 
 /// A hit that has been navigated to and is waiting to be scrolled into view.
@@ -150,75 +142,6 @@ pub(super) fn reveal_current(state: &FindState, doc: &mut OpenDoc) {
 
 /// **Hold the zoom still across a find jump, when the operator has asked
 /// for that** — the *Zoom* control, `OPERATOR_REQUESTS.md` **O163**.
-///
-/// # What actually changes the zoom, because it is not this module
-///
-/// Nothing in `find` has ever called `set_zoom`, and this function does not
-/// either. The zoom changes on a jump because **a fit mode is still switched
-/// on**: [`crate::viewer::ViewState::apply_fit`] runs on *every* frame from
-/// `canvas::present`, recomputing the zoom from the extent of whatever page is
-/// showing. Land on a sheet of a different size and it re-scales, by exactly
-/// the ratio of the two sheets.
-///
-/// That is not a hypothetical. This repository's own `fixtures/four-pages.pdf`
-/// carries three page sizes: page 1 is 2384×1684 pt, pages 2 and 3 are
-/// 612×792, page 4 is 306×396. Under the shipped default of
-/// [`FitMode::Page`] a jump from page 1 to page 2 moves the zoom by 3.9×, and
-/// from page 1 to page 4 by 7.8×. A drawing set with a letter-size cover sheet
-/// in front of A1 sheets is the same document. The operator's report was of a
-/// search that "changed the zoom"; the cause is a fit doing precisely what a
-/// fit is for, on a page he did not choose to go to.
-///
-/// The **engine's** `pageops/four-pages.pdf`, which most of the tests in
-/// this module open through `open_fixture`, is four *identical* 612×792 pages
-/// and cannot show the effect at all. The tests for this function therefore
-/// open the local file through `open_local_fixture` instead — a distinction
-/// that is easy to lose because the two fixtures share a name.
-///
-/// # So the intervention is to stop following the fit, not to set a number
-///
-/// `set_fit(FitMode::None)` leaves [`crate::viewer::ViewState::zoom`] exactly
-/// as it is and stops `apply_fit` from touching it again. The operator keeps
-/// the size they were reading at, on the new page.
-///
-/// **This deliberately changes a visible setting**, and that is disclosure
-/// rather than a side effect: the status bar's zoom readout stops saying *Fit
-/// page* and starts showing the percentage. A build that held the zoom while
-/// still *claiming* to be in Fit page would be lying about its own state in
-/// the one place the operator can check it. The control's tooltip says this
-/// will happen, in [`crate::text::find::find_zoom_tooltip`].
-///
-/// # Three guards, and each one is a case where doing nothing is correct
-///
-/// - **The control is on** — the shipped default. Nothing happens, so an
-///   operator who never opens the options menu is unaffected.
-/// - **The page is not changing.** Stepping between two hits on the same sheet
-///   cannot re-fit, because `apply_fit` would compute the identical scale from
-///   the identical extent. Dropping the fit anyway would take the operator out
-///   of Fit width for pressing *Next* — a setting silently changed for
-///   nothing.
-/// - **No fit is active.** The zoom is already pinned; there is nothing to
-///   hold off, and assigning `FitMode::None` over `FitMode::None` would still
-///   emit a `find-zoom-held` trace line saying an intervention happened — a
-///   harness reading that line would believe it.
-///
-/// Called from [`reveal_current`] **before** `go_to_page`, because the second
-/// guard is a question about the page the operator is leaving.
-///
-/// # Why it returns a `bool` nobody in the shipped path reads
-///
-/// Because the third guard is otherwise **unobservable to a test**, and an
-/// unobservable guard is one that can be deleted with every check still green.
-/// Deleting it changes exactly one thing: a trace line on stderr that a unit
-/// test cannot capture. Under that guard's own conditions the acting branch
-/// would assign `FitMode::None` over `FitMode::None` and leave `zoom` alone, so
-/// *every* piece of document state a test could assert on is identical either
-/// way. Measured, not assumed: with the guard removed, all ten tests in this
-/// module still pass.
-///
-/// So the function reports what it did, the tests read the report, and
-/// [`reveal_current`] discards it. That is the cheapest way to make a real
-/// guard falsifiable without a stderr capture harness.
 fn hold_the_zoom_if_asked(state: &FindState, doc: &mut OpenDoc, target: usize) -> bool {
     if state.zoom_on_jump() || target == doc.view.page_index || doc.view.fit == FitMode::None {
         return false;
@@ -368,16 +291,6 @@ mod tests {
     // =======================================================================
 
     /// **A hit's quad projects into canvas space, once, at search time.**
-    ///
-    /// Driven against a real page so the bridge under test is the one the
-    /// canvas paints through — `viewer::pdf_space_to_canvas`, which inverts
-    /// the renderer's own device transform. A hand-built transform here would
-    /// prove that this module agrees with itself.
-    ///
-    /// The property asserted is the **Y flip**: PDF user space is Y-up from
-    /// the CropBox's lower-left, canvas space is Y-down from the page's
-    /// top-left, so a quad near the top of the page in PDF terms (a large Y)
-    /// must land near the top in canvas terms (a small Y).
     #[test]
     fn a_quad_projects_into_canvas_space_with_the_y_axis_flipped() {
         use pdfcer_core::annot_author::Quad;
@@ -440,11 +353,6 @@ mod tests {
     }
 
     /// **A reveal whose page never arrives is abandoned.**
-    ///
-    /// Otherwise it would sit on the document until the page index coincided
-    /// by accident and then scroll the view somewhere the operator did not
-    /// ask for — the hazard `canvas::zoom::AnchorStep::Drop` exists for,
-    /// which is why the answer here is the same one.
     #[test]
     fn a_reveal_whose_page_never_arrives_is_abandoned() {
         let mut doc = open_fixture(FOUR_PAGES);
@@ -472,12 +380,6 @@ mod tests {
 
     /// Land on `page` **the way the canvas does**: change the page, then apply
     /// whatever fit is still switched on against *that page's* extent.
-    ///
-    /// This reproduces the part of the frame the defect lives in rather than
-    /// asserting around it. Checking only that `fit` became `FitMode::None`
-    /// would prove this module agrees with itself; running the fit afterwards
-    /// proves the number the operator reads actually held still, which is what
-    /// he asked for.
     fn land_on(doc: &mut OpenDoc, page: usize) {
         doc.view.go_to_page(page, doc.pages.len());
         let extent = doc
@@ -490,10 +392,6 @@ mod tests {
 
     /// The local four-page fixture, already settled on page 1 under `fit`,
     /// with a find state whose *Zoom* control is at `zoom_on_jump`.
-    ///
-    /// `open_local_fixture`, **not** `open_fixture`: the engine fixture of the
-    /// same name is four identical pages and cannot show this effect at all.
-    /// See [`hold_the_zoom_if_asked`].
     fn settled(fit: FitMode, zoom_on_jump: bool) -> (FindState, OpenDoc) {
         let mut doc = crate::app::state::open_local_fixture("four-pages.pdf");
         doc.view.set_fit(fit);
@@ -505,12 +403,6 @@ mod tests {
 
     /// **The control OFF holds the zoom across a jump between differently
     /// sized sheets** — the whole of O163, asserted as the operator sees it.
-    ///
-    /// Page 1 of the fixture is 2384×1684 pt and page 4 is 306×396, so under
-    /// Fit page the zoom would otherwise move by 7.8×. The assertion is
-    /// **exact equality**, not a tolerance: nothing is supposed to touch the
-    /// number at all, so any drift at all is a second code path that should
-    /// not exist.
     #[test]
     fn the_control_off_holds_the_zoom_across_a_jump() {
         let (state, mut doc) = settled(FitMode::Page, false);
@@ -557,11 +449,6 @@ mod tests {
 
     /// **Stepping between two hits on the same sheet does not drop the
     /// fit** — the second guard.
-    ///
-    /// `apply_fit` would compute the identical scale from the identical
-    /// extent, so there is nothing to hold off, and dropping the fit anyway
-    /// would take the operator out of Fit page for pressing *Next*: a setting
-    /// silently changed for no benefit at all.
     #[test]
     fn a_step_within_one_page_leaves_the_fit_alone() {
         let (state, mut doc) = settled(FitMode::Page, false);
@@ -576,11 +463,6 @@ mod tests {
 
     /// **With no fit active there is nothing to hold, and nothing is
     /// touched** — the third guard.
-    ///
-    /// Asserted rather than assumed because the acting branch would otherwise
-    /// assign `FitMode::None` over `FitMode::None` and emit a `find-zoom-held`
-    /// trace line claiming an intervention that did not happen — which a
-    /// harness reading that line would believe.
     #[test]
     fn no_fit_active_means_no_intervention() {
         let (state, mut doc) = settled(FitMode::None, false);
@@ -602,10 +484,6 @@ mod tests {
     }
 
     /// **Fit width is held too, not only Fit page.**
-    ///
-    /// The guard tests `fit == FitMode::None`, so every other mode is meant to
-    /// be covered by the one branch. This is the check that it was not written
-    /// as `== FitMode::Page`, which would pass every test above.
     #[test]
     fn fit_width_is_held_as_well_as_fit_page() {
         let (state, mut doc) = settled(FitMode::Width, false);
@@ -618,10 +496,6 @@ mod tests {
 
     /// **The shipped default is ON**, so an operator who never opens the
     /// options menu keeps the fit-following behaviour.
-    ///
-    /// [`FindState`] carries a hand-written `Default` for precisely this;
-    /// `#[derive(Default)]` would give `false` and quietly change the
-    /// behaviour of everyone who has no preference file yet.
     #[test]
     fn the_shipped_default_leaves_the_zoom_free() {
         assert!(FindState::default().zoom_on_jump());
@@ -629,10 +503,6 @@ mod tests {
 
     /// The solve centres the hit: a hit at the middle of a page bigger than
     /// the viewport lands at the middle of the viewport.
-    ///
-    /// Asserted as the *outcome* — where the point ends up on screen —
-    /// through `geometry::anchor_screen_pos`, rather than as an offset, so
-    /// this checks the framing and not that the code agrees with itself.
     #[test]
     fn the_solve_puts_the_hit_in_the_middle_of_the_viewport() {
         let mut doc = open_fixture(FOUR_PAGES);

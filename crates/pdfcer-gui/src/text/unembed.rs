@@ -245,12 +245,6 @@ mod tests {
     use super::*;
 
     /// **The size sentence always says pdfcer's Save will not deliver it.**
-    ///
-    /// The one assertion in this module that guards a real trap rather than a
-    /// wording preference. `bytes_reclaimable` is the number an operator opens
-    /// this window for, `app::save` writes incrementally, and a sentence that
-    /// reported the first without the second would promise a smaller file that
-    /// pdfcer cannot produce.
     #[test]
     fn the_size_sentence_never_promises_a_smaller_file() {
         for bytes in [1_024_u64, 500_000, 8_000_000] {

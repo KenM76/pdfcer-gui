@@ -67,3 +67,12 @@ consulted by the ribbon, the context menu and the keyboard — three doors,
 and only one of them is that surface. A gate that assumed the exclusion
 would be correct today and wrong the first time a widget became selectable
 anywhere.
+
+## Item notes
+
+### `fn the_three_policy_refusals_are_spelled_as_the_engine_spells_them`
+
+Asserted as strings rather than by building a document, because the
+claim under test is that this shell's spelling matches the engine's
+`CutWouldNotSurvive { subtype }` — a wording agreement across a crate
+boundary, which no fixture can check and a typo would silently break.

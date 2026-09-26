@@ -59,3 +59,26 @@ behind the list are pinned where they live
 **That pressing it twice does nothing.** That is `DialogsState`'s
 already-open guard and it has a unit test with a pointer-identity assertion,
 which is a stronger check than anything a window can offer.
+
+## Item notes
+
+### `const DIALOG`
+
+`dialogs::diagnostics::REGION_BODY`. Spelled here as a literal because that
+is the contract between the two crates; the application's own constant
+carries a comment saying that renaming it un-aims whatever check was
+measuring it, and this is that check.
+
+### `fn the_region_names_match_the_ids_they_describe`
+
+The seam where a rename in `egui_shell::ribbon::report` would otherwise
+turn every assertion above into a silent SKIP — *"the application
+declared no region"* — which reads as a missing control rather than as a
+renamed one.
+
+### `fn the_dialogs_region_is_in_its_own_namespace`
+
+It is declared by the application rather than by `egui-shell`, so a
+`declared_names` sweep over `ribbon.` must not catch it and a sweep for
+it must not catch a ribbon item. Cheap to assert, and the alternative is
+a filter that quietly returns the wrong rect.

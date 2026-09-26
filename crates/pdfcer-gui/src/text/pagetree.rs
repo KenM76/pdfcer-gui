@@ -112,11 +112,6 @@ mod tests {
     use super::*;
 
     /// **The operator's own symptom appears in the sentence.**
-    ///
-    /// He wrote *"blank pages at the end of the document equalling the number
-    /// of pages I deleted"*. A sentence that described a page-tree
-    /// inconsistency without saying "blank pages" would be true, accurate, and
-    /// unrecognisable to the person it is for.
     #[test]
     fn the_root_sentence_names_the_symptom_he_reported() {
         let s = save_refused_root("SW41177.pdf", 36, 34);
@@ -138,13 +133,6 @@ mod tests {
 
     /// **The pre-existing sentence does NOT tell him to press Ctrl+Z, and
     /// the other two do.**
-    ///
-    /// The whole reason the third sentence exists. Undo is the remedy exactly
-    /// when pdfcer caused the damage; on a file that arrived broken it is a
-    /// circle, and an operator who empties his undo stack against a refusal he
-    /// was told undo would fix has been misled by his own tool. This is the
-    /// assertion that stops the three sentences being consolidated back into
-    /// one on the grounds that they say nearly the same thing.
     #[test]
     fn only_the_sentences_pdfcer_can_undo_offer_undo() {
         let pre = save_refused_pre_existing("a.pdf", 13, 12);
@@ -161,11 +149,6 @@ mod tests {
     }
 
     /// **All three sentences promise that the work survives.**
-    ///
-    /// The claim is true — `to_incremental_bytes` takes `&self` and the
-    /// refusal happens before `std::fs::write` — and it is the one an operator
-    /// most needs and is least likely to assume. A future edit that dropped
-    /// this clause would leave a refusal that reads as data loss.
     #[test]
     fn both_sentences_say_the_work_survives() {
         for s in [
@@ -179,11 +162,6 @@ mod tests {
     }
 
     /// **Neither sentence uses the engine's vocabulary.**
-    ///
-    /// Rule: the operator is never shown `/Count`, `/Kids`, `/Pages`, "page
-    /// tree" or "node". Those are in the trace, where a reader of a machine
-    /// wants them. This is the check that stops the next edit reaching for the
-    /// precise word.
     #[test]
     fn neither_sentence_speaks_pdf() {
         for s in [

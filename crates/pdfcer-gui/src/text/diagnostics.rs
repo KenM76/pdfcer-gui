@@ -221,11 +221,6 @@ mod tests {
     use super::*;
 
     /// The measurements say what they are measuring.
-    ///
-    /// Not a spelling test — a **units** test. A duration with no unit and a
-    /// scale with no multiplication sign are the two ways this surface could
-    /// present a number the operator cannot interpret, and both are exactly the
-    /// sort of thing a later edit trims for width.
     #[test]
     fn every_measurement_carries_its_unit() {
         assert!(took(1240).contains("ms"), "a duration needs its unit");
@@ -236,10 +231,6 @@ mod tests {
     }
 
     /// The scale is shown to two places, so 1.0 and 1.25 are distinguishable.
-    ///
-    /// A rounded-to-integer scale would print `1×` for every zoom between 50 %
-    /// and 150 % on a 1.0 density display, which is a readout that changes
-    /// nothing while the thing it reports changes constantly.
     #[test]
     fn the_scale_is_not_rounded_to_a_whole_number() {
         assert_ne!(raster(1.0, 1, 1), raster(1.25, 1, 1));
@@ -247,23 +238,12 @@ mod tests {
     }
 
     /// **The clean sentence is the status bar's, not a second one.**
-    ///
-    /// The property this module's header is about, asserted rather than
-    /// promised: two surfaces describing one raster must not be able to say
-    /// different things about it.
     #[test]
     fn the_clean_sentence_is_the_one_the_status_bar_uses() {
         assert_eq!(clean(), crate::text::status::diagnostics_clean());
     }
 
     /// **No `(s)` and no `oddity/oddities`**, in any of the four cases.
-    ///
-    /// The shape being refused is *"0 structural oddity/oddities … and 0
-    /// section(s)"*. Every `diagnostics_*` entry in [`crate::text::status`]
-    /// spells both forms, so this is the catalog's own convention being kept
-    /// rather than a new rule — and the assertion is on the *characters*,
-    /// because that is what an operator sees and what a later "just make it
-    /// shorter" edit would reintroduce.
     #[test]
     fn the_absorbed_line_is_never_written_with_a_slash_or_a_parenthesised_s() {
         for (t, c) in [(0, 0), (1, 0), (0, 1), (3, 5)] {
@@ -278,10 +258,6 @@ mod tests {
     }
 
     /// Both counters at zero gets a positive sentence, not "0 and 0".
-    ///
-    /// [`crate::text::status::diagnostics_clean`]'s argument, applied to the
-    /// line beneath it: a true answer that reads as an unfilled template is
-    /// worse than no line at all, because the operator cannot tell which it is.
     #[test]
     fn nothing_absorbed_is_stated_positively() {
         let none = absorbed(0, 0);
@@ -294,13 +270,6 @@ mod tests {
 
     /// **The three blend-space origins are three different sentences**, and the
     /// falsification is per-variant rather than one combined assertion.
-    ///
-    /// A `match` over a unit-variant enum is the shape that reads as obviously
-    /// correct and is the shape a copy-paste edit silently collapses: two arms
-    /// returning the same string still compiles, still passes a test that only
-    /// checks "the answer is non-empty", and hands the operator a sentence
-    /// about the wrong document. Pairwise inequality is the only assertion that
-    /// can fail for that.
     #[test]
     fn every_blend_space_origin_says_something_different() {
         let all = [
@@ -325,17 +294,6 @@ mod tests {
 
     /// **Only the output-intent origin points at a setting**, because it is the
     /// only one a setting can change.
-    ///
-    /// R9's rule applied to prose. `page_blend_space_source` decides what to do
-    /// when the page group declares nothing AND the document carries a
-    /// resolvable output intent; on a page whose own `/Group` named a space it
-    /// is not consulted at all. A sentence sending the operator to Settings for
-    /// a page Settings cannot affect is the prose form of a disabled button,
-    /// and it costs more than a disabled button because he goes and looks.
-    ///
-    /// Asserted BOTH ways. The positive half alone would pass a catalog that
-    /// named the setting in all three; the negative half alone would pass one
-    /// that named it in none.
     #[test]
     fn only_the_output_intent_origin_names_the_setting() {
         assert!(
@@ -353,10 +311,6 @@ mod tests {
     }
 
     /// **Ink and screen are different sentences, and neither is a bare word.**
-    ///
-    /// The failure this pins is the one-word readout - `CMYK` / `RGB` - which
-    /// looks tidy in a report and is unreadable next to a duration, because
-    /// nothing on the line says what the acronym is a property OF.
     #[test]
     fn the_blend_line_says_what_was_blended_and_not_just_a_colour_model() {
         let ink = blended_in(true);

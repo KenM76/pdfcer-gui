@@ -117,3 +117,27 @@ wrong for the rest — and "silently wrong about where your text ends" is the
 defect being fixed, wearing a faster suit. It could be made honest (measure
 what is measurable, disclose the rest), and that is a reasonable thing to
 build **after** (1), when it would be a fallback rather than the mechanism.
+
+## Item notes
+
+### `fn median`
+
+A mean over ten iterations on a Windows desktop is a mean including whatever
+else the machine did; the median is the cost of a typical keystroke, which is
+the thing an operator experiences.
+
+### `fn corpus`
+
+The two outside the repository are the ones that matter — they are the
+operator's real material — so a missing one **skips that row** and says so
+rather than failing. A
+measurement that cannot run is not a measurement that passed;
+`run-all.sh`'s three-state model is the same rule one level up.
+
+### `fn what_a_per_keystroke_re_measure_would_cost`
+
+A timing assertion in a suite that runs on whatever machine happens to be
+free is a flake, and a flake gets `#[ignore]`d and then deleted. What is
+asserted is only that the harness *ran* — the rule that a layout test must
+assert a measurement happened rather than only its value, applied to a
+timing one.

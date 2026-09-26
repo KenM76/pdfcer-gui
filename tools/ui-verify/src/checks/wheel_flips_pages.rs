@@ -20,14 +20,6 @@ const TOGGLE_REGION: &str = "status-wheel-paging";
 const STATUS_EVENT: &str = "status";
 
 /// How many notches to roll for one page turn.
-///
-/// One physical detent is 50 logical points on this platform and the
-/// application's threshold is 40, so one notch is enough — but the harness's
-/// wheel and the platform's may disagree about how much a "notch" is, and a
-/// run that under-delivered would report "the wheel does not flip" for a build
-/// where it does. Two notches is comfortably over one threshold and, because
-/// the accumulator is **zeroed** on each turn rather than decremented, still
-/// buys exactly one page.
 const NOTCHES: i32 = 2;
 
 /// See the module documentation.
@@ -55,17 +47,6 @@ impl Check for TheWheelTurnsPagesWhenTheOperatorAsksItTo {
 }
 
 /// The wheel-paging setting the status bar last reported: `scroll` or `flip`.
-///
-/// The instrument that makes this check **re-runnable**, and it did not
-/// exist until this check needed it. The setting is PERSISTED, so a run that
-/// turned it on left it on, and the second run of this check inherited the
-/// first one's choice and reported the shipped default as broken — a
-/// confident, specific, wrong accusation aimed at the part of the build a
-/// reader can least easily check.
-///
-/// The standing rule this repeats: **a driven check that mutates persisted
-/// state must normalise at the START**, and to normalise it must first be able
-/// to read. A setting a check can change is a setting the trace must state.
 fn wheel(session: &Session) -> Result<Option<String>> {
     Ok(session
         .trace()?
@@ -80,12 +61,6 @@ fn wheel(session: &Session) -> Result<Option<String>> {
 const SCROLL: &str = "scroll";
 
 /// The document this check pins, in place of `--pdf`.
-///
-/// A wheel that turns pages needs a page to turn to, and the sweep's shared
-/// fixture has exactly one. Run against it, every claim up to the toggle passed
-/// and then the check accused the application of ignoring its own preference,
-/// in three confident paragraphs, on a document where the correct behaviour is
-/// to do nothing. Pinned rather than tabled so a hand invocation gets it too.
 const FIXTURE: &str = "fixtures/four-pages.pdf";
 
 fn fixture_path() -> PathBuf {

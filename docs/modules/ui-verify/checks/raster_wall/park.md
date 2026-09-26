@@ -49,3 +49,13 @@ trace parsing beyond calling `raster_wall::trace`: the geometry reads the
 canvas's own published rect, and a check that assembles screen coordinates
 from a window origin instead stops hitting anything the first time a dock
 width changes.
+
+## Item notes
+
+### `fn aim_at`
+
+Expressed as fractions of the published canvas rect rather than assembled
+from a window origin, because that is the crate's coordinate contract: a
+check that builds its own screen coordinates stops hitting anything the
+first time a panel width changes, and a stale coordinate is
+symptom-identical to a broken conversion.

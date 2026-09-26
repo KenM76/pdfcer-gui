@@ -13,13 +13,6 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// The mode this runs in.
-///
-/// **Read**, deliberately, and it is an assertion rather than a convenience —
-/// [`super::export_dxf`]'s reason, and here it is the stronger one. Taking the
-/// words out of a drawing is the archetypal reading act, and it is the same
-/// argument that moved `copy_page_text` onto the File tab in the first place:
-/// *replacing Acrobat Reader* is what Read mode is for, and a Read that cannot
-/// get the text out is wrong about the thing it exists to be.
 const MODE: &str = "read";
 /// The window's own region.
 const WINDOW: &str = "dialog:export-text";
@@ -30,11 +23,6 @@ const OPENED: &str = "export-text-open";
 /// The trace the apply arm emits on a successful write.
 const WROTE: &str = "export-text";
 /// The trace the apply arm emits when the document carries no readable text.
-///
-/// Read even on a successful run, because it is the branch this feature
-/// exists for and a build that took it here would otherwise be reported only as
-/// *"no `export-text` line"* — true, and it would not say which of four
-/// different things happened.
 const REFUSED: &str = "export-text-refused";
 /// The environment seam that answers the save dialog.
 const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH"; // ui-text-exempt: an environment variable name

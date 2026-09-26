@@ -359,11 +359,6 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 }
 
 /// The `paper=` and `sheet=` fields of the most recent `print-plan` line.
-///
-/// The **last** line rather than the first: the dialog emits one per frame, so
-/// the first describes the state it opened in and only the last describes the
-/// state after a click. Reading the first is a mistake that would make every
-/// assertion below trivially true and is worth naming.
 fn last_plan(session: &Session) -> Result<(String, String)> {
     let trace = session.trace()?;
     let line = trace.events(PLAN_EVENT).last().ok_or_else(|| {

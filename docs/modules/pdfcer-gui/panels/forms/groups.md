@@ -118,3 +118,105 @@ so the listing is provable from a trace without anyone having to click.
 That matters more here than on a visual surface: a screenshot of this
 section cannot tell you that a node the file carries is missing from the
 list, or that the refusal query was never asked. Both are in the trace.
+
+## Item notes
+
+### `const REGION_HEADER`
+
+A published region name is a cross-repo stability contract: the harness
+asserts on it by string, so renaming one turns a check into a skip rather
+than a failure.
+
+### `const REGION_ARM`
+
+Suffixed with the grouping node's **object number**, not its index in
+`AcroForm::groups` and not its name.
+
+- Not the index: deleting one node renumbers every node after it, so a check
+  that pressed "row 1" twice would press two different groups. This is the
+  same argument `tab_order::register` makes for keying on tab position
+  rather than list position.
+- Not the name: a fully-qualified field name is the operator's own words and
+  may contain spaces, `=` and anything else `/T` permits (Table 220 makes it
+  a text string). Region names are parsed out of a `key=value` trace line,
+  so a name would break the parse on exactly the documents whose fields are
+  worth naming.
+
+An object number is stable across the session, unique, and safe in a trace.
+
+### `const MAX_TRACED_ROWS`
+
+`pdfcer_core::forms::MAX_FORM_FIELDS` is 500,000 and a pathological form
+could carry grouping nodes in proportion, so an uncapped per-row census
+would bury every other line in a capture. The summary line is never capped,
+so the *count* stays provable even when the enumeration stops — the same
+rule [`super::tab_order`] caps its own row census under.
+
+### `fn trace_rows`
+
+This module's header promises the row lines are written *"whether or not the
+collapsing header is open, so the listing is provable from a trace without
+anyone having to click."* It was not true: the loop that wrote them sat
+inside `CollapsingHeader::show`'s body, and egui does not run that closure
+while the header is closed — and this section ships **closed**.
+
+So a trace from a run that never opened the header carried the summary and
+no rows, and a check reading it would conclude the form has no groups. The
+promise was in prose, in a doc comment, checked by nobody.
+
+⇒ Lifted here, above the header, where the claim is true by construction.
+The separation is also the more honest one and matches
+`crate::panels::comments`: **a trace describes what the panel computed**,
+not what it happened to paint. A surface that traced only what it drew would
+go quiet exactly when a reader most wants to know what it decided — behind a
+closed header, off the bottom of a scroll, inside a collapsed tree.
+
+Capped at [`MAX_TRACED_ROWS`], and the summary line above carries the real
+total, so a truncated listing can never be mistaken for a short one.
+
+### `fn rows`
+
+# At most one press per frame, and it is not an accident
+
+The loop stops raising after the first press. Two presses in one frame would
+queue two actions against a form parsed **before** either ran, and the
+second would be acting on a set the first has already changed. The names
+here are stable where indices are not, so the second action would in fact
+still name the right node — the discipline is kept anyway, because *"queue
+only what was computed against the state you have"* is worth holding
+mechanically rather than re-deriving each time a queued verb is added. It
+costs the operator nothing: physically, one press per frame is all there is.
+
+# Order is core's, deepest-first, and is deliberately not re-sorted
+
+`AcroForm::groups` is post-order — a child appears before its parent — and
+core states it because *"it is the opposite of what DFS order suggests and a
+consumer that assumed parents-first would render a breadcrumb backwards."*
+It is also the useful order here: the deepest node is the smallest,
+least-destructive removal, so the list reads from the safest press to the
+most sweeping one.
+
+### `fn disclosure`
+
+# This block is the whole point of the preview existing
+
+The engine's own words for why: *"an operator looking at a collapsed tree
+row cannot see how many that is or what they are called. This answers that
+question against the live session, before anything changes."* And the reason
+it is safe to draw from: the preview runs the **same gates** as the
+deletion, because both go through one `group_deletion_preflight` — *"a
+preview that succeeds where the act fails is worse than no preview: it
+invites the operator to confirm something that cannot happen."*
+
+# The order of what it says
+
+Numbers, then names, then the two controls. The numbers decide *whether*,
+the names decide *which*, and a control above either would be a button
+offered before its own justification.
+
+# Cancel is a real control and not an implicit click-away
+
+A destructive confirmation the operator can only escape by pressing
+something else in the panel is one they can dismiss by accident and cannot
+dismiss on purpose. It raises `ArmGroupDeletion(None)`, which changes
+nothing and clears the block.

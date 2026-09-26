@@ -51,3 +51,21 @@ read and cross-checked against the gap the release reported, which rules
 out the two answers that are wrong by a whole document (the start and the
 end). It does not verify the *content* of the inserted sheets; that is
 `pdfcer-core`'s `insert_pages` and it has its own corpus.
+
+## Item notes
+
+### `const DWELL`
+
+Twice, and generously. The application's timer runs on `egui`'s input clock
+and only advances on frames it actually draws; a machine that is
+rasterizing a dense CAD sheet at the same moment can drop several. Waiting
+exactly the threshold would make this check a stopwatch race against a
+renderer, and that is the classic shape of a flake: **a full suite red is
+not a defect report until the member has been re-run alone.**
+
+### `const TOOK_REFUSED`
+
+Distinct from [`TOOK`]'s `removed=0`, and the distinction decides the
+verdict: `removed=0` says *the source still has them*, which has two causes
+pointing opposite ways — a build that never attempted the delete (a defect)
+and an engine that refused it for a reason about the document (not one).

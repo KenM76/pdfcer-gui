@@ -20,12 +20,6 @@ const READ: &str = "read";
 
 /// The control mode: the one whose tab list contains `edit`, so the identical
 /// drag is expected to be a content marquee and to trace no text selection.
-///
-/// Edit rather than Review, deliberately, and for the *opposite* reason
-/// [`crate::checks::read_mode`] chooses it: Review would also sweep text —
-/// `edit_content` is false there too — so a check that compared Read against
-/// Review would be comparing two selections and would pass against a build that
-/// had removed the mode gate entirely.
 const EDIT: &str = "edit";
 
 /// `canvas-text-selection via=… page=… chars=… quads=…` — `canvas::trace`'s
@@ -41,10 +35,6 @@ const QUADS_FIELD: &str = "quads";
 
 /// `page-text page=… runs=… chars=… ms=… status=…` —
 /// `app::cache::PageTextCache`'s report of an extraction it actually paid for.
-///
-/// Read here for the **cost** note rather than for a verdict: a cache that
-/// worked emits one of these per `(page, epoch)` and a cache that did not emits
-/// one per gesture frame, and the difference is visible by counting.
 const PAGE_TEXT_EVENT: &str = "page-text";
 
 /// **Where to sweep, as fractions of the page box** — the two ends of each
@@ -134,10 +124,6 @@ impl Check for TextSelectionSweepsAndCopies {
 }
 
 /// Every `canvas-text-selection` line that reports a **non-empty** selection.
-///
-/// Filtered on `chars > 0` rather than counting the event, because a *clear* is
-/// traced too — `chars=0` — and a check that counted lines would be satisfied by
-/// the gesture that ends a selection as readily as by the one that makes it.
 fn selections(trace: &Trace) -> Vec<&crate::trace::TraceLine> {
     trace
         .events(TEXT_EVENT)
@@ -514,10 +500,6 @@ mod tests {
 
     /// The two modes are the two the argument needs, and they are not the same
     /// one.
-    ///
-    /// `EDIT` in particular: comparing Read against **Review** would compare two
-    /// modes that both sweep text, and would pass against a build that had
-    /// deleted the mode gate outright. See [`EDIT`]'s own documentation.
     #[test]
     fn the_control_mode_is_the_one_that_does_not_sweep() {
         assert_eq!(READ, "read");
@@ -548,12 +530,6 @@ mod tests {
     }
 
     /// **A cleared selection is not a selection.**
-    ///
-    /// `canvas::trace` emits `chars=0` for a clear — deliberately, because a
-    /// clear is a real event with a real cause — so a check that counted
-    /// `canvas-text-selection` lines would be satisfied by the gesture that
-    /// *ends* a selection as readily as by the one that makes it. Phase C's
-    /// whole verdict turns on this filter.
     #[test]
     fn only_a_non_empty_selection_counts() {
         let trace = Trace::parse(
@@ -569,10 +545,6 @@ mod tests {
 
     /// …and a selection that copies text while highlighting nothing is read as
     /// the distinct failure it is, rather than as a pass.
-    ///
-    /// This is the one-derivation promise's failure mode, and it is a FAIL and
-    /// not a SKIP: unlike "no text under the sweep", it is evidence the gesture
-    /// ran and produced half an answer.
     #[test]
     fn a_selection_with_no_boxes_is_visible_to_the_filter() {
         let trace = Trace::parse(

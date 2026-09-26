@@ -18,22 +18,9 @@ const COMMIT_EVENT: &str = "resize-commit";
 /// `resize-declined reason=…` — the six worded refusals.
 const DECLINED_EVENT: &str = "resize-declined";
 /// The trace label `vector_edit` traces when the edit reached the engine.
-///
-///
-/// The stale constant did not make this check pass wrongly; it made it FAIL
-/// against a build where the resize had just got better — reporting *"the
-/// action was raised and its apply arm never ran"* while the trace plainly
-/// carried `transform-objects … transformed=1`. Worth knowing, because a check
-/// that pins a MECHANISM rather than an OUTCOME goes red on the day the
-/// mechanism improves, and the reflex when that happens is to doubt the code.
 const APPLIED: &str = "transform-objects-applied";
 
 /// How far to drag the grip, in screen pixels, on each axis.
-///
-/// Big enough that the factors are unambiguously greater than one — a two-pixel
-/// drag would produce `sx = 1.002`, which a build that ignored the delta
-/// entirely could also produce by rounding. Small enough to stay inside the
-/// window on a modest client area.
 const DRAG_PX: f32 = 60.0;
 
 /// See the module documentation.

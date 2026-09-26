@@ -34,3 +34,12 @@ A dialog seam. That is the entire point of the feature and it is worth
 stating: `save_copy_round_trip` needs `PDFCER_DIAG_SAVE_PATH` because a modal
 picker is a hard wall to a harness. Save has no picker, so this check drives
 exactly what the operator drives, with nothing substituted.
+
+## Item notes
+
+### `fn scratch_copy`
+
+**Never the operator's own fixture.** This check exists to prove a verb
+that overwrites, so pointing it at `--pdf` directly would mean a harness run
+modifies the file the next run measures — and a fixture that changes under
+the suite is the thing `crate::fixture`'s header refuses.

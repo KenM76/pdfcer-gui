@@ -64,3 +64,13 @@ channel rather than discarding them as "no error".
   of an `h`-terminated subpath has no operands in the content stream, so
   there is nothing for `move_handle` to rewrite. `ObjectModelProvider::
   node_handles` does not return it, so no control is offered for it.
+
+## Item notes
+
+### `fn the_nearest_of_two_close_handles_wins`
+
+An anchor's two handles can be within a few pixels of each other on a
+shallow curve. "Whichever came first in the list" would make which one
+the operator got depend on the decomposition order — a coin toss they
+cannot see and cannot learn, and one that would show up as "sometimes it
+drags the wrong side".

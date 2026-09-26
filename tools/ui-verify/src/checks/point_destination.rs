@@ -62,10 +62,6 @@ const FAR_AIM: (f64, f64) = (168.0, 655.0);
 const FAR_DEST_LEFT: f64 = 1150.0;
 
 /// Ctrl+wheel notches before the click.
-///
-/// Enough that a 1,224 pt page is several times the width of any window this
-/// runs in. The range is measured afterwards regardless — this constant is the
-/// thing to raise if that measurement starts reporting SKIP.
 const ZOOM_NOTCHES: usize = 8;
 
 /// The least horizontal scroll range, in logical points, that makes the
@@ -76,10 +72,6 @@ const ZOOM_NOTCHES: usize = 8;
 const MIN_RANGE: f32 = 200.0;
 
 /// How far the horizontal must move for the far link to count as having moved.
-///
-/// The far destination is 982 pt to the right of the near one and the view is
-/// magnified, so the real figure is several hundred points. This is a floor
-/// well clear of a rounding difference, not an expected value.
 const MIN_MOVE: f32 = 100.0;
 
 /// How close `origin_x` and the measured pre-click offset must be to count as
@@ -96,12 +88,6 @@ fn workspace_root() -> PathBuf {
 
 /// The view as the canvas reported it: page, the `zoom=` field verbatim, and the
 /// scroll offset.
-///
-/// The zoom is carried as the **string** the application printed rather than a
-/// parsed float, because the first clause of the request is an identity and the
-/// honest test of an identity is byte equality. A parsed `f32` compared with a
-/// tolerance would accept a shell that re-derived the same magnification by a
-/// different route, which is the failure D47 was.
 #[derive(Clone, Debug)]
 struct View {
     page: usize,
@@ -611,10 +597,6 @@ mod tests {
     use super::*;
 
     /// The two aim points are inside the rectangles the fixture writes.
-    ///
-    /// Pinned because a click on empty paper is symptom-identical to a broken
-    /// hit test, and these numbers are transcribed by hand from the fixture's
-    /// `PROVENANCE.py`.
     #[test]
     fn both_aim_points_are_inside_their_link_rectangles() {
         // near: rect [36 700 300 730]
@@ -630,13 +612,6 @@ mod tests {
     }
 
     /// The two drives differ in exactly one property.
-    ///
-    /// The whole argument for the pair rests on this: same x, so both zoom about
-    /// the same content column and reach the click with the same horizontal
-    /// geometry; different rows, so they are different links; different
-    /// destination `left`, which is the one input the request's second clause
-    /// turns on. If a future edit moves one aim sideways, the two outcomes stop
-    /// being attributable to the destination.
     #[test]
     fn the_two_drives_differ_only_in_the_destination() {
         assert!(
@@ -656,11 +631,6 @@ mod tests {
     }
 
     /// The near destination is the point the check zooms about.
-    ///
-    /// That equality is what makes it visible by construction — zoom-to-cursor
-    /// holds the content under the pointer fixed — so the check never has to
-    /// predict a window size or a notch step. Break it and the control drive
-    /// starts depending on the machine it runs on.
     #[test]
     fn the_near_destination_is_the_point_the_pointer_is_on() {
         assert!((NEAR_AIM.0 - NEAR_DEST_LEFT).abs() < f64::EPSILON);
@@ -704,10 +674,6 @@ mod tests {
     }
 
     /// The movement floor is well inside the range the check demands.
-    ///
-    /// If `MIN_MOVE` ever exceeded `MIN_RANGE` the witness drive could not pass
-    /// on any view the precondition admits, and the failure would read as a
-    /// product defect.
     #[test]
     #[allow(clippy::assertions_on_constants)]
     fn the_movement_floor_fits_inside_the_range_required() {

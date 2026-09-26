@@ -250,11 +250,6 @@ mod tests {
     }
 
     /// **The default filter hides nothing.**
-    ///
-    /// The assertion that protects every operator who never opens the filter
-    /// strip: this panel's contract has always been *every annotation in the
-    /// document*, and a filter whose `Default` narrowed would silently change
-    /// what a surface means for everybody.
     #[test]
     fn the_default_shows_everything() {
         let filter = Filter::default();
@@ -263,10 +258,6 @@ mod tests {
     }
 
     /// Filtering by author keeps that author's comments and only those.
-    ///
-    /// Both halves asserted — the count *and* that no other author survives —
-    /// because a predicate that returned `true` for everything passes a bare
-    /// "Ken's comments are still here" check.
     #[test]
     fn filtering_by_author_keeps_only_that_author() {
         let filter = Filter {
@@ -283,11 +274,6 @@ mod tests {
     }
 
     /// **An exact match, not a substring.**
-    ///
-    /// *Ken* and *Ken Mantle* are two reviewers. A substring match would fold
-    /// one into the other, and the operator would read one person's comments
-    /// under another's name — the worst available failure on a surface whose
-    /// whole subject is attribution.
     #[test]
     fn an_author_filter_does_not_match_a_prefix() {
         let filter = Filter {
@@ -310,12 +296,6 @@ mod tests {
     }
 
     /// **"With text only" drops the rows pdfcer's own markup produces.**
-    ///
-    /// The filter this shell added that Acrobat does not have, and the reason
-    /// it earns its place: `MarkupSpec` has no contents field on any variant,
-    /// so every shape pdfcer draws arrives with no `/Contents`. On a drawing
-    /// marked up here, this is the switch that turns forty rows into the three
-    /// somebody actually wrote on.
     #[test]
     fn with_text_only_drops_the_noteless_rows() {
         let filter = Filter {
@@ -328,12 +308,6 @@ mod tests {
     }
 
     /// A `/Link`'s accessibility **description** counts as text.
-    ///
-    /// §12.5.2 makes `/Contents` dual-purpose and the row already says which
-    /// meaning it carries. The filter asks *"is there anything to read"*, and
-    /// dropping a description would hide a string somebody wrote on the
-    /// grounds that it is not a *comment* — a distinction the operator did not
-    /// ask this switch to make.
     #[test]
     fn a_description_counts_as_text() {
         let rows = vec![row(0, 1, "Link", None, Note::Description("a URL".into()))];
@@ -346,11 +320,6 @@ mod tests {
 
     /// **Sorting by author is stable, and document order survives inside
     /// each name.**
-    ///
-    /// The property that stops the list flickering. An unstable sort would
-    /// reshuffle one reviewer's own comments between frames — the panel
-    /// redraws sixty times a second — which reads as the surface being broken
-    /// rather than as an ordering choice.
     #[test]
     fn sorting_by_author_is_stable_within_a_name() {
         let filter = Filter {
@@ -367,11 +336,6 @@ mod tests {
     }
 
     /// **An unsigned comment sorts to the END, not the start.**
-    ///
-    /// A reviewer ordering by author is looking for a person. `None` sorting
-    /// first — which is the derived order on `Option` and therefore what an
-    /// implementation gets for free — buries the name they asked for under
-    /// every anonymous row in the document.
     #[test]
     fn an_unsigned_comment_sorts_last() {
         let filter = Filter {
@@ -404,10 +368,6 @@ mod tests {
     }
 
     /// **Sorting is not narrowing**, so it raises no disclosure.
-    ///
-    /// Stated as a test because the obvious implementation of `is_narrowing`
-    /// is *"the filter is not `Default`"*, which would put a "some comments
-    /// are hidden" notice above a list that is hiding nothing.
     #[test]
     fn sorting_alone_raises_no_disclosure() {
         let filter = Filter {

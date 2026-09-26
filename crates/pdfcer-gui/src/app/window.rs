@@ -6,22 +6,9 @@
 use egui::{Id, ViewportCommand};
 
 /// `egui::Memory` key for "the chrome is hidden".
-///
-/// A named constant rather than a literal at both call sites, for the reason
-/// [`crate::shell::commands::FILE_RECENT`] gives about its own id: a key spelled
-/// twice that stops agreeing produces **silence** — a toggle that writes one
-/// slot and a composition step that reads another — rather than an error.
 const READ_MODE_ID: &str = "pdfcer-read-mode"; // ui-text-exempt: widget id, never displayed
 
 /// The command id whose chord the two exit statements name.
-///
-/// **Spelled once in this crate for this purpose.** The failure this guards
-/// against is not a compile error: a second literal `"view.read_mode"` at the
-/// title site and a third at the status-bar site would each keep working while
-/// slowly meaning different things, and the day one of them was renamed the
-/// other would resolve to `None` and the surface would go *silent* — which is
-/// indistinguishable from an operator who has read mode off. The same argument
-/// [`READ_MODE_ID`] makes about its memory key, one level up.
 const READ_MODE_COMMAND: &str = "view.read_mode"; // ui-text-exempt: command id, never displayed
 
 /// The full-screen command id, named here for the same reason as its sibling.
@@ -202,15 +189,6 @@ const PENDING_FULLSCREEN: &str = "pdfcer.window.fullscreen-asked"; // ui-text-ex
 
 /// How many frames a full-screen request is believed over the viewport's own
 /// report before the report wins again.
-///
-/// Bounded rather than latched, and the bound is the whole safety property. A
-/// request the platform silently refuses — a window manager that does not do
-/// full screen, a compositor that declines — would otherwise leave this shell
-/// permanently convinced of a state the window is not in, and every subsequent
-/// press would toggle a fiction.
-///
-/// Four is generous: `eframe` answers a viewport command on the next frame it
-/// pumps, and this only has to outlast the round trip.
 const PENDING_FRAMES: u64 = 4;
 
 /// The value a press of `view.fullscreen` should ask the viewport for.
@@ -303,11 +281,6 @@ mod tests {
     use super::*;
 
     /// **Read mode starts off, flips, and flips back.**
-    ///
-    /// Driven through the real memory slot rather than a local `bool`, because
-    /// the slot is the thing two surfaces share: a toggle that wrote one key
-    /// while `draws_chrome` read another would leave the ribbon drawn and the
-    /// control pressed, and nothing else in the suite would notice.
     #[test]
     fn read_mode_starts_off_and_toggles_both_ways() {
         let ctx = egui::Context::default();
@@ -342,13 +315,6 @@ mod tests {
     }
 
     /// **An unreported viewport state counts as windowed.**
-    ///
-    /// The one rule in the full-screen half that a test can reach, and the one
-    /// that decides whether the *first* press does anything. `None` is what a
-    /// headless context reports and what a backend that does not track the flag
-    /// reports; reading it as `true` would make the first press ask for
-    /// `Fullscreen(false)` on a windowed application — a control that visibly
-    /// does nothing on the only press most operators ever make.
     #[test]
     fn an_unreported_fullscreen_state_is_read_as_windowed() {
         assert!(
@@ -361,20 +327,6 @@ mod tests {
 
     /// **A second press while the report still lags turns full screen OFF**,
     /// which is the whole reason [`next_fullscreen`] takes three arguments.
-    ///
-    /// The sequence, exactly as the driven check performs it:
-    ///
-    /// 1. frame 10, windowed, nothing outstanding → ask for `true`;
-    /// 2. frame 11, **the report still says `false`** because the backend has
-    ///    not answered yet — an implementation that reads only the report asks
-    ///    for `true` again, so full screen turns on and will not turn off.
-    ///
-    /// `read_mode_hides_the_chrome` is where that shows up, and its failure
-    /// branch says *"the display has been left filled; close the window to
-    /// recover it"* — which is what an operator gets. It fails intermittently,
-    /// because the dependency is on how many frames fall between the presses;
-    /// reading an intermittent as harness flakiness is the mistake
-    /// `D:/dev/rag/egui/`'s chord-matcher finding warns about by name.
     #[test]
     fn a_second_press_before_the_backend_answers_still_toggles_off() {
         // Press one, on frame 10.
@@ -388,10 +340,6 @@ mod tests {
     }
 
     /// …and once the report agrees, the request is spent and the report wins.
-    ///
-    /// The other half of the rule, and what makes an **externally** triggered
-    /// full screen — a window manager's own key, a double-clicked title bar —
-    /// honoured on the very next press rather than fought.
     #[test]
     fn a_confirmed_request_hands_authority_back_to_the_report() {
         // We asked for `true` on frame 10 and the report now agrees.
@@ -410,10 +358,6 @@ mod tests {
 
     /// **A request the platform never answers expires**, so a shell cannot be
     /// left permanently convinced of a state its window is not in.
-    ///
-    /// Bounded rather than latched, and the bound is the safety property: a
-    /// window manager that declines full screen outright would otherwise make
-    /// every subsequent press toggle a fiction.
     #[test]
     fn an_unanswered_request_expires_rather_than_latching() {
         // Asked on frame 10; it is now well past the window and the report has
@@ -426,13 +370,6 @@ mod tests {
 
     /// **The chord the operator is told to press is the chord the manifest
     /// binds** — asserted against the real manifest, not against a literal.
-    ///
-    /// The vacuous shape this refuses: `assert_eq!(chord, "Ctrl+H")`. That test
-    /// passes on a build whose keymap has moved on and whose surfaces are
-    /// therefore lying, because it is a second copy of the very fact under
-    /// test. What is asserted instead is an **identity between two
-    /// derivations** — the one the surfaces use, and the keymap read the other
-    /// way round — so a rebind either moves both or fails here.
     #[test]
     fn the_published_chord_is_the_one_the_manifest_binds() {
         let shell = crate::shell::manifest::built_in();
@@ -457,11 +394,6 @@ mod tests {
     }
 
     /// **An unbound command yields no chord, and no default is invented.**
-    ///
-    /// A fallback of `Ctrl+H` here would be a second spelling of the binding
-    /// wearing a fallback's clothes: correct exactly when it is not needed, and
-    /// wrong in the one case it is reached for. The surfaces treat `None` as
-    /// *say nothing about a key* — see `app::status::readmode`.
     #[test]
     fn an_unbound_command_yields_no_chord_and_no_guess() {
         let empty = egui_shell::manifest::Keymap::default();
@@ -475,12 +407,6 @@ mod tests {
     }
 
     /// **One command bound twice advertises the same chord a menu would show.**
-    ///
-    /// It shares `egui_shell::menu::shortcut::prefer` rather than picking the
-    /// first match, and the failure that prevents is quiet: a command bound to
-    /// two keys would otherwise be advertised as one chord in a context menu and
-    /// a *different* chord on the status bar, both true, with no way for an
-    /// operator comparing them to know that either was.
     #[test]
     fn a_command_bound_twice_advertises_what_a_menu_advertises() {
         let mut map = std::collections::BTreeMap::new();
@@ -497,10 +423,6 @@ mod tests {
 
     /// The headless context reports no viewport full-screen flag, which is the
     /// precondition the test above is about.
-    ///
-    /// Asserted rather than assumed: if a future egui reported `Some(false)`
-    /// here, the rule would still be right but the reason written down for it
-    /// would have stopped being true, and this is where that shows up.
     #[test]
     fn a_headless_context_reports_no_fullscreen_state() {
         let ctx = egui::Context::default();

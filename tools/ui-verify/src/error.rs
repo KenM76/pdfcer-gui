@@ -18,6 +18,8 @@
 //! messages in this crate are written to name the thing that was missing and,
 //! where it is not obvious, what to do about it — because a harness error is
 //! read by someone who is already confused about something else.
+//!
+//! Design and rationale: `docs/modules/ui-verify/error.md`.
 
 use std::fmt;
 
@@ -101,10 +103,6 @@ impl From<std::io::Error> for Error {
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// Shorthand for `Err(Error::new(format!(...)))`.
-///
-/// Exists so the call sites read as prose rather than as three layers of
-/// wrapping, which is what encourages the specific messages this module asks
-/// for.
 #[macro_export]
 macro_rules! bail {
     ($($arg:tt)*) => {

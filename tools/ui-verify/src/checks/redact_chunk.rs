@@ -30,19 +30,9 @@ const UNDO_EVENT: &str = "undo"; // ui-text-exempt: a trace event name
 const UNDO_DECLINED_EVENT: &str = "undo-declined"; // ui-text-exempt: a trace event name
 
 /// Which chunk of the fixture is aimed at.
-///
-/// **An interior line.** Chunk 0 shares its top edge with the block and chunk 5
-/// its bottom, so a build that marked the block while standing on either would
-/// produce a box agreeing with the chunk on one side — and a containment test
-/// that passes for the wrong reason is worse than none.
 const AIM_CHUNK: usize = 2;
 
 /// How much of the block's height a single line is allowed to occupy.
-///
-/// The fixture holds [`EXPECTED_CHUNKS`] lines, so a correct chunk is about a
-/// sixth of its block and the wrong answer is the whole of it. Half is the
-/// midpoint between the two, chosen so the threshold cannot be reached by
-/// leading, ascenders or a rounded trace figure.
 const MAX_CHUNK_SHARE: f64 = 0.5;
 
 /// See the module documentation.

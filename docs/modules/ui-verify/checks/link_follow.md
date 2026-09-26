@@ -76,3 +76,75 @@ wrong before the subject is reached.
 No binary, `--no-input`, no diagnostic channel, no canvas rect to aim
 against, or a fixture that is not where it should be. None of those is a
 pass, and each says which it was.
+
+## Item notes
+
+### `const CLICK_EVENT`
+
+The **kind** is on the line, not merely the fact of a click. The whole
+defect class here is a viewer collapsing five destinations into two
+behaviours, and a trace that said `link-followed` for all five could not
+show it.
+
+### `const DISCLOSURE_REGION`
+
+The oracle for *"a sentence reached the operator"*. A `record_note` writes
+no trace of its own, so the only honest evidence that the disclosure was
+**drawn** is the region the status bar publishes when it draws it — the same
+distinction `checks::ocr_progress` had to make between a tally that was
+computed and one that was shown.
+
+### `const GOTO_LINK`
+
+The third rather than the first, and the furthest target rather than the
+nearest. A shell that resolved nothing and defaulted to page 0 reaches page 1
+and would satisfy a check aimed at the first link's neighbourhood; nothing
+reaches page 4 by accident.
+
+### `const ZOOM_NOTCHES`
+
+Four leaves the fitted view by a wide margin and keeps the link on screen:
+zoom-to-cursor holds the point under the pointer fixed, and the pointer is
+on the link.
+
+### `fn view_of`
+
+# Three numbers rather than one, and the reason is a falsification that
+FAILED to falsify
+
+The first cut of [`ALinkItCannotFollowSaysSo`] asserted only that the *page*
+had not changed. A deliberately broken build was then planted — every
+destination fed to `destination::actions_for(0, Fit)`, which is the
+plausible wrong implementation — and the check **passed anyway**, because
+the fixture opens on page 0 and a defaulted jump to page 0 moves nothing.
+
+⇒ A check that cannot fail is not evidence, and that one could not have
+caught the exact defect it was written for. The repair is to make the view
+**distinguishable from the destination before the click**: zoom in first, so
+that any navigation at all — a `Fit`, an `Xyz`, or a `GoToPage` followed by
+either — changes at least one of these three.
+
+### `fn the_goto_target_cannot_be_reached_by_a_defaulted_index`
+
+The single assertion that makes the first check worth running. A
+destination resolver's likeliest defect is returning a defaulted `0`,
+and a check aimed at a link targeting the first or second page would
+pass against an implementation that resolved nothing at all. The
+engine's own fixture note asks for this property to be copied rather
+than assumed.
+
+### `fn both_aim_points_are_inside_the_rectangles_the_engine_reports`
+
+Pinned because a click on empty paper is symptom-identical to a broken
+hit test — the confusion that produced a filed-then-retracted defect in
+this codebase — and the numbers here are transcribed from
+`pdfcer list-links` output by hand, which is exactly the kind of
+transcription that goes wrong silently.
+
+### `fn the_two_aim_points_are_not_the_same_row`
+
+They are read from two different fixtures, so this cannot fail today —
+and it is pinned against the plausible future edit that points both
+checks at one document, where two rows 65 pt apart on a page fitted into
+a window are perhaps forty screen pixels and a transcription error would
+put both clicks on the same link.

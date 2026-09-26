@@ -44,3 +44,12 @@ window, and an in-viewport panel that regressed would look like a perfectly
 good dialog in that same capture. *"Is this a separate OS window"* is a fact
 about the window manager, and the only thing in the process that knows it is
 the viewport egui created.
+
+## Item notes
+
+### `const DIALOGS`
+
+The second element is for the failure message and is deliberately the
+operator's word rather than the module name: a report that says *"Export to
+DXF opened inside the application window"* is actionable to whoever reads
+it, and `export_dxf.rs` is not.

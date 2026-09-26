@@ -47,3 +47,12 @@ of them was forgotten.
 With it derived there is nothing to forget. Whatever clears the pending
 record — including a route written next year by somebody who has never read
 this file — the window is back on the next frame.
+
+## Item notes
+
+### `fn hidden_follows_the_pending_record_and_nothing_else`
+
+The property the whole design rests on, and the one a stored flag would
+not have. The test deliberately cancels through `canvas::placing` — a
+module this one does not otherwise touch — because that is the point:
+the un-hiding is not something `PlaceHandoff` participates in.

@@ -13,42 +13,12 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// The scale the second launch runs at.
-///
-/// **1.8, not the 2.0 maximum.** Two reasons, and the first is about what the
-/// check can conclude:
-///
-/// * At exactly the maximum, a build that silently clamped to *some* ceiling
-///   would produce the same measurement as one that honoured the request. 1.8
-///   is inside the range, so the assertion below distinguishes "applied" from
-///   "clamped to whatever it felt like".
-/// * 1.8 is enough to break a layout that is going to break. The shipped
-///   window is 1100 × 800 and the ribbon band is ~103 pt; at 1.8 that is
-///   ~186 pt of an 800 pt window, which is where a two-row group with a
-///   caption starts competing for space with the canvas.
 const LARGE: f32 = 1.8;
 
 /// How far the measured ratio may sit from [`LARGE`] and still pass.
-///
-/// Generous, and it has to be: a laid-out control's size is not a pure
-/// multiple of the scale. Text is measured in whole pixels at the device
-/// density, padding is rounded, and `egui` snaps some rects to the pixel grid
-/// — so a 30.3 pt tab at 1.8 lands near 54.5 pt rather than at exactly
-/// 54.54 pt.
-///
-/// 12 % is wide enough that no rounding regime trips it and narrow enough that
-/// **it cannot be satisfied by the wrong answer**: the two failures worth
-/// catching are "no scaling at all" (ratio 1.0, which is 44 % away) and
-/// "scaled by the wrong factor" (the nearest plausible wrong factor is the
-/// device pixel ratio, 1.0 or 2.0 on this hardware, both far outside).
 const RATIO_TOLERANCE: f32 = 0.12;
 
 /// The regions measured for the scaling assertion.
-///
-/// Ribbon chrome specifically, because it is drawn by `egui-shell` from the
-/// theme's own metrics and is therefore the surface a scale change is
-/// *supposed* to move. The canvas is deliberately excluded — assertion 3 is
-/// that the page does **not** grow, and mixing the two into one list would
-/// make a pass ambiguous.
 const SCALED_REGIONS: &[&str] = &[
     "ribbon.tab.file",
     "ribbon.modes",
@@ -81,11 +51,6 @@ impl Check for UiScaleResizesTheChrome {
 }
 
 /// One launch at one scale: write the preference, start, read what it declared.
-///
-/// Returns the declared regions and the client area, which is everything the
-/// assertions need. Kept separate from [`drive`] so the two launches cannot
-/// drift apart — the failure that would produce is a comparison between two
-/// runs configured differently, which would look exactly like a scaling defect.
 struct Measured {
     /// Every region the application declared, by name.
     names: Vec<String>,

@@ -57,13 +57,6 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// The mode the check runs in.
-///
-/// **Read, deliberately, and it is half of what this check is for.** The
-/// operator's instruction is that OCR be available in Read, and the first
-/// implementation of this feature put the command on the **Tools** tab —
-/// `RIBBON_IA.md` §5.7's placement — where Read cannot reach it at all, Read
-/// being shown `["file", "view"]` alone. Driving the ribbon in Read is what
-/// turns that from an argument into an observation.
 const READ: &str = "read";
 
 /// The tab the command lives on. See [`READ`] for why it is not `tools`.
@@ -90,29 +83,13 @@ const APPLIED_EVENT: &str = "ocr-applied";
 
 /// `ocr-layer page=… n=… epoch=… disclosures=…` — `vector_edit`'s record that
 /// the **session** took it.
-///
-/// Both are asserted, and the pair is the point. The dialog's line says *I
-/// asked*; this one says *it happened*. A build where the action was raised and
-/// dropped emits the first and not the second, and that is a state with a
-/// dialog claiming the text is in the operator's document while the document
-/// has none.
 const EDIT_EVENT: &str = "ocr-layer";
 
 /// How long to wait for recognition, in settle frames.
-///
-/// Generous. Recognition of one page measured about one second in a release
-/// build and twenty in a debug one, and this harness drives whichever binary it
-/// was pointed at. A wait that was too short would report "recognition did not
-/// happen" about a build that was still working, which is the worst available
-/// failure message.
 const RECOGNITION_FRAMES: u32 = 400;
 
 /// The repository's own copy of the fixture, located from this crate rather
 /// than from the working directory.
-///
-/// `tools/ui-verify/` → up two → the workspace root. Stable whatever the
-/// harness was invoked from and whatever `--source-root` says, which is the
-/// property the first two attempts at this lacked — see [`drive`].
 fn default_fixture() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("..")
@@ -145,13 +122,6 @@ impl Check for OcrRecognisesAPageAndTheDocumentKeepsIt {
 }
 
 /// A cheap content digest — length plus FNV-1a over the bytes.
-///
-/// Not cryptographic and does not need to be: the question is *"did this file
-/// change"*, the adversary is a bug rather than a forger, and carrying a SHA-2
-/// implementation into this crate to answer it would be a dependency for
-/// nothing. The **length is part of the digest** so a truncation cannot be
-/// hidden by a hash collision, which is the only failure mode a 64-bit hash
-/// realistically has here.
 fn digest(bytes: &[u8]) -> (usize, u64) {
     let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
     for b in bytes {
@@ -595,10 +565,6 @@ mod tests {
     use super::*;
 
     /// **The digest changes when one byte does, and the length is part of it.**
-    ///
-    /// Phase E's whole verdict rests on this function, so a digest that answered
-    /// "unchanged" for a modified file would turn the check's most important
-    /// assertion into a formality that always passes.
     #[test]
     fn the_digest_notices_a_single_changed_byte_and_a_truncation() {
         let a = b"%PDF-1.4 hello world";
@@ -615,11 +581,6 @@ mod tests {
 
     /// The mode this check drives is the one the operator's instruction is
     /// about, and the tab is one that mode is actually shown.
-    ///
-    /// Pinned because the two together *are* the finding: `RIBBON_IA.md` §5.7
-    /// puts OCR on Tools, Read is shown `["file", "view"]`, and a check that
-    /// quietly drove Edit instead would pass against a build in which OCR is
-    /// unreachable in Read.
     #[test]
     fn the_check_drives_read_and_a_tab_read_actually_has() {
         assert_eq!(READ, "read");
@@ -661,10 +622,6 @@ mod tests {
     }
 
     /// The check never writes into `fixtures/`.
-    ///
-    /// A stray recognised copy beside the fixture would be committed by
-    /// somebody eventually, and a repository that gains a file every time the
-    /// harness runs is a repository whose `git status` stops being read.
     #[test]
     fn the_output_path_is_not_beside_the_fixture() {
         assert_eq!(

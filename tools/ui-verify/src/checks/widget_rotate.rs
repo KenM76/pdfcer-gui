@@ -12,21 +12,6 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// Edit mode, the text-field tool armed, and the Properties panel open.
-///
-/// The properties panel is **not** opened here, and the first version's
-/// attempt to is why.
-///
-/// `view.panel_properties` is a TOGGLE, and opening it re-docks the canvas
-/// narrower — after which the coordinate this check computed for its placement
-/// click pointed somewhere else. The symptom was not a missed click: it was
-/// *"the window containing (1224, 538) could not be brought to the front"*,
-/// three runs running, because the point had moved over a different window
-/// entirely.
-///
-/// ⇒ `D:/dev/rag/egui/` already carries this as **harness coordinates going
-/// stale when a dock width changes**. The panel is open in Edit mode by
-/// default, so the toggle was never needed — it was doing nothing but moving
-/// the canvas out from under the check.
 const INVOKE: &str = "mode.edit,edit.form_text_field";
 
 /// The placement dialog accepts itself, so no dialog has to be driven.
@@ -36,12 +21,6 @@ const ACCEPT_ENV: (&str, &str) = ("PDFCER_DIAG_FORM_ACCEPT", "1");
 const BOX_LINE: &str = "form-target";
 
 /// The **Turn right** button's own region.
-///
-/// Its own, not a fraction of the row's. The first version took the row's
-/// rect and aimed 78 % across it — coordinate arithmetic the harness already
-/// has `declared_center` for — and landed outside the window entirely, which
-/// surfaced as *"the window could not be brought to the front"* three runs
-/// running. A named control is aimed at by name.
 const ROTATE_RIGHT_REGION: &str = "properties.widget_edit.rotate_right";
 
 /// The engine's own report.

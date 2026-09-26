@@ -26,6 +26,8 @@
 //! The **printer selector stays outside the tabs** — see
 //! [`super::PrintDialog::options_column`] for why that one is not a setting
 //! like the others.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/print/tabs.md`.
 
 use egui::Ui;
 
@@ -218,13 +220,6 @@ pub(crate) fn parse_page_range(spec: &str, count: usize) -> Option<Vec<usize>> {
 // ---------------------------------------------------------------------------
 
 /// Publish one scale radio's rectangle under [`super::REGION_SCALE_PREFIX`].
-///
-/// `ui_rect_visible` and not `ui_rect`, because the options column scrolls: a
-/// radio scrolled out of view must stop being published rather than hand a
-/// driver a rectangle it would click through to whatever is on top.
-///
-/// The percentage inside `ScaleMode::Custom` is ignored — all four modes are
-/// one radio each, and `Custom(0.35)` and `Custom(1.0)` are the same control.
 fn publish_scale_region(ui: &egui::Ui, mode: ScaleMode, rect: egui::Rect) {
     let key = match mode {
         // ui-text-exempt: diagnostic region name, never displayed in the UI
@@ -579,11 +574,6 @@ pub(super) fn comments(ui: &mut Ui, dialog: &mut PrintDialog) {
 }
 
 /// The resolution each page is rendered at, on the Pages tab.
-///
-/// The limit field is drawn in EVERY state. Drawn only while the cap bound, it
-/// vanished the moment the operator raised the cap to the printer's own
-/// resolution — the next job had nothing to cap, so the control that would
-/// lower it again was gone.
 fn resolution(ui: &mut Ui, dialog: &mut PrintDialog, resolution: Option<JobResolution>) {
     ui.add_space(8.0);
     ui.horizontal_wrapped(|ui| {
@@ -683,12 +673,6 @@ mod tests {
     }
 
     /// The order typed is the order printed, and duplicates survive.
-    ///
-    /// Both are *behaviours*, not accidents, and both are shared with the
-    /// CLI — which is the whole reason there is one parser. A future "tidy"
-    /// that sorted or de-duplicated here would make the same text mean two
-    /// different jobs depending on which surface the operator typed it into,
-    /// and neither surface would say which.
     #[test]
     fn the_typed_order_is_preserved_and_duplicates_are_kept() {
         assert_eq!(parse_page_range("5,1-2", 10), Some(vec![4, 0, 1]));
@@ -696,11 +680,6 @@ mod tests {
     }
 
     /// Malformed input yields NOTHING, never a salvaged prefix.
-    ///
-    /// The property the whole "one parser" argument rests on: a range that
-    /// cannot be read must not become a job. Each of these would be a
-    /// plausible thing to "recover" from, and recovering would print pages
-    /// nobody asked for.
     #[test]
     fn malformed_input_refuses_rather_than_recovering() {
         for spec in ["0", "4-2", "11", "1-11", "abc", "1-", "-3", "1,abc", ""] {
@@ -741,11 +720,6 @@ mod tests {
     }
 
     /// A current page past the end of the document selects nothing.
-    ///
-    /// Reachable rather than theoretical: the dialog holds the page index it
-    /// opened on, and a document can be closed and a shorter one opened while
-    /// it is up. Selecting *something* here would print a page that is not
-    /// the one the radio names.
     #[test]
     fn a_stale_current_page_selects_nothing() {
         assert!(PrintRange::Current.indices("", 2, 7).is_empty());
@@ -758,10 +732,6 @@ mod tests {
     }
 
     /// Every tab has its own label and its own question.
-    ///
-    /// The tabs earn their keep only if their names distinguish them; three
-    /// tabs sharing a tooltip would be the drawer this design replaced,
-    /// wearing a strip of buttons.
     #[test]
     fn the_three_tabs_are_distinguishable() {
         let labels: Vec<_> = PrintTab::ALL.iter().map(|t| t.label()).collect();

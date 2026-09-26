@@ -62,3 +62,17 @@ the after-the-fact editing, not in the tool that authors it. The engine's
 verbs for it (`move_dimension_vertex`, `insert_dimension_vertex`,
 `remove_dimension_vertex`, and `vertex_edit_preview` so a menu can be greyed
 correctly) all exist. Recorded here so the gap is named rather than implied.
+
+## Item notes
+
+### `fn closes_the_ring`
+
+Compared in **canvas space** at the same tolerance a selecting click uses,
+so the target is the same physical size at every zoom. In page space the
+ring would be impossible to close zoomed out — the first vertex would be a
+sub-pixel target — and trivially easy to close by accident zoomed in.
+
+Requires [`MIN_CLOSED`] vertices before it will answer `true`. Below that
+there is no ring to close, and reading a click on the first of two vertices
+as a close would consume a pick and then refuse, which from the operator's
+chair is a click that did nothing.

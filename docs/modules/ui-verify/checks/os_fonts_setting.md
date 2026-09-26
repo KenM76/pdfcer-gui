@@ -47,3 +47,11 @@ pass any check that asked whether the group existed.
 a second document; `embedding_works_with_no_font_folder_at_all` already
 drives the *resolver* half from the other end. What is asserted here is the
 half O50 is actually about: that an operator looking for this can find it.
+
+## Item notes
+
+### `const INVOKE`
+
+The two open one window and ask different questions, which is why they
+stopped sharing a route. `file.settings` is *"show me the settings"* and
+lands at the top, correctly; this one is *"where do font folders live"*.

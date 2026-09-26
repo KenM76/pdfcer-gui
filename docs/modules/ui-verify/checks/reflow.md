@@ -47,3 +47,42 @@ measurement, so re-wrapping them has nothing to do. **A check driven against
 either would report the feature broken about a build whose reflow works.**
 
 ## What this check deliberately does NOT do, and what it CANNOT see
+
+## Item notes
+
+### `const INVOKE`
+
+`edit.text` is rung here rather than clicked because arming the caret is
+**not what this check is about**, and it already has its own driven check.
+A check that re-verifies its own preconditions through the slowest possible
+route fails for reasons that are not its subject.
+
+### `const REFLOW_ITEM`
+
+The pair is written once so the region and the id cannot drift apart: a
+check that clicked one control and asserted about another would pass or fail
+for reasons unrelated to either.
+
+### `const APPLIED_EVENT`
+
+`-applied`, per the convention this project adopted after making the
+same-name mistake twice: `vector_edit` writes its own bare `reflow-block …`
+line for the identical edit, and `.last()` on the bare name reads that one.
+
+### `const CARET_AT`
+
+Inside **line 2** of the block — `x = 120`, baseline `y = 668` — rather
+than in the first or last line. A first-line caret would pass on a build
+whose block lookup returned 0 unconditionally, and the last line is the one
+most likely to be split off by a recogniser that disagrees about the block's
+extent. The middle is the honest place to ask.
+
+The numbers come from `tools/gen-reflow-fixture.py`, which prints the
+geometry it computed for exactly this reason. They are quoted, not derived
+twice.
+
+### `fn parse_lines`
+
+A parse rather than a `split` at the call site, so a malformed field is a
+SKIP with a sentence instead of a silent `0->0` that would pass the
+`after >= before` test by arithmetic accident.

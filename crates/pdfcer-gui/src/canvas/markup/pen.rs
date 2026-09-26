@@ -262,69 +262,6 @@ pub const MAX_WIDTH_PTS: f64 = 12.0;
 
 impl Default for Pen {
     /// **The shipped pen: Acrobat's own eight defaults, at 2 pt, opaque.**
-    ///
-    /// # Every colour here is measured, and none of it is chosen
-    ///
-    ///
-    /// # THIS DELIBERATELY BREAKS THE STANDING "OMITS NOTHING" RULE, and
-    /// # the rule is not being ignored — it is being answered
-    ///
-    /// [`Self::opacity`]'s doc comment states the rule this project applies when
-    /// a capability becomes choosable:
-    ///
-    /// > **a build which omits nothing must behave as it did before the choice
-    /// > existed**, byte for byte.
-    ///
-    /// That rule is about a *capability arriving*: an operator who never touches
-    /// a new control must not discover that the new control changed their output
-    /// anyway. It is a rule against **silent** change, and it is a good one.
-    ///
-    /// ⇒ It does not bind here, and the reason is that this change is not
-    /// silent — **it is the thing the operator asked for by name**:
-    ///
-    /// > *"Also make sure you've used the same default colours and style look
-    /// > for these things as Adobe."*
-    ///
-    /// A markup authored by this build is therefore a different colour from one
-    /// authored by the build before it. That is a deliberate, requested,
-    /// operator-visible change, and pretending otherwise by keeping the old
-    /// values *"for compatibility"* would be answering a request with a refusal
-    /// dressed as a principle. Saying so here, rather than quietly departing
-    /// from a rule written four lines above, is the whole reason this paragraph
-    /// exists.
-    ///
-    ///
-    /// # 2 pt is KEPT, and Adobe's number is not being ignored — there
-    /// # isn't one
-    ///
-    /// The brief for this change said to weigh Acrobat's default line width
-    /// against this shell's 2 pt and decide, recording both sides. The weighing
-    /// found only one side, and the finding is the decision:
-    ///
-    /// **There is no measurable Acrobat width to match.** `cAnnots` holds a
-    /// colour key, a fill key, a text key, an opacity key and an icon name for
-    /// every subtype, and **no width, thickness or border key at all** — the
-    /// whole `…\Adobe Acrobat\DC` tree was searched for `width`, `thick` and
-    /// `border` and the only hits were print-N-up and multimedia settings. So an
-    /// "Acrobat default of 1 pt" could only have come from memory or from a
-    /// web page, and this project's **claim-bearing copy** rule is explicit that
-    /// a plausible number from a marketplace convention is not a source. A line
-    /// width is written into `/BS /W` and reaches the operator's file; it is a
-    /// claim.
-    ///
-    /// The two sides, since both were asked for:
-    ///
-    /// | for adopting Adobe's | for keeping 2 pt |
-    /// |---|---|
-    /// | the operator asked for parity with Adobe, and asked for it about style | **the number is not sourced** — the ask was for Adobe's value, not for a guess at it |
-    /// | a thinner default is easier to thicken than a thick one is to find | the operator's own drawings are dense CAD exports whose linework is 0.25 pt, and *"a hairline vanishes among the drawing's own linework"* is his use case, argued here since the constant existed |
-    /// | | 2 pt is what every markup this shell has authored is drawn at, so an old and a new comment on one sheet match |
-    ///
-    /// ⇒ **2 pt wins**, on the first row of the right-hand column alone. If a
-    /// measurement of Acrobat's width later turns up — its Properties dialog
-    /// shows a `Thickness` field, so the number exists somewhere this search did
-    /// not reach — this decision should be revisited **with that measurement**,
-    /// not with a recollection of it.
     fn default() -> Self {
         Self {
             // DOCUMENT COLOUR: Acrobat's shape-tool red, written into `/C`.
@@ -581,11 +518,6 @@ impl Pen {
 }
 
 /// PDF components from a screen colour.
-///
-/// Alpha is dropped — see [`Pen::set_ink`]. The division is by `255.0` rather
-/// than by `256.0`: the component range is *inclusive* of both ends, so `255`
-/// must map to exactly `1.0` or a "pure red" chosen in the picker would be
-/// written as `0.996` and round-trip to a slightly different swatch.
 fn rgb_of(c: Color32) -> (f64, f64, f64) {
     (
         f64::from(c.r()) / 255.0,
@@ -595,11 +527,6 @@ fn rgb_of(c: Color32) -> (f64, f64, f64) {
 }
 
 /// A screen colour from PDF components.
-///
-/// The inverse of [`rgb_of`], and **opaque**: the swatch shows the colour the
-/// annotation will be, and an annotation has no alpha in `/C`. Rounding rather
-/// than truncating, so the round trip through the picker is stable — truncation
-/// would walk a colour down by one unit per visit.
 fn color32_of((r, g, b): (f64, f64, f64)) -> Color32 {
     let byte = |v: f64| {
         // `clamp` first: a settings file or a future loader could hand this a
@@ -622,23 +549,6 @@ mod tests {
     use super::*;
 
     /// **The shipped pen is Acrobat's, slot for slot.**
-    ///
-    /// The successor to `the_default_pen_is_the_constants_it_replaced`, which
-    /// pinned `(0.85, 0.16, 0.16)` and `(1.0, 1.0, 0.0)` — this shell's own
-    /// invented red and yellow — under the *"a build that omits nothing behaves
-    /// as it did before"* rule. That test was **deleted deliberately**, not
-    /// renamed: it asserted the exact values the operator asked to have
-    /// replaced, so leaving it would have made the requested change fail the
-    /// suite. `Pen::default`'s own doc comment carries the argument for why the
-    /// rule does not bind here.
-    ///
-    /// What replaces it is stronger, because it is checkable against something
-    /// outside this file: every slot must equal the [`super::palette`] constant
-    /// whose doc comment names the Acrobat registry key it was read from. A
-    /// hand-typed drift in either place fails here.
-    ///
-    /// Falsified by changing `ink` to `palette::NOTE_PURPLE`: the assertion
-    /// fired naming `Shape`. Restored.
     #[test]
     fn every_slot_ships_at_the_acrobat_value_it_was_measured_from() {
         let pen = Pen::default();
@@ -668,14 +578,6 @@ mod tests {
     }
 
     /// **The highlighter is ORANGE, and that is not a typo.**
-    ///
-    /// Stated as its own test because it is the single value most likely to be
-    /// "corrected" back to yellow by somebody who knows that PDF highlighters
-    /// are yellow. They are not, in the program the operator compares against:
-    /// `cHighlight\cstrokeColor` reads `1.0, 0.384308, 0.0`.
-    ///
-    /// The assertion is written as *"not the yellow it used to be"* rather than
-    /// only as *"is the orange"*, so the failure message says what happened.
     #[test]
     fn the_highlighter_is_acrobats_orange_and_not_the_old_yellow() {
         let pen = Pen::default();
@@ -692,16 +594,6 @@ mod tests {
 
     /// **Every markup kind reaches a slot, and the geometric family shares
     /// one.**
-    ///
-    /// The successor to `only_the_highlight_kind_uses_the_highlighter`, over
-    /// the whole `MarkupKind::ALL` list rather than a hand-written subset — so a
-    /// ninth kind is covered without anybody remembering to add it here.
-    ///
-    /// What it asserts is now the *routing*, not the colour: eight
-    /// distinguishable values are planted, one per slot, so a kind that took the
-    /// wrong pen names itself. Planting real colours would let a wrong answer
-    /// pass whenever two slots happened to ship the same red — which three of
-    /// them do.
     #[test]
     fn every_kind_takes_the_slot_it_is_documented_to_take() {
         let pen = planted();
@@ -723,15 +615,6 @@ mod tests {
 
     /// **Every slot is separately settable, and setting one moves nothing
     /// else.**
-    ///
-    /// This is the *"once they set a colour for a kind, it sticks for that
-    /// kind"* half of the operator's ask, and it is the property a collapsed
-    /// slot would silently lose: if `Squiggly` were folded into `Shape` because
-    /// they ship the same red, recolouring the shape pen would recolour every
-    /// squiggly on every future page and nothing would say so.
-    ///
-    /// Falsified by making `set_colour`'s `Squiggly` arm write `self.ink`: the
-    /// assertion fired on the `Shape` slot while setting `Squiggly`. Restored.
     #[test]
     fn setting_one_slot_leaves_the_other_seven_alone() {
         for target in PenSlot::ALL {
@@ -759,13 +642,6 @@ mod tests {
     }
 
     /// The three text-annotation kinds land on three different slots.
-    ///
-    /// The mapping `app::actions::apply` depends on. Before 2026-09-06 all
-    /// three took `pen.ink`, so a sticky note came out shape-red where
-    /// Acrobat's `cText` is violet — this is the assertion that would have
-    /// caught that, stated as *"three kinds, three slots"* rather than as three
-    /// hard-coded colours, because the colours may legitimately be edited and
-    /// the separation may not.
     #[test]
     fn the_three_text_annotation_kinds_do_not_share_a_pen() {
         use crate::canvas::textannot::TextAnnotKind;
@@ -794,20 +670,6 @@ mod tests {
     }
 
     /// **THE TOLERANCE FOLLOWS THE WIDTH.**
-    ///
-    /// The rule [`Pen::simplify_tolerance_pts`] carries at length: ε must be a
-    /// quarter of the stroke width, because that is half of the half-width and
-    /// therefore the bound that keeps a simplified centreline strictly inside
-    /// the stroke the operator drew.
-    ///
-    /// It is asserted by **varying the width**, which is the only form of the
-    /// rule a stale constant cannot pass: `ink::SIMPLIFY_TOLERANCE_PTS` was
-    /// `PEN_WIDTH_PTS / 4.0` frozen at 2 pt, and it satisfied every test that
-    /// used the default pen while being wrong by 4× at the thin end.
-    ///
-    /// ⚠ **If a width ever goes per-slot, this test must gain the slot too.**
-    /// See the function's own note; the rule has been broken once already by a
-    /// session that had just read it.
     #[test]
     fn the_tolerance_follows_the_width() {
         for width in [MIN_WIDTH_PTS, 0.5, 2.0, 7.5, MAX_WIDTH_PTS] {
@@ -827,10 +689,6 @@ mod tests {
     }
 
     /// A pen with eight distinguishable colours, one per slot.
-    ///
-    /// Named rather than spelled out at three call sites, and built from the
-    /// slot's own *index* so it cannot fall out of step with [`PenSlot::ALL`]:
-    /// a ninth slot gets a ninth distinct value with no edit here.
     fn planted() -> Pen {
         let mut pen = Pen::default();
         for (i, slot) in PenSlot::ALL.iter().enumerate() {
@@ -850,14 +708,6 @@ mod tests {
     }
 
     /// A colour survives the round trip through the picker unchanged.
-    ///
-    /// The property that makes the swatch usable rather than merely present.
-    /// A conversion that truncated would walk a colour down by one unit every
-    /// time the operator opened the picker and closed it without choosing —
-    /// a slow, silent drift with no event to attach a bug report to.
-    ///
-    /// The endpoints are the ones that catch an off-by-one scale factor:
-    /// dividing by 256 rather than 255 makes pure white round-trip to 254.
     #[test]
     fn a_colour_round_trips_through_the_swatch() {
         // DOCUMENT COLOUR: four `/DeviceRGB` values round-tripping through the
@@ -881,11 +731,6 @@ mod tests {
 
     /// An out-of-range component clamps rather than wrapping to a nonsense
     /// colour.
-    ///
-    /// Not reachable from the picker, which cannot produce one — reachable from
-    /// a hand-edited file the day the pen is persisted, and from any future
-    /// loader. `as u8` on a NaN is 0, a silent black; the clamp states the
-    /// intent instead of inheriting that.
     #[test]
     fn an_impossible_component_clamps_instead_of_wrapping() {
         // DOCUMENT COLOUR: expected `/DeviceRGB` results, not palette entries.
@@ -897,21 +742,6 @@ mod tests {
     }
 
     /// The shipped width is reachable on the control that sets it.
-    ///
-    /// # Why the range's own bounds are asserted in a `const` block
-    ///
-    /// `MIN_WIDTH_PTS > 0.0` is a relationship between two literals, so an
-    /// ordinary `assert!` is a statement the compiler folds away and clippy
-    /// rightly refuses. It is still worth stating — **zero is legal PDF** and
-    /// means *"the thinnest line the device can draw"*, a width whose
-    /// appearance depends on the output device and therefore exactly what a
-    /// comment annotation must not be — so it is stated where a compile-time
-    /// claim belongs, and a future edit that lowered the floor to zero would
-    /// fail to build rather than fail to run.
-    ///
-    /// The runtime half is the one that can actually change: the shipped
-    /// default is a value, and a default outside its own control's bounds
-    /// would be silently rewritten the first time anybody touched the swatch.
     #[test]
     fn the_shipped_width_is_reachable_on_its_own_control() {
         const {

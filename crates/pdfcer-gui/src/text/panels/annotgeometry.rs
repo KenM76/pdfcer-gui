@@ -61,14 +61,6 @@ mod tests {
     }
 
     /// **Present tense, no past-tense verb about an edit.**
-    ///
-    /// This is a hover on a control the operator has not pressed. A sentence
-    /// saying an edit "was refused" would describe an event that has not
-    /// happened — the exact confusion `super::properties`'
-    /// `geometry_nothing_typed` avoids next door by naming the next act.
-    ///
-    /// **Falsified** by rewording [`locked`] to *"that change was refused"*:
-    /// red, as it must be.
     #[test]
     fn it_does_not_claim_an_edit_already_happened() {
         let line = locked();

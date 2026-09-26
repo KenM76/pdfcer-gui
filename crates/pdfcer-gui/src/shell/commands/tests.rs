@@ -16,13 +16,6 @@ fn registry() -> CommandRegistry {
 }
 
 /// **No two commands share a handler token.**
-///
-/// The shell explicitly permits it — two ids may share a token if the
-/// application wants two names for one handler — which is exactly why
-/// this needs asserting on *our* side. pdfcer has no such pair, so a
-/// collision here is a typo in a hand-assigned number, and its symptom
-/// would be one command silently doing another's work. Nothing else in
-/// the system can detect that.
 #[test]
 fn every_handler_token_is_unique() {
     let mut seen: BTreeSet<u64> = BTreeSet::new();
@@ -37,11 +30,6 @@ fn every_handler_token_is_unique() {
 }
 
 /// Handler tokens sit in their tab's hundred-block.
-///
-/// The blocks are what make a collision improbable in the first place
-/// and what makes a raw token in a trace readable — `4xx` is an Edit
-/// command without looking anything up. A number in the wrong block is
-/// how the next one gets assigned on top of an existing command.
 #[test]
 fn every_handler_token_is_in_its_tabs_block() {
     let blocks = [
@@ -71,11 +59,6 @@ fn every_handler_token_is_in_its_tabs_block() {
 }
 
 /// Every enable condition is one of the five documented names.
-///
-/// A predicate naming a condition the application never publishes is a
-/// command that is permanently greyed — and it fails silently, because
-/// an unset condition and a false condition are the same value. The
-/// vocabulary is small on purpose; this is what keeps it small.
 #[test]
 fn every_predicate_names_a_documented_condition() {
     const KNOWN: &[&str] = &[
@@ -294,12 +277,6 @@ fn every_predicate_names_a_documented_condition() {
 
 /// **With no document open, only the commands that make sense without
 /// one are available.**
-///
-/// The headless equivalent of launching pdfcer and looking at the
-/// ribbon. It is asserted as an exact set rather than a count, because
-/// the interesting failure is a *specific* command escaping its
-/// predicate — `pages.delete` live with nothing open — and a count
-/// would pass as long as some other command lost one.
 #[test]
 fn with_no_document_only_the_document_free_commands_are_enabled() {
     let nothing = ConditionSet::new();
@@ -369,11 +346,6 @@ fn with_no_document_only_the_document_free_commands_are_enabled() {
 
 /// A document with no pages is a legal document, and it must not arm
 /// anything that acts on a page.
-///
-/// `/Count 0` is valid PDF. pdfcer opens such a file and says "This
-/// document has no pages" rather than reporting a failure — so the
-/// condition set it publishes has `doc.open` and not `doc.pages`, and
-/// this asserts the consequence.
 #[test]
 fn an_empty_document_arms_nothing_that_needs_a_page() {
     let empty_doc = ConditionSet::new().with("doc.open");
@@ -416,10 +388,6 @@ fn undo_and_redo_follow_their_stacks() {
 }
 
 /// Every registered command has a tooltip.
-///
-/// The catalog type makes this structurally true, so the test is
-/// guarding the *wiring*: a command built with `Command::new` and
-/// never given `.with_tooltip` would compile.
 #[test]
 fn every_command_has_a_tooltip() {
     for command in registry().iter() {
@@ -435,38 +403,6 @@ fn every_command_has_a_tooltip() {
 }
 
 /// **Every icon key a command names is a key the icon set has.**
-///
-///
-/// | test | question |
-/// |---|---|
-/// | the split | *does this command name a glyph at all?* |
-/// | this one | *and does that name resolve to a picture?* |
-///
-/// # What a wrong key actually does, which is why this is not cosmetic
-///
-/// It does **not** crash and it does **not** draw nothing.
-/// `icons::paint_ribbon_icon` falls through to `paint_missing_mark`, which
-/// draws a rounded square with a diagonal slash — a deliberate, visible
-/// mark, argued at length in `icons::paint`'s header as *not* a
-/// placeholder: it says "there is no glyph for this", which is a true
-/// statement about the build rather than an invitation to believe a
-/// control is coming.
-///
-/// That is the right behaviour at run time and it is exactly why a test
-/// is needed. The failure is **legible on screen and silent everywhere
-/// else**: a typo in a `with_icon("…")` string compiles, registers,
-/// renders, passes the coverage split (the key is `Some`), passes the
-/// kebab-case check (the typo is kebab), and ships as a slashed box in
-/// the middle of the File tab. The only oracle was a screenshot, and
-/// `MODES_AND_PANELS.md` is clear that a defect an oracle found deserves
-/// a test that would have found it too.
-///
-/// Asserted over the **whole registry** rather than over the ribbon
-/// manifest, and that is the wider claim on purpose: a command's icon is
-/// drawn wherever the command is drawn — the band, the quick-access
-/// toolbar, the overflow menu, a context menu, the collapsed-group popup,
-/// the shortcuts dialog. Scoping this to the ribbon would bless a broken
-/// key on any of the other five surfaces.
 #[test]
 fn every_icon_key_a_command_names_resolves_to_real_art() {
     let reg = registry();
@@ -501,14 +437,6 @@ fn every_icon_key_a_command_names_resolves_to_real_art() {
 
 /// **…and the check above can fail**, which is the half a green test
 /// cannot demonstrate about itself.
-///
-/// `PROJECT_PLAN.md` §4.1 records a gate that printed "clean" while
-/// checking a handful of files, and the standing lesson from it is that
-/// *finding nothing looks exactly like finding no violations*. So the
-/// predicate the test above is built on — `Icon::from_key` returning
-/// `None` for a name that is not in the set — is asserted directly,
-/// against a key shaped exactly like the typo this is guarding against:
-/// plausible, kebab-case, and absent.
 #[test]
 fn a_plausible_but_absent_icon_key_does_not_resolve() {
     assert!(
@@ -526,11 +454,6 @@ fn a_plausible_but_absent_icon_key_does_not_resolve() {
 
 /// Icon keys are lower-case kebab, matching the salvaged icon set's
 /// naming.
-///
-/// A key that does not match the set's spelling resolves to nothing at
-/// run time and renders as a missing glyph — a placeholder arriving
-/// through the back door, and one that no headless test would
-/// otherwise see.
 #[test]
 fn icon_keys_are_kebab_case() {
     for command in registry().iter() {

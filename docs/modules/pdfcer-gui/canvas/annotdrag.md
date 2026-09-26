@@ -83,3 +83,36 @@ resize grip. Nothing about the annotation itself is tinted, badged or
 flagged, and the one-line test passes — a screenshot of the canvas mid-drag
 differs from the saved file by a marching outline, which is where the
 pointer is and not what the document says.
+
+## Item notes
+
+### `fn eligible`
+
+Three conditions, and each one is a different kind of "no":
+
+| condition | what it means |
+|---|---|
+| an annotation is selected | otherwise the content branch owns the press |
+| it is [`AnnotKind::Markup`] | a ce dimension is `dimdrag`'s, and it does more |
+| it is not **locked** | §12.5.3 Table 165 bit 8 — *the file* says the user interface may not change this |
+
+The locked case is the one worth stating. It is a flag the **document**
+carries, not a state this shell invented, and honouring it here rather than
+letting the engine refuse is what stops a drag drawing a ghost for a move
+that will not happen. `canvas::moving`'s obligation 3, applied one surface
+along: *a ghost is drawn if and only if the release would commit.*
+
+### `fn only_ordinary_markup_is_this_modules_business`
+
+The second half is the load-bearing one. `dimdrag` claims a ce
+dimension and does strictly more with it — `place_dimension` moves where
+the dimension is *drawn* and cannot alter the number it prints — so a
+ce dimension reaching this module would be a translation that leaves the
+dimension measuring something it is no longer next to.
+
+### `fn a_locked_annotation_offers_no_ghost`
+
+§12.5.3 Table 165 bit 8 is the *document* saying the user interface may
+not change this. The failure this guards is the one that looks like it
+works: a ghost that tracks the pointer for a move the engine will refuse
+is a promise the release cannot keep.

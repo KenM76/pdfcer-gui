@@ -2,6 +2,8 @@
 //!
 //! One preference, two values, and the whole of its subject is that **neither
 //! order is obviously right**.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/app/prefs/pastechords.md`.
 
 /// **Which chord pastes a form field as a NEW field, and which as a DUPLICATE.**
 ///
@@ -171,12 +173,6 @@ mod tests {
     use super::*;
 
     /// The two orders must be an EXCHANGE, not two independent choices.
-    ///
-    /// The failure this forbids is a build where both commands end up on the
-    /// same chord — one silently unreachable from the keyboard, with the
-    /// ribbon still showing both and the shortcuts dialog still listing a key
-    /// that reaches the other one. Nothing on screen shows it; it is invisible
-    /// until an operator presses the chord and gets the wrong paste.
     #[test]
     fn every_order_binds_the_two_commands_to_two_different_chords() {
         for order in PasteChords::ALL {
@@ -189,10 +185,6 @@ mod tests {
     }
 
     /// The two orders are each other's mirror, and nothing else.
-    ///
-    /// Asserted as a property rather than by restating the four literals,
-    /// because restating them is how a table and its test come to agree with
-    /// each other and disagree with the operator.
     #[test]
     fn the_acrobat_order_is_exactly_the_pdfcer_order_reversed() {
         assert_eq!(
@@ -222,10 +214,6 @@ mod tests {
     }
 
     /// The default is the operator's own ruling, not Acrobat's.
-    ///
-    /// The preference exists to **offer** Acrobat's order, never to impose it:
-    /// a build that shipped with `AcrobatOrder` as the default would change what
-    /// `Ctrl+V` does on an upgrade for everyone who never opens settings.
     #[test]
     fn the_default_is_the_operators_ruling() {
         assert_eq!(PasteChords::default(), PasteChords::PdfcerOrder);

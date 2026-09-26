@@ -18,11 +18,6 @@ use crate::report::CheckReport;
 use crate::trace::Trace;
 
 /// **Edit, and only Edit** — the one mode where this tool changes anything.
-///
-/// Read and Review already sweep text with the select tool, so arming the tool
-/// there is a no-op an operator cannot see; the two gaps it closes are both in
-/// Edit, whose primary button is the content marquee. A check aimed at Review
-/// would pass against a build where `view.tool_text` did nothing at all.
 const MODE: &str = "edit";
 
 /// The tab carrying `view.tool_text`. View is in **every** mode's tab list,
@@ -40,11 +35,6 @@ const TOOL_ITEM: &str = "ribbon.item.view.tool_text";
 const TOOL_ID: &str = "view.tool_text";
 
 /// Its neighbour in View ▸ Navigate, asserted for **presence only**.
-///
-/// The two pointer-tool toggles are one group and one idea, and a build that
-/// registered the new one while losing the old would otherwise pass this check
-/// completely — the same half-done-registration guard
-/// [`crate::checks::text_markup`] applies to Strikeout and Squiggly.
 const TOOL_SIBLING: &str = "ribbon.item.view.tool_hand";
 
 /// The tab carrying the text-markup controls.
@@ -54,11 +44,6 @@ const MARKUP_TAB: &str = "ribbon.tab.markup";
 const MARKUP_TAB_ID: &str = "markup";
 
 /// **The control whose reachability is the P3 claim.**
-///
-/// Underline rather than Strikeout or Squiggly for
-/// [`crate::checks::text_markup`]'s reason: the three are one dispatch arm with
-/// one `match` between them, `shell::commands::mapping` walks all three, and the
-/// *join* under test here is per-command only in its id.
 const MARK_ITEM: &str = "ribbon.item.markup.underline";
 
 /// [`MARK_ITEM`]'s command id.
@@ -128,10 +113,6 @@ impl Check for TextToolSelectsAndMarksInEdit {
 }
 
 /// Every `canvas-text-selection` line reporting a **non-empty** selection.
-///
-/// Filtered on `chars > 0` for the reason both sibling checks record: a *clear*
-/// is traced too, with `chars=0`, so counting the event would be satisfied by
-/// the gesture that ends a selection.
 fn selections(trace: &Trace) -> Vec<&crate::trace::TraceLine> {
     trace
         .events(TEXT_EVENT)
@@ -140,10 +121,6 @@ fn selections(trace: &Trace) -> Vec<&crate::trace::TraceLine> {
 }
 
 /// How many times the shell has reported `id` invoked.
-///
-/// A **count**, never a presence: this check clicks the same control twice and
-/// two different controls in one run, so "has it ever been invoked?" would be
-/// answered `true` by a click made ten seconds earlier.
 fn invokes(session: &Session, id: &str) -> Result<usize> {
     Ok(shell_trace(session)?
         .events(INVOKE_EVENT)
@@ -152,13 +129,6 @@ fn invokes(session: &Session, id: &str) -> Result<usize> {
 }
 
 /// Click a ribbon tab and confirm the shell reported it.
-///
-/// Three tab clicks in one run is what this check costs — View to arm, Markup to
-/// mark, and Markup again after the sweep — so the move is written once rather
-/// than three times. It is not in [`driving`] because the two existing tab
-/// clicks in the suite are inline and folding them in would rewrite checks that
-/// are already known to detect their defects, which is the argument that
-/// module's own header makes about `markup_rectangle`.
 fn click_tab(
     session: &Session,
     driver: &Driver,
@@ -718,11 +688,6 @@ mod tests {
 
     /// The names this check greps for are the ones `egui-shell` builds, and the
     /// ids are the ones the application registers.
-    ///
-    /// Pinned for the reason both sibling checks pin theirs: the two crates are
-    /// joined by a **string** and nothing else, so a rename would leave both
-    /// sides compiling while every assertion here quietly stopped matching — and
-    /// a check that matches nothing passes vacuously.
     #[test]
     fn the_selectors_match_the_shells_own_spelling() {
         assert_eq!(TOOL_ITEM, format!("ribbon.item.{TOOL_ID}"));
@@ -746,11 +711,6 @@ mod tests {
 
     /// **The two halves of the toggle are read from the same field and are not
     /// the same value** — the arithmetic phase B and phase E rest on.
-    ///
-    /// `canvas::tool::toggle_text` traces the tool it moved *to*, so arming and
-    /// retiring differ only in that one word. A check that grepped for the event
-    /// name alone would be satisfied by either, and phase E — the falsifier —
-    /// would then pass on the frame the tool was armed.
     #[test]
     fn arming_and_retiring_are_told_apart_by_the_tool_field() {
         let trace = Trace::parse(

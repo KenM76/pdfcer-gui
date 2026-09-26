@@ -29,3 +29,21 @@ which is also why the byte count grew past a limit in the first place.
 Not here: the registration itself ([`super::super::register`]), the
 command-id-to-behaviour mapping ([`super::super::mapping`]), and the
 reachability register ([`super::super::reach`]).
+
+## Item notes
+
+### `const MARKUP_RESTYLABLE`
+
+Spelled once here because five registrations read it, and spelled as a
+constant rather than as five literals for [`crate::shell::commands::FILE_RECENT`]'s
+reason: a typo in one of five copies produces a permanently greyed control
+and no error at all, because an unset condition and a false condition are
+the same value.
+
+It is **not** shared with `manifest::format`'s `MARKUP_VISIBLE_WHEN`,
+which holds the same string. That is the same deliberate de-aliasing
+`manifest::SELECTION_ANY` records the cost of: while `SELECTION_ANY` read
+`= format::VISIBLE_WHEN`, editing the Format tab's condition would have
+silently retargeted the canvas context menu's Delete. Two readers, two
+spellings, and the manifest side carries the full account of what the
+condition means.

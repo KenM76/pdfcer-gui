@@ -75,3 +75,84 @@ gesture that cannot be honoured. It passes only if the status bar's `⊗` slot
 is on screen — `status-group:decline` is published as a `ui-rect` on the
 frame it draws, and its **absence is the failure**, because a refusal
 nobody is told about is the founding defect of this project.
+
+## Item notes
+
+### `const MODE`
+
+Driving this in Edit would exercise the same code with the interesting
+half of every gate short-circuited: `press_kind`'s markup-node rung is
+gated on `author_markup` precisely so it fires where `edit_content` does
+not, and Edit has both.
+
+### `const DRAW_EVENT`
+
+Note how close this is to the node-editing lines below, and that the
+closeness is exactly why they are spelled `markup-node-*`. This event
+belongs to `canvas::markup::vertex` and has since polygons became
+authorable; a node-move line under the same first token would make
+`Trace::last` return whichever came later, and a check asserting a node
+MOVED would read a line about a node being PLACED.
+
+### `const ENGINE_MOVE`
+
+Distinct from [`SHELL_MOVE`] deliberately, and asserting both is the
+point: one says the gesture was understood, the other says the document
+changed. A check that read only the first could not tell a shell that never
+asked from an engine that refused.
+
+### `const DESTINATION`
+
+**Upper right, and the first run is why it is not lower right.** The
+first draft aimed at `(0.80, 0.15)` and the "before" box came back holding
+423 ink pixels of 1,406 — because `four-pages.pdf`'s page 1 carries a
+coloured **title block** in exactly that corner. The assertion still passed,
+on a delta of 28 pixels against a floor of 423, which is a measurement one
+stray antialiased edge could have made either way. ⇒ **Read the run's own
+capture before believing a pixel assertion.** The title block was plain in
+it; only the number hid it.
+
+### `const INK_DELTA_FLOOR`
+
+Four pixels, and the reasoning is `InkReport::is_text`'s: one or two
+pixels either way is antialiasing on an edge that did not move, while a
+2 pt stroke crossing a box contributes a run. A strict `>` on a raw count
+would let noise decide the verdict, and this project's standing rule is
+that when a measurement runs out you read something else rather than
+widening a tolerance — so the fix here is a floor with a stated reason plus
+a SECOND, opposite measurement below, not a looser comparison.
+
+### `const SAMPLE_HALF_FRACTION`
+
+A fraction and not a constant in points, and the first run is why: 22 pt
+on this fixture at fit-page zoom is an **8 x 9 pixel** window, which is too
+few pixels for `ink_run_into` to say anything with. Small enough that the
+square's original edges are nowhere near it — the nearest is a quarter of
+the page away — and large enough to contain the corner two edges now meet
+at, even after a snap has nudged it.
+
+### `fn drag_holding`
+
+**Held across the press, the walk and the release, and that is not
+politeness.** `Driver::press_held`'s own note records the finding: a
+modifier that goes down and up inside one frame's event batch can be applied
+and undone before the event it was meant to carry is dispatched, because
+modifier state reaches egui through winit's `ModifiersChanged`. A harness
+that pressed Ctrl just before the button would produce a plain drag and
+report *"the node was moved, not deleted"* about a perfectly working build.
+
+It also matches what `canvas::dimdrag::intent` actually does: it reads the
+modifiers **live on every frame**, so a Ctrl released half way through turns
+the gesture back into a move and the preview says so on that very frame.
+Holding it throughout is the only way to drive the gesture the operator's
+hand makes.
+
+### `fn ink_pair`
+
+**Two boxes from ONE capture, and the pair is the assertion.** A single
+"ink arrived at the destination" reading is satisfied by anything that puts
+dark pixels there, including a build that drew a stray anchor. A single "ink
+left the origin" reading is satisfied by a build that simply stopped drawing
+the shape. Requiring **both, in opposite directions, in the same frame** is
+what makes the pair describe a node that MOVED rather than one that appeared
+or vanished.

@@ -124,3 +124,18 @@ the keymap holds arrives*. Neither alone is enough and neither is redundant.
   that stopped sending it at all leaves one line and the check SKIPs.
 * **`line=` and the title quote the chord with different spellings** would be
   a real failure and is the one this check is most likely to catch first.
+
+## Item notes
+
+### `const VIEWPORT`
+
+Wide, because a narrow bar sheds groups and this check would rather read a
+bar that is not under width pressure — the shedding is `fitting`'s subject,
+not this one's.
+
+### `fn title_of`
+
+The application traces it with `{:?}`, so the whole payload is one quoted
+value rather than `key=value` fields. Parsed the way
+[`super::title_build_stamp`] parses it, and for the same reason: the
+left-hand part is a file name and may contain anything a path can.

@@ -755,28 +755,6 @@ pub(super) fn draw(
 
 /// **The boxes that show what a selected text block is made of** —
 /// `OPERATOR_REQUESTS.md` O215 ask 3.
-///
-/// [`crate::canvas::chunks`] decides *whether* and *which*; this decides
-/// nothing except how the answer is reported. The split is deliberate: the
-/// decision is testable without a painter, and the painter cannot grow a second
-/// opinion about what a chunk is.
-///
-/// # Why every path writes a line, and why they share one slot
-///
-/// The same argument [`draw_anchors`] makes: a driven check that finds no boxes
-/// has to be able to tell *the operator turned them off* from *the click
-/// missed* from *the program is broken*, and silence says all three at once.
-///
-/// Through [`crate::diag::trace_changed`] rather than `trace`, because this
-/// runs once per page per frame and an unchanging state re-reported at sixty
-/// hertz buries the transitions that are the news. **Both the drawn line and
-/// the declined line take the one slot**, so an alternation between them is
-/// never collapsed — only a repeat of the identical line is.
-///
-/// The first token is `canvas-chunks-declined`, not `canvas-chunks`, for the
-/// reason `draw_anchors` states at length: `tools/ui-verify` keys on first
-/// tokens, and a reader asking for the drawn line must not be handed a decline
-/// carrying none of the fields it reads.
 fn draw_chunks(
     painter: &egui::Painter,
     ctx: &egui::Context,
@@ -814,20 +792,6 @@ fn draw_chunks(
 }
 
 /// Mark the entered object's anchors when the operator is inside one.
-///
-/// # Why this is a function here rather than three lines at the call site
-///
-/// Because it is the **only** place in the paint pass that needs the object
-/// model, and reaching for it costs a `Ref` into the document's decomposition
-/// cache. Keeping that borrow inside one short function is what guarantees it is
-/// released before the rest of the frame — the same discipline
-/// `app::cache::page_objects`' own docs set out, and the reason
-/// `canvas::interact` has a comment about dropping its `Ref` explicitly.
-///
-/// It draws nothing at the Object rung. An object's anchors are not the
-/// operator's subject there — the object is — and painting thousands of hollow
-/// squares over a selection they are about to *move as a whole* would be noise
-/// with a rendering cost.
 #[allow(clippy::too_many_arguments)]
 fn draw_anchors(
     painter: &egui::Painter,

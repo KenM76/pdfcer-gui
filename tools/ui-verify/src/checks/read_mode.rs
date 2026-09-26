@@ -21,77 +21,24 @@ const READ: &str = "read";
 
 /// The control mode: the one whose tab list contains `edit`, so the identical
 /// click at the identical document point is expected to select.
-///
-/// Edit rather than Review, deliberately. Review would *also* refuse the click
-/// — `edit_content` is false there too — so a check that compared Read against
-/// Review would be comparing two refusals and would pass against a build where
-/// the click never reached the canvas at all. Edit is the only shipped mode
-/// that answers "would this click have selected something?".
 const EDIT: &str = "edit";
 
 /// `canvas-selection via=… mod=… sel=… level=…` — `canvas::trace`'s report of
 /// what the selection layer just did.
-///
-/// Emitted from exactly two places in `canvas::interact`: the `Click` arm's
-/// non-measure branch, and the completed select-marquee arm. Both are inside
-/// gesture outcomes that `press_kind` refuses in a mode without
-/// `edit_content`, so in Read there is nothing that can produce this line.
 const SELECTION_EVENT: &str = "canvas-selection";
 
 /// The `via=` value that means a completed click with no drag.
-///
-/// Matched rather than taking any `canvas-selection`: a marquee is a different
-/// gesture with a different gate (`MarqueeIntent::Select` needs
-/// `edit_content`, `MarqueeIntent::Zoom` needs nothing at all and is offered in
-/// every mode including Read), and a check that conflated them could be
-/// satisfied by a navigation gesture.
 const VIA_CLICK: &str = "click";
 
 /// `mode-capabilities content=… markup=… measure=… retired_tool=… \
 /// cleared_selection=… abandoned_drag=…` — `app/gating.rs`'s report of what a
 /// mode change **put down on the way in**.
-///
-/// Emitted only when something was actually retired, cleared or abandoned, so
-/// its presence is itself news: entering Read with nothing selected and no tool
-/// armed writes no line at all. That is what makes counting them a usable
-/// oracle for phase C.
 const CAPABILITIES_EVENT: &str = "mode-capabilities";
 
 /// The field on it that says a selection was dropped on the way into the mode.
 const CLEARED_FIELD: &str = "cleared_selection";
 
 /// **Where to look for content, as fractions of the page box.**
-///
-/// # Why a ladder rather than a `--doc-point`
-///
-/// [`crate::checks::delete_key`] takes its target from `--doc-point` and SKIPs
-/// without one, and that is right for a check whose *subject* is the point: it
-/// needs an object, and a wrong point is indistinguishable from a broken hit
-/// test. This check is different in one respect that changes the answer: it
-/// does not merely hope the point has content, it **proves** it, in phase B,
-/// with the application's own `sel=`. A candidate that proves nothing is
-/// discarded and the next is tried; a ladder that proves nothing at all is a
-/// SKIP.
-///
-/// So the ladder is a search whose every step is confirmed by the program under
-/// test, which is the opposite of the guess `crate::coords` warns about. It
-/// also keeps the check runnable with no arguments beyond `--pdf`, which
-/// matters because a check nobody can run without knowing a magic coordinate is
-/// a check that stops being run.
-///
-/// `--doc-point`, when given, is tried **first**: an operator who knows where
-/// their fixture keeps an object should not have to wait for the search.
-///
-/// # Why these fractions, in this order
-///
-/// Ordered cheapest-first for the drawing fixtures this project actually uses.
-/// A SolidWorks sheet is a border frame, a title
-/// block in the bottom-right, and drawing views across the middle, so the
-/// ladder walks the middle band first and then the title block, rather than
-/// starting at a page centre that on a two-view drawing is often paper.
-///
-/// Every entry is well inside the page box, so all of them land on paper rather
-/// than on the grey surround whatever size the fixture is.
 const CANDIDATES: [(f64, f64); 12] = [
     (0.50, 0.50),
     (0.30, 0.60),
@@ -132,11 +79,6 @@ impl Check for ReadModeRefusesCanvasEdits {
 }
 
 /// How many `canvas-selection via=click` lines the trace carries so far.
-///
-/// Counted rather than "is the last line a click?", for the reason
-/// [`crate::checks::driving::click_mode_segment`] counts its mode events: a run
-/// makes several of these, and a check asking "did one ever appear?" would be
-/// satisfied by one it provoked itself a phase ago.
 fn selection_clicks(trace: &Trace) -> Vec<&crate::trace::TraceLine> {
     trace
         .events(SELECTION_EVENT)
@@ -145,22 +87,6 @@ fn selection_clicks(trace: &Trace) -> Vec<&crate::trace::TraceLine> {
 }
 
 /// Aim a document point at the canvas **as it is laid out right now**.
-///
-/// Re-derived on every use rather than cached, and that is not caution — it is
-/// required. Read defaults to a continuous strip and Edit to a single page
-/// (`viewer::display::default_for_mode`), so switching mode moves and rescales
-/// the page: the same `DocPoint` is a different screen pixel in the two modes,
-/// which is exactly why this crate writes document coordinates and never screen
-/// ones.
-///
-/// # Errors
-///
-/// * the application has traced no canvas layout yet;
-/// * it is showing a page other than the first, whose size this harness does
-///   not know;
-/// * the point is not currently on screen — refused rather than clamped, since
-///   a clamped click lands on the canvas edge and hit-tests nothing, which
-///   reads as a broken feature.
 fn aim(
     ctx: &CheckContext,
     session: &Session,
@@ -185,10 +111,6 @@ fn aim(
 }
 
 /// Run the sequence.
-///
-/// The three-way return is [`crate::report`]'s rule made structural: `Err` is
-/// a precondition that was absent (SKIP), `Ok(Some(_))` is an assertion that
-/// did not hold (FAIL), `Ok(None)` is a pass.
 #[allow(clippy::too_many_lines)]
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
     // --- preconditions -----------------------------------------------------
@@ -510,10 +432,6 @@ mod tests {
 
     /// The two modes are the two the argument needs, and they are not the same
     /// one.
-    ///
-    /// `EDIT` in particular: comparing Read against Review would compare two
-    /// refusals, and would pass against a build where the click never reached
-    /// the canvas at all. See [`EDIT`]'s own documentation.
     #[test]
     fn the_control_mode_is_the_one_that_actually_selects() {
         assert_eq!(READ, "read");
@@ -537,11 +455,6 @@ mod tests {
     }
 
     /// **A marquee is not a click**, and the two are gated differently.
-    ///
-    /// `MarqueeIntent::Zoom` needs no capability at all and is offered in Read
-    /// — `press_kind` says so in as many words — so a check that matched any
-    /// `canvas-selection` would be one navigation gesture away from a false
-    /// FAIL against a correct build.
     #[test]
     fn only_a_click_counts_as_a_click() {
         let trace = Trace::parse(
@@ -567,11 +480,6 @@ mod tests {
 
     /// The capability line is read by field name, and `cleared_selection` is
     /// not the only boolean on it.
-    ///
-    /// `retired_tool` and `abandoned_drag` sit beside it and are `false` in the
-    /// case this check drives, so a reader matching the *line* rather than the
-    /// field would accept a mode change that put down a pen and kept the
-    /// selection.
     #[test]
     fn the_cleared_flag_is_read_by_name_and_not_by_the_line() {
         let trace = Trace::parse(

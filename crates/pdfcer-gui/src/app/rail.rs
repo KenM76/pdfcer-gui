@@ -132,13 +132,6 @@ pub fn show(
 }
 
 /// One control: a picture, optionally with its word under it.
-///
-/// Hand-drawn rather than an `egui::Button`, and the reason is the width.
-/// A button sizes itself from its content; this row must be exactly the strip
-/// wide at every rung, whatever the label says. Allocating the rectangle first
-/// and painting into it is the only arrangement in which the label physically
-/// cannot influence the geometry — which is the R128 argument made structural
-/// rather than promised in a comment.
 #[allow(clippy::too_many_arguments, clippy::fn_params_excessive_bools)]
 fn entry(
     ui: &mut egui::Ui,
@@ -263,12 +256,6 @@ fn entry(
 }
 
 /// The overflow chevron, and the menu of everything the strip folded away.
-///
-/// It is drawn only when it holds something — a chevron over an empty
-/// overflow is the dead control R9 forbids — and it is **never itself
-/// folded**: [`egui_shell::dock::rail::build`] appends it after the ladder has
-/// run. That is Inkscape failure mode #8 (past about six tabs the overflow
-/// button is the thing that gets hidden) refused by construction.
 fn chevron(
     ui: &mut egui::Ui,
     folded: &[String],

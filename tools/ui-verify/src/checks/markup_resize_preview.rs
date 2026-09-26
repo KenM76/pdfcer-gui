@@ -30,18 +30,10 @@ const SELECT_EVENT: &str = "annot-select";
 const RESIZE_EVENT: &str = "resize-annotation";
 
 /// Where the shape is drawn, as fractions of the page.
-///
-/// Deliberately the same rectangle `markup_move` uses. Two checks aiming at
-/// one shape means a fixture that breaks one breaks both visibly, rather than
-/// one of them quietly measuring an empty patch of paper.
 const SHAPE: ((f64, f64), (f64, f64)) = ((0.35, 0.35), (0.55, 0.50));
 
 /// Where the corner is dragged to — **outward in both axes**, so the ghost has
 /// to grow rather than merely move.
-///
-/// Both axes, for `markup_move`'s reason applied to a different value: a
-/// resize that scaled only x would satisfy a check that dragged only in x, and
-/// `sy` is the factor with the sign convention to get wrong.
 const DRAG_TO: (f64, f64) = (0.72, 0.66);
 
 /// See the module documentation.
@@ -71,11 +63,6 @@ impl Check for DraggingACommentsCornerShowsWhereItIsGoing {
 }
 
 /// Parse `rect=[[x0 y0] - [x1 y1]]` into its width and height.
-///
-/// Width and height rather than the corners, because the assertion is about
-/// **size** and carrying the position would invite a check that accidentally
-/// asserts the ghost is somewhere in particular — which it is not required to
-/// be, since the pivot is the opposite corner and moves with the grip.
 fn extent(raw: &str) -> Option<(f64, f64)> {
     let body = raw.split("rect=").nth(1)?;
     let nums: Vec<f64> = body

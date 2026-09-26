@@ -246,3 +246,147 @@ annotation is byte-identical to a CLI-authored one.
 [`mark`] is pure and is where every rule lives; the dispatch arm calls it and
 pushes what it returns. That is the same division [`super::action`] has, for
 the same reason: a rule with a test beats a rule inside a `match` arm.
+
+## Item notes
+
+### `fn subtype`
+
+The one place the shell's vocabulary meets the specification's, exactly
+as [`super::spec`] is for the geometric kinds. The two enums are
+deliberately not the same type even though three of the four names match:
+`TextMarkupKind` carries Highlight as well, which belongs to the *band*
+gesture here (§3), and a shared type would make that fourth value
+reachable from a control that cannot mean it.
+
+### `fn slot`
+
+Split out from `rgb` so a test can assert the *routing* without asserting
+a colour. The two are different claims: which slot a kind takes is a fact
+about this module and must not change; what colour that slot holds is the
+operator's and may.
+
+### `fn pen`
+
+Named rather than spelled `Pen::default()` at nine call sites so that the
+tests which *are* about colour stand out by building their own — the
+reader can tell at a glance which assertions would move if the default
+moved.
+
+### `fn each_kind_authors_its_own_subtype`
+
+The failure this catches is the copy-paste one: three arms built from one
+another, two of which say `Underline`. It would produce three ribbon
+controls that all draw an underline, and nothing else in the system would
+notice — the engine would author a perfectly valid annotation each time.
+
+### `fn the_selections_quads_are_authored_unchanged`
+
+The one-derivation promise at this end of it: the boxes the operator saw
+washed are the boxes written into `/QuadPoints`. A build that merged,
+clipped, re-ordered or de-duplicated them here would mark a different set
+of glyphs from the one that was highlighted, and the difference would only
+be visible after saving.
+
+### `fn the_operators_pen_reaches_every_text_kind`
+
+# It asserts a RELATION, never a magnitude
+
+A test that pins the literal triple [`TextMarkKind::rgb`] returns is two
+copies of one constant, and two copies of one constant can only disagree
+if somebody edits one of them — so such a test stays green through the
+entire life of a defect in which the pen never reaches the spec at all.
+
+So: whatever colour the kind's own slot holds, that is the colour the
+spec authors. Driven with a pen whose eight slots are eight
+distinguishable values, so a kind that takes a neighbour's pen names
+itself. A planted pen with one ink could not catch a kind taking the
+wrong *line* colour, because there would be only one line colour to take.
+
+# What it deliberately does NOT assert
+
+The shipped default values. Those are Acrobat's, pinned against the
+registry keys they were read from by
+`pen::tests::every_slot_ships_at_the_acrobat_value_it_was_measured_from`;
+`Pen::default`'s own doc comment carries the argument for departing from
+the "omits nothing" rule. Asserting them a second time here would be
+exactly the two-copies-of-one-constant mistake above.
+
+### `fn each_text_kind_takes_its_own_pen`
+
+# What this replaces, and why the replacement is stricter
+
+It was `no_text_kind_takes_the_highlighter`, which asserted the
+two-instrument partition: *these three are lines and take the ink;
+Highlight is a wash and takes the highlighter.* True while there were two
+pens, and it would now pass on a build that had collapsed Underline,
+StrikeOut and Squiggly back into one slot — which is precisely the
+regression the operator's ask forbids, since Acrobat gives each of them
+its own key and two of them different colours.
+
+So the claim is now about **separation**: four kinds, four slots, no two
+equal. It still catches everything the old one did — a future hand
+"simplifying" `rgb` to one shared colour fails on the first pair — and it
+catches the new failure as well.
+
+It asserts on the **slot**, not on the colour. Two slots may legitimately
+hold the same colour (Squiggly and Shape ship at the same Acrobat red, and
+an operator may set any two the same), and a test that demanded distinct
+*colours* would forbid a state the operator is entitled to choose.
+
+# THE SEPARATION CLAIM ALONE WAS NOT ENOUGH, and running the
+# falsification is how that was found
+
+This test shipped its first draft asserting only *"no two of the four
+share a slot"*, with a doc comment claiming it was falsified by pointing
+`Squiggly` at `PenSlot::Shape`. **That falsification was run and the test
+stayed green** — because `Shape` is a fourth distinct slot, so all four
+were still different and the separation claim was still true. The mark
+would have come out of the shape pen, moving whenever the operator
+recoloured a rectangle, and this test would have said nothing.
+
+
+Falsified twice, both actually run: pointing `Squiggly` at
+`PenSlot::Shape` (fired — and did **not** fire before the identity row
+existed), and pointing it at `PenSlot::StrikeOut` (fired). Both land on
+the identity row, because it is checked first and is the stricter of the
+two; the separation row is kept anyway, since identity alone would pass a
+build where two kinds were each renamed to the other's slot. Restored
+after each.
+
+### `fn planted_pen`
+
+Built from each slot's index rather than written out, so a ninth slot
+gets a ninth distinct value with no edit here — the same construction
+`pen::tests::planted` uses, and for the same reason.
+
+### `fn a_live_selection_marks_its_own_page`
+
+The page assertion is the load-bearing half and it is written as a
+magnitude rather than a relation: the action must name page **7**, the
+page the selection was made on, not "a page". A build that read
+`doc.view.page_index` in the apply arm would author the mark on whatever
+sheet was on screen — the same class of defect as the markup that landed
+in the centre of the page, one axis over.
+
+### `fn a_stale_selection_is_refused_and_says_so`
+
+`canvas::textsel` §7's rule at the authoring end: after an edit the
+recorded positions may name different glyphs, and writing a `/QuadPoints`
+annotation from them would put a mark over possibly-wrong words *into the
+file*. Distinguished from [`Refusal::NoSelection`] on the trace, because
+the two have different answers — sweep again, versus sweep at all.
+
+### `fn a_selection_with_no_boxes_authors_nothing`
+
+Structurally unreachable through `textsel::resolve`, which answers `None`
+instead — and guarded anyway, for the reason the geometric kinds guard
+their degenerate drag: the shell never sends the engine an empty
+`/QuadPoints`, so `validate_geometry` never has to refuse one and the
+operator never sees an engine error for a shell decision.
+
+### `fn every_kind_marks_and_refuses_alike`
+
+Asserted over `ALL` rather than for one kind, because the plausible
+failure is per-kind: a fourth entry added to the enum, given a subtype and
+a command, and reaching a `mark` that quietly special-cases the three that
+were there first.

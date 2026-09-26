@@ -58,3 +58,12 @@ showing, and nothing errors.
 * That a tab can be dragged to a *different* compartment. It cannot yet,
   deliberately: there is no drop grammar behind such a gesture, so the dock
   proposes nothing over a strip the drag did not start in.
+
+## Item notes
+
+### `fn find_strip`
+
+By containment rather than by name: a tab region is named for its panel and
+carries no compartment, which is deliberate — a panel keeps its name when
+the operator moves it — so the only thing that says which bar a tab is in
+is where it was drawn.

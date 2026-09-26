@@ -26,6 +26,8 @@
 //! All three are **layout**: they draw, they collect intent, and they apply
 //! nothing. The ordering constraints *between* them are `frame.rs`'s, which is
 //! the file to read when the question is *when*; this one answers *what*.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/app/surfaces.md`.
 
 use eframe::egui;
 
@@ -884,30 +886,12 @@ impl PdfcerApp {
 }
 
 /// **Publish one dock region as a claim about VISIBILITY.**
-///
-/// Returns whether the region was published — `false` means the dock laid it
-/// out somewhere the operator cannot see it, and the trace stays silent about
-/// it on purpose.
-///
-/// A stack's address as one grep-able token: `left.0.1`.
-///
-/// The same shape [`egui_shell::dock::DockSide::key`] is built for — an
-/// identifier a harness matches on, never a label an operator reads — extended
-/// with the two indices, because a side alone does not name a compartment and a
-/// check that could only say *"the right dock"* could not tell the two stacks of
-/// a column apart.
 fn stack_key(a: egui_shell::dock::StackAddr) -> String {
     // ui-text-exempt: diagnostic trace, never displayed.
     format!("{}.{}.{}", a.side.key(), a.column, a.stack)
 }
 
 /// What the drop grammar would be asked to do, as one token.
-///
-/// Three shapes for the three variants rather than one flattened set of
-/// fields, because the variants do not share an address space: a `Tab`'s `gap`
-/// counts tabs, a `Stack`'s counts stacks and a `Column`'s counts columns, and
-/// printing all three as `gap=` would invite a check to compare two numbers
-/// that are not in the same units.
 fn target_key(t: &egui_shell::dock::DropTarget) -> String {
     use egui_shell::dock::DropTarget;
     match t {
@@ -946,12 +930,6 @@ mod dock_rect_tests {
 
     /// Render one frame of a **real** dock in a window of the given size and
     /// return a [`Row`] per published region.
-    ///
-    /// Deliberately the real [`Dock`], not a hand-built list of rectangles.
-    /// The rectangles that matter here are the ones `egui` and the dock's own
-    /// geometry produce together at a window size nobody laid out for, and a
-    /// fixture written by hand could only contain the numbers its author
-    /// already expected.
     fn rows(window: egui::Vec2) -> Vec<Row> {
         let ctx = egui::Context::default();
         let mut registry = PanelRegistry::new();
@@ -1065,12 +1043,6 @@ mod dock_rect_tests {
     }
 
     /// At an ordinary window size **nothing** is filtered.
-    ///
-    /// The companion to the test above, and the one that catches
-    /// over-application. Every region the dock publishes at 1280 × 800 is
-    /// fully inside its clip, so the gate must be a no-op there. If this ever
-    /// fails, the filter has begun eating regions that driven checks
-    /// legitimately need — in silence, because that is what the gate does.
     #[test]
     fn at_an_ordinary_window_size_the_visibility_gate_drops_nothing() {
         let rows = rows(egui::Vec2::new(1280.0, 800.0));

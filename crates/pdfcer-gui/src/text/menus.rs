@@ -13,18 +13,6 @@ mod tests {
 
     /// **The menu surface owns no copy of its own — asserted, not
     /// assumed.**
-    ///
-    /// This module's emptiness is a *consequence* of every menu item being a
-    /// command reference, and that consequence has a precise failure mode:
-    /// an `Item::Custom` row is drawn by the application, so its words come
-    /// from the application, and there is no other honest place for them
-    /// than this file. A separator has no words either, so it is allowed —
-    /// it is punctuation.
-    ///
-    /// If this fails, the fix is **not** to delete the test. It is to write
-    /// the string into this module and hand it to whatever renders the
-    /// custom row, which is the sequence the whole catalog rule exists to
-    /// force.
     #[test]
     fn the_menu_surface_owns_no_copy_of_its_own() {
         for menu in menus::built_in().iter() {

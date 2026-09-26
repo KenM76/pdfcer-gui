@@ -22,6 +22,8 @@
 //! that is genuinely useful — it is the difference between panning being free
 //! and panning costing a redraw — and it is not a judgement about what he
 //! should pick.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/text/maxzoom.md`.
 
 /// The heading over the popup.
 #[must_use]
@@ -87,17 +89,6 @@ mod tests {
 
     /// **`f32` cannot hold a trillion exactly**, and the label says what is
     /// actually stored rather than what was asked for.
-    ///
-    /// `1e12` rounds to `999,999,995,904` — four parts in a billion
-    /// low, unobservable at a zoom where one screen pixel is a millionth of a
-    /// point. But the label is read by a person, and a row claiming a round
-    /// trillion while the preferences file says otherwise is the kind of small
-    /// inconsistency that makes somebody doubt the whole control.
-    ///
-    /// So the preset list uses `MAX_MAX_ZOOM_PERCENT` and this asserts the
-    /// honest rendering. If a future edit makes the two agree by rounding the
-    /// LABEL instead, this fails — which is the right way round, because the
-    /// file is the thing the operator can check.
     #[test]
     fn the_top_preset_reads_as_what_is_actually_stored() {
         assert_eq!(

@@ -47,3 +47,19 @@ the half that has no visible difference from "no preview at all" on a page
 that rasterises quickly — and every fixture in this repository rasterises
 quickly. A check that only drove the fast case would pass on a build with the
 hold deleted.
+
+## Item notes
+
+### `const DRAG_PX`
+
+Far enough that the shape visibly changes and the move is not mistaken for
+a click, and short enough to stay on the page. `multi_node` uses the same
+figure for the same reasons.
+
+### `fn anchor_region`
+
+A local copy of `multi_node`'s, deliberately rather than a shared helper:
+the list is the OVERLAY's contract about what it publishes, and two checks
+naming it independently is what would catch a rename in one of them. A
+shared constant would make both agree with each other and neither with the
+application.

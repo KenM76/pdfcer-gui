@@ -115,3 +115,73 @@ gate while passing every assertion that does not name it.
 the ladder's shape: in Edit the annotation rung below is reachable too, so
 the check reads the decline's `reason=` key rather than settling for *"a
 decline happened"*.
+
+## Item notes
+
+### `const INVOKE`
+
+`file.properties` is the command that mounts and activates the panel from
+any arrangement, so the check does not have to know what dock layout the
+machine it runs on happens to have persisted. `mode.edit` is load-bearing
+rather than cosmetic — see the module header's last section.
+
+### `const CERTIFIED`
+
+**Relative to `CARGO_MANIFEST_DIR`, which is `tools/ui-verify`** — two
+levels up, not three. See [`super::annot_delete_gate`]'s note on the same
+constant: this file inherited the wrong depth from it, and both resolved to
+a `D:/Dev/fixtures/` that does not exist, so both SKIPPED on every run while
+telling the reader to run a generator that writes somewhere else.
+
+### `const GATES_EVENT`
+
+The `-gates` suffix is not decoration: `tools/gates/check-trace-names.py`
+forbids a module's own summary line from sharing its first token with a
+`vector_edit` funnel label. A harness reading a bare name would get the
+funnel's line — `page`, `n`, `epoch`, `disclosures`, and none of the keys
+read below. That confusion has produced a confident false negative on this
+project three times.
+
+### `const DECLINED_EVENT`
+
+Shared with the annotation rung, which is why the `reason=` key is read
+rather than the event alone: in Edit mode both rungs are reachable, and a
+decline from the wrong one would say nothing about the gate under test.
+
+### `const FUNNEL_EVENT`
+
+Asserted **absent** in phase D. Its presence means the ladder let the action
+through and the engine refused it — which is the pre-fix behaviour exactly,
+and which no region assertion would catch, because the panel would still
+have drawn its sentence on the frames before the press.
+
+### `const WIDGET_CENTRE`
+
+Derived from `objs[11]` in `tools/gen-certified-fixture.py`
+(`/Rect [60 60 300 120]`), and stated as a point rather than as a page
+fraction for the reason [`super::annot_delete_gate`] gives about its own
+operand: the target is **in the fixture**, so the aim has to be where the
+fixture put it. Phase B asserts the click really selected `Certifier` by
+name, so a click that missed reports as a miss rather than as a broken gate.
+
+### `const FIELD_NAME`
+
+The whole evidential value of the pair is that the two documents are
+identical apart from one dictionary. A check that went looking for
+*"a field"* could find a different one in each run and would report the
+difference as a gate difference.
+
+### `struct Run`
+
+Factored because phases A–C and phase E are the **same** sequence against
+two files, and the whole value of the pair is that they were driven
+identically. Two hand-written copies would eventually differ in a settle or
+in an aim, and the difference would be reported as a difference between the
+documents.
+
+### `fn page_geometry`
+
+Stated rather than read from the file: the check is bound to fixtures the
+repository generates itself, so a page size read back from them could only
+confirm what the generator wrote — and a `--page-size` override would let a
+caller aim this check at a document it is not about.

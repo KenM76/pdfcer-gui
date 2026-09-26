@@ -16,11 +16,6 @@ const INVOKE: &str = "mode.edit,edit.form_text_field";
 /// Makes the placement dialog accept itself, so no dialog driving is needed.
 const ACCEPT_ENV: (&str, &str) = ("PDFCER_DIAG_FORM_ACCEPT", "1");
 /// The per-widget census line the canvas publishes, carrying each box's rect.
-///
-/// Parsed by `checks::formaim::targets` rather than by a copy in this file.
-/// Three checks read this census, and the third copy is where copies start to
-/// disagree; the shared module's header carries the finding that made one worth
-/// having.
 const BOX_LINE: &str = crate::checks::formaim::TARGET_LINE;
 /// The line the canvas writes when a click selects a widget.
 const SELECTED: &str = "form-field-selected";
@@ -30,19 +25,11 @@ const DRAG_EVENT: &str = "widget-drag";
 /// can be reported as what it was rather than as a dropped gesture. See phase C.
 const RESIZE_EVENT: &str = "resize-widget-commit";
 /// The line the apply arm writes when the engine has moved it.
-///
-/// `-applied`, per the convention this project adopted after making the
-/// same-name mistake twice: `vector_edit` writes its own `move-widget …` line
-/// for the identical edit and `.last()` on the bare name reads that one.
 const MOVED: &str = "move-widget-applied";
 /// The page region, so a failure can say whether a sheet was drawn at all.
 const PAGE_REGION: &str = "page";
 
 /// Where the field is placed and where it is dragged to, as page fractions.
-///
-/// Both well inside the sheet: the first so the placement lands on paper, the
-/// second so the move has somewhere to go. Diagonal, for the `dy` reason in the
-/// module header.
 const PLACE_AT: (f64, f64) = (0.30, 0.55);
 const MOVE_TO: (f64, f64) = (0.50, 0.35);
 

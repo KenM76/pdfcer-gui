@@ -46,3 +46,24 @@ asserted.
 placement dialog press its own Add — the same seam `form_field` uses. So this
 runs on any `--pdf` with a page, which is what keeps it in the ordinary
 sweep rather than behind a fixture nobody remembers to pass.
+
+## Item notes
+
+### `const BOX_LINE`
+
+Parsed by `checks::formaim::targets` rather than by a copy in this file.
+Three checks read this census, and the third copy is where copies start to
+disagree; the shared module's header carries the finding that made one worth
+having.
+
+### `const MOVED`
+
+`-applied`, per the convention this project adopted after making the
+same-name mistake twice: `vector_edit` writes its own `move-widget …` line
+for the identical edit and `.last()` on the bare name reads that one.
+
+### `const PLACE_AT`
+
+Both well inside the sheet: the first so the placement lands on paper, the
+second so the move has somewhere to go. Diagonal, for the `dy` reason in the
+module header.

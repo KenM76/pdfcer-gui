@@ -13,15 +13,6 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// The commands, rung one per frame in order.
-///
-/// `mode.edit` first because `pages.delete` sits behind the Edit tab's
-/// capability set, and because driving from a named mode makes the run
-/// reproducible rather than dependent on whatever mode the last session left
-/// behind.
-///
-/// `pages.delete` with no page selection acts on the **current page**, which is
-/// `crate::panels::pages::ops::operands`' documented fallback — so no panel has
-/// to be opened and no tile has to be clicked to make the save structural.
 const INVOKE: &str = "mode.edit,pages.delete,file.save_copy";
 /// This repository's own signed fixture. See the header.
 const FIXTURE: &str = "../../fixtures/signed-two-pages.pdf";

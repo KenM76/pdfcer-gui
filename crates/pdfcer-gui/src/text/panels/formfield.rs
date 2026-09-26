@@ -28,6 +28,8 @@
 //! `/Btn` is a check box or a button, `/TU` is a tooltip. The one place the
 //! spec's vocabulary survives is the word **box** for a widget, because there
 //! is no better one — "widget" is jargon and "annotation" is wrong.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/text/panels/formfield.md`.
 
 use pdfcer_core::forms::{Field, FieldType};
 
@@ -1313,19 +1315,6 @@ mod tests {
 
     /// **The limitation note does not tell the operator to delete their
     /// field**, which is what it did until 2026-08-27.
-    ///
-    /// The test it replaces asserted the opposite — it required the string
-    /// `"delete this field"` to be present, on the reasoning that *"a note that
-    /// only said 'cannot be changed' would leave the operator stuck"*. That
-    /// reasoning was sound and its premise was false: the capability existed,
-    /// so the operator was not stuck, and the test was pinning a sentence that
-    /// recommended destroying a field's name, value and tab position for
-    /// nothing.
-    ///
-    /// A test can pin a sentence and cannot know whether the sentence is
-    /// true. This one is written in the negative for that reason: it does not
-    /// try to say what the note should claim, only that it must not send an
-    /// operator down the destructive route again.
     #[test]
     fn the_limitation_note_never_advises_deleting_the_field() {
         let note = not_editable_note();
@@ -1344,10 +1333,6 @@ mod tests {
     }
 
     /// **A field with no type is described as a defect, not as "unknown".**
-    ///
-    /// A `/FT`-less field is what a bare kid that lost its `/Parent` becomes,
-    /// and no viewer can fill it. "Unknown" would read as pdfcer failing to
-    /// look; this says what is true of the document.
     #[test]
     fn a_typeless_field_is_described_as_unfillable() {
         let mut field = sample();

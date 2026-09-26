@@ -44,10 +44,6 @@ const MARKUP_TAB: (&str, &str) = ("ribbon.tab.markup", "markup");
 
 /// `mode-changed from=… to=… remembered=… panels=…` — the **application's**
 /// line, written by `crate::app::modes` when a mode's arrangement is applied.
-///
-/// Not the shell's `ribbon-mode-selected`, which says a segment was pressed.
-/// The distinction matters here: the anchor has to be the moment the dock this
-/// check reads was rearranged, not the moment the click landed.
 const MODE_CHANGED_EVENT: &str = "mode-changed";
 
 /// One frame's reading of the Comments panel.

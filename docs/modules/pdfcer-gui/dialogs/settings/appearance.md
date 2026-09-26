@@ -32,3 +32,26 @@ it returns `Option` rather than a default **so the caller can say** that the
 file asked for something this build does not have.
 
 That `Option` is the entire reason [`theme`] is not three lines long.
+
+## Item notes
+
+### `fn every_offered_preset_round_trips_through_its_token`
+
+The bridge this module is: a preset whose key `from_key` does not
+recognise would render as a radio nobody can select — click it, the
+token is written, `from_key` returns `None` next frame, and the window
+shows the unknown-theme sentence about a theme it has just offered.
+
+### `fn the_shipped_default_token_is_a_theme_this_build_has`
+
+`pdfcer-core` writes `"quiet"` as a **literal** in `Settings::default`,
+for the layering reason in this module's header — core may not name a
+shell type. A literal is exactly what can drift, and this is the test
+that catches it: a fresh profile must not open showing the
+unknown-theme disclosure.
+
+### `fn an_unknown_token_is_not_silently_replaced`
+
+The property the disclosure promises. A draft carrying a token from a
+newer pdfcer must still carry it after the window has drawn — this test
+covers the data half; the sentence is covered in the catalog.

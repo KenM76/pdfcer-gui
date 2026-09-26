@@ -15,29 +15,14 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// The collection: three stamps, one of them dynamic, category *Site Review*.
-///
-/// Built by `fixtures/stamp-collection.PROVENANCE.py`, which computes its own
-/// xref offsets. Its name tree is deliberately **not** in page order — `#`
-/// sorts before `S`, so the dynamic stamp is tree entry 0 and page 3 — because
-/// the rows are indexed by tree position and a fixture sorted the lazy way
-/// would let a build that enumerated pages pass.
 const COLLECTION: &str = "stamp-collection.pdf";
 
 /// The control: an ordinary four-page document with no name tree.
-///
-/// ⚠ Asserted through the engine by the shell's
-/// `the_driven_checks_fixtures_are_what_the_check_believes_they_are`. Do not
-/// swap it for another fixture without adding the new name there.
 const PLAIN: &str = "four-pages.pdf";
 
 /// The disclosure section's region in Document properties.
 const SECTION_REGION: &str = "properties.stamp-collection";
 /// The prefix of the per-stamp row regions inside it.
-///
-/// ⚠ It is `SECTION_REGION` plus a dot, and the shell asserts that relationship
-/// in its own test: several checks dump every region under a prefix when they
-/// cannot find the one they wanted, and a row prefix that drifted out from
-/// under the section's would vanish from that dump.
 const ROW_PREFIX: &str = "properties.stamp-collection.";
 /// How many rows the fixture's name tree must produce.
 const STAMPS: usize = 3;
@@ -58,12 +43,6 @@ const STATUS_LINE: &str = "status";
 // ---------------------------------------------------------------------------
 
 /// How many pages `PLAIN` has, and therefore how many stamps the plan holds.
-///
-/// ⚠ Every row is included by default (`Plan::new` sets `include: true`), so a
-/// build that silently dropped a page would still write a valid collection —
-/// one sheet short, with no error anywhere. That is why this number is
-/// asserted three times over: on the window's `pages=`, on the request's
-/// `stamps=`, and on the row count when the written file is read back.
 const SOURCE_PAGES: usize = 4;
 
 /// The ribbon item that opens the authoring window.
@@ -81,12 +60,6 @@ const DIALOG_OPENED: &str = "stamp-collection-open";
 /// The line the window traces when Save is pressed, carrying the plan.
 const REQUESTED: &str = "stamp-collection-requested";
 /// The line `crate::stamps::write` traces after the bytes are on disk.
-///
-/// ⚠ Exactly `stamp-collection`, and the trace parser matches event names by
-/// **equality** — so this does not also match `stamp-collection-open`,
-/// `-requested`, `-failed`, `-declined`, `-cancelled` or `-unavailable`. That
-/// is load bearing rather than incidental: a prefix match here would let the
-/// window merely *opening* satisfy the assertion that a file was written.
 const WROTE: &str = "stamp-collection";
 /// The environment seam that answers the save picker.
 const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH"; // ui-text-exempt: an environment variable name
@@ -288,13 +261,6 @@ fn repo_fixture(name: &str) -> Result<PathBuf> {
 }
 
 /// **Launch on a document this check names, with whatever extra seams it needs.**
-///
-/// Takes a `&Path` rather than a fixture name because the author half's third
-/// launch opens a file that did not exist when the check started — the
-/// collection pdfcer itself just wrote, under `--out`. A helper that could only
-/// open things in `fixtures/` would have made the round trip unwritable, and the
-/// round trip is the only assertion in this file that reads the produced bytes
-/// with the reader Acrobat's own structure demands.
 fn launch_on(
     ctx: &CheckContext,
     exe: &Path,
@@ -324,11 +290,6 @@ fn launch(ctx: &CheckContext, exe: &Path, fixture: &str, trace_name: &str) -> Re
 }
 
 /// Bring the Document properties panel to the front, if it is not already.
-///
-/// Reuses `properties_metadata`'s opener rather than spelling the two clicks
-/// again. It is the same ribbon item and the same toggle hazard — pressing
-/// `file.document_properties` while the panel is up CLOSES it — and two copies
-/// of that guard would be two places for the next ribbon move to be applied.
 fn open_properties(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
     if declared(&session.trace()?, ui_rect, PANEL_OPEN_WITNESS).is_some() {
         return Ok(());

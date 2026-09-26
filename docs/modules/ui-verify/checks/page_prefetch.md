@@ -60,3 +60,20 @@ unfalsifiable at once.
 Single-page mode keeps no strip at all, so the check runs in **Read**,
 whose default page display is continuous. A band cannot exist on a one-page
 fixture; the check says so rather than passing vacuously.
+
+## Item notes
+
+### `const NOTCHES`
+
+Deliberately modest. 40 notches draw about three pages, measured by
+`page_cache`, and this check must not outrun the eight-page band: a scroll
+landing past everything prefetched would pass the main assertion for the
+wrong reason, because the pages it then re-requests were never prefetched.
+A short scroll lands inside the band, where the claim has to hold.
+
+### `fn not_nearest_first`
+
+Scoped to one `current` on purpose. Scrolling changes which page is current
+and the band is re-ranked around the new one, so a distance that drops
+across that boundary is the feature working — comparing across it would
+report a defect on every scroll.

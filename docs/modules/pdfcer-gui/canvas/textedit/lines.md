@@ -63,3 +63,43 @@ lands at the same column on the next line, clamped to its length, and a
 second press keeps whatever column that left. Named rather than left to be
 discovered, exactly as [`super::blocks::neighbour`] names the same omission
 for the page-level walk.
+
+## Item notes
+
+### `fn a_single_line_draft_behaves_exactly_as_it_did`
+
+The regression guard for the whole module: the overwhelmingly common
+draft is one line, and this change must not alter what any key does to
+it. Home is 0, End is the length, and there is nowhere to go up or down
+to.
+
+### `fn a_shorter_line_clamps_rather_than_overshooting`
+
+The case a naive implementation gets wrong by landing past the end of
+the line, which is an index into the *next* line's text and puts the
+caret somewhere the operator did not press.
+
+### `fn a_trailing_break_makes_a_line_to_stand_on`
+
+The state an operator is in the instant after pressing Enter, and the
+one an off-by-one drops: if the final empty line did not exist, Home,
+End and Up would all answer about the line *above* the caret, and
+Backspace would appear to delete the wrong thing.
+
+### `fn a_caret_survives_an_accent_on_every_line`
+
+The one arithmetic property that cannot be seen in an ASCII test and
+panics in production. `café` is four characters and five bytes; every
+offset this module produces is a *character* index, so a byte-indexed
+implementation would put a line boundary inside the `é` and the first
+`String` splice after it would panic.
+
+Asserted by round-tripping every position on every line rather than by
+spot-checking one, because the failure is off-by-one and an off-by-one
+hides wherever it is not looked at.
+
+### `fn an_overlong_caret_lands_at_the_end`
+
+A draft is written from the pointer handler, the keystroke handler and
+the diagnostic seam within one frame, so an index one step behind its
+string is a reachable state and must not be a panic.

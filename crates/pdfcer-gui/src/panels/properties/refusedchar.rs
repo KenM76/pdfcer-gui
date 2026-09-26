@@ -46,28 +46,12 @@ pub(crate) struct RefusedCharacter {
     /// `Refusal::base_font`.
     base_font: String,
     /// **The words the operator typed, which the refusal threw away.**
-    ///
-    /// `Ctrl+Enter` calls `commit_into` and then `abandon` unconditionally, so
-    /// by the time this block is on screen the draft is gone. Without this the
-    /// offer could change the face and could not finish the job — the operator
-    /// had to click back into the text and produce his own edit a second time,
-    /// from memory, which is the *"two gestures where there should be one"* half
-    /// of O141.
-    ///
-    /// `None` when the plan that produced the refusal named a different
-    /// `(page, run)` than the refusal did, which is a disagreement between two
-    /// facts about the same commit and is not something to paper over: the block
-    /// then offers the face swap alone, and the operator retypes.
     typed: Option<crate::canvas::textedit::Committing>,
 }
 
 thread_local! {
     /// The refusal waiting to be adopted by the panel, written by the
     /// dispatcher and taken by the first body that draws after it.
-    ///
-    /// A `take`, not a peek: adopting it stamps it against the epoch on
-    /// screen, and a slot that kept handing the same refusal back would re-stamp
-    /// it after every edit and never retire.
     static PENDING: RefCell<Option<RefusedCharacter>> = const { RefCell::new(None) };
 }
 
@@ -417,19 +401,6 @@ pub(super) fn section(
 
 /// Fill [`RefusedCharUi::faces`] when the stamp has moved, and otherwise keep
 /// what is there.
-///
-/// # Why this block asks for its own pre-flight rather than borrowing the
-/// panel's
-///
-/// `properties::text::TextStyleDraft` already holds a face list, and it is the
-/// wrong one twice over. It is stamped on the **selection**, which is empty here
-/// — the caret was abandoned by the commit that got refused — and even where a
-/// selection survives, it need not be the run the refusal named. Borrowing it
-/// would make the offer's rows depend on what happens to be selected, which is a
-/// list that is right most of the time and silently wrong the rest.
-///
-/// The cost is one extraction with provenance capture plus one pre-flight, paid
-/// once per `(page, run, epoch)` and only while a refusal is on screen.
 fn sync_faces(doc: &OpenDoc, state: &mut RefusedCharUi, refused: &RefusedCharacter) {
     let stamp = (refused.page, refused.run, doc.edit_epoch);
     if state.faces_stamp == Some(stamp) {
@@ -467,11 +438,6 @@ mod tests {
 
     /// The words the operator typed, as `plan` would have recorded them for the
     /// refusal [`refusal`] describes.
-    ///
-    /// Present rather than `None`, because the state machine's interesting
-    /// path is the one where the retype can actually be re-raised — a helper
-    /// that omitted it would let a build that dropped the operand pass every
-    /// test in this module.
     fn typed() -> crate::canvas::textedit::Committing {
         crate::canvas::textedit::Committing {
             page: 1,
@@ -508,11 +474,6 @@ mod tests {
 
     /// **A recorded refusal is adopted once and stamped against the
     /// revision on screen.**
-    ///
-    /// The `take` is the property: a slot that kept handing the same refusal
-    /// back would re-stamp it after every edit, so the block would never retire
-    /// and the operator would read a sentence about a gesture from ten minutes
-    /// ago.
     #[test]
     fn a_recorded_refusal_is_adopted_exactly_once() {
         drain();
@@ -529,11 +490,6 @@ mod tests {
 
     /// **An edit the operator makes INSTEAD of taking the offer ends the
     /// offer.**
-    ///
-    /// The refusal it reports is then two gestures ago, and
-    /// `app::status::decline`'s own retirement rule is the precedent: a sentence
-    /// about an earlier press, read after a later one, is a small lie told
-    /// confidently.
     #[test]
     fn an_unrelated_edit_retires_the_offer() {
         drain();
@@ -546,12 +502,6 @@ mod tests {
 
     /// **Taking the offer moves to the follow-up rather than retiring**,
     /// and this is the transition the whole route rests on.
-    ///
-    /// The face swap is itself an edit, so from the outside it is
-    /// indistinguishable from the case above — the epoch moved. Only this block
-    /// knows it caused it. Without `taken` the offer would vanish at exactly the
-    /// moment the operator needs to be told to type the character again, and the
-    /// route would end one gesture short of the thing it promised.
     #[test]
     fn taking_the_offer_leaves_the_follow_up_behind() {
         drain();
@@ -570,10 +520,6 @@ mod tests {
 
     /// **And the successful re-type retires it** — the second half of the
     /// same property, and the one that gives the block dynamic range.
-    ///
-    /// A follow-up that survived every subsequent edit would be a permanent
-    /// *"type it again"* under a document where it had already gone in, which is
-    /// the same defect class as a decline that never retires.
     #[test]
     fn the_edit_that_lands_retires_the_follow_up() {
         drain();
@@ -591,11 +537,6 @@ mod tests {
     }
 
     /// **A second refusal replaces the first**, rather than queuing behind it.
-    ///
-    /// `app::status::decline`'s slot rule, and it matters more here: an operator
-    /// who meets two different missing characters in a row must be offered a face
-    /// for the second one, and a block still naming the first would send them to
-    /// a chooser aimed at the wrong run.
     #[test]
     fn a_second_refusal_replaces_the_first() {
         drain();
@@ -625,42 +566,6 @@ mod tests {
 
     /// **THE WHOLE CHAIN, DRAWN** — the refusal recorded, the panel run for
     /// real, and a face that can type the character offered at the end of it.
-    ///
-    /// # Why this is not another state-machine test
-    ///
-    /// Every test above it exercises [`RefusedCharUi::advance`], which is the
-    /// part that is easy to get right and easy to test. **None of them would
-    /// fail on a build where `body_sections` never calls [`section`]**, where
-    /// the pre-flight is never asked, or where `choices` answers an empty list —
-    /// and this project's standing lesson is exactly that: *eight green unit
-    /// tests once passed while the feature performed one of fourteen steps.*
-    ///
-    /// So this runs the **real** `panels::properties::body` through
-    /// `Context::run_ui`, on the real fixture, and reads what the frame left
-    /// behind. `panels::comments::tests` established the technique and its
-    /// header carries the argument in full.
-    ///
-    /// # What each assertion would catch
-    ///
-    /// | assertion | the build it fails on |
-    /// |---|---|
-    /// | the refusal was adopted | `body_sections` does not call [`section`] at all — the capability built and unreached, which is O141's own subject |
-    /// | the face list is non-empty | [`sync_faces`] asked the engine and got nothing: a pin that did not resolve, or a pre-flight that refused |
-    /// | at least fourteen rows are `PdfcerWouldAdd` | the offer is built from **the page's own fonts**, which is the offer that cannot work: this block only exists because those faces refused the character |
-    ///
-    /// The third is the one that matters most, and it is a real risk rather
-    /// than a hypothetical: `preview_font_resources` enumerates the page's own
-    /// `/Font` resources, so a chooser built from `accepted()` alone leaves the
-    /// engine's standard-14 authoring present and unreachable from any surface,
-    /// on the one block whose whole purpose is to reach it.
-    ///
-    /// # Two frames, not one
-    ///
-    /// `panels::dimension_groups`' reason, which `panels::comments::tests`
-    /// repeats: an immediate-mode layout's first pass is a guess and the scroll
-    /// area's size settles on the second. This panel is one `ScrollArea` and
-    /// [`section`] publishes through `ui_rect_visible`, which answers nothing
-    /// for a rect outside a clip that has not settled.
     #[test]
     fn the_offer_reaches_the_panel_and_carries_faces_the_page_does_not_have() {
         drain();
@@ -748,27 +653,6 @@ mod tests {
 
     /// **THE OFFER IS TESTED AGAINST THE CHARACTER THAT WAS REFUSED, NOT
     /// AGAINST THE WORDS ALREADY IN THE RUN.**
-    ///
-    /// This is the assertion that proves the `candidate` argument reaches the
-    /// engine, and it needs a character that **discriminates**. `'q'` does not:
-    /// every standard-14 text face holds it, so the sibling test above passes
-    /// whether the offer was coverage-tested for `'q'` or for the run's own
-    /// ASCII. A test that cannot tell the two apart is not a test of the change.
-    ///
-    /// `'中'` discriminates. No standard-14 face can encode it under
-    /// `WinAnsiEncoding` or under `Symbol`/`ZapfDingbats`' built-in encodings,
-    /// while the run's own characters are plain ASCII that all twelve text faces
-    /// hold. So:
-    ///
-    /// | what the pre-flight is asked | addable rows |
-    /// |---|---|
-    /// | the run's own text (`None`) | twelve |
-    /// | the refused character (`Some("中")`) | **none** |
-    ///
-    /// ⇒ An empty offer is the CORRECT answer here. pdfcer genuinely cannot
-    /// type `'中'` with any face it can author, and a list of twelve faces that
-    /// would each refuse is a control that cannot work — the exact thing R9
-    /// forbids.
     #[test]
     fn the_offer_is_coverage_tested_for_the_refused_character_not_the_runs_own_text() {
         drain();
@@ -822,34 +706,6 @@ mod tests {
 
     /// **Taking the offer swaps the face AND re-applies the operator's own
     /// edit** — O141's second half, asserted without a frame.
-    ///
-    /// # What a build that fails this does to the operator
-    ///
-    /// It changes his letters and abandons his edit. He picked a font from a
-    /// list captioned *"pdfcer will put your change in with it"*, watched the
-    /// text on the page change shape, and got nothing typed into it — which
-    /// reads as the feature half-working, and is worse than the two-gesture
-    /// route it replaced because the caption promised otherwise.
-    ///
-    /// # The three things asserted, and why each is separate
-    ///
-    /// 1. **The retype is raised at all**, and it is `Action::CommitTextEdit` —
-    ///    the same variant `Ctrl+Enter` raises, so the retype takes the
-    ///    identical route through `canvas::textedit::plan` and re-derives the
-    ///    pin and the follower disposition from the page **as the restyle left
-    ///    it**. A bespoke verb here would be a second path that drifts.
-    /// 2. **It carries the operator's own words.** `replacement` is the one
-    ///    operand recoverable from nowhere else once the draft is abandoned, so
-    ///    a build that rebuilt it from the page would silently retype the
-    ///    ORIGINAL and report success.
-    /// 3. **[`RefusedCharUi::retried`] is set**, which is what moves the block
-    ///    off a sentence promising a retype that has already happened.
-    ///
-    /// Driven through [`RefusedCharUi::advance`] rather than by setting the
-    /// fields, because the transition into `Swapped` is the thing under test:
-    /// the epoch moves once, `taken` is consumed, and only then is the retype
-    /// owed. A test that assigned `swapped_to` itself would pass on a build
-    /// whose state machine never reached it.
     #[test]
     fn taking_the_offer_re_applies_the_edit_the_operator_already_typed() {
         drain();
@@ -925,15 +781,6 @@ mod tests {
 
     /// **A refusal that arrived without the operator's words still swaps the
     /// face, and still leaves the block able to move on.**
-    ///
-    /// `RefusedCharacter::typed` is `None` when the plan that produced the
-    /// refusal named a different `(page, run)` than the refusal did — a
-    /// disagreement between two facts about one commit, which this shell
-    /// declines to paper over. The face swap is still worth having, and
-    /// [`RefusedCharUi::retried`] must still be set: it means *this block has
-    /// done everything it can*, not *an action was pushed*. A build that tied it
-    /// to the push would sit for ever on a sentence promising a retype that is
-    /// never coming.
     #[test]
     fn a_refusal_with_no_carried_words_still_leaves_the_swapped_state() {
         drain();
@@ -980,12 +827,6 @@ mod tests {
 
     /// **The three regions are distinct and none of them is another
     /// surface's.**
-    ///
-    /// Worth asserting because the face chooser's regions are namespaced by a
-    /// prefix passed in at the call site, and a prefix copied from
-    /// `properties::text` would make this block's popup indistinguishable from
-    /// the *This text* section's in a trace — so a driven check would read the
-    /// wrong control's rectangle and click it.
     #[test]
     fn the_regions_name_this_block_and_not_the_text_section() {
         assert_eq!(REGION, "properties.refusedchar");

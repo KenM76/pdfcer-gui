@@ -67,3 +67,42 @@ evidence about O218 or O219 either.
 It also does not assert that a raster **completed** — only that one was
 ordered. A check needing a finished raster waits for the application's own
 `render-async-done`.
+
+## Item notes
+
+### `const FIXTURE`
+
+An A1 CAD sheet fits at about 30 %, so six rungs of zoom-in land at
+125 % — a discrete climb that stays entirely under the whole-page raster
+ceiling. The suite's usual clean control opens near 100 % and the same
+ladder would run into the refusal, which would make a rung's silence
+ambiguous between *"the seam did not deliver"* and *"the rasterizer
+declined"*, and those two send a reader to opposite ends of the program.
+
+### `const OFFSCREEN`
+
+Nothing is ever aimed at this window and no OS input is sent to it — which
+is the whole point of the seam — so this check can run while the operator
+is working.
+
+### `const RUNG_DEADLINE`
+
+The seam paces its chords twenty frames apart and requests a repaint on
+every frame while chords remain, so on any machine this runs on the whole
+list is delivered in about a second. The generous deadline is for a loaded
+machine; exceeding it is reported as a finding rather than a hang.
+
+### `fn check_delivery`
+
+A seam that delivered a chord twice, skipped one, or renumbered them would
+pass every zoom assertion below by accident — the windows would still be in
+ascending order and the zoom would still climb. This is what makes the
+rung-to-chord mapping real rather than assumed.
+
+### `fn wait_for_rung`
+
+Not [`Session::settle`]. That polls the frame counter, and this
+application stops drawing the moment the seam stops asking it to — so a
+settle asked for more frames than the run has left would spin out its whole
+cap on every green run. The thing being waited for is a trace line, so the
+trace line is what is waited for.

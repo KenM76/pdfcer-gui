@@ -26,18 +26,8 @@ const RESULT_EVENT: &str = "place-result"; // ui-text-exempt: trace event name, 
 /// Every region the insert window publishes shares this prefix.
 const REGION_PREFIX: &str = "insert-image"; // ui-text-exempt: trace region prefix, never displayed
 /// Where on the page the click lands, as a fraction of the sheet.
-///
-/// Away from the edges and away from the centre. A default placement already
-/// sits near the middle, so a click there could pass against a build that
-/// ignored the pointer completely.
 const AT: (f64, f64) = (0.31, 0.62);
 /// How far the recorded placement may sit from the point that was clicked.
-///
-/// Generous against the real error and tight against the real defect. The
-/// measured agreement is under half a point; one screen pixel at the fit zoom
-/// this fixture opens at is about 3 pt, so a few points absorbs the click
-/// quantisation. The mirror this check was written after is about 300 pt out,
-/// and a centre-defaulting build is of the same order.
 const TOLERANCE_PT: f64 = 8.0;
 
 pub struct TheInsertWindowStepsAside;

@@ -14,13 +14,6 @@ use crate::launch::{LaunchSpec, Session};
 const MODE: &str = "read";
 
 /// The substring that means the **object** clipboard answered.
-///
-/// Matched as a fragment rather than as the whole sentence because
-/// `text::clipboard::os_marker` spells singular and plural differently and both
-/// mean the same failure. Kept in sync by nothing but this comment, which is
-/// acceptable precisely because a *false negative* here is harmless: if the
-/// wording changes and this stops matching, the positive assertion still fails
-/// on a build that copies no text.
 const OBJECT_MARKER: &str = "copied from pdfcer";
 
 /// See the module documentation.
@@ -233,22 +226,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 }
 
 /// How far to sweep, in PDF points, along the baseline.
-///
-/// Wide enough to cross several glyphs on a drawing's title block at any
-/// reasonable font size, and short enough that it stays inside one line rather
-/// than wrapping into whatever is beside it.
 const SWEEP_PT: f64 = 60.0;
 
 /// The trace line that says a sweep produced a selection, and **how many
 /// characters** it took.
-///
-/// The first version of this check watched `text-selection`, which no build
-/// has ever emitted — the event is `canvas-text-selection`. The sweep worked
-/// perfectly and the check reported SKIPPED with a message blaming the fixture
-/// and `--doc-point`. A wrong event name and a genuinely missing feature are
-/// the same silence, and the harness cannot tell them apart; only reading the
-/// trace can.
-///
-/// It reads `chars=` rather than merely counting the line, so a sweep that
-/// produced an EMPTY selection is distinguishable from one that produced text.
 const SELECTION_EVENT: &str = "canvas-text-selection";

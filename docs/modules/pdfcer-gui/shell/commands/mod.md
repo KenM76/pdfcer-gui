@@ -119,3 +119,27 @@ argument lives beside the registrations it justifies.
 
 The list is **one flat function in one file** — see [`catalog`]'s header
 for why splitting *that* would be the cheaper edit and the wrong one.
+
+## Item notes
+
+### `mod reach`
+
+Every other obligation this catalogue carries is about the *registration*
+being self-consistent — a count, a group count, a `PLANNED` removal, a RON
+regeneration, a `KNOWN` condition name — and a command can satisfy all of
+them while doing nothing at all: drawn on the quick-access toolbar, bound to
+a chord, printing that chord in its own tooltip, with no dispatch arm behind
+it. [`reach`] is the assertion that closes that gap: every id in this
+registry is routed by a literal arm, claimed by a guard arm, or listed in
+[`reach::SCAFFOLDED`] with a written reason.
+
+`#[cfg(test)]` because the reader parses `app/dispatch.rs` with `syn`, a
+**dev**-dependency — see this crate's `Cargo.toml` for why a real parser and
+not a grep, and [`reach`]'s own header for what a grep cannot see.
+Nothing here is compiled into `pdfcer-gui.exe`.
+
+### `mod ledger`
+
+Mostly commentary against a handful of assertions, which is the point rather
+than an accident: an integer records nothing, and what a reader needs when
+one of them fails is whether the change that moved it was supposed to.

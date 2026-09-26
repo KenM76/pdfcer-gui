@@ -76,10 +76,6 @@ fn session() -> EditSession {
 }
 
 /// The face swap, exactly as the offer performs it, located by `find` alone.
-///
-/// No pin and no target: the point of this module is that **nothing the shell
-/// computes** is in the request, so a refusal downstream cannot be blamed on a
-/// stale span.
 fn swap_face(session: &mut EditSession) {
     let req = FormatRequest::new(0, RUN_TEXT).font(FontSelector::new(FACE));
     session
@@ -100,12 +96,6 @@ fn type_the_character(session: &mut EditSession) -> Result<(), String> {
 /// Type it the way **the shell** does: a pinned whole-operator request, with
 /// the pin measured **now**, from a fresh provenance-carrying extraction over
 /// the session's current view.
-///
-/// This is the shape `canvas::textedit::plan` builds and `Action::CommitTextEdit`
-/// applies, reduced to its operands. The pin being re-measured after the restyle
-/// is the point: it is what removes "the shell handed the engine a span pinned
-/// before the stream was rewritten" from the list of explanations, by
-/// construction rather than by argument.
 fn type_the_character_pinned(session: &mut EditSession) -> Result<(), String> {
     use pdfcer_core::text_edit::{BlockRecognitionOptions, EditableTextModel};
 
@@ -150,44 +140,6 @@ fn page_text(session: &EditSession) -> String {
 /// fix.** One session, `format_text` then `edit_text`, and the second call now
 /// **succeeds** — in both request shapes, with no save and no reopen between
 /// them.
-///
-///
-/// It asserted the **refusal**: that the `/Font` object `format_text` had just
-/// allocated lived only in the session overlay, that `edit_text` planned with
-/// `plan_edit(&self.base, …)`, and that `resolve_font_dict` therefore
-/// dereferenced the run's `Tf` name through a revision that predated the
-/// resource — answering `None`, which surfaced as *"the run's font resource is
-/// unresolvable in the target stream's resources"*.
-///
-/// That assertion was written **so that it would go red**, and on the engine
-/// bump to v0.41.0 it did, on the first run, with its own `expect_err` message
-/// naming the response. `Pass 257.0` (`5e95805`) made every text-edit planner
-/// and helper take `&DocumentView<'_>` and every `EditSession` verb pass
-/// `self.view()`; there is no `&Document → &DocumentView` coercion, so handing
-/// a planner the base revision is now a **compile error** rather than a latent
-/// wrong answer, and the class cannot return by the route it arrived.
-///
-/// ⇒ The lesson worth keeping is the one `RESUME.md` states: **a sentence about
-/// what the engine cannot do is a dated citation with a shelf life measured in
-/// hours, and where the claim can be an assertion it must be one.** This file
-/// cost one test and returned the day the limit stopped being true, which is
-/// what a paragraph cannot do.
-///
-/// # Why BOTH shapes are still asserted, now that both pass
-///
-/// They failed in **different voices** and the difference was the finding: the
-/// pinned form reached `resolve_font_dict` and named the resource, while the
-/// `find` form never got that far — locating a run by its text means decoding
-/// every show operator, decoding needs the font, and the font was the thing
-/// that would not resolve, so the answer was the locational `NoMatch`, *"text
-/// to edit was not found in an editable run on the page"*, which told the
-/// operator their text was absent from a page that was plainly printing it.
-///
-/// A regression could come back through either door, and the `find` door is the
-/// one that would come back **quietly** — as a "no match", which reads like a
-/// bad search rather than like a broken session. So both are driven, each in
-/// its **own session**, because a successful edit rewrites the run and the
-/// second shape would otherwise be searching a page the first one changed.
 #[test]
 fn the_engine_types_into_a_face_it_just_swapped_in() {
     // ── The control, and it is not decoration ──────────────────────────────
@@ -319,11 +271,6 @@ fn a_face_the_page_already_carries_can_be_typed_into_at_once() {
 /// **The control that makes the measurement evidence.** The same two verbs,
 /// with a save and a reopen between them — which is exactly what two runs of
 /// `pdfcer.exe` do — and the character lands.
-///
-/// Without this, the test above would be equally consistent with "this fixture
-/// cannot take that edit at all", and the request filed against the engine would
-/// name the wrong subject. This project has filed two such requests in one week
-/// on diagnoses that did not survive re-measurement.
 #[test]
 fn two_sessions_do_what_one_session_will_not() {
     let mut first = session();
@@ -351,19 +298,6 @@ fn two_sessions_do_what_one_session_will_not() {
 /// **The words the operator typed survive the refusal that threw the draft
 /// away** — the round trip [`super::Committing`] promises, asserted rather than
 /// argued.
-///
-/// `super::plan` is the one function every text commit passes through, and it
-/// writes the slot; `panels::properties::refusedchar::record` reads it back. The
-/// hazard the assertion covers is not exotic — it is a slot written before the
-/// operands are known, or written for the wrong run, either of which would make
-/// the offer re-apply *something else* into the operator's document, silently
-/// and with an undo entry. That is a worse outcome than the two-gesture route
-/// this replaced.
-///
-/// Driven through the real `plan`, on this repository's own fixture, rather
-/// than by poking the thread-local: the claim is about what `plan` does, and a
-/// test that set the slot itself would pass on a build where `plan` had stopped
-/// setting it.
 #[test]
 fn last_commit_is_the_one_just_planned() {
     let doc = crate::app::state::open_local_fixture("subset-font-floor.pdf");

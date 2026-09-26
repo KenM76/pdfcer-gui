@@ -15,20 +15,10 @@ use crate::report::CheckReport;
 const FIXTURE: &str = "fixtures/a1-titleblock.pdf";
 
 /// The strip the dock reserves. Published by `egui_shell::dock::rail::draw`.
-///
-/// `toolrail`, **not** `dock.left.rail` — that name belongs to the sliver a
-/// *collapsed* side leaves behind, which is a different surface. Reading the
-/// wrong one is the failure
-/// `two_trace_lines_sharing_an_event_name_make_a_check_read_the_wrong_one`
-/// records.
 const STRIP: &str = "dock.left.toolrail";
 
 /// The panel tabs this check covers, as `crate::app::rail::region("tabs", id)`
 /// names them.
-///
-/// **Not the whole group.** The rail's `RailFold::Never` group also holds
-/// `rail.tabs.markup.comments`, and it is absent here, so the Comments tab's
-/// reachability is asserted in no mode. `DEFECTS.md` D30.
 const TABS: [&str; 5] = [
     "rail.tabs.view.panel_pages",
     "rail.tabs.view.panel_bookmarks",

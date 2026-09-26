@@ -41,10 +41,6 @@ pub(super) fn section(ui: &mut egui::Ui, doc: &OpenDoc) -> bool {
 #[cfg(test)]
 mod tests {
     /// The region names the Properties panel, and no other.
-    ///
-    /// Worth a test because a driven check sweeping for a region name that
-    /// nothing publishes finds nothing and SKIPs — and a SKIP is not red, so a
-    /// region renamed out from under a check costs no build and all coverage.
     #[test]
     fn the_region_moved_with_the_block() {
         assert_eq!(super::REGION, "properties.disclosures");

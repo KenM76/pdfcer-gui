@@ -27,13 +27,6 @@ const PART_RUNG_LOWER: &str = "part"; // ui-text-exempt: a trace token, never di
 /// `selection-set page=… object=… part=… level=… via=…` —
 /// `SelectionState::select_part`'s own line, naming the chunk it replaced the
 /// entry list with.
-///
-/// The only channel on which a press-time re-pick is visible.
-/// `canvas-selection` is written by the CLICK path, which runs on the release
-/// and reports the selection the click left — so a chunk chosen on the press
-/// and then dragged never appears there at all. A check that read
-/// `canvas-selection` for the gap press would see silence and report the fix as
-/// missing.
 const SET_EVENT: &str = "selection-set"; // ui-text-exempt: a trace event name, never displayed
 
 /// `via=` on the line `presspick::take` writes when it re-picks.
@@ -48,10 +41,6 @@ const RUNG_EVENT: &str = "status-rung"; // ui-text-exempt: a trace event name, n
 const MOVED_MANY_EVENT: &str = "move-text-lines"; // ui-text-exempt: a trace event name, never displayed
 
 /// `move-text-line …` — the **singular** twin.
-///
-/// Read as a failure witness in the multi-chunk steps and as the required
-/// answer in the gap-press step, which is the whole reason both names are
-/// constants here rather than one being spelled inline.
 const MOVED_ONE_EVENT: &str = "move-text-line"; // ui-text-exempt: a trace event name, never displayed
 
 /// `canvas-move-declined level=… sel=… reason=… detail=…`, on release only.
@@ -72,38 +61,18 @@ const UNDO_DECLINED_EVENT: &str = "undo-declined"; // ui-text-exempt: a trace ev
 
 /// The two chunks the set is built from, as positions in the fixture's content
 /// stream.
-///
-/// Two apart, so the aims are 32 pt apart on a document whose baselines are
-/// 16 pt apart and an aim off by a few points still lands on the intended line
-/// — and, more importantly, so there is an **unselected** line between them for
-/// step G to press on.
 const PAIR: [usize; 2] = [0, 2];
 
 /// The line between them, which is deliberately never selected.
 const BETWEEN: usize = 1;
 
 /// How far apart the two aims are, in PDF user-space points.
-///
-/// [`crate::fixture::text_chunk_point`] puts the fixture's baselines 16 pt
-/// apart, and the pair is two lines apart. Quoted only in the message that
-/// reports the two aims collapsing onto one chunk, where the number is what
-/// tells a mapping fault from a selection one.
 const AIM_SEPARATION_PT: usize = 32;
 
 /// How far each drag travels, in window logical points, on each axis.
-///
-/// Comfortably past the drag threshold and past `Refusal::NoTravel`'s floor,
-/// and small enough that the pointer stays well inside the canvas on a
-/// 612 × 792 page at fit zoom.
 const DRAG_PX: f32 = 40.0;
 
 /// How deep the undo log must be when the first undo is pressed.
-///
-/// **One**, and that is the assertion, not a bookkeeping detail: the plural
-/// move issues one `move_text_run` per run of every selected line, and
-/// `fold_undo` coalesces them into a single entry. A build that skipped the
-/// fold moves both lines and then needs one press of undo per line — which the
-/// operator experiences as undo not working.
 const EXPECTED_DEPTH: usize = 1;
 
 /// What one gesture produced, read off `canvas-selection`.
@@ -147,20 +116,9 @@ impl Check for ShiftClickBuildsAChunkSetTheWholeProgramHonours {
 }
 
 /// What a step measured, or the sentence a FAIL should carry.
-///
-/// The outer `Result` is this harness's: its `Err` is a SKIP, *the check could
-/// not run*. The inner one separates *the check ran and the assertion did not
-/// hold* from *the check ran and here is the number it read* — three outcomes,
-/// which is what a driven step actually has and what a bare `Option` cannot
-/// spell.
 type Step<T> = Result<std::result::Result<T, String>>;
 
 /// Click — plainly or with Shift held — and read what the selection became.
-///
-/// `Ok(None)` is *the application wrote no `canvas-selection` line since the
-/// mark taken here*. Every gesture in this check is meant to change the
-/// selection, so that silence is a finding; it is returned rather than reported
-/// so each step can say what it means where it happened.
 fn click_and_read(
     session: &Session,
     driver: &Driver,
@@ -185,15 +143,6 @@ fn click_and_read(
 }
 
 /// Ascend to the top of the ladder, then descend to the one chunk under `at`.
-///
-/// Returns the chunk index the descent reached. Two clicks, because the chunk
-/// rung is entered on the second — `chunk_click` owns that claim and it is
-/// assumed here rather than re-filed, but the RUNG is asserted: a set built at
-/// the Object rung is a different selection and every assertion below would
-/// then be about the wrong thing.
-///
-/// The leading Escapes make this callable both at the start of the run and
-/// again after a committed edit, without inheriting a rung.
 fn descend(session: &Session, driver: &Driver, at: ScreenPoint) -> Step<usize> {
     driver.press(vk::ESCAPE)?;
     session.settle(12);

@@ -207,3 +207,107 @@ It also could not be done through the funnel without weakening it: the apply
 phase is deliberately handed no [`egui::Context`], and both of these need
 one — the memory write for read mode, and `send_viewport_cmd` for full
 screen.
+
+## Item notes
+
+### `const READ_MODE_ID`
+
+A named constant rather than a literal at both call sites, for the reason
+[`crate::shell::commands::FILE_RECENT`] gives about its own id: a key spelled
+twice that stops agreeing produces **silence** — a toggle that writes one
+slot and a composition step that reads another — rather than an error.
+
+### `const READ_MODE_COMMAND`
+
+**Spelled once in this crate for this purpose.** The failure this guards
+against is not a compile error: a second literal `"view.read_mode"` at the
+title site and a third at the status-bar site would each keep working while
+slowly meaning different things, and the day one of them was renamed the
+other would resolve to `None` and the surface would go *silent* — which is
+indistinguishable from an operator who has read mode off. The same argument
+[`READ_MODE_ID`] makes about its memory key, one level up.
+
+### `const PENDING_FRAMES`
+
+Bounded rather than latched, and the bound is the whole safety property. A
+request the platform silently refuses — a window manager that does not do
+full screen, a compositor that declines — would otherwise leave this shell
+permanently convinced of a state the window is not in, and every subsequent
+press would toggle a fiction.
+
+Four is generous: `eframe` answers a viewport command on the next frame it
+pumps, and this only has to outlast the round trip.
+
+### `fn read_mode_starts_off_and_toggles_both_ways`
+
+Driven through the real memory slot rather than a local `bool`, because
+the slot is the thing two surfaces share: a toggle that wrote one key
+while `draws_chrome` read another would leave the ribbon drawn and the
+control pressed, and nothing else in the suite would notice.
+
+### `fn an_unreported_fullscreen_state_is_read_as_windowed`
+
+The one rule in the full-screen half that a test can reach, and the one
+that decides whether the *first* press does anything. `None` is what a
+headless context reports and what a backend that does not track the flag
+reports; reading it as `true` would make the first press ask for
+`Fullscreen(false)` on a windowed application — a control that visibly
+does nothing on the only press most operators ever make.
+
+### `fn a_second_press_before_the_backend_answers_still_toggles_off`
+
+The sequence, exactly as the driven check performs it:
+
+1. frame 10, windowed, nothing outstanding → ask for `true`;
+2. frame 11, **the report still says `false`** because the backend has
+   not answered yet — an implementation that reads only the report asks
+   for `true` again, so full screen turns on and will not turn off.
+
+`read_mode_hides_the_chrome` is where that shows up, and its failure
+branch says *"the display has been left filled; close the window to
+recover it"* — which is what an operator gets. It fails intermittently,
+because the dependency is on how many frames fall between the presses;
+reading an intermittent as harness flakiness is the mistake
+`D:/dev/rag/egui/`'s chord-matcher finding warns about by name.
+
+### `fn a_confirmed_request_hands_authority_back_to_the_report`
+
+The other half of the rule, and what makes an **externally** triggered
+full screen — a window manager's own key, a double-clicked title bar —
+honoured on the very next press rather than fought.
+
+### `fn an_unanswered_request_expires_rather_than_latching`
+
+Bounded rather than latched, and the bound is the safety property: a
+window manager that declines full screen outright would otherwise make
+every subsequent press toggle a fiction.
+
+### `fn the_published_chord_is_the_one_the_manifest_binds`
+
+The vacuous shape this refuses: `assert_eq!(chord, "Ctrl+H")`. That test
+passes on a build whose keymap has moved on and whose surfaces are
+therefore lying, because it is a second copy of the very fact under
+test. What is asserted instead is an **identity between two
+derivations** — the one the surfaces use, and the keymap read the other
+way round — so a rebind either moves both or fails here.
+
+### `fn an_unbound_command_yields_no_chord_and_no_guess`
+
+A fallback of `Ctrl+H` here would be a second spelling of the binding
+wearing a fallback's clothes: correct exactly when it is not needed, and
+wrong in the one case it is reached for. The surfaces treat `None` as
+*say nothing about a key* — see `app::status::readmode`.
+
+### `fn a_command_bound_twice_advertises_what_a_menu_advertises`
+
+It shares `egui_shell::menu::shortcut::prefer` rather than picking the
+first match, and the failure that prevents is quiet: a command bound to
+two keys would otherwise be advertised as one chord in a context menu and
+a *different* chord on the status bar, both true, with no way for an
+operator comparing them to know that either was.
+
+### `fn a_headless_context_reports_no_fullscreen_state`
+
+Asserted rather than assumed: if a future egui reported `Some(false)`
+here, the rule would still be right but the reason written down for it
+would have stopped being true, and this is where that shows up.

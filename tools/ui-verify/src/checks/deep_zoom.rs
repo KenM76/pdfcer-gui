@@ -19,19 +19,9 @@ const CANVAS_EVENT: &str = "canvas";
 const RENDER_EVENT: &str = "render-async-done";
 
 /// How many times to press `+`.
-///
-/// Enough to SATURATE, deliberately. The ladder runs to 800 % and then doubles,
-/// so this walks all the way to the ceiling and keeps pressing — which means
-/// the check exercises the whole range rather than a point in the middle of it,
-/// and would catch a build that renders at 25,000 % and fails at 2,000,000 %.
-///
 const PRESSES: usize = 60;
 
 /// The zoom this check has to exceed to be testing anything, as a multiplier.
-///
-/// A Letter page's whole-page raster fails at about 26×. Reported as SKIPPED
-/// below this rather than passed: a run that never left the whole-page tier has
-/// not exercised the region tier at all.
 const MUST_EXCEED: f32 = 26.0;
 
 /// See the module documentation.

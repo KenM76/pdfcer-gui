@@ -23,36 +23,12 @@ pub(crate) const CANVAS_EVENT: &str = "canvas";
 pub(crate) const POS_EVENT: &str = "canvas-pos";
 
 /// Where to roll the wheel to knock the view off its centred position.
-///
-/// The pan is what makes this check able to fail. The centred position is
-/// exactly where the O24e defect snapped **to**, so a check that zoomed without
-/// panning first would have watched the view "stay" where the bug was about to
-/// put it anyway — green, and measuring nothing.
 const PAN_AT: (f32, f32) = (0.30, 0.30);
 
 /// How many Ctrl+wheel notches per stage.
 const STAGE: usize = 8;
 
 /// The most stages to climb before giving up.
-///
-/// # A CAP, not a count — the loop climbs until the zoom SATURATES
-///
-/// The operator, 2026-08-22: *"can you test up to maximum zoom please?"* So the
-/// run does not stop at a chosen depth; it keeps rolling until a whole stage
-/// fails to increase the zoom, which is the application saying it has reached
-/// its ceiling. With the default maximum of 10¹² % that is a long climb — eight
-/// notches multiply the zoom by roughly five, so from a page-fit 76 % it takes
-/// about fifteen stages.
-///
-/// The cap exists only so that a build broken in the *other* direction — one
-/// that climbs by an epsilon for ever — ends the run instead of wedging the
-/// suite. Reaching it is reported as a SKIP, not a pass: a run that never found
-/// the ceiling has not tested the ceiling.
-///
-/// The saturation test asks the APPLICATION where its ceiling is rather than
-/// comparing against a constant. The maximum is an operator setting, so a check
-/// that hard-coded 10¹² % would silently stop testing the ceiling the day he
-/// changed it — the same silently-inert control this whole request began with.
 const MAX_STAGES: usize = 24;
 
 // Where the two tier boundaries sit, for the guard at the end of the climb: the
@@ -233,11 +209,6 @@ pub(crate) fn held(session: &Session, canvas: crate::geom::LRect) -> Result<Opti
 const SETTLE_STEP: u32 = 3;
 
 /// How many settling reads before giving up. See [`settled`].
-///
-/// `SETTLE_STEP × SETTLE_ROUNDS` frames is the worst case per notch — about
-/// two seconds on an idle machine, and reached only when the view genuinely
-/// never stops moving, which is a finding in itself and is reported as an
-/// error rather than swallowed.
 const SETTLE_ROUNDS: usize = 24;
 
 /// Read [`held`] repeatedly until two consecutive reads agree exactly, so the

@@ -238,60 +238,12 @@ pub fn notes_on<G: ObjectGraph + ?Sized>(graph: &G, page: &Page) -> Vec<NoteView
 }
 
 /// **Does the file say this note starts open?**
-///
-///
-/// This function's whole body was a `graph.value(id)` dictionary lookup for
-/// `b"Open"`, reported as a workaround under pdfcer decision 058 (*anything the
-/// GUI has to work around is a place the crate boundary was drawn wrong*) and
-/// filed as `request_popup_open_state_cannot_be_read.md`. Its own docs said
-/// *"the day the engine models `/Open` this function becomes two field reads."*
-///
-/// `Pass 253.3` shipped [`pdfcer_core::annot::Annotation::open`] and this is
-/// that day: two field reads, the workaround deleted rather than left beside
-/// the real thing. The prediction that mattered was in the request itself —
-/// *"the day `Annotation` grows the field, two places will answer the same
-/// question and one of them will be ours"* — and the way to make sure that
-/// never happened was to remove the shell's copy the moment the engine's
-/// existed.
-///
-/// # `Option<bool>` in, `bool` out, and the asymmetry is the point
-///
-/// The engine reports **facts**: `None` means the key was absent, which
-/// §12.5.6.4 Table 172 distinguishes from an explicit `false` even though its
-/// stated *default* is `false`. `Annotation::open`'s own docs argue the
-/// distinction is load-bearing for exactly this case — a reader that could not
-/// tell *"said closed"* from *"said nothing"* would silently shut every note
-/// another producer authored open.
-///
-/// This function is where the default is finally applied, because a **window
-/// is either drawn or it is not** and something has to decide. So the
-/// three-state fact becomes a two-state answer here, once, in a named place,
-/// rather than at the drawing site where it would be an `unwrap_or(false)`
-/// nobody reads.
-///
-/// # The order: the note first, then its pop-up
-///
-/// Both carry the key and the standard gives both the same meaning — Table 172
-/// for a `/Text` annotation, Table 183 for the `/Popup`. `pdfcer-core`'s author
-/// writes the **same** value to both — the note's `/Open` is copied onto the
-/// companion in the same call that creates it — so
-/// on a file pdfcer wrote the order cannot matter. It matters on a file
-/// somebody else wrote, and the note wins because it is the annotation the
-/// operator interacts with — and because Table 170 gives a `/Square` or an
-/// `/Ink` no `/Open` of its own, so for those the note half is `None` and the
-/// companion is the whole answer.
-///
-/// Absent on both is `false`: Table 172's default value, stated.
 #[must_use]
 fn read_open(annotation: Option<bool>, popup: Option<bool>) -> bool {
     annotation.or(popup).unwrap_or(false)
 }
 
 /// An annotation `/Rect` in canvas space, or `None` when it is unusable.
-///
-/// A thin adapter so the two call sites above spell the conversion once.
-/// `annot_canvas_rect` already rejects a degenerate or non-finite rectangle,
-/// which is the whole of what "unusable" means here.
 fn canvas_rect(rect: pdfcer_core::page_tree::Rect, page: &Page) -> Option<Rect> {
     annot_canvas_rect([rect.llx, rect.lly, rect.urx, rect.ury], page)
 }
@@ -531,11 +483,6 @@ pub fn replies_to<G: ObjectGraph + ?Sized>(graph: &G, pages: &[Page], root: ObjI
 }
 
 /// How many levels of reply-to-a-reply are followed.
-///
-/// Eight, which is far past any thread a human writes and far short of
-/// anything that costs a frame. The bound exists for the malformed case rather
-/// than the deep one: a `/IRT` cycle is legal syntax and would otherwise loop
-/// for ever. See [`replies_to`].
 const MAX_THREAD_DEPTH: usize = 8;
 
 #[cfg(test)]
@@ -547,12 +494,6 @@ mod tests {
     }
 
     /// **A note the file says is open reads as open.**
-    ///
-    /// The assertion the whole `/Open` path exists for, and the one the
-    /// assignment names: *"A note authored open should open. Read it; do not
-    /// default it."* An implementation that returned `false` unconditionally
-    /// would pass every other test in this module.
-    ///
     #[test]
     fn a_note_authored_open_reads_as_open() {
         assert!(read_open(Some(true), None));
@@ -570,27 +511,12 @@ mod tests {
 
     /// **Absent means closed**, which is Table 172's stated default value —
     /// not an assumption this module is making.
-    ///
-    /// And *absent on both* is the case that has to be spelled out, because
-    /// the engine deliberately reports absence as `None` rather than folding it
-    /// to `false`: somewhere the default has to be applied, and this asserts
-    /// that the somewhere is here.
     #[test]
     fn a_note_with_no_open_key_is_closed() {
         assert!(!read_open(None, None));
     }
 
     /// **The pop-up's own `/Open` is consulted when the note has none.**
-    ///
-    /// The case that matters on a file another product wrote: `/Square`,
-    /// `/Ink` and every other geometric markup have **no `/Open` in Table
-    /// 170** — the key belongs to `/Text` — so their open state lives only on
-    /// the `/Popup`. Reading the parent alone would report every shape's note
-    /// as closed however the producer saved it.
-    ///
-    /// Both directions, because a fall-through that always answered `true`
-    /// would pass a one-sided check and open every shape's window in the
-    /// document.
     #[test]
     fn a_shapes_open_state_comes_from_its_popup() {
         assert!(read_open(None, Some(true)));
@@ -600,11 +526,6 @@ mod tests {
     /// The note wins when both carry the key. Stated as a test rather than
     /// left to the `or`, because the precedence is a decision with a reason
     /// (see [`read_open`]) and a reordering would be silent.
-    ///
-    /// Asserted in the direction where the two DISAGREE and the note says
-    /// *closed*: a build with the operands swapped passes any test where they
-    /// agree, and passes the `Some(true), Some(false)` case as well by
-    /// accident.
     #[test]
     fn the_note_outranks_its_popup() {
         assert!(!read_open(Some(false), Some(true)));
@@ -631,12 +552,6 @@ mod tests {
     }
 
     /// **The topmost note wins, not the first one found.**
-    ///
-    /// `/Annots` is paint order, so a sticky dropped over a cloud is drawn
-    /// last and is what the operator sees. A hit test taking the first match
-    /// would open the note underneath — which reads as the click having
-    /// missed, because a window appears about something the operator was not
-    /// pointing at.
     #[test]
     fn the_topmost_note_takes_the_click() {
         let notes = vec![
@@ -679,24 +594,6 @@ mod tests {
     }
 
     /// **THE FIXTURE CARRIES WHAT THE DRIVEN CHECKS ASSERT ABOUT.**
-    ///
-    /// # Why this test is here and not in `tools/ui-verify`
-    ///
-    /// `RESUME.md`'s falsification discipline: *"a fixture note with empty
-    /// `/Contents` makes 'the pop-up shows the words' pass on a build that
-    /// shows nothing."* A driven check aimed at a document that cannot
-    /// exercise its case reports **SKIP or a green pass**, and neither is
-    /// distinguishable from the feature working. This project has been bitten
-    /// by that seven times in one month, three of them on one afternoon.
-    ///
-    /// So the fixture's own properties are asserted **here**, in a cheap unit
-    /// test that runs on every `cargo test`, rather than trusted. If the
-    /// generator is edited, or the file is regenerated by a different hand,
-    /// this goes red long before a driven sweep would notice anything.
-    ///
-    /// It doubles as the only end-to-end exercise of [`notes_on`] and
-    /// [`replies_to`] against a real document, which is why the assertions
-    /// below are about the model's output rather than about the bytes.
     #[test]
     fn the_fixture_carries_a_real_thread_with_words_an_author_and_a_date() {
         let path = fixture();
@@ -879,31 +776,6 @@ mod tests {
     /// **Only an annotation with somewhere to write it is offered the
     /// *Open by default* control** — R83, and the two halves are different
     /// rules.
-    ///
-    /// # What the engine will and will not write
-    ///
-    /// `set_annotation_open` writes `/Open` on the annotation itself **only for
-    /// `/Text`** — §12.5.6.4 Table 172 gives it there and Table 169 gives it to
-    /// no other subtype, and the engine refuses to invent it: *"writing it onto
-    /// a `/Square` would add a key the standard does not define there, which is
-    /// noise a later reader could mistake for meaning."* It writes the `/Popup`
-    /// companion's when there is one, and it **will not manufacture a
-    /// companion**, because choosing a `/Rect` the caller did not pick is
-    /// authoring rather than a state change.
-    ///
-    /// With neither, the call succeeds, writes nothing and pushes no undo
-    /// entry. That is the right contract for an engine acting over a mixed
-    /// selection and the wrong affordance for a window: a tick box whose whole
-    /// effect is a sentence explaining that it had none.
-    ///
-    /// # All four combinations, because two of them are the interesting ones
-    ///
-    /// A build that asked only *"is it a `/Text`?"* withholds the control from
-    /// every shape an operator commented on and gave a pop-up — which is what
-    /// `pdfcer-core`'s own sticky-note author writes, and what Acrobat writes
-    /// for a highlight. A build that asked only *"does it have a `/Popup`?"*
-    /// withholds it from a `/Text` whose companion another producer left out,
-    /// where the annotation's own `/Open` is the entire answer.
     #[test]
     fn only_a_note_with_somewhere_to_record_it_may_record_it() {
         let note = |subtype: &str, popup: bool| NoteView {

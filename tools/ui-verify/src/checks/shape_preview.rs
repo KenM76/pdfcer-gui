@@ -27,10 +27,6 @@ const DRAWN: &str = "canvas-shape-drawn";
 const HELD: &str = "canvas-held-preview";
 
 /// How far to drag the anchor, in screen pixels.
-///
-/// Far enough that the shape visibly changes and the move is not mistaken for
-/// a click, and short enough to stay on the page. `multi_node` uses the same
-/// figure for the same reasons.
 const DRAG_PX: f32 = 25.0;
 
 /// See the module documentation.
@@ -242,12 +238,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 }
 
 /// The overlay's published anchor marks, by index.
-///
-/// A local copy of `multi_node`'s, deliberately rather than a shared helper:
-/// the list is the OVERLAY's contract about what it publishes, and two checks
-/// naming it independently is what would catch a rename in one of them. A
-/// shared constant would make both agree with each other and neither with the
-/// application.
 fn anchor_region(n: usize) -> &'static str {
     const NAMES: [&str; 6] = [
         "canvas.anchor.0",

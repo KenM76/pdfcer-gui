@@ -110,16 +110,6 @@ mod tests {
 
     /// O24g — **the two zoom buttons must be inverses of each other**,
     /// above the ladder as well as on it.
-    ///
-    /// The operator: *"clicking the negative button to zoom back snaps me back
-    /// to 800% when I am over 800%."* `ladder_step_up` grew a doubling branch
-    /// when the maximum zoom was raised; `ladder_step_down` did not, so from
-    /// 4,155 % one press discarded a hundred-fold magnification.
-    ///
-    /// Asserted as a ROUND TRIP rather than against fixed numbers. The
-    /// property this module's header promises is reversibility, and a test of
-    /// two constants would keep passing if both were changed together in a way
-    /// that broke it.
     #[test]
     fn stepping_up_then_down_returns_to_where_it_started_above_the_ladder() {
         for start in [9.0_f32, 16.0, 41.55, 1_000.0, 20_000.0, 1e6] {
@@ -134,11 +124,6 @@ mod tests {
     }
 
     /// The descent must LAND ON the ladder, not vault over it.
-    ///
-    /// Halving from 8.5 gives 4.25, which is between two named rungs — so the
-    /// next press down would go to 4.00 and the 600 % rung would never be
-    /// reachable from above. Clamping the halving at the top rung hands the
-    /// descent to the named percentages cleanly.
     #[test]
     fn descending_past_the_ladders_end_lands_on_its_top_rung() {
         let top = *ZOOM_LADDER.last().expect("a ladder");
@@ -176,17 +161,6 @@ mod tests {
     }
 
     /// **Stepping DOWN saturates; stepping UP no longer does** — O24.
-    ///
-    ///
-    /// So the property changes shape rather than disappearing: **the step
-    /// keeps climbing, and what stops it is the CEILING** — `ViewState::zoom_in`
-    /// clamps against `zoom_ceiling`, which is where the limit belongs. A
-    /// stepper that enforced its own maximum would be a second opinion about
-    /// how far the operator may zoom.
-    ///
-    /// The downward half is unchanged: `MIN_ZOOM` is a floor with nothing
-    /// below it, and 10 % of a page is not a number anybody has asked to go
-    /// under.
     #[test]
     fn ladder_stepping_climbs_past_its_end_and_still_saturates_downward() {
         assert_eq!(ladder_step_up(MAX_ZOOM), MAX_ZOOM * 2.0);

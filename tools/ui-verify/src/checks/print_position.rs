@@ -33,16 +33,6 @@ const SCALE_ACTUAL: &str = "print.scale.actual";
 
 /// The Position tab's own button — both the control that opens the tab and the
 /// thing the wheel is rolled over to bring the group below it into view.
-///
-/// A button, deliberately: it does not consume a wheel notch, so the notch
-/// reaches the scrolling body behind it. A `DragValue` — and the Position group
-/// has two — would have eaten the notch and changed the number it was sitting
-/// on, which is a silent edit to the very geometry being measured.
-///
-/// It is also the only anchor that can work. The scale radios, which this
-/// check used to scroll over, are on a different tab: once Position is open
-/// they are not drawn at all, so an anchor there would be absent exactly when
-/// it was needed and the check would read "the group drew nothing".
 const TAB_POSITION: &str = "print.tab.position";
 
 /// The page's grabbable rectangle inside the preview canvas.
@@ -56,38 +46,14 @@ const CENTRE_V: &str = "print.position.centre-v";
 const RESET_ALL: &str = "print.position.reset-all";
 
 /// How far the pointer is dragged, in logical points, on each axis.
-///
-/// Bounded above by the preview canvas, which a measured run reported as
-/// **340x438 logical points** on this machine's default window: the gesture has
-/// to start and finish inside the page, the page at Actual size fills the
-/// canvas, and so the canvas's short side is the ceiling. 240 pt was tried
-/// first and skipped every run for want of room.
-///
-/// Bounded below by [`EGUI_MAX_CLICK_DIST`]: the driver walks the pointer in
-/// [`DRAG_STEPS`] equal steps, and the prediction below is only the truth while
-/// one of those steps is longer than that distance. `travel_per_step_clears_egui`
-/// holds the two numbers against each other.
 const DRAG_PT: f32 = 120.0;
 
 /// egui's own click-versus-drag distance, logical points:
 /// `InputOptions::max_click_dist`, whose default is 6.0
 /// (`egui-0.35.0/src/input_state/mod.rs:115`).
-///
-/// A press becomes a drag on the first frame whose travel from the press origin
-/// exceeds this, and that frame's `drag_delta()` carries its entire step. So a
-/// driver whose step is longer than this loses nothing to the decision, and one
-/// whose step is shorter loses every step before the crossing. The prediction
-/// below is the whole travel, which assumes the first case — hence the test.
 const EGUI_MAX_CLICK_DIST: f32 = 6.0;
 
 /// How much of the predicted movement must actually arrive.
-///
-/// The prediction is the whole pointer travel, so the floor is for steps the
-/// application misses under load — two of the eight — and the ceiling is for
-/// rounding. Deliberately too narrow to be satisfied by a delta applied twice
-/// (a ratio near 2) or by one never divided by the preview scale (a ratio near
-/// the scale itself, about 0.4). The sharp assertion about magnitude is not this
-/// band — it is [`assert_magnified`].
 const MOVE_BAND: (f64, f64) = (0.70, 1.10);
 
 /// Above this preview scale, dividing the screen delta by it no longer
@@ -101,10 +67,6 @@ const SCROLL_TRIES: usize = 8;
 
 /// How much bigger than the drag the grabbable page must be for the gesture to
 /// start and finish inside it.
-///
-/// The drag runs from the page's centre outward, so the requirement is that
-/// half the smaller side exceeds the travel — a factor of two — plus a margin
-/// for the pointer landing a pixel off.
 const ROOM_FOR_THE_DRAG: f32 = 2.2;
 
 pub struct ThePrintedPageCanBeMovedOnThePaper;
@@ -217,13 +179,6 @@ fn position(trace: &Trace) -> Result<Position> {
 }
 
 /// A declared region, scrolling the dialog body downward until it appears.
-///
-/// The Position group fills a scrolling options column, so on a short window
-/// its lower controls are genuinely off screen and their regions are genuinely
-/// absent — `ui_rect_visible` is what publishes them and it refuses below 60 %
-/// visible. An absent region here is therefore a scroll position, not a missing
-/// control, and a check that read it as the latter would report a defect in a
-/// button that is drawn every time the dialog opens.
 fn scrolled_into_view(
     session: &Session,
     driver: &Driver,
@@ -279,11 +234,6 @@ fn press(
 /// screen point of pointer travel is MORE than one paper point of page
 /// movement, so the page must have moved further in paper points than the
 /// pointer moved in screen points.
-///
-/// This is the assertion a missing `/ scale` fails, and it fails it by a factor
-/// rather than by a percentage — which the wide [`MOVE_BAND`] cannot promise,
-/// because at a typical fit scale of 0.4 a missing division lands inside the
-/// band.
 fn assert_magnified(moved_pt: f64, scale: f32, axis: char) -> Option<String> {
     if scale >= MAGNIFY_SCALE_CEILING || moved_pt.abs() > f64::from(DRAG_PT) {
         return None;

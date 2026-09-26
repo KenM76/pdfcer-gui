@@ -17,13 +17,6 @@ use crate::sys::vk;
 /// deliberately, so a mode-gating change breaks both together.
 const MODE: &str = "review";
 /// The **Length** tool's ribbon item — the same gesture that never closes.
-///
-/// Checked at the end of this run rather than in a second check, because the
-/// property worth asserting about it is a NEGATIVE one relative to Perimeter —
-/// *clicking the first vertex adds a vertex instead of closing* — and a
-/// negative is only meaningful beside the positive it differs from. Two checks
-/// would let the pair drift: Perimeter's could stop closing and Length's would
-/// still pass.
 const LENGTH_ITEM: &str = "ribbon.item.measure.length";
 /// The `Debug` spelling of `CanvasTool::Measure(MeasureKind::PathLength)`.
 const LENGTH_ARM: &str = "Measure(PathLength)";
@@ -53,11 +46,6 @@ const VERTEX_COMMIT: &str = "move-dimension-vertex";
 const SHELL_VERTEX: &str = "dimension-vertex";
 
 /// The four corners, as fractions of the page box.
-///
-/// A rectangle rather than an irregular shape, because the total is then
-/// arithmetic a reader can check by hand from the page size printed in the
-/// report — and a check whose expected value cannot be verified by eye is a
-/// check that can be wrong in the same direction as the code.
 const CORNERS: [(f64, f64); 4] = [(0.30, 0.30), (0.60, 0.30), (0.60, 0.60), (0.30, 0.60)];
 
 /// See the module documentation.

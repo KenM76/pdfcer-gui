@@ -69,6 +69,8 @@
 //! **"none"**, and never a sliver — and why [`plan_tab_strip`] has a width
 //! below which it stops trying to show a tab at all. Both rules exist
 //! because being accommodating here reproduces the defect.
+//!
+//! Design and rationale: `docs/modules/egui-shell/ribbon/plan/row.md`.
 
 use super::plan_band;
 
@@ -296,10 +298,6 @@ pub(crate) fn plan_strip_row(row: f32, demand: RowDemand) -> RowPlan {
 
 /// Grant a region all of what it wants, as much of `spare` as is still
 /// usable, or nothing.
-///
-/// The three-way answer is the whole point — see this module's header on
-/// why a width between zero and `floor` is not a smaller region but a
-/// control drawn outside it.
 fn grant(wanted: f32, spare: f32, floor: f32) -> f32 {
     if wanted <= 0.0 {
         0.0
@@ -313,12 +311,6 @@ fn grant(wanted: f32, spare: f32, floor: f32) -> f32 {
 }
 
 /// A width, or zero if it is not one.
-///
-/// `egui` hands out `f32::INFINITY` for available width inside an
-/// unbounded container, and `INFINITY − anything` is still infinity — a
-/// region granted an infinite width would be laid out somewhere no
-/// coordinate system contains. `NaN` and negatives get the same answer for
-/// the same reason: the degenerate case must be the *safe* one.
 fn sane(v: f32) -> f32 {
     if v.is_finite() { v.max(0.0) } else { 0.0 }
 }
@@ -577,11 +569,6 @@ mod tests {
 
     /// The theme-and-face numbers the rendered ribbon actually produces,
     /// so these pure tests exercise the same regime the renderer does.
-    ///
-    /// Measured, not invented: `button_floor` is
-    /// `button_padding (8) + "…" (11.6875)` against the synthetic face of
-    /// [`super::super::super::testfont`], and `gap` is `egui`'s default
-    /// `item_spacing.x`. See [`super::super::super::measure::min_button_width`].
     const FLOOR: f32 = 19.6875;
     const GAP: f32 = 8.0;
 
@@ -625,18 +612,6 @@ mod tests {
     }
 
     /// **The QAT is not allowed to consume the strip.**
-    ///
-    /// Without the floors, measured against the synthetic face at a 180 pt
-    /// viewport, the QAT runs from x = −6 to x = 160 with both tabs
-    /// entirely off screen. The arithmetic form of "must be
-    /// impossible" is this: **whatever the QAT asks for, the tabs are left
-    /// something usable**, at every row width above zero.
-    ///
-    /// Swept over the whole plausible range of both, because the
-    /// interesting case is not "the QAT is enormous" — that one is easy to
-    /// spot — but the widths where it is *nearly* the whole row and a
-    /// subtraction would leave a small positive number that looks fine and
-    /// is not.
     #[test]
     fn no_reservation_may_leave_the_tabs_with_nothing() {
         for row in (1..900).step_by(7).map(|w| w as f32) {
@@ -675,10 +650,6 @@ mod tests {
 
     /// A row with room for everything grants everything, and grants
     /// **exactly** what was asked for.
-    ///
-    /// The other half of the rule above: a floor that also applied when
-    /// there was plenty of space would be a permanent tax, and a
-    /// reservation that rounded up would push the tabs left for no reason.
     #[test]
     fn a_row_with_room_grants_every_reservation_untouched() {
         let plan = plan_strip_row(1000.0, demand(166.0, 189.0, 3));
@@ -694,24 +665,6 @@ mod tests {
     }
 
     /// **A wide QAT cannot compress the mode selector to a sliver.**
-    ///
-    /// The QAT is reserved first, so without
-    /// [`RowDemand::selector_floor`] it takes everything the tabs do not
-    /// need and the three-position selector is left whatever remains. At a
-    /// 180 pt row that was 19.7 pt — 6.6 pt per position, which
-    /// `MODES_AND_PANELS.md` Part 1 forbids in the plainest terms it uses
-    /// anywhere: *"all three labels visible"*.
-    ///
-    /// Holding one button's width per position back from the QAT's share
-    /// is what makes the ordering a *priority* rather than a licence.
-    ///
-    /// The claim is carefully **relative**, and the difference matters: it
-    /// is *"an enormous QAT leaves the selector no less than a
-    /// zero-width QAT would"*, not *"the selector always gets its floor"*.
-    /// The second is not true and must not be asserted, because when the
-    /// row itself is narrower than `tabs_floor + selector_floor` the
-    /// selector compresses further — the tabs' floor outranks it and there
-    /// is nothing left to take.
     #[test]
     fn a_wide_qat_cannot_squeeze_the_selector_below_one_control_per_position() {
         for row in (30..600).step_by(3).map(|w| w as f32) {
@@ -730,12 +683,6 @@ mod tests {
     }
 
     /// Truncation is reported, in both directions and only when real.
-    ///
-    /// The flags are what [`super::super::strip`] turns into
-    /// `ribbon-qat-truncated`, and they are what makes a silently shrunken
-    /// row a different fact from a row that fitted. A flag that merely
-    /// meant "the row is narrow" would fire on every narrow window and be
-    /// ignored within a day.
     #[test]
     fn a_truncated_reservation_says_so_and_an_untouched_one_does_not() {
         // Roomy: nothing is touched.
@@ -759,11 +706,6 @@ mod tests {
 
     /// A degenerate row is answered with zeros rather than with a panic or
     /// an infinity.
-    ///
-    /// `egui` hands out `f32::INFINITY` for available width inside an
-    /// unbounded container; `INFINITY − anything` is still infinity, and a
-    /// region granted an infinite width would be laid out somewhere no
-    /// coordinate system contains.
     #[test]
     fn a_degenerate_row_is_answered_with_zeros() {
         for bad in [f32::INFINITY, f32::NEG_INFINITY, f32::NAN, -10.0, 0.0] {
@@ -798,22 +740,6 @@ mod tests {
     const BOTH: f32 = 2.0 * FLOOR + GAP;
 
     /// **The active tab is never in the overflow menu.**
-    ///
-    /// The rule the whole pin exists for. A band may legitimately degrade
-    /// to "no groups, one working affordance" because everything it hid is
-    /// one click away; a strip cannot, because the tab the operator is
-    /// looking at is the one thing its menu is not a route to. A strip
-    /// that hid it would show a band whose owner is invisible.
-    ///
-    /// Swept across every width **and** every choice of active tab,
-    /// because the interesting case is the *last* tab being active — the
-    /// one a prefix-filling planner would drop first — and a test that
-    /// only pinned tab 0 would pass with the pin removed entirely.
-    ///
-    /// Above the collapse width only. Below it the strip has no tab slot
-    /// at all and the menu holds everything, which
-    /// `a_strip_too_narrow_for_both_collapses_to_the_affordance` covers
-    /// and this test must not contradict.
     #[test]
     fn the_active_tab_is_always_shown_and_never_hidden() {
         let widths = tabs(5);
@@ -844,14 +770,6 @@ mod tests {
     }
 
     /// **Failure mode #8 for the strip: nothing is ever lost.**
-    ///
-    /// Every tab is either drawn in the strip or reachable through the
-    /// menu, and the menu exists exactly when it has something in it.
-    ///
-    /// The biconditional is asserted from one button's width upward, which
-    /// is a real boundary rather than a fudge: below it nothing can be
-    /// drawn in the area at all, and "the affordance is missing" describes
-    /// a strip that does not exist. See [`plan_tab_strip`]'s header.
     #[test]
     fn every_tab_is_either_shown_or_reachable_through_the_menu() {
         let widths = tabs(7);
@@ -896,11 +814,6 @@ mod tests {
     }
 
     /// **Both the strip and its menu keep the manifest's order.**
-    ///
-    /// The visible set is *not* a prefix — the pin makes sure of that —
-    /// but it is still ascending, and so is the menu. A strip whose
-    /// left-to-right order depended on the window width would move every
-    /// target under the operator's cursor as they resized.
     #[test]
     fn the_strip_and_the_menu_both_keep_the_manifest_order() {
         let widths = tabs(6);
@@ -927,18 +840,6 @@ mod tests {
 
     /// **A contextual tab arriving into a full strip goes into the menu
     /// and does not displace the active one.**
-    ///
-    /// [`super::super::tabs::visible_tabs`] appends contextual tabs last,
-    /// so this is stated as "the tab that appeared at the end". Three
-    /// claims, and the middle one is the rule:
-    ///
-    /// 1. Adding it does not change which *other* tabs are shown when the
-    ///    strip was already full — the appearance of a Format tab must not
-    ///    reshuffle the strip under the operator's cursor.
-    /// 2. The active tab is still shown afterwards.
-    /// 3. The menu's count went up by one, which is how the new tab is
-    ///    announced — [`super::overflow_label`] puts that count in the
-    ///    affordance.
     #[test]
     fn a_contextual_tab_arriving_into_a_full_strip_goes_to_the_menu() {
         let ordinary = tabs(5);
@@ -975,14 +876,6 @@ mod tests {
     }
 
     /// **Widening the area never hides a tab that was visible.**
-    ///
-    /// Monotonicity is what makes a window resize feel like a resize
-    /// rather than like a reshuffle. It is inherited from [`plan_band`]'s
-    /// greedy fill, but the pin, the collapse and the shared affordance
-    /// floor all sit on top of it and any of them could break it.
-    ///
-    /// The collapse is the interesting boundary: crossing it upward must
-    /// *gain* the pinned tab, never lose one.
     #[test]
     fn widening_the_strip_never_hides_a_tab_that_was_visible() {
         let widths = tabs(6);
@@ -1007,12 +900,6 @@ mod tests {
     /// **Above the collapse width, the pinned tab and the affordance
     /// share the shortfall and neither is reduced below what `egui` will
     /// draw.**
-    ///
-    /// The place this planner deliberately differs from [`plan_band`]. In
-    /// the band the affordance takes absolute priority and the groups may
-    /// get zero, because every group is still reachable. Here both must
-    /// survive: the affordance is the only route to the hidden tabs, and
-    /// the pinned tab is not reachable through it.
     #[test]
     fn a_crowded_strip_keeps_both_the_pinned_tab_and_the_affordance() {
         let widths = tabs(4);
@@ -1057,13 +944,6 @@ mod tests {
 
     /// **Below the collapse width the strip becomes the affordance, and
     /// the affordance reaches every tab — the active one included.**
-    ///
-    /// The one place the pin is deliberately given up, and the reasoning is
-    /// in [`plan_tab_strip`]'s header: the alternative is one visible tab
-    /// and no route at all to any of the others, which is failure
-    /// mode #8 in its original form. Reachability wins over pinning
-    /// because an unreachable tab is a lost capability and a hidden active
-    /// tab is a confusing one.
     #[test]
     fn a_strip_too_narrow_for_both_collapses_to_the_affordance() {
         let widths = tabs(4);
@@ -1091,10 +971,6 @@ mod tests {
 
     /// A strip that fits reserves nothing, and a strip with no tabs plans
     /// nothing.
-    ///
-    /// The first is the "no permanent tax" half of the biconditional; the
-    /// second is the first frame of an application that has not built its
-    /// manifest yet.
     #[test]
     fn a_strip_that_fits_reserves_nothing_and_an_empty_one_plans_nothing() {
         let widths = tabs(3);
@@ -1112,11 +988,6 @@ mod tests {
 
     /// **A single tab, too wide for the area, keeps its place and loses
     /// characters — and grows no affordance.**
-    ///
-    /// The corner where the pin and the biconditional could contradict
-    /// each other. There is exactly one tab, it does not fit, and it is
-    /// active. Nothing is hidden, so nothing may be reserved: a
-    /// "⏷ 0 more" button would be a control that opens an empty menu.
     #[test]
     fn one_over_wide_tab_truncates_rather_than_growing_an_empty_menu() {
         let p = plan(60.0, &[200.0], Some(0));
@@ -1134,10 +1005,6 @@ mod tests {
     }
 
     /// With **no** active tab the plan is an ordinary prefix fill.
-    ///
-    /// An empty manifest, or the frame before `resolve_active` has run.
-    /// The pin is the only thing that makes the visible set non-prefix, so
-    /// without one the strip must behave exactly like a band.
     #[test]
     fn with_no_active_tab_the_strip_fills_from_the_front() {
         let widths = tabs(5);
@@ -1157,12 +1024,6 @@ mod tests {
     }
 
     /// A non-finite available width degrades to "everything in the menu".
-    ///
-    /// The same guard [`plan_band`] carries, for the same reason, and it
-    /// has to be re-asserted here because this function does its own
-    /// arithmetic before delegating. At zero width the area collapses, so
-    /// the honest answer is that everything is in the menu and there is no
-    /// room to draw even the affordance.
     #[test]
     fn a_non_finite_strip_width_degrades_safely() {
         for bad in [f32::INFINITY, f32::NEG_INFINITY, f32::NAN, -50.0] {
@@ -1177,11 +1038,6 @@ mod tests {
     }
 
     /// **A row with no trailing region is arithmetically unchanged.**
-    ///
-    /// The first thing a claimant on a shared budget owes the others: it
-    /// costs nothing when it is not there. Every other assertion in this
-    /// file is about the three-region row, so if the fourth region's
-    /// arithmetic moves any of them, the fourth is the one that is wrong.
     #[test]
     fn a_row_with_no_trailing_region_divides_exactly_as_it_did_before() {
         for row in (1..600).map(|r| r as f32) {
@@ -1202,12 +1058,6 @@ mod tests {
 
     /// **The trailing region never eats the selector, the QAT or the tabs'
     /// floor — at any width.**
-    ///
-    /// `no_reservation_may_leave_the_tabs_with_nothing` restated for the
-    /// fourth claimant, and the assertion that makes reserving one safe.
-    /// A trailing control four times wider than the whole window
-    /// must still leave every load-bearing region what it had; the only thing
-    /// that may give is the trailing region itself.
     #[test]
     fn a_trailing_region_never_consumes_the_row() {
         for row in (1..800).map(|r| r as f32) {
@@ -1239,17 +1089,6 @@ mod tests {
 
     /// **A trailing region that cannot have a whole control gets NOTHING,
     /// and says so.**
-    ///
-    /// The three-way `grant` rule, which this module's header measures: a
-    /// width between zero and the floor does not produce a smaller button, it
-    /// produces a button drawn *outside its own rectangle* — here, on top of
-    /// the mode selector, where a misplaced click changes the operator's mode
-    /// instead of opening their document elsewhere.
-    ///
-    /// And the drop is announced. `trailing_dropped` is a separate flag from
-    /// `trailing == 0.0` precisely because the ordinary state of this region
-    /// is to be empty, and announcing that every frame would bury the one
-    /// case worth reading.
     #[test]
     fn a_trailing_region_below_its_floor_is_dropped_whole_and_disclosed() {
         // Roomy: it gets exactly what it asked for and nothing is disclosed.

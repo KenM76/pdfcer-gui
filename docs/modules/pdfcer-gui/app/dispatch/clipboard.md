@@ -101,3 +101,102 @@ happened. `app::status::decline::clipboard`'s header carries the argument.
 The clipboard's **other** refusals — `canvas::clipboard::Refusal`, which are
 about the operand rather than about the stance — still go through
 `record_note`, and that is named there as unfinished rather than principled.
+
+## Item notes
+
+### `fn duplicate`
+
+# Why it is here and not an extension of `edit.paste_duplicate`
+
+That question was asked first, because the two names are one word apart.
+`edit.paste_duplicate` **does** already route by selection kind — this
+module's header says what it does over a markup: *"falls through to the
+ordinary paste … a markup has no second sense to duplicate into"*. Its
+second sense is a **form field's**: `Ctrl+V` plants a copied field as a new
+field, `Ctrl+Shift+V` plants it as another widget of the same one.
+
+⇒ Teaching it to duplicate the **selection** over a markup would give one id
+two unrelated behaviours — a paste verb that acts when the clipboard is
+empty and ignores the clipboard when it is not — behind a chord named for
+the behaviour it would stop having. The same argument this module's header
+makes for the two pastes being two commands, applied once more.
+
+# What it does NOT do, and it is the feature
+
+It does not put anything on the clipboard and does not read what is there.
+An operator laying out a row of revision marks keeps whatever they were
+carrying — a part number, a title-block string — which `Ctrl+C`/`Ctrl+V`
+destroyed once per mark. `crate::text::commands::edit_duplicate`'s tooltip
+leads with that clause for the same reason.
+
+# The mode gate is `author_markup`, and the sentence is its own
+
+A duplicate authors an annotation, so Review — the mode whose whole purpose
+is marking up somebody else's drawing — must be able to do it, and Read must
+not. That is the same gate `paste` applies to a markup clip.
+
+The **sentence** is not the same: `ModeRefusal::PasteMarkup` says *"switch
+to Review to paste this"*, and nothing was pasted. A seventh variant —
+`DuplicateMarkup` — carries the wording, and its doc comment argues why a
+shared remedy still owes its own sentence.
+
+It records through `decline::record_mode_refusal`, which draws in the
+`⊗` slot meaning *this did not happen* — never through
+`actions::record_note`, which draws under `⚑ About your last edit:` and
+would report a press where nothing happened as an edit. Fourth application
+of the split this module's header states.
+
+# The operand refusals go through `record_note`, unchanged
+
+Nothing selected, an annotation the engine will not carry, a selection that
+has outlived its annotation — those are
+[`crate::canvas::clipboard::Refusal`]s about the *operand* rather than the
+stance, and they take the same route the other clipboard verbs' operand
+refusals take, worded by the same `text::clipboard::refusal`. That routing
+is named as unfinished rather than principled in this module's header, and
+this arm inherits the note rather than inventing a second answer.
+
+### `fn copy_as_vector`
+
+`OPERATOR_REQUESTS.md` **O120**, 2026-09-03: *"Also I'd like to be able to
+copy and paste anything to other software - like copy and paste vector
+graphics into word or inkscape for example if possible."*
+
+# Why this is a fifth id and not a modifier on `edit.copy`
+
+The same argument the two pastes make one screen up, and it holds harder
+here: **a command is the unit this shell can register, bind, place on a
+ribbon, put in a menu and withhold by mode.** A modifier read inside
+`copy_or_cut` would be reachable from the keyboard alone — nothing to draw
+in the Clipboard group, nothing to name in a tooltip, and nothing for an
+operator to discover. This is a *discoverability* feature as much as a
+capability one: the operator did not know pdfcer could do it, which is why
+he asked.
+
+⇒ And the two verbs genuinely differ in what they produce. `edit.copy` puts
+an internal clip plus a picture on the clipboard, for pasting back into
+pdfcer. This puts four public formats on it, for pasting into somebody
+else's program, and touches the internal clipboard not at all — so a copy-out
+does not destroy what the operator had copied for an in-pdfcer paste.
+
+# It says something on SUCCESS, which no other clipboard verb here does
+
+Because it alone has two possible operands and the button cannot show which
+was taken: the selection if there is one, the whole page otherwise. An
+operator who selected three parts and silently got the sheet finds out in
+Word, minutes later. `text::clipboard::copied_as_vector` carries the wording
+and the argument.
+
+# No mode gate, deliberately
+
+*Copying is not authoring* — the operator's own ruling, the same line that
+leaves `edit.copy` ungated above and put `file.copy_page_text` in Read. The
+Edit tab is not shown outside Edit mode, so the control is absent rather than
+refusing there; that is visibility doing the work, which is the rule
+`app::modes` states.
+
+### `fn handles_the_six_and_not_the_registered_absence`
+
+`edit.paste_in_place` is the trap this test exists for: it is a
+registered ABSENCE, and a prefix rule would claim it the day it became
+real, routing it here with no body and no failure.

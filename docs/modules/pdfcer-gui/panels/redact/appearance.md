@@ -44,3 +44,45 @@ moved underneath us rather than to one we changed.
 and because there is a real use for it (removing content without announcing
 where), but it is a thing the operator chooses rather than a thing they get
 by not choosing.
+
+## Item notes
+
+### `fn default`
+
+Black is written **explicitly**, and that is the whole point: see the
+module header. Leaving it `None` would inherit the engine's new
+transparent default and silently change what every existing operator's
+redactions look like.
+
+### `fn the_shipped_fill_is_an_explicit_black_box_not_a_none`
+
+The regression test for the engine's default changing underneath this
+shell. `a705d14` made `RedactSpec::fill = None` mean **transparent**
+where it had meant black — correctly, per Table 192 — so a shell that
+passed `None` would silently stop drawing the box over every redaction
+its operators applied. The content would still be removed, which is why
+nothing would fail; the operator would simply see no evidence that
+anything had happened, on the one operation they cannot undo.
+
+Asserted against the ENGINE's type rather than against `Fill::Black`,
+so it fails if the mapping is what breaks rather than the default.
+
+### `fn a_blank_caption_is_no_caption`
+
+The rule lives in one place so no call site can send `Some("   ")` to
+the engine, which would author an `/OverlayText`, burn in a box of
+spaces, and count as a caption in the report.
+
+### `fn a_caption_on_a_dark_fill_is_flagged`
+
+The engine hard-codes black text in the `/DA` it authors and told us so
+when it shipped the feature. Black-on-black is the case an operator
+reaches by accident — keeping the default fill and typing a caption —
+so it must be flagged rather than special-cased as "well, that is the
+default".
+
+### `fn a_fill_with_no_caption_is_never_flagged`
+
+The other half, and the one that stops the warning becoming permanent
+furniture: the default appearance is a black box with no caption, which
+is the commonest redaction there is and has nothing wrong with it.

@@ -18,6 +18,8 @@
 //! practice rather than spec. So a reorder of `/Annots` changes what is on the
 //! page without changing what the file states, and an operator has to be told
 //! that. [`Sequence`] is the type that carries the difference.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/panels/forms/tab_order/tabs.md`.
 
 use pdfcer_core::graph::ObjectGraph;
 use pdfcer_core::object::{ObjId, Object};
@@ -173,15 +175,6 @@ pub fn page_tabs<G: ObjectGraph + ?Sized>(graph: &G, slot: &PageSlot) -> TabsEnt
 }
 
 /// The `/Tabs` name on one page-tree node's dictionary, if it has one.
-///
-/// `Dict::get` collapses a null-valued entry to `None` (§7.3.7/§7.3.9), so
-/// `/Tabs null` reads as absent without a second check — which is right: a null
-/// value is the standard's way of saying the key is not there.
-///
-/// A `/Tabs` whose value is not a name (a string, a number, an array) reads as
-/// absent too. That is a malformation, and the honest reading of a malformed
-/// entry is that the file has not named a tab order — inventing one from a
-/// string that happened to say "R" would be pdfcer deciding what the file meant.
 fn tabs_name<G: ObjectGraph + ?Sized>(graph: &G, id: ObjId) -> Option<TabsMode> {
     let name = graph
         .resolved(id)

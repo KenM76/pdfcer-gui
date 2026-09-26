@@ -61,3 +61,24 @@ absent on a document that has none — the arithmetic is
 `app::actions::redactimg`'s and is a straight filter over the object model.
 It also does not press Apply: what happens there is the engine's, was
 reproduced with the CLI in O103, and is not this shell's to verify.
+
+## Item notes
+
+### `const CONSEQUENCE`
+
+Matched on the CONSEQUENCE rather than on "image", because the sentence has
+to tell the operator what will happen to him and not merely what is on the
+page. A build that said "this region covers 1 image(s)" and stopped would
+pass a looser check and leave him no wiser about what Apply will do.
+
+**It read `"will be refused"` until 2026-09-03, and the words changed
+because the OUTCOME did.** `pdfcer-core` v0.26.0 (`Pass 245.0`) destroys
+image samples under a region instead of refusing the document, so the
+disclosure stopped being a warning about a failure and became a warning
+about an irreversible success. This constant is what made that a one-line
+edit: the check asserts *"the consequence is stated"*, and only the
+consequence moved.
+
+⇒ A check pinned to a whole sentence would have gone red here and read as a
+regression in the shell, when what had happened is that the engine got
+better.

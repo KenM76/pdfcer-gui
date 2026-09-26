@@ -79,26 +79,6 @@ mod tests {
 
     /// **The slider's range is the STORE's, and a hand-edited legal value
     /// survives opening this window.**
-    ///
-    /// The regression test for the silent-edit hazard both sliders in this
-    /// window carry — stated once here and once in [`super::super::text`].
-    ///
-    /// # Why it drives the parser instead of comparing constants
-    ///
-    /// The obvious test is `assert!(MIN <= 0.0 && MAX >= 45.0)`, and it is
-    /// worthless twice over: both operands are `const`, so the compiler folds
-    /// it away and clippy rightly refuses it, and it asserts a relationship
-    /// between two constants rather than the property that matters. The
-    /// property is about **behaviour**: a number the settings file accepts must
-    /// still be that number after this window has had it.
-    ///
-    /// So it goes through `Settings::parse`, which is the store's own
-    /// validation, and asserts on its **notes**. A value the parser clamps
-    /// pushes a `Clamped` note; a value it accepts pushes none. If the slider's
-    /// bounds ever narrow below the parser's, this window would rewrite a
-    /// legal hand-edited value on open — and Save would write the changed
-    /// number back, an edit the operator never made and cannot see, because
-    /// they never touched the control.
     #[test]
     fn a_hand_edited_value_inside_the_stores_range_is_not_rewritten() {
         // Well inside the store's range and well outside any "usable band" a
@@ -129,10 +109,6 @@ mod tests {
 
     /// The store clamps beyond its own range, and says so — so the ceiling is
     /// real rather than decorative.
-    ///
-    /// The other side of the test above, and the reason the first one proves
-    /// something. If the parser accepted everything, "the slider matches the
-    /// parser" would be satisfied by a slider with no bounds at all.
     #[test]
     fn the_store_clamps_beyond_its_range_and_discloses_it() {
         let mut notes = Vec::new();
@@ -154,10 +130,6 @@ mod tests {
     }
 
     /// The shipped default sits inside the offered range.
-    ///
-    /// A default outside its own control's bounds would be silently rewritten
-    /// the first time anybody opened this window, on every machine, without a
-    /// click.
     #[test]
     fn the_shipped_default_is_reachable_on_the_slider() {
         let default = Settings::default().parallel_epsilon_degrees;

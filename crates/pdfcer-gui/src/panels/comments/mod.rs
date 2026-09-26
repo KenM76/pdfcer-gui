@@ -558,20 +558,6 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
 }
 
 /// Draw one comment.
-///
-/// Every line below the heading is conditional, and each condition is a real
-/// state of a real document rather than a formatting choice. A row is between
-/// two and seven lines tall depending on what the annotation actually carries,
-/// which is why this panel cannot use `ScrollArea::show_rows` — see the module
-/// header.
-/// **What one row can raise**, collected so the row function takes a subject
-/// and a destination rather than eight loose parameters.
-///
-/// Three `Option`s and a flag, and each is `None`/`false` for the whole frame
-/// unless exactly one row sets it — which is the invariant that makes them
-/// scalars rather than `Vec`s: **two rows cannot be pressed in one frame**, and
-/// a `Vec` would invite a future reader to queue two navigations or two edits
-/// that would each bump the epoch under the other.
 struct RowSink<'a> {
     /// **What a Go to press asks for** — the page, and the annotation on it.
     ///
@@ -774,34 +760,6 @@ fn row(
 }
 
 /// **Delete this comment.**
-///
-/// # Four reasons it is not drawn, and every one is R83 rather than R9
-///
-/// R83 — *an affordance that cannot be honoured is not drawn* — rather than
-/// R9's *unavailable renders nothing*, and the distinction is real: the
-/// capability **exists**, and what is missing in each case is the permission
-/// to use it on *this* annotation. None of the four is a build limitation, so
-/// none of them is a sentence about pdfcer.
-///
-/// | not drawn when | why |
-/// |---|---|
-/// | the row has **no object id** | a direct dictionary in `/Annots` is a malformed file (§12.5.2 Table 164 requires an indirect object) and there is nothing to name. The row already says so where its editor would be |
-/// | the document **refuses deletion** | encrypted, or a certification signature forbids the change. `EditSession::annotation_deletion_refusal`, asked once per frame — see [`RowSink::deletable`] |
-/// | it is a **ce dimension** | rule 15. `delete_annotation` would remove the `/Line` and leave the `/PieceInfo` sidecar describing a ce dimension that no longer exists. The Dimension groups panel owns that verb |
-/// | the annotation is **hidden** | deliberately NOT a reason. A hidden annotation is exactly the one a reviewer cannot reach from the canvas, so this panel is the only place it can be removed — which is the whole argument for listing it in the first place |
-///
-/// # No confirmation, and no hover preview
-///
-/// The collateral is reported **after** the call rather than predicted before
-/// it, because `docs/core-api/03-capabilities.md` §3.4 says a prediction *"is
-/// not a perfect oracle"* and the real call can still refuse.
-/// `delete_annotation`'s report names the pop-up it removed, the replies it
-/// orphaned and the group members it promoted, and
-/// `crate::app::actions::annots::delete` surfaces it. One statement of record
-/// beats a guess before and a fact after that can disagree with it.
-///
-/// Undo is the safety net, and it is one press: the deletion is a single
-/// `CommandKind` on the same stack as every other edit.
 fn delete_control(ui: &mut egui::Ui, comment: &CommentRow, sink: &mut RowSink<'_>) {
     if !sink.deletable || comment.is_ce_dimension {
         return;
@@ -825,29 +783,6 @@ fn delete_control(ui: &mut egui::Ui, comment: &CommentRow, sink: &mut RowSink<'_
 }
 
 /// **The filter strip** — two choosers, a switch, an ordering and a way back.
-///
-/// # Built from the UNFILTERED rows, always
-///
-/// A chooser built from what survived the current filter would drop every
-/// other author from the menu the moment one was chosen, leaving no route from
-/// one reviewer's comments to another's except *Show all* and starting again.
-/// The lists are therefore derived from the whole listing and are stable while
-/// the operator works — which is also what makes them a map of the document
-/// rather than a map of the current view.
-///
-/// # Why `ComboBox` and not a row of toggles
-///
-/// Because the number of authors and the number of subtypes are properties of
-/// the **document**, not of this build: a drawing set that went round six
-/// reviewers has six names, and six toggles would be six lines of a 320 pt
-/// dock. A chooser is one line whatever the document contains.
-///
-/// # `Show all` is drawn only when a filter is set
-///
-/// R9's shape applied to a control that would do nothing: with no filter in
-/// force, *Show all* is a button whose entire effect is a repaint. It appears
-/// with the first narrowing and goes when the last one is lifted, which also
-/// makes its presence a second, wordless statement that something is hidden.
 fn filter_strip(ui: &mut egui::Ui, all: &[CommentRow], state: &mut filter::Filter) {
     let authors = filter::authors(all);
     let subtypes = filter::subtypes(all);
@@ -899,11 +834,6 @@ fn filter_strip(ui: &mut egui::Ui, all: &[CommentRow], state: &mut filter::Filte
 }
 
 /// One "All, or exactly this one" chooser over a list of document values.
-///
-/// Written once for the author and the type because the two differ only in
-/// their label and their values — and because a second copy is a second place
-/// for the `None` entry to be forgotten, which would leave a filter nobody
-/// could lift.
 fn chooser(
     ui: &mut egui::Ui,
     id: &str,
@@ -928,10 +858,6 @@ fn chooser(
 }
 
 /// The label for one ordering.
-///
-/// A `match` rather than a method on [`filter::Sort`], because a label is copy
-/// and copy lives in `crate::text` — and because the compiler makes this
-/// exhaustive, so a fourth ordering cannot ship without a word for it.
 fn sort_label(sort: filter::Sort) -> &'static str {
     match sort {
         filter::Sort::Document => t::comment_sort_document(),
@@ -941,49 +867,6 @@ fn sort_label(sort: filter::Sort) -> &'static str {
 }
 
 /// One `comments-panel` line per frame, carrying what the panel computed.
-///
-/// # Why this is more than a debug print
-///
-/// R1 — a surface is verified by driving the binary, not by a passing test —
-/// and a screenshot of this one cannot tell you that four widgets were
-/// excluded, that two rows are hidden annotations, or that the `/Line` on
-/// page 3 was recognised as a ce dimension. Every one of those is arithmetic,
-/// and arithmetic is what a trace is for.
-///
-/// Every count that drives a *decision* is here, which is the test for what
-/// belongs: `with_note` decides the document-wide disclosure, the three
-/// exclusion counts decide the exclusion line, and `ce_dimensions`,
-/// `suppressed`, `unresolved`, `replies` and `group_members` each decide a row
-/// caption. If a number here is wrong, something on screen is wrong with it.
-///
-/// # `listed` is the CENSUS, `shown` is what is on screen
-///
-/// [`filter::apply`] sits between [`model::collect`] and the draw, so the two
-/// numbers differ whenever a filter is set. One field carrying both meanings
-/// would let a reader outside the process watch a census shrink with no way to
-/// tell a filtered list from a document that had lost annotations — exactly the
-/// omission this panel's founding discipline forbids, held on the diagnostic
-/// channel as well as on the screen, and the more load-bearing because the
-/// driven `save_copy_round_trip` and `undo_redo_round_trip` use this line as
-/// their **only** oracle for whether an annotation reached the document.
-///
-/// So the line carries both, and they answer different questions:
-///
-/// | field | question | source |
-/// |---|---|---|
-/// | `listed` | how many annotations does this document have that a reviewer may work through | [`model::collect`], unfiltered — the census |
-/// | `shown` | how many rows is the operator actually looking at | the same rows after [`filter::apply`] |
-/// | `filtered` | is the operator's filter narrowing the list right now | [`filter::Filter::is_narrowing`] |
-///
-/// `filtered=1` says the operator is narrowing the list, and `shown` says by
-/// how much.
-///
-/// ⚠ **The filter is read one frame late**, and that is deliberate rather than
-/// overlooked: this runs *before* [`filter_strip`] draws, so a filter the
-/// operator changes on frame *N* appears here on frame *N+1*. The panel
-/// repaints continuously, so a filter that is on is reported as on within a
-/// frame; what the lag rules out is reading a single frame's line as evidence
-/// about a filter set in that same frame, which nothing does.
 fn trace(doc: &OpenDoc, listing: &Listing, filter: &filter::Filter) {
     crate::diag::trace(|| {
         let ce = listing.rows.iter().filter(|r| r.is_ce_dimension).count();

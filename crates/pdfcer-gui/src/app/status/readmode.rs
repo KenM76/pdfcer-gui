@@ -9,11 +9,6 @@ use super::ROW_HEIGHT_PTS;
 use crate::text::window as t;
 
 /// The share of the bar this line may occupy before eliding.
-///
-/// Wider than [`super::NOTES_WIDTH_FRACTION`] (0.45) on purpose — see the
-/// module header's ranking argument. Bounded all the same, because the controls
-/// on the right are what an operator uses to *read* the document they are in
-/// read mode to read.
 const EXIT_WIDTH_FRACTION: f32 = 0.60;
 
 /// The region the line publishes for `ui-verify`.
@@ -23,14 +18,6 @@ const EXIT_WIDTH_FRACTION: f32 = 0.60;
 pub(super) const REGION_READ_MODE_EXIT: &str = "status-group:read-mode-exit"; // ui-text-exempt: trace region name, never displayed
 
 /// The trace slot the line publishes, de-duplicated on the rendered sentence.
-///
-/// It carries the **sentence**, not a boolean, and that is what makes a
-/// driven check able to fail correctly. `read-mode-exit shown=true` is
-/// identical for a build that names the right chord, a build that names a chord
-/// nothing is bound to, and a build that names no chord at all — so a check
-/// reading it could only assert *something appeared*, which is the vacuous
-/// shape this project has shipped before. The text is the claim; the trace
-/// carries the claim.
 const EXIT_SLOT: &str = "read-mode-exit"; // ui-text-exempt: trace slot name, never displayed
 
 /// Draw the exit statement, if read mode is on.
@@ -119,12 +106,6 @@ pub(super) fn show(ui: &mut egui::Ui) {
 }
 
 /// One elided label with the whole sentence on hover.
-///
-/// The same four rules `super::disclosure::disclosure_line` applies — bounded
-/// width, fixed row, elide rather than wrap, full text on hover — written here
-/// rather than reused because that helper draws `.small()`, which is right for
-/// narration the operator did not ask for and wrong for the one sentence they
-/// are hunting.
 fn statement(ui: &mut egui::Ui, line: &str) {
     ui.add(egui::Label::new(line).truncate())
         .on_hover_text(line.to_owned());
@@ -139,10 +120,6 @@ mod tests {
 
     /// **Nothing is said when read mode is off**, and this is the half of
     /// the pair that is easy to get vacuously right.
-    ///
-    /// A check that only asserted the sentence *appears* would pass on a build
-    /// that showed it permanently — which would be furniture, and would be a
-    /// false statement for every minute the mode is off.
     #[test]
     fn the_ordinary_state_says_nothing_about_read_mode() {
         let ctx = Context::default();
@@ -165,12 +142,6 @@ mod tests {
     }
 
     /// **The line names the chord the keymap actually holds.**
-    ///
-    /// The vacuous shape this forbids: a test that asserts a sentence exists
-    /// passes on a sentence naming the wrong key. What is asserted is the
-    /// identity of two derivations — the one this module draws, and the one
-    /// taken from `shell::manifest::built_in`'s keymap — so a rebind moves both
-    /// or fails here.
     #[test]
     fn the_sentence_names_the_binding_the_keymap_holds() {
         let shell = crate::shell::manifest::built_in();
@@ -191,10 +162,6 @@ mod tests {
 
     /// **A context nothing has published into offers no chord**, and the line
     /// falls to the button rather than to a guess.
-    ///
-    /// The failure this forbids is a default: `Ctrl+H` as a fallback would be a
-    /// second spelling of the binding wearing a fallback's clothes, and it would
-    /// be wrong in exactly the case it was reached for.
     #[test]
     fn an_unpublished_context_names_no_key() {
         let ctx = Context::default();

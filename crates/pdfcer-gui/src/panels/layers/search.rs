@@ -49,21 +49,6 @@ pub fn matches(name: &str, query: &str) -> bool {
 }
 
 /// Case-insensitive substring test, ASCII folding, no allocation.
-///
-/// `str::contains` with a closure cannot express "case-insensitively", and
-/// `to_lowercase().contains(&q.to_lowercase())` allocates two `String`s per
-/// row per frame. This walks the byte windows instead: at most
-/// `MAX_LAYERS` rows of a few dozen bytes, once per frame, with nothing on
-/// the heap.
-///
-/// Byte windows are safe here despite UTF-8 being multi-byte, and the
-/// reason is worth stating because it looks like a bug: `eq_ignore_ascii_case`
-/// on two byte slices is `true` only when they are equal after folding
-/// *ASCII* letters, and every non-ASCII byte must therefore match exactly.
-/// A window that starts mid-character cannot match a needle that starts on
-/// a character boundary unless the bytes are genuinely equal — in which
-/// case it is a real match on the same bytes. So no false positive can be
-/// produced by the slicing, and none can be lost either.
 fn contains_ignore_ascii_case(haystack: &str, needle: &str) -> bool {
     let (h, n) = (haystack.as_bytes(), needle.as_bytes());
     if n.is_empty() {
@@ -164,10 +149,6 @@ mod tests {
 
     /// **Literal, not a pattern.** A layer called `A*` is searched for by
     /// typing `A*`, and an asterisk is not a wildcard.
-    ///
-    /// `find` offers wildcards behind a control; this does not, and a query
-    /// containing one must therefore match the character rather than
-    /// silently matching everything.
     #[test]
     fn a_query_is_literal_and_a_star_is_a_character() {
         assert!(matches("A*B", "*"));
@@ -210,10 +191,6 @@ mod tests {
     }
 
     /// **The name the ROW shows is what is matched.**
-    ///
-    /// Asserted through the placeholder the panel actually draws, so that a
-    /// change to that wording is caught here rather than leaving one row in
-    /// the list unmatchable by anything on screen.
     #[test]
     fn the_unnamed_placeholder_is_searchable_by_what_it_says() {
         let shown = crate::text::panels::layer_unnamed();
@@ -237,13 +214,6 @@ mod tests {
 
     /// **A query that matches nothing is distinguishable from a
     /// document with no layers.**
-    ///
-    /// The whole reason `Filtered` counts rather than discards. Without
-    /// this distinction the panel's only available sentence is "nothing
-    /// here", which is also what a panel that failed to read the document
-    /// says — and R9's rule that an absent capability renders nothing is
-    /// exactly the rule that makes those two indistinguishable if the
-    /// count is thrown away.
     #[test]
     fn an_empty_result_knows_it_was_the_query_that_emptied_it() {
         let f = Filtered {

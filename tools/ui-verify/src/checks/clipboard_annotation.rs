@@ -15,24 +15,12 @@ use crate::report::CheckReport;
 use crate::sys::vk;
 
 /// The mode whose canvas selects annotations and may paste one.
-///
-/// **Review, not Edit**, and the choice is an assertion in itself. A comment
-/// is markup, so pasting one needs `author_markup` — which Review grants —
-/// rather than `edit_content`, which only Edit does. A build that demanded the
-/// content capability for an annotation clip would leave the mode whose entire
-/// purpose is marking up somebody else's drawing unable to paste a comment,
-/// and driving in Edit would never notice.
 const MODE: &str = "review";
 
 /// The fixture, relative to the repository root.
 const FIXTURE: &str = "fixtures/annots-with-everything.pdf";
 
 /// The sticky note's `/Rect` centre in PDF user space — `[360 660 380 680]`.
-///
-/// Hard-coded rather than taken from `--doc-point`, which this check ignores
-/// along with `--pdf`: the point and the fixture are one fact, and a suite-wide
-/// coordinate aimed at a different document would put the click on blank paper
-/// and report a defect about the hit test.
 const NOTE_POINT: (f64, f64) = (370.0, 670.0);
 
 /// The page, in points — `/MediaBox [0 0 595 842]` in the fixture.
@@ -48,10 +36,6 @@ const PASTE_EVENT: &str = "clipboard-paste";
 /// `paste-objects-applied page=… pasted=… annots=… resources_added=… at=[…]`.
 const APPLIED_EVENT: &str = "paste-objects-applied";
 /// `annot-select page=… id=… kind=… subtype=… locked=… rect=…`.
-///
-/// **The annotation selection's own line**, and the only one that reports one:
-/// `canvas-selection` is silent for an annotation. See the precondition in
-/// [`drive`] for the incident that put it here.
 const ANNOT_SELECT: &str = "annot-select";
 /// The `/Subtype` this check's operand must have.
 const WANTED_SUBTYPE: &str = "Text";

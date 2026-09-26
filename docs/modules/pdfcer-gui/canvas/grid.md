@@ -50,3 +50,68 @@ The version that would fail the test is a grid that **snapped to something
 pdfcer found** — a detected drawing frame, an inferred module size. That is
 an inference, an inference owes an off-canvas report, and there is no such
 code path here.
+
+## Item notes
+
+### `const MIN_GRID_PITCH_PTS`
+
+The grid uses the same ladder as the ruler but is allowed to be far denser,
+because a grid line carries no text and its whole purpose is to be fine
+enough to judge alignment against. 8 points is about where a hairline grid
+stops reading as a grid and starts reading as a tint.
+
+This is also the **line-count bound**, and the bound is what makes a
+page-space grid affordable on a 129,758-object A3 sheet: at 8 points'
+minimum pitch a 2,000-point-wide viewport holds at most 250 vertical lines,
+whatever the page's size and whatever the zoom.
+
+### `const GRID_MINOR_ALPHA`
+
+Low, because a grid is a reference the operator looks *through*. The
+standard is the one `overlay`'s find highlight records after a screenshot
+corrected it: the operator's next act is to read the drawing, and chrome
+that competes with the drawing has defeated its own purpose. On a dense CAD
+sheet a grid at even a quarter opacity turns black linework grey.
+
+### `const GRID_MAJOR_ALPHA`
+
+Two weights rather than one, and the ratio matters more than either number:
+a uniform grid gives the eye nothing to count by, so judging "how far is
+that" means counting hairlines one at a time. Every drafting grid in every
+CAD package does this, and the heavy lines are the ones that line up with
+the ruler's numbers.
+
+### `fn lines`
+
+Named for what it draws — a run of lines — rather than for the axis it is
+given, so the parameter and the function do not share a name.
+
+`Axis::X` produces **vertical** lines, spaced along the page's x. See
+[`Axis`] on why one enum carries both readings.
+
+### `fn every_grid_line_keeps_a_usable_pitch_at_every_zoom`
+
+The bound applies to the **minor** step, because a minor line is a line
+that gets drawn. The version that bounded the *major* chose a 1-point
+grid on the benchmark A3 sheet — a line every 1.4 screen pixels, which
+is a tint rather than a grid, and ten times the shape count. It passed
+the old form of this test, which asserted only that the grid was finer
+than the ruler.
+
+The upper bound is asserted too. A grid whose lines drift to 80 points
+apart has stopped being something to judge alignment against, and the
+climb in [`Ladder::for_lines`] is exactly the code that could overshoot.
+
+### `fn every_ruler_label_has_a_grid_line_under_it`
+
+The coincidence is the whole reason to ship a ruler and a grid rather
+than two independent ornaments: a feature sitting on a grid line can be
+read off the ruler without counting.
+
+The claim is deliberately *a grid line*, not *a heavy grid line*. Both
+ladders are 1-2-5 numbers and a 1-2-5 number is not always divisible by
+a smaller one — 500 over 200 is 2.5 — so the stronger statement is not
+true in general, and it was written as though it were. What is true, and
+what the operator actually needs, is that the ruler's labelled step is a
+whole number of grid *minors*; this asserts that, and that the grid is
+the finer of the two.

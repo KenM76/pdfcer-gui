@@ -70,3 +70,49 @@ Everything drawn from this is a **cursor**: a caret in a gap while a button
 (or in this case a file) is held, gone the instant it lands. Nothing here
 marks content, tints a page, or draws a second rendering path. The words
 half of the disclosure is the status note the insert itself records.
+
+## Item notes
+
+### `const DIAG_DROP_PATH`
+
+Moved here from `app::dropped` unchanged, because the simulated drop now
+needs the same *position* the real one has, and the position is this
+module's subject.
+
+### `const DIAG_DROP_AFTER_MS`
+
+# Why a delay is the difference between drivable and not
+
+A real drop carries a position, and this feature is entirely *about* the
+position — so a check must be able to say **where** the simulated file
+lands. It cannot pass a coordinate: the interesting points are tile
+rectangles inside a scrolling panel, which do not exist until the
+application has laid itself out, long after the environment was read.
+
+So the check moves the **real cursor** over the tile it means — which it
+can do, because that is the one thing `ui-verify` is good at — and this
+delay gives it time to do so before the drop fires. The position is then
+genuinely read from the operating system by the same line of code a real
+drop uses.
+
+⇒ The only synthetic part left is the OLE payload, which cannot be
+synthesised by moving a mouse and is precisely why the seam exists at all.
+
+### `static FIRST_FRAME`
+
+Set on the first [`poll`] rather than at `main`, so the delay is
+measured from the first frame — which is what the check is waiting for
+too. Measuring from process start would count the time `eframe` spends
+creating a window against a budget meant for the harness's pointer.
+
+### `fn the_fallback_gets_a_drop_no_surface_took`
+
+Written as a sequence rather than as two assertions about one function,
+because the property is about the ORDER: a surface claims during the
+frame, the fallback runs at the end, and exactly one of them acts.
+
+### `fn a_landing_keeps_every_path`
+
+`app::dropped` decides that only the first is acted on and says so to
+the operator. This module must not make that decision early, or the
+claiming surface loses the ability to say how many arrived.

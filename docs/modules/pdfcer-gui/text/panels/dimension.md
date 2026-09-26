@@ -45,3 +45,12 @@ rendered from the engine's own `MeasurementDisplay`, and what a tolerance
 will *do* to the printed label is stated in a sentence
 ([`tolerance_suppresses_nominal`], [`tolerance_is_a_box`]) rather than
 demonstrated by a preview this module would have to derive a second time.
+
+## Item notes
+
+### `fn the_three_style_sources_read_differently`
+
+The property under test is that `Factory` and `Group` do **not**
+collapse into one "inherited". They differ in what a `--clear` on the
+group would do, and an operator reading "inherited" cannot tell which
+tier to go and edit.

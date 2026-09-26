@@ -49,3 +49,18 @@ see below.)
   on the session's report. Whether the file on disk is larger afterwards —
   which it will be — is exactly what the window discloses and is not
   asserted, because pdfcer cannot currently make it otherwise.
+
+## Item notes
+
+### `const APPLIED`
+
+`-applied`, per the convention this project adopted after making the
+same-name mistake twice: `vector_edit` writes its own `unembed-fonts …` line
+for the identical edit, and `.last()` on the bare name reads the funnel's.
+
+### `const OPENED`
+
+The check reads `targets=` off this to tell a GREYED button from a broken
+one. Both look identical from outside - no click reaches anything - and
+exactly one of them is a fact about the fixture rather than about the
+program.

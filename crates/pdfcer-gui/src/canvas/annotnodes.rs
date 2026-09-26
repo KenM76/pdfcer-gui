@@ -118,13 +118,6 @@ pub const TRACE_DECLINED: &str = "markup-node-declined"; // ui-text-exempt: diag
 pub const TRACE_UNAVAILABLE: &str = "markup-nodes-unavailable"; // ui-text-exempt: diagnostic trace name
 
 /// How much slack a press gets around a node anchor, in points.
-///
-/// The drawn square is the **promise**; this is the **target**. They differ
-/// because a 7 pt square is hard to hit on a dense drawing, and the standing
-/// convention here — stated at `handles::grip_at` and again at
-/// `dimdrag::vertex_at` — is that a grip's live area may exceed its drawn one
-/// and never the reverse. A target smaller than its picture is the operator
-/// missing something they can plainly see.
 const NODE_GRAB_SLACK_PT: f32 = 3.0;
 
 /// **The nodes of one selected markup shape**, and how the engine addresses
@@ -387,21 +380,6 @@ impl Geometry {
     }
 
     /// The shape this edit would produce.
-    ///
-    /// Returned rather than drawn, so the preview and the action are built
-    /// from **one** value. A second derivation of *"what would this look like"*
-    /// is the defect `measure::Resolved` exists to prevent, and it has shipped
-    /// on this canvas twice.
-    ///
-    /// `None` for an index the list does not hold, which the preflight would
-    /// also refuse — asked here as well because this function is where the
-    /// slice is indexed and a panic mid-drag would take the window with it.
-    ///
-    /// For an `/Ink` the stroke table moves with the points:
-    /// [`ink::StrokeTable::after_edit`] grows or shrinks the **grabbed**
-    /// stroke, so an insert after a stroke's last point extends that stroke —
-    /// the engine's rule — and the preview's boundaries stay true to the list
-    /// it is drawn from.
     #[must_use]
     fn edited(&self, intent: VertexIntent, index: usize, target: Point) -> Option<Self> {
         let mut out = self.points.clone();
@@ -540,11 +518,6 @@ impl Plan {
 
 /// **Build the [`Plan`] for this frame's intent**, addressed the way the
 /// shape's family addresses a node.
-///
-/// `None` only for an `/Ink` anchor index the stroke table cannot place — a
-/// press the painter could not have drawn an anchor for. A single-list shape
-/// always answers, and leaves an out-of-range index to the engine's own
-/// `AnnotationVertexIndexOutOfRange`, exactly as before ink existed.
 #[must_use]
 fn planned(
     shape: &Geometry,
@@ -571,40 +544,6 @@ fn planned(
 }
 
 /// Which of the shell's sentences an engine refusal is.
-///
-/// The mapping lives **here** rather than in `crate::text::markup`, for
-/// `dimdrag::refusal_for`'s reason and this project's standing division: the
-/// engine's error enum is a *shell* concern, and the string catalog holds
-/// operator prose only. A `crate::text::` module that matched on `EditError`
-/// would put the engine's vocabulary into the catalog and give the catalog a
-/// reason to change every time the engine adds a variant.
-///
-/// The engine offers a `reason: &'static str` on
-/// [`EditError::GeometryNotReshapable`] and says a shell may show it verbatim.
-/// It is **not** shown verbatim, and the choice is deliberate rather than
-/// squeamish: those sentences are written for a developer reading a CLI —
-/// *"author a PolyLine instead"*, *"use resize_annotation"*, *"/QuadPoints are
-/// text-anchored quadrilaterals"* — and they name verbs and PDF keys this
-/// operator has never seen. The `subtype` field is what is used, because that
-/// is the fact the operator can check against the shape in front of them. The
-/// engine's sentence goes to the **trace**, where the developer is.
-///
-/// # The five ink refusals of `Pass 278.0`, each answered
-///
-/// | engine says | sentence | why that one |
-/// |---|---|---|
-/// | `InkStrokeWouldBreachPointFloor` | `StrokeWouldLeaveTooFew` | the floor is **per stroke** (two), so *"the shape has as few corners as it can have"* would be false of a mark whose other strokes have plenty; the next act is *add a point to this stroke* |
-/// | `InkPointIndexOutOfRange`, `InkStrokeIndexOutOfRange` | `PointNotFound` | the anchors and the file have gone out of step; the next act is to reselect, which rebuilds both from one walk |
-/// | `InkWouldBeEmpty` | `WouldLeaveNothing` | only a whole-stroke verb can raise it and this shell calls none — worded anyway, because an unreachable refusal that becomes reachable silently is how a grip comes to do nothing |
-/// | `InkVerbOnNonInk` | `Refused` | a routing defect in this shell (a non-ink shape reached the ink planner); no sentence about nodes helps the operator, and the engine's own sentence names it in the trace |
-///
-/// The `_` arm is not laziness. The remaining refusals —
-/// `AnnotationNotFound`, `AnnotationIsCeDimension`, `AnnotationLocked`,
-/// `AnnotationVertexIndexOutOfRange`, `DocumentEncrypted`, the certification
-/// guard, `MarkupSpec` — are either unreachable from an anchor this shell drew
-/// from this same geometry, or are properties of the FILE that no wording about
-/// nodes would help with. They get the general sentence rather than a
-/// fabricated specific one, and the operator learns that the press was heard.
 #[must_use]
 fn refusal_for(error: &EditError) -> crate::text::markup::NodeEditRefusal {
     use crate::text::markup::NodeEditRefusal as R;
@@ -645,14 +584,6 @@ fn refusal_for(error: &EditError) -> crate::text::markup::NodeEditRefusal {
 }
 
 /// The operator's word for a `/Subtype`.
-///
-/// A mapping and not a passthrough. `"PolyLine"` is a PDF name; *"a
-/// polyline"* is a shape. `"Square"` is the PDF name for what pdfcer's own
-/// ribbon calls a **rectangle**, and showing the operator "Square" for the
-/// thing they drew with the Rectangle tool is the surface disagreeing with
-/// itself. The unknown arm keeps the raw name rather than inventing one,
-/// because a subtype this shell has never heard of is better named exactly than
-/// named wrongly.
 #[must_use]
 fn shape_word(subtype: &str) -> crate::text::markup::ShapeWord {
     use crate::text::markup::ShapeWord as W;
@@ -798,14 +729,6 @@ fn inner(frame: NodeFrame<'_>, actions: &mut Vec<Action>) -> Option<NodeDrag> {
 
 /// Everything the second half of a node drag needs, once the geometry and the
 /// snap have been resolved.
-///
-/// A struct for [`NodeFrame`]'s reason and one more: it is the seam that lets
-/// every rule below be tested **against the real engine** without a window, a
-/// pointer or an `egui::Context`. `dimdrag::CountEdit` draws the identical seam
-/// for the identical reason, and its own tests are the precedent — a test that
-/// faked the annotation would be asking the engine about a shape that does not
-/// exist and would get `AnnotationNotFound` for every case while looking
-/// exactly like a test that passed for the right reason.
 struct Resolve<'a> {
     /// The read side of the document, for the preflight.
     session: &'a EditSession,

@@ -59,3 +59,27 @@ and until 2026-09-01 a right-click anywhere in Read produced **no menu at
 all** — the gate asked `caps.edit_content` before asking which menu, so
 even the view menu that file's own comment calls *"the correct menu for a
 reader"* was unreachable.
+
+## Item notes
+
+### `const SELECTION`
+
+`selection-set`, not `canvas-selection`. The two are written by different
+functions for different acts: the ladder's click path writes the second, and
+`SelectionState::select_only` — which this arm calls, because it is naming
+one object rather than walking a ladder — writes the first. The check was
+written against the wrong one and its first run said the picture could not
+be selected while the trace carried `selection-set page=0 object=0
+via=read-image` four lines further down.
+
+⇒ Worth keeping as a note rather than a silent correction: this suite's own
+rule is to ask what a check SAMPLED before asking what is broken, and the
+first failure here was a check aiming at the wrong line.
+
+### `const FIXTURE`
+
+`synthetic-image-only.pdf` places a single image over the whole 306 × 396 pt
+page (`q 306 0 0 396 0 0 cm /Im0 Do`), so a click anywhere on the sheet can
+only mean the picture. That is what makes step A's failure unambiguous: on a
+build without this arm the click produces a text-selection line or nothing,
+never a different object.

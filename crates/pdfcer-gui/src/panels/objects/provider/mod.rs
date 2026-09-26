@@ -1074,16 +1074,6 @@ impl ObjectModelProvider {
 }
 
 /// Resolve a caller-supplied tolerance, falling back on a degenerate one.
-///
-/// A degenerate tolerance (`0.0` from a non-finite or zero zoom, or a
-/// negative value) would silently make every query a miss. Falling back to
-/// the fixed canvas-space value instead is the right trade: *fussy at low
-/// zoom* is a far better failure than *selection is broken*.
-///
-/// Extracted into one function rather than repeated at each of the four call
-/// sites that need it, because the four must agree — a click that selects an
-/// object and then finds none of its subpaths reads as "the second level is
-/// broken" when the real answer is that one site forgot the fallback.
 fn resolve(tolerance: f64) -> f64 {
     if tolerance.is_finite() && tolerance > 0.0 {
         tolerance
@@ -1097,9 +1087,5 @@ mod tests;
 
 /// The Point rung's pick sets: which points belong to which part, and which
 /// handle belongs to which node.
-///
-/// Separate from the module's main test block because these answer a
-/// different question — not "does a click find the object" but "does the
-/// index the operator sees mean what `node-move --node N` means".
 #[cfg(test)]
 mod node_rung_tests;

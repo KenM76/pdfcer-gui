@@ -80,3 +80,25 @@ would be a second author for one fact — the rule that module already keeps.
 
 ⇒ Nothing is drawn on the canvas about it. R8b rule 4: applied content
 renders exactly as saved content will; the extent goes off-canvas, in words.
+
+## Item notes
+
+### `fn the_block_is_numbered_the_way_the_engine_will_read_it`
+
+A source assertion, and the WEAKER of the two instruments in this module
+— the behavioural one below is the real check and should be read first.
+This one survives because it fails with a sentence naming the intent,
+where a behavioural failure names only a number: both option sets
+produce a valid model and a valid block index, so a build using the
+wrong one either re-wraps **a different paragraph** than the operator
+clicked in — silently, correctly — or is refused for an index out of
+range on a paragraph plainly on the screen. Measured on the operator's
+own drawing: run 100 is block 106 of 144 to the caret's recognition and
+block 49 of 70 to the engine's.
+
+⇒ This assertion ran green for the whole time the WRONG option set was
+in place — it was written to hold the opposite, on reasoning about
+paragraphs rather than about subscripts. It is inverted here rather than
+deleted, because the mistake is symmetrical and the next author will
+reach for the caret's recognition for exactly the reason the last one
+did.

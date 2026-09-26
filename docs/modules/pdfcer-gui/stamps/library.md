@@ -71,3 +71,21 @@ inferences are made and both are reported rather than silently applied:
 
 The second is the one that would otherwise be invisible: a folder of six
 stamps that shows five is indistinguishable from a folder of five.
+
+## Item notes
+
+### `fn read_collection`
+
+`None` when the file will not open at all, or opens and has no stamp name
+tree — the two cases a caller counts identically because to the operator
+they are the same thing: a file in the folder that is not a stamp file.
+
+### `fn label_for`
+
+The display half when there is one, the internal name when there is not —
+with the `#` that marks a dynamic stamp stripped, because that character is
+a *marker in the format*, not part of what the stamp is called. Acrobat
+shows `Received`, not `#Received`.
+
+⚠ Stripping it here is presentation only. [`CustomStamp::dynamic`] carries
+the fact, so nothing downstream has to re-derive it from a string.

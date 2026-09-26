@@ -67,3 +67,13 @@ in another viewer. That is a sentence, not a barrier.
 
 **Render normally, report separately.** Nothing is drawn on the page and
 no button is marked.
+
+## Item notes
+
+### `fn field_level_scripts_alone_are_not_worth_saying`
+
+The single most important property here. A form that computes a total
+carries calculate and format scripts, and a shell that warned about
+those would put a sentence on the status row of every real form an
+operator opens — which trains them to ignore the one that says their
+drawing is about to be posted to a web server.

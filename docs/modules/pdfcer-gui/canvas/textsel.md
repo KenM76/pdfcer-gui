@@ -348,3 +348,126 @@ every call site still writes `textsel::copy` and `textsel::pending_key`.
 The seam is there rather than anywhere else because [`clipboard::copy`] is
 reached by two **ribbon commands** that have no selection at all — see that
 module's header.
+
+## Item notes
+
+### `const GLYPH_ASCENT`
+
+`pdfcer-core`'s **search-quad** number, deliberately, where its run and line
+boxes use `0.75`. See the module header §5: `crate::find` paints
+`TextMatch::quad`, and a selected word must not be a visibly different height
+from the same word found. There is no shared constant in core to inherit, so
+this is a decision rather than a reference.
+
+### `const CLAMP_SCAN`
+
+A scan rather than a straight bisection because the reachable set along a
+drag is not an interval: a sweep that crosses a gap between two columns
+leaves reach and re-enters it, and a bisection seeded from the anchor would
+stop at the near edge of the gap and silently under-select. Scanning
+**backwards from the pointer** finds the furthest text the operator has
+actually dragged past, which is the one they mean.
+
+### `fn clamp_to_text`
+
+The clamp that makes overshooting a line harmless. Without it a sweep that
+ran one line-height past the last character resolved no focus, [`drag`]
+returned `None`, and the entire selection vanished mid-gesture — on a
+drawing sheet, where a title-block run is 40 pt wide on a 2,384 pt page,
+that is most sweeps.
+
+# The engine is the oracle, and nothing here re-derives its geometry
+
+*Where* the text ends is [`EditableTextModel::hit_test`]'s question — its
+reach is one line-height around each line's box and is deliberately not a
+parameter. So this does not compute a line end, an inflated box or a
+direction: it asks `hit_test` at sample points and keeps the furthest one
+that answered. A rotated line, a multi-line sweep and a future change to
+the reach are all handled by construction, which is the property a
+shell-side copy of the rule could not have.
+
+`None` when no sample along the ray resolves — the caller then drops the
+selection, which is [`drag`]'s unchanged behaviour for a sweep over paper.
+
+### `fn model`
+
+Rebuilt per gesture event rather than cached, and affordable for a
+structural reason: the model **borrows** the `PageText` and owns no glyph
+data, so recognition is a clustering pass over indices rather than a copy of
+the page. The expensive half — the content-stream walk — is the thing that
+*is* cached, on `(page, edit epoch)`, in [`crate::app::cache::PageTextCache`].
+
+Caching the model instead would mean storing a value that borrows a
+`RefCell`'s contents, which is the self-referential shape neither `Ref` nor
+this crate's cache pattern can express.
+
+`BlockRecognitionOptions::default()` and not a customized one: its ratios and
+`ExtractOptions`' segmentation ratios are two halves of one derivation, and
+tuning either alone would make the lines this shell paints and the lines the
+engine derived describe different text.
+
+### `fn hit`
+
+Two hops, and the first is the one that is easy to get backwards: the canvas
+speaks **Y-down from the page's top-left with `/Rotate` applied**, and every
+glyph position `pdfcer-core` reports is in **PDF user space — Y-up, from the
+un-rotated CropBox's lower-left**. `canvas::mapping`'s header names conflating
+those two as *the classic silent defect*, and it is silent here in the worst
+way: the page looks perfect, and a drag selects a mirrored line.
+
+So the conversion goes through [`crate::viewer::canvas_to_pdf_space`], which
+is the single bridge for that hop and works by inverting the **renderer's
+own** device transform — so the geometry and the picture agree by
+construction rather than by two implementations happening to match.
+
+`None` when the page's transform will not invert, or when the point is out
+of **reach** of every line — [`EditableTextModel::hit_test`] inflates each
+line's box by one line-height and answers `None` outside all of them, so
+this is a presence test and not a placement that never fails. A drag begun
+in the margin beside a line still selects from it, which is Acrobat's
+behaviour; a drag begun on open paper selects nothing.
+
+⚠ A sweep whose *focus* leaves that reach must not cancel the gesture. See
+[`clamp_to_text`], which is the caller's answer and the reason this
+function is allowed to be strict.
+
+### `fn is_rotated`
+
+`true` for anything that is not left-to-right along +x. The test is on the
+engine's own [`pdfcer_core::text_edit::Line::direction`], which is the unit
+vector taken from the §9.4.4 text rendering matrix and shared by every glyph
+on the line by construction.
+
+Why a *tolerance* rather than exact equality with `(1, 0)`: a page that
+rotates through the CTM rather than through `Tm`, and a fitted OCR baseline,
+both produce a direction a hair off horizontal. Treating those as rotated
+would send ordinary prose down the frame-accumulating path for no benefit;
+the engine draws the same line at `text_extract::SAME_DIRECTION_COS` and
+this matches it in spirit — near-horizontal is horizontal.
+
+### `fn resolve`
+
+One ordered pair in, one [`TextSelection`] out, and both of its halves
+produced by the same walk over the same byte windows:
+
+* the **string** is sliced out of each covered run's own `text`, so derived
+  word spaces and line breaks — which are runs carrying no glyphs — are
+  copied along with the characters they separate;
+* the **boxes** are accumulated from the glyphs whose byte ranges intersect
+  those same windows, grouped by the line the engine put each glyph on.
+
+The glyph list comes from [`EditableTextModel::resolve_range`] rather than
+being re-derived from the byte windows here, because that function already
+owns the intersection rule (including its correct treatment of a zero-width
+caret window, which selects nothing) and a second implementation of it is
+precisely how a highlight comes to cover one glyph more than the copy does.
+
+Returns `None` for a range covering no glyphs. That is the *only* way a
+caller clears a selection through this module, which is what makes "an empty
+selection is `None`" true everywhere rather than in most places.
+
+### `fn ordered`
+
+`TextPosition`'s own ordering key is private to `pdfcer-core`, so the tuple is
+spelled here — once, in the one function that needs it, rather than at each
+of [`resolve`]'s two uses of "the earlier one".

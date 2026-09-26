@@ -25,51 +25,15 @@ const POS_EVENT: &str = "canvas-pos";
 const RENDER_EVENT: &str = "render-async-done";
 
 /// The worker's **inline** completion line — the other half of the same fact.
-///
-/// Added 2026-08-28, after this check reported *"NO RENDER WAS REQUESTED"*
-/// against a build that had spawned and completed **nineteen** of them.
-///
-/// `render::worker` has two completion paths and takes whichever is cheaper: a
-/// raster that finishes fast enough is done **inline**, on the frame that asked
-/// for it, and only a slow one goes to the thread and comes back as
-/// `render-async-done`. A region raster above the pixmap ceiling covers the
-/// viewport rather than the page, so it is *small* — 3 ms on the fixture this
-/// check now uses — and it never takes the asynchronous path at all.
-///
-/// ⇒ **A check that counts one completion path fails on a build that took the
-/// other one**, and it fails by naming the feature rather than the instrument.
-/// This one printed `render::settle`'s staleness test as the suspect, in detail,
-/// down to `RenderKey::same_region` — and that mechanism was working perfectly.
-///
-/// The general rule, which this project has now met three times in one day:
-/// **ask what the check SAMPLED before asking what is broken.** A failing
-/// measurement is a claim about an instrument as much as about a program.
 const RENDER_INLINE_EVENT: &str = "render-inline";
 
 /// How far to zoom before panning, in Ctrl+wheel notches.
-///
-/// Enough to be **past the pixmap ceiling**, which is where a raster stops
-/// covering the page and starts covering the window — the tier this check is
-/// about. Below it a pan is free and this check would be measuring nothing.
-/// Twenty notches lands around 4,000 % on a Letter sheet, comfortably above the
-/// ~2,070 % crossover.
 const ZOOM_NOTCHES: usize = 20;
 
 /// How far to pan, in wheel notches, and it is deliberately a lot.
-///
-/// `render::strategy::OVERSCAN` gives the raster half a viewport of margin on
-/// every side, and `region_for` snaps to a half-viewport grid — so a pan has to
-/// exceed a whole viewport before the operator is certainly looking at
-/// something the current raster does not contain. This is the "too far to one
-/// side" in his report, made specific.
 const PAN_NOTCHES: i32 = -40;
 
 /// How far to zoom back out afterwards, in Ctrl+wheel notches.
-///
-/// Enough to change the region substantially while staying **above the
-/// crossover** — dropping below it in one step would put the raster back on the
-/// whole-page path, where this defect cannot occur and the check would be
-/// measuring the wrong tier.
 const ZOOM_OUT_NOTCHES: usize = 6;
 
 /// See the module documentation.
@@ -96,11 +60,6 @@ impl Check for PanningPastTheOverscanRendersTheNewArea {
 }
 
 /// How many renders have completed so far, **by either path**.
-///
-/// The asynchronous line carries an `outcome`, because a thread can come back
-/// with a cancellation or a failure; the inline one cannot fail asynchronously
-/// and carries none, so it is counted unconditionally. Two shapes for one fact,
-/// and the asymmetry is the worker's rather than this function's.
 fn renders_done(session: &Session) -> Result<usize> {
     let trace = session.trace()?;
     let asynchronous = trace
@@ -112,10 +71,6 @@ fn renders_done(session: &Session) -> Result<usize> {
 }
 
 /// A field of the canvas's `canvas-pos` line, as text.
-///
-/// Compared as text rather than parsed: this only needs to know *whether it
-/// changed*, and the trace prints both regions from the same bits the cache
-/// keys on, in the same format.
 fn field(session: &Session, key: &str) -> Result<Option<String>> {
     Ok(session
         .trace()?
@@ -127,16 +82,6 @@ fn field(session: &Session, key: &str) -> Result<Option<String>> {
 
 /// The region the shell **wants**, which is the one that moves with the
 /// view.
-///
-/// `region=` is what the pixels on screen are a picture of, and on a build with
-/// O25 present it never changes — no render is requested, so no new texture
-/// arrives, so the field that describes the texture stands still. A check
-/// watching it reads *"the view did not move"* and skips, which is what the
-/// first version of this check did against a binary with the defect
-/// deliberately restored.
-///
-/// `want=` moves the instant the view does. **The gap between the two is the
-/// defect**, and it takes both fields to measure a gap.
 fn wanted_region(session: &Session) -> Result<Option<String>> {
     field(session, "want")
 }

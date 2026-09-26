@@ -71,3 +71,19 @@ are:
 [`is_ribbon_caption`] must recognise the names the ribbon publishes. See
 its documentation for what it matches and why the rule is a pair of words
 rather than an exact spelling.
+
+## Item notes
+
+### `fn ribbon_regions`
+
+Split out of [`assess`] so that the claim *"this check starts asserting on
+its own the day the ribbon declares its captions"* is **testable without a
+ribbon**. A test can hand this function a trace containing the lines the
+ribbon will emit and observe that the whole chain — parse, match, convert
+to capture pixels, resolve — produces a trace-sourced plan. If that claim
+were only exercised by running the real ribbon, it would be untested for
+exactly as long as it matters.
+
+`frame` is the live window's measured geometry; it supplies the DPI scale
+that turns the application's logical rects into pixels of the capture. See
+[`WindowFrame::logical_to_capture_pixels`] for why no origin term appears.

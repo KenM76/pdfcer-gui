@@ -48,3 +48,23 @@ three-text-fields.pdf` exists for this, and `the_three_field_fixture_offers
 _three_clickable_text_boxes` is its guard — **not** one of the engine's own
 form fixtures, none of which carries a text field with a drawn `/AP`, and
 an `/AP`-less field is not drawn on the canvas at all.
+
+## Item notes
+
+### `const BOX_LINE`
+
+Deliberately not `form-target`, which is the *selectable* census: a push
+button and an undrawn widget are selectable and not fillable, and the field
+ring walks the fillable set. Aiming from the wrong census would put the
+click on a widget the ring does not contain and report the miss as a broken
+Tab.
+
+Narrowed to `kind=text` below for a second reason: this check needs a box
+that takes the keyboard on a click. A drop-down is fillable and on the same
+ring, but clicking it opens an option list instead.
+
+### `fn fillable`
+
+The application's numbers, not the fixture's — a check that computed the
+rect from the PDF would be asserting that two independent derivations agree
+and would report a disagreement as a Tab failure.

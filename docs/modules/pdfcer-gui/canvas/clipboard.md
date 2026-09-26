@@ -95,3 +95,33 @@ Both halves are the convention and both have a reason:
 swept range is a more specific statement than a selected annotation, the
 operator made it more recently, and every program in the class resolves the
 collision the same way. This module's copy runs only when no text is swept.
+
+## Item notes
+
+### `fn paste_clip`
+
+# The offset rule is the markup one, and the geometry is not
+
+Same page offsets so the copy is visible; a different page or document lands
+in place, so a shape copied to sheet 12 is where it was on sheet 1. That
+rule is shared with [`paste`] deliberately — two answers to *"where does a
+paste land"* would be two things for the operator to learn.
+
+What is **not** shared is how the offset is expressed. A markup carries a
+`/Rect` and moves by a pair of numbers; page content moves by a **page-space
+matrix**, which is the same contract `transform_objects` takes and the same
+reason: `cm` composes into the CTM in force at that point in the stream, so
+the engine conjugates by each item's own captured matrix and the caller
+passes page space or nothing.
+
+`Matrix::IDENTITY` is paste-in-place; `translate` is paste-with-offset. That
+the same verb also gives paste-scaled and paste-rotated through
+`Matrix::about` is why the request asked for a matrix rather than a
+displacement, and it is what a future *paste special* is already built on.
+
+# Errors
+
+None today — the deserialisation happens in the apply arm, where the session
+is. A clip this shell wrote is a clip this shell can read; one it cannot is
+the engine's `ClipError::NotAClip`, and that reaches the status row through
+`vector_edit` like every other engine refusal.

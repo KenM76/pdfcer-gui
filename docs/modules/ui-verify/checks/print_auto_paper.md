@@ -192,3 +192,133 @@ Each of those is a state in which nothing was learned about the
 application, and each says so in its own sentence rather than through a
 shared one — because a reader of a SKIP wants to know what to do next, and
 "something went wrong" is not that.
+
+## Item notes
+
+### `const PAPER_AUTO`
+
+That is not a naming preference, it is the reason `print_paper_changes_the_plan`
+still measures what it says it measures. Auto sits second on screen, so the
+obvious thing would have been to give it index 1 and push the driver's forms
+up by one — which would have left that check clicking a policy while its own
+report said it had clicked a sheet, still green. `REGION_PAPER_AUTO`'s doc in
+the application carries the full argument.
+
+### `const OVERHANG_PT`
+
+**2 pt of it is the application's own `FIT_TOLERANCE_PT`**, mirrored here
+deliberately: `autopaper::fits` is `pw <= sw + FIT_TOLERANCE_PT`, so a page
+up to 2 pt bigger than a form is a *correct* `matched` and a check that
+called it wrong would be failing the application for doing what it says it
+does. CAD producers write A3 as a clean 1191×842 pt; the driver calls the
+same sheet 1190.4×841.68. That 0.6 pt is the whole reason the tolerance
+exists, and the first driven run of this check measured exactly it.
+
+**4 pt of it is the two-different-calls allowance** — the fit decision is
+made against the driver's *enumerated* form size and `sheet=` comes back
+from `printer_caps_for`'s device context, and a driver may round the two
+differently.
+
+
+⚠ **If the application's `FIT_TOLERANCE_PT` grows, this must grow with
+it**, or a correct `matched` starts failing here. The two cannot be shared:
+this is a separate crate and that constant is private. The dependency is
+therefore stated, and [`the_band_is_at_least_the_applications_own_tolerance`]
+pins the direction so a shrink here is caught by the compiler's own test
+run rather than by a confusing red on the operator's machine.
+
+### `const APP_FIT_TOLERANCE_PT`
+
+⚠ Mirrored by hand from `crates/pdfcer-gui/src/dialogs/print/autopaper.rs`.
+It is not imported because `ui-verify` does not depend on the application's
+crate — it drives the built binary, which is the entire point of it. A
+mirrored constant is a claim about someone else's source, and this project's
+standing lesson about those is that they get a test which fails in the
+direction that matters.
+
+### `const _`
+
+These were a `#[test]` until clippy pointed out that a comparison between
+two constants is decided by the compiler and a test of it can never fail at
+run time. It is right, and the right answer is not to silence it: a
+relationship that is knowable at compile time should **break the build**,
+not produce a red test somebody has to run first. So they are `const _`
+items, and a violation is a compile error naming this file.
+
+Both directions matter, which is why both are here:
+
+- **Too small** and a *correct* `matched` fails this check — the
+  application permits a page to overhang its form by `FIT_TOLERANCE_PT`,
+  so any value below that makes the check red on a build doing exactly what
+  it documents. That is the failure the first driven run walked into from
+  the other side, and it cost a rewrite of the oracle.
+- **Too large** and a sheet that is a whole size wrong is waved through,
+  which is the only defect this check exists for. The bound is stated
+  against the closest adjacent pair in ordinary use, A4 to A3 on the short
+  edge — 246 pt.
+
+⚠ The lower bound is a claim about **another crate's private constant**,
+mirrored by hand into [`APP_FIT_TOLERANCE_PT`]. If that constant moves and
+this one is not moved with it, this assertion still holds — it pins the
+relationship, not the value. The tripwire for the value is the driven run
+itself: a `matched` failing by a point or two is what a widened application
+tolerance looks like from here.
+
+### `fn plan`
+
+The **last** line rather than the first: the dialog emits one per frame, so
+the first describes the state it opened in and only the last describes the
+state after a click. Reading the first would make every assertion above
+trivially true, which is a mistake this project has made once and is worth
+naming at every site that could make it again.
+
+### `fn plan_field`
+
+Separate from [`plan`] because it is used only for prose: `mixed=` is worth
+printing beside a pass so a reader knows whether the job was single-size,
+but no assertion turns on it and adding it to [`Plan`] would suggest one
+does.
+
+### `fn fit_clearance`
+
+Positive means it fits with that much to spare on the tighter axis;
+negative means it is over by that much. Signed rather than boolean so that
+a failure report can say *how far* wrong the answer is, which is the
+difference between "the sheet is one size down" and "the sheet is unrelated
+to this document".
+
+Both orientations are tried, and that is not a convenience: `dmPaperSize`
+names a physical piece of paper and `dmOrientation` is a separate field with
+its own control in this dialog. A3 and "A3 landscape" are not two sheets. A
+clearance that respected page orientation would call an A3 sheet wrong for a
+landscape A3 drawing, which is the commonest CAD export there is — and it
+would do so as a FAILURE, against an application that was right.
+
+### `fn a_size_token_parses_the_way_the_application_writes_it`
+
+The application's own test asserts the same round trip from its side.
+Both exist because they are two different claims: that one writes what
+it means, and that this one reads what was written. A single test on
+either side would leave the boundary itself untested, which is the
+shape of defect this whole harness is for.
+
+### `fn a_turned_page_lies_on_the_same_sheet`
+
+The second half is the one worth having: a landscape A4 page on a
+portrait A4 sheet must report room to spare, not a shortfall, because
+which way the image lies is `dmOrientation` and not `dmPaperSize`.
+
+### `fn a_page_too_big_reports_how_far_over_it_is`
+
+The sign carries the verdict and the magnitude carries the diagnosis,
+so both are asserted. An A3 page on an A4 sheet is over by the
+difference on the tighter axis — not by the difference in area, and not
+by zero.
+
+### `fn the_measured_producer_rounding_case_passes_and_the_wrong_sheet_does_not`
+
+The measured case, pinned: A3 written by a CAD producer as a clean
+1191x842 against the driver's 1190.4x841.68 is `matched` and correct.
+The defect case beside it: the same page against a Letter sheet, which
+is what "auto resolved to the front of the driver's list" looks like on
+this machine.

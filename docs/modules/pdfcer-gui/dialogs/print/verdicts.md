@@ -137,3 +137,39 @@ list of `bool` tests and map lookups, which is the same order as
 [`Job::clipped`] itself. **Nothing here renders anything**, which is the
 constraint the whole design is built to satisfy: an ink-aware count that
 rasterised the job would make opening the dialog cost more than the print.
+
+## Item notes
+
+### `struct Sheet`
+
+Not the plan's position in the send order. A job may print the same
+document page twice (uncollated copies) or in a reversed or filtered
+sequence, and the verdict is a fact about *this page under this placement*,
+not about a position in a list. Two plans naming the same page carry
+identical placements by construction — `super::spooler::plan` computes one
+placement per page — so the second one inherits the first's verdict
+legitimately: it is derived, not invented.
+
+### `fn of`
+
+One function, called by both the write path and the read path, so
+the two cannot build the identity differently. A remembered verdict
+that could never be found again would look exactly like a preview that
+was never opened — a silent, permanent over-count with nothing to say
+why.
+
+`page_sizes` is indexed by `plan.index`, the **document** page, and
+never by a position in the plan list. That is the same defect
+`super::preview::paint` carries a comment about, and it would be
+re-introduced here by using the loop counter.
+
+### `fn verdict`
+
+Three ways to get `None`, and they are deliberately indistinguishable
+to the caller because they mean the same thing — *no claim can be made
+about this sheet*:
+
+1. the context has moved on (different settings, scope or device);
+2. the plan names a page that is no longer there;
+3. the sheet was never previewed, or was previewed under a different
+   placement or page size.

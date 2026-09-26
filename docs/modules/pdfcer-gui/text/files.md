@@ -29,3 +29,21 @@ producing a parse error inside a child process nobody is watching. English
 copy here has no need of one, and the day it does — a translation, most
 likely — the fix is the `rfd` call the module header already carries,
 which has no shell in it at all.
+
+## Item notes
+
+### `fn the_dialog_strings_cannot_break_out_of_the_script`
+
+See the module header. The interim picker single-quotes these into a
+script; a `'` inside one would end the literal and the child process
+would fail to parse a program nobody can see. This is the mechanical
+half of that rule, and it fails at `cargo test` rather than at the
+operator's next click.
+
+### `fn each_created_document_gets_its_own_name`
+
+The property the ordinal exists for, asserted rather than assumed. An
+`untitled` that ignored its argument would satisfy every other test in
+this module, and would make the `new-document` trace line unable to
+distinguish a second New from a New that did nothing — a class of
+failure findable only by reading a driven run's trace.

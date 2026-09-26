@@ -33,3 +33,11 @@ That the labels are legible, or that the ✕ closes anything. The first is
 [`super::legibility`]'s kind of question and the second is a destructive
 act this check deliberately does not perform — a close behind an
 unsaved-edits prompt is its own gesture with its own failure modes.
+
+## Item notes
+
+### `const OPEN_PATH_ENV`
+
+`D:\dev\rag\egui\native_file_dialog_is_a_hard_wall_substitute_the_answer_via_env_var.md`
+carries the finding; `crate::app::files::DIAG_OPEN_PATH` is the constant on
+the application side.

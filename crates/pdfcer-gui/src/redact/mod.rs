@@ -7,12 +7,6 @@ pub mod proof;
 
 /// **The call-site monopoly** — §2.4. Parses every `.rs` file in this crate and
 /// asserts that `apply_redactions` is called in exactly one place.
-///
-/// `#[cfg(test)]` because the reader parses Rust with `syn`, a
-/// **dev**-dependency — the same posture `crate::shell::commands::reach` takes
-/// for the same reason, and for the same reason nothing here is compiled into
-/// `pdfcer-gui.exe`. See this crate's `Cargo.toml` for why a real parser and not
-/// a grep, and `sealed`'s own header for what it refuses to claim.
 #[cfg(test)]
 mod sealed;
 
@@ -206,12 +200,6 @@ pub enum WriteRefusal {
 
 impl std::fmt::Display for WriteRefusal {
     /// Diagnostic prose for the trace, and for nothing else.
-    ///
-    /// `check-ui-strings.sh`'s exclusion 3 permits a `Display` impl to carry
-    /// text that is not in the catalog **because it is diagnostic**, and states
-    /// in the same breath that this "is not permission to route UI text through
-    /// an error type". Nothing here reaches an operator; the sentences the
-    /// dialog shows are [`crate::text::redact`]'s.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::ResidualsNotAcknowledged { residuals } => {
@@ -271,15 +259,6 @@ pub struct PreparedRedaction {
 
 impl std::fmt::Debug for PreparedRedaction {
     /// **Hand-written so that `{:?}` cannot emit the redacted document.**
-    ///
-    /// `#[derive(Debug)]` on a struct with a `Vec<u8>` prints every byte. This
-    /// value is, by construction, the most sensitive buffer the program ever
-    /// holds — and a `format!("{prepared:?}")` in a trace line, a panic message
-    /// or a test failure would put a whole redacted PDF into a log file that
-    /// nobody thinks of as containing document content.
-    ///
-    /// It reports the length instead, which is the only thing a reader of a
-    /// diagnostic actually wants from that field.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PreparedRedaction")
             .field("bytes", &self.bytes.len())
@@ -968,12 +947,6 @@ pub fn save_applying_pending(
 
 /// The one mapping from the engine's [`RedactError`] to this module's refusal
 /// taxonomy.
-///
-/// Free rather than repeated in each of the three call sites, because three
-/// copies of a `match` over an error enum is how one of them comes to be
-/// missing an arm — and the arm it would be missing is `NothingToApply`, which
-/// is the one refusal the operator can actually reach. One table serves all
-/// three, so `crate::text::redact::refusal_message` needs no second one.
 fn map_refusal(err: RedactError) -> RedactApplyRefusal {
     match err {
         // A write failure is the same class of refusal as a failed
@@ -1103,25 +1076,6 @@ mod tests;
 thread_local! {
     /// The document an *apply now* has just produced, waiting for the action
     /// funnel to install it.
-    ///
-    /// # Why a slot rather than a payload on the action
-    ///
-    /// `RedactAction` derives `Clone` and `PartialEq`, and
-    /// [`PreparedRedaction`] is deliberately neither — cloning a redacted
-    /// document is precisely the thing this module makes hard. Deriving them
-    /// for it to fit an enum would have been the tail wagging the dog, and
-    /// `Document` is no more clonable.
-    ///
-    /// ⇒ So the action carries **consent and counts**, which are small and
-    /// copyable, and the document travels here. That split is not a workaround:
-    /// it is the same one `crate::app::actions::disclosure` makes for the same
-    /// reason, and that module's own note says why a thread-local is sound
-    /// rather than smuggled — this is not document state, it is a value in
-    /// flight between one frame and the action drained after it.
-    ///
-    /// Single-slot and take-on-read. Two applies cannot be in flight: the
-    /// dialog closes on the press, and a second press would need it reopened.
-    /// A queue would model a concurrency this surface does not have.
     static APPLIED: std::cell::RefCell<Option<Document>> = const { std::cell::RefCell::new(None) };
 }
 

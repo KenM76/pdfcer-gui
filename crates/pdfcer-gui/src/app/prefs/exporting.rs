@@ -83,12 +83,6 @@ pub struct ExportImagePrefs {
 
 impl Default for ExportImagePrefs {
     /// Exactly what `ExportImageDialog::open` hard-coded before this existed.
-    ///
-    /// The specification, not a coincidence: a fresh `userdata` folder must open
-    /// this window the way every previous build of pdfcer opened it. **Deleting
-    /// `preferences.txt` is a way to reset pdfcer, never a way to change what it
-    /// does.** Asserted rather than assumed — see
-    /// `tests::the_image_default_is_what_the_dialog_used_to_hard_code`.
     fn default() -> Self {
         Self {
             format: ImageFormat::Png,
@@ -138,12 +132,6 @@ pub struct ExportTextPrefs {
 
 impl Default for ExportTextPrefs {
     /// Exactly what `ExportTextDialog::open` hard-coded before this existed.
-    ///
-    /// ⚠ Written out field by field rather than `#[derive(Default)]`, and that
-    /// is not style. [`PageScope`] has **no** `Default` impl at all, and the
-    /// other three would take their own `#[default]` variants — which happen to
-    /// agree today and are not *specified* to. This impl is the specification;
-    /// the derive would have been a coincidence that compiles.
     fn default() -> Self {
         Self {
             // `AllPages`, where the image window defaults to `CurrentPage`.
@@ -180,11 +168,6 @@ impl Default for ExportDxfPrefs {
     /// Exactly what `DxfOptions::default()` gave `ExportDxfDialog::open`
     /// before this existed — read off the engine at pin `5e17017` and written
     /// here as literals rather than delegated to `DxfOptions::default()`.
-    ///
-    /// Literals, deliberately: if the engine changes a default, this window's
-    /// behaviour must change **visibly, in a diff**, not silently on a
-    /// `cargo update`. The disagreement is then a failing test rather than a
-    /// different DXF.
     fn default() -> Self {
         Self {
             units: DxfUnits::Inches,

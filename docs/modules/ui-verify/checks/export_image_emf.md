@@ -95,3 +95,44 @@ becomes — so a GDI+ rendering of a *correct* metafile looks wrong, and the
 obvious next move is to change a writer that was right. Real GDI
 (`PlayEnhMetaFile`) plays it correctly and is what Office and Win32 use; the
 engine's `docs/core-api` §7.10 has the numbers.
+
+## Item notes
+
+### `const MODE`
+
+**Read**, as `export_dxf` runs in, and for the reason that check states: an
+export reads the document and writes elsewhere, so there is no mode in which
+it should be refused. If a capability gate ever creeps onto this command,
+this is where it shows up.
+
+### `const EMF_KEY`
+
+**Lowercase, and sourced rather than chosen.** It is the FILE TOKEN,
+`pdfcer_gui::app::prefs::exporting::image_format_key(ImageFormat::Emf)` —
+the same string the preferences file stores, which is exactly why the
+emitter uses it: a check reading this trace and a check reading
+`preferences.txt` then cannot disagree about what EMF is called.
+
+⚠ **This constant was `"Emf"` until 2026-09-14 and the check was RIGHT to
+say so when it was written.** On 2026-09-04 the emitter read
+`format={:?}` — `Debug` on `ImageFormat`, which prints `Emf`. On
+2026-09-13 commit `28f5389` replaced that with the token, correctly and
+for this project's own standing reason (*never `Debug`-format a field a
+machine reads*), and **broke the only machine reading the field without
+anything going red** — because this check had never been run. The first
+sweep to run it, on 2026-09-14, duly reported *"the radio drew and did not
+bind"* while quoting `format=emf` in the same sentence.
+
+The lesson generalises past this file: **changing a trace field's
+spelling is an edit to every reader of that field**, and an unrun check is
+a reader that cannot object to it.
+
+### `const EMF_KEY_DEBUG_SPELLING`
+
+Kept as a SEPARATE diagnosis rather than folded into the comparison.
+Seeing this spelling again would mean the emitter had regressed to
+`{:?}` — a real defect, with a real one-line remedy, and **not remotely
+the same thing as a radio that failed to bind**. An assertion that lumps
+the two together produces the message this check produced today: a
+confident accusation against the program, quoting the evidence that
+clears it.

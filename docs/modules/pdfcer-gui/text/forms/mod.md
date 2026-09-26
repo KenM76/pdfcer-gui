@@ -51,3 +51,64 @@ decisions per line than any other:
 - **A warning glyph is never the only cue.** Every `⚠` sentence reads
   correctly with the glyph stripped, because a glyph is a colour-class cue
   and `RIBBON_IA.md` R84 forbids carrying state in one.
+
+## Item notes
+
+### `mod authoring`
+
+Re-exported below, so this split is invisible at every call site — see that
+module's header for why this is the seam R2 forced and why it was the right
+one anyway.
+
+### `fn every_refusal_explains_a_different_refusal`
+
+Each exists because, without it, the operator's only available reading
+of an inert control is *"pdfcer got it wrong"*. Two that read alike
+would send them looking for the wrong cause — and two of these
+describe gates that genuinely disagree with each other on the most
+common certified document there is.
+
+### `fn the_structural_refusal_does_not_claim_values_are_locked`
+
+Not a tautology of the test above. These two are the pair most likely
+to be collapsed into one string by someone tidying up, because on most
+documents they are both absent and on a fully-locked one they are both
+present. The case that matters is the ordinary certified fillable form
+(`/P 2`), where filling is permitted and flattening is not — and an
+operator told "form values cannot be changed" while happily typing
+into the fields has been misinformed by their own tool.
+
+### `fn a_warning_glyph_is_never_load_bearing`
+
+R84 — never a colour-class cue alone. A `⚠` is exactly that, and a
+sentence whose meaning depended on it would be unreadable to anyone
+whose font lacks the glyph or who is listening rather than looking.
+
+### `fn an_unreadable_rich_value_is_not_reported_as_an_unformatted_one`
+
+The single most consequential distinction in this file. Both cases
+render as a row with no formatting listed, and only one of them is a
+reason to stop before pressing Convert: an unreadable `/RV` means the
+operator is about to discard formatting **nobody has seen**.
+
+### `fn emphasis_is_grouped_before_typography`
+
+Pins the ordering decision recorded in
+[`form_field_rich_text_summary`]'s header — the one found by reading a
+rendered panel rather than the code. `bold` and `italic` must end up
+adjacent even when they arrive on runs separated by a run carrying the
+`/DS` size and family.
+
+### `fn the_count_line_is_scoped_to_this_panel`
+
+The sentence says "you can fill **here**", not "fillable fields". That
+word is what makes the count honest when a certification signature
+disables every row: the panel is describing itself, not the model's
+`is_fillable` predicate. See the function's own header for the bite
+this closes.
+
+### `fn the_recompute_explainer_states_a_rule_rather_than_a_gap`
+
+"pdfcer never runs a document's JavaScript" is a project rule, and the
+wording has to read as a decision rather than as an unfinished feature
+— otherwise an operator waits for a version that will never come.

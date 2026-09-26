@@ -68,3 +68,21 @@ ruling on core's side — *"by name rather than by count"*.
 - **A refusal is a sentence, never a silence.** [`field_groups_refusal`]
   exists because the alternative — drawing no controls and saying nothing —
   is indistinguishable from a feature nobody built.
+
+## Item notes
+
+### `fn is_certification`
+
+A helper rather than a second match arm, because the certification refusal
+is not one variant. `check_certification` reports the document as certified
+by name, and which variant carries that has changed once already on the
+engine's side; matching on the *family* through the error's own rendering
+keeps this sentence correct across that. The rendering is never shown to the
+operator — see [`crate::text::status::save_copy_failed`] for why a `Display`
+impl's prose is not operator copy — it is only asked a yes/no question here.
+
+### `fn plural`
+
+`(s)` is a form-filling convention that leaked into prose across this
+catalog, and it reads as a machine talking. One helper here rather than a
+conditional at each of the four call sites.

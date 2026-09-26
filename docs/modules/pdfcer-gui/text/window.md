@@ -53,3 +53,34 @@ Two consequences, both structural rather than editorial:
 
 Both are drawn only while read mode is on. A permanent hint would be
 furniture nobody reads, and it would be false the moment the mode is off.
+
+## Item notes
+
+### `fn no_string_here_names_a_key`
+
+The rule this module exists to hold, asserted rather than trusted — and
+the probe list is the one `crate::text::shortcuts` uses, because the
+habit being caught is the same one.
+
+A hand-written `"press Ctrl+H"` here would look entirely reasonable in
+review, would be correct on the day it was written, and would become a
+sentence that names a dead key the first time anybody rebinds anything —
+on the one surface an operator reaches for when they are already stuck.
+
+### `fn every_chord_handed_in_reaches_the_sentence`
+
+The vacuous failure this forbids: a format string that drops its
+parameter still compiles, still returns a plausible sentence, and would
+pass any test that only asserted the sentence is non-empty.
+
+### `fn the_status_line_names_the_ribbon_and_the_panels`
+
+An operator in this state has noticed two things missing and does not
+necessarily know the mode's name. A sentence that only said *"leave read
+mode"* would require them to have made that connection first.
+
+### `fn the_bound_and_unbound_wordings_are_different_sentences`
+
+Two states, two sentences, and an operator seeing one message for both
+cannot tell which they have — `crate::text::shortcuts`' own rule about
+its two empty states.

@@ -332,16 +332,6 @@ pub(super) fn click(st: &mut MeasureState, c: Click<'_>, actions: &mut Vec<Actio
 }
 
 /// **Did this click land on the first vertex?**
-///
-/// Compared in **canvas space** at the same tolerance a selecting click uses,
-/// so the target is the same physical size at every zoom. In page space the
-/// ring would be impossible to close zoomed out — the first vertex would be a
-/// sub-pixel target — and trivially easy to close by accident zoomed in.
-///
-/// Requires [`MIN_CLOSED`] vertices before it will answer `true`. Below that
-/// there is no ring to close, and reading a click on the first of two vertices
-/// as a close would consume a pick and then refuse, which from the operator's
-/// chair is a click that did nothing.
 fn closes_the_ring(
     st: &MeasureState,
     canvas_point: Pos2,

@@ -28,26 +28,6 @@ const RENDER_EVENT: &str = "render-async-done";
 const POS_EVENT: &str = "canvas-pos";
 
 /// The zooms to photograph, as multipliers.
-///
-/// # Chosen against what the fixture actually contains
-///
-/// `banana.pdf`'s own generator prints the scale chain, and these are its
-/// tiers rather than round numbers picked for the look of them:
-///
-/// | zoom | what becomes visible |
-/// |---|---|
-/// | 1 × | the banana, at life size |
-/// | 20 × | the two cell outlines |
-/// | 120 × | cell labels, starch grains |
-/// | 450 × | organelle labels |
-/// | 4,000 × | chloroplast grana, plasmodesmata |
-/// | 26,000 × | mitochondrial cristae |
-/// | 350,000 × | ATP synthase heads — the 10 nm features |
-/// | 10,000,000,000 × | the configured ceiling |
-///
-/// The last rung is not a feature tier. It is there because the operator
-/// asked whether rendering *still happens* at the maximum, and a gallery that
-/// stopped where the detail stops would not have answered him.
 const TIERS: &[f32] = &[
     1.0,
     20.0,
@@ -70,13 +50,6 @@ const TIERS: &[f32] = &[
 ];
 
 /// How many notches to roll before re-checking against the target.
-///
-/// A small batch rather than a computed count. A Ctrl+wheel notch multiplies
-/// by about 1.22, but the ladder's rungs are not a pure geometric series near
-/// the bottom, so the number of notches to reach a given zoom is not something
-/// a check should predict. It rolls, reads what the application says, and stops
-/// when it is there — which is also what makes it survive a change to the
-/// ladder.
 const BATCH: usize = 2;
 
 /// The most batches to roll toward any one tier before giving up.
@@ -192,13 +165,6 @@ fn drawn_now(session: &Session) -> Result<u32> {
 }
 
 /// **The tone count of the most recent completed raster, if the build says.**
-///
-/// Reads `ink=` off the last `render-async-done` whose `outcome=done`. Renders
-/// that were cancelled or failed carry `ink=-1` and are filtered out rather than
-/// read as a count: a cancelled render says nothing about what the page
-/// contains, and letting `-1` through would turn every mid-zoom cancellation
-/// into a spurious *"the engine drew nothing"*.
-///
 fn last_ink(session: &Session) -> Result<Option<i64>> {
     Ok(session
         .trace()?

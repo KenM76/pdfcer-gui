@@ -29,3 +29,18 @@ reason to leave the Tools tab silent.
 blocker stops being true without anybody noticing, because nothing about it
 changes when the other surface ships. Re-derive a route's blocker from the
 target, never from the route's own entry.
+
+## Item notes
+
+### `fn target`
+
+One function, so the mapping is stated once and [`handles`] cannot drift
+from [`dispatch`] — the two would otherwise be a list and a match that agree
+today.
+
+### `fn every_route_points_at_a_registered_command_that_is_not_itself`
+
+Two failures in one assertion, and both are silent. A route to an
+unregistered id raises an `Action::Command` that `dispatch_command`
+drops on the floor — a drawn control that does nothing. A route to
+itself is an infinite loop through the action queue.

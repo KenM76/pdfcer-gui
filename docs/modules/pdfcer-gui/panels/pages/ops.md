@@ -103,3 +103,102 @@ either the sentence retires only on the operator's next *command* (which is
 after a mere click on a different thumbnail), or `live`'s plumbing grows a
 third source. That is a real decision, not a line of wiring, which is the
 other half of why it is not taken here.
+
+## Item notes
+
+### `fn landing`
+
+`drop_order` returns the engine's permutation — *which page is at
+position i* — and every assertion below is easier to read as the page
+sequence itself, which is what an operator sees in the grid.
+
+### `fn a_block_dragged_forward_lands_at_the_boundary_that_was_pointed_at`
+
+The case that catches an off-by-one: dragging pages 0–1 to gap 4 in a
+five-page document. Naively splicing at 4 into the three remaining
+pages would put them after page 4, not before it. The lift-count
+correction is what makes the answer `[2, 3, 0, 1, 4]`.
+
+### `fn gathering_scattered_pages_at_their_own_first_page_is_not_a_no_op`
+
+Pages 0, 4 and 8 dropped at gap 0 become adjacent at the top. A
+predicate that only compared the drop against the block's endpoints
+would call this a no-op, because gap 0 is the lower lip of the
+selection's range — and the operator would drag, release, and watch
+nothing happen.
+
+### `fn a_block_dropped_on_itself_is_refused_at_every_boundary_it_spans`
+
+The engine would accept the identity permutation and write an undo
+entry for it, so an operator who picked a page up and put it back would
+get a document marked as edited and a `Ctrl+Z` that changes nothing
+they can see.
+
+### `fn every_landing_is_a_permutation`
+
+Swept over every operand set and every gap in a small document rather
+than spot-checked: the failure this guards against is not one wrong
+answer, it is a whole family of drags producing a vector the engine
+declines for a reason no operator could act on.
+
+### `fn the_moved_pages_arrive_adjacent_and_in_document_order`
+
+A drag says *"put these here"*, and "these" is a set the operator built
+by clicking. Re-ordering them relative to each other would be the panel
+inventing an intention; leaving gaps between them would make the drag
+do half of what it looks like it does.
+
+### `fn with_nothing_picked_the_operand_is_the_current_page`
+
+The rule `PanelsState::selected_pages` states in words — *"Empty is a
+defined answer, not a missing one"* — as a mechanism. A build that
+returned an empty operand list here would make every ribbon Pages
+control do nothing until the operator discovered the panel, which is the
+exact "live control, no effect" defect this work exists to close.
+
+### `fn a_stale_pick_is_dropped_rather_than_refusing_the_whole_batch`
+
+`EditSession::delete_pages` resolves **every** index before planning
+anything and returns `PageOutOfRange` for the whole batch if one is bad,
+so a stale pick would turn "delete these three" into "delete nothing,
+silently". Reachable by chord: the panel clamps on its next frame and a
+keyboard verb can arrive before that frame is drawn.
+
+### `fn a_contiguous_run_moves_as_a_run`
+
+The property a naive "swap each with its neighbour" loop gets wrong: run
+it ascending without the ceiling and pages 1 and 2 swap with each other
+twice and end up back where they started. This asserts the *magnitude*
+as well as the direction — the run really is one place earlier —
+because a test that only checks the direction is satisfied by a loop
+that moves the run twice as far.
+
+### `fn a_non_contiguous_pick_moves_each_item_by_one`
+
+The alternative — gathering the set at its topmost member — would
+reorder pages the operator never named, which is the same class of
+error `select::PageSelection::right_click` exists to prevent from the
+pointer's side.
+
+### `fn the_top_of_the_document_refuses_a_move_up`
+
+`reorder_pages` returns `Ok(())` for the identity, having recorded
+nothing. Handing it one would be a control the operator pressed that
+changed nothing and said nothing — which is the defect this project is
+named after, so the refusal is the result rather than a detail.
+
+### `fn a_partly_blocked_run_moves_the_part_that_can`
+
+Pages 1 and 3 picked, moved up: page 1 is pinned, page 3 is not. The
+alternative — refusing the whole gesture because one member is at the
+edge — would make a large selection increasingly hard to move, which is
+the opposite of what a reorder control is for.
+
+### `fn every_order_is_a_permutation_and_moves_by_exactly_one`
+
+The one property `EditSession::reorder_pages` checks and refuses over,
+and therefore the one whose failure would be a verb that declines with
+nothing an operator could do about it. Asserted exhaustively over every
+non-empty subset of a five-page document, in both directions — 62 cases,
+which is cheap and is the difference between "the examples above work"
+and "the rule is sound".

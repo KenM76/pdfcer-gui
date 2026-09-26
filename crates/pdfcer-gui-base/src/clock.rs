@@ -64,12 +64,6 @@ pub fn iso_date_utc(unix_secs: u64) -> String {
 }
 
 /// The pure half, so the formatting can be tested without a clock.
-///
-/// Split out for exactly that reason and for no other. A function that reads
-/// the clock and formats it in one body is a function whose formatting can only
-/// be tested by asserting on today's date — which is a test that passes for a
-/// year and then starts failing at a month boundary for reasons nobody
-/// remembers.
 #[must_use]
 fn format_pdf_date(unix_secs: u64) -> String {
     // Whole days since the epoch, and the seconds within today. Unsigned
@@ -83,18 +77,6 @@ fn format_pdf_date(unix_secs: u64) -> String {
 }
 
 /// Days since 1970-01-01 → `(year, month, day)`.
-///
-/// Howard Hinnant's `civil_from_days`, the algorithm C++20 `<chrono>`
-/// specifies. The shift to a **March-based** year is the whole trick: with
-/// March as month 1, the leap day lands on the last day of the year, so the
-/// day-of-year formula is a single linear expression and the leap rule needs
-/// no branch at all.
-///
-/// The magic numbers are the algorithm's own and are not tunable:
-/// `719_468` is the day count from 0000-03-01 to 1970-01-01, `146_097` is the
-/// days in a 400-year Gregorian cycle, and `153` and `2` are the coefficients
-/// of the linear month-length pattern March..February. Changing any of them
-/// does not make it approximate — it makes it wrong.
 #[must_use]
 fn civil_from_days(days_since_epoch: u64) -> (u64, u64, u64) {
     let z = days_since_epoch + 719_468;
@@ -114,12 +96,6 @@ mod tests {
     use super::*;
 
     /// **Known instants, formatted exactly.**
-    ///
-    /// Four dates chosen for what each one would break: the epoch itself, a
-    /// leap day, the day after a leap day, and a century year that is **not** a
-    /// leap year. The last is the one a hand-rolled calendar gets wrong — 1900
-    /// and 2100 are divisible by four and are common years — and it is why the
-    /// algorithm is Hinnant's rather than `days / 365`.
     #[test]
     fn known_instants_format_exactly() {
         assert_eq!(format_pdf_date(0), "D:19700101000000Z");
@@ -140,14 +116,6 @@ mod tests {
     }
 
     /// **The string this shell writes is one the ENGINE accepts.**
-    ///
-    /// Not a re-implementation of `MarkupNote::validate` — the real one, called
-    /// on the real output. A format that drifted from what the engine parses
-    /// would be refused at author time with `MarkupDateMalformed`, and the
-    /// operator would meet it as *"my comment did not save"*.
-    ///
-    /// ⇒ This is the assertion that makes the two sides of the boundary agree
-    /// by test rather than by both files claiming to follow §7.9.4.
     #[test]
     fn the_engine_accepts_what_this_module_writes() {
         let stamp = format_pdf_date(1_756_382_400);
@@ -159,11 +127,6 @@ mod tests {
     }
 
     /// A live clock produces a plausible, well-shaped answer.
-    ///
-    /// Deliberately weak — it asserts the SHAPE and a lower bound on the year,
-    /// never the value. A test that asserted today's date would be a test that
-    /// starts failing tomorrow, and the formatting itself is pinned above by
-    /// instants that do not move.
     #[test]
     fn the_live_clock_is_shaped_like_a_pdf_date() {
         let stamp = pdf_date_utc().expect("the system clock is after 1970");

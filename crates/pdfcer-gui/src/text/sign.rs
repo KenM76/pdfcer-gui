@@ -822,11 +822,6 @@ pub fn written(file_name: &str, replaced: bool) -> String {
 }
 
 /// **The shape one line of a signature's appearance is shown in.**
-///
-/// One constant because [`written_details`] writes it and [`appearance_shown`]
-/// matches it, and two spellings of an indent would drift without a symptom:
-/// the sentence would still read correctly and the counter would silently
-/// report that none of it reached the operator.
 const APPEARANCE_INDENT: &str = "\n    "; // string-gap-exempt: an indent, not a sentence.
 
 /// **Everything one signing wrote**, as the sentence that discloses it needs

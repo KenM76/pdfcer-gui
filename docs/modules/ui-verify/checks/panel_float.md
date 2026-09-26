@@ -152,3 +152,76 @@ somebody is using, exactly like `dialog_windows`.
   with no optional content the honest content of the Layers panel is one
   sentence, and one sentence is what R9 requires of a panel with nothing
   to list.
+
+## Item notes
+
+### `const PANEL`
+
+Layers, and the choice is not arbitrary: it is mounted by default in every
+mode, it has a body that draws something with no gesture first, and it is
+the panel the other two features in O126 are about — so a failure here and
+a failure in the search check point at the same surface.
+
+⚠ On every repository fixture this panel's whole body is **one sentence**,
+because none of them carries an `/OCProperties`. That is fine for what is
+asserted here — see the module header's last section — but it is the
+reason the oracle had to become *"the body filled a rectangle"* rather
+than *"the body published one of its own controls"*.
+
+### `const MODE`
+
+# This check was passing because a DIFFERENT check leaked its mode
+
+`view.panel_layers` is not in every mode's default dock. Read mounts five
+panels, Review seven, Edit thirteen — measured off `mode-changed … panels=`
+— and the Layers panel is an Edit-mode surface. So a float of it can only
+succeed in a mode whose default dock carries it.
+
+
+⇒ **A check that does not state its preconditions is not passing — it is
+agreeing with whatever ran before it.** The isolation fix did not break
+this check; it revealed that the check had never been testing what it
+claimed on its own. That is the price of isolation and it is worth paying
+once per check that had been coasting.
+
+⚠ It is `mode.edit` rather than a click on the mode segment because
+`PDFCER_DIAG_INVOKE` is this check's whole input channel — the harness has
+no pointer here, which is the same reason the float command carries an
+operand at all.
+
+### `fn reset_landed`
+
+Returns the failure sentence when it did not happen. Written as its own
+function because a section that skipped this and went on to report
+`moved=false` would be reporting the application broken for the check's
+own reason — which is exactly what happened for days.
+
+### `fn float_viewport`
+
+Read rather than hard-coded: the id is a hash of the panel id, so a
+constant would keep matching after a rename while naming a window that no
+longer exists.
+
+### `fn the_windows_retirement_is_recognised_from_a_real_trace_line`
+
+`diag` spells the census key `viewport-inner:"F83E"` — a value with a
+quote **inside** it rather than around it — and the trace parser
+strips surrounding quotes from a field. If it stripped these, or if
+it split the field at the quote, `window_retired` would answer `false`
+for every run and this check would report *"the panel is being drawn
+in two places at once"* about a build that closes its window
+perfectly. That failure would be articulate, permanent and about
+nothing, which is this harness's signature defect.
+
+### `fn another_windows_retirement_does_not_count`
+
+Without this, `window_retired` could be written as *"is there any
+`ui-rect-gone` naming a viewport"* and pass on a run where a dialog
+closed and the panel's window stayed open.
+
+### `fn a_section_that_never_reset_its_layout_says_so`
+
+This is the whole of the fix for the `moved=false` / `docked=0`
+family: without it a section inherits the previous launch's saved
+layout and every verdict downstream describes a state the harness
+created. See the module header, defect 1.

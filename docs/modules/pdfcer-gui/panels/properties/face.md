@@ -113,3 +113,82 @@ in the file — is discharged as a sentence at the point of choice
 ([`crate::text::panels::face::face_addable_disclosure`]), which is the
 off-canvas report rule 4 requires and the one thing this feature could not
 ship without.
+
+## Item notes
+
+### `const POPUP_MIN_WIDTH`
+
+The ribbon's chooser button is **78** points wide
+([`crate::app::fontband`]'s `FACE_WIDTH`, sized to fit inside the band's
+custom-item budget), and an `egui` combo popup is otherwise no wider than its
+button. The disclosure is a three-clause sentence; wrapped to 78 points it
+would be a column of two-word lines, which is a sentence an operator does not
+read.
+
+So the popup states its own minimum and the two surfaces get the same one —
+which is also what stops the panel's copy and the ribbon's copy from being
+legible in one place and not the other, the divergence this module exists to
+end.
+
+### `fn preflight_for_paragraph`
+
+The reason given at the time was honest and real: `FontPreflight` is
+`#[non_exhaustive]` and cannot be built with a struct literal outside
+`pdfcer-core`. ⇒ **The answer to "I cannot construct it" is to obtain a
+real one, not to simulate the function under test.** `EditSession`
+hands one over for the asking, and a fixture costs a millisecond.
+
+⚠ It also means the input half — the half the old comment admitted was
+uncovered — is the half that mattered, because that is where the change
+landed.
+
+### `fn the_faces_the_page_lacks_are_offered_and_come_from_the_engines_survey`
+
+`fixtures/paragraph.pdf` carries `Helvetica` and nothing else, and its
+text is plain ASCII that every text face can encode — so the expected
+answer is the whole fourteen: one through `accepted()` as a page face,
+thirteen as addable.
+
+Asserted as `>= 13` addable rather than `== 13` on purpose. The
+standard 14 contains `Symbol` and `ZapfDingbats`, whose acceptance for
+ASCII text is the engine's ruling and not this shell's to pin — if the
+engine decides a font-specific encoding cannot hold `its box.`, that is
+a correct answer and must not fail this shell's test. What IS pinned is
+that the twelve text faces all arrive.
+
+### `fn the_pages_own_standard_face_is_offered_once_and_not_as_addable`
+
+The duplicate would be the visible defect. The invisible one is worse:
+a page `Helvetica` that this run's characters cannot encode into is
+absent from `accepted()`, so a filter built on that list would offer
+*"pdfcer can add Helvetica"* — and `plan_font` would resolve the
+selector to the page's own refused resource and decline. An entry that
+cannot work, described wrongly.
+
+⇒ `Std14Presence::OnPage` is the engine answering that from the resource
+dictionary it actually resolved, which is why [`choices`] no longer
+compares shortened name strings to decide it.
+
+### `fn no_offered_face_is_absent_from_the_engines_own_survey`
+
+A rewrite that quietly reverted to walking the constant would satisfy
+both tests above, because on this fixture the two answers coincide. This
+one does not: it empties the survey's contribution by asserting the
+offered labels are a SUBSET of what the engine reported, which a local
+walk cannot guarantee.
+
+### `fn no_preflight_offers_no_faces`
+
+The tempting shape — *"we could not ask the page, so offer the standard
+faces, they always work"* — is wrong twice. The standard-14 half is
+filtered **by** the pre-flight, so without one the list would offer
+`Helvetica` on a page whose own `Helvetica` will take the click; and a run
+that did not pin cannot be restyled at all, so every row would refuse.
+
+### `fn the_two_origins_are_not_equal`
+
+A `FaceChoice` that lost its origin would render under whichever heading
+it happened to sort beside, and the disclosure would then be attached to
+rows it is not true of. The enum is `Copy` and cheap; this asserts it is
+also actually compared somewhere, which is what a `derive(PartialEq)` on
+an unused field would not be.

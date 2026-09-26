@@ -33,3 +33,26 @@ fail-soft parser, different file — for the reason `crate::app::prefs`
 states. The group sits in this window because a *window* is where an
 operator looks for a choice, and which file a choice is stored in is not
 their concern.
+
+## Item notes
+
+### `fn the_shipped_quality_changes_no_raster`
+
+The "a build that omits nothing behaves as it did before" rule, at the
+one place it can be checked cheaply. `viewer::raster_scale` was
+`zoom × pixels_per_point` exactly before this setting existed, so
+`Normal` must multiply by one or every raster in the application
+silently changed size the day the control landed.
+
+### `fn the_qualities_ascend`
+
+The control reads left to right as a scale, so a list whose middle
+entry was not between its neighbours would be a scale that does not
+scale.
+
+### `fn the_shipped_settle_is_reachable_on_the_slider`
+
+A default outside its control's bounds would be silently rewritten the
+first time anybody opened this window, on every machine, without a
+click. Third instance of this check in the window; third setting with a
+range that must be the store's.

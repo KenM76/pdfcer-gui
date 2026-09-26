@@ -394,14 +394,6 @@ impl CanvasMapping {
     }
 
     /// **PDF user space → canvas space, the one place this crate does it.**
-    ///
-    ///
-    /// With a traced [`PageFrame`] the mapping is the real one, `/Rotate` and
-    /// crop origin included. Without it, the historical behaviour is preserved
-    /// exactly: `x` unchanged, `y` flipped against the page height. That
-    /// fallback is not a compromise so much as a statement of what the legacy
-    /// binary's trace can support — it cannot emit a crop box, so the harness
-    /// cannot honour one.
     fn user_to_canvas(&self, p: DocPoint) -> (f32, f32) {
         match self.frame {
             Some(frame) => {
@@ -959,10 +951,6 @@ mod tests {
     use crate::profile::Vocabulary;
 
     /// The legacy mapping: no traced frame, so the historical single flip.
-    ///
-    /// Deliberately left frameless. These tests are the record of what the
-    /// fallback does, and a build whose profile names no crop field still takes
-    /// this path — so it has to keep being measured.
     fn mapping() -> CanvasMapping {
         CanvasMapping {
             image_rect: LRect::new(Pt::new(200.0, 100.0), Pt::new(1000.0, 900.0)),
@@ -1012,11 +1000,6 @@ mod tests {
 
     /// **A quarter turn is not the flip, and that is the whole point of the
     /// method existing.**
-    ///
-    /// The falsification: the naive `(x, height - y)` answer for this input is
-    /// `(100, 542, 300, 592)`, which this asserts it is NOT. Without the
-    /// inequality the test passes on the arithmetic the method was written to
-    /// replace.
     #[test]
     fn a_turned_page_does_not_get_the_flip() {
         let m = framed((0.0, 0.0, 612.0, 792.0), 90);
@@ -1049,16 +1032,6 @@ mod tests {
 
     /// **Every corner of the crop box lands on the matching corner of the
     /// canvas, on every rotation.**
-    ///
-    /// This is the falsifiable form of the whole fix. A mapping that
-    /// ignored `/Rotate` — the one that shipped — sends the crop box's four
-    /// corners to the canvas's four corners on `/Rotate 0` and to a transposed
-    /// set on every other, so the upright case alone proves nothing. Looping
-    /// over all four is what makes the test able to fail.
-    ///
-    /// The expected canvas corner per rotation is derived from where the page
-    /// is *drawn*: at 270° the crop box's lower-left `(llx, lly)` appears at the
-    /// canvas's top-right, and so on around.
     #[test]
     fn each_crop_corner_lands_on_the_matching_canvas_corner() {
         let crop = (20.0_f64, 35.0, 632.0, 827.0);
@@ -1096,13 +1069,6 @@ mod tests {
     }
 
     /// **A point on the far side of a turned page is reachable.**
-    ///
-    /// The literal symptom: on `A-591.pdf` the harness refused every
-    /// `--doc-point` whose user-space `x` exceeded 792, because it measured
-    /// against the crop box's width where the canvas is 1224 wide. Here the
-    /// point is well inside the crop box and near the canvas's right edge, and
-    /// the conversion must produce a window position inside the image rect
-    /// rather than an error.
     #[test]
     fn a_point_near_the_far_edge_of_a_turned_page_is_reachable() {
         let m = framed((0.0, 0.0, 792.0, 1224.0), 270);
@@ -1113,11 +1079,6 @@ mod tests {
     }
 
     /// **The refusal names user space, so the reader does not "fix" the check.**
-    ///
-    /// A point outside the crop box is still refused — that guard is not
-    /// relaxed. What changed is the message: it has to say which space it
-    /// measured in and what the rotation was, because the failure a rotated
-    /// page produces looks exactly like a typo in the check.
     #[test]
     fn a_point_off_a_turned_page_is_refused_in_the_words_of_user_space() {
         let m = framed((0.0, 0.0, 792.0, 1224.0), 270);
@@ -1211,13 +1172,6 @@ mod tests {
 
     /// Aiming at a declared rect goes through the origin **and** the scale,
     /// unlike measuring one, which goes through the scale alone.
-    ///
-    /// The two conversions are next to each other and differ by exactly the
-    /// origin term, which is the mistake worth pinning: a capture is of the
-    /// client area and shares its corner, whereas the input driver works in
-    /// desktop pixels and does not. Getting them the wrong way round is
-    /// invisible on a maximised window at the top-left of the primary monitor —
-    /// i.e. on the machine anybody would test it on.
     #[test]
     fn aiming_at_a_declared_rect_takes_its_centre_in_desktop_pixels() {
         let f = WindowFrame {

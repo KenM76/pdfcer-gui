@@ -89,3 +89,45 @@ half the oracle unfalsified.
 5. **Require the `[FAIL]` line**, not the exit code — a SKIP exits the way a
    PASS does.
 6. **Restore from the byte copy**, rebuild, confirm the PASS returns.
+
+## Item notes
+
+### `const INVOKE`
+
+The panel is opened because `marks=` is published **only while it is
+drawn** — it is the panel's own census, not the document's, so a run that
+never opened it reads silence and cannot tell a mark that did not happen
+from a count nobody published.
+
+### `const PAIR`
+
+**Two apart, deliberately** — see the module header. `BETWEEN` is the line
+that must never be selected, and is named here so the failure messages can
+say which line a union would have destroyed.
+
+### `const MIN_PLURAL_RATIO`
+
+Two regions two lines apart span the two lines and the one between them, so
+their union is about three line heights against the singular's one. Two is
+the floor: comfortably above anything leading or a rounded trace figure
+could contribute, and comfortably below the real answer, so the threshold
+discriminates a second region from a re-measurement of the first.
+
+### `const MAX_PLURAL_RATIO`
+
+The two aims are two baselines apart, so an honest union is one line height
+plus 32 pt — between 3.0× and 3.9× a line height of 11 to 16 pt. The whole
+block is five baselines, so a union spanning it is 80 pt plus a line height,
+between 6.0× and 8.3×. Five sits between those two ranges: above anything
+the right answer can produce, below anything the block-sized one can.
+
+Expressed against the CONTROL rather than against the block's own bounds,
+because the block's bounds would have to be measured by marking it — a third
+gesture and a third undo, to bound a number the control already bounds.
+
+### `fn descend_to_a_chunk`
+
+Two clicks because the chunk rung is entered on the second — `chunk_click`
+owns that claim and it is assumed here rather than re-filed. The leading
+Escapes make this callable again after a mark and an undo, without
+inheriting a rung.

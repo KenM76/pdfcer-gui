@@ -128,3 +128,107 @@ result:
 * **the freehand drag produced fewer than three trail points** — the harness
   could not deliver enough frames of pointer movement, so `kept < raw` would
   be measuring the harness rather than the simplification.
+
+## Item notes
+
+### `const MODE`
+
+The weaker claim, and [`crate::checks::markup_rectangle`]'s reason for the
+same choice: a markup tool that works in Review works in Edit. It is also the
+mode in which the vertex click has the least competition — Review's primary
+button selects no content — so a build whose vertex click fell through to the
+selection would still show *nothing happening*, which is what phase C's
+`markup-vertex` count is for.
+
+### `const INK`
+
+A table rather than eight constants, because every one of them is used in the
+same two ways — locate the rect, count the invokes — and a name/id pair that
+drifted apart would make this check aim at one control and assert about
+another.
+
+### `const CLOUD`
+
+**The kind whose failure mode is silent**, which is why it is driven at
+all rather than left to the unit test that already asserts its subtype. A
+cloud IS a `/Polygon` in the file — `MarkupSpec::Cloud` writes `/Subtype
+/Polygon` and differs only by `/BE << /S /C /I n >>` — so a build whose
+ribbon control armed `Polygon` instead of `Cloud` would place vertices,
+finish, author a legal annotation and render it. The operator would get a
+polygon from the revision-cloud button, with no error, no refusal and no
+trace line to notice. Phase F reads the **kind** out of `markup-commit`,
+which is the one place that distinction is externally visible.
+
+### `const VERTEX_EVENT`
+
+The only external evidence a click became a vertex: an armed vertex tool with
+two corners and one with three are the same screenshot at any threshold, since
+the rubber-banded segments are hairlines in the pen colour over a drawing that
+is already full of them.
+
+### `const INK_DRAG`
+
+Well inside the page on every side, because a drag that left the page would
+be clamped by the canvas and the trail would be shorter than the gesture. A
+diagonal rather than an axis-aligned line so that both coordinates move,
+which is what makes the intermediate points distinct rather than duplicates
+the capture filter would drop.
+
+### `const CORNERS`
+
+A triangle rather than three collinear points: `markup::action` refuses a run
+with no extent, and three points on a line have extent but are the least
+interesting shape available. Spread wide enough that the harness's rounding to
+whole screen pixels cannot merge two of them.
+
+### `fn invokes`
+
+A **count**, never a presence: this check clicks four different controls and
+presses Finish four times in one run, so "has it ever been invoked?" would be
+answered `true` by a click made ten seconds earlier. Every assertion below is
+a comparison of two counts taken around one click.
+
+### `fn arm`
+
+The two-oracle move [`crate::checks::markup_rectangle`] establishes, in one
+function because this check makes it three times: the **shell** says the click
+reached the control, and the **application** says the tool armed. A present
+invoke with an absent `markup-tool` names the application's dispatch and
+nothing else; an absent invoke means no click was delivered, which is a SKIP
+rather than a failure.
+
+### `fn click_out`
+
+The count is taken as a **difference** across the clicks rather than as a
+total, because this check clicks out three runs in one session and a total
+would be answered by a run finished a phase earlier.
+
+### `fn press_finish`
+
+Returns `(failure, invoked)`: a `Some` failure is a control that could not be
+located at all, and `invoked` is the availability answer every phase reads —
+`false` means the control was greyed, which is positive evidence rather than
+an absence, because a disabled `egui` control never reports itself invoked.
+
+### `fn the_selectors_match_the_shells_own_spelling`
+
+Pinned for the reason every sibling check pins its own: the two crates are
+joined by a **string** and nothing else, so a rename would leave both
+sides compiling while every assertion here quietly stopped matching — and
+a check that matches nothing passes vacuously.
+
+### `fn the_corners_are_a_real_triangle_and_the_first_two_are_a_real_line`
+
+Phase D rests entirely on `CORNERS[..2]` being a run a **polyline** would
+accept and a **polygon** would not. A fixture whose first two corners were
+coincident would make phase D pass for the wrong reason: the control would
+be greyed because the run had no extent, not because a polygon needs three
+corners, and the falsifier would be measuring nothing.
+
+### `fn the_freehand_drag_moves_on_both_axes`
+
+`markup::ink` drops a sample identical to the one before it, so a drag
+along one axis whose other coordinate never changes would still produce
+distinct points — but a drag that moved in neither would produce exactly
+one, and the `raw < 3` SKIP would fire on every run. Asserted so the
+fixture cannot quietly become degenerate.

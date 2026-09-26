@@ -191,15 +191,6 @@ mod tests {
     use super::*;
 
     /// Only the three legal entry forms are offered.
-    ///
-    /// §7.5.4 permits exactly three, and the temptation a future hand will feel
-    /// is to add the others "for completeness" — bare `LF` in particular, since
-    /// it is what a text editor produces. Every one of them makes the entry the
-    /// wrong length and the file non-conforming.
-    ///
-    /// Asserted by round-tripping each offered value through the engine's own
-    /// byte encoding: a form that is not two bytes cannot be legal, and a form
-    /// the engine does not know would not compile.
     #[test]
     fn only_the_legal_entry_forms_are_offered() {
         // `resolve` needs a base document to observe; `MatchSource` against an
@@ -225,11 +216,6 @@ mod tests {
     }
 
     /// `MatchSource` with nothing to match falls back to a legal fixed form.
-    ///
-    /// The case the default's own note promises — *"files that have no index of
-    /// this kind get a space then a newline"* — and one an operator will hit
-    /// without knowing it, because a cross-reference **stream** file has no
-    /// entry EOL at all.
     #[test]
     fn matching_nothing_falls_back_to_the_documented_form() {
         assert_eq!(

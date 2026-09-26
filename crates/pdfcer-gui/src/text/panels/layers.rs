@@ -125,11 +125,6 @@ pub fn layer_selection_report(m: Membership, row: RowOfAnswer<'_>) -> Option<Str
 }
 
 /// The long form of each reason pdfcer cannot name the layer.
-///
-/// Separate from [`layer_selection_report`] so the reasons can be read as a
-/// set — they are meant to be *different* from one another, and a reader
-/// checking that has them in one place rather than spread through a match with
-/// four other arms.
 const fn unresolved_long(why: Unresolved) -> &'static str {
     match why {
         Unresolved::PageNotDecomposed => {
@@ -183,11 +178,6 @@ pub fn layer_clause(m: Membership, name: Option<&str>) -> Option<String> {
 }
 
 /// The short form of each reason, for the bar.
-///
-/// Every one of these is a **cause**, not an apology. *"layer not known"*
-/// alone would be the hedge this catalog's header forbids; the clause after
-/// the dash is what tells the operator whether to look at their file, their
-/// selection, or pdfcer.
 const fn unresolved_short(why: Unresolved) -> &'static str {
     match why {
         Unresolved::PageNotDecomposed => "this page would not read",
@@ -250,13 +240,6 @@ mod tests {
 
     /// Every state of the answer, named **once**, so the tests below cannot
     /// quietly stop covering one.
-    ///
-    /// The `match` beneath it is the mechanism: adding a variant to
-    /// `Membership` makes this file fail to compile, which is what a
-    /// hand-written array in a completeness test cannot do. This project has
-    /// shipped four defects into exactly that gap (`RESUME.md`, three
-    /// separate recurrences), and the fix each time was to make the compiler
-    /// hold the list.
     fn every_state() -> Vec<Membership> {
         let all = vec![
             Membership::NothingSelected,
@@ -310,11 +293,6 @@ mod tests {
     }
 
     /// **A highlighted row that is off screen still owes words.**
-    ///
-    /// The failure this forbids is silent and reads as a broken feature: the
-    /// operator types in the search, the matching layer is narrowed out, the
-    /// plate goes with it, and the panel looks exactly as it would if
-    /// selecting an object highlighted nothing at all.
     #[test]
     fn a_group_whose_row_is_not_on_screen_is_reported_in_words() {
         let hidden = layer_selection_report(group(), RowOfAnswer::HiddenBySearch("Grid"))
@@ -376,10 +354,6 @@ mod tests {
     }
 
     /// **A group pdfcer cannot name does not render as empty quotes.**
-    ///
-    /// `on layer ""` is the shape of a placeholder, and R9 forbids one. The
-    /// unnamed case is a different sentence, not the same sentence with a hole
-    /// in it.
     #[test]
     fn an_unnamed_group_gets_its_own_words() {
         let named = layer_clause(group(), Some("Grid")).unwrap();

@@ -87,3 +87,145 @@ as a boundary: `tools/ui-verify` drives the binary and `egui-shell` is
 forbidden from knowing what a PDF is (`check-shell-purity.sh`), so the only
 other Rust in this workspace that could reach `pdfcer-core` is a harness that
 does not ship. See [`super`] §2.5.
+
+## Item notes
+
+### `fn crate_src`
+
+`CARGO_MANIFEST_DIR` rather than a relative path from the working directory:
+`cargo test` and a test run from an IDE do not agree about the latter, and a
+path that resolved to nothing would be the "looked at nothing" failure this
+module's header is about.
+
+### `const OWNER`
+
+Compared as a path suffix rather than as a string, so the separator is the
+platform's rather than this constant's — the same file is `redact\mod.rs` on
+the machine this is built on and `redact/mod.rs` elsewhere.
+
+### `struct Counter`
+
+`syn::visit::Visit` rather than a hand-written recursion: "anywhere" has
+to include a closure body, a nested `fn`, a `match` arm, an `if let`
+scrutinee and every other place an expression can hide, and the variant
+a hand-written walker forgot would be a silent hole rather than a
+compile error.
+
+### `const MIN_FILES_SWEPT`
+
+A floor rather than an exact count, deliberately: an exact number is a
+figure in prose, and figures in prose drift, while a floor only ever
+fails for the reason it exists — a walker that stopped early. The crate
+holds around 150 source files.
+
+### `const FIXTURE_SUBJECT`
+
+[`SUBJECTS`]'s first row rather than a fourth string literal, so the
+fixtures cannot drift away from a name the real check uses. Which of
+the four it is does not matter — the self-tests prove the *reader* and
+the *walker*, not the table — and taking it from the table means a
+rename of that row updates them for free.
+
+### `fn every_removal_verb_is_called_from_exactly_one_place`
+
+The assertion this module exists to make. A failure here means one of
+three things, and the message says which: a second path to the engine's
+removal has appeared — an unverified redaction that will not know it is
+one; a legitimate call has moved out of the
+proving file; or a route has been added or deleted and this table has
+not been told.
+
+It sweeps once per subject rather than once, and pays four directory
+walks for it. That is deliberate: a single sweep counting four
+identifiers together would report *"seven calls in one file"* and be
+satisfied by three of one and none of another, which is precisely the
+arithmetic that lets a deletion hide behind an addition.
+
+### `fn the_apply_pipeline_never_reaches_for_the_incremental_writer`
+
+[`super::super`] §1.1's *"there is no parameter anywhere that could make
+an apply write incrementally"*, restated as a property of the directory
+rather than of a reader's care.
+
+The hazard is specific to this shell and did not exist in the salvage
+source's world: `crate::app::save` is built on `to_incremental_bytes`
+and `file.save_copy`'s shipped tooltip promises it, so the verb is
+idiomatic here, well documented, and one autocompletion away from the
+one directory where it would leave the un-redacted content in a prior
+revision of a file the operator has been told is redacted.
+
+# The exception
+
+`redact/tests/` **does** call the forbidden verb, deliberately and
+repeatedly, and it must. It performs exactly the save the ban forbids
+and asserts it is **refused by name** (`WriteError::RedactionPending`),
+because the un-redacted content is still live in the staged session, so
+the guarantee is a refusal rather than a property of the bytes.
+
+The shape survives a change of engine contract. Were a removal to
+collapse into the session instead of staying pending, the same call
+would be made and the assertion would become *the removed text is not in
+the result* — the measurement is a save that is actually made and looked
+at, whichever guarantee the engine offers.
+
+⇒ Either way, *"the guarantee is the engine's; the measurement is ours"*,
+and a ban that also forbade the measurement would leave the whole
+deferred route resting on a doc comment. So the ban is scoped to the
+**production** files of the directory, and the exception is pinned
+rather than merely allowed:
+
+1. no production file under `redact/` calls it — unchanged, and it is
+   the assertion that was always the point;
+2. **the `tests/` suite calls it at least twice**, because if the measurement is
+   ever deleted this test starts passing for the wrong reason and the
+   only evidence for the deferred route's safety goes with it.
+
+Without (2) the narrowing would be a hole. With it, the file is either
+proving the property or failing.
+
+### `fn fixture`
+
+**Built from [`FIXTURE_SUBJECT`] rather than spelling the verb out.**
+It was a `const` with the name written in, and the day [`SUBJECTS`]'
+first row named a different verb every assertion below went looking for
+a call the fixture no longer contained. A falsification that plants
+nothing reports *nothing found*, which is indistinguishable from a
+passing check; these four survived only because they assert an exact
+count rather than an absence, which is luck rather than design.
+Deriving the text removes the possibility.
+
+### `fn the_reader_finds_a_real_call`
+
+Without this, assertion B below could pass by finding nothing at all,
+which is the failure mode the module header's "fail closed" section is
+about, arriving inside the self-test instead.
+
+### `fn the_reader_counts_only_calls`
+
+The four false positives a grep produces, and the reason the count in A
+is `1` rather than `5`. The `use` line matters most: every module that
+imports the function without calling it would otherwise be reported as a
+breach, and a check that cries wolf gets its allow-list widened until it
+says nothing.
+
+### `fn a_planted_second_call_is_reported`
+
+The real defect, in the two shapes it would actually take: a plain call
+in a function, and one inside a closure — which is where a hand-written
+AST walk would most plausibly have stopped, and which is why this uses
+`syn::visit` rather than a bespoke recursion.
+
+### `fn a_missing_tree_is_an_error`
+
+The "looked at nothing" state, closed at the level of the tree. In the
+real check it cannot arise — [`crate_src`] is built from
+`CARGO_MANIFEST_DIR` — and it is asserted anyway, because the reason it
+cannot arise is a property of one line that a refactor could change.
+
+### `fn the_walker_descends_and_reports_a_planted_file`
+
+A and C prove the *reader* bites; this proves the *walker* does. A
+fixture tree is built under the OS temporary directory with the
+violation two levels down, because a walker that only read its top
+directory would pass every test above and report the real crate clean —
+the crate's own offender would have to be in `src/` itself to be seen.

@@ -52,3 +52,30 @@ Photographed in Acrobat Pro on `fixtures/all-field-kinds.pdf`, which carries
   button.** That is not decoration: the text box covers the appearance
   stream, so a field that drew no arrow of its own would lose the only mark
   that says it is a drop-down at the moment the operator starts using it.
+
+## Item notes
+
+### `fn commit_typed`
+
+The whole of what bit 19 buys: `set_choice_value` matches the string
+against `/Opt` first, so a typed *"Large"* is the same command as a picked
+*"Large"*, and a typed *"Extra large"* is a free-text value the engine
+stores as its own export. Nothing here has to tell the two apart.
+
+One function because it is reached from three exits — Enter, focus loss and
+Escape — and *"tabbing through a field writes nothing"* has to mean the same
+thing at all three. [`display_matches`] is the half that makes it true when
+the field's `/V` is an export whose display text is what the box shows.
+
+### `fn display_matches`
+
+Without this, opening an editable combo whose `/V` is an export that
+differs from its display would commit the *display* on the way out — a
+write the operator did not ask for, on every field they merely looked at.
+
+### `fn chevron`
+
+`accent_pair`, never a named colour — `tools/gates/check-theme-colors.sh`
+forbids the second and `check-plate-colour.sh` requires that an `on_accent`
+ink state the plate it is drawn on. Both are satisfied by taking the pair
+together, which is also the only way the contrast is gated.

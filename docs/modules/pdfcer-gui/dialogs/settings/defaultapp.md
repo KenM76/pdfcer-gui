@@ -45,3 +45,20 @@ and [`crate::text::assoc`] for the wording that carries it.
 ## Rule 15
 
 No dimension of either kind appears in this module.
+
+## Item notes
+
+### `fn act_now`
+
+**Two steps, and the second runs only if the first succeeded.** Opening
+Windows' Default-apps page having failed to register would deep-link the
+operator to a list pdfcer is not in — a page that proves the feature is
+broken, with no explanation on it, in an application pdfcer does not own. A
+refusal shown here is a refusal the operator can act on.
+
+### `fn a_stale_registration_is_distinguished_from_a_live_one`
+
+The state that looks like success from the inside — the key exists and
+names pdfcer — and opens a build the operator thought they had replaced.
+A line that folded it into *"pdfcer is in the list"* would be true and
+useless.

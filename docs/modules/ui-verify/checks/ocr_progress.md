@@ -98,3 +98,96 @@ page** through `pdfcer ocr`. See `OPERATOR_REQUESTS.md` O93.
   already over cannot be interrupted. That is a property of the machine's
   speed on the day, not a defect, and it is reported as a SKIP that names
   the timing rather than as a pass that hides it.
+
+## Item notes
+
+### `const FIXTURE_PAGES`
+
+Used **only** to sanity-check the `of=` the application reports when the
+default fixture is driven. Everything else derives the denominator from the
+trace, so `PDFCER_VERIFY_SCAN` can point at a document of any length.
+
+### `const SCAN_ENV`
+
+An environment variable rather than a flag, deliberately: it is a property
+of the *machine* — whether this box happens to have a scan on it — and not
+of the run. A flag would have to be passed by every caller of the suite,
+including the ones that have no such file, and would then be forgotten.
+
+### `const RUN_FRAMES`
+
+A frame here is 25 ms (`Session::settle`), so 1,600 frames is **40
+seconds**. Measured inputs: the synthetic page recognises in about a second
+in a release build, and the operator's scanned parts manual measured 2.6 s a
+page — so eight pages is 8–21 s and this is roughly twice the worst of
+those.
+
+Generous on purpose, and the reasoning is `checks::ocr`'s: a budget that
+was too short would report *"recognition never finished"* about a build that
+was still working, which is the worst available failure message. This
+harness also drives whichever binary it was pointed at, and a debug build is
+twenty times slower.
+
+### `const FIRST_PAGE_FRAMES`
+
+One page's worth plus a wide margin. If no page has finished in twelve
+seconds the run is either refused, stuck, or being driven in a debug build,
+and all three want a different message from "the tally did not advance".
+
+### `const SLICE`
+
+Small enough that a Stop lands with pages still to go on a one-second-a-page
+run; large enough that the loop is not re-reading a growing trace file forty
+times a second.
+
+### `fn workspace_root`
+
+`tools/ui-verify/` → up two. Stable whatever the harness was invoked from
+and whatever `--source-root` says — see `checks::ocr`'s `default_fixture`
+for the two wrong ways this was done first, one of which overwrote the
+repository's own fixture.
+
+### `fn document`
+
+Returns the path and whether it is the real-material one, because every
+report says which it drove. A green result over the synthetic fixture and a
+green result over a scanned manual are different amounts of evidence and
+must not read the same.
+
+### `fn wait_until`
+
+Returns whether it held. **Checks before it sleeps**, so a condition that is
+already true costs nothing — which matters for the Stop and Cancel checks,
+where the whole question is whether the harness got there in time.
+
+### `fn start_a_run`
+
+Everything up to the moment work starts is identical in all three checks,
+and duplicating it three times would be three places for the ribbon path to
+rot. `Err` is a SKIP in every caller.
+
+Returns the session, the driver, and the resolved document with its
+real-material flag.
+
+### `fn the_fixture_is_multi_page_and_image_only`
+
+Pinned because both properties are load-bearing and each fails silently
+on its own: a single-page fixture makes all three checks vacuous, and a
+fixture with text makes the doubling guard skip every page so the run
+reports nothing and the tally never moves — which reads as the very
+defect being looked for.
+
+### `fn the_two_endings_reach_two_different_controls`
+
+The one assertion in this file that could not be got wrong by accident
+and would invalidate everything if it were: the pair of checks is a pair
+precisely because the two buttons must not be the same button, and a
+harness that clicked one region for both would report that they behave
+identically — correctly, and about itself.
+
+### `fn the_default_document_is_the_committed_fixture`
+
+Deliberately does not test the override branch: setting a process-wide
+environment variable from a test races every other test in the binary,
+and this crate runs its tests in threads. The branch is three lines and
+its risk is a typo in the variable name, which this pins instead.

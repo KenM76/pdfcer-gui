@@ -462,12 +462,6 @@ mod tests {
 
     /// A failure is cached, so a page that will not draw is not re-attempted
     /// on every frame.
-    ///
-    /// The behaviour this protects is not subtle: without it, a strip
-    /// containing one undecodable page would spawn a render for it sixty times
-    /// a second, and every one of those cancels whatever else was rendering —
-    /// so a single bad page would stop the *rest* of the strip from ever
-    /// filling in.
     #[test]
     fn a_refusal_is_cached_so_it_is_not_retried_every_frame() {
         let mut cache = StripRasters::default();
@@ -491,12 +485,6 @@ mod tests {
 
     /// **A lookup misses on a different scale, and on a different edit
     /// epoch.**
-    ///
-    /// The epoch half is what lets a module this work may not edit —
-    /// `panels::forms::edit`, which clears the *current page's* texture and
-    /// knows nothing about a strip — invalidate every other page for free. If
-    /// the epoch were not compared, an edit would leave the pages either side
-    /// of the current one showing the document as it was before it.
     #[test]
     fn a_stale_key_or_a_stale_epoch_is_a_miss() {
         let mut cache = StripRasters::default();
@@ -519,11 +507,6 @@ mod tests {
     }
 
     /// **The current page is never in this cache.**
-    ///
-    /// The one rule the split with `OpenDoc::page_texture` costs, enforced
-    /// rather than remembered. A duplicate would be a second texture for the
-    /// one page that is always resident — the worst page in the document to
-    /// hold twice, since it is the largest one on screen.
     #[test]
     fn the_current_page_is_pruned_out_even_when_it_is_visible() {
         let mut cache = StripRasters::default();
@@ -538,24 +521,6 @@ mod tests {
 
     /// **Pages that scrolled out of view are KEPT**, and this test used to
     /// assert the opposite.
-    ///
-    /// It read `pages_that_left_the_viewport_are_dropped`, drove
-    /// `retain(&[4, 5], 5)` over six cached pages, and asserted
-    /// `cache.len() == 1` with the note *"only page 4 is both visible and not
-    /// current"*. It passed for the whole life of the cache, and what it was
-    /// pinning was **the operator's complaint**: *"increase cache to maximum for
-    /// page view so they don't constantly redraw with larger files."*
-    ///
-    /// A cache whose contents are the visible set is not a cache. Every page he
-    /// scrolled past was rendered again from the content stream the moment it
-    /// came back — 691 ms on a dense A1 (`BENCHMARK.md`) — and this test said
-    /// that was correct.
-    ///
-    /// It is **reversed in place rather than deleted**, which is this
-    /// project's rule for a test that turned out to encode a wrong contract: a
-    /// reader who remembers the old behaviour must be able to find out what
-    /// replaced it, and a deleted test tells them nothing. The name changed
-    /// with the claim, because a name is a claim too.
     #[test]
     fn pages_that_left_the_viewport_are_kept_until_the_budget_bites() {
         let mut cache = StripRasters::default();
@@ -581,13 +546,6 @@ mod tests {
     }
 
     /// **The budget is what bounds it**, and it evicts furthest-first.
-    ///
-    /// The assertion the old design could not make, because the visible-set
-    /// prune ran first and left the budget nothing to do. A refusal occupies
-    /// zero texels by definition, so this drives a real raster size through the
-    /// one lever a headless test has — `PageRaster::Failed` cannot carry a
-    /// count — by setting the budget to zero and checking that the cache prunes
-    /// itself down to the single entry the loop's own guard protects.
     #[test]
     fn a_budget_of_nothing_prunes_to_the_floor() {
         let mut cache = StripRasters::default();
@@ -610,14 +568,6 @@ mod tests {
 
     /// The budget evicts furthest-from-current first, so the pages either side
     /// of the operator survive a fast scroll.
-    ///
-    /// Driven with `Failed` entries carrying a synthetic texel count is not
-    /// possible — a refusal is zero by definition — so this asserts the
-    /// *ordering* rule through the one lever a headless test has: the entry
-    /// list after a prune whose budget cannot bite. The texel arithmetic
-    /// itself is a `sum` and a `saturating_sub` with no branch worth a
-    /// fixture, and the eviction order is the part that would be wrong in a
-    /// way nobody notices.
     #[test]
     fn eviction_prefers_the_page_furthest_from_the_one_being_read() {
         let mut cache = StripRasters::default();

@@ -95,3 +95,33 @@ operator can see, never the thing pdfcer models.** They can see a stamp, a
 cloud, a highlight and the order two of them overlap in; they cannot see
 `/Annots`, an `ObjId` or an indirect reference. A sentence in the file
 format's vocabulary reads as an internal error, whatever it says.
+
+## Item notes
+
+### `fn every_nudge_refusal_has_its_own_sentence`
+
+The failure this catches is the copy-paste one: four arms of a `match`,
+three distinct strings, and the fourth silently telling the operator
+about a state they are not in. It is exactly the shape
+`text::commands::tests::no_two_commands_share_a_label` catches one file
+over, and it shipped there once.
+
+### `fn no_sentence_speaks_in_the_file_formats_vocabulary`
+
+The rule the header sets, asserted rather than trusted. The probe list is
+the vocabulary of the file format, which is what leaks: every one of
+these words is in the doc comments above — correctly, because those are
+for a reader of the code — and the test is what keeps the two registers
+apart.
+
+### `fn front_and_back_are_not_the_same_sentence`
+
+`already_there(true)` and `already_there(false)` answer two different
+commands, and an operator who pressed *Send to back* and read *"already
+in front"* would reasonably conclude the button was mis-wired.
+
+### `fn the_counted_sentences_agree_in_number`
+
+One of each pair is a singular written out and the other a plural built
+from a format string; a build that used the plural for one would read
+*"1 annotations"*, which is the sort of thing an operator screenshots.

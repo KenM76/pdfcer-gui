@@ -36,10 +36,6 @@ const UI_RECT: &str = "ui-rect";
 
 /// Where and how large the window is placed. `with_active(false)`, so it takes
 /// neither focus nor pointer.
-///
-/// Wide, because a narrow bar sheds groups and this check would rather read a
-/// bar that is not under width pressure — the shedding is `fitting`'s subject,
-/// not this one's.
 const VIEWPORT: &str = "0,0,1400,900";
 
 /// See the module documentation.
@@ -282,11 +278,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 }
 
 /// The title out of a `window-title "…"` line.
-///
-/// The application traces it with `{:?}`, so the whole payload is one quoted
-/// value rather than `key=value` fields. Parsed the way
-/// [`super::title_build_stamp`] parses it, and for the same reason: the
-/// left-hand part is a file name and may contain anything a path can.
 fn title_of(raw: &str) -> String {
     raw.trim()
         .rsplit_once(TITLE)

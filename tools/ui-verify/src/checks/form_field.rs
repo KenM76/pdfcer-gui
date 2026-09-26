@@ -13,28 +13,6 @@ use crate::report::CheckReport;
 use crate::trace::Trace;
 
 /// The commands rung on startup, in order, one per frame.
-///
-/// The list form of `PDFCER_DIAG_INVOKE`, which exists because arming a form
-/// tool takes two commands: the arm declines without `edit_content`, so Edit
-/// mode has to be entered first. Using it here rather than clicking a mode
-/// segment also removes a whole class of flake from this check — a mode segment
-/// click that misses is a failure about the ribbon, not about forms.
-///
-/// **`file.properties` is in the middle of the list, and phases D–F cannot
-/// run without it.** Edit mode's default dock puts Properties in a TABBED stack
-/// with Comments, Forms, Redact, Dimension groups and Attachments
-/// (`app::modes::defaults`), and a tabbed stack draws only its **active** tab.
-/// If Properties is not the active tab then
-/// `panels::properties::formfield::section` never runs on a single frame, no
-/// `properties.form_field` region is ever declared, and phase D reports a
-/// properties pane that "did not draw" about a pane that was never asked to
-/// draw. `file.properties` is `show_panel`, not a toggle — it mounts
-/// the panel and brings it to the front of whatever stack holds it, from any
-/// mode (`app::tests` asserts exactly that), so ringing it is idempotent.
-///
-/// It goes AFTER `mode.edit`, because a mode change re-applies that mode's
-/// default arrangement and would undo it, and BEFORE `edit.form_text_field`, so
-/// that nothing runs after the tool is armed that could put it down.
 const INVOKE: &str = "mode.edit,file.properties,edit.form_text_field";
 
 /// The seam that answers the placement dialog. See the module header.
@@ -49,129 +27,28 @@ const AUTHORED: &str = "add-form-field";
 /// Traced when a click selects an existing field.
 const SELECTED: &str = "form-field-selected";
 /// The census line naming every **selectable** widget, in canvas space.
-///
-/// `form-target`, not `form-box`. The two censuses describe different sets
-/// and the difference is exactly what form authoring added: `form-box` lists
-/// what a click can FILL, which excludes a drop-down, a push button and any
-/// widget with no appearance. Aiming at that list would make this check unable
-/// to reach three of the five kinds it exists to verify — and on a fixture whose
-/// only text field is undrawn, unable to reach anything at all.
 const BOX_LINE: &str = "form-target";
 /// The properties section's published region.
 const PROPERTIES_REGION: &str = "properties.form_field";
 /// **A window tall enough that a form field's properties fit in the
 /// Properties pane.**
-///
-/// The harness's default window gives the Properties panel about **180 points**
-/// of dock slot — it shares the right column with the Tool and Objects panels —
-/// and a selected form field now draws about **450 points** of content there:
-/// the read-only facts, the rename box, seven editable properties, the two
-/// delete buttons, and the box's own four numbers.
-///
-/// **That is a real finding about the product and it is recorded here rather
-/// than absorbed.** An operator on a 1,100 × 800 window has to scroll a
-/// 180-point window through 450 points of pane to reach the controls that move
-/// a box, and *"I clicked the field and there is nothing there"* is what that
-/// looks like from a chair. It is written up in `FEATURES.md`; the remedy is a
-/// layout decision (collapsible groups, a taller default slot, or the dialog
-/// route O39 already uses for placement) and it is the operator's call, not
-/// this check's.
-///
-/// What this check does about it is drive at the biggest window the desktop
-/// will actually show, which is `read_mode_chrome`'s precedent and its
-/// reasoning: a check's job is to exercise the feature, and a check that failed
-/// because the *window* was small would be reporting the wrong subject. **The
-/// scroll loop below is what carries the step regardless** — a taller window
-/// makes it need fewer notches, not none, and on the display this is driven on
-/// it needs them all. The measurement below says why the room cannot be had.
-///
-/// # A viewport is a request; a PLACED window is an arithmetic obligation
-///
-/// `PDFCER_DIAG_VIEWPORT` states a size, not a position:
-/// `launch::Session::place` moves **every** launched window to desktop
-/// `(780, 40)`, deliberately, to clear the top-left corner where the Windows
-/// on-screen keyboard docks. So the real constraint is
-/// `SAFE_ORIGIN + size ≤ desktop`, and asking for more does not fail — it hangs
-/// the far edge of the window off the screen, which is precisely where the
-/// Properties panel lives.
-///
-/// **The consequence is invisible and total.** `SetCursorPos` **clamps** an
-/// off-desktop coordinate rather than refusing it, so a wheel aimed past the
-/// right edge still lands over the panel and scrolls, and the step looks
-/// healthy — while a click aimed past the bottom edge lands a few points above
-/// its target and the check reports that the control reached nothing. That is
-/// an accusation against the application for a pixel the harness could not
-/// deliver. `Driver::confirm_uncovered` refuses such a click by name rather
-/// than clamping it, so the next check to overreach is told.
-///
-/// This constant is what keeps this one inside the screen:
-/// 780 + 1100 + 16 px of border = 1896, and 40 + 980 + 39 px of title bar =
-/// 1059 — both inside the 1920 × 1080 this is driven on, with room to
-/// spare. **A margin of one pixel is a margin that a theme change takes
-/// away.**
-///
-/// # And the height it CAN get is still not enough, which is the real point
-///
-/// 1000 points of window is ~400 points of Properties slot once the tab bar,
-/// the Objects panel above it and the status bar have taken theirs — against
-/// ~1100 points of content for a selected field. **No window on this display
-/// puts these controls above the fold.** So the scroll loop in phase E is not a
-/// fallback for a small screen, it is the mechanism; this constant only decides
-/// how many notches it spends.
 const VIEWPORT: &str = "0,0,1100,980";
 
 /// **The Properties panel's own dock slot** — the scroll anchor.
-///
-/// `egui_shell::dock` publishes `dock.body.<panel command id>` for the body of
-/// every mounted pane, and that rect is the visible slot by construction: it is
-/// what the dock gave the panel, before the panel scrolled anything inside it.
-/// See [`scroll_to`] for the three content rects that were tried first and how
-/// each of them failed.
 const PANE_REGION: &str = "dock.body.file.properties";
 /// The editable-properties section, reached through `EditSession::edit_field`.
-///
-/// Its own region, distinct from [`PROPERTIES_REGION`], and the separation
-/// is the point. The section above it — the read-only facts, the rename box,
-/// the delete buttons — draws perfectly well on a build whose pane is entirely
-/// READ-ONLY, so a check asserting only `properties.form_field` passes there,
-/// correctly, because what it asserts is true.
-///
-/// The two regions are therefore two separate claims: *"clicking a field
-/// describes it"* and *"clicking a field lets you change it"*. Only the second
-/// distinguishes an editor from a viewer.
 const EDITABLE_REGION: &str = "properties.field_edit";
 /// The Required checkbox — the single control an operator reaches for first,
 /// and the one O39's row named by name.
 const REQUIRED_REGION: &str = "properties.field_edit.required";
 /// The Default value box's own region — `/DV`, the value a Reset button puts
 /// back.
-///
-/// Asserted here rather than in a check of its own because the expensive
-/// part is already paid: this check authors a text field, selects it, and
-/// scrolls the properties pane to its editable section. Adding a second launch
-/// to look at one more control in the same section would cost thirty seconds
-/// per run to assert something this one is already looking at.
-///
-/// ⚠ **Text fields only.** `/DV` is a text string on a `/Tx` and a NAME on a
-/// `/Btn`, so `panels::properties::fieldedit` gates the row on the field type —
-/// and this check authors a text field, which is why the assertion is
-/// unconditional here and would not be in a check that authored a checkbox.
 const DEFAULT_VALUE_REGION: &str = "properties.field_edit.default_value";
 /// The Alignment chooser's own region — `/Q`, which end of the box the text
 /// sits against.
-///
-/// Asserted in the SAME late block as [`DEFAULT_VALUE_REGION`] and for the
-/// same reason: reaching it scrolls the pane, and anything that moves the pane
-/// belongs after every phase that clicks at a computed point. That ordering was
-/// learned the expensive way — see the block's own comment.
 const ALIGNMENT_REGION: &str = "properties.field_edit.alignment";
 /// The `edit-field` label `vector_edit` writes when the change reached the
 /// engine.
-///
-/// Named after the ENGINE verb, so the line says which crate did the work —
-/// the convention `format-text` follows, and the one that was learned the hard
-/// way when a module's summary line and `vector_edit`'s label shared a name and
-/// a check read the wrong one.
 const EDIT_APPLIED: &str = "edit-field";
 /// How many notches to spend looking for the editable properties below the
 /// Properties panel's fold. `restyle_text` spends the same number looking for
@@ -234,12 +111,6 @@ struct PlacedBox {
 }
 
 /// Read the application's own census of where the form's boxes are.
-///
-/// The application's numbers, not the fixture's. `canvas/forms.rs` publishes
-/// one line per widget precisely so a harness can aim at where the program says
-/// the box is; a check that computed the rect from the PDF would be asserting
-/// that two independent derivations agree, and would report a disagreement as a
-/// hit-test failure.
 fn placed_boxes(trace: &Trace) -> Vec<PlacedBox> {
     trace
         .events(BOX_LINE)

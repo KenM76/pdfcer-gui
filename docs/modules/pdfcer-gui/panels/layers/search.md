@@ -93,3 +93,43 @@ Here the equivalent is worse, because the operator can see the layers in
 the document — they were on screen a moment ago. So the empty case says
 the query back to them and how many rows it is hiding. See
 [`crate::text::panels::layers_search_none`].
+
+## Item notes
+
+### `fn contains_ignore_ascii_case`
+
+`str::contains` with a closure cannot express "case-insensitively", and
+`to_lowercase().contains(&q.to_lowercase())` allocates two `String`s per
+row per frame. This walks the byte windows instead: at most
+`MAX_LAYERS` rows of a few dozen bytes, once per frame, with nothing on
+the heap.
+
+Byte windows are safe here despite UTF-8 being multi-byte, and the
+reason is worth stating because it looks like a bug: `eq_ignore_ascii_case`
+on two byte slices is `true` only when they are equal after folding
+*ASCII* letters, and every non-ASCII byte must therefore match exactly.
+A window that starts mid-character cannot match a needle that starts on
+a character boundary unless the bytes are genuinely equal — in which
+case it is a real match on the same bytes. So no false positive can be
+produced by the slicing, and none can be lost either.
+
+### `fn a_query_is_literal_and_a_star_is_a_character`
+
+`find` offers wildcards behind a control; this does not, and a query
+containing one must therefore match the character rather than
+silently matching everything.
+
+### `fn the_unnamed_placeholder_is_searchable_by_what_it_says`
+
+Asserted through the placeholder the panel actually draws, so that a
+change to that wording is caught here rather than leaving one row in
+the list unmatchable by anything on screen.
+
+### `fn an_empty_result_knows_it_was_the_query_that_emptied_it`
+
+The whole reason `Filtered` counts rather than discards. Without
+this distinction the panel's only available sentence is "nothing
+here", which is also what a panel that failed to read the document
+says — and R9's rule that an absent capability renders nothing is
+exactly the rule that makes those two indistinguishable if the
+count is thrown away.

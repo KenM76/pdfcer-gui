@@ -19,11 +19,6 @@ pub const DEST_GRACE_FRAMES: u8 = 4;
 pub const DEST_EDGE_MARGIN: f32 = crate::canvas::CANVAS_MARGIN;
 
 /// How clear of the viewport edge a point must be to count as already visible.
-///
-/// A point exactly on the boundary is technically visible and practically is
-/// not — it is under the scroll bar, or half of it is. Deliberately the same
-/// number as [`DEST_EDGE_MARGIN`]: "clear of the edge" and "inset from the
-/// edge" are one idea, and a second constant would let them drift.
 const VISIBLE_CLEARANCE: f32 = DEST_EDGE_MARGIN;
 
 /// A destination that named a point, waiting for a frame that can solve it.
@@ -350,10 +345,6 @@ mod tests {
     /// without a window.** A point destination produces an OFFSET and nothing
     /// else — there is no magnification anywhere in [`Solved`], and none of the
     /// four positions it chooses between is a scale.
-    ///
-    /// The mechanism this replaced grew the point into a 150 pt square and
-    /// handed it to the framing solver, which answered with a zoom. That
-    /// cannot be expressed here, which is the point: the type is the enforcer.
     #[test]
     fn a_point_destination_can_only_answer_with_a_position() {
         let solved = solve(
@@ -415,11 +406,6 @@ mod tests {
 
     /// **A null axis is left as it is — and "as it is" is THIS frame's
     /// offset**, not the pre-navigation one.
-    ///
-    /// `/FitH` names no left edge and raises `Action::Fit(Width)` beside the
-    /// scroll; that fit outranks this in `canvas::offset` and has already
-    /// placed the horizontal. Holding at `origin_x` here would undo it one
-    /// frame later, which is D47's own failure shape wearing a different hat.
     #[test]
     fn a_null_horizontal_defers_to_whatever_placed_the_view_this_frame() {
         let solved = solve(&parked(None, Some(0.5), ORIGIN_X), POINT, WANT, CURRENT, VP);

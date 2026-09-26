@@ -27,20 +27,8 @@ const ZOOM_OUT_NOTCHES: usize = 24;
 /// The application's own report of how much of the view it drew.
 const COVERAGE_EVENT: &str = "canvas-coverage";
 /// The least of the view that may be left undrawn at any moment.
-///
-/// Not 100 %. A gesture legitimately passes through frames where the held
-/// picture is being re-placed, and demanding perfection would fail on rounding.
-/// Half the view is far above anything a working stand-in produces and far
-/// below the measured failure, which was **0.000**.
 const MIN_COVERED: f64 = 0.5;
 /// How far to zoom in before the gestures.
-///
-/// Deep enough that a raster is slow — which is what creates the interval
-/// under test — and no deeper. The first run climbed to 3590 %% and found 52 ink
-/// pixels on the whole canvas: at that magnification a technical drawing is
-/// mostly the space BETWEEN lines, so there was nothing whose disappearance
-/// could be measured. A check about losing sight of the drawing needs the
-/// drawing in sight.
 const CLIMB_TO: f64 = 20.0;
 /// How many frames to allow the render to finish before the reference capture.
 const SETTLE_TO_FINISH: u32 = 90;
@@ -48,10 +36,6 @@ const SETTLE_TO_FINISH: u32 = 90;
 const MIN_INK: usize = 2_000;
 
 /// Which gesture a phase performs.
-///
-/// An enum rather than a closure because the two arms need different driver
-/// calls with different argument shapes, and a boxed closure per gesture would
-/// be ceremony around a two-case match.
 #[derive(Clone, Copy)]
 enum Gesture {
     /// Wheel, no modifier.
@@ -94,11 +78,6 @@ fn zoom_now(trace: &Trace) -> f64 {
 }
 
 /// Every coverage ratio the application has published, in order.
-///
-/// `trace_on_change` collapses runs of identical values, so this is the
-/// sequence of DISTINCT states the canvas passed through rather than one entry
-/// per frame. That is what makes a minimum over it meaningful: a blank held for
-/// twenty frames appears once, and so does a blank held for one.
 fn coverage_samples(trace: &Trace) -> Vec<f64> {
     trace
         .events(COVERAGE_EVENT)
@@ -116,14 +95,6 @@ fn capture(session: &Session, ctx: &CheckContext, name: &str) -> Result<crate::i
 
 /// How many sampled canvas pixels carry **ink** — anything appreciably darker
 /// than paper.
-///
-/// ## Why ink and not uniformity, and what the first version got wrong
-///
-///
-/// So "blank" here does not mean "uniform", it means **the drawing is not
-/// there**. Counting ink is what distinguishes them: a band of a CAD sheet with
-/// its lines missing has near-zero ink, and the same band with its lines has
-/// thousands of pixels of it, on the same white background.
 fn ink(img: &crate::image::Image, region: crate::geom::PixRect) -> usize {
     img.pixels_in(region)
         // 200 is well below page white (measured 248) and well above any line

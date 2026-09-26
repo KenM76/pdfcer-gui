@@ -37,3 +37,18 @@ zoom driven past the ceiling on a running application.
 Both, because either alone is satisfiable by a build that renders nothing
 at all: a canvas that never asks cannot fail, and a canvas that fails
 silently still drew something earlier.
+
+## Item notes
+
+### `const PRESSES`
+
+Enough to SATURATE, deliberately. The ladder runs to 800 % and then doubles,
+so this walks all the way to the ceiling and keeps pressing — which means
+the check exercises the whole range rather than a point in the middle of it,
+and would catch a build that renders at 25,000 % and fails at 2,000,000 %.
+
+### `const MUST_EXCEED`
+
+A Letter page's whole-page raster fails at about 26×. Reported as SKIPPED
+below this rather than passed: a run that never left the whole-page tier has
+not exercised the region tier at all.

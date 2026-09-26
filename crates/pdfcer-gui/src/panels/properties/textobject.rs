@@ -91,10 +91,6 @@ struct Reading {
 
 impl TextObjectDraft {
     /// Re-read if the stamp moved. `true` when a reading is available.
-    ///
-    /// The expensive call is behind the stamp comparison and nothing else, so
-    /// the ordinary frame — the operator looking at a selection they made three
-    /// seconds ago — costs one tuple comparison.
     fn sync(&mut self, doc: &OpenDoc, page: usize, object: usize) -> bool {
         let stamp = (page, object, doc.edit_epoch);
         if self.stamp != Some(stamp) {
@@ -110,22 +106,6 @@ impl TextObjectDraft {
 }
 
 /// **How the object's per-run fills become one control state.**
-///
-/// Its own function, and every branch is a decision O89 argued:
-///
-/// 1. **A glyphless run is not a colour.** It has no show operator, so
-///    `textstyle::apply` skips it; counting it would let a derived word space
-///    make an object "mixed".
-/// 2. **An ink pdfcer will not convert wins over everything.** It is checked
-///    before agreement, not after, because *"they all agree and one of them is a
-///    spot ink"* must not draw a swatch. The check is
-///    [`super::text::rgb_of`] — the same predicate the swept-text swatch uses —
-///    so the two surfaces cannot disagree about which spaces are safe.
-/// 3. **`DefaultBlack` is black**, not "no opinion". §8.6.8 says an absent
-///    colour operator paints black, so an object of one red run and one
-///    default-black run is genuinely **mixed** and must say so. See
-///    [`RunFill`]'s own docs for the flattening that collapsing this would
-///    cause.
 fn classify(found: &ObjectText) -> Colour {
     let mut total = 0_usize;
     let mut affected = 0_usize;
@@ -284,11 +264,6 @@ mod tests {
 
     /// **A spot ink anywhere in the object removes the swatch**, even when
     /// every other run agrees.
-    ///
-    /// The assertion this module exists for. If the ink check ran *after* the
-    /// agreement check, an object of nine black runs and one `/Separation` run
-    /// would draw a black swatch, and one click would convert the plate colour
-    /// — invisibly, permanently, looking entirely normal.
     #[test]
     fn one_undecodable_run_removes_the_swatch_for_the_whole_object() {
         let colour = classify(&reading(vec![
@@ -327,11 +302,6 @@ mod tests {
 
     /// **An absent colour operator is BLACK and therefore disagrees with
     /// red.**
-    ///
-    /// The [`RunFill`] distinction, asserted where it is consumed. Written as
-    /// its own test because the failure it guards has no symptom: the control
-    /// would open on red, and pressing nothing would change nothing, so only a
-    /// deliberate check can see it.
     #[test]
     fn a_default_black_run_disagrees_with_a_coloured_one() {
         let colour = classify(&reading(vec![

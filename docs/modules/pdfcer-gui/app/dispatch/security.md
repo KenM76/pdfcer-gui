@@ -64,3 +64,34 @@ sending it out changes nothing on any page, so it is not authoring; an
 operator reading a document in Read mode is exactly the operator about to
 email it to somebody. `file.export_dxf` is gated the same way for the same
 reason.
+
+## Item notes
+
+### `fn the_guard_and_the_dispatcher_claim_the_same_ids`
+
+[`super::panels`]' test by the same name and for its reason: the two
+lists are written separately and a command added to one and not the
+other becomes a registered control that does nothing — indistinguishable
+from the outside from one that was never wired.
+
+Asserted against the **registry** rather than against another hard-coded
+list, so a Security command registered tomorrow fails here rather than
+passing a test that lists the same ids again.
+
+### `fn each_command_reaches_its_own_task`
+
+The one decision this module makes, asserted as a pure mapping. A build
+that sent both commands to `Task::Password` would open a window that
+works — and `Permissions…` would offer to set a password on a document
+the operator wanted to re-permission, which is a wrong window rather
+than a broken one and therefore the kind that ships.
+
+### `fn task_of`
+
+A second spelling of the mapping, and it is the honest cost of
+asserting a decision that is otherwise only reachable through a
+`&mut PdfcerApp`. It is pinned to the real one by
+[`each_command_reaches_its_own_task`] reading the same ids the registry
+test above proves are registered — so the two cannot drift about *which*
+commands exist, only about what they map to, and that mapping is short
+enough to hold both spellings in view.

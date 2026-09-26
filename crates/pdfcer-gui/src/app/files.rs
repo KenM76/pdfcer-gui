@@ -7,24 +7,8 @@ use std::ffi::OsString;
 use std::path::PathBuf;
 
 /// The environment variable that answers the dialog instead of opening it.
-///
-/// `PDFCER_DIAG_*` is this project's established prefix for a
-/// diagnostics-only seam — `PDFCER_DIAG`, `PDFCER_DIAG_VIEWPORT`,
-/// `PDFCER_DIAG_EXPORT_DIR` — and the naming is part of the pattern rather
-/// than decoration: a reader who finds one of them knows what kind of thing
-/// the others are.
-/// The environment variable `pages.insert_from_file`'s picker reads.
-///
-/// Deliberately NOT `DIAG_OPEN_PATH` — see [`pick_insert_source`] for why
-/// sharing one seam between two verbs would make a check that drives both
-/// impossible to write.
 const DIAG_INSERT_PATH: &str = "PDFCER_DIAG_INSERT_PATH"; // ui-text-exempt: an environment variable name, never displayed
 /// The seam that answers the **image** picker.
-///
-/// A third variable rather than a shared one, on the argument
-/// [`pick_insert_source`] spells out for the second: one seam answering two
-/// pickers makes a run that opens a PDF and inserts a picture unwritable, and
-/// a run meant to test one quietly test both. Three verbs, three seams.
 const DIAG_IMAGE_PATH: &str = "PDFCER_DIAG_IMAGE_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
 pub const DIAG_OPEN_PATH: &str = "PDFCER_DIAG_OPEN_PATH"; // ui-text-exempt: an environment variable name, never displayed
@@ -219,50 +203,10 @@ pub fn pick_document() -> Picked {
 
 thread_local! {
     /// How many answers this process has already taken from the open queue.
-    ///
-    /// A property of the process, not of a document: the queue exists to
-    /// provision a process with several documents, so its position must
-    /// survive every one of them being opened and closed.
     static OPEN_QUEUE_POS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
 }
 
 /// Take this call's answer from a `;`-separated queue, one entry per call.
-///
-/// # Why a queue, when every other seam here is single-valued
-///
-/// A shell that holds several documents at once has a ceiling question that
-/// only a several-document process can answer — `OPERATOR_REQUESTS.md` **O221**
-/// — and until this existed there was **no headless route to one at all**.
-/// `main` reads a single `argv[1]`, the synthetic file drop fires once per
-/// process, and a single-valued seam answers every picker with the same path,
-/// which opens one document however many times it is rung.
-///
-/// ⇒ *N* separate processes could be provisioned and *N* tabs could not, so the
-/// configuration the per-document strip cache would actually multiply in was
-/// the one that could not be measured.
-///
-/// # The single-valued seam must behave identically, and that is what the
-/// separator test buys
-///
-/// `None` here means *"this is not a queue"*, and the caller then runs the
-/// original path untouched. A value with no `;` in it therefore answers every
-/// call with the same path exactly as before — so every check written against
-/// the old seam keeps its meaning, and this cannot be a silent change to a
-/// seam six checks already depend on.
-///
-/// A `;` cannot occur in a Windows filename, which is what makes the
-/// separator test safe rather than a heuristic. It is also the separator
-/// [`pick_merge_sources`] already uses, so the two list-valued seams in this
-/// module are spelled one way.
-///
-/// # An exhausted queue says the operator declined
-///
-/// Past the last entry — and for an empty entry between two semicolons — the
-/// answer is [`Picked::Cancelled`], which is the same answer the empty
-/// single value gives and for the same reason: a complete, correct outcome
-/// that opens no dialog. The alternative, falling through to the native
-/// picker, would put a real modal dialog in front of a harness that has no
-/// hand to dismiss it.
 fn queued(raw: &OsString) -> Option<Picked> {
     let text = raw.to_string_lossy();
     if !text.contains(';') {
@@ -337,28 +281,6 @@ pub fn raise(picked: Picked, actions: &mut Vec<crate::app::actions::Action>) {
 }
 
 /// Ask the platform for its own file picker.
-///
-/// `rfd` opens the OS's real dialog — Windows' `IFileOpenDialog`, GTK/portal
-/// on Linux, `NSOpenPanel` on macOS — so the operator gets the picker they
-/// already know, with their own places, recent folders and typing habits.
-///
-/// # Errors have exactly two shapes, and only one of them is an error
-///
-/// `pick_file` returns `Option<PathBuf>`: `Some` is a chosen file, `None` is
-/// a dismissed dialog. There is no third case, so [`Picked::Unavailable`]
-/// cannot arise here at all — it survives as a variant because
-/// [`Picked::from_env`] can still answer it, and because collapsing "the
-/// operator said no" into "this build cannot ask" is the distinction the
-/// type exists to keep.
-///
-/// # It blocks
-///
-/// The UI thread stops while the dialog is open. That is what a modal file
-/// dialog is, and it is what the previous implementation did too; nothing
-/// repaints behind it. `pick_file` is the blocking call deliberately rather
-/// than `pick_file().await` — an async picker would need the frame loop to
-/// keep running with an open document half-replaced, which is a larger
-/// change than opening a file should be.
 fn native_pick() -> Picked {
     rfd::FileDialog::new()
         .set_title(crate::text::files::open_dialog_title())
@@ -904,17 +826,6 @@ pub fn pick_save_path(suggested: &std::path::Path, title: &str) -> Picked {
 }
 
 /// The platform save dialog, pre-filled from `suggested` and headed `title`.
-///
-/// The directory and the file name are set separately because `rfd` treats
-/// them as separate: handing the whole path as a name would produce a dialog
-/// offering to create a file called `D:\scans\survey-recognised.pdf` inside
-/// whatever folder it happened to open in.
-///
-/// `title` is a parameter rather than a constant because the two callers are
-/// asking about different things and the window's heading is the only place
-/// the OS lets pdfcer say which — see [`pick_save_path`]. It is still catalog
-/// copy: both call sites pass a `crate::text::*` function, and neither builds
-/// a sentence.
 fn native_save(suggested: &std::path::Path, title: &str) -> Picked {
     let mut dialog = rfd::FileDialog::new()
         .set_title(title)
@@ -942,10 +853,6 @@ mod tests {
     }
 
     /// A value with no separator is not a queue, so the old seam is untouched.
-    ///
-    /// The arm that matters most: six checks answer their pickers through the
-    /// single-valued form, and every one of them calls `pick_document` more
-    /// than once. `None` here is what keeps them meaning what they meant.
     #[test]
     fn a_single_path_is_not_a_queue_and_never_runs_out() {
         let raw = OsString::from("C:/drawings/one.pdf");
@@ -963,11 +870,6 @@ mod tests {
     }
 
     /// Past the end the answer is a declined dialog, not a native picker.
-    ///
-    /// This is the arm that decides whether the seam is safe to leave set
-    /// for the whole of a run. Returning `None` at the end would fall through
-    /// to `rfd` and put a real modal dialog in front of a harness with no hand
-    /// to dismiss it — the exact failure the seam exists to prevent.
     #[test]
     fn an_exhausted_queue_declines_rather_than_opening_a_dialog() {
         let raw = OsString::from("only.pdf;");
@@ -985,14 +887,6 @@ mod tests {
     }
 
     /// **The picker's answer becomes an action, and only a path does.**
-    ///
-    /// The `file.open` arm reduced to the part a test may run — see rule 3 in
-    /// this module's header for why dispatching the command itself is
-    /// forbidden here. All three answers are checked, because the interesting
-    /// failure is not "a path did nothing" but "a *cancel* opened something":
-    /// `Picked` exists as three variants precisely so a dismissed dialog
-    /// cannot be mistaken for a path, and an `Option<PathBuf>` collapsed with
-    /// `unwrap_or_default` would open `""`.
     #[test]
     fn only_a_picked_path_becomes_an_action() {
         let mut actions = Vec::new();
@@ -1010,12 +904,6 @@ mod tests {
 
     /// **`file.close` raises the Close action, and applying it empties the
     /// shell.**
-    ///
-    /// `file.close` was registered, drawn on the File tab, gated on
-    /// `doc.open` — and had no dispatch arm, exactly as `file.open` had none.
-    /// Driven through the real token lookup rather than by calling the arm, so
-    /// a command that stopped being registered fails here rather than silently
-    /// taking the `command-unimplemented` path.
     #[test]
     fn the_close_command_empties_the_shell() {
         // A bare context: these tests exercise the dispatcher, not a
@@ -1043,12 +931,6 @@ mod tests {
     }
 
     /// **The Open action opens, from every starting state.**
-    ///
-    /// Including the one an operator meets most: nothing open at all.
-    /// [`crate::app::PdfcerApp::apply`] refuses every other action when
-    /// `Status` is not `Open`, which is right for actions about the open
-    /// document and would be fatal here — so Open and Close are matched
-    /// *before* that guard, and this is the assertion that says so.
     #[test]
     fn the_open_action_opens_whether_or_not_something_is_already_open() {
         let mut app = PdfcerApp::new();
@@ -1073,39 +955,6 @@ mod tests {
 
     /// **`file.save_copy` raises the SaveCopy action, through the real token
     /// lookup.**
-    ///
-    /// The regression guard for the defect this command shipped with for the
-    /// whole life of the project: it was registered, drawn on the File tab,
-    /// drawn on the quick-access toolbar, bound to `Ctrl+S`, printed "(Ctrl+S)"
-    /// in its own tooltip — and had **no dispatch arm**, so every press traced
-    /// `command-unimplemented` and nothing this shell could author could be
-    /// written to disk.
-    ///
-    /// Driven through `commands.get(id).handler` rather than by calling the arm,
-    /// exactly as `the_close_command_empties_the_shell` and
-    /// `the_new_command_makes_a_blank_document_from_nothing` are, and for the
-    /// reason those two record: a test that called the function directly would
-    /// pass against a build in which the command was never registered, or in
-    /// which the token-to-id lookup had stopped resolving — which is precisely
-    /// the state that produced the fall-through in the first place.
-    ///
-    /// # Why it stops at the action, and must
-    ///
-    /// It raises and does **not** apply. Applying `Action::SaveCopy` reaches
-    /// `crate::app::save::save_copy`, which opens a **real modal save dialog**
-    /// unless `PDFCER_DIAG_SAVE_PATH` is set — and this crate is
-    /// `#![forbid(unsafe_code)]` while `std::env::set_var` is `unsafe` in
-    /// edition 2024, so a test cannot set it. That is rule 3 in this module's
-    /// header, moved one phase along with the picker: the *dispatch* of
-    /// `file.save_copy` is safe to drive and its *apply* is not.
-    ///
-    /// What is therefore untested here and tested elsewhere, stated rather than
-    /// implied by a green run: the write itself is covered by
-    /// `crate::app::save`'s own tests, which call the picker-free half directly
-    /// and re-open the file that comes out; and the whole chain — ribbon click,
-    /// dispatch, apply, picker, write, re-open — is covered by
-    /// `tools/ui-verify`'s `save_copy_round_trip`, which answers the dialog
-    /// through [`DIAG_SAVE_PATH`] because that is the only way anything can.
     #[test]
     fn the_save_copy_command_raises_the_save_action() {
         let ctx = egui::Context::default();
@@ -1125,15 +974,6 @@ mod tests {
     }
 
     /// **Nothing is pending, so nothing is blocked — and the gate is real.**
-    ///
-    /// The dirty-document rule has one home,
-    /// [`crate::app::PdfcerApp::save_pending`], consulted by both arms. This
-    /// build has no save, so it answers `false`, and the assertion is that the
-    /// two arms therefore proceed. It is not a tautology: it pins the
-    /// direction of the gate, so a future save subsystem that wired it
-    /// backwards — blocking an Open whenever a document is merely *dirty*,
-    /// which is not what the rule says — fails here rather than in an
-    /// operator's hands.
     #[test]
     fn the_dirty_document_gate_blocks_nothing_in_a_build_with_no_save() {
         let mut app = PdfcerApp::new();
@@ -1145,11 +985,6 @@ mod tests {
     }
 
     /// **The diagnostic seam answers the dialog, in all three shapes.**
-    ///
-    /// This is the whole harness contract, and every row of the table in the
-    /// module header is asserted: unset defers to the picker, a value is a
-    /// path, and an *empty* value is a cancel — the third being the one a
-    /// reader would otherwise assume was an accident.
     #[test]
     fn the_diagnostic_seam_answers_the_dialog() {
         assert_eq!(from_env(None), None, "unset must not answer at all");
@@ -1165,11 +1000,6 @@ mod tests {
     }
 
     /// A path with a space, and one that is not ASCII, both survive the seam.
-    ///
-    /// `OsString` rather than `String` throughout for the same reason
-    /// `main.rs` reads `args_os`: a path is not required to be valid Unicode,
-    /// and a non-Unicode path is the operator's business rather than ours to
-    /// reject.
     #[test]
     fn the_seam_does_not_mangle_a_real_path() {
         for raw in [

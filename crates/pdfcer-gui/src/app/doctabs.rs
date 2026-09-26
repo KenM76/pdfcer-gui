@@ -21,10 +21,6 @@ pub const SPRING_DWELL: f64 = 0.6;
 const REGION_STRIP: &str = "doc-tabs"; // ui-text-exempt: trace region name, never displayed
 
 /// Named region prefix: one per **drawn** tab, with the slot appended.
-///
-/// Indexed by slot rather than by position among the drawn, so a check that
-/// scrolls the strip keeps naming the same document. Absent for a tab behind
-/// the overflow affordance, which is itself the fact an overflow check wants.
 const REGION_TAB_PREFIX: &str = "doc-tab."; // ui-text-exempt: trace region name, never displayed
 
 /// Trace slot for the once-per-change summary of what the strip drew.
@@ -179,12 +175,6 @@ impl PdfcerApp {
     }
 
     /// One tab, built from one slot's [`Status`].
-    ///
-    /// Four arms because there are four things a tab can be, and collapsing
-    /// the three unopened ones would lose the distinction
-    /// [`crate::app::lifecycle`] exists to preserve: *the file is wrong*, *the
-    /// file is fine and pdfcer is not finished*, *the file is encrypted and
-    /// pdfcer has not been told the password*.
     fn tab_item(&self, slot: usize) -> egui_shell::tabstrip::TabItem {
         use crate::text::doctabs as t;
         match self.slot(slot) {
@@ -233,11 +223,6 @@ impl PdfcerApp {
 
     /// §3 — **activate the tab the pointer has been dwelling on**, but only
     /// while a page drag is in flight.
-    ///
-    /// Gated on the drag, deliberately and not defensively. Spring-loading a
-    /// tab under an ordinary pointer would change documents because the
-    /// operator paused on their way to the ribbon — the application taking an
-    /// initiative the operator did not ask for, which this shell does not do.
     fn spring_loaded_hover(&mut self, ctx: &egui::Context, hovered: Option<usize>) {
         if !crate::pagedrag::in_flight(ctx) {
             ctx.data_mut(|d| d.remove_temp::<Spring>(spring_id()));
@@ -320,10 +305,6 @@ mod tests {
     }
 
     /// **A file that would not open still gets a tab, with the reason on it.**
-    ///
-    /// `documents` §2's rule, asserted at the surface that would otherwise
-    /// quietly drop it — because the failure mode is an operator who opens a
-    /// damaged file and loses the three documents they had open.
     #[test]
     fn a_failed_open_is_a_tab_that_says_why() {
         let mut app = PdfcerApp::new();
@@ -338,10 +319,6 @@ mod tests {
     }
 
     /// **The unsaved marker leads the label.**
-    ///
-    /// Asserted rather than trusted because the whole argument for the prefix
-    /// is about truncation, and a trailing marker would pass any test that
-    /// merely looked for the character somewhere in the string.
     #[test]
     fn the_unsaved_marker_is_where_truncation_cannot_reach_it() {
         let label = crate::text::doctabs::tab_label(std::path::Path::new("D:/j/SW41177.pdf"), true);

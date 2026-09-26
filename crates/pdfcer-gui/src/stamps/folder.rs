@@ -25,12 +25,6 @@ const VENDOR: [&str; 2] = ["Adobe", "Acrobat"]; // ui-text-exempt: filesystem na
 
 /// Folder names under `%APPDATA%\Adobe\Acrobat\` that are **not** an Acrobat
 /// generation, measured on the operator's machine.
-///
-/// A deny-list rather than an allow-list of known generations, because a new
-/// generation name is a thing that will happen and a new sibling utility
-/// folder is a thing that already has. Getting the deny-list wrong costs a
-/// wrong suggestion in a picker the operator is looking at; getting an
-/// allow-list wrong costs the feature entirely on a future Acrobat.
 const NOT_A_GENERATION: [&str; 3] = ["Privileged", "TypeQuest", "Preflight"];
 
 /// The operator's Acrobat stamps folder, if one can be identified.
@@ -67,20 +61,6 @@ fn read_generations(root: &Path) -> Vec<(String, bool)> {
 }
 
 /// Choose the generation folder, given `(name, already_has_a_Stamps_dir)`.
-///
-/// The rule, in order:
-///
-/// 1. **A folder that already holds `Stamps` wins outright.** Acrobat made it,
-///    which means the operator has made a stamp with that generation.
-/// 2. Otherwise, the shortest name that is not on [`NOT_A_GENERATION`].
-///    Generation keys are short (`DC`, `11.0`, `2020`); the sibling utility
-///    folders are long descriptive phrases. Shortest-wins is a heuristic and
-///    is admitted as one — it only ever decides a *suggestion* in a picker the
-///    operator can overrule.
-///
-/// ⚠ Ties are broken by name order so the answer is deterministic. A
-/// suggestion that differs between two runs on an unchanged machine is a
-/// defect even when both answers are defensible.
 fn pick_generation(found: &[(String, bool)]) -> Option<String> {
     let plausible = |name: &String| {
         !NOT_A_GENERATION
@@ -131,10 +111,6 @@ pub fn suggested_file_name(category: &str) -> String {
 }
 
 /// Whether a character cannot appear in a Windows filename.
-///
-/// The set is §"Naming Files, Paths, and Namespaces"'s reserved list. A
-/// category name is free text an operator typed and `Approved / Rejected` is
-/// an entirely reasonable thing to type.
 const fn is_path_hostile(c: char) -> bool {
     matches!(c, '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*') || (c as u32) < 0x20
 }

@@ -20,30 +20,12 @@ const APPLIED: &str = "transform-objects-applied";
 const OUTLINE_REGION: &str = "canvas.selection-outline";
 
 /// The canvas viewport's own declared region.
-///
-/// Read so the check can tell *the handle is outside the canvas* from *the
-/// handle is on the canvas and the press was routed wrongly*. Those are
-/// different defects in different files and they produce the identical
-/// symptom — no `rotate-commit` line.
 const CANVAS_REGION: &str = "canvas-viewport";
 
 /// Half a grip's edge, in points — mirrors `canvas::handles::GRIP_SIZE_PX / 2`.
-///
-/// The handle is a square CENTRED on the stem's end, so its topmost pixel is
-/// half a grip above that centre. Using the centre alone would let a handle
-/// that is half off-canvas read as reachable.
 const HALF_GRIP_PT: f32 = 4.0;
 
 /// How far above the selection box the handle sits, in points.
-///
-/// It mirrors `canvas::handles::ROTATE_STEM_PX` and is **not** imported from
-/// it — this harness drives a built binary and must not compile against the
-/// application's internals, or it would agree with a build by construction
-/// rather than by observation.
-///
-/// The check does not aim at this number directly. It is used only to know how
-/// far outside the published outline to look, and the press is then made at the
-/// point the application itself declared — see `driving::declared_at`.
 const STEM_PT: f32 = 20.0;
 
 /// See the module documentation.

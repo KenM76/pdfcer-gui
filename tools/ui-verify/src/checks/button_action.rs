@@ -12,19 +12,10 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// Edit mode, then arm the push-button tool.
-///
-/// `edit.form_push_button` through the harness seam is also the control point
-/// for link 1: the seam bypasses the ribbon, so a build where the command is
-/// greyed but the dispatcher still arms would get past this. Link 1 is asserted
-/// separately, below, by reading the ribbon item's own region.
 const INVOKE: &str = "mode.edit,edit.form_push_button";
 /// The closed chooser, published by `dialogs::buttonaction::rows`.
 const COMBO_REGION: &str = "form.button.action"; // ui-text-exempt: a trace region name, never displayed
 /// The *Clear the form* row inside the popup.
-///
-/// Named by KIND, matching the publisher. An index-named region would keep
-/// passing after `ButtonDoesKind::ALL` was reordered, aiming at whatever row
-/// now sits second.
 const RESET_ROW: &str = "form.button.action.row.ResetForm"; // ui-text-exempt: a trace region name
 /// The dialog's Add button.
 const ACCEPT_REGION: &str = "dialog.form_field.accept"; // ui-text-exempt: a trace region name

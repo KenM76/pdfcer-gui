@@ -43,73 +43,10 @@ pub(super) const VISIBLE_WHEN: &str = "selection.formattable"; // ui-text-exempt
 
 /// The condition under which a mode may change page content, and therefore
 /// under which the Font group is drawn at all.
-///
-/// **Visibility, not enablement**, and R9 is the whole of the reasoning:
-/// *an unavailable capability renders nothing; greying is reserved for
-/// temporarily unavailable and is always explained on hover.* Read and Review
-/// do not have a mislaid ability to restyle text — they do not have the
-/// ability — so the group is **absent** there. Inside Edit the same controls
-/// grey on `selection.text`, because there the capability is present and only
-/// the operand is missing.
-///
-/// One condition would not do both jobs. `selection.text` alone would draw an
-/// enabled Bold in Read, where pressing it must be refused; `mode.edit_content`
-/// alone would draw an enabled Bold in Edit with nothing swept, which is a
-/// control that does nothing on almost every press — the exact placeholder
-/// shape P3 forbids.
 const FONT_VISIBLE_WHEN: &str = "mode.edit_content"; // ui-text-exempt: a condition name, never displayed
 
 /// The condition under which the **Markup** group is drawn at all: a markup
 /// annotation is selected, and this mode may author markup.
-///
-/// # Why it is ONE fused fact and not two conditions
-///
-/// The Font group above takes two — `mode.edit_content` for visibility and
-/// `selection.text` for enablement — and the reason is O37: an operator meets
-/// the Font controls **greyed**, because reaching the operand means pressing
-/// `T` first and nothing on screen says so, and a greyed control they can hover
-/// is the one surface that can tell them. The greying is the feature.
-///
-/// Nothing here is like that. The operand is *the mark you clicked*, and the
-/// gesture that produces it is clicking the mark — which the operator has
-/// already done, or the tab would not be on screen. So a greyed Markup group
-/// would explain nothing an operator did not already know, and R9 is explicit
-/// about what that leaves: *an unavailable capability renders nothing; greying
-/// is reserved for temporarily unavailable and is always explained on hover.*
-/// **Absent**, in both of the two states that make it unavailable:
-///
-/// | state | why absent rather than greyed |
-/// |---|---|
-/// | the selection is not a markup — a page object, a form field, a swept text range, or a **ce dimension** | these controls have no operand of the right *kind*, and `set_dimension_style` is the ce dimension's verb (Rule 15) |
-/// | the mode cannot author markup — Read | not a mislaid ability; Read does not have it, and the mode selector is the disclosure |
-///
-/// Fusing them is what `selection.formattable` and
-/// `selection.delete_permitted` already do, and for the stated reason:
-/// `egui_shell::commands::Enable`'s grammar is one condition name with an
-/// optional leading `!` — *"a grammar in a string is a parser and a parser is a
-/// thing that has its own bugs"* — so an `A && B` predicate is published as a
-/// **named fact** rather than assembled here. The name says which fact.
-///
-/// # What is deliberately NOT folded in: the lock
-///
-/// §12.5.3 Table 165 bit 8 says a locked annotation's properties *"shall not be
-/// changed by the user interface"*, and the engine refuses `set_markup_style`
-/// for one by name. That is a property of **this annotation** rather than of
-/// this build or this mode — click a different mark and the controls work —
-/// which is exactly the case R9 reserves greying for, and exactly the case
-/// where making the controls vanish would read as pdfcer being unable to
-/// restyle anything at all.
-///
-/// So the lock greys, with a sentence, and [`crate::app::markupband`] does that
-/// itself: a custom item gets no greying from the shell, and the sentence has
-/// to be the locked one rather than the command's tooltip. The Properties
-/// panel's *This mark* section takes the same position with the same string
-/// (`text::panels::properties::markup_locked`), which is what keeps the two
-/// surfaces from refusing for different reasons.
-///
-/// Note it is **not** spelled `selection.markup`. That name would claim only
-/// half of what is published and would read, at the two call sites, as though
-/// Read could restyle a mark.
 const MARKUP_VISIBLE_WHEN: &str = "selection.markup_restylable"; // ui-text-exempt: a condition name, never displayed
 
 /// The Format tab.
@@ -331,22 +268,6 @@ mod tests {
 
     /// Every command on the Format tab that WRITES is withheld from a mode
     /// that authors nothing.
-    ///
-    /// # Why this is a list and not a predicate
-    ///
-    /// Because "does this command write" is not a property the manifest can
-    /// see. The manifest holds an id and a condition string; whether the arm
-    /// behind that id calls `EditSession` is a fact about
-    /// `app::dispatch::format`. A test that tried to derive the answer would
-    /// be re-implementing the dispatcher, and a hand-written list inside a
-    /// completeness test is exactly the shape this project has already been
-    /// bitten by — a new module invisible to the check built to find it.
-    ///
-    /// So the list is stated, and its JOB is to fail loudly when the Format
-    /// tab grows an item it does not name. `every_writer_is_accounted_for`
-    /// below is the half that makes the list honest: it asserts that the tab's
-    /// full command set is exactly the writers plus the explicitly-declared
-    /// readers, so a new command lands in neither bucket and fails.
     const WRITERS: &[&str] = &[
         "format.font",
         "format.font_size",
@@ -414,30 +335,6 @@ mod tests {
 
     /// **Every CUSTOM item on this tab is withheld too, and neither test
     /// above can see one.**
-    ///
-    /// `items()` filters `Item::Command`, because that is the only variant
-    /// carrying an id — which means the two tests above walked past the three
-    /// Font controls from the day they landed and would have walked past the
-    /// five Markup controls the same way. All eight **write to the document**:
-    /// a face chooser rewrites a content stream, a colour swatch regenerates an
-    /// annotation's appearance. They are the exact population A18 was about.
-    ///
-    /// ⇒ The gap is the shape this file's own `WRITERS` note warns of — *"a
-    /// hand-written list inside a completeness test is exactly the shape this
-    /// project has already been bitten by"* — arriving through a **variant**
-    /// rather than through a missing row. So this asserts over custom items,
-    /// where the check is stronger than the command one and needs no list:
-    /// there is nothing on this tab that a custom item may legitimately do
-    /// without authoring, so *every* one of them must carry a mode-bearing
-    /// condition. A custom item with no `shown_when` at all fails.
-    ///
-    /// Two conditions are accepted rather than one, and they are not
-    /// interchangeable: `mode.edit_content` gates the Font group (page content)
-    /// and `selection.markup_restylable` gates the Markup group (an
-    /// annotation), and `Capabilities` keeps `edit_content` and `author_markup`
-    /// as separate questions precisely so a reviewer may recolour a cloud in a
-    /// drawing they may not otherwise touch. A test that demanded one string
-    /// would have taken the working verb away from the mode that owns it.
     #[test]
     fn every_custom_control_on_this_tab_is_withheld_from_a_mode_that_cannot_author() {
         let mut seen = 0_usize;

@@ -26,12 +26,6 @@ const VISIBLE_EVENT: &str = "strip-raster-requested";
 const DISCLOSURE_EVENT: &str = "strip-prefetch";
 
 /// How many wheel notches to send, once, forwards.
-///
-/// Deliberately modest. 40 notches draw about three pages, measured by
-/// `page_cache`, and this check must not outrun the eight-page band: a scroll
-/// landing past everything prefetched would pass the main assertion for the
-/// wrong reason, because the pages it then re-requests were never prefetched.
-/// A short scroll lands inside the band, where the claim has to hold.
 const NOTCHES: i32 = 12;
 
 /// See the module documentation.
@@ -266,11 +260,6 @@ fn over_budget(session: &Session) -> Result<Option<String>> {
 
 /// The first place the band's distance from the current page went BACKWARDS
 /// while the current page held still, if any.
-///
-/// Scoped to one `current` on purpose. Scrolling changes which page is current
-/// and the band is re-ranked around the new one, so a distance that drops
-/// across that boundary is the feature working — comparing across it would
-/// report a defect on every scroll.
 fn not_nearest_first(ahead: &[(usize, usize)]) -> Option<String> {
     for pair in ahead.windows(2) {
         let (page_a, current_a) = pair[0];

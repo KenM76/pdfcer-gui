@@ -78,3 +78,58 @@ reasons, and both are requirements rather than taste:
 
 The wording is non-agentive throughout — no "cannot", no "failed" — for
 the same reason.
+
+## Item notes
+
+### `fn every_verdict_word_stays_short_enough_for_a_narrow_dock`
+
+This is the clipped-row incident turned into an assertion. The row is
+`verdict · size · name`, a dock pane is ~370 pt, and the byte size —
+the field the panel exists for — is the one that got cut when the
+verdicts were sentences. Twenty characters is a generous ceiling that
+still catches a sentence.
+
+A width in characters is a proxy for a width in points, and a poor
+one. It is used anyway because the honest measurement needs a live
+frame and a pixel oracle, and a proxy that fires on the regression
+that actually happened beats no check at all — the incident was
+sentences of 30 and 34 characters replacing words of 10 and 17.
+
+### `fn no_two_verdicts_say_the_same_thing`
+
+Two verdicts reading alike would collapse two different facts about a
+file into one, and the whole panel is an argument that the difference
+between them is what the operator needs.
+
+### `fn an_unreadable_fstype_says_unknown_and_is_never_blank`
+
+The single most dangerous confusion in this file: `0` means
+Installable — the *broadest* embedding right the field can express —
+so a blank or a dash for "we could not read the bits" would assert
+that right on the strength of bytes nobody read. Both failure states
+say the word "Unknown" in their own sentence, and neither is empty.
+
+### `fn every_fstype_permission_attributes_the_claim_to_the_vendors_bits`
+
+Claim-bearing copy. The OpenType specification is explicit that
+`fsType` is the vendor's machine-readable assertion of intent and not
+the licence, and that a face may permit more or less than its bits
+say. Every permission sentence must therefore attribute the claim to
+the bits, and none may use the word "licence"/"license" as a verb
+about what is permitted.
+
+`Restricted License` is the `fsType` value's own proper name, so the
+check is on the attribution clause rather than on the word.
+
+### `fn the_identity_reason_distinguishes_having_a_tounicode_map_from_not`
+
+Two independently-bad outcomes stack: the text cannot be drawn, and
+without `/ToUnicode` it cannot be recovered either. Saying the second
+about a font that does carry the map would be a false alarm on the
+panel whose entire credibility rests on its refusals being accurate.
+
+### `fn the_row_header_ends_with_the_name_so_the_size_cannot_clip`
+
+This pins the *overflow decision*: whatever clips must be the field
+recoverable from elsewhere. A future reordering that reads better in
+isolation would silently reintroduce the clipped byte size.

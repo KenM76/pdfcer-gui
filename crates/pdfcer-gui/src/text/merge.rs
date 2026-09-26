@@ -14,6 +14,8 @@
 //! source pages, no tint, no overlay. These are off-canvas sentences, which is
 //! where a disclosure belongs, and they are the only thing about the operation
 //! that appears in the window at all.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/text/merge.md`.
 
 use std::path::Path;
 
@@ -110,11 +112,6 @@ mod tests {
     }
 
     /// The success sentence carries BOTH counts.
-    ///
-    /// The property that lets an operator notice a dropped source in the one
-    /// sentence they were going to read. Asserted as "both numbers appear"
-    /// rather than against the wording, because the wording will change and
-    /// the property must not.
     #[test]
     fn the_success_sentence_names_what_went_in_and_what_came_out() {
         let s = merged(4, 37);
@@ -151,10 +148,6 @@ mod tests {
     }
 
     /// The success sentence says the sources survived.
-    ///
-    /// Not obvious from the outside: *combine* is a word that could mean
-    /// *consume*, and an operator who has just pointed pdfcer at four drawings
-    /// deserves to be told in the same breath that they are all still there.
     #[test]
     fn the_success_sentence_says_the_originals_survived() {
         assert!(merged(2, 4).contains("originals are unchanged"));

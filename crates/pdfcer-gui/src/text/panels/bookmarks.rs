@@ -326,12 +326,6 @@ mod tests {
     use super::*;
 
     /// **The move disclosure never says "0 bookmarks".**
-    ///
-    /// `OutlineMove::visible_items` counts the item itself, so `1` means *just
-    /// this one* and the sentence must not subtract its way into a template.
-    /// `0` is not a value the engine produces for a successful move — it counts
-    /// the item — and it is folded into the same arm rather than being left to
-    /// underflow, which is the one arithmetic error this function could make.
     #[test]
     fn the_move_disclosure_never_reads_as_a_template() {
         for reparented in [false, true] {
@@ -348,12 +342,6 @@ mod tests {
     }
 
     /// **Re-parenting and reordering do not read the same.**
-    ///
-    /// `OutlineMove::reparented` is carried by the engine precisely so a shell
-    /// does not derive it, *"because it is the fact a disclosure sentence turns
-    /// on"*. A build that ignored the flag would produce one sentence for two
-    /// different acts, and the operator could not tell a chapter that changed
-    /// place from one that changed owner.
     #[test]
     fn a_reparent_and_a_reorder_are_worded_differently() {
         for n in [1usize, 2, 9] {
@@ -364,11 +352,6 @@ mod tests {
     /// **The hidden-subtree sentence is about the branch, not about the
     /// screen**, and it is the one place the two `/Count` quantities are
     /// visibly different.
-    ///
-    /// The fixture makes the two answers unconfusable: a collapsed bookmark
-    /// reports `visible_items = 1` and may hold any number, so the sentence
-    /// pair for a collapsed chapter of forty sections must name **40** and must
-    /// not read as though one thing moved.
     #[test]
     fn the_hidden_subtree_sentence_names_the_branch_size() {
         let moved = bookmark_moved(1, true);
@@ -385,15 +368,6 @@ mod tests {
 
     /// **The collapsed-destination sentence names the remedy and does not
     /// read as a failure.**
-    ///
-    /// Its whole purpose is that the operator watched a row leave and did not
-    /// see it arrive. A sentence that only stated the fact would leave them
-    /// where they started; the triangle is the way out and it is on screen
-    /// beside them.
-    ///
-    /// Deliberately pinned against `bookmark_add_under_collapsed`'s two
-    /// properties, because the two sentences are the same disclosure for two
-    /// verbs and must not drift apart.
     #[test]
     fn the_collapsed_destination_sentence_matches_the_add_rows_posture() {
         let said = bookmark_move_into_collapsed();
@@ -411,12 +385,6 @@ mod tests {
 
     /// **Neither decline names a bookmark**, which is what keeps
     /// `Declined` `Copy`.
-    ///
-    /// The field-group pair made this rule: a `String` payload on that enum
-    /// would take away a deliberate property, and the loss is small because the
-    /// operator's pointer is still on the row they dropped. Asserted as a
-    /// property of the *signature* — both are `&'static str` and neither takes
-    /// an argument — because that is the thing a future edit would break.
     #[test]
     fn the_declines_carry_no_title() {
         let own: &'static str = bookmark_move_declined_own_subtree();
@@ -429,11 +397,6 @@ mod tests {
     }
 
     /// **The two triangles differ**, and both are one character.
-    ///
-    /// A build that returned the same glyph for both states would give the
-    /// operator a control that never appears to respond — the row would open
-    /// and the triangle would not turn — and every unit test about the *tree*
-    /// would still pass.
     #[test]
     fn the_disclosure_triangles_are_two_different_glyphs() {
         assert_ne!(bookmark_collapsed_glyph(), bookmark_expanded_glyph());
@@ -442,12 +405,6 @@ mod tests {
     }
 
     /// **Both triangle tooltips say the state is stored in the document.**
-    ///
-    /// The one genuinely surprising fact about this control. Every other tree
-    /// an operator has used treats expand and collapse as a window setting;
-    /// here it is `/Count`'s sign in the file, so the gesture marks the
-    /// document modified and lands on the undo stack. A tooltip that omitted it
-    /// would leave them hunting for what dirtied their file.
     #[test]
     fn both_triangle_tooltips_disclose_that_the_state_is_saved() {
         for tip in [bookmark_expand_tooltip(), bookmark_collapse_tooltip()] {
@@ -458,12 +415,6 @@ mod tests {
     }
 
     /// **The drag hint names all three landings.**
-    ///
-    /// The three-band split is the only part of the gesture that cannot be
-    /// discovered by trying it once: an edge drop and a middle drop look
-    /// identical until the caret has been seen to move. A hint that said only
-    /// *"drag to move"* would leave re-parenting undiscoverable, which is half
-    /// the feature.
     #[test]
     fn the_drag_hint_teaches_the_three_landings() {
         let hint = bookmark_drag_hint();

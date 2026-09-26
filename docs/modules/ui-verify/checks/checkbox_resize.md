@@ -68,3 +68,19 @@ square, so there is no corner to aim at and the gesture under test cannot be
 started. The drag route is the operator's own (*"click to place the position
 or drag a box for size"*, O53) and it makes the box big enough to have
 corners.
+
+## Item notes
+
+### `const DRAG_FROM`
+
+Deliberately far larger than a check box ever is on paper. The subject is
+the appearance rebuild, not the size, and a box that is generous on screen
+is one whose eight grips do not overlap each other — see the header.
+
+### `const PULL`
+
+Outward on both axes, so every candidate grip in the corner — the corner
+itself or either neighbouring edge grip — enlarges rather than collapses the
+box. A drag that produced a rectangle with no area would be refused by the
+engine, correctly, and this check would report a redraw failure that was
+really an aim failure.

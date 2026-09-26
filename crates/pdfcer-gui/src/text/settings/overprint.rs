@@ -10,6 +10,8 @@
 //!
 //! ⇒ Which is why nothing in this module writes down *which* option is the
 //! default. It asks. See [`zero_tint_default_suffix`].
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/text/settings/overprint.md`.
 
 // ===========================================================================
 // Overprint — which colours get the zero-tint rule
@@ -115,11 +117,6 @@ mod tests {
 
     /// **Exactly one scope is marked as the default, and it is the one the
     /// ENGINE says is the default.**
-    ///
-    ///
-    /// Asserting **exactly one** rather than "the right one carries it"
-    /// catches the other half: a suffix added to a second label by hand, which
-    /// would leave two options both claiming to be what pdfcer does.
     #[test]
     fn exactly_one_scope_is_marked_as_the_engines_default() {
         let all = [
@@ -139,10 +136,6 @@ mod tests {
     }
 
     /// **No label may hard-code the word "default".**
-    ///
-    /// The suffix is derived; a label that spells it out would be a second,
-    /// unsynchronised claim about the same fact — which is exactly how the
-    /// original defect happened.
     #[test]
     fn no_scope_label_spells_out_the_default_itself() {
         for scope in [

@@ -36,10 +36,6 @@ mod file;
 pub use file::{file_export_image, file_export_text, file_import_text, file_save_as};
 
 /// **The View tab's entries**, a module of its own under R2.
-///
-/// Glob-re-exported, so a caller sees no seam at all: every call site still
-/// writes `crate::text::commands::view_zoom_in()`. See that module's header
-/// for why the cut is there and nowhere else.
 mod view;
 
 pub use view::*;

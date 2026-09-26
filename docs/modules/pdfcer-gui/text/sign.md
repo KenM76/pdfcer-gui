@@ -51,3 +51,12 @@ whose two important controls are the certificate and the destination is
 three boxes an operator scrolls past, and because nobody has asked for it.
 Adding it is one field and one string; that is the right size for a request,
 and the wrong size for a guess.
+
+## Item notes
+
+### `const APPEARANCE_INDENT`
+
+One constant because [`written_details`] writes it and [`appearance_shown`]
+matches it, and two spellings of an indent would drift without a symptom:
+the sentence would still read correctly and the counter would silently
+report that none of it reached the operator.

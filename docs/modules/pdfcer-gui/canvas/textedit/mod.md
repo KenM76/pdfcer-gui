@@ -120,3 +120,62 @@ does not:
   replacement grows *into* it. [`plan`] adds
   `crate::text::textedit::pinned_tail_disclosure` for exactly this, which is
   why the pin is never silent.
+
+## Item notes
+
+### `const DRAFT_MEMORY_KEY`
+
+One key for both kinds, because one draft can be in flight: arming the other
+kind clears it, exactly as arming a different `MarkupKind` cannot reach a
+drag already in flight.
+
+### `fn an_unchanged_draft_pushes_no_action`
+
+The no-op guard, and it is load-bearing because clicking away commits: an
+operator who typed a letter and removed it again would otherwise get an
+undo entry for having changed their mind.
+
+### `fn a_box_draft_commits_with_its_wrap_rectangle`
+
+The operator: *"I should be able to make it multi line."*
+
+Asserted through the ACTION rather than through the engine, because the
+action is where this shell's decision lives: `wrap: Some(..)` is what
+becomes `AddTextRequest::with_box`, and a build that dropped it would
+author the same characters as one long single line — plausible, silent,
+and wrong in exactly the way the operator asked for.
+
+### `fn a_point_draft_commits_without_one`
+
+A build that gave every add-text a box would wrap a one-line label at
+whatever width it invented — and the width would have to be invented,
+because a click has no extent.
+
+### `fn only_a_box_anchor_takes_a_paragraph_break`
+
+Asserted on the ANCHOR, because that is the fact the keystroke handler
+branches on. Driving the key itself needs a `Context` with focus and an
+event queue, which `text_box_takes_a_paragraph` does in the real binary;
+what is provable here is that the two anchors are distinguishable at all
+— and a build that folded the box into `Origin` with an `Option<Rect>`
+would fail this by construction.
+
+### `fn an_emptied_run_draft_commits_the_emptying`
+
+Deleting every character of a run and clicking away is ambiguous —
+"remove this text" and "I changed my mind" are the same gesture — and
+the recoverable reading is **undo**, not refusal, which is what Acrobat
+does. The refusing reading raised no action at all, so there was no
+plan, no engine call and no sentence: a declined edit and a failed save
+looked the same from the operator's side.
+
+The emptiness guard stays on the `Origin` and `Box` arms, where
+`an_empty_add_text_draft_places_nothing` holds it.
+
+### `fn an_empty_add_text_draft_places_nothing`
+
+**Both** add anchors are asserted here, because this is the whole of
+the emptiness guard: `commit_into`'s `Run` arm deliberately does not
+carry one (`an_emptied_run_draft_commits_the_emptying`), so an assertion
+covering `Origin` alone would leave the `Box` arm's guard held by
+nothing while its header claimed otherwise.

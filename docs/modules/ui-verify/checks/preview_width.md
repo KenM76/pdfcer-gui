@@ -79,3 +79,68 @@ reach [`super::super`]'s stroke rule by different routes.
 and is what this was measured on. A point on an image or on text selects
 something with no stroked geometry, `for_move_subject` answers with an erase
 and no shapes, and the check SKIPs naming that.
+
+## Item notes
+
+### `const DRAG_PX`
+
+Far enough that the press is a drag and not a click, and short enough
+that the object stays on the page at the deep rung — at 900 % a 40 px pull
+is under 5 pt of document, which no fixture can fall off.
+
+### `const DEEP_ZOOM`
+
+Nine times, not the 20,000 % `scale_sweep` reaches, and the reason is
+that this check wants a **large, reliable** zoom rather than an extreme one.
+The defect multiplies the preview width by the zoom, so 9× turns a 2 px
+outline into an 18 px one — an eight-sigma difference against a tolerance of
+a hundredth of a pixel — while staying well inside the region tier where the
+aim is stable and a drag still lands.
+
+### `const MIN_ZOOM_RATIO`
+
+The guard against the degenerate pass. If the wheel does not reach the
+canvas — which has happened, and is `zoom_gallery`'s report to make — both
+phases measure the same zoom, the widths are trivially equal, and this check
+would report a green it did not earn. Three times is far below
+[`DEEP_ZOOM`]'s nine and far above any rounding.
+
+### `const WIDTH_TOLERANCE`
+
+The trace prints two decimals, so anything under half a hundredth is below
+the resolution of the report and 0.02 is two ticks of it. The defect being
+guarded against is multiplicative by a factor of nine; there is no version
+of it that hides inside a fiftieth of a pixel.
+
+### `fn selection_count`
+
+Read from `canvas … sel=N` rather than by counting `selection-set` lines.
+`scale_sweep`'s header carries why: the trace suppresses a line identical to
+its predecessor, so a second click that picks the same object writes
+nothing, and a check counting those events reads "the click did nothing"
+about a click that worked.
+
+### `fn painted_since`
+
+`shapes=0` lines are skipped rather than counted as zero. A delete
+preview publishes an erase and no shapes — `ShapePreview::is_empty` asks
+about `shapes` precisely because of that — and folding a `widest_px=0.00`
+from such a frame into the maximum would be harmless, but folding it into
+the *count* would let a phase that drew nothing report that it drew.
+
+### `fn drag_and_read`
+
+The press point is the aim — the same coordinate the click immediately
+before selected the object from, so it is on the object by the same evidence
+that produced the selection. `scale_sweep`'s `drag_selection` header carries
+the run that established this: pressing at the *outline's centre* instead
+made every rung report "the drag raised nothing", including the baseline,
+and a uniform failure at every rung of a sweep is evidence about the probe.
+
+### `fn undo`
+
+The document has to be the one this check started with between phases.
+A drag that is not undone leaves the object [`DRAG_PX`] away from the aim,
+and the next phase's click then selects whatever is now under that
+coordinate — which reads as "clicking on the content selected nothing" and
+is the check having moved its own target out from under itself.

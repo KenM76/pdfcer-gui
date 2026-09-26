@@ -35,22 +35,11 @@ use flate2::Compression;
 use flate2::write::ZlibEncoder;
 
 /// The fixture's page size, in points -- half of US Letter.
-///
-/// 306 x 396 pt. At [`FIXTURE_DPI`] that is an 850 x 1100 raster, which
-/// compresses to tens of kilobytes and is a reasonable thing to keep in a
-/// repository. An A1 sheet at 300 DPI, for comparison, is 70 megapixels.
 const PAGE_W: f64 = 306.0;
 /// See [`PAGE_W`].
 const PAGE_H: f64 = 396.0;
 
 /// The resolution the source page is rasterized at to make the fixture image.
-///
-/// 200, which is not the resolution recognition will run at, and the
-/// difference is deliberate: the
-/// fixture should not be rendered at exactly the resolution it will later be
-/// recognised at, or the recogniser would be reading back a raster it could
-/// have been handed unresampled. A scan is never at the resolution the reader
-/// chooses either.
 const FIXTURE_DPI: f32 = 200.0;
 
 /// **The page's text, and why it is a PAGE rather than a caption.**
@@ -171,23 +160,6 @@ pub(crate) fn multipage_path() -> PathBuf {
 }
 
 /// A minimal one-page PDF carrying [`LINES`] as real text.
-///
-/// The *source* for the fixture, never the fixture itself — it is thrown away
-/// as pixels in step 2. Written as literal syntax rather than authored through
-/// `EditSession` because every byte of it needs to be inspectable: this is the
-/// thing whose text must survive a round trip through a raster and a
-/// recogniser, and a document assembled by the same engine that will later be
-/// asked to read it would make the test partly self-referential.
-///
-/// Standard-14 Helvetica, so nothing is embedded and the file stays under two
-/// kilobytes. 11 pt on a 396 pt page with 24 pt leading is ordinary document
-/// type. See [`LINES`] for why the fixture is a page of text rather than a
-/// caption, and what the first version of it discovered by not being one.
-///
-/// `TL`/`T*` rather than a `Td` per line: one text object with a set leading is
-/// how a real producer writes a paragraph, and a fixture whose content stream is
-/// shaped like nothing any producer emits is a fixture testing a shape nobody
-/// meets.
 fn source_pdf() -> Vec<u8> {
     let mut content = String::from(
         "BT /F1 11 Tf 24 TL 36 360 Td
@@ -224,10 +196,6 @@ fn source_pdf() -> Vec<u8> {
 }
 
 /// A `<< dict >> stream … endstream` body with `/Length` filled in.
-///
-/// `extra` is spliced into the dictionary before `/Length`, which is how the
-/// image object gets its `/Filter`, `/Width`, `/Height` and colour space
-/// without a second assembler.
 fn stream_object(extra: &[u8], data: &[u8]) -> Vec<u8> {
     let mut out = Vec::new();
     out.extend_from_slice(b"<< ");
@@ -239,14 +207,6 @@ fn stream_object(extra: &[u8], data: &[u8]) -> Vec<u8> {
 }
 
 /// Serialize numbered objects into a complete PDF with a classic xref table.
-///
-/// A cross-reference **table** rather than a stream, and a `%PDF-1.4` header,
-/// on purpose: both are the oldest and most widely-agreed forms, so a fixture
-/// that failed to open would be a defect in whatever opened it rather than an
-/// argument about which of two encodings was meant. The offsets are counted
-/// from the emitted bytes as they are written — never computed in advance —
-/// because an xref whose offsets are one byte out is a file that opens on some
-/// readers and not others, which is the worst kind of broken fixture.
 fn assemble(objects: &[(u32, Vec<u8>)], root: u32) -> Vec<u8> {
     let mut out: Vec<u8> = b"%PDF-1.4\n%\xE2\xE3\xCF\xD3\n".to_vec();
     let mut offsets: Vec<(u32, usize)> = Vec::new();
@@ -270,58 +230,11 @@ fn assemble(objects: &[(u32, Vec<u8>)], root: u32) -> Vec<u8> {
 }
 
 /// Build the image-only PDF: no text operator anywhere in it.
-///
-/// `grey` is one byte per pixel, row-major, top-down — the layout
-/// [`super::greyscale`] produces and the layout `/DeviceGray` at
-/// `/BitsPerComponent 8` expects, so no transposition happens here. The image
-/// XObject is defined on the unit square (§8.9.4), so the whole of placement is
-/// the one `cm` matrix that scales it to the page box.
 fn image_only_pdf(grey: &[u8], width: u32, height: u32) -> Vec<u8> {
     image_only_pdf_pages(grey, width, height, 1)
 }
 
 /// The same document with `pages` identical sheets, all sharing **one** image.
-///
-/// # Why a multi-page image-only fixture has to exist
-///
-/// The one-page fixture is the right subject for *"did the recogniser read this
-/// page"*. It is the wrong subject for pages-done, words-and-characters
-/// detected, and a Stop control, because **every one of those is a statement
-/// about a run in progress**, and a one-page run has no observable middle. It
-/// is started and
-/// then it is finished; a Stop pressed during it can only ever race the single
-/// page, and a progress line that draws once carries no evidence that it
-/// advances.
-///
-/// So this exists to give the driven checks a run with a **middle**:
-/// [`MULTIPAGE_PAGES`] sheets, recognised one after another, long enough that a
-/// harness can see `attempted` climb and can press Stop with pages still to go.
-///
-/// # Why the pages are identical, which looks like a shortcut and is not
-///
-/// Each page is the same rendered notes sheet, and every page dictionary points
-/// at the **same** image XObject. Three consequences, all wanted:
-///
-/// * the file is ~40 kB rather than ~300 kB, because the pixels are stored once
-///   — a fixture that has to be committed should not be a third of a megabyte;
-/// * every page recognises to the **same word count**, so a check can assert
-///   the totals are consistent with the pages attempted rather than having to
-///   accept any number at all;
-/// * a page that is skipped or dropped is visible as an arithmetic hole rather
-///   than as a plausible smaller number.
-///
-/// The pages sharing an XObject is *also* representative: it is what a real
-/// scanner-produced PDF does not do, but what every stamp, logo and repeated
-/// figure in a real document does, and a recogniser that assumed one image per
-/// page would break on both.
-///
-/// # What it still does not establish
-///
-/// The same caveat the one-page fixture carries, and it is not weakened by
-/// there being more of them: this is a **rendered** page, not a scan. No
-/// scanner noise, no skew, no JPEG ringing, no uneven lighting. It establishes
-/// the plumbing of a multi-page run. It establishes nothing about recognition
-/// quality, and the driven checks say so in their own reports.
 fn image_only_pdf_pages(grey: &[u8], width: u32, height: u32, pages: usize) -> Vec<u8> {
     assert!(pages >= 1, "a document needs at least one page");
     let mut encoder = ZlibEncoder::new(Vec::new(), Compression::best());
@@ -402,12 +315,6 @@ pub(crate) fn build_multipage() -> Vec<u8> {
 }
 
 /// Rasterize the source page once. Shared by both builders.
-///
-/// Split out when the multi-page fixture arrived, so that the two documents are
-/// **the same pixels** by construction rather than by two call sites happening
-/// to pass the same DPI. A one-page and an eight-page fixture that disagreed
-/// about the raster would make their word counts incomparable, and comparing
-/// them is half of what the multi-page checks do.
 fn raster() -> (Vec<u8>, u32, u32) {
     let doc = pdfcer_core::document::Document::from_bytes(source_pdf())
         .expect("the hand-written source PDF must parse");
@@ -460,17 +367,6 @@ mod tests {
 
     /// **The multi-page fixture really has eight pages, and the engine
     /// agrees.**
-    ///
-    /// Pinned because the whole value of that fixture is the page COUNT, and
-    /// the count is produced by hand-written object numbering with a classic
-    /// xref table — the one part of this module where an off-by-one produces a
-    /// file that still opens. A `/Count 8` over seven `/Kids` is a document
-    /// most readers will show, and every driven check over it would then be
-    /// asserting against a denominator that is a lie.
-    ///
-    /// Parsed by `pdfcer_core` rather than grepped, deliberately: the question
-    /// is *what will the application see*, and the application sees whatever
-    /// the page-tree walker sees.
     #[test]
     fn the_multipage_fixture_has_the_page_count_it_claims() {
         let bytes = build_multipage();
@@ -485,12 +381,6 @@ mod tests {
     }
 
     /// **Eight pages cost barely more than one, because the image is shared.**
-    ///
-    /// The property that makes committing this fixture reasonable. Asserted as
-    /// a ratio rather than an absolute size so it survives a change to the
-    /// raster DPI: if somebody later gives each page its own copy of the
-    /// pixels, the eight-page file becomes ~8× the one-page file and this
-    /// fails, which is the moment to notice — not at the next `git push`.
     #[test]
     fn the_multipage_fixture_shares_one_image_rather_than_copying_it() {
         let one = build().len();
@@ -510,13 +400,6 @@ mod tests {
     }
 
     /// The multi-page fixture is image-only too.
-    ///
-    /// Separate from [`the_fixture_contains_no_text_operator_at_all`] rather
-    /// than folded into it. The two documents are built by two functions, and
-    /// the assertion that matters — *any text on this page came from the
-    /// recogniser* — has to hold of the one the checks actually drive. A shared
-    /// test over only the one-page build would leave the eight-page build
-    /// unasserted while looking like it covered both.
     #[test]
     fn the_multipage_fixture_contains_no_text_operator_either() {
         let bytes = build_multipage();
@@ -536,18 +419,6 @@ mod tests {
     }
 
     /// **The fixture contains no text-showing operator anywhere.**
-    ///
-    /// The property that makes it a valid test of OCR rather than a test of
-    /// nothing, asserted against the **emitted bytes** rather than against the
-    /// construction that produced them. Both streams are checked: the content
-    /// stream is uncompressed and inspectable directly, and the image stream is
-    /// binary and could in principle contain the byte pairs by accident — which
-    /// is why the assertion is on the content stream's region specifically.
-    ///
-    /// Without this, a future change that "helpfully" kept a caption on the page
-    /// would leave every OCR check passing for the wrong reason: the text would
-    /// already be extractable, the offer would never appear, and the round trip
-    /// would succeed without the recogniser contributing anything.
     #[test]
     fn the_fixture_contains_no_text_operator_at_all() {
         let bytes = build();
@@ -589,12 +460,6 @@ mod tests {
 
     /// **pdfcer extracts nothing from it**, which is the condition the Find
     /// offer keys on.
-    ///
-    /// The previous test asserts the *bytes*; this asserts what the **engine
-    /// makes of them**, which is the thing `OpenDoc::page_has_extractable_text`
-    /// actually asks. They are not the same claim: a content stream with no text
-    /// operator could still carry text through an annotation appearance or a
-    /// form XObject, and the extractor is what would know.
     #[test]
     fn the_engine_finds_no_text_on_the_fixture() {
         let doc = pdfcer_core::document::Document::from_bytes(build()).unwrap();
@@ -692,13 +557,6 @@ mod tests {
     }
 
     /// The source page, by contrast, DOES have the two lines on it.
-    ///
-    /// The control, and it is the load-bearing half of the pair: rule 4 of
-    /// `tools/ui-verify`'s own checks — *never treat an absence as evidence
-    /// unless you have shown the thing that would have produced it was
-    /// working* — applies just as much to a unit test. Without this, an
-    /// extractor that returned nothing for **every** document would satisfy the
-    /// assertion above perfectly.
     #[test]
     fn the_source_page_does_have_the_text_the_fixture_throws_away() {
         let doc = pdfcer_core::document::Document::from_bytes(source_pdf()).unwrap();

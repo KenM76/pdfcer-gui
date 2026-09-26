@@ -173,28 +173,6 @@ pub fn cut_would_not_survive(subtype: &str) -> String {
 }
 
 /// **Why a copy could not carry what was selected**, naming the subtypes.
-///
-/// # Why each subtype earns its own clause rather than one general refusal
-///
-/// Because the operator's next move differs, and in one case the refusal is
-/// protecting them rather than admitting a limit:
-///
-/// | subtype | what they should do instead |
-/// |---|---|
-/// | `/Widget` | select it in Edit mode — a form field has its own copy, which asks the naming question a blind copy would have to guess at |
-/// | `/Popup` | copy the comment it belongs to; the pop-up travels with it |
-/// | `/Redact` | nothing — and that is the point. A redaction mark is a **pending destructive operation**, and pasting one arms a redaction in a document nobody reviewed |
-///
-/// The `/Redact` line is the one that must not be softened into *"pdfcer
-/// cannot copy this"*. It can; it declines to, and an operator who reads a
-/// capability limit will go looking for a workaround for something that is a
-/// safeguard.
-///
-/// The catch-all is **named, not guessed**. `pdfcer-core` may refuse a
-/// subtype this shell has never seen — a ce dimension whose sidecar record is
-/// missing is the documented fourth case — and the honest answer says which it
-/// was rather than inventing a reason for it. Same posture as
-/// [`cut_would_not_survive`] one function up, and the same reason.
 fn cannot_carry(subtypes: &[String]) -> String {
     let mut clauses: Vec<String> = subtypes
         .iter()
@@ -397,12 +375,6 @@ pub fn copy_out_refusal(reason: &CopyOut) -> String {
 }
 
 /// The sentence for the operating system's own refusal.
-///
-/// Split out so the four Win32 outcomes get four different next moves rather
-/// than one shrug. *Another program is holding it* is transient and the answer is
-/// to press the button again; a **partial** placement is the one case where the
-/// clipboard has genuinely changed, and the operator needs to know that what is
-/// there now is neither the old contents nor the whole copy.
 fn clipboard_refusal(err: &native_clipboard::PlaceError) -> String {
     match err {
         native_clipboard::PlaceError::Open => {
@@ -560,11 +532,6 @@ mod tests {
     use super::*;
 
     /// **Every refusal says what to do next, or why there is nothing to do.**
-    ///
-    /// Asserted as a length floor rather than by matching words, because the
-    /// property is *"this is a sentence, not a label"*. A four-word refusal is
-    /// the failure this whole module exists to prevent, and it is the shape a
-    /// future edit would most plausibly introduce while "tidying".
     #[test]
     fn every_refusal_is_a_sentence() {
         //
@@ -596,11 +563,6 @@ mod tests {
 
     /// **A partial copy's sentence says BOTH what was left behind and what
     /// arrived thin**, and never claims the copy failed.
-    ///
-    /// The wording trap here is real and one-directional: *"could not be
-    /// copied"* over a copy that mostly worked sends the operator back to
-    /// press `Ctrl+C` again, which changes nothing and costs them the
-    /// afternoon. It has to open by saying the copy happened.
     #[test]
     fn a_partial_copy_says_what_arrived_and_what_did_not() {
         let both = partial_copy(&["Redact".to_owned()], 2);
@@ -625,10 +587,6 @@ mod tests {
     }
 
     /// The OS marker names comments as comments, and a mixed copy as both.
-    ///
-    /// `os_marker(0, 1)` was the case that did not exist before 2026-09-05
-    /// and is the one an operator now meets most: a comment copied and pasted
-    /// into an email says *"1 comment copied from pdfcer"*, not *"1 object"*.
     #[test]
     fn the_os_marker_counts_objects_and_comments_separately() {
         assert!(os_marker(0, 1).starts_with("1 comment copied"));
@@ -652,12 +610,6 @@ mod tests {
     }
 
     /// **Every mode refusal names a mode the selector actually offers.**
-    ///
-    /// `ModeRefusal::line` returns `&'static str`, so *"Edit"* and *"Review"*
-    /// are written out rather than built from `crate::text::ribbon`. This is
-    /// what stops that being a quiet duplication: rename a mode and this fails
-    /// and names the sentence, instead of leaving the operator directed at a
-    /// control that no longer exists.
     #[test]
     fn every_mode_refusal_names_a_mode_the_selector_actually_offers() {
         use crate::text::ribbon;
@@ -682,12 +634,6 @@ mod tests {
 
     /// **Every one of the seven is a distinct sentence**, and the four that
     /// follow a gesture over a visible operand say the document is unchanged.
-    ///
-    ///
-    /// `DuplicateMarkup` says *"Nothing has been added"* rather than
-    /// *"removed"*, which is why it is asserted separately below rather than
-    /// folded into the cut loop: the doubt it answers is the opposite one — a
-    /// second comment landed somewhere I cannot see.
     #[test]
     fn the_seven_mode_refusals_are_seven_sentences_and_the_gestures_reassure() {
         let all = [

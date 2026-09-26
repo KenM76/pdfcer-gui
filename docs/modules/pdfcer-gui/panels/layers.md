@@ -192,3 +192,213 @@ explanation with `on_hover_text` alone, and **egui does not show the
 ordinary hover text of a disabled widget**. So the one row whose whole
 problem is that it looks broken was silent about why. Both are attached
 now, the same fix [`crate::panels::bookmarks`] made for its disabled rows.
+
+## Item notes
+
+### `fn row_name`
+
+An undeclared name shows as a placeholder, never as an invented one.
+`/Name` is Required (Table 98), so its absence is a real malformation and
+a synthesised "Layer 3" would disguise it as data from the file.
+
+# Why this is a function and not two lines at the row
+
+It was two lines at the row until the search landed. The search matches
+**the name the row shows** — [`search`]'s Decision 1 — and the only way to
+hold that claim is for the row and the predicate to call the same
+function. Two copies of the same three-line `if` would compile, pass every
+test written about either half, and leave a layer with no `/Name` drawn as
+its placeholder while being searchable only by the empty string: a row on
+screen that nothing the operator can type will find.
+
+The general form is `DEFECTS.md` D5's — *the same concept implemented in
+two places, and the copies drift* — arriving in a feature small enough
+that it would have been assumed safe.
+
+### `fn is_locked`
+
+A linear scan rather than a map, deliberately. It runs only when a radio
+group is being examined, over at most [`pdfcer_core::layers::MAX_LAYERS`]
+rows, and a map built per frame to serve a handful of lookups would cost
+more than it saved. Measure before trading back.
+
+A member id that is not in `read.layers` answers `false` — it is a
+dangling reference inside `/RBGroups`, which cannot be locked because it
+is not a group. Failing closed here would silently refuse a legal toggle.
+
+### `fn toggle_actions`
+
+# What it does
+
+- Always ends with `SetLayerVisible { group: id, visible }`.
+- When `visible` is `true` **and** `id` is in an `/RBGroups` array, it is
+  preceded by one `SetLayerVisible { …, visible: false }` per **unlocked**
+  sibling. Table 101: at most one member of a radio group is ON.
+
+# What it deliberately does NOT do
+
+- **Turning a layer off does not turn a sibling on.** "At most one"
+  permits none, and choosing a replacement would be pdfcer deciding which
+  alternate the operator meant.
+- **It does not switch off a locked sibling** — `DA-A8`, argued in the
+  module docs and disclosed by
+  [`crate::text::panels::layer_radio_locked_sibling_tooltip`].
+- **It does not chase a group's *other* radio arrays.**
+  `Layer::radio_group` reports the **first** array a group belongs to and
+  `LayerDiagnostics::overlapping_radio_groups` counts the rest, because
+  the constraints are not jointly satisfiable and the standard is
+  permanently silent on the case (`DA-N1`). Honouring the first array is
+  the engine's own reported answer; inventing a resolution for the others
+  would be pdfcer deciding something ISO declined to.
+
+# Why a `Vec<Action>` rather than one action carrying a set
+
+See the module docs: they compose correctly because `apply` runs them in
+order and each one recomputes from the *current* hidden set, and keeping
+one `Action` per layer that moved is what keeps "what changed this layer?"
+answerable by grep.
+
+The clicked layer goes **last** so that a group whose array (legally)
+lists the clicked group among its own members cannot end with the
+sibling sweep switching off the very layer being switched on.
+
+### `fn row_caveats`
+
+A pure function over one [`pdfcer_core::layers::Layer`] and the effective
+state, so the *set* of caveats a row carries is testable without an egui
+context — which matters because each one exists to stop an operator
+concluding "pdfcer got it wrong", and a row that silently loses its
+explanation looks exactly like a row that never needed one.
+
+Order is meaningful: the operator's own change comes first, because if
+they changed this row that is the explanation they are looking for.
+
+### `trait RadioGroupLookup`
+
+[`pdfcer_core::layers::Layer::radio_group`] is an *index* into
+[`pdfcer_core::layers::Layers::radio_groups`] rather than a member list, so
+every use of it is this two-step. Written once, in a trait, so the two
+places that need it (the tooltip decision and the toggle composition)
+cannot come to disagree about which array a layer belongs to.
+
+### `fn settle`
+
+Test-only, and it exists so the radio tests can assert on the *outcome* of
+a click rather than on the shape of the action list. Mirrors
+`OpenDoc::set_layer_visible`'s arithmetic exactly — insert to hide, remove
+to show — which is the thing being modelled.
+
+### `fn a_composed_click_changes_both_the_hidden_set_and_the_render_key`
+
+The end-to-end statement the other tests only approach: compose the
+click the way [`super::body`] does, hand the result to the real
+[`crate::app::actions::Action`] machinery via the mutator `apply`
+calls, and assert the effective hidden set moved AND the render key
+with it.
+
+Without this, every piece could be individually correct and the panel
+still inert — which is precisely the S3 state, and it took a person
+reading the file to notice.
+
+### `fn a_reset_restores_the_document_rather_than_revealing_everything`
+
+Core API trap T-12.9 in one assertion, on a fixture that actually
+declares a layer off. `Action::ResetLayers` maps to
+`OpenDoc::reset_layers`, and the failure it guards against is a
+plausible one — `set_hidden_layers(BTreeSet::new())` reads like
+"clear the override" and means "reveal every layer the document
+turns off", which on a drawing with a "Confidential" watermark is a
+disclosure event.
+
+### `fn the_reset_control_appears_exactly_when_the_view_differs_from_the_document`
+
+Pins the predicate [`super::body`] uses, since the control's presence
+is the only signal that an override is in force at all — `OpenDoc`
+exposes no "is it overridden?" accessor.
+
+The second half is the part the old shell got subtly wrong: it
+counted *clicks*, so a layer switched off and back on left the panel
+claiming a difference that no longer existed. Comparing sets says
+what an operator would say.
+
+### `fn turning_on_a_radio_member_turns_its_unlocked_siblings_off`
+
+Table 101's whole content, against the fixture built for it. The
+failure this prevents is not cosmetic: on a CAD drawing the members of
+an `/RBGroups` array are mutually exclusive alternates, so two of them
+on means two title blocks painted over each other, and the operator
+has no way to know pdfcer did that rather than the document.
+
+### `fn a_locked_radio_sibling_is_never_switched_off_by_a_click_elsewhere`
+
+pdfcer's answer to a conflict the standard leaves open, asserted rather
+than merely written down — see the module docs for why the lock wins.
+
+Note what it asserts: not that the group ends up legal, but that no
+action *names* the locked layer. A click on one row must never change
+a layer the document told the interface not to touch, and the failure
+mode is a silent one: it would look like the radio rule working.
+
+### `fn turning_a_radio_member_off_leaves_its_siblings_alone`
+
+"At most one" permits none. Choosing a replacement would be pdfcer
+deciding which alternate the operator meant — the class of invention
+rule 4 forbids — and it would do so at the exact moment the operator
+asked to see *less*.
+
+### `fn a_click_never_reaches_outside_the_radio_array_core_reported`
+
+`DA-N1`: a group may legally appear in more than one `/RBGroups`
+array, the standard never says what a reader does with it, and the
+constraints are not jointly satisfiable. `pdfcer_core` answers with
+"the first array, plus a count of the overlaps", and this panel
+carries that answer through rather than inventing a resolution.
+
+The fixture is built for exactly this — two inner arrays sharing a
+member. The invariant asserted is the strong, general one: **no click
+ever names a layer outside the array core reported for it**, checked
+for every clickable row rather than for a hand-picked one. A version
+that hunted for the shared member and asserted about that row alone
+would pass on a fixture whose shared member happened to be the locked
+one, and prove nothing.
+
+### `fn a_layers_state_is_carried_by_words_not_by_a_cue`
+
+R84 — never colour alone. With the checkbox back these are no longer
+the *only* state cue, which weakens the argument not at all: a tick is
+a glyph, so a panel whose state was carried by the tick alone would be
+exactly the colour-only failure R84 names, one substitution along.
+
+### `fn each_per_layer_caveat_explains_a_different_surprise`
+
+Eight of them now: the six per-layer caveats, both arms of the
+override tooltip, and the ordinary toggle tooltip they share a row
+with. Each exists because without it the operator's only available
+reading of a surprising row is "pdfcer got it wrong". Two that read
+alike would send them looking for the wrong cause — and the
+design-intent one in particular explains a row that *contradicts the
+file's own `/OFF` array*, which is the most alarming thing this panel
+can show.
+
+### `fn only_a_diverging_row_says_the_operator_changed_it`
+
+The caveat set is what the operator reads to find out why a row looks
+wrong, so a row that explains something that did not happen is as bad
+as one that explains nothing.
+
+Driven off `Layer::visible_by_default` rather than off the hidden set,
+because that is the field [`super::row_caveats`] actually branches on
+— a test that reconstructs the same answer by another route is one
+more thing that can disagree.
+
+### `fn the_locked_sibling_warning_is_not_shown_to_every_radio_row`
+
+A blanket warning on every radio row would train the operator to
+ignore it, and the row it matters on is the one where two members of a
+mutually exclusive group can end up showing at once.
+
+### `fn an_unnamed_layer_is_not_given_an_invented_name`
+
+`/Name` is Required, so its absence is a real malformation. A
+synthesised "Layer 3" would disguise a defect in the file as data
+from it.

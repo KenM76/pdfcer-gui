@@ -14,10 +14,6 @@ use crate::app::actions::pages::PageAction;
 use crate::app::dropped::{Dropped, classify};
 
 /// One file that is going to be imported, and how many pages it brings.
-///
-/// The count is read **once**, here, and then used twice — for the page list
-/// and for the next file's position. Reading it twice would be two parses of
-/// the same file with no guarantee they agreed.
 struct Source {
     path: PathBuf,
     pages: usize,
@@ -86,15 +82,6 @@ pub fn claim(
 }
 
 /// The dropped paths that are PDFs with pages, in order, each with its length.
-///
-/// # Why the page count is read here rather than at apply time
-///
-/// Because a file with **no** readable pages must not be claimed at all — it
-/// has to reach `Action::Open` so the parser can say what is wrong with it —
-/// and "does this file have pages?" cannot be answered without opening it.
-/// `dialogs::insert_pages` opens the file for the same reason and says the same
-/// thing about the cost: *"the load is cheap relative to what follows"*, since
-/// the insert itself opens it again anyway.
 fn readable_documents(paths: &[PathBuf]) -> Vec<Source> {
     paths
         .iter()
@@ -110,11 +97,6 @@ fn readable_documents(paths: &[PathBuf]) -> Vec<Source> {
 }
 
 /// How many pages a file on disk has, or `0` if it cannot be read.
-///
-/// `0` for every failure, deliberately: the caller's only question is *"can
-/// this be imported?"*, and a `Result` here would make three different
-/// unreadable-ness reasons into three call-site branches that all end in the
-/// same fall-through.
 fn page_count_of(path: &Path) -> usize {
     match pdfcer_core::document::Document::load(path) {
         Ok(doc) => pdfcer_core::page_tree::pages(&doc).map_or(0, |p| p.len()),
@@ -150,11 +132,6 @@ mod tests {
     }
 
     /// **A position of `None` declines**, rather than defaulting.
-    ///
-    /// The platform gives no cursor position on a locked workstation, and the
-    /// tempting default — the panel's own centre, or the end of the document —
-    /// would import pages at a place nobody pointed at. Falling through opens
-    /// the file instead, which is visible and undoable.
     #[test]
     fn a_landing_with_no_position_is_not_claimed() {
         let ctx = egui::Context::default();
@@ -181,11 +158,6 @@ mod tests {
     }
 
     /// **A file that is not a readable PDF is left for the fallback.**
-    ///
-    /// The path does not exist, so it cannot be read — the same outcome as a
-    /// corrupt file, and the one that matters: the drop is NOT claimed, so
-    /// `app::dropped` still runs and the operator gets the parser's own
-    /// sentence rather than silence.
     #[test]
     fn an_unreadable_document_is_left_for_the_parser_to_explain() {
         let ctx = egui::Context::default();
@@ -219,11 +191,6 @@ mod tests {
 
     /// **Two files land in the order they were dragged, not on top of each
     /// other.**
-    ///
-    /// The arithmetic from the module header, asserted without touching the
-    /// disk: A has three pages and goes in the gap before page 5, so B's own
-    /// position has to be 8 rather than 5. Deriving each position at apply
-    /// time would produce 5 twice and interleave the two documents.
     #[test]
     fn several_files_stack_in_the_order_they_were_dropped() {
         let sources = [

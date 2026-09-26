@@ -194,15 +194,6 @@ pub fn audit<G: ObjectGraph + ?Sized>(graph: &G) -> Audit {
 
 /// One node: how many `/Page` leaves are beneath it, recording any
 /// disagreement on the way back up.
-///
-/// Returns the **structural** answer — what `/Kids` actually holds — never the
-/// declared one. That direction is the whole of §1: a walk that short-circuited
-/// on `/Count` would be reading the field it is here to check.
-///
-/// The disagreement is recorded **after** the children are counted, so
-/// [`Audit::disagreements`] comes out deepest-first with the root last, which
-/// is the order a reader of the trace wants: the first entry is the innermost
-/// node that is wrong.
 fn walk<G: ObjectGraph + ?Sized>(
     graph: &G,
     id: ObjId,
@@ -274,10 +265,6 @@ fn walk<G: ObjectGraph + ?Sized>(
 }
 
 /// One node's `/Count`, resolved through a reference if it is one.
-///
-/// `as_int` rather than `as_number`: §7.7.3.2 says integer, and a `/Count 3.0`
-/// is a file this guard declines to judge rather than one it refuses — the same
-/// posture §6 takes for an absent count, for the same reason.
 fn count_of<G: ObjectGraph + ?Sized>(graph: &G, id: ObjId) -> Option<i64> {
     graph
         .resolved(id)

@@ -80,21 +80,12 @@ mod tests {
     /// **The default is the ENGINE's default**, so that a shell that omits
     /// `stamp_fit` and a shell that names it explicitly ask for the same
     /// thing.
-    ///
-    /// `TextAnnotStyle::stamp_fit`'s doc: *"`None` means
-    /// `StampFit::GrowToText`, the authoring default"*. If this constant ever
-    /// disagreed, the properties panel and the placing dialog would apply
-    /// different rules to the same stamp and neither would say so.
     #[test]
     fn the_default_is_grow_to_text() {
         assert_eq!(DEFAULT, StampFit::GrowToText);
     }
 
     /// Every policy this shell knows about is offered exactly once.
-    ///
-    /// The failure this catches is a list that quietly holds two of the
-    /// three — a policy an operator can never reach, with no error anywhere.
-    /// The same test `pen::FACES` has, for the same reason.
     #[test]
     fn every_policy_is_offered_exactly_once() {
         for fit in [

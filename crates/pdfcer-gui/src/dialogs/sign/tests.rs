@@ -1,3 +1,4 @@
+//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/sign/tests.md`.
 #![cfg(test)]
 //! Tests for [`super`] — the Sign window's pure decisions.
 //!
@@ -14,10 +15,6 @@
 use super::*;
 
 /// A dialog in the state the operator meets after opening a clean document.
-///
-/// Built directly rather than through [`super::SignDialog::open`], which
-/// needs an `OpenDoc`. Every field this file asserts on is set here explicitly,
-/// so a test cannot pass because a default happened to line up.
 fn filling() -> SignDialog {
     SignDialog {
         source: PathBuf::from("D:/drawings/SW41177.pdf"),
@@ -56,17 +53,6 @@ fn filling() -> SignDialog {
 }
 
 /// **The confirm control is dead until a certificate has been OPENED.**
-///
-/// Not until one has been chosen, and not until a passphrase has been typed —
-/// until the container has actually been unlocked and its subject is on screen.
-/// That is §1 of the module header, and it is the one guard this surface offers
-/// against the mistake that matters: an operator who can fill in a reason,
-/// choose a destination and press *Sign* with the certificate still unopened
-/// has been allowed to make the decision before the identity check.
-///
-/// ⚠ A build that enabled the button on `certificate.is_some()` would pass
-/// every screenshot and every ribbon test, and would sign with whichever file
-/// was picked.
 #[test]
 fn the_confirm_control_is_dead_until_the_certificate_has_been_opened() {
     let mut dialog = filling();
@@ -86,15 +72,6 @@ fn the_confirm_control_is_dead_until_the_certificate_has_been_opened() {
 }
 
 /// **The disabled hover names the certificate first, and the tick second.**
-///
-/// R9: greying is only ever for temporarily unavailable, and it is **always
-/// explained on hover**. `OPERATOR_REQUESTS.md` O77's sweep found seven greyed
-/// controls with no explanation.
-///
-/// The order matters because both can be outstanding at once, and the
-/// certificate is the one the operator must deal with first — a sentence about
-/// a tick-box on a form whose first section is not finished sends them to the
-/// wrong end of the window.
 #[test]
 fn the_disabled_hover_names_the_first_outstanding_thing() {
     let mut dialog = filling();
@@ -107,17 +84,6 @@ fn the_disabled_hover_names_the_first_outstanding_thing() {
 }
 
 /// **Changing the destination retires an acknowledgement already given.**
-///
-/// `crate::dialogs::redact::choose_destination`'s rule. Without it an operator
-/// could tick the box, think better of it, select *a new file*, change their
-/// mind again, and arrive back at *replace* with the consent still standing
-/// from a decision they had explicitly withdrawn in between — on the one
-/// control in this window that writes over a file with no picker in front of
-/// it.
-///
-/// It fires on **any** change rather than only on leaving the replace choice:
-/// retiring a tick that was not needed costs nothing, and deciding which
-/// changes matter is where a future edit gets it wrong.
 #[test]
 fn changing_the_destination_retires_the_overwrite_acknowledgement() {
     let mut dialog = filling();
@@ -148,11 +114,6 @@ fn re_selecting_the_same_destination_leaves_the_acknowledgement_alone() {
 }
 
 /// **A refusal, a signing in flight and a finished write all have no confirm.**
-///
-/// The `Signing` arm is the one worth having: it lasts one frame in practice,
-/// and "in practice" is an assumption about a machine. Without it a second
-/// press on a slow document signs twice — two files, two signatures, and the
-/// second one written over the first if the destination was *replace*.
 #[test]
 fn no_phase_but_filling_offers_a_confirm() {
     for phase in [
@@ -177,17 +138,6 @@ fn no_phase_but_filling_offers_a_confirm() {
 }
 
 /// **`Debug` prints no passphrase, no certificate path, and no key.**
-///
-/// The mechanism, asserted rather than trusted. `crate::secret`'s header
-/// records what the alternative costs: `Action` derives `Debug`, this crate
-/// traces to stderr under `PDFCER_DIAG`, and **`tools/ui-verify` captures that
-/// stderr to a file it keeps as evidence** — so a single `{:?}` on this struct
-/// would write the operator's passphrase to disk, in a directory whose whole
-/// purpose is to be kept and read.
-///
-/// The **path** is asserted absent too, which goes further than
-/// `crate::dialogs::protect`'s equivalent. A path is not key material; it is a
-/// durable pointer at where somebody keeps their digital ID.
 #[test]
 fn the_debug_impl_carries_neither_the_passphrase_nor_the_certificate() {
     let mut dialog = filling();
@@ -237,11 +187,6 @@ fn the_handlers_outcome_moves_the_window_out_of_the_signing_phase() {
 }
 
 /// **Picking a different certificate retires the identity AND the error.**
-///
-/// Leaving either would show the operator a read-back of the certificate they
-/// just replaced — which is the one sentence on this window that must never
-/// describe a different file from the one that will sign — or an error about a
-/// file they are no longer using.
 #[test]
 fn choosing_a_new_certificate_clears_what_the_old_one_said() {
     let mut dialog = filling();
@@ -261,12 +206,6 @@ fn choosing_a_new_certificate_clears_what_the_old_one_said() {
 }
 
 /// **Every refusal has its own sentence, and no two are the same.**
-///
-/// The cheap test that catches the expensive mistake: a `match` whose arms
-/// were filled in by copying the one above it. Five refusals, five different
-/// next moves for the operator, and a build that gave two of them the same
-/// words would send somebody to take the password off a document that has a
-/// redaction armed.
 #[test]
 fn the_five_refusals_are_five_different_sentences() {
     use crate::sign::Refusal;
@@ -293,17 +232,6 @@ fn the_five_refusals_are_five_different_sentences() {
 
 /// **No sentence on this surface calls a signature valid, trusted, secure
 /// or verified.**
-///
-/// `crate::text::sign`'s first rule, enforced rather than remembered.
-/// Authoring a signature and a recipient trusting it are different facts
-/// settled by different parties, and this surface only ever performs the first.
-/// [`crate::panels::signatures`] is the only place in pdfcer that reports the
-/// second; it reports three facts that never collapse into one, and one
-/// cheerful word here would undo that design before the panel is opened.
-///
-/// ⚠ The word list is deliberately blunt and will catch an innocent sentence
-/// one day. That is the right failure: the fix is to re-word the sentence, and
-/// a reviewer who thinks the word is fine has to say so in a commit.
 #[test]
 fn nothing_on_this_surface_claims_a_signature_is_trusted() {
     use crate::text::sign as t;
@@ -405,23 +333,6 @@ fn nothing_on_this_surface_claims_a_signature_is_trusted() {
 
 /// **The box is no longer described as empty, and this assertion is the
 /// successor to a paragraph that could not go red.**
-///
-/// Until `Cargo.lock` moved to `d6b998f` (v0.42.0),
-/// [`crate::text::sign::placement_note`] told the operator *"The box is an
-/// empty frame: pdfcer does not yet draw your name or the date inside it."*
-/// Engine `Pass 10.14` composes the signer's CN, the date and the reason and
-/// location into it — so the sentence became false the moment the pin moved.
-///
-/// ⚠ **And it became false in the direction nothing reports.** An operator told
-/// the box would be empty, who then finds his name in it, has been
-/// under-promised; he files nothing, no screen looks wrong, and no test was
-/// asserting the claim. What caught it was a doc comment carrying its own
-/// expiry date and the engine commit that would void it.
-///
-/// ⇒ **Where a claim about the engine CAN be an assertion, make it one.** This
-/// is that assertion. It names both old wordings so a future "simplification"
-/// cannot reinstate one out of git history, and it requires the two facts the
-/// box now actually carries.
 #[test]
 fn the_box_is_described_as_carrying_the_name_and_the_date() {
     let note = crate::text::sign::placement_note().to_lowercase();
@@ -446,19 +357,6 @@ fn the_box_is_described_as_carrying_the_name_and_the_date() {
 
 /// **AN AUTHOR-IMPOSED REFUSAL SAYS WHOSE RULE IT IS, AND PDFCER IS NOT THE
 /// SUBJECT OF THE FIRST SENTENCE.**
-///
-/// The single most important property of any string added on 2026-09-06.
-/// `Pass 10.13` enforces a signature field's `/SV` dictionary in full and is
-/// deliberately stricter than Acrobat, so the operator **will** meet refusals
-/// here on documents another reader signs. The general wording,
-/// [`crate::text::sign::engine_refused`] — *"pdfcer did not sign the document:
-/// …"* — would tell him, in plain English, that pdfcer is broken; he would be
-/// right to conclude it from the sentence and wrong about the program, and a
-/// working feature would be reported as a defect.
-///
-/// So: the document's preparer is named, and named FIRST; the strictness is
-/// admitted as a choice rather than hidden; and a remedy is offered that does
-/// not require pdfcer to change.
 #[test]
 fn an_author_imposed_refusal_names_the_author_and_not_pdfcer() {
     let sentence = crate::text::sign::author_imposed("the field requires SubFilter one of: X, Y");
@@ -486,12 +384,6 @@ fn an_author_imposed_refusal_names_the_author_and_not_pdfcer() {
 }
 
 /// **What the report says was written names the box that was reused.**
-///
-/// The rule-4 disclosure has to distinguish the two outcomes an operator cannot
-/// tell apart from the file: signed IN the sender's box, or signed beside it.
-/// And `SignReport::notes` — the seed-value constraints the author RECOMMENDED
-/// and this signature does not meet — must reach the screen, because they are
-/// the ones that did **not** refuse and would otherwise be silent.
 #[test]
 fn the_written_summary_carries_the_reuse_the_lock_and_the_notes() {
     let written = crate::text::sign::written_details(&crate::text::sign::Written {
@@ -528,13 +420,6 @@ fn the_written_summary_carries_the_reuse_the_lock_and_the_notes() {
 }
 
 /// **What the signature's box will read reaches the screen.**
-///
-/// `SignReport::appearance_lines` is the text the engine composed into a
-/// visible signature's appearance — the certificate's subject, the time of
-/// signing, and the reason and location as given. The operator never wrote that
-/// composition, and he cannot read it off the document he still has open,
-/// because that one is the unsigned original he started from. A fact about what
-/// was written that is obtainable no other way is rule 4's whole subject.
 #[test]
 fn the_written_summary_carries_the_text_the_signature_box_shows() {
     let visible = crate::text::sign::written_details(&crate::text::sign::Written {
@@ -585,13 +470,6 @@ fn the_written_summary_carries_the_text_the_signature_box_shows() {
 }
 
 /// **The counter that the driven check reads measures the sentence.**
-///
-/// `appearance_shown` is the shell's own account of whether the page's composed
-/// text reached the operator, and `ui-verify` believes it. So it is asserted on
-/// three shapes: every line present, a line dropped, and a line that appears in
-/// the sentence but not as an appearance line — the last because a counter
-/// matching a bare substring would score the subject and report a disclosure
-/// that never happened.
 #[test]
 fn the_appearance_counter_measures_the_sentence_not_the_slice() {
     let lines = [
@@ -642,11 +520,6 @@ fn the_appearance_counter_measures_the_sentence_not_the_slice() {
 }
 
 /// **The three placement arms map to three different requests.**
-///
-/// The one that matters: choosing the sender's box must NOT produce a
-/// rectangle. `SignRequest::visible` beside a resolving `field_name` is
-/// `RectRefusedForExistingField`, so a build that carried both would refuse the
-/// ordinary case the feature exists for.
 #[test]
 fn choosing_the_senders_box_produces_no_rectangle() {
     let mut dialog = filling();
@@ -678,13 +551,6 @@ fn choosing_the_senders_box_produces_no_rectangle() {
 }
 
 /// **An index that outran its list falls back to drawing NOTHING.**
-///
-/// Unreachable from the window — `Place::Existing` is only offered when a
-/// selectable field exists — so this pins the *direction* of a guess rather
-/// than a live path. When a surface has to guess on a branch it believes
-/// impossible, it should guess toward writing LESS into the operator's file: a
-/// fallback of `Visible` would stamp a box carrying his name on a page he never
-/// asked to have marked.
 #[test]
 fn a_field_index_with_no_field_draws_nothing() {
     let mut dialog = filling();

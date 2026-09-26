@@ -157,13 +157,6 @@ pub fn drag(
 const ELLIPSE_SEGMENTS: usize = 48;
 
 /// The arrowhead barb length, in **screen** points, and the angle it opens at.
-///
-/// Screen-space, deliberately: the head is part of the *cursor*, and a head that
-/// shrank to nothing at 25 % would stop saying which end of the band is the
-/// head — which is the one thing this preview exists to say. The committed
-/// annotation's own `/LE` head is drawn by the appearance stream at whatever
-/// size the engine chooses; this is not a promise about that size, it is a
-/// statement about direction.
 const HEAD_LEN_PX: f32 = 14.0;
 /// Half-angle of the arrowhead, in radians (≈ 24°).
 const HEAD_ANGLE: f32 = 0.42;
@@ -261,10 +254,6 @@ pub fn draw_preview(
 }
 
 /// The two barb endpoints of the preview arrowhead at `head`.
-///
-/// Returns an empty array's worth of coincident points for a zero-length band,
-/// which draws nothing — a head with no direction to point in must not be
-/// invented from a normalised zero vector (which would be NaN).
 fn arrowhead(tail: Pos2, head: Pos2) -> [Pos2; 2] {
     let dir = head - tail;
     let len = dir.length();
@@ -348,14 +337,6 @@ mod tests {
 
     /// **The markup lands where the operator dragged, not at the page
     /// centre.**
-    ///
-    /// The operator: *"they just drop things into the center of the pdf
-    /// window."* It is written as a **magnitude** assertion against the dragged
-    /// corners and, separately, as a statement that the result is nowhere near
-    /// the media-box centre, because a test asserting a relation rather than a
-    /// magnitude is satisfied by any absurdity in the right direction. "The
-    /// shape is on the page" passes on the defective build; "the shape's
-    /// corners ARE the corners dragged" cannot.
     #[test]
     fn the_markup_lands_where_the_drag_was_and_not_at_the_page_centre() {
         let page = test_page(612.0, 792.0, 0);
@@ -386,12 +367,6 @@ mod tests {
     /// The same drag, at four magnifications, through the frame's real
     /// mapping — because the pointer only ever reports **screen** positions and
     /// a stray zoom would enter exactly there.
-    ///
-    /// This is the markup gesture's form of
-    /// `moving::a_drag_between_two_page_points_moves_the_same_distance_at_every_zoom`,
-    /// and it is the stronger of the two statements: a move only has to be the
-    /// same *displacement* at every zoom, while a markup has to land on the same
-    /// *absolute* page coordinates.
     #[test]
     fn the_same_drag_authors_the_same_page_coordinates_at_every_zoom() {
         use crate::viewer::page_extent_pts;
@@ -448,12 +423,6 @@ mod tests {
 
     /// **A click with no drag never reaches this module at all**, and the
     /// degenerate drag it would look like is refused.
-    ///
-    /// The module docs' decision, pinned from both ends: the gesture machine
-    /// raises `Click` (not a `DragKind`) for a press-and-release under egui's
-    /// threshold, and if a zero-extent drag does arrive it commits nothing.
-    /// Without the second half, "a click places nothing" would rest on egui's
-    /// behaviour alone.
     #[test]
     fn a_click_places_nothing_and_the_degenerate_drag_it_resembles_is_refused() {
         use crate::canvas::gesture::{
@@ -545,12 +514,6 @@ mod tests {
     }
 
     /// **A non-band kind draws no band and authors nothing here.**
-    ///
-    /// The guard on the first line of [`drag`], asserted because its absence is
-    /// silent: an ink drag routed here by mistake would draw a rectangle between
-    /// the stroke's first and latest points and would **author** one on release
-    /// — a perfectly valid `/Square` that the operator did not draw, over the
-    /// region their freehand stroke happened to span.
     #[test]
     fn a_non_band_kind_is_refused_by_the_band_gesture() {
         let page = test_page(612.0, 792.0, 0);
@@ -602,10 +565,6 @@ mod tests {
 
     /// **The preview's arrowhead is at the head end**, whichever way the
     /// operator drags — the on-screen half of the raw-endpoint rule.
-    ///
-    /// Asserted as a distance, not as a side: both barbs must be within a barb's
-    /// length of the head and nowhere near the tail. A "the head is drawn"
-    /// assertion would pass on an implementation that drew it at the wrong end.
     #[test]
     fn the_preview_arrowhead_sits_at_the_head_whichever_way_the_drag_went() {
         for (tail, head) in [
@@ -637,13 +596,6 @@ mod tests {
     /// The highlight wash is the pen colour with an alpha, not a second choice
     /// of colour — so restyling the application cannot move it and the wash
     /// cannot disagree with the `/C` that lands in the file.
-    ///
-    /// Compared as the *whole* `Color32` against a value rebuilt from the pen,
-    /// rather than channel by channel, because `egui::Color32` stores
-    /// **premultiplied** components: `r()` on a translucent colour returns the
-    /// multiplied byte, so a per-channel comparison against the opaque pen
-    /// fails for a wash that is completely correct — a false failure against
-    /// working code, which is why the whole value is compared.
     #[test]
     fn the_highlight_wash_is_the_pen_colour_with_an_alpha() {
         let pen = super::super::pen_color(

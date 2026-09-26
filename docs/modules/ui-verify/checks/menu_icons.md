@@ -75,3 +75,12 @@ row". `view.zoom_actual` and `view.panel_close` are argued refusals, not
 gaps, and a check that demanded a glyph per row would be demanding art the
 project has decided against — the wrong-picture failure, arriving through a
 harness.
+
+## Item notes
+
+### `const CLICK_AT`
+
+Well inside the sheet, so the popup is nowhere near an edge — `egui` flips a
+popup to keep it on screen and a flipped menu is harder to reason about in a
+failure message, though this check reads names rather than positions and
+would survive it.

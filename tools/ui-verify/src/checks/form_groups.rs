@@ -20,43 +20,11 @@ use crate::trace::Trace;
 const NESTED: &str = "forms/nested-form.pdf";
 /// The `/P 2` certified form **over that same two-level tree**, in *this*
 /// repository. See the module header's fixture table.
-///
-/// **Relative to `CARGO_MANIFEST_DIR`, which is `tools/ui-verify`** — two
-/// levels up, not three, and resolved by [`local_fixture`] rather than by
-/// [`engine_fixture`]. `annot_delete_gate` and `field_delete_gate` both record
-/// the same trap: written as `../../../fixtures/…` it resolves to a
-/// `D:/Dev/fixtures/` that does not exist, and the check SKIPs on every run
-/// while telling the reader to run a generator that writes somewhere else.
-///
-/// It is in this repository and not the engine's because `D:/Dev/pdfcer` is
-/// READ-ONLY for this project — see the workspace manifest — so a fixture this
-/// project needs and that project does not have is authored here, by
-/// `tools/gen-certified-nested-fixture.py`.
 const CERTIFIED: &str = "../../fixtures/certified-nested-form.pdf";
 /// The command that shows the Forms panel, and the tab it lives on.
 const PANEL_TAB: &str = "view";
 const PANEL_ITEM: &str = "ribbon.item.view.panel_forms";
 /// The command that shows the **Properties** panel, and the tab it lives on.
-///
-/// **Needed because the two panels share one tabbed dock stack, and a
-/// tabbed stack draws only its active tab.** Edit's default arrangement puts
-/// Properties, Comments, Forms, Redact, Dimension groups and Attachments in one
-/// stack (`app::modes::defaults`), so phase F's own `ribbon.item.view.panel_forms` click — the
-/// one that brings the Forms panel forward to read the Field-groups section —
-/// **pushes Properties to the back of the same stack**, and
-/// `panels::properties::formfield::section` stops running entirely.
-///
-/// That is why the 2026-08-29 sweep reported *"a field is selected and the
-/// Properties pane traced no `form-field-gates` line"*: the selection was real
-/// (`form-field-selected page=0 field=Personal.Address.Zip widget=0` is in the
-/// trace) and the pane that would have written the census was a background tab
-/// the check had itself put there. Phase H now brings it back before reading.
-///
-/// `file.properties` is `show_panel`, not a toggle, so it is idempotent and
-/// scrolls the tab into view — which matters, because the dock publishes a
-/// `dock.tab.*` rect only for tabs its bar is currently showing, and clicking
-/// that rect directly would work only when the bar happened to be scrolled
-/// right. Going through the ribbon command asks for the panel by name instead.
 const PROPERTIES_TAB: &str = "file";
 const PROPERTIES_ITEM: &str = "ribbon.item.file.properties";
 /// The mode the structural surfaces are reached in.
@@ -90,11 +58,6 @@ const PREVIEWED: &str = "form-group-preview";
 const REQUESTED: &str = "form-group-delete-requested";
 /// The module's own summary line for the deletion — **`-applied`**, not the
 /// bare `delete-field-group` the `vector_edit` funnel writes for the same edit.
-///
-/// Two lines sharing a name is how a check taking `.last()` reads the wrong one
-/// and then reports failure about a gesture that worked. This project has made
-/// that mistake twice (`text-style`, `import-form-data`); the suffix convention
-/// is what stops the third.
 const APPLIED: &str = "delete-field-group-applied";
 /// The Properties pane's per-frame gate census.
 const GATES: &str = "form-field-gates";
@@ -105,13 +68,6 @@ const TARGETS: &str = "form-target";
 
 /// A window tall enough that the Forms panel's third section is on screen
 /// without a scroll hunt.
-///
-/// The same remedy `form_field` applies for the same measured reason: the
-/// harness's default window gives a dock slot a few hundred points, and the
-/// Forms panel now draws a header, two disclosure blocks, three whole-form
-/// controls, a Tab-order section and a Field-groups section above its fill
-/// list. A check that failed because the *window* was small would be reporting
-/// the wrong subject.
 const VIEWPORT: &str = "0,0,1400,1300";
 
 /// **Delete a field group and its whole subtree, from the Forms panel.**
@@ -743,10 +699,6 @@ fn preflight(ctx: &CheckContext) -> Result<(std::path::PathBuf, &'static str)> {
 }
 
 /// Launch on a named fixture, with the shell's own diagnostics on.
-///
-/// `invoke` rings commands on startup, one per frame — used by the refusals
-/// check to enter Edit mode without a segment click, because a mode segment
-/// that misses is a failure about the ribbon rather than about forms.
 fn launch(
     ctx: &CheckContext,
     exe: &std::path::Path,
@@ -827,12 +779,6 @@ fn census(trace: &Trace) -> Option<Census> {
 
 /// The first selectable widget the canvas named, as `(page, canvas_x,
 /// canvas_y)` at its centre.
-///
-/// The application's numbers, not the fixture's. `canvas/forms.rs` publishes
-/// one line per widget precisely so a harness can aim at where the program says
-/// the box is; a check that computed the rect from the PDF would be asserting
-/// that two independent derivations agree and would report a disagreement as a
-/// hit-test failure.
 fn first_target(trace: &Trace) -> Option<(usize, f64, f64)> {
     trace.events(TARGETS).find_map(|l| {
         let page: usize = l.get("page")?.parse().ok()?;
@@ -873,14 +819,6 @@ fn engine_fixture(rel: &str) -> Option<std::path::PathBuf> {
 }
 
 /// A fixture from **this** repository's `fixtures/`.
-///
-/// Resolved from `CARGO_MANIFEST_DIR` — `tools/ui-verify` — rather than from
-/// the process's working directory, which is whatever the operator happened to
-/// be in. `reflow`, `text_edit`, `annot_delete_gate` and `field_delete_gate` all
-/// do the same, and two of those record having got the *depth* wrong first:
-/// `../../` reaches the repository root, `../../../` reaches `D:/Dev`, and the
-/// second SKIPs on every run with a message telling the reader to run a
-/// generator that writes to the first.
 fn local_fixture(rel: &str) -> Option<std::path::PathBuf> {
     let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(rel);
     path.is_file().then_some(path)

@@ -193,3 +193,143 @@ at the top of `dispatch_command` — so any decline left on the bar by an
 earlier gesture is cleared before this one starts. That is what makes the
 "nothing on the bar before the drag" control below assertable rather than
 hopeful.
+
+## Item notes
+
+### `const MODE`
+
+The shell's default is Read, where a canvas click on content is refused BY
+DESIGN. A check that skipped this step would report the mode gate as a
+selection defect — which `delete_key`'s own header records as having
+happened.
+
+### `const MOVE_DECLINED_EVENT`
+
+Not per frame. An in-flight drag is re-evaluated 60 times a second and a
+refusal traced per frame would bury every other event on the channel — the
+lesson `canvas-pointer` taught when a stationary pointer emitted fifty
+identical lines in nine seconds.
+
+### `const RECORDED_EVENT`
+
+**The per-refusal tokens live in [`AIMS`], not in constants here.** A
+token hoisted to module scope reads as a property of the check, so it
+survives the disappearance of the refusal it names — the assertion stays
+green while the constant becomes the name of nothing. A token that only one
+row needs belongs in that row, where the answer it describes is visible
+beside it and a changed answer changes them together.
+
+### `const DECLINE_REGION`
+
+⚠ Read through [`driving::declared`], never with `Trace::last`. The
+application's `ui-rect` channel is a **change log** — it emits when a rect
+moves and emits a `ui-rect-gone` when a region stops being drawn — so
+`.last()` returns a fossil for a region that has been retired, and a caller
+cannot tell it from a live one. That misreading once produced a confident,
+detailed, entirely wrong layout-defect report about eighteen ribbon
+controls.
+
+### `const AIMS`
+
+One launch, one fixture, four drags — one per visual LINE of
+`inherited-runs.pdf`. Every field here is measured; the spans are recorded
+in `fixtures/inherited-runs.PROVENANCE.md` and pinned by
+`provider::line::tests::the_local_fixture_gives_all_four_line_move_answers`,
+which decomposes the same file.
+
+**The aim is not asserted directly, and it does not need to be.** The
+two refusing lines produce different answers and differ from the two that
+move, so an aim that landed on the wrong one mostly produces the wrong
+answer and this check fails — loudly, naming what it got. That is the
+property a table of four buys that four separate
+checks against four separate fixtures could not: the discriminating power
+is in the document, not in the harness's arithmetic.
+
+**Two aims are on rotated text, and that is not decoration.** An
+inherited show operator advances along the text direction, so a horizontal
+one always lands on its predecessor's baseline and is always inside its
+predecessor's line. A line can only BEGIN with an inherited piece when the
+text is turned — so without rows three and four, `run-has-no-position` and
+`run-would-move-next` are tokens no document could produce at line
+granularity, and this check would pass on a build that had deleted both.
+
+### `const MOVED_EVENT`
+
+`n=` is the number of show operators the line is written in, not `1`.
+The pieces go to one `move_text_runs` as a set, one undo step, so a line
+a producer wrote as nine `Tj`s reports `n=9`.
+
+Asserted instead of `canvas-move`, and the difference is the whole
+point of asserting it. `canvas-move` is written by the canvas when it
+RAISES the action; this one is written by the apply phase after the engine
+has accepted the edit and the epoch has moved. A shell that raised a move
+the engine then refused writes the first and not the second — and that is
+precisely the build a pre-check regression produces.
+
+### `const DRAG_PX`
+
+Comfortably past any drag threshold and past
+`canvas::moving::Refusal::NoTravel`'s floor, and small enough that the
+pointer stays well inside the canvas on a 612 × 792 page at fit zoom. The
+destination does not matter: the release is refused before any geometry is
+computed, so this only has to be *a drag* rather than *a click*.
+
+### `fn drive`
+
+The three-way return is the SKIP/FAIL/PASS rule made structural: `Err` is a
+precondition that was absent (SKIP), `Ok(Some(_))` is an assertion that did
+not hold (FAIL), `Ok(None)` is a pass.
+
+### `fn one_aim`
+
+Same three-way return as [`drive`]: `Err` SKIP, `Ok(Some(_))` FAIL,
+`Ok(None)` pass.
+
+# Why the control is INSIDE this function and not once at the top
+
+Because `status-group:decline` is one region shared by every decline in the
+application, and two of the three rows put a sentence in it. A control taken
+once, before the loop, would be a baseline for row 1 and a fossil for rows 2
+and 3 — the exact shape of *an absence assertion is only as good as when
+its baseline was taken*, which cost this project a green check over a
+planted defect. Each row establishes its own.
+
+The clearing gesture is a press of **Escape**. It ascends the selection
+ladder, which is what this row needs: every row starts from no selection and
+descends to the Part rung by its own click, so no row inherits a rung.
+
+
+This function's first shape treated an empty status-bar slot as a
+**precondition** and skipped the row when the slot was still on screen,
+reasoning that *"Escape is a command, and `decline::retire` runs at the top
+of `dispatch_command`."* The first driven run refuted it: row 2 skipped with
+the slot still live, and the trace carries no `ui-rect-gone
+name=status-group:decline` anywhere — so the sentence really was still
+drawn.
+
+The cause is that **Escape is claimed by the canvas before it can become a
+command.** With a selection standing, `canvas::keys` spends it ascending the
+ladder, so `dispatch_command` never runs and neither does `retire`.
+`canvas::keys`' own header states the contract plainly — *"pressing Escape
+twice puts the tool down; pressing it once corrects a mis-aimed pick"* —
+and neither of those is a command.
+
+**That is behaviour, not a defect, and the fix was to stop needing it.**
+Both of this check's sentences are `still_true` for the reason
+`decline::fresh` calls *"the FILE cannot change under it"*: they report a
+property of the document, so no later moment makes them stale and they are
+meant to outlive a deselection. A check that demanded an empty slot was
+asserting a retirement policy this project deliberately does not have.
+
+**So the per-row link is a MARK, not an absence.** Every assertion below
+is anchored at a `Trace::mark` taken immediately before this row's drag and
+reads `last_after`. A sentence left standing by an earlier row cannot
+satisfy them, because the events that carry it are behind the mark. The
+slot's live-ness is still read — and reported — but as a note, which is
+the difference between measuring a thing and gating on it.
+
+### `fn moved`
+
+**This is the row that proves the other two are measuring something.**
+It is also the whole of O188's move half as the operator experiences it —
+he drags one label in a title block and the label moves.

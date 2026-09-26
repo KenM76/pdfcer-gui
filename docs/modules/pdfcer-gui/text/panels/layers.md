@@ -43,3 +43,41 @@ None of this is drawn on the drawing. An inference the operator cannot see
 object nested deeper than the leaf list can see through — still owes a
 report, and this is where that report is worded. **Render normally; report
 separately. Both.**
+
+## Item notes
+
+### `fn unresolved_long`
+
+Separate from [`layer_selection_report`] so the reasons can be read as a
+set — they are meant to be *different* from one another, and a reader
+checking that has them in one place rather than spread through a match with
+four other arms.
+
+### `fn unresolved_short`
+
+Every one of these is a **cause**, not an apology. *"layer not known"*
+alone would be the hedge this catalog's header forbids; the clause after
+the dash is what tells the operator whether to look at their file, their
+selection, or pdfcer.
+
+### `fn every_state`
+
+The `match` beneath it is the mechanism: adding a variant to
+`Membership` makes this file fail to compile, which is what a
+hand-written array in a completeness test cannot do. This project has
+shipped four defects into exactly that gap (`RESUME.md`, three
+separate recurrences), and the fix each time was to make the compiler
+hold the list.
+
+### `fn a_group_whose_row_is_not_on_screen_is_reported_in_words`
+
+The failure this forbids is silent and reads as a broken feature: the
+operator types in the search, the matching layer is narrowed out, the
+plate goes with it, and the panel looks exactly as it would if
+selecting an object highlighted nothing at all.
+
+### `fn an_unnamed_group_gets_its_own_words`
+
+`on layer ""` is the shape of a placeholder, and R9 forbids one. The
+unnamed case is a different sentence, not the same sentence with a hole
+in it.

@@ -55,3 +55,25 @@ the mapping is the argument:
 that check, run over `Preset::ALL` rather than over the default — a preset
 is exactly where two roles collapse into one, and the two that are not the
 current default are the two nobody looks at.
+
+## Item notes
+
+### `fn the_preview_and_committed_roles_are_distinct_on_every_preset`
+
+The check `egui-shell`'s `overlays.rs` says the application owes and the
+shell cannot write for it. Its own words for what it is protecting: *"a
+theme that merges two roles removes a cue that was doing work, and it
+would do so silently."*
+
+Over `Preset::ALL`, not the default. A preset is exactly where two roles
+collapse — a light theme reaching for the same mid-grey twice — and the
+two presets that are not the current default are the two nobody looks
+at until an operator switches to one.
+
+### `fn every_role_the_canvas_reads_is_defined`
+
+The failure this catches is the one `Overlays::get`'s `Option` makes
+possible: a role nobody defined returns `None`, the caller falls back,
+and **nothing looks broken** — the snap marker simply keeps drawing in
+the selection stroke, which is exactly the state this module was written
+to end and which survived unnoticed for a whole phase.

@@ -47,3 +47,39 @@ the grid** and had a non-zero height, which rules out the two failures that
 produce a region and no visible mark. It does not assert which boundary it
 sat on; that is what the `gap=` field on the release line is for, and the
 two are cross-checked below.
+
+## Item notes
+
+### `const GRID`
+
+The panel's own `panel-pages` region is deliberately not used: it includes
+the header, the previews checkbox and the slow-page note, so a caret
+"inside the panel" would be a weaker claim than a caret inside the grid.
+
+### `const DRAG_START`
+
+`page-drag-start`, **singular**, and the name is not the panel's. The drag
+lives in `crate::pagedrag`, shared with the page view and with the document
+tab strip, because a drag that crosses documents cannot be owned by the
+panel it started in. So it is *a page drag*, not *the pages panel's drag*.
+
+**A harness constant naming an application event is a coupling, and it
+decays silently in exactly one direction: absence reads as failure.** A
+check holding the stale spelling reports *"the tile does not sense a drag"*
+over a build whose trace carries the line two names away — a confident,
+specific, entirely wrong defect report about working code.
+
+### `const MIN_PAGES`
+
+Three. With two, every landing is the block's own lip and the correct
+answer to a drag is *refuse*, so a run on a two-page fixture cannot
+distinguish a working gesture from a dead one.
+
+### `const LAND_ACROSS`
+
+Three-quarters, not the right edge. The panel resolves the **nearer**
+vertical edge, so anything past the midpoint means the same boundary — and
+a point exactly ON the edge is the one place a rounding difference between
+the application's `f32` rectangle and this harness's reading of it could
+flip the answer. Three-quarters is unambiguous and still inside the tile,
+which is what makes the drop target resolve at all.

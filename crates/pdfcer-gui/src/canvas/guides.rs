@@ -61,47 +61,15 @@ pub const CAP: usize = 200;
 pub const MAX_PER_DOCUMENT: usize = 256;
 
 /// The half-width, in logical points, of the band that catches a guide drag.
-///
-/// A **screen**-space radius, like [`super::mapping::SELECT_SCREEN_TOLERANCE_PX`]
-/// and for the identical reason recorded there: a page-space catch radius is
-/// `radius × zoom` pixels on screen, so a guide that is easy to grab at 100 %
-/// is un-grabbable at 25 % — exactly the zoom an operator uses to see a whole
-/// sheet.
-///
-/// Deliberately smaller than the 6-point selection radius. A guide is a line
-/// the operator can see, so aiming at it is easy; and the cost of a miss is
-/// asymmetric — missing a guide starts a marquee the operator can abandon with
-/// Escape, while catching a guide the operator did not aim at moves something
-/// they had positioned deliberately.
 const CATCH_PTS: f32 = 4.0;
 
 /// The alpha, out of 255, of a placed guide.
-///
-/// High enough to read over dense linework — a guide the operator cannot see
-/// on a CAD sheet is a guide that is not there — and short of opaque, because
-/// a guide crosses the whole page and an opaque line would compete with the
-/// drawing along its entire length. The same trade `overlay::GHOST_ALPHA`
-/// records for the move ghost, at the same order of magnitude.
 const GUIDE_ALPHA: u8 = 170;
 
 /// The alpha of a guide preview that would be **discarded** on release.
-///
-/// Half again fainter than a placed guide, and that difference *is* the
-/// feedback: while the pointer is over the grey or over a ruler, the line the
-/// operator is dragging says "release here and this does not happen". No
-/// second colour, no second shape, no wording — emphasis, which is the same
-/// answer `overlay`'s current-find-hit reached when it could not have a second
-/// hue.
 const DISCARD_ALPHA: u8 = 60;
 
 /// `egui::Memory` key for the in-flight guide drag.
-///
-/// In `Memory` for the reason `canvas`'s `GESTURE_MEMORY_KEY` states and not
-/// the one the selection was moved off it for: a drag that is happening *right
-/// now* is genuinely frame-local UI state with no meaning across a document,
-/// and keying it here means a document change starts the next frame with no
-/// drag in flight, by construction. What the drag *produces* is a
-/// [`Action::SetGuides`] applied after the frame, through the one funnel.
 const DRAG_KEY: &str = "pdfcer-canvas-guide-drag"; // ui-text-exempt: internal memory id, never displayed
 
 /// `egui::Id` base for the guides' catch bands.
@@ -182,10 +150,6 @@ pub struct Guide {
 
 impl Guide {
     /// Its line on screen, spanning the page it belongs to.
-    ///
-    /// Across the **page**, not across the viewport, and that is the visual
-    /// half of "a guide belongs to a sheet": a line that ran on into the grey
-    /// would look like a property of the window.
     fn segment(self, map: PageMapping) -> [Pos2; 2] {
         let page = map.image_rect();
         match self.axis {
@@ -201,11 +165,6 @@ impl Guide {
     }
 
     /// The screen-space band a press must land in to grab this guide.
-    ///
-    /// [`CATCH_PTS`] either side of the line, and no further along it than the
-    /// page goes — so a guide cannot be grabbed from the grey beside its own
-    /// sheet, which under a continuous mode would mean grabbing a guide the
-    /// operator cannot see.
     fn band(self, map: PageMapping) -> Rect {
         let [a, b] = self.segment(map);
         Rect::from_two_pos(a, b).expand2(match self.axis {
@@ -296,10 +255,6 @@ impl Guides {
     }
 
     /// Parse an on-disk payload, dropping anything that does not parse.
-    ///
-    /// Dropping rather than failing, for the reason the module header gives:
-    /// every malformed state means the same thing to the caller — there is no
-    /// guide there to restore — and a preference is not worth an error path.
     fn decode(payload: &str) -> Self {
         let mut out = Self::default();
         for token in payload.split_whitespace() {
@@ -466,10 +421,6 @@ pub fn remember_at(file: Option<&Path>, document: &Path, guides: &Guides) {
 
 /// Split a file's text into `(payload, path)` pairs, dropping unparseable
 /// lines.
-///
-/// The payload is everything before the **first** tab and the path is the
-/// whole remainder, which is what lets a path contain spaces. A line with no
-/// tab, or with an empty path, is dropped.
 fn parse(text: &str) -> Vec<(String, PathBuf)> {
     text.lines()
         .filter_map(|line| {
@@ -484,17 +435,6 @@ fn parse(text: &str) -> Vec<(String, PathBuf)> {
 }
 
 /// A document's path as this store keys it.
-///
-/// **`std::path::absolute`, and not `std::fs::canonicalize`** — the same
-/// normalisation [`crate::viewer::remembered`] uses, and it has to stay the
-/// same or the two stores would disagree about whether two spellings name one
-/// document.
-///
-/// The difference is not cosmetic. `canonicalize` touches the filesystem, so
-/// it **fails on a path that does not exist** — and on Windows it returns the
-/// verbatim `\\?\D:\…` form, which is a line no operator opening
-/// `guides.txt` would recognise as their drawing, and one that would not match
-/// the same document's entry in `page-display.txt`.
 fn absolute(path: &Path) -> PathBuf {
     std::path::absolute(path).unwrap_or_else(|_| path.to_path_buf())
 }
@@ -504,10 +444,6 @@ fn absolute(path: &Path) -> PathBuf {
 // ---------------------------------------------------------------------------
 
 /// A guide drag in flight.
-///
-/// `Copy` and three small fields, held in [`egui::Memory`] between frames. See
-/// the module header §3 for why the *release* is read from raw pointer input
-/// rather than from the `Response` the press came from.
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct Drag {
     /// Which way the line being dragged runs.
@@ -602,20 +538,6 @@ fn pointer_page(ctx: &Context, geometry: &CanvasGeometry) -> Option<(usize, Page
 }
 
 /// Finish an in-flight drag, if the pointer has come up.
-///
-/// **The one release path**, shared by both entry points, and the whole of the
-/// create / move / delete rule:
-///
-/// | drag started as | released over a page | released anywhere else |
-/// |---|---|---|
-/// | new (from a ruler) | the guide is created there | nothing happens |
-/// | an existing guide | it moves there, page included | it is **deleted** |
-///
-/// Raises at most one [`Action::SetGuides`] carrying the whole next
-/// collection. One action rather than three verbs because the operand is
-/// small, because the apply then has exactly one thing to persist, and because
-/// "compute the next value from the previous one and hand it over" is the same
-/// shape the canvas already uses for the selection.
 fn release(ctx: &Context, doc: &OpenDoc, geometry: &CanvasGeometry, actions: &mut Vec<Action>) {
     let Some(drag) = load(ctx) else {
         return;
@@ -717,11 +639,6 @@ pub(super) fn settle(
 }
 
 /// The cursor over a guide, or over the ruler that yields one.
-///
-/// A resize cursor rather than a move cursor, and the pair of them rather than
-/// one: a two-headed arrow across the guide says *this slides that way*, which
-/// is the whole of what a guide drag does. `Grabbing` would say "pan", which
-/// is what the middle button and the hand tool already mean on this canvas.
 fn cursor(axis: GuideAxis) -> egui::CursorIcon {
     match axis {
         GuideAxis::Horizontal => egui::CursorIcon::ResizeVertical,
@@ -788,11 +705,6 @@ pub(super) fn canvas_drag(
 }
 
 /// Draw the guide being dragged, if one is.
-///
-/// Across the page it would land on, at full strength — or across the whole
-/// viewport at [`DISCARD_ALPHA`] when it would land nowhere, which is how the
-/// line says *release here and this does not happen*. See [`DISCARD_ALPHA`] on
-/// why the difference is emphasis rather than a second colour.
 fn preview(ui: &Ui, geometry: &CanvasGeometry) {
     let Some(drag) = load(ui.ctx()) else {
         return;
@@ -880,10 +792,6 @@ mod tests {
 
     /// **Every guide survives a round trip through the on-disk spelling**,
     /// including a negative coordinate.
-    ///
-    /// Negative is not an edge case invented for the test: canvas space has
-    /// its origin at the page's top-left, and a guide can legitimately sit
-    /// above or left of the sheet — the operator dragged it into the bleed.
     #[test]
     fn every_guide_round_trips_through_its_on_disk_spelling() {
         let guides = sample();
@@ -906,10 +814,6 @@ mod tests {
 
     /// **A corrupt payload degrades into fewer guides, never into an
     /// error.**
-    ///
-    /// The posture the module header commits to, asserted token by token:
-    /// each of these is a different way a line can be wrong, and every one of
-    /// them must cost exactly the guide it describes.
     #[test]
     fn a_corrupt_payload_drops_only_the_guides_it_breaks() {
         let good = "0:h:10 1:v:20";
@@ -920,11 +824,6 @@ mod tests {
     }
 
     /// A non-finite coordinate is refused rather than stored.
-    ///
-    /// It cannot come from a drag — the pointer is finite — but it can come
-    /// from a hand-edited file, and a NaN guide is a line that paints nothing
-    /// and a band that catches nothing: present in the count, absent from the
-    /// canvas.
     #[test]
     fn a_non_finite_guide_is_refused() {
         let mut g = Guides::default();
@@ -976,11 +875,6 @@ mod tests {
 
     /// **A guide is stored against a page in canvas space, so it does not
     /// move when the view does.**
-    ///
-    /// The property `GUI_ROADMAP.md` names for the selection — identity, not
-    /// position — applied to a guide: the stored value is identical at every
-    /// zoom, and the *screen* line it produces tracks the page. A guide stored
-    /// in screen coordinates would pass no part of this.
     #[test]
     fn a_guide_holds_still_on_the_page_at_every_zoom() {
         let guide = Guide {
@@ -1011,10 +905,6 @@ mod tests {
 
     /// **The catch band is the same number of screen points wide at every
     /// zoom.**
-    ///
-    /// The law `canvas::mapping` exists to enforce, applied to a guide: a
-    /// page-space catch radius would be un-grabbable at exactly the zoom an
-    /// operator uses to see a whole sheet.
     #[test]
     fn the_catch_band_is_the_same_width_at_every_zoom() {
         let guide = Guide {
@@ -1041,10 +931,6 @@ mod tests {
 
     /// **A document's guides come back after a reopen, and a second
     /// document's do not leak into the first.**
-    ///
-    /// The whole of `PLANNED`'s *"need a per-document store to survive a
-    /// reopen"*, driven through the real reader and writer against a real
-    /// file.
     #[test]
     fn guides_survive_a_reopen_and_stay_with_their_own_document() {
         let dir = std::env::temp_dir().join(format!("pdfcer-guides-{}", std::process::id()));
@@ -1093,10 +979,6 @@ mod tests {
 
     /// **A path containing spaces round-trips**, which is why the payload is
     /// written first and the path is the whole remainder of the line.
-    ///
-    /// Not hypothetical: every Windows operator has
-    /// `C:\Users\<name>\My Documents`, and a drawing office names job folders
-    /// after the job.
     #[test]
     fn a_path_with_spaces_survives_the_format() {
         let pairs = parse("0:h:10 1:v:20\tC:\\Program Files\\a b\\c d.pdf\n");

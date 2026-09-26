@@ -64,3 +64,36 @@ for that name.
 on the session's own report of it; whether the program survives a write and
 reopen is `save_copy`'s territory and is not asserted here. The engine tests
 that round trip; this tests that the GUI reaches the engine.
+
+## Item notes
+
+### `const INVOKE`
+
+`mode.edit` first. The command is drawn on the Tools tab, which every mode
+shows, but embedding is a content edit and driving from a known mode makes
+the run reproducible rather than dependent on whatever mode the last session
+left behind.
+
+### `const SYSTEM_FONTS`
+
+Deliberately not what the product searches. `Prefs::font_folders` starts
+empty and pdfcer never adds to it, for the licensing reason `app::fonts`
+records: which font goes into somebody's document is the operator's call. A
+harness may look where a product may not.
+
+### `const APPLIED`
+
+`-applied`, and the suffix is why this constant has a doc comment.
+`vector_edit` writes a **second** line for the same edit under the bare name
+— `embed-fonts page=0 n=3 epoch=1 disclosures=…` — and trace matching is on
+the exact event name, so `.last()` on the bare name would read the funnel's
+line, find no `embedded=` key, and report `embedded=0` about an embed that
+worked. That defect has been made twice in this project and the naming
+convention is what prevents the third.
+
+### `const OPENED`
+
+The check reads `targets=` off this to tell a GREYED button from a broken
+one. Both look identical from outside - no click reaches anything - and
+exactly one of them is a fact about the fixture rather than about the
+program.

@@ -72,3 +72,38 @@ is a rename across a file another track is editing, made in the same pass as
 a new feature, which is exactly the diff `RIBBON_IA.md` records as
 unreviewable. The trigger is armed: the next surface to need a page scope is
 the one that moves it to a module named for what it is.
+
+## Item notes
+
+### `fn habits`
+
+The membership rule and the argument for every inclusion and every
+omission live on [`crate::app::prefs::ExportTextPrefs`], which is the
+type this returns; this function is only the projection. It is one
+struct literal with **no `..Default::default()`**, so a field added to
+`ExportTextPrefs` is a compile error here rather than a preference
+written to disk as its own default and never actually remembered.
+
+### `fn pages`
+
+Called twice per frame — once to grey the Export button, once on the
+press — and it is cheap: a parse of a short string. Computing it live is
+what keeps the button and the sentence beside the box from ever
+disagreeing.
+
+### `fn separator_group`
+
+Two radios rather than a checkbox, because the operator is choosing
+between **two things that go in the file**, one of which is the standard
+character and one of which is prose pdfcer wrote. A checkbox labelled
+"add page markers" would make the second look like a formatting
+preference rather than like added content, which is precisely the
+distinction rule 4 exists to keep visible.
+
+### `fn losses_group`
+
+Drawn as ordinary labels rather than `weak`, and above the buttons
+rather than below them. This is the paragraph that decides whether the
+operator should be doing this at all — a drafter who needs the title
+block's *layout* wants the DXF export or the image export, and this is
+where they find that out.

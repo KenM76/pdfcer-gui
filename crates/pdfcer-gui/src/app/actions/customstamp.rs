@@ -167,17 +167,6 @@ pub(super) fn place(doc: &mut OpenDoc, stamp: &CustomStamp, page: usize, rect: R
 }
 
 /// **The words owed for one placement**, in the order they are read.
-///
-/// Split out so it can be tested without a document, and so the *"say it
-/// unless `dynamic` already covered it"* rule for widgets sits in one place
-/// rather than inside a closure inside a funnel.
-///
-/// # Order
-///
-/// Shape first, then the promise, then what did not arrive. That is the order
-/// of how much each one can cost him: a stretched signature is wrong on the
-/// page, a stale date is wrong in fact, and a missing form field is a design
-/// detail of somebody else's stamp.
 fn disclosures(placed: &pdfcer_core::edit::PlacedArtwork, dynamic: bool) -> Vec<String> {
     let mut said = Vec::new();
     if placed.distorted {
@@ -228,19 +217,6 @@ mod tests {
     use super::*;
 
     /// Build a `PlacedArtwork` with the fields these rules read.
-    ///
-    /// `PlacedArtwork` is `#[non_exhaustive]`, so it cannot be built with a
-    /// struct literal from outside its crate. It is `Copy` and every field is
-    /// public, so the fixture is made by placing artwork once — which is
-    /// exactly what a unit test must not do. The rules are therefore tested
-    /// through a shape this module owns instead, and the mapping from
-    /// `PlacedArtwork` to it is the two-line `disclosures` signature above,
-    /// which a reader can check by eye.
-    ///
-    /// This is a real limitation and it is written down rather than worked
-    /// around: when the disclosure rules grow another condition, this comment
-    /// is the signal to ask the engine for a constructor rather than to bolt
-    /// another boolean onto the test helper.
     fn said(distorted: bool, dynamic: bool, widgets: usize, annots: usize) -> Vec<String> {
         let mut out = Vec::new();
         if distorted {
@@ -287,10 +263,6 @@ mod tests {
     }
 
     /// The stretch sentence names a direction, and gets it the right way round.
-    ///
-    /// Both signs, deliberately. A helper that only ever divides one way
-    /// passes on a symmetric bug: *a suite which only tries one SIGN is not
-    /// testing the value*.
     #[test]
     fn the_stretch_direction_follows_the_ratio() {
         assert!(t::placed_distorted(1.5, 1.0).contains("wider"));

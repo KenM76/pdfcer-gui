@@ -28,11 +28,6 @@ const DISCLOSURE_REGION: &str = "properties.text.face.disclosure";
 /// The first row offering a face the document does not contain.
 const NEW_FACE_REGION: &str = "properties.text.face.new";
 /// The `text-style-applied page=… change=… applied=… of=…` line.
-///
-/// Named `-applied` rather than plain `text-style` because `vector_edit`'s
-/// label for the same edit is a sibling event and trace matching is on the exact
-/// event name — the mistake `tools/gates/check-trace-names.py` was written after
-/// this project made three times in three days.
 const STYLE_EVENT: &str = "text-style-applied";
 /// The `text-style-declined applied=…` line.
 const DECLINED_EVENT: &str = "text-style-declined";
@@ -45,11 +40,6 @@ const SWEEP_PT: f64 = 60.0;
 /// How many scroll notches to spend looking for the chooser below the fold.
 const SCROLL_ATTEMPTS: usize = 6;
 /// `T`, as a Windows virtual key — the text-sweep tool.
-///
-/// Not optional. In Edit mode `textsel::gate::takes_the_press` reads
-/// `tool.is_text() || (Select && !caps.edit_content)`, and the second disjunct
-/// is false there — so a drag with the Select tool is an object marquee and the
-/// check would report a working panel as broken.
 const VK_T: u16 = 0x54;
 /// `Esc`, to shut the popup if this check leaves early.
 const VK_ESCAPE: u16 = 0x1B;
@@ -81,15 +71,6 @@ impl Check for TheFaceChooserOffersAFaceTheDocumentDoesNotContain {
 
 /// Poll until the restyle reports one way or the other, and answer how long it
 /// took.
-///
-/// A bounded poll rather than a fixed sleep, for `restyle_text`'s reason: a
-/// restyle re-resolves the pin per run from a fresh provenance extraction, a
-/// sweep across a title-block label is a dozen runs, and a fixed sleep long
-/// enough for that makes every run slow while a pleasant one fails on the
-/// operator's own drawings. Reaching the ceiling is not an error — the caller
-/// then reads a trace with neither line in it and reports the "nothing
-/// happened" verdict, which is the right answer if a restyle really can take
-/// twenty seconds.
 fn wait_for_verdict(session: &Session) -> Result<u128> {
     const CEILING_MS: u128 = 20_000;
     let started = std::time::Instant::now();

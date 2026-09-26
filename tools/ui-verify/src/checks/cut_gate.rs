@@ -22,17 +22,6 @@ const REFUSED: &str = "clipboard-cut-refused";
 const COPIED: &str = "clipboard-copy";
 
 /// What the canvas says when an ANNOTATION is selected.
-///
-/// `annot-select`, not `canvas-selection`. The general selection line
-/// carries `sel=`, `level=` and `first=` — all about the **content** index
-/// spaces — and an annotation selection is not in either of them. Reaching for
-/// the familiar line would have made the hunt below click twenty-five times and
-/// conclude there were no marks on a document with three.
-///
-/// It also carries `subtype=`, which turns the hunt from *"did something get
-/// selected?"* into *"did a REDACTION MARK get selected?"* — the difference
-/// between a check that proves its own subject and one that proves a click
-/// landed on some annotation and then blames the cut gate.
 const ANNOT_SELECT: &str = "annot-select";
 
 /// See the module documentation.
@@ -60,10 +49,6 @@ impl Check for CuttingARedactionMarkIsRefusedBeforeAnythingIsRemoved {
 }
 
 /// Resolve a fixture under the engine repository's synthetic corpus.
-///
-/// `None` rather than a panic turns a missing corpus into a SKIP with a reason
-/// instead of a crash mid-suite. `D:\Dev\pdfcer` is READ-ONLY to this project;
-/// this reads from it and writes nowhere near it.
 fn engine_fixture(rel: &str) -> Option<std::path::PathBuf> {
     let path = std::path::Path::new("D:/Dev/pdfcer/fixtures/synthetic").join(rel);
     path.is_file().then_some(path)

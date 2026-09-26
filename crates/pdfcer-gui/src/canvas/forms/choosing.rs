@@ -30,45 +30,19 @@ const LIST_KEY: &str = "pdfcer-canvas-form-choice-list"; // ui-text-exempt: inte
 const LIST_AREA: &str = "pdfcer-canvas-form-choice-area"; // ui-text-exempt: internal widget id, never displayed
 
 /// The tallest the option list is drawn, in screen points.
-///
-/// `/Opt` is unbounded — a country list is two hundred entries — so the list
-/// scrolls rather than growing to fit, and this is the height it scrolls
-/// within. Above it the popup stops looking like a dropdown and starts looking
-/// like a page of its own.
 const LIST_MAX_H: f32 = 240.0;
 
 /// The narrowest the option list is drawn, in screen points.
-///
-/// A choice widget may be 30 pt wide on the sheet and its options may be
-/// words. The list is at least this wide whatever the box measures, which is
-/// the same trade `boxes::MIN_EDITOR` makes for the text editor: a
-/// control too small to read is a worse lie than one a little wider than the
-/// field it belongs to.
 const LIST_MIN_W: f32 = 140.0;
 
 /// The allowance the popup's own border needs when its scroll height is
 /// derived from the room on the chosen side.
-///
-/// It is not a gap. A combo's list is drawn **flush** against the widget, with
-/// no rounding, no shadow and no frame margin, because that is what Acrobat
-/// draws and because a floating card hovering a few points below a field reads
-/// as a tooltip rather than as the field's own options.
 const LIST_PAD: f32 = 4.0;
 
 /// The least height the list is given, in screen points — about one row.
-///
-/// The floor is deliberately this low rather than a comfortable minimum: a
-/// larger one would exceed the room on the chosen side for a widget near the
-/// edge of the screen, and `constrain_to` would then slide the popup back over
-/// the widget, which is the failure the module header's is about.
 const LIST_MIN_H: f32 = 24.0;
 
 /// Space above and below a row's text, in screen points.
-///
-/// Small on purpose. `egui`'s own `selectable_label` sets a button's padding,
-/// which gives rows roughly half again the height Acrobat draws — so a list of
-/// eight options needed a scroll bar where Acrobat needed none, and the two
-/// surfaces could not be compared row for row.
 const ROW_VPAD: f32 = 1.0;
 
 /// Space between a row's left edge and its text, in screen points.
@@ -98,10 +72,6 @@ fn store(ctx: &egui::Context, id: Id, state: ListState) {
 }
 
 /// Forget the list state, because the field has lost the keyboard.
-///
-/// Called on every path that clears the focus, so that clicking the same
-/// field again a minute later opens a list positioned and highlighted from
-/// scratch rather than from wherever the last visit left it.
 fn forget(ctx: &egui::Context, id: Id) {
     ctx.data_mut(|d| d.remove::<ListState>(id.with(LIST_KEY)));
 }
@@ -388,44 +358,6 @@ pub(super) fn choose(
 }
 
 /// Draw the option list and answer which row was clicked.
-///
-/// # Two presentations, and they are not styling variants
-///
-/// `/Ff` `Combo` decides **where the options are drawn**, and the two answers
-/// are structurally different surfaces:
-///
-/// * a **combo box** drops its list *outside* the widget, below it when there
-///   is room and above it otherwise — the module header's governs the side,
-///   the constraint and the scroll height;
-/// * a **list box** draws its options **inside its own rectangle**, opaquely
-///   covering the appearance stream, with a scroll bar the moment they do not
-///   fit. It is anchored to the widget and deliberately overlaps it, so none
-///   of the half-plane arithmetic applies.
-///
-/// ### The opacity is load-bearing, and Acrobat is the counter-example
-///
-/// An in-place list that lets the page show through is unreadable over the one
-/// document type this program exists for. O209, on a SolidWorks-exported
-/// drawing: *"I tested some on the SW drawing so I guess the background on the
-/// drawing interferes with the list box in Acrobat."* Acrobat's own list is
-/// legible over a blank form and not over dense vector line work, so the fill
-/// here is the theme's opaque text-entry background rather than anything
-/// derived from the widget or blended with what is underneath.
-///
-/// That is measured against Acrobat rather than assumed, and it is what O209
-/// reports: *"the list option is somehow hidden from view in Acrobat until I
-/// click on it, then I can select options and if the box is too small for all
-/// of the options it gives a scroll bar."*
-///
-/// # Why the frame is built here instead of using [`egui::Frame::popup`]
-///
-/// `Frame::popup` is a rounded, shadowed, generously padded card — correct for
-/// a menu floating over an application's own chrome, wrong for a control
-/// belonging to a rectangle on a page. Acrobat's list is a square 1 px box
-/// flush against the field, no shadow and no margin, and the difference is
-/// most of what *"look different than they do in Acrobat when they are clicked
-/// on"* names. The border takes `canvas_selection_ink` so it matches the focus
-/// ring [`choose`] has already drawn around the same widget.
 #[expect(
     clippy::too_many_arguments,
     reason = "every argument is a distinct fact about one popup: where it \
@@ -543,27 +475,6 @@ fn list(
 }
 
 /// Draw one option row and answer whether it was clicked.
-///
-/// # Why the row is painted rather than assembled from `selectable_label`
-///
-/// Three things have to be true at once and no stock widget delivers them
-/// together: the row is the **full width** of the list (a click anywhere along
-/// it picks, as in every list the operator has used), it is **compact** enough
-/// to compare against Acrobat row for row, and a selected row is a **solid
-/// plate with legible ink** rather than a tinted button.
-///
-/// The plate is `Theme::accent_pair` — the sanctioned spelling of *"paint this
-/// as the emphasised thing"*, contrast-gated at the theme, and the only legal
-/// route to a solid emphasis colour outside the theme module.
-/// `tools/gates/check-selection-channel.sh` forbids reading `visuals.selection`
-/// here and `check-theme-colors.sh` forbids naming a colour outright; both are
-/// satisfied, and the result is Acrobat's solid-row treatment expressed in this
-/// shell's own palette instead of copied out of a screenshot.
-///
-/// A **multi-select** row gets the same plate and no check box. That is
-/// Acrobat's answer too, measured: a multi-select list marks its chosen rows by
-/// filling them, and adding a check box would invent an affordance the product
-/// class does not have — which is why this takes no `multi` argument.
 fn row(ui: &mut Ui, width: f32, label: &str, on: bool, hl: bool) -> egui::Response {
     let font = egui::TextStyle::Body.resolve(ui.style());
     let height = ui.text_style_height(&egui::TextStyle::Body) + 2.0 * ROW_VPAD;
@@ -599,13 +510,6 @@ fn row(ui: &mut Ui, width: f32, label: &str, on: bool, hl: bool) -> egui::Respon
 }
 
 /// Whether the pointer is inside the popup's own rectangle.
-///
-/// Read from the `Area`'s rectangle rather than from a row's response, because
-/// a point on the frame's padding is still inside the popup — and because the
-/// `Area`'s rect is in `egui` **memory**, carried over from the pass that drew
-/// it, so this answers before this frame's popup has been laid out. That is
-/// what makes it usable by [`choose`]'s focus guard, which runs above the call
-/// to [`list`].
 fn pointer_in_list(ctx: &egui::Context, id: Id) -> bool {
     let Some(pos) = ctx.pointer_interact_pos() else {
         return false;
@@ -615,30 +519,11 @@ fn pointer_in_list(ctx: &egui::Context, id: Id) -> bool {
 }
 
 /// Whether this frame's press landed inside the popup.
-///
-/// [`pointer_in_list`] plus *"and a button went down this frame"* — the extra
-/// half that makes it a claim on **this** press, which is what
-/// [`super::overlay`] needs to know before reading the same press as a request
-/// to focus some other field.
 fn pressed_in_list(ctx: &egui::Context, id: Id) -> bool {
     pointer_in_list(ctx, id) && ctx.input(|i| i.pointer.any_pressed())
 }
 
 /// The selections a pick produces, as **export** values.
-///
-/// Single-select is the one option picked. Multi-select toggles it against
-/// what is already selected.
-///
-/// # Rebuilt from `/Opt`, which is not what the panel does
-///
-/// The current selection is recovered by asking each *option* whether it is
-/// selected, rather than by copying `/V` and editing it. The difference shows
-/// on a field whose `/V` holds a value matching no option — a real state, set
-/// by another program or left behind when the option list changed. Carrying it
-/// forward hands `set_choice_value` a value it must refuse
-/// (`ChoiceValueNotInOptions`), so the operator's tick would fail with a
-/// refusal naming a value they never touched. Rebuilding drops it instead,
-/// which is the same thing picking a new value on any other surface does.
 fn wanted(
     options: &[(String, String)],
     selected: &[String],
@@ -684,11 +569,6 @@ fn step(hl: usize, len: usize, backwards: bool) -> usize {
 }
 
 /// Which way a vertical arrow points, or `None` when neither was pressed.
-///
-/// Vertical only, which is where this differs from
-/// [`super::tabbing`]'s `arrow`: a radio group may be laid out in a row, so
-/// the horizontal arrows mean something there. A list is a list, and Left and
-/// Right are left to whatever the canvas means by them.
 fn arrow(ctx: &egui::Context) -> Option<bool> {
     ctx.input(|i| {
         if i.key_pressed(Key::ArrowDown) {

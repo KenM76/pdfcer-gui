@@ -12,12 +12,6 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// The document this check opens.
-///
-/// Pinned, and `--pdf` ignored: the subject is the **device**, not the file,
-/// and the ladder's first rung is defined as *one ordinary document at fit
-/// zoom*. A suite-wide fixture could be the dense site plan, whose fit-zoom
-/// raster is large enough that a silent `gl-pressure` would stop being a
-/// control and start being a result.
 const FIXTURE: &str = "four-pages.pdf";
 
 /// The precondition. A launch that opened nothing traces no `status` line, and
@@ -32,32 +26,12 @@ const TEXTURE_LIMIT: &str = "gl-max-texture-side";
 const PRESSURE: &str = "gl-pressure";
 
 /// `egui`'s `InputState::default().max_texture_side`.
-///
-/// The number this check exists to distinguish from a device reading.
-/// Spelled here because the failure text has to be able to say *"this is
-/// exactly the framework's pre-backend default"*, which is the sentence that
-/// tells the reader where to look.
 const EGUI_DEFAULT_SIDE: usize = 2048;
 
 /// The floor the standing reading must clear.
-///
-/// Not derived from any engine constant, and deliberately not:
-/// `tools/ui-verify` has exactly one dependency and cannot import
-/// `pdfcer_render::MAX_PIXMAP_EDGE`, so a harness constant *naming* an engine
-/// constant would be a copy that decays the day the engine's moves. This is a
-/// **plausibility floor** instead — one doubling above the framework default,
-/// far under every limit a card running this shell reports — and it is
-/// therefore correct for as long as the framework's default is 2048, which is
-/// the only fact it depends on.
 const CREDIBLE_FLOOR: usize = 4096;
 
 /// Off the desktop, at the harness's usual size.
-///
-/// Nothing is ever aimed at this window, so the `SAFE_ORIGIN + size` arithmetic
-/// that binds an on-screen check does not bind here. The size is kept at the
-/// usual figure anyway so that the window's frames cost what every other
-/// check's frames cost — a tiny window would raster a tiny page, and the
-/// pressure reading would be about a surface no operator ever sees.
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
 
 /// See the module documentation.

@@ -10,20 +10,6 @@ use crate::canvas::geometry;
 
 /// How far the viewport must move, on either axis, before it counts as a
 /// **resize** that re-places the view.
-///
-///
-///
-/// # Why half a point, and why the comparison is STRICTLY greater
-///
-/// The worst jitter measured is exactly 0.5 pt (`444.0` → `444.5` in the
-/// driven trace), so `>=` would have let that one frame through — the first
-/// test below was written with that value in its series and went red on `>=`
-/// before the operator ever could. Smaller than any resize an operator can
-/// make: a dock splitter moves in whole
-/// points, a window edge in whole physical pixels, and a panel collapse by
-/// its whole width. Nothing an operator does lands in the gap. It is a
-/// **floor**, not a tolerance on the placement arithmetic — once the gate
-/// opens the placement is exact.
 const RESIZE_FLOOR_PT: f32 = 0.5;
 
 /// **Where the view should go, AND which layout unit that offset is
@@ -372,19 +358,6 @@ mod tests {
     }
 
     /// **Move the document past the open-seed frame.**
-    ///
-    /// Every resize test below is about a document that has been on screen for
-    /// a while and is *then* resized — a dock drag, a window edge, a panel
-    /// collapsing. That world has a canvas-frame count well past
-    /// [`crate::canvas::offset::SEED_FRAME`], and the resize arm declines
-    /// outright below it (see the guard).
-    ///
-    /// Spelled as its own call in each test rather than folded into
-    /// [`place_at`], deliberately. Folding it in would make every test in this
-    /// module unable to observe the guard at all, and
-    /// [`the_resize_arm_declines_until_the_seed_has_placed_the_view`] — the
-    /// test that exists *because* the guard was missing — would be testing a
-    /// world the helper had already made impossible.
     fn settled(doc: &mut OpenDoc) {
         doc.canvas_frames = crate::canvas::offset::SEED_FRAME + 4;
     }
@@ -509,26 +482,6 @@ mod tests {
     }
 
     /// **The regression of 2026-09-13, in the smallest world that has it.**
-    ///
-    /// A freshly opened document reaches its second canvas frame with a
-    /// `before` frame available — `zoom::remember_frame` ran on frame 0 the
-    /// moment O186's narrower pasteboard let a sliver of sheet be drawn — and
-    /// with a viewport that differs from frame 0's, because the canvas's
-    /// scroll bars have just become solid. Both of the resize arm's original
-    /// preconditions are therefore met on the one frame the open-seed arm owns.
-    ///
-    /// The arm must decline anyway. The "centre" it would preserve is
-    /// `before.offset`, which on an unplaced frame is the `ScrollArea`'s own
-    /// default `(0, 0)` — the top-left corner of the pasteboard, a whole
-    /// viewport above and left of the page. Preserving it parks the document
-    /// off the bottom-right corner of the canvas, and because the seed is a
-    /// one-shot keyed on a single frame index, nothing ever places it again.
-    ///
-    /// ⚠ The two asserts are deliberately a pair. The first is the guard; the
-    /// second is what makes the guard non-vacuous, by showing that the very
-    /// same call with the document one frame further on *does* place. Without
-    /// it a future change that made this arm decline for an unrelated reason
-    /// would leave a green test asserting nothing.
     #[test]
     fn the_resize_arm_declines_until_the_seed_has_placed_the_view() {
         let mut doc = crate::app::state::open_local_fixture(FIXTURE);

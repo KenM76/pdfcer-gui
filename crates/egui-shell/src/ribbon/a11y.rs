@@ -68,6 +68,8 @@
 //! is a genuine match for "one of N, mutually exclusive", and
 //! `RadioGroup` exists for the container — so the selector announces
 //! correctly and only the tab strip carries the ceiling.
+//!
+//! Design and rationale: `docs/modules/egui-shell/ribbon/a11y.md`.
 
 use crate::commands::Command;
 use egui::{Response, WidgetInfo, WidgetType};
@@ -95,13 +97,6 @@ pub fn accessible_name(command: &Command, shows_label: bool) -> &str {
 }
 
 /// A last-resort name: the command's own id.
-///
-/// Reached only when an application registers a command with an empty
-/// label and an empty (or absent) tooltip. The id is never empty in a
-/// registered command, so this is what makes
-/// `an_accessible_name_is_never_empty` a total claim rather than a
-/// hopeful one. It is also *diagnostic*: hearing "view dot fit page"
-/// announced tells whoever hears it exactly which registration to fix.
 fn fallback(command: &Command) -> &str {
     if command.id.is_empty() {
         "unnamed control"
@@ -184,11 +179,6 @@ mod tests {
     }
 
     /// **An icon-only control announces its tooltip.**
-    ///
-    /// The whole point of the module. Without this, every icon in the
-    /// ribbon announces as "button" and the ribbon is unusable by anyone
-    /// who cannot see it — while looking completely correct in a
-    /// screenshot, which is why it needs a test rather than a review.
     #[test]
     fn an_icon_only_control_announces_its_tooltip() {
         let c = command("Fit page", Some("Scale the page to fit the window"));
@@ -200,11 +190,6 @@ mod tests {
 
     /// A control that draws its label announces the label, and the
     /// tooltip stays a hint.
-    ///
-    /// Promoting the tooltip over a visible label would make the spoken
-    /// name differ from the printed one, which is worse than either
-    /// alone: a user cannot then relate what they hear to what a sighted
-    /// colleague is pointing at.
     #[test]
     fn a_labelled_control_announces_the_label_it_shows() {
         let c = command("Fit page", Some("Scale the page to fit the window"));
@@ -213,12 +198,6 @@ mod tests {
 
     /// **An accessible name is never empty, whatever the application
     /// registered.**
-    ///
-    /// The fallback chain is tooltip → label → id, and a registered
-    /// command always has an id. The degenerate rows are application
-    /// defects; the shell's obligation is that they degrade to something
-    /// announceable and *diagnostic* — hearing the id read out says which
-    /// registration to fix.
     #[test]
     fn an_accessible_name_is_never_empty() {
         let cases = [
@@ -243,10 +222,6 @@ mod tests {
     }
 
     /// Whitespace is not a name.
-    ///
-    /// `"   "` passes an `is_empty` check and announces as silence, which
-    /// is the same failure as no name at all but harder to spot in a
-    /// string catalogue.
     #[test]
     fn whitespace_falls_through_to_the_next_candidate() {
         // A blank label with a real tooltip announces the tooltip, even
@@ -260,11 +235,6 @@ mod tests {
     }
 
     /// **The tab ceiling is asserted, so it cannot be quietly forgotten.**
-    ///
-    /// If a future `egui` adds `WidgetType::Tab`, this test is what fails
-    /// and points at the module header that has to be rewritten. Until
-    /// then it records that `SelectableLabel` is a deliberate choice with
-    /// a stated cost, not an oversight.
     #[test]
     fn tabs_are_published_as_selectable_labels_because_egui_035_has_no_tab_role() {
         // The variant list `egui` 0.35 offers. If this stops compiling,

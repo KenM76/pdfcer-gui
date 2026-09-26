@@ -19,6 +19,8 @@
 //! pdfcer reads and must not silently alter. The copy avoids the bare word and
 //! says *"the dimensions you draw"*, which is unambiguous without asking the
 //! operator to learn a distinction that is ours rather than theirs.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/text/scale.md`.
 
 use pdfcer_core::dimension::{FractionMode, Unit};
 
@@ -383,12 +385,6 @@ mod tests {
     use super::*;
 
     /// The intro discloses that dimensions are currently measuring the paper.
-    ///
-    /// The sentence this whole window exists to deliver. An operator who has
-    /// placed dimensions and read numbers has been given plausible answers to
-    /// a question they did not ask, and this is where they find out. A test
-    /// rather than a convention, because the natural edit when an intro reads
-    /// long is to cut its first clause.
     #[test]
     fn the_intro_says_the_numbers_currently_measure_the_paper() {
         let intro = intro();
@@ -400,15 +396,6 @@ mod tests {
     }
 
     /// Every unit has a name, and no two share one.
-    ///
-    /// A picker with two identically-labelled rows is a picker whose choice is
-    /// a coin toss.
-    ///
-    ///
-    /// ⇒ **A completeness test that carries its own copy of the set is
-    /// testing the copy.** It reads `Unit::all()` now, which is the same list
-    /// the three unit dropdowns read, so the test and the product cannot
-    /// disagree about what the set is.
     #[test]
     fn every_unit_is_named_distinctly() {
         let units = Unit::all();
@@ -427,10 +414,6 @@ mod tests {
     }
 
     /// The default number style reads as a choice, not as an absence.
-    ///
-    /// "Whatever suits the unit" is a thing an operator can decide they want.
-    /// An empty string, or "Default", is a row that looks like a missing value
-    /// — and this one is the row most operators will leave selected.
     #[test]
     fn the_default_number_style_is_worded_as_a_choice() {
         let name = fraction_name(None);
@@ -442,11 +425,6 @@ mod tests {
     }
 
     /// The fraction entries write the fraction the way a drawing does.
-    ///
-    /// The operator's ask was to be able to read `55 5/8"` rather than
-    /// `55.63"`. A picker offering "eighths" without showing `1/8` makes them
-    /// translate in their head at the moment they are trying to match a
-    /// drawing.
     #[test]
     fn the_fraction_styles_show_the_fraction() {
         for (denominator, needle) in [(8_u32, "1/8"), (16, "1/16"), (32, "1/32")] {
@@ -459,10 +437,6 @@ mod tests {
     }
 
     /// The commit button names its act rather than saying OK.
-    ///
-    /// It re-propagates every member's appearance, so dimensions already on the
-    /// page change. "OK" would be a button whose blast radius the operator has
-    /// to have read the intro to know.
     #[test]
     fn the_commit_button_names_what_it_does() {
         let label = accept();

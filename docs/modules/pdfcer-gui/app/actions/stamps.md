@@ -31,3 +31,17 @@ application, and the reason it is hard is not the encoding but the naming.
 
 Everything about *what the file contains* lives in [`crate::stamps`], which
 is where it can be unit tested without a picker.
+
+## Item notes
+
+### `fn suggested_path`
+
+Acrobat's user-stamps folder when one can be identified, and the document's
+own folder when it cannot — the graceful nothing **R9** asks for rather than
+a suggestion pointing at a path that does not exist on this platform.
+
+The *name* is always [`crate::stamps::folder::suggested_file_name`]'s, and
+deliberately readable: Acrobat writes an opaque key there
+(`YTV_yyfVN1TzJ0_6oei-GB.pdf`, measured on this machine) and reads the
+category from `/Info` `/Title`, so nothing depends on the filename and a
+human browsing that folder gets `Signatures.pdf` instead.

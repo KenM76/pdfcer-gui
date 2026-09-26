@@ -57,3 +57,25 @@ continuous — `viewer::display::default_for_mode`. A document of at least a
 few pages is required for a scroll to take one off screen; the check says so
 rather than passing vacuously on a one-page fixture. **An instrument that
 can only return one answer is not an instrument.**
+
+## Item notes
+
+### `const NOTCHES`
+
+Enough to take **several** pages off screen and bring them back. 14 notches
+draw only three pages, measured, and a round trip over three pages is a weak
+sample for a claim about a 36-sheet drawing set.
+
+Sent as a burst rather than one at a time because the question is what
+survives the round trip, not what happens during it.
+
+**Falsified** against a planted defect: with `retain` cut down to keeping
+only the current page and its two neighbours, this check FAILS and names the
+pages drawn twice.
+
+That falsification does not rescue the gesture. A continuous scroll
+rehomes every page it passes into the strip cache, so this check warms its
+own subject and evicts nothing — scrolling **further** makes that more true,
+not less. Both halves of the assertion rest on a precondition the gesture
+prevents. `DEFECTS.md` D52 names the repair: a discontinuity, then an
+assertion on `strip-raster-evicted`.

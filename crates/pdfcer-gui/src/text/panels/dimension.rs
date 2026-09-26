@@ -510,11 +510,6 @@ mod tests {
     }
 
     /// The three tiers are three different sentences.
-    ///
-    /// The property under test is that `Factory` and `Group` do **not**
-    /// collapse into one "inherited". They differ in what a `--clear` on the
-    /// group would do, and an operator reading "inherited" cannot tell which
-    /// tier to go and edit.
     #[test]
     fn the_three_style_sources_read_differently() {
         let names = [

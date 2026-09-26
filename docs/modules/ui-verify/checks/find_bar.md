@@ -56,3 +56,27 @@ Every keystroke goes to the foreground window, so this check needs
 `Driver::press_chord`, which will not send a chord at all without a target
 window — a bare keystroke into the operator's editor types a character,
 but a chord runs a command.
+
+## Item notes
+
+### `const NEEDLE`
+
+`e` rather than a word, and the reason is the fixture problem: this check
+is pointed at whatever PDF the operator passes, and any *word* is a bet
+about that document's contents. A single common letter is the closest
+thing to a needle that a page of English or of a CAD title block will
+contain — and when it does not, the check still passes and says so, which
+is why the choice is a note rather than a load-bearing assumption.
+
+### `fn the_needle_and_its_virtual_key_are_the_same_letter`
+
+Two constants describing one keystroke, so they can disagree — and if
+they did, the check would type one character and report having
+searched for another, which reads as a Find defect rather than as a
+harness bug.
+
+### `fn the_chord_is_control_plus_f`
+
+Pinned because a wrong modifier code does not fail loudly: it sends a
+chord nobody bound, the application does nothing, and the check
+reports that Find is broken.

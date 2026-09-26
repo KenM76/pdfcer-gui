@@ -132,3 +132,12 @@ protected file looks identical to the one it came from.
 So after a replace, the window is deliberately stale and
 [`crate::text::protect::written`]'s replace form says so by name, telling the
 operator which file to re-open. Rule 4: report separately, and do not pretend.
+
+## Item notes
+
+### `fn owner_session`
+
+The authentication and the throwaway in one act — see §2. The document is
+read from disk rather than from the open session because the two mutating
+verbs take `&mut EditSession` and what they mutate would disarm
+`save_incremental`'s refusal on the session the operator is still using.

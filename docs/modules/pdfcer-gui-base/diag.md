@@ -109,3 +109,113 @@ Both check [`enabled`] before touching their registries, so with
 `PDFCER_DIAG` unset a call site costs one relaxed atomic load and no lock,
 no hash, no allocation and no formatting. That is what makes it correct
 to leave these calls in permanently — see the contract above.
+
+## Item notes
+
+### `static LAST_LINE`
+
+A `Mutex` rather than a `thread_local!` or a `RefCell` because
+[`ui_rect`] is designed to be handed to `egui-shell` as a plain
+`fn(&str, Rect)` callback (see the module docs), and a callback whose
+correctness depends on which thread invokes it is a trap for whoever wires
+it up. The lock is uncontended in practice — everything that traces layout
+runs on the UI thread — and it is only ever taken when tracing is on.
+
+Keys are `&'static str`, which is not an accident: a slot names a *call
+site*, and call sites are known at compile time. It also means the
+steady-state (nothing changed) path performs **no allocation at all** —
+only a hash of a string that already exists.
+
+### `static LAST_UI_RECT`
+
+Separate from [`LAST_LINE`] and typed as a [`egui::Rect`] rather than as a
+rendered string for two reasons: region names are runtime values (a ribbon
+group's caption id is data, not a literal), so they cannot key
+[`LAST_LINE`]; and comparing the rect itself rather than its rendering
+keeps the comparison independent of the format the line happens to be
+printed in.
+
+### `static UI_RECTS_THIS_FRAME`
+
+## Why this exists: the trace is a CHANGE LOG, and a change log cannot
+say that something stopped
+
+[`ui_rect`] emits only when a region's rect *differs* from the last one
+emitted for that name, which is what keeps the channel usable — a per-frame
+dump of ~60 regions at 60 fps is a torrent nobody can read. The cost is
+that a region which stops being drawn **emits nothing**, so its last known
+rect stands in the trace forever and a reader has no way to tell "still
+there, unmoved" from "gone forty frames ago".
+
+That is not academic, and the failure it produces is **confident and
+wrong**: a ribbon whose overflow has correctly swallowed a control leaves
+that control's last rect standing in the trace, at the position it held
+under an earlier layout, and a harness measuring it reports a live layout
+defect against a fossil. A screenshot of the same frame shows a perfectly
+laid-out ribbon.
+
+So [`end_ui_frame`] diffs this set against the previous frame's and emits
+`ui-rect-gone name=…` for anything that disappeared. The log stays a change
+log and becomes an *honest* one, reporting both directions of change.
+
+### `fn lock`
+
+A panic while one of these locks was held would otherwise disable the
+trace for the rest of the process — and the trace is the thing you reach
+for *because* something went wrong. `into_inner` keeps the channel alive
+on a possibly-stale map, which can at worst cost one duplicate or one
+suppressed line. The contract says the trace is never load-bearing; this
+is that contract applied to its own failure mode.
+
+### `fn record_if_changed`
+
+Split out from [`trace_changed`] — and taking the map as an argument
+rather than reaching for the global — so the de-duplication rule is
+testable without an environment variable, without stderr capture, and
+without two parallel tests fighting over one process-global registry. The
+rule is the interesting part; `eprintln!` is not.
+
+Returns whether the caller should print, and records the line if so.
+
+### `static VIEWPORT`
+
+A thread-local rather than a parameter because `ui_rect` is called from
+~40 sites, none of which knows or should know that dialogs exist. It is
+safe as a thread-local for a reason specific to *immediate* viewports:
+egui runs a child's callback **synchronously, inside the parent's
+frame, on the parent's thread**, so the scope is a straight-line region
+of one call stack rather than a global mode.
+
+### `fn viewport_suffix`
+
+Empty for the application's own window, so **every existing trace line is
+byte-identical to what it was** and no consumer has to learn anything to go
+on working. A harness that never opens a dialog sees no change at all; one
+that does gets a field it can ask for. That is the cheaper half of the
+change and it was a deliberate choice over tagging every line with `root`.
+
+### `const FRAME_TICK_EVERY`
+
+Ten, which is one line per ~250 ms of animation and per ~0.2 s of a busy
+redraw — negligible beside the hundreds of `ui-rect` lines a frame already
+emits, and fine enough that `Session::settle` can wait on a count rather than
+on a clock.
+
+### `fn record_rect_if_changed`
+
+The comparison is exact rather than epsilon-based, deliberately. An
+unmoved region is laid out from the same inputs every frame and produces a
+bit-identical `Rect`; a region that moved by a quarter of a point moved,
+and a check measuring it wants to know. There is no third case in which an
+epsilon would help.
+
+### `fn a_disabled_trace_never_builds_its_message`
+
+This is the property that lets call sites be left in permanently:
+the moment a disabled trace still formats its message, every one of
+them becomes a per-frame allocation and the next engineer starts
+deleting them again.
+
+The test is written so it is meaningful in BOTH environments: if the
+harness itself runs under `PDFCER_DIAG`, the closure is expected to
+run, so the assertion follows `enabled()` rather than assuming it.

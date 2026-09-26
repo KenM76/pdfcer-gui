@@ -9,10 +9,6 @@
 use crate::text::ocr as t;
 
 /// How wide the slider is drawn, in points.
-///
-/// Wide enough that a percent is aimable — the travel is about one point per
-/// percent — and narrow enough to sit in a band beside five icon-only
-/// switches without pushing the group into the overflow menu on a laptop.
 const TRAVEL_PT: f32 = 110.0;
 
 /// Draw the blend control, if `kind` is its kind.
@@ -68,12 +64,6 @@ mod tests {
     use super::*;
 
     /// How wide the laid-out region is after `draw` is asked for one kind.
-    ///
-    /// The return value is the wrong oracle for these two tests and would make
-    /// both of them unfalsifiable: `draw` answers `None` on every frame the
-    /// operator did not move the slider, which is every frame in a headless
-    /// context. What differs between *drew a slider* and *declined* is whether
-    /// anything was allocated, so that is what is measured.
     fn laid_out(kind: &'static str, at: Option<f32>) -> f32 {
         let ctx = egui::Context::default();
         let mut width = f32::NAN;
@@ -87,16 +77,6 @@ mod tests {
 
     /// The kind guard is load-bearing: a foreign kind draws nothing even when
     /// there is a perfectly good blend to draw.
-    ///
-    /// The failure this guards is `manifest::COLOUR_SWATCH`'s, from the other
-    /// side. That note records a kind the manifest wrote and no renderer
-    /// matched, which left a caption over an empty band for a release; a
-    /// renderer that answered *every* kind is the same defect inverted — a
-    /// blend slider standing where the Font group asked for a face chooser.
-    ///
-    /// It is given `Some(0.5)` on purpose. Passing `None` would let the
-    /// guard be deleted with this test still green, because the blend would
-    /// then be missing too and either arm could be the one answering.
     #[test]
     fn a_foreign_kind_draws_nothing_even_with_a_blend_to_draw() {
         for kind in [
@@ -126,10 +106,6 @@ mod tests {
 
     /// With the layer off there is no blend, and the control does not invent
     /// one.
-    ///
-    /// The alternative is a slider sitting at zero over a mode that is not
-    /// running, which reads as *the layer is on and showing nothing* rather
-    /// than as *the layer is off*.
     #[test]
     fn its_own_kind_with_no_blend_draws_nothing() {
         assert_eq!(laid_out(crate::shell::manifest::OCR_BLEND, None), 0.0);

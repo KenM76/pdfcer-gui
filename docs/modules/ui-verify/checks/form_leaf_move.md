@@ -55,3 +55,21 @@ The fixture's strokes cross, so a press at the box centre could be on a
 different one — and `canvas::pressing::body_under` requires the press to
 land on the selected object's own geometry before a drag is a move rather
 than a marquee.
+
+## Item notes
+
+### `const SELECTION`
+
+**The third time in one session that a check aimed at the wrong one of
+two selection lines**, and it is worth pinning here rather than fixing
+silently. This shell writes two, from two functions, for two different acts:
+
+| line | written by | for |
+|---|---|---|
+| `selection-set … object=N via=…` | `SelectionState::select_only` | naming ONE target directly |
+| `canvas-selection … first=object:N` | `canvas::trace::selection_event` | a click that walked the ladder |
+
+The descent goes through the ladder, so it writes the second. A check that
+reads the first sees nothing and reports the feature missing — which is what
+this one did on its first run, while the trace four lines further down said
+`first=leaf:0`.

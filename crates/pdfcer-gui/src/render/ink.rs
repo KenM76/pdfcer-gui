@@ -5,19 +5,9 @@
 use pdfcer_render::tiny_skia::Pixmap;
 
 /// The most tones worth counting.
-///
-/// Nothing downstream cares whether a page has 90 tones or 9,000; the questions
-/// are *"is it one?"* and *"is it clearly more than one?"*. Capping keeps the
-/// working set small and the trace line short.
 const TONE_CAP: u8 = 64;
 
 /// Roughly how many pixels to look at, whatever the raster's size.
-///
-/// A region raster can be 16,383 px on a side — 268 million pixels — and this
-/// runs on **every** completed render, including the ones arriving during a live
-/// zoom. A full scan would be a frame-rate defect introduced by an instrument,
-/// which is a poor trade for a number whose only job is to separate blank from
-/// not-blank.
 const TONE_SAMPLE_TARGET: usize = 40_000;
 
 /// **How many distinct tones a raster carries, from a strided sample.**
@@ -93,11 +83,6 @@ mod tests {
     }
 
     /// **A single hairline is enough to say "not blank".**
-    ///
-    /// This is the assertion that makes the field useful rather than merely
-    /// present: the interesting case is not a busy drawing, it is *one line on
-    /// otherwise empty paper*, which is what a deep-zoom viewport of a CAD sheet
-    /// actually contains when it contains anything at all.
     #[test]
     fn one_dark_row_on_white_paper_is_not_uniform() {
         let w = 64;
@@ -117,12 +102,6 @@ mod tests {
     }
 
     /// **The stride keeps the cost bounded on a raster the size of a region.**
-    ///
-    /// Not a timing test — those are flaky — but a statement of the invariant
-    /// the stride exists to hold: a raster two orders of magnitude larger than
-    /// the sample target still examines about the sample target's worth of
-    /// pixels. Written as an arithmetic assertion on the stride itself so it
-    /// cannot pass by accident on a fast machine.
     #[test]
     fn the_sample_is_bounded_however_large_the_raster() {
         let big = 4_000_000_usize;

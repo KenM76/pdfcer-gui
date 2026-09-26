@@ -187,3 +187,167 @@ ink — an E-size sheet was measured giving out at 284,964 where a business
 card reached 8,053,069). That the neighbour is ever drawn again on the way
 back down. That anything holds on a facing-continuous layout, which lays out
 two pages per row and is not exercised here.
+
+## Item notes
+
+### `const FIXTURE`
+
+Part A needs **more than one page**, pages of **different sizes** (so a
+neighbour reaches its pixmap ceiling at a different zoom from the acting
+page, which is what the operator's own set did), and a **known page count**
+so the seam search can refuse to park after the last sheet. The operator's
+drawings are frequently single-sheet, and a single-sheet document cannot be
+in the state part A is about at all.
+
+### `const FIXTURE_DENSE`
+
+# Why a repository fixture cannot serve — measured, not assumed
+
+
+That is not a defect, it is the region tier working. Above
+`viewer::ceiling::SUB_PIXEL_CONTENT_EXTENT` the canvas asks for the VISIBLE
+REGION rather than the whole page, and the visible region shrinks as the zoom
+rises — the last line of that trace asked for a region about 2×10⁻⁷ pt
+across. The raster therefore stays viewport-sized for ever and there is no
+zoom at which a pixmap ceiling can bind on it.
+
+**So the refusal is a property of INK, not of size or of zoom.** What
+gives out is the rasterizer's capacity to draw the content inside the
+requested region at that scale, and a test document of four empty sheets has
+no content to give out on. The operator met it on a 36-sheet SOLIDWORKS
+drawing set; this check meets it on a 5.7 MB dense vector site plan, which is
+the same kind of document and is already on the machine as the project's
+standing render benchmark.
+
+⚠ Absent, this check is **SKIPPED and says which file is missing** — never
+passed, and never failed. Committing a multi-megabyte CAD drawing to
+`fixtures/` was considered and rejected: that directory is for documents
+whose specific content is the point, and this one is wanted for the sheer
+quantity of it.
+
+### `const PAGE_COUNT`
+
+Used only to refuse to look for a seam *after the last page*, where there is
+no neighbour to be unorderable. A wrong value here makes the run SKIP, not
+pass — the seam band is still asserted.
+
+### `const MESSAGE_REGION`
+
+It has exactly two publishers — `canvas::present`'s no-pages arm and its
+**Single-mode** `render_error` arm — and the `nothing-visible` arm publishes
+**no** region at all. So part B's dead end cannot be mistaken for the
+painted error, which is the one confusion that would have made this region a
+useless oracle.
+
+### `const UNFILLABLE_EVENT`
+
+`fillable=false` means the frame declined to place an order because the page
+had no region and its whole sheet is past the pixmap ceiling. Read here for
+two different jobs: it is the transition pair that proves the new guard is
+live, and when part A's window turns out to be empty it distinguishes "the
+neighbour left the screen" from "the acting page itself went unorderable".
+
+### `const ROW_GAP_PT`
+
+# Why a copy of another module's constant is tolerable here, and how a
+drift would show up
+
+This is used for **aim**, never for a verdict. The pointer is parked
+`ROW_GAP_PT / 2 × zoom` below the acting page's bottom edge, i.e. at the
+midpoint of the gap, because that is the position at which the two pages
+separate most slowly as the zoom rises.
+
+If the application's gap grew, this aim would land *nearer the upper page*
+but still inside the gap. If it shrank below this value, the aim would land
+a few points onto the **lower** page — which is still a point that holds
+both pages either side of it, because zoom-to-cursor is linear in the strip.
+Either way the run still works, and the two things that could actually
+invalidate it are asserted rather than assumed: the seam must land inside
+[`SEAM_BAND`] of the canvas, and the canvas must report `visible >= 2`.
+
+### `const BOTTOM_DEAD_BAND_PT`
+
+On the failing run the neighbour was last counted at `visible=2` with its top
+edge at y = 889 and was gone by y = 900, against a canvas whose published
+bottom was 944. Whatever accounts for the band — a scroll bar, a clip inset,
+the strip's own culling margin — the arithmetic that predicts when part A's
+window closes has to allow for it, or it predicts a window that is about two
+notches wider than the one that exists.
+
+Used only for the feasibility prediction, never for a verdict. An exact
+value is not needed and is not claimed; what is needed is that the prediction
+errs on the early side.
+
+### `const WINDOW_MARGIN`
+
+A Ctrl+wheel notch multiplies the zoom by about 1.22, and the climb can only
+observe the state on a notch boundary, so the first notch above 20.7 can land
+as high as 25.9. 1.5 covers that with room to spare and still leaves the whole
+of [`SEAM_BAND`] feasible.
+
+### `const SEAM_SEARCH_NOTCHES`
+
+It moves one notch at a time and re-reads the canvas each time, because the
+notch distance is egui's and the document's opening zoom is the
+application's — neither is this check's business to know.
+
+### `const EDGE_MARGIN_PT`
+
+The acting page's horizontal centre is used when it is on screen, and
+clamped into the canvas when it is not. A point on the very edge risks
+`Driver::confirm_uncovered` finding a scroll bar, which is a harness failure
+dressed as an application one.
+
+### `const CLIMB_NOTCHES_A`
+
+At roughly 1.22× a notch this is about eleven orders of magnitude of zoom —
+vastly more than the twenty or so needed to put a letter-size neighbour past
+its pixmap ceiling. Overshooting is cheap and under-shooting would SKIP, so
+the budget is set generously and the run breaks as soon as the state is
+reached.
+
+### `const CLIMB_NOTCHES_B`
+
+The wall is content-dependent — the same build gave out at raster scale
+284,964 on an E-size sheet and 8,053,069 on a business card — so this cannot
+be derived, only budgeted. If it is not met, part B is NOTED as unmeasured
+with the zoom it reached, never quietly dropped.
+
+### `const CLIMB_BATCH_B`
+
+Batched, unlike part A's single notches, because part B has no state to
+detect *during* the climb other than its end, and a round trip per notch
+over a budget of 160 is most of a minute of wall clock for nothing.
+
+### `const EXTRA_NOTCHES_B`
+
+This is the operator's *"the canvas will just stop zooming in"*: the test is
+not that the clamp happened once, it is that it holds against continued
+pressure.
+
+### `const CEILING_SLACK`
+
+The ceiling is converted scale → zoom through a division by the display
+density and back again, so an exact comparison would be asserting `f32`
+rounding. A thousandth is four orders of magnitude below a single wheel
+notch, so it cannot mask a zoom that kept climbing.
+
+### `fn part_a`
+
+Returns `Some(failure)` when the refusal happened, `None` when the state was
+entered and nothing went wrong. A state that was never entered is an `Err`,
+which the report turns into a SKIP.
+
+### `fn part_b`
+
+Returns `Some(failure)` for a breach of that clause. An unreachable wall is
+`Ok(None)` **with a note** — never an `Err`, because part A has already
+measured something real and turning the whole check into a SKIP would throw
+that away.
+
+### `fn drive_b`
+
+⚠ Deliberately a second launch of its own rather than a second stage of
+[`drive_a`]'s session. The fixtures differ, and a check that opened a second
+document into the first's window would be measuring the multi-document tab
+machinery as well as the raster wall — two subjects, one verdict.

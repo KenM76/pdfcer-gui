@@ -46,3 +46,27 @@ Theme and UI scale are the two settings that change **the program's own
 appearance and nothing about the document**, and they belong together for
 that reason. It is also the only group whose two members share the live
 preview below.
+
+## Item notes
+
+### `fn the_shipped_scale_is_the_identity_and_is_reachable`
+
+Both halves matter. Identity is the "the shipped default reproduces a
+build without the choice" rule; reachability is the recurring one that a
+default must sit inside its own widget's range, or the first operator to
+open the window has their value rewritten without touching anything.
+
+### `fn normalising_twice_changes_nothing`
+
+The property that makes the load path safe to run on its own output —
+which it is, every time pdfcer saves and reloads. A rounding that moved
+a value it had already produced would make the preference drift a step
+per restart, which is the kind of defect that takes a fortnight to be
+noticed and is then very hard to attribute.
+
+### `fn every_value_the_control_offers_round_trips`
+
+The weld between the widget's step and the file's grammar. If the
+slider could land on a value the loader would round away, the operator
+would set a scale, restart, and find a different one — with the file
+on disk holding what they chose and the program showing something else.

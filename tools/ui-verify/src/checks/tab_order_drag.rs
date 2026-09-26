@@ -19,12 +19,6 @@ const MODE: &str = "edit";
 /// The ribbon item that opens the Forms panel, and the tab it lives on.
 const PANEL_ITEM: &str = "ribbon.item.view.panel_forms";
 /// The collapsing header for the Tab-order section, which ships **closed**.
-///
-/// Deliberately closed — the section is a diagnostic rather than the panel's
-/// main job — so a check that assumed it open would report the whole feature
-/// missing on a correct build. That exact mistake has been made in this harness
-/// before, on the OCR check, where a collapsed ribbon group made a working
-/// command look absent.
 const HEADER: &str = "forms.tab_order.header";
 /// The Forms panel's dock body — an on-screen-by-construction scroll target.
 const PANEL_BODY: &str = "dock.body.view.panel_forms";
@@ -39,21 +33,9 @@ const DRAG_RELEASE: &str = "tab-order-drag-release";
 /// The label the edit funnel traces when `reorder_annotations` succeeded.
 const APPLIED: &str = "reorder-annotations-applied";
 /// The fewest rows this check can say anything with.
-///
-/// Two. With one, every gap is the row's own boundary and the correct answer to
-/// a drag is *do nothing* — so a run on a one-widget page could not tell a
-/// working gesture from a dead one, which is the failure mode this check
-/// exists to catch. It would report PASS on a build with no drag at all.
 const MIN_ROWS: usize = 2;
 /// How far down the landing row the pointer is released, as a fraction of its
 /// height.
-///
-/// Nine-tenths, not the bottom edge. The row's own midpoint decides *before* or
-/// *after*, so anything past halfway means the same gap — and a point exactly
-/// ON the boundary is the one place a rounding difference between the
-/// application's `f32` rectangle and this harness's reading of it could flip
-/// the answer. The page rail's check makes the same argument for its
-/// three-quarters across.
 const LAND_DOWN: f32 = 0.9;
 
 /// See the module documentation.
@@ -377,16 +359,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 }
 
 /// Drag the dock splitter above the Forms pane upward, so the panel has room.
-///
-/// The splitter is resolved by **geometry** rather than by name: whichever
-/// published `…split.row.N` region sits immediately above the Forms panel body
-/// is the one that controls its top edge. Naming `dock.right.0.split.row.1`
-/// would bake in which dock the panel happens to live in and which of three
-/// stacked panes it is, both of which are layout that can legitimately change.
-///
-/// Silent when there is no splitter above it — a panel that is already the only
-/// pane in its dock needs no help, and the caller's own assertions report the
-/// case where the rows still do not appear.
 fn enlarge_forms_pane(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
     let trace = session.trace()?;
     let Some(body) = declared(&trace, ui_rect, PANEL_BODY) else {
@@ -425,12 +397,6 @@ fn enlarge_forms_pane(session: &Session, driver: &Driver, ui_rect: &str) -> Resu
 }
 
 /// Scroll the Forms panel until the tab-order rows publish a visible rectangle.
-///
-/// Returns as soon as at least [`MIN_ROWS`] rows are on screen. If the panel
-/// runs out of scroll without producing them, the caller's own check reports
-/// that — this function does not decide it is a failure, because "the section
-/// is empty on this document" and "the section is below the fold" are different
-/// findings and only the caller knows which it was looking for.
 fn scroll_rows_into_view(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
     const NOTCHES: i32 = -3;
     const TRIES: usize = 12;
@@ -468,10 +434,6 @@ fn scroll_rows_into_view(session: &Session, driver: &Driver, ui_rect: &str) -> R
 }
 
 /// The fixture, relative to the engine repository's synthetic corpus.
-///
-/// Two widgets on one page — `FullName` and `Subscribe` — which is exactly
-/// [`MIN_ROWS`] and the smallest document a drag can be distinguished from a
-/// dead gesture on.
 const FIXTURE: &str = "forms/demo-form.pdf";
 
 /// Resolve [`FIXTURE`] under the engine repository.
@@ -527,11 +489,6 @@ fn open_tab_order(session: &Session, driver: &Driver, ui_rect: &str) -> Result<(
 }
 
 /// Whether two logical rectangles share any area.
-///
-/// A caret is a zero-height line, so this is deliberately an *overlap* test
-/// rather than a containment one: the caret sits ON the row's boundary, and a
-/// containment test would reject the correct answer half the time depending on
-/// which side of the edge floating point put it.
 fn overlaps(a: LRect, b: LRect) -> bool {
     a.min.x < b.max.x && b.min.x < a.max.x && a.min.y <= b.max.y && b.min.y <= a.max.y
 }

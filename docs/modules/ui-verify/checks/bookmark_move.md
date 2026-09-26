@@ -85,3 +85,44 @@ see [`visible_rows`] and the incident it carries.
 | C | press DETAIL's triangle | `bookmark-disclosure open=0`, `set-bookmark-open`, and **the item count unmoved with one row fewer drawn** |
 
 [`OutlinePlacement::LastChild`]: https://docs.rs/pdfcer-core
+
+## Item notes
+
+### `const PARENT_KEYS`
+
+Spelled from the letters `crate::sys::vk` actually publishes. That module
+adds virtual-key constants **one at a time, with a reason**, deliberately —
+its own note says so — so a check invents a word from the alphabet that is
+there rather than widening a shared file for a fixture name. `DETAIL` is
+also the word `bookmark_edit` renames to, so a reader comparing the two
+traces sees a name they recognise.
+
+### `const CHILD_KEYS`
+
+A **different length** from the first, deliberately, so a trace that
+reported only a character count could still tell them apart. Nothing below
+needs that today; it costs nothing, and it is the property `bookmark_edit`
+had to go back and add after the fact.
+
+### `fn visible_rows`
+
+# Why both filters, and why each was paid for
+
+**The frame filter.** The trace holds every frame the application drew, and
+this check needs to count rows — *"one row is drawn"* is its central
+assertion. Counting `bookmark-row` lines across the whole trace counts
+hundreds. The panel traces its census line at the **top** of its body,
+before any row, so the lines after the last census are exactly the last
+frame's rows.
+
+
+⇒ The general form, and this suite has now met it three times: **a trace
+line written for every item is not a list of the items you can click.** The
+`ui-rect` census answers *what is on screen*; a per-item diagnostic answers
+*what was computed*.
+
+### `fn author`
+
+Factored because it happens twice and the second time must be identical to
+the first — a set-up that differed between the two bookmarks would leave the
+check unable to say which difference mattered.

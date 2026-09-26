@@ -155,28 +155,6 @@ fn landing_key() -> egui::Id {
 }
 
 /// **The PREVIOUS frame's answer**, which is the one the caption reads.
-///
-/// ## Why there are two slots and one rotation, rather than a shared flag
-///
-/// Two surfaces can resolve a landing — the Pages panel's grid and the page
-/// view — and only one of them can have the pointer inside it, so at most one
-/// writes per frame. The hard case is **neither**: the pointer is over the
-/// ribbon, or a dock splitter, or off the window. Nobody writes, and nobody is
-/// in a position to *clear* either, because "the pointer is not in my region"
-/// is a thing every surface can say about itself and none can say about the
-/// others. A surface that cleared on its own behalf would erase the answer the
-/// other one had just written.
-///
-/// So the clear is not a surface's job. [`begin_frame`] rotates: whatever was
-/// written last frame becomes what the caption reads, and the write slot goes
-/// empty for this frame's surfaces to fill. One writer for the rotation, at a
-/// known point, before anything draws.
-///
-/// That the caption is therefore **one frame late** is not a cost this design
-/// introduced. It is the same one-frame lateness `PagesUi::drag_landing` was
-/// documented as having, for the same unavoidable reason: *a gap has no
-/// position until the rows have been placed, and the rows are placed below the
-/// header.*
 fn landing_shown_key() -> egui::Id {
     egui::Id::new("pdfcer-page-drag-landing-shown") // ui-text-exempt: an id, never displayed
 }
@@ -363,11 +341,6 @@ mod tests {
     }
 
     /// **Ending a drag clears the landing too.**
-    ///
-    /// The failure this closes is one `panels::pages` already names: a caret
-    /// that survives the gesture that produced it is a caret nobody can get
-    /// rid of. Here it would additionally make the status row describe a drop
-    /// that had already happened.
     #[test]
     fn ending_a_drag_clears_where_it_would_have_landed() {
         let ctx = egui::Context::default();
@@ -433,10 +406,6 @@ mod tests {
     }
 
     /// **A gap becomes the engine's vocabulary, with both ends named.**
-    ///
-    /// The ends matter more than the middle: `End` survives the document
-    /// changing length between the gesture and the edit, and `Before(count)`
-    /// does not.
     #[test]
     fn a_gap_maps_onto_an_insert_position() {
         use pdfcer_core::pageops::InsertPosition;

@@ -27,6 +27,8 @@
 //! alone is true of a zero-field export and of a four-hundred-field one, and
 //! the number is the only thing that distinguishes "it worked" from "it worked
 //! on nothing". `export_dxf`'s own outcome sentences make the same argument.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/text/export_form.md`.
 
 /// The save dialog's title bar.
 ///
@@ -171,12 +173,6 @@ pub fn neutralised(count: usize, fields: &[String]) -> String {
 }
 
 /// The field names, bounded.
-///
-/// It keeps the FIRST few and says how many were dropped, rather than
-/// sampling from the middle or the end. A form's field names share a prefix —
-/// `Revision.Row0.Date`, `Revision.Row1.Date` — so the opening names are what
-/// identify the group, and an operator who recognises the prefix does not need
-/// the rest.
 fn name_list(fields: &[String]) -> String {
     if fields.len() <= MAX_NAMED_FIELDS {
         return fields.join(", ");
@@ -187,10 +183,6 @@ fn name_list(fields: &[String]) -> String {
 }
 
 /// How many field names the neutralisation sentence lists before eliding.
-///
-/// Four. Enough to recognise a group — a revision table's four columns are the
-/// commonest case this fires on — and few enough that the sentence still fits a
-/// status line beside the count that precedes it.
 const MAX_NAMED_FIELDS: usize = 4;
 
 /// Where the file went.
@@ -221,11 +213,6 @@ mod tests {
 
     /// **The neutralisation sentence says what was done, not that something
     /// went wrong.**
-    ///
-    /// The failure this guards is a rewording toward alarm. pdfcer performed a
-    /// protection the operator did not ask for and should keep; a sentence
-    /// containing "error", "failed" or "warning" would invite them to go
-    /// looking for the switch that turns it off.
     #[test]
     fn the_neutralisation_disclosure_reads_as_an_act_not_an_alarm() {
         let line = neutralised(3, &["A".to_owned(), "B".to_owned()]);
@@ -240,10 +227,6 @@ mod tests {
     }
 
     /// **A long field list is elided rather than allowed to run off the bar.**
-    ///
-    /// Asserted against a real shape rather than a token: a form whose every
-    /// field is formula-shaped is a revision table with forty rows, and that is
-    /// the case that would otherwise push the count off the line.
     #[test]
     fn a_long_field_list_is_bounded() {
         let many: Vec<String> = (0..40).map(|i| format!("Revision.Row{i}.Date")).collect();
@@ -256,10 +239,6 @@ mod tests {
     }
 
     /// **"No form" and "an empty form" are different sentences.**
-    ///
-    /// They describe states with different remedies — add a form, or add fields
-    /// to the one you have — and a single sentence covering both would be
-    /// vague about the only thing the operator needs.
     #[test]
     fn the_two_empty_states_are_told_apart() {
         assert_ne!(no_form(), no_fields());

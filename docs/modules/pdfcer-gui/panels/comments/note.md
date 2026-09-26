@@ -78,3 +78,50 @@ anything pre-filled goes out signed by them.
   properties of the operator and the moment rather than of the draft. A
   draft that captured the clock when the editor opened would date a comment
   by when somebody started typing it.
+
+## Item notes
+
+### `fn a_reply_draft_and_a_note_draft_remember_which_they_are`
+
+The single assertion this whole `DraftTarget` change exists for. A
+build that stamped `Note` for both would compile, would draw a box that
+said *Post reply*, and would commit `set_markup_note` — writing the
+operator's answer **over the comment they were answering**. Nothing on
+screen distinguishes that from a reply having worked until somebody
+reads the file, which is exactly the class of defect a unit test can
+still catch.
+
+Both directions, because asserting only the reply case would pass on
+an implementation that returned `Reply` unconditionally — and that
+build turns every note correction into a new annotation, leaving the
+typo on the page with an answer stuck to it.
+
+### `fn a_reply_starts_blank_and_a_note_edit_does_not`
+
+The rule on `begin_reply`, asserted because it is a one-character
+difference in the implementation with a consequence in the file: a
+reply pre-filled with its parent's words is authored as a new
+annotation carrying the **operator's** `/T`, so it publishes somebody
+else's sentence under their name.
+
+The seeded case is asserted beside it as the control — without it this
+would pass on a draft that never seeds anything, which would make
+correcting a typo into retyping the sentence.
+
+### `fn a_reply_editor_counts_as_the_rows_one_open_editor`
+
+[`NoteDraft::editing`] deliberately ignores the destination, so a row
+whose reply box is open reports itself as editing and does not also
+offer *Add note* beside it. Two boxes on one row would be two drafts,
+and this type holds one — the second would silently take the first's
+words.
+
+### `fn an_edit_under_the_operator_drops_a_reply_draft_as_well`
+
+The epoch rule is the expensive half of this type and the whole reason
+the reply reuses it rather than getting a draft of its own. A build
+that added a parallel reply draft without a `sync` would keep the words
+alive across an edit and post them at an object id the writer may have
+reused — the failure `an_edit_under_the_operator_drops_the_draft`
+describes, on the path where the words become a *new annotation* rather
+than a correction.

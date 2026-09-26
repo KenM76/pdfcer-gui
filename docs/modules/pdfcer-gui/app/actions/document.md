@@ -89,3 +89,35 @@ close verb"* is only a proxy for *discards a document*.
 is the half of this that fails when a new arm arrives without the guards.
 It asserts the property rather than a count of arms, because the count was
 never what mattered.
+
+## Item notes
+
+### `fn every_action_that_discards_a_document_asks_about_unsaved_edits`
+
+# What is asserted, and what deliberately is not
+
+Not *"there are N arms in this file and all of them call
+`ask_unsaved`"*. A count is not the property, and an arm that adds a tab
+rather than replacing one must **not** ask — a guard there would state
+something false to the operator, so a test keyed on the count would
+demand a lie the moment the count moved.
+
+The property is **an arm that can destroy a document must ask first**,
+and that is what is checked: any body naming a destructive verb must
+also name both guards, in order. The counts survive only as floors — an
+instrument that cannot fail detects nothing — and they are floors on
+*both* populations, so neither "no arms were found" nor "no destructive
+arms were found" can pass silently.
+
+# Why it reads the source rather than driving the functions
+
+Driving them is not possible in a unit test and the reason is the point:
+three of the five end in `open_path` / `new_document` /
+`new_document_sized`, which build real `EditSession`s, and the two that
+do not would pass trivially by having no document to ask about. A
+behavioural test here would exercise the **absence** of the guard's
+precondition rather than the presence of the guard.
+
+Crude, and deliberately so — the same trade this project made for the
+settings-coverage gate. A crude check that fails when the guard is
+dropped beats an exact one that cannot run.

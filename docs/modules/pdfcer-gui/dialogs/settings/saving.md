@@ -31,3 +31,23 @@ before-and-after.
 
 That is a real consequence for the people who use this program, and the
 window says so rather than treating "nothing visible" as "nothing".
+
+## Item notes
+
+### `fn only_the_legal_entry_forms_are_offered`
+
+§7.5.4 permits exactly three, and the temptation a future hand will feel
+is to add the others "for completeness" — bare `LF` in particular, since
+it is what a text editor produces. Every one of them makes the entry the
+wrong length and the file non-conforming.
+
+Asserted by round-tripping each offered value through the engine's own
+byte encoding: a form that is not two bytes cannot be legal, and a form
+the engine does not know would not compile.
+
+### `fn matching_nothing_falls_back_to_the_documented_form`
+
+The case the default's own note promises — *"files that have no index of
+this kind get a space then a newline"* — and one an operator will hit
+without knowing it, because a cross-reference **stream** file has no
+entry EOL at all.

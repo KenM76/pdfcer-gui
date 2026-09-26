@@ -4,11 +4,6 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/dimension_groups/mod.md`.
 
 /// Renaming a group and removing one.
-///
-/// Its header carries the interesting half: deleting a populated group is the
-/// **orphan question**, the engine refuses by default with the member count in
-/// the refusal, and putting that question in front of an operator is a thing
-/// only a surface can do.
 mod identity;
 mod style;
 
@@ -169,17 +164,6 @@ pub struct DimensionGroupsUi {
 
 impl Default for DimensionGroupsUi {
     /// Hand-written, and `pdfcer_core::dimension::Unit` is why.
-    ///
-    /// `Unit` implements no `Default`, deliberately — the engine declines to
-    /// have an opinion about which unit a drawing is in, which is exactly the
-    /// stance `crate::dialogs::settings`' header describes for every ambiguity
-    /// the spec leaves open. So the surface must have one, and a surface's
-    /// choice is a statement about *this operator's* drawings rather than about
-    /// the type.
-    ///
-    /// The rest is `Option::None` and an empty `String`, which a derive would
-    /// have given for free. It is worth the eleven lines to keep the one real
-    /// decision visible instead of buried in a field initialiser.
     fn default() -> Self {
         Self {
             // Nothing has been laid out yet, so nothing has overflowed.
@@ -212,20 +196,6 @@ impl DimensionGroupsUi {
     }
 
     /// The whole panel body.
-    ///
-    /// # One `ScrollArea` and nothing after it
-    ///
-    /// The single most important line of layout in this file. **A control that
-    /// must be reachable cannot be placed after an unbounded `ScrollArea`, and
-    /// reserve-and-hope is the same defect with a tuning parameter** — four
-    /// surfaces in this shell have met it. This one has no footer at all: the
-    /// dock tab carries the close control and
-    /// the Add button lives inside a fold at the bottom of the scroll region —
-    /// so there is nothing that *can* be pushed past the end.
-    ///
-    /// `auto_shrink([false, false])` so the region claims the dock column even
-    /// when its folded content is six lines high. Without it a fully folded
-    /// panel would shrink to a stripe and the tab would look half-drawn.
     fn show(&mut self, ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) {
         // Read once per frame, and read from the SESSION rather than from any
         // cache. `dimension_model()` clones out of the `/PieceInfo` sidecar, so
@@ -318,12 +288,6 @@ impl DimensionGroupsUi {
 
     /// The list of groups: the authoring radio, the name, and the facts that
     /// distinguish one row from another.
-    ///
-    /// # Why the row shows the scale and the member count
-    ///
-    /// Because those are the two things that tell an operator *which group this
-    /// is* when the names are `Plan` and `Detail` and they set them up an hour
-    /// ago. A list of names alone would be a list of words.
     fn group_list(
         &mut self,
         ui: &mut Ui,
@@ -624,27 +588,6 @@ impl DimensionGroupsUi {
 }
 
 /// A foldable section, and the reason this panel has them at all.
-///
-/// The operator asked for it by name — *"each section should be able to fold up
-/// like the settings one"* — and [`crate::dialogs::settings`]'s `widgets::group`
-/// is the model. This is a second implementation rather than a call to that one
-/// for a single reason worth stating: that function publishes its rect under
-/// `settings.heading.<key>`, and a check aimed at the settings window would then
-/// find headings belonging to a panel in a different surface entirely. A shared
-/// helper taking a prefix would be the tidier answer and is worth doing the day
-/// a third surface wants folds; two is not yet a pattern.
-///
-/// `ui_rect_visible`, not `ui_rect`, for the reason the settings window
-/// learned the hard way: these headings live in a `ScrollArea`, `egui` lays out
-/// the ones below the fold before clipping them, and publishing a rect for a
-/// heading nobody can see makes a contrast check measure whatever is genuinely
-/// at those coordinates — which on the settings window's first live run was the
-/// Pages panel and the drawing behind the dialog.
-///
-/// The caption is **plain text**, never `.strong()`. `DEFECTS.md` D11: no theme
-/// this project ships renders `.strong()` legibly on a panel, and
-/// `tools/gates/check-strong-text.sh` refuses a bare one. The disclosure
-/// triangle beside the caption is the whole of the emphasis and it is enough.
 fn section(
     ui: &mut Ui,
     key: &str,
@@ -685,43 +628,9 @@ mod width_tests {
     use eframe::egui;
 
     /// **The dock column this panel is designed for**, in points.
-    ///
-    /// `crate::app::modes::defaults::NAVIGATOR_WIDTH` is 280; the panel gets
-    /// that less the dock's own margins and the scroll bar it reserves. 250 is
-    /// the number `panels::pages`' own column test uses for the same reason.
     const NARROW: f32 = 250.0;
 
     /// **No row in this panel outruns a narrow dock.**
-    ///
-    /// A row wider than the side bar hides part of a control with no scroll bar
-    /// to show the part that is missing, and the defect is **invisible by
-    /// construction**, which is why it needs a number rather than a look. A
-    /// `ScrollArea::vertical()`
-    /// clips horizontally and offers no bar in that axis: a row wider than the
-    /// column is cut off at the right edge, does not scroll, and reports
-    /// nothing. The control that ends up outside is unreachable and there is
-    /// nothing on screen to say it exists.
-    ///
-    /// The widest row is `"no scale set — showing raw page units"` followed by
-    /// the **Set scale…** button — about 310 pt of content in a 250 pt column.
-    /// A `ui.horizontal` does not wrap; every row in this panel is
-    /// `horizontal_wrapped`.
-    ///
-    /// ## Why the assertion is on a measured overflow rather than on a
-    /// screenshot
-    ///
-    /// Because the panel can measure itself exactly — `content_size.x` against
-    /// the scroll viewport's width — and a number that the application
-    /// computes is a better oracle than a rendering a test has to interpret.
-    /// The screenshot rule (`D:/dev/rag/egui/`) is about *reachability*
-    /// defects a trace cannot see; this one the application can see, so it is
-    /// made to say so.
-    ///
-    /// ## What it does NOT prove
-    ///
-    /// That every control is legible, or that wrapping put things somewhere
-    /// sensible. It proves nothing is off the edge, which is the operator's
-    /// complaint exactly.
     #[test]
     fn no_row_in_this_panel_outruns_a_narrow_dock() {
         let ctx = egui::Context::default();

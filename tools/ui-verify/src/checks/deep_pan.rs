@@ -13,25 +13,6 @@ use crate::launch::{LaunchSpec, Session};
 const VK_CONTROL: u16 = 0x11;
 
 /// **Where on the page to zoom INTO**, in PDF user-space points.
-///
-/// `banana.pdf` draws a banana at life size and, beside it, two banana cells at
-/// **the same scale** — 0.85 pt and 0.17 pt across, with labels 0.085 pt tall.
-/// At a zoom where the whole page fits a screen the pair covers roughly one
-/// pixel. They are the reason the fixture exists and the only thing on it worth
-/// magnifying.
-///
-/// The operator, 2026-08-22: *"You should try zooming into the two cells, then
-/// try slightly panning to test. Right now you are just zooming into a blank
-/// area on the canvas."* He was right — the check zoomed about the viewport
-/// centre, which on this page is white paper, so every raster it exercised was
-/// empty. The geometry assertions were still valid (a placement is a placement
-/// whatever the pixels show), but nothing about the run resembled what he does
-/// with it, and a screenshot oracle added later would have had nothing to look
-/// at.
-///
-/// Located by rendering the region at 30x and measuring: the pair sits at
-/// (540, 560), about 600 micrometres past the tip of the arrow that points at
-/// them.
 const CELLS_PT: (f64, f64) = (540.0, 560.0);
 
 /// The zoom group on the status bar — its right end is `+`.
@@ -44,111 +25,21 @@ const CANVAS_REGION: &str = "canvas-viewport";
 const CANVAS_EVENT: &str = "canvas";
 
 /// The canvas's `f64` pan position — the only field that can measure this.
-///
-/// Not `canvas`'s `off=` and not its `rect=`. Both are `f32`, and at the
-/// zoom this check works at their representable spacing is larger than the
-/// drag, so both would read "unchanged" against an application that panned
-/// perfectly. See `canvas::trace::position`.
 const POS_EVENT: &str = "canvas-pos";
 
 /// How far to zoom in before the FIRST probe.
-///
-/// # Where this has to land, and how badly it was got wrong
-///
-/// It must land in the band where the **region tier is engaged and the position
-/// is still on the `scroll` tier** — because that band is the only place O24c
-/// can exist, and it is narrower than it looks:
-///
-/// | zoom | raster | position |
-/// |---|---|---|
-/// | below ~2,070 % | whole page | `scroll` |
-/// | ~2,070 % … ~1,000,000 % | **region** | **`scroll`** ← the band |
-/// | above that | region | `deep` |
-///
-/// The lower edge is `MAX_PIXMAP_EDGE / page_height` = 16,383 / 792 on a Letter
-/// sheet. Sixteen notches landed at **1,867 %** — just under it — so every run
-/// traced `region=none`, the placement cross-check had nothing to compare, and
-/// the check reported PASS twice against a binary with the defect deliberately
-/// put back in.
-///
-/// It was defended with an argument, too: the operator's *"up to 800 %
-/// things work perfect"* was read as evidence that 800 % is a mechanism
-/// boundary. It is not one — 800 % is the **old maximum zoom**, and the plain
-/// reading of his sentence is *"the range that existed before is fine; the new
-/// range is not."* A sentence was promoted to a measurement, and it agreed with
-/// a theory that the actual trace contradicts.
-///
-/// Hence [`REGION_TIER_REQUIRED`]: this check now refuses to pass a run in
-/// which no region raster was ever placed.
 const PRESSES: usize = 20;
 
 /// Refuse to PASS unless a region raster was actually placed.
-///
-/// The single most important line in this file. Without it the check is
-/// satisfied by a run that never reached the tier it is named after — which is
-/// not a hypothetical, it is what happened. A check that cannot fail is not
-/// evidence, and this one was being quoted as evidence.
 const REGION_TIER_REQUIRED: bool = true;
 
 /// How many MORE presses before the second probe.
-///
-/// # Why the check probes twice
-///
-/// The position is owned by two different mechanisms at two different depths —
-/// an `f32` scroll offset below the deep threshold and an `f64`
-/// `viewer::deep::DeepAnchor` above it — and they are a hard branch, not a
-/// re-parameterisation. A pan that works on one says nothing about the other.
-///
-/// Probing only the deepest would have been the tempting choice and it would
-/// have missed the operator's actual case, which was on the shallow tier. One
-/// probe per mechanism is the minimum that can honestly claim panning works
-/// "at high zoom".
-///
-/// Sized to SATURATE, on the operator's request of 2026-08-22 — *"can you
-/// test up to maximum zoom please?"* A Ctrl+wheel notch multiplies the zoom by
-/// about 1.22, so reaching the default ceiling of 10¹² % from the first probe's
-/// 4,155 % takes roughly a hundred notches. Overshooting costs a few seconds
-/// and is what makes the second probe a statement about the **ceiling** rather
-/// than about some arbitrary depth on the way to it.
 const MORE_PRESSES: usize = 110;
 
 /// How many wheel notches to roll.
-///
-/// # Why the wheel and not a drag
-///
-/// The first version of this check drag-panned with the primary button and
-/// reported a stuck view. It was wrong: `canvas::input::pan_delta` pans on the
-/// **middle** button always, and on the primary button only while the hand
-/// tool is active. The default tool is Select, so a primary drag correctly
-/// rubber-band selected and correctly did not move the view. The harness had
-/// measured a gesture the application never claimed to honour, and blamed the
-/// application.
-///
-/// The wheel is unconditional — no tool, no modifier, no button — so a view
-/// that does not move under it is unambiguously the application's. It is also
-/// what an operator reaches for first.
-///
-/// Three notches: small enough to be the "little bit" he described, large
-/// enough that a working build moves visibly.
 const NOTCHES: i32 = -3;
 
 /// How many separate wheel rolls to make, sampling the placement after each.
-///
-/// # Why one small roll is not enough, and how that was found out
-///
-/// `render::strategy::region_for` quantises the wanted region to a **half
-/// viewport** grid, and O24c only exists while a *new* cell's raster is in
-/// flight. A single three-notch roll moves about 120 points, stays inside the
-/// cell it started in, requests nothing, and therefore cannot reproduce the
-/// defect at all.
-///
-/// That was not reasoned out — it was measured. With one roll this check passed
-/// **twice out of two** against a binary with the defect deliberately put back
-/// in. A check that green-lights the bug it is named after is worse than no
-/// check, because it is quoted as evidence.
-///
-/// Enough rolls to cross at least one grid line, with a placement reading taken
-/// between each, so whichever roll crosses is sampled inside its transient.
 const ROLLS: usize = 8;
 
 /// The page's own rect, on the `ui-rect` channel.
@@ -156,14 +47,6 @@ const PAGE_REGION: &str = "page";
 
 /// How far a raster may sit from where its own region says it belongs, in
 /// window logical points, before this is a defect.
-///
-/// Not zero. The application computes the placement in `f32` from a page rect
-/// that is itself `f32`, and the trace prints three decimals; the harness
-/// recomputes in `f64` from those printed values. A fraction of a point of
-/// disagreement is the arithmetic, not the defect. The defect it is looking for
-/// is `render::strategy::region_for`'s grid step — half a viewport, several
-/// hundred points — so there is four orders of magnitude between the noise and
-/// the signal and no need to tune this finely.
 const PLACEMENT_TOLERANCE_PT: f64 = 2.0;
 
 /// See the module documentation.
@@ -208,19 +91,6 @@ struct Pos {
 
 /// The canvas's latest `f64` position line, parsed, **with the page rect from
 /// the same reading**.
-///
-/// # Why the two must be read together
-///
-/// The first version of this check read the position here and the page rect at
-/// the end of the probe. They came from different frames, so the placement
-/// cross-check compared a paint rectangle recorded before the wheel against a
-/// page rectangle recorded after it — and reported a 120-point placement error
-/// that was exactly the wheel movement, against a correct build.
-///
-/// That is the third time in two days this harness has produced a confident,
-/// specific, entirely wrong verdict by sampling two quantities at two moments.
-/// The pairing is now structural: one function, one return value, and no way
-/// for a caller to hold one without the other.
 fn position(session: &Session, ui_rect: &str) -> Result<Option<(Pos, crate::geom::LRect)>> {
     let trace = session.trace()?;
     let Some(page_rect) = driving::declared(&trace, ui_rect, PAGE_REGION) else {
@@ -430,14 +300,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 }
 
 /// Roll the wheel once over the canvas and report what the view did.
-///
-/// Returns `Ok(None)` when the view moved and stayed moved, and
-/// `Ok(Some(verdict))` when it did not — the two failure shapes described in
-/// this module's header.
-///
-/// Takes the report so its notes carry BOTH probes' numbers. A verdict that
-/// says "the view did not move" without saying which tier it was on sends the
-/// next reader to whichever of the two files they guess first.
 fn probe(
     session: &Session,
     driver: &Driver,
@@ -571,15 +433,6 @@ fn probe(
 }
 
 /// O24c — THE PIXELS MUST BE A PICTURE OF WHERE THEY ARE DRAWN.
-///
-/// Checked at every reading, because the window in which it fails is exactly
-/// the window in which a new region's raster is in flight: check only the
-/// settled one and the defect is invisible, which is how it shipped.
-///
-/// `scroll` tier only. Above the deep threshold the placement comes from the
-/// `f64` anchor rather than from the page's rect, and `placement_error`'s
-/// formula does not describe it — comparing anyway would report a defect that
-/// is only a wrong model.
 fn check_placement(
     when: &str,
     pos: &Pos,

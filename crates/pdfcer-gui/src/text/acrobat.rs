@@ -340,10 +340,6 @@ mod tests {
 
     /// **Every sentence the operator can be shown before the document is
     /// handed over says that it will be closed.**
-    ///
-    /// O122 point 6 in checkable form. The two dialogs that lead to a handover
-    /// must both carry the fact; the third must not, because nothing is being
-    /// closed there and saying so would be false.
     #[test]
     fn both_confirmations_say_the_document_will_be_closed() {
         let pro = viewer(Edition::Pro);
@@ -382,11 +378,6 @@ mod tests {
     }
 
     /// **No sentence and no button offers to open without saving.**
-    ///
-    /// The module header's argument, mechanised. A future edit that adds a
-    /// *Don't save* button to this dialog — reasonably, by analogy with
-    /// [`crate::dialogs::unsaved`] — has to delete this test first, which is
-    /// where they will read why it is there.
     #[test]
     fn nothing_offers_to_open_without_saving() {
         let pro = viewer(Edition::Pro);
@@ -417,11 +408,6 @@ mod tests {
     }
 
     /// **The three refusals are three different sentences.**
-    ///
-    /// The one that matters is that *"no file on disk"* does not read as
-    /// *"Acrobat is missing"*: they have different remedies, and an operator
-    /// sent to look for an installer they already have will conclude the
-    /// feature does not work.
     #[test]
     fn a_missing_file_does_not_read_as_a_missing_acrobat() {
         let missing_file = format!("{} {}", no_file_heading(), no_file_body());

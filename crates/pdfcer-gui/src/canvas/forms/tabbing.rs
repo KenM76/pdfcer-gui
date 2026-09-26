@@ -88,12 +88,6 @@ pub(super) fn advance(
 }
 
 /// Where the focused box sits on its page's ring.
-///
-/// Falls back to *the ring stop belonging to the same field* when the box
-/// itself is not a stop, which is the radio group: [`ring::assemble`] collapses
-/// a group to its first widget, and an arrow key can leave the focus on one of
-/// the others. Without the fallback the next Tab would find no position and
-/// stop dead in the middle of a form.
 fn locate(table: &ring::TabRings, list: &[WidgetBox], focus: &Focus) -> Option<(usize, usize)> {
     let here = list
         .iter()
@@ -110,12 +104,6 @@ fn locate(table: &ring::TabRings, list: &[WidgetBox], focus: &Focus) -> Option<(
 
 /// **Move the focus to `target`**, committing whatever `leaving` held and
 /// asking for the smallest scroll that brings the new box into view.
-///
-/// `leaving` is `None` for a move that had no previous focus. The commit is
-/// guarded exactly as [`super::settle`] guards its own: a draft describing a
-/// document or a revision that is no longer on screen is dropped rather than
-/// written, because writing it would write a value against a document the
-/// operator has not seen since they typed it.
 fn move_focus(
     ctx: &egui::Context,
     doc: &OpenDoc,
@@ -308,10 +296,6 @@ pub(super) fn button_focus(
 }
 
 /// Raise the state change a press on this button means.
-///
-/// The same rule [`super::click`] applies to a pointer press, called rather
-/// than restated so a keyboard activation and a click cannot come to mean
-/// different things.
 fn activate(widget_box: &WidgetBox, actions: &mut Vec<Action>) {
     match &widget_box.kind {
         BoxKind::Check { on_state, on } => {
@@ -358,10 +342,6 @@ fn arrow(ctx: &egui::Context) -> Option<bool> {
 }
 
 /// The next widget of the focused radio group, wrapping.
-///
-/// `None` for anything that is not a radio group, which is what keeps the arrow
-/// keys out of a check box's way: a lone check box has no siblings and the
-/// arrows should go on meaning whatever the canvas means by them.
 fn sibling<'a>(list: &'a [WidgetBox], focus: &Focus, backwards: bool) -> Option<&'a WidgetBox> {
     let group: Vec<&WidgetBox> = list
         .iter()

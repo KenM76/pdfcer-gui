@@ -92,3 +92,20 @@ tell those two apart has not measured anything.
 it is a different drive; splitting them keeps each failure naming one
 module. This one ends at the engine's own answer, because the whole of O216
 ask 1 was that the engine was never asked.
+
+## Item notes
+
+### `const SELECT_EVENT`
+
+Emitted by `trace_on_change`, so it appears once per change rather than
+once per frame — which is what makes counting the lines meaningful and what
+makes the *last* one the current state.
+
+### `const PLAN_EVENT`
+
+Raised by `app::actions::textcommit::commit_text_edit` before the engine is
+called, so its presence says an action was raised and a plan was built, and
+says nothing about whether the engine agreed. Those are separate questions
+and this check asks them in that order: a build that reinstates the guard
+fails here, a build whose engine refuses fails one step further down with
+the engine's own sentence quoted.

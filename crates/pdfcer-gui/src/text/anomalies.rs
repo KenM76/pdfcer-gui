@@ -390,10 +390,6 @@ mod tests {
     use pdfcer_core::object::{Dict, Name};
 
     /// The operator's own file, in one sentence.
-    ///
-    /// The literal case from engine decision 145: a catalog naming `/PageMode`
-    /// twice, `/UseOC` against `/UseOutlines`. If this row cannot say both
-    /// values the feature has not been built, only counted.
     #[test]
     fn the_duplicate_key_row_shows_both_values() {
         let row = duplicate_key_row(
@@ -417,10 +413,6 @@ mod tests {
     }
 
     /// Every value kind renders to something a sentence can hold.
-    ///
-    /// The container arms name a shape instead of expanding it; the assertion
-    /// that matters is that none of them is empty and none of them contains a
-    /// newline, because either would break the one-line bar (**R128**).
     #[test]
     fn every_value_kind_renders_to_one_short_line() {
         let values = [

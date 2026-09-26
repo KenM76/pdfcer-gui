@@ -17,73 +17,19 @@ use crate::launch::{LaunchSpec, Session};
 const PAN_AT: (f32, f32) = (0.30, 0.30);
 
 /// The most notches to spend climbing to the deep tier before giving up.
-///
-/// The threshold is about 132,000 % on a Letter sheet — `2^20` px of content
-/// extent over 792 pt; see the module header for why the older 2,118,000 % no
-/// longer applies — and a page-fit start is about 76 %, so the climb is a
-/// factor of ~1,700. A wheel notch multiplies the zoom by roughly 1.22, so ~38
-/// notches reach it. The cap is generous: **reaching it is now a FAIL**, and the
-/// only build that reaches it is one whose wheel is not zooming — which the
-/// descent guard would report anyway.
-///
-/// ⚠ The cap is **not** re-tuned downward just because the threshold fell.
-/// Spending a hundred notches this run would cost a second; arriving exactly at
-/// the boundary and reporting a failure would cost a reader an investigation.
-///
-/// On [`FIXTURE`] the numbers are **measured, not derived**, and the first
-/// two written here were neither.
-///
-/// That sheet is 2383.9 pt on its long side, not Letter's 792 — and the long
-/// side is what the bound is taken against, because the threshold is
-/// `SUB_PIXEL_CONTENT_EXTENT / longest_page_pt`. A paragraph written on
-/// 2026-09-13 said *"1683.8 pt tall"*, quoted a threshold of **623** and a
-/// crossing at **33** notches; every one of those is wrong. 1683.8 is the
-/// SHORT side, and using it inflated the threshold by the aspect ratio.
-///
-/// The driven run reports the real figures on its own progress lines:
-/// threshold **~440**, crossed at notch **39**, at a zoom of **46,479 %**,
-/// turning round at 154,316 %. Those are what [`MAX_CLIMB`]'s headroom is
-/// measured against.
-///
-/// ⚠ The Letter arithmetic above is kept anyway, because it is where the cap
-/// came from — but it is arithmetic about a different sheet, and a reader who
-/// takes it for this check's notch count will be out by six notches and two
-/// orders of magnitude of zoom.
 const MAX_CLIMB: usize = 140;
 
 /// **The sheet this check is calibrated against**, pinned rather than taken from
 /// `--pdf`.
-///
-/// The same A1 fixture `sweep-full.sh` hands the chunked checks, chosen for that
-/// reason: it is the sheet on which this check has actually been observed
-/// crossing the hand-over and coming back down, so every notch count in this
-/// file is quoted against it. See the pinning block in `drive` for why `--pdf`
-/// is ignored rather than preferred.
 const FIXTURE: &str = "fixtures/a1-titleblock.pdf";
 
 /// How far past the threshold to climb before turning round.
-///
-/// Not zero, deliberately. A descent that begins with the zoom balanced
-/// exactly on the boundary could cross back on its first notch, and a check
-/// whose first measurement *is* the hand-over cannot distinguish "the
-/// hand-over is broken" from "the climb ended somewhere unlucky". Starting a
-/// few notches inside gives the deep tier a chance to be measured holding
-/// still before the interesting notch arrives.
 const PAST_THRESHOLD: usize = 6;
 
 /// The most notches to spend descending.
-///
-/// The climb records how many notches it took; the descent is allowed that
-/// many plus this margin, so the run is symmetric by construction rather than
-/// by a hard-coded depth that would stop matching the day the ladder changes.
 const DESCENT_MARGIN: usize = 16;
 
 /// How many consecutive `tier=scroll` readings end the descent.
-///
-/// Consecutive, not "the first one". The whole subject of this check is the
-/// frames immediately after the hand-over — a descent that stopped the instant
-/// the tier flipped would stop one notch before the defect had a chance to
-/// show, which is the same mistake as measuring once per stage.
 const SETTLE_NOTCHES: usize = 8;
 
 /// See the module documentation.

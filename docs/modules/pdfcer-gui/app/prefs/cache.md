@@ -47,3 +47,31 @@ as **976 MB**. There is no compression and no shared storage — these are GPU
 textures — so the figure is what it says. The texel counts are round in
 decimal and the megabyte figures therefore are not; the megabyte figure is
 the one the operator is shown, so it is the one the tables below carry.
+
+## Item notes
+
+### `fn the_steps_go_up`
+
+A control whose second entry held less than its first would read as
+broken, and the labels are generated from the numbers, so a duplicate
+would render as two identical rows.
+
+### `fn the_label_and_the_spend_are_one_number`
+
+Asserted as the *relation* rather than against four literals, which is
+the whole point: two copies of one constant cannot disagree, so a test
+written against literals would pass on a build whose label lied.
+
+### `fn small_is_the_value_this_shell_shipped_with`
+
+The row that makes the default reversible by name. An operator who finds
+the default heavy must be able to ask for a smaller budget without
+knowing that it is 48 million of anything, so the number behind the name
+is held here rather than left free to drift.
+
+### `fn the_default_is_large_and_maximum_is_offered_above_it`
+
+Both halves are the decision recorded on the variant: the operator asked
+for the maximum, and taking 2 GB on his behalf risks an allocation
+failure in a program holding unsaved edits. The larger step exists and is
+one click away.

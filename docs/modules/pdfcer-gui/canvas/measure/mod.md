@@ -48,3 +48,37 @@ the axis-constrained projection, the measured length, the scale back-calc,
 and `author_from_two_lines`. The rule the old shell stated and this one
 keeps: **reuse, never reimplement**, so a dimension authored on the canvas
 is byte-for-byte the one `pdfcer dimension-add` writes.
+
+## Item notes
+
+### `fn trace_pick`
+
+A function rather than the `format!` written twice, because the circular arm
+returns before the tail of [`click`] and a harness reading this channel must
+not have to know which arm produced its line. Two spellings would drift on
+the first field anyone added.
+
+### `fn arming_another_measure_tool_discards_the_circle_fit`
+
+`MeasureState::set_kind` owns the rule and has its own tests; this
+asserts the *hosting* applies it, because `load` is what calls it and a
+hosting that skipped the call would carry a fit set into the linear tool
+— where it would sit invisible, unfinishable, and would reappear the
+moment the operator came back.
+
+### `fn every_variant_is_either_offered_or_deliberately_excluded`
+
+`MeasureKind::ALL` stopped being exhaustive over the enum when
+[`MeasureKind::Scale`] arrived — it is armed from the Set-scale dialog,
+not from a ribbon control, so listing it there would fail
+`every_measure_kind_has_a_registered_command` for a kind that correctly
+has no command.
+
+An inventory with a silent exception is how a future kind ships armed by
+nothing, which is the exact failure `ALL` was written to prevent. So the
+exhaustiveness is moved here and made a **compile-time** obligation: the
+`match` below has no wildcard, so a new variant does not build until
+somebody decides which list it belongs in.
+
+The run-time half then checks the two lists are disjoint and complete,
+so a kind cannot be quietly in both or in neither.

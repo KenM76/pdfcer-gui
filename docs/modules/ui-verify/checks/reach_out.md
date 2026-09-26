@@ -54,3 +54,11 @@ assertion this check would be worthless without. A build that warned on
 every document would pass every positive assertion above and train the
 operator to ignore the status row — after which the sentence that matters is
 one they have learned not to read.
+
+## Item notes
+
+### `const NOTE`
+
+`record_note` puts prose on the status bar and traces nothing, so the
+shell emits this beside it. Without it a check could prove the scan ran and
+could not prove the operator was TOLD — which is the whole subject.

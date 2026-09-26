@@ -89,10 +89,6 @@ mod tests {
     use super::*;
 
     /// A tree this crate CAN build, standing in for the engine's.
-    ///
-    /// `OutlineItem` is `#[non_exhaustive]`, so the real one cannot be
-    /// constructed here — which is why the walks above take accessors rather
-    /// than the type. This is the tree they are exercised against.
     struct Node {
         id: ObjId,
         open: bool,
@@ -116,12 +112,6 @@ mod tests {
     }
 
     /// A bookmark is found at any depth.
-    ///
-    /// Depth is the point. The hazard this search replaces is an **index**, and
-    /// an index is wrong precisely for the nested case — which is the one the
-    /// engine hit in its own CLI: *"I got this wrong myself while driving the
-    /// command and nested something two levels deeper than intended, and the
-    /// output looked entirely plausible."*
     #[test]
     fn an_item_is_found_at_any_depth() {
         let tree = vec![
@@ -143,11 +133,6 @@ mod tests {
 
     /// A collapsed item is readable, which is what makes the add row's
     /// disclosure possible at all.
-    ///
-    /// `open` is the shell's read of the **sign** on `/Count` — §12.3.3 defines
-    /// no `/Open` key, so the sign is the only carrier — and it is the one
-    /// field that decides whether an operator will be able to see what they
-    /// just added.
     #[test]
     fn a_collapsed_item_is_visible_to_the_disclosure() {
         let tree = vec![node(2, true, vec![node(3, false, vec![])])];
@@ -157,22 +142,6 @@ mod tests {
 
     /// **The subtree count is the whole subtree, and it excludes the node
     /// itself.**
-    ///
-    /// This is the number the delete disclosure quotes before the press, so
-    /// both of its plausible errors are worth pinning:
-    ///
-    /// * counting the node itself would over-report by one and read as *"and
-    ///   the 3 bookmarks under it"* for a parent with two children;
-    /// * counting only the immediate children would under-report, and would
-    ///   under-report **most** on exactly the deep heading where the operator
-    ///   can least see what they are about to lose.
-    ///
-    /// The fixture is deliberately three levels deep and lopsided so the two
-    /// wrong answers (3 and 5) differ from the right one (6) and from each
-    /// other. That is the discipline the engine's `Pass 156.0` note asks for:
-    /// *"when you assert that A and B differ, check your fixture can tell them
-    /// apart"* — its own delete test passed against every sabotage because it
-    /// only asserted the list got shorter.
     #[test]
     fn the_subtree_count_is_every_level_and_excludes_the_node() {
         // 1
@@ -214,17 +183,6 @@ mod tests {
     }
 
     /// A **collapsed** node's subtree is counted in full.
-    ///
-    /// The case the §12.3.3 trap would get wrong. `/Count` on a closed item is
-    /// negative and its magnitude is not a subtree size — core's own doc says
-    /// *"Do not use this to size anything"* — and a closed item contributes
-    /// exactly **1** to its ancestors however large it is. So a disclosure
-    /// built from `/Count` would tell an operator that removing a collapsed
-    /// chapter takes one bookmark when it takes twenty.
-    ///
-    /// The fixture makes the two answers different: the collapsed node holds
-    /// two levels, so a `/Count`-shaped answer (1) and the true one (3) cannot
-    /// be confused.
     #[test]
     fn a_collapsed_nodes_subtree_is_counted_in_full() {
         let collapsed = node(

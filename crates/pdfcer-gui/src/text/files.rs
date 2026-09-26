@@ -353,12 +353,6 @@ mod tests {
     use std::path::PathBuf;
 
     /// **No dialog string can break out of the PowerShell script.**
-    ///
-    /// See the module header. The interim picker single-quotes these into a
-    /// script; a `'` inside one would end the literal and the child process
-    /// would fail to parse a program nobody can see. This is the mechanical
-    /// half of that rule, and it fails at `cargo test` rather than at the
-    /// operator's next click.
     #[test]
     fn the_dialog_strings_cannot_break_out_of_the_script() {
         for text in [
@@ -385,12 +379,6 @@ mod tests {
     }
 
     /// **Two created documents are told apart by their names.**
-    ///
-    /// The property the ordinal exists for, asserted rather than assumed. An
-    /// `untitled` that ignored its argument would satisfy every other test in
-    /// this module, and would make the `new-document` trace line unable to
-    /// distinguish a second New from a New that did nothing — a class of
-    /// failure findable only by reading a driven run's trace.
     #[test]
     fn each_created_document_gets_its_own_name() {
         assert_eq!(untitled(1), "Untitled 1.pdf");

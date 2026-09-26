@@ -60,3 +60,36 @@ which event carries the selection count, which field holds it — lives in
 [`crate::profile`], because it differs between the binary this project is
 building and the binary it is replacing, and a parser that hard-coded one
 of them could not be pointed at the other.
+
+## Item notes
+
+### `fn unwrap_debug_option`
+
+`None` mapping to `None` is the point: a field whose value is literally the
+string `None` is the application saying "there is nothing here", and a
+caller asking for it as a number wants the same answer as if the field had
+been missing.
+
+### `fn parse_fields`
+
+The algorithm, and why it is not a regex or a `split_whitespace`:
+
+1. Walk the characters, maintaining bracket depth over `[`, `(`, `{` and a
+   flag for being inside a double-quoted string (honouring `\` escapes).
+2. A **key boundary** is an identifier starting at depth zero, outside a
+   string, at the start of the tail or immediately after a space, and
+   followed by `=`.
+3. Each value runs from just after its `=` to just before the next key
+   boundary, or to end of line for the last one.
+
+Step 2's depth condition is the whole reason this is a function rather than
+a one-liner: `rect=[[0.0 0.0] - [16.0 9.0]] zoom=1.5` contains no key
+boundary inside the brackets, and a splitter that did not know that would
+produce a field called `0` and lose `rect` entirely.
+
+### `fn last_reads_a_fossil_where_last_after_reports_silence`
+
+A surface publishes a census, something else happens, and the surface
+**stops publishing**. `last` still answers with the stale census — which
+is what made two checks report a working panel as broken — and
+`last_after`, anchored on the cause, correctly answers `None`.

@@ -747,14 +747,6 @@ mod tests {
 
     /// Every markup kind has an instruction, and every instruction says how the
     /// gesture ends.
-    ///
-    /// The second half is the assertion worth having. *"Click each corner"*
-    /// is not a complete instruction — nothing in it says when to stop — and
-    /// the failure it produces is an operator clicking forever, which is
-    /// exactly what the two endings exist to prevent. Asserted as a property
-    /// (the sentence names a release, a double-click or a stop) rather than
-    /// against the literals, which would pass just as well if every kind
-    /// returned the same string.
     #[test]
     fn every_markup_instruction_says_how_the_gesture_ends() {
         for kind in MarkupKind::ALL.iter().copied() {

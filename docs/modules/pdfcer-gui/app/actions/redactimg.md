@@ -38,3 +38,13 @@ Rule 4: nothing is drawn on the canvas. The mark renders exactly as any
 other mark renders, because it IS any other mark — a warning tint would be
 pdfcer styling its own uncertainty into content, which is the thing the rule
 forbids by name. The sentence goes where every other disclosure goes.
+
+## Item notes
+
+### `fn image_count`
+
+Split out as its own function because it is the whole factual claim this
+module makes, and because it is the part that could be wrong in a way an
+operator would notice: over-counting invents a warning about a page that
+would have redacted cleanly, and under-counting is the silence this module
+exists to end.

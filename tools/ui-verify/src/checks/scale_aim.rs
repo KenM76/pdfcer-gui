@@ -132,18 +132,9 @@ pub fn re_aim(
 }
 
 /// How many correction moves [`re_aim`] will make before giving up.
-///
-/// Each is one pointer move and one 70 ms settle, and the ordinary case
-/// exits after the first. Twelve is enough to close a full-viewport error at a
-/// third of the viewport per step with room to spare.
 const RE_AIM_STEPS: usize = 12;
 
 /// The residual, in screen pixels, at which [`re_aim`] stops correcting.
-///
-/// Screen pixels rather than canvas points, deliberately: what the next
-/// click needs is to land on the same ink, and "the same ink" is a screen
-/// distance. In canvas points the same tolerance would be meaninglessly tight
-/// at 100 % and meaninglessly loose at 200,000 %.
 const RE_AIM_TOLERANCE_PX: f32 = 2.0;
 
 /// The factor by which a correction must improve the residual to be worth

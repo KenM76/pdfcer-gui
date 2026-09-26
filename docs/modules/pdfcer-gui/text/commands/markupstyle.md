@@ -65,3 +65,33 @@ to return to after trying a fill on a drawing.
 This does **not** change what new markup is authored with. The pen is
 `canvas::markup::pen`'s and it is untouched; this restyles one existing
 annotation, which is a different act with a different verb.
+
+## Item notes
+
+### `fn the_six_markup_style_strings_hold_the_catalog_conventions`
+
+Asserted **here** rather than by adding five rows to
+`super::tests::all()`. That list is a hand-maintained enumeration of the
+whole catalog and is edited by whoever adds a command anywhere; five
+concurrent tracks were writing in this tree on the day these landed, and
+a shared list is the file two of them collide in. The rules it asserts
+are asserted here over exactly the strings this module owns, which is
+weaker in one way — it cannot see a label these five share with a
+command in another file — and stronger in another: it fails in the file
+whose author can fix it.
+
+⚠ Recorded rather than silently chosen, because the whole-catalog check
+is the better one and should get these five when the tree is quiet.
+
+### `fn no_markup_style_label_collides_with_the_font_group_on_the_same_tab`
+
+The collision that nearly happened: `RIBBON_IA.md` §5.8 calls this
+group's first row *Colour*, and `format.font_colour` is already called
+"Colour" — on the **same tab**, one group over. Two adjacent controls
+with one label is the defect `no_two_commands_share_a_label` was written
+for after `edit_text_tool_button` and `add_text_tool_button` both
+returned `"Aa"`.
+
+Only the Font group is checked and that is deliberate: it is the one
+that shares a tab with this one, so it is the one where a duplicate is
+on screen at the same moment.

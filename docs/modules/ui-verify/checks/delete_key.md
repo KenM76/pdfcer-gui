@@ -102,3 +102,13 @@ produces a SKIP rather than a FAIL: the harness cannot then distinguish "the
 application is broken" from "the harness aimed at empty page", and filing
 the former when it is the latter is precisely the retracted-false-defect
 outcome `crate::coords` documents.
+
+## Item notes
+
+### `fn drive`
+
+The three-way return is the SKIP/FAIL/PASS rule made structural:
+`Err` is a precondition that was absent (SKIP), `Ok(Some(_))` is an
+assertion that did not hold (FAIL), `Ok(None)` is a pass. A check author
+who reaches for `?` gets a SKIP, which is the safe default — the unsafe
+default would be a pass.

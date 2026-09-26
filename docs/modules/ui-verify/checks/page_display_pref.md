@@ -73,3 +73,57 @@ No binary, `--no-input`, no diagnostic channel, the page-display control not
 declared on the ribbon, or the window refusing to close within the grace
 period — the last being a property of the machine on the day, reported as a
 skip that says so rather than as a pass.
+
+## Item notes
+
+### `const COMMAND`
+
+`PageDisplay::Single` is what a fresh install shows, so a check that chose
+Single would pass against a build that persisted nothing at all — the
+preference and the default would agree and the check could not tell them
+apart. Facing is nobody's default.
+
+### `const FLUSH_EVENT`
+
+Traced even when nothing was pending, deliberately: *"the hook ran and had
+nothing to do"* and *"the hook never ran"* are the two states the defect hid
+between, and a line that only appeared on a write could not tell them apart.
+
+### `const STATE_FILES`
+
+Deleted before the first launch so every run starts from the shipped
+defaults. `D:/dev/rag/egui/` carries the rule this follows: *a driven check
+that mutates persisted state must normalise at the start.*
+⚠ **`preferences.txt` is RESET, not deleted** — see `normalise`. It is
+named here because the tier it represents must be normalised; the mechanism
+differs because deleting it would take the sandbox's O173 suppression with
+it and open the default-app offer in front of this check's second launch.
+
+### `const CLOSE_FRAMES`
+
+25 ms a frame, so 160 frames is four seconds. Generous: the exit path writes
+files, and a machine that is also rasterizing has been seen to take a second
+over it. A close that has not happened by then is reported as a skip, because
+a check that could not close the program has not measured what happens when
+it closes.
+
+### `fn the_chosen_display_is_not_the_shipped_default`
+
+`PageDisplay::Single` is what a fresh install shows. A check that chose
+Single would pass against a build that persisted nothing whatsoever —
+the preference and the default would agree, and the second process would
+open correctly for entirely the wrong reason. This is the assertion that
+keeps the check from being decorative.
+
+### `fn the_second_document_is_a_different_file`
+
+Pinned because the whole subject is *a document the program has never
+seen*: opening the same file twice would be answered by the per-document
+record, correctly, and would hide the missing tier completely.
+
+### `fn the_normalised_state_covers_all_three_tiers`
+
+`page-display.txt` is the per-document record, `preferences.txt` holds
+the standing preference, and `layout.ron` carries the ribbon mode — which
+picks the default for a document with no entry, and is therefore the
+third way a stale file could make this check pass without the feature.

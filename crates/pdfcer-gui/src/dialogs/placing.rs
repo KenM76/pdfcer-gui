@@ -78,11 +78,6 @@ mod tests {
 
     /// **Clearing the pending record un-hides the window, whatever
     /// cleared it.**
-    ///
-    /// The property the whole design rests on, and the one a stored flag would
-    /// not have. The test deliberately cancels through `canvas::placing` — a
-    /// module this one does not otherwise touch — because that is the point:
-    /// the un-hiding is not something `PlaceHandoff` participates in.
     #[test]
     fn hidden_follows_the_pending_record_and_nothing_else() {
         let ctx = egui::Context::default();

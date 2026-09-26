@@ -46,6 +46,8 @@
 //! passes its own built-in default, which is the same value it uses on a
 //! fresh profile and the same value [`super::LayoutDocument::from_ron`]
 //! falls back to. One constant, three uses, no drift.
+//!
+//! Design and rationale: `docs/modules/egui-shell/layout/reset.md`.
 
 use crate::dock::model::{DockLayout, DockSide};
 
@@ -196,12 +198,6 @@ mod tests {
 
     /// **Reset recovers a floated panel** — the deterministic half of
     /// the off-screen-window answer.
-    ///
-    /// `crate::dock::float::honour_position` is a *heuristic* about a
-    /// window whose monitor has been unplugged, and its own docs say so.
-    /// This is the part that is not a guess: whatever the desktop looks
-    /// like, a reset puts the panel back in the dock, where it is on the
-    /// same monitor as the application window by construction.
     #[test]
     fn resetting_re_docks_a_floated_panel() {
         let mut layout = rearranged();
@@ -222,12 +218,6 @@ mod tests {
 
     /// **A scoped reset only re-docks the floats whose HOME is in
     /// scope.**
-    ///
-    /// The module header promises that a side outside the scope is *"not
-    /// read, not written"*. A float has no side, so without this the
-    /// promise would quietly stop covering half the layout: resetting the
-    /// left dock would yank back a panel the operator had floated out of
-    /// the right one.
     #[test]
     fn a_scoped_reset_leaves_a_float_from_the_other_side_alone() {
         let mut layout = rearranged();
@@ -246,10 +236,6 @@ mod tests {
     }
 
     /// **A reset with nothing floating still reports honestly.**
-    ///
-    /// The float clause must not make an already-default layout claim it
-    /// changed, or an application that saves on `reset`'s return value
-    /// writes a file on every press of a command that did nothing.
     #[test]
     fn resetting_an_already_default_layout_with_no_floats_reports_no_change() {
         let mut layout = default_layout();
@@ -258,12 +244,6 @@ mod tests {
 
     /// **The rule, asserted directly: resetting the right dock leaves
     /// the left one bit-identical.**
-    ///
-    /// *"An operator who only wanted the right dock back must not lose
-    /// their left one."* Equality on the whole `SideLayout` — its
-    /// columns, its shares, its width and its visibility — because a
-    /// reset that preserved the panels and lost the widths would satisfy
-    /// a weaker assertion and still be the defect.
     #[test]
     fn resetting_one_side_leaves_the_other_bit_identical() {
         let mut layout = rearranged();
@@ -304,13 +284,6 @@ mod tests {
     }
 
     /// **A partial reset cannot leave a panel mounted twice.**
-    ///
-    /// The operator dragged `pages` — which the default mounts on the
-    /// left — over to the right, then reset the left. Without the
-    /// normalization pass the panel would now be in both docks, which is
-    /// the state-drift bug [`DockLayout::normalize`] exists to forbid.
-    /// The freshly reset side keeps it, which is the side the operator
-    /// just asked to have back.
     #[test]
     fn resetting_one_side_cannot_leave_a_panel_in_both() {
         let mut layout = DockLayout::new(
@@ -331,10 +304,6 @@ mod tests {
     }
 
     /// **A reset never destroys a named workspace.**
-    ///
-    /// The judgement call in this module's header, asserted so that a
-    /// later "make reset thorough" edit fails a test instead of costing
-    /// an operator work they deliberately kept.
     #[test]
     fn a_reset_never_touches_a_saved_workspace() {
         let mut doc = LayoutDocument::new(rearranged());

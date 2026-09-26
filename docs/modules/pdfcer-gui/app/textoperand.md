@@ -84,3 +84,12 @@ Nothing here marks the canvas and nothing here can — it returns run
 ordinals. Every disclosure a restyle causes is raised off-canvas by
 [`crate::app::actions::textstyle`], and restyled text renders exactly as the
 saved file will render it.
+
+## Item notes
+
+### `fn is_text`
+
+Asked through [`crate::panels::objects::summary::object_kind`], which is
+the same classification the Objects panel row and the read-only object
+section use — so what this module calls text and what the panel beside it
+calls text cannot disagree.

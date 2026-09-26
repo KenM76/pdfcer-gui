@@ -81,3 +81,70 @@ Phase F is not symmetry for its own sake. A mode that cannot be left is a
 mode that follows the operator into the next thing he does, and the
 disclosure that says *"this is not what will print"* becoming permanent
 would be the worst version of that.
+
+## Item notes
+
+### `const MIN_ZOOM`
+
+250 %, inside the 200–400 % band the operator named. Below roughly 150 % a
+default-width (1.0 unit) stroke is under two device pixels and capping it at
+one moves too little ink to distinguish from antialiasing noise.
+
+### `const MIN_INK_DROP`
+
+**3 %**, where the unit measurement on `a1-titleblock.pdf` at scale 4 is
+**17.7 %** (484,078 → 398,578 dark pixels). Deliberately far under it: most
+of a title block's ink is text and fills, which this mode correctly does not
+touch, so the share that *can* move depends on the document. What is being
+asserted is the direction and the reality of the change, not a rendering
+constant.
+
+### `fn ever_declared`
+
+`ui_rect` is a **change log**, not a per-frame census — a widget that
+stops being drawn publishes nothing. So "has it ever appeared" is the
+question a change log can answer honestly, and "is it on screen now" is not.
+Phase A therefore asks *never*, and phase F asks *not since the second
+press*, which is the same question scoped to a suffix of the trace.
+
+### `fn densest_ink`
+
+# Why the climb has to be aimed, and what NOT aiming it cost
+
+`Ctrl+wheel` zooms **about the pointer**, so whatever is under the cursor
+stays under it for the whole climb. Aiming at the canvas's geometric centre
+therefore does not zoom into the drawing — it zooms into whatever happens to
+be in the middle of the sheet, and on a CAD sheet that is **blank paper**:
+the linework is a border and a title block around the edges.
+
+This check SKIPPED on `fixtures/a1-titleblock.pdf` for exactly that reason,
+and its skip message named the repair without performing it — *"aim the view
+at content before climbing"*. **A SKIP is not red**, so it had been telling
+nobody anything for as long as it had been running.
+
+# Why a patch and not the ink's bounding box
+
+Measured on that fixture at scale 0.25: the ink spans **24–2356 pt
+horizontally and 28–1660 vertically** — very nearly the whole A1 sheet — and
+the centre of that box is the blank middle. A bounding box says where the
+drawing *is*; it does not say where the drawing is *dense*, and those are
+opposite answers on a sheet whose content is a frame.
+
+# The method, and why it is deliberately coarse
+
+Divide the canvas into a `GRID × GRID` lattice, count dark pixels per cell,
+return the fullest cell's centre as fractions. Eight cells per axis is
+enough to separate a title block from a border on any sheet size, and coarse
+on purpose: a fine grid finds a single thick line and aims at a spot that
+leaves the viewport as soon as the zoom climbs, while a coarse one finds a
+*region* that stays populated all the way up.
+
+It answers the cell's **centre**, not the darkest pixel, for the same
+reason — the exact pixel of a stroke is a knife edge at 400 %, and one
+rounding in the pointer's position falls off it.
+
+Fractions rather than a screen point, so the caller converts through
+`Frame::declared_at` like every other aim in this harness. `coords`' rule is
+that a coordinate is **produced by a conversion and never assembled**, and
+returning pixels here would be assembling one two conversions away from the
+rect it belongs to.

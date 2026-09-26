@@ -54,11 +54,6 @@ impl Check for SaveWritesOverTheFileYouOpened {
 }
 
 /// Copy the fixture somewhere this check may destroy.
-///
-/// **Never the operator's own fixture.** This check exists to prove a verb
-/// that overwrites, so pointing it at `--pdf` directly would mean a harness run
-/// modifies the file the next run measures — and a fixture that changes under
-/// the suite is the thing `crate::fixture`'s header refuses.
 fn scratch_copy(ctx: &CheckContext, pdf: &Path) -> Result<PathBuf> {
     let target = ctx.out("save_in_place_subject.pdf");
     std::fs::copy(pdf, &target).map_err(|e| {

@@ -82,29 +82,6 @@ impl FillDisclosure {
 
 thread_local! {
     /// The most recent fill's disclosures, waiting to be read by the panel.
-    ///
-    /// # Why a thread-local and not a field on `OpenDoc`
-    ///
-    /// It should be a field on [`OpenDoc`], beside `edit_epoch`, dropped with
-    /// the document — and the constraint is a **boundary rather than a design
-    /// judgement**, the same one [`crate::panels::forms::FormsUi`]'s header
-    /// records for the drafts: `OpenDoc` is declared in `crate::app::state`,
-    /// which this work may not extend. Stated here rather than left for
-    /// somebody to find, so that whoever lifts the constraint knows what the
-    /// preferred shape is.
-    ///
-    /// Why it is nonetheless sound rather than a smuggled mutation: this is
-    /// **not document state**. It is a note about an edit that has already
-    /// happened through the funnel, it cannot change a pixel of the page, and
-    /// nothing reads it except a panel deciding whether to draw a sentence.
-    /// It is also correctly scoped — `eframe`'s update loop is one thread, so
-    /// the writer and the reader are the same thread, and a test running on
-    /// another one gets its own empty slot rather than another test's leftovers
-    /// (which a `static Mutex` would hand it).
-    ///
-    /// Staleness is handled by the `epoch` rather than by clearing: a
-    /// disclosure is shown only while it describes the revision on screen, so
-    /// an undo silences it without anything having to remember to.
     static LAST_FILL: RefCell<Option<FillDisclosure>> = const { RefCell::new(None) };
 }
 
@@ -266,17 +243,6 @@ pub enum FormEdit {
 
 impl FormEdit {
     /// A short, stable name for the diagnostic trace.
-    ///
-    /// Separate from `Debug` on purpose: `Debug` prints the operands, which on
-    /// a `Recompute` is the whole plan and on a `FillText` is whatever the
-    /// operator typed — including into a `/Ff` `Password` field. A trace line
-    /// is written to stderr and read by whoever is diagnosing a machine they
-    /// cannot see, and neither of those belongs there.
-    ///
-    /// **That is not a hypothetical.** `crate::text::forms::form_field_password_tooltip`
-    /// exists to tell an operator that a masked field is stored as plain text
-    /// in the PDF; echoing it to stderr as well would be pdfcer widening the
-    /// exposure it just warned about.
     const fn label(&self) -> &'static str {
         match self {
             Self::FillText { .. } => "form-fill-text",
@@ -400,37 +366,6 @@ pub fn apply(doc: &mut OpenDoc, edit: &FormEdit) {
 }
 
 /// **Which single page this form edit could have changed, if exactly one.**
-///
-/// `OPERATOR_REQUESTS.md` O74. `None` means *"not established"* and is the
-/// answer for everything this function has not proved, which is most of it.
-///
-/// # Why every branch below defaults to `None`
-///
-/// A `Some(page)` is a promise that no rasteriser drawing any **other** sheet
-/// would produce a different picture. If that promise is ever false the page
-/// rail shows the operator content he has already changed — rule 4's *sneaky*,
-/// which outranks the slowness this exists to fix. So the shape of every arm
-/// is "prove it or say `None`", and the four whole-form verbs never even ask.
-///
-/// | verb | answer | why |
-/// |---|---|---|
-/// | `FillText`, `ConvertRichTextToPlain`, `SetButtonState`, `SetChoice` | the field's page, if its widgets share one | one `/T`, and §12.7.3.1 lets one field have widgets on several sheets — so this is checked, not assumed |
-/// | `Recompute` | `None` | N fields, N undo entries, no reason to think they share a page |
-/// | `Reset` | `None` | every eligible field in the document |
-/// | `RegenerateAppearances` | `None` | every field's `/AP`, and `/NeedAppearances` on the catalog |
-/// | `Flatten` | `None` | burns every widget into page content and removes the form |
-///
-/// # Why it reads the form AFTER the edit rather than before
-///
-/// Because the pages that need invalidating are the ones the widgets are on
-/// **now**. None of these verbs moves a widget between sheets, so the two
-/// readings agree today — but "they agree today" is the kind of premise that
-/// stops being true silently, and reading after costs the same.
-///
-/// # What it costs
-///
-/// One `parse_acroform` walk per fill. On the operator's own set that is a
-/// small fraction of the single thumbnail it saves, and it replaces twelve.
 fn scope_of(doc: &OpenDoc, edit: &FormEdit) -> Option<usize> {
     let field_name = match edit {
         FormEdit::FillText { field, .. }
@@ -475,11 +410,6 @@ fn scope_of(doc: &OpenDoc, edit: &FormEdit) -> Option<usize> {
 
 /// What one [`FormEdit`] did: how many undo commands it pushed, and whatever
 /// it disclosed that the document cannot afterwards be asked.
-///
-/// A struct rather than a tuple because the two travel for different reasons —
-/// the count decides whether to invalidate the page, the disclosure decides
-/// whether the panel says a sentence — and a `(usize, Option<_>)` at four call
-/// sites is four chances to read the pair in the wrong order.
 #[derive(Debug, PartialEq)]
 struct Applied {
     /// How many undo commands were pushed. See [`run`] on why a count.
@@ -503,50 +433,6 @@ impl Applied {
 }
 
 /// The stable trace token for an [`pdfcer_core::vartext::AutoFitBound`].
-///
-/// # Why this exists rather than `{:?}`
-///
-/// **Never `Debug`-format a field a machine reads.** `Debug` is a derived,
-/// unstable rendering owned by another crate: a rename upstream, a
-/// `#[derive]` change, or a variant gaining a payload all change the string
-/// with no compile error here, and a driven check keyed on it goes quiet —
-/// or, worse, reports the opposite of the truth while quoting the truth in
-/// its own failure message. This project has that exact defect on the record.
-///
-/// ⇒ Spelling the tokens here makes the trace vocabulary **this shell's**, and
-/// makes changing it a deliberate edit next to the checks that read it.
-///
-/// # ⚠⚠⚠ And a worked example of the trap, committed by this very function
-///
-///
-/// > *"The `match` is exhaustive and must stay that way. `AutoFitBound` is
-/// > **not** `#[non_exhaustive]`, so a new variant upstream is a compile error
-/// > here … Do not add a wildcard to silence a future build; the error is the
-/// > feature."*
-///
-/// **Wrong.** `AutoFitBound` **is** `#[non_exhaustive]` — the attribute sits on
-/// the line *after* the `#[derive]`, and the check that produced the claim
-/// grepped the derive line. The compiler rejected it immediately (`E0004`), so
-/// it cost two minutes.
-///
-/// It is left here because of *when* it happened: **within the hour of
-/// writing a RAG lesson titled "`#[non_exhaustive]` removes the compile-time
-/// guarantee, and comments keep claiming it anyway"**, after that same class
-/// had bitten twice the same evening in unrelated modules. Knowing the rule is
-/// not the same as checking the attribute, and *"I grepped for it"* is not
-/// checking when the grep can miss by one line.
-///
-/// ⇒ **Grep for the type name and read the lines above it, not for `derive`.**
-///
-/// ## So the wildcard below is mandatory, and it returns a real token
-///
-/// `"other"` rather than a panic or an empty string: a bound this build has
-/// never met is a fact worth seeing in a trace, and a check reading `bound=`
-/// can tell *"a new upstream variant arrived"* from *"no bound was decided"*
-/// (`bound=none`) from any of the three known ones. The operator-facing side
-/// makes the matching choice — an unknown bound takes the general sentence,
-/// which is true of every auto-size, rather than a claim about a constraint
-/// this build cannot name.
 const fn bound_token(bound: pdfcer_core::vartext::AutoFitBound) -> &'static str {
     use pdfcer_core::vartext::AutoFitBound as B;
     match bound {
@@ -574,29 +460,6 @@ fn disclosure_of(field: &str, out: &FillOutcome) -> FillDisclosure {
 
 /// Run `edit` against `session`, returning how many **undo commands** it
 /// pushed.
-///
-/// Split out from [`apply`] so the borrow of `doc.session` ends before the
-/// epoch bump touches `doc`'s other fields, and so the verb dispatch is one
-/// readable `match` uncluttered by the protocol around it.
-///
-/// # Why a command COUNT rather than `()`
-///
-/// Because two of the eight can legitimately do nothing, and "nothing
-/// happened" must not look like "something happened":
-///
-/// - [`FormEdit::Recompute`] with an empty plan writes no field.
-/// - [`FormEdit::Reset`] on a form that already holds its defaults commits a
-///   command, but `ResetOutcome::fields_reset` is 0.
-///
-/// Returning the count lets [`apply`] skip the invalidation, which is the
-/// difference between a no-op and a no-op that discards the page raster, the
-/// canvas selection and the Objects panel's expansion state.
-///
-/// **It is a count of commands, not of fields**, and the two differ on exactly
-/// one variant: `Recompute` pushes one per change. That is the distinction
-/// `pdfce_FeatureRequests/README.md` warns about in general terms — a number a
-/// verb hands back is not automatically the number the caller wanted — so the
-/// unit is named in the return type's doc rather than left to the reader.
 fn run(session: &mut EditSession, edit: &FormEdit) -> Result<Applied, EditError> {
     match edit {
         FormEdit::FillText { field, value } => {
@@ -694,10 +557,6 @@ mod tests {
     use super::*;
 
     /// **Every variant has a distinct trace label.**
-    ///
-    /// The labels are how a refusal is identified in a log from a machine
-    /// nobody can reach, and two verbs sharing one would make the log say
-    /// which pair of things might have failed.
     #[test]
     fn every_form_edit_traces_under_its_own_name() {
         let all = [
@@ -737,17 +596,6 @@ mod tests {
     }
 
     /// **A trace label never carries an operand.**
-    ///
-    /// The label is what reaches stderr, and `FormEdit::FillText` carries
-    /// whatever the operator typed — which, on a `/Ff` `Password` field, is a
-    /// value pdfcer has just warned them is stored in the clear. Widening that
-    /// exposure into a log would be pdfcer doing the thing it cautioned
-    /// against.
-    ///
-    /// Asserted by construction rather than by inspection: a `const fn`
-    /// returning `&'static str` **cannot** interpolate a field, so the only
-    /// way this test fails is if someone changes the signature to build a
-    /// `String` — which is exactly the change that would need reviewing.
     #[test]
     fn a_trace_label_cannot_contain_a_typed_value() {
         let secret = "hunter2";
@@ -763,15 +611,6 @@ mod tests {
     }
 
     /// **An empty recompute plan is a no-op, and reports itself as one.**
-    ///
-    /// Pins the reason [`run`] returns a count at all. A plan with nothing in
-    /// it is reachable from a real click — the section recomputes its plan
-    /// every frame it is open, and a form whose calculations are already
-    /// correct produces an empty one — and treating it as a change would drop
-    /// the page texture and clear the canvas's resolved selection for nothing.
-    ///
-    /// Driven through a real `EditSession` so it is the actual code path
-    /// rather than a restatement of the match arm.
     #[test]
     fn an_empty_recompute_plan_changes_nothing() {
         use crate::panels::objects::test_support::engine_fixture;
@@ -803,11 +642,6 @@ mod tests {
     }
 
     /// **A form verb on a document with no form refuses rather than panicking.**
-    ///
-    /// The reachable case this guards: the panel draws Flatten, the operator
-    /// clicks it, and between the two frames an undo removed the form. Every
-    /// one of these verbs answers `EditError` for that, and the whole of
-    /// [`apply`]'s error arm is built on their doing so.
     #[test]
     fn a_form_verb_on_a_formless_document_is_an_error_not_a_panic() {
         use crate::panels::objects::test_support::engine_fixture;
@@ -849,22 +683,6 @@ mod tests {
 
     /// **A fill carries back exactly the two facts the document cannot be
     /// asked again — and only when there is something to say.**
-    ///
-    /// Driven through a real `EditSession` and a real form, because the whole
-    /// claim is about what `FillOutcome` reports rather than about what this
-    /// module remembers.
-    ///
-    /// Both halves matter:
-    ///
-    /// * an **ordinary** fill discloses nothing, so the panel draws no
-    ///   sentence. A disclosure line under every edit would train the operator
-    ///   to stop reading the ones that matter — the same argument
-    ///   `crate::app::status::page_box`'s `Note` makes for having no `Ok`
-    ///   variant;
-    /// * a fill of text the field's font **cannot encode** discloses the
-    ///   substitution. That is the one this exists for: the saved value IS the
-    ///   substituted one, so re-reading the field afterwards reports what pdfcer
-    ///   wrote and never that it wrote something else.
     #[test]
     fn a_fill_discloses_a_substitution_and_an_ordinary_fill_says_nothing() {
         use crate::panels::objects::test_support::engine_fixture;
@@ -942,12 +760,6 @@ mod tests {
 
     /// **A disclosure is shown only while it describes the revision on
     /// screen.**
-    ///
-    /// The staleness rule, which is what lets an undo silence the sentence with
-    /// nothing anywhere having to remember to clear it. Verified by driving as
-    /// well — an unrelated check-box toggle made a live auto-size line
-    /// disappear — and pinned here because the epoch comparison is the whole
-    /// mechanism.
     #[test]
     fn a_disclosure_is_hidden_once_the_document_moves_past_it() {
         record_fill_disclosure(Some(FillDisclosure {

@@ -662,12 +662,6 @@ mod tests {
     use super::*;
 
     /// Every tab has a question, and every question is a question.
-    ///
-    /// Not a tautology: the question is the coherence test `RIBBON_IA.md`
-    /// §4 applies to a tab, and a "question" that is really a description
-    /// ("Things you can do with files") passes a non-empty check and fails
-    /// the test it exists to be. Requiring the question mark is the
-    /// cheapest mechanical proxy for "this is one question".
     #[test]
     fn every_tab_question_is_one_question() {
         for q in [
@@ -690,11 +684,6 @@ mod tests {
     }
 
     /// Tab labels are distinct.
-    ///
-    /// Two tabs with one label is a navigational dead end that no test in
-    /// `egui-shell` can catch — the manifest's uniqueness rules are about
-    /// *ids*, and two tabs may legally carry the same label as far as the
-    /// framework is concerned.
     #[test]
     fn tab_labels_are_distinct() {
         let labels = [
@@ -717,10 +706,6 @@ mod tests {
 
     /// The mode labels are the three `MODES_AND_PANELS.md` names, in
     /// capability order.
-    ///
-    /// Pinned because the *order* is the feature: the selector renders
-    /// them left to right and "slide left to calm the interface down" is
-    /// only an obvious gesture if Read is on the left.
     #[test]
     fn the_three_modes_are_named_in_capability_order() {
         assert_eq!(

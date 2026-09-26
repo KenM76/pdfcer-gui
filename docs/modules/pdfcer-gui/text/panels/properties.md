@@ -65,3 +65,59 @@ and another way in a Properties field.
 
 This module owns only the **labels** — the left-hand column — and the
 panel's own chrome.
+
+## Item notes
+
+### `fn no_field_label_carries_its_own_punctuation`
+
+The colon is layout. Baking it into the string means a future
+two-column or grid layout has to strip it back out of every entry,
+and the one that gets missed renders as `Type::`.
+
+### `fn every_field_label_is_distinct`
+
+Two rows reading "Size" — one for the bounding box and one for the
+image's samples — is exactly the confusion [`value_pixels`]'s "px vs
+pt" comment is about, arriving through the label column instead of
+the value column.
+
+### `const ALL_FIELD_LABELS`
+
+Hand-written, like every enumeration of things Rust cannot enumerate
+for us. It is only used by tests, so an entry missed here weakens a
+check rather than shipping a defect — but it is listed in the same
+order as the panel draws them so a reader can diff the two.
+
+### `fn geometry_values_keep_one_decimal_and_state_their_unit`
+
+The decimal is not decoration: a horizontal rule is 0.0 pt tall and a
+hairline is 0.5 pt tall, and rounding to whole points makes those the
+same object.
+
+### `fn image_samples_are_never_labelled_in_points`
+
+The Size field a few rows above is in points and describes a
+different thing. Two numbers of the same shape with the same unit
+would read as one measurement stated twice.
+
+### `fn the_embedded_font_answers_include_an_honest_dont_know`
+
+The ambiguous one is the load-bearing case: a confidently wrong "Yes"
+is indistinguishable from a right one, so the panel has to be able to
+decline. It must not read like either of the definite answers, and it
+must point at the surface that can be definite.
+
+### `fn an_absent_value_says_so`
+
+A blank field is indistinguishable from one pdfcer forgot to fill in,
+and this panel's whole value is that its silences are as legible as
+its numbers.
+
+### `fn the_read_only_note_states_the_boundary_without_promising_a_control`
+
+`RIBBON_IA.md` §5.8 specifies editable X/Y/W/H here, and it is not
+built: there is no selection model and no mutating action to carry
+the edit. The read-only note is the one string that says so, and a
+well-meaning copy edit that turns it into "editing coming soon" would
+make it a promise — which P3 forbids in prose exactly as it forbids
+in a widget.

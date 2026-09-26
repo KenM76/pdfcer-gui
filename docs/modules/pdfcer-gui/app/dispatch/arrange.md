@@ -44,3 +44,34 @@ raises an action; the array itself is read at apply time by
 argument. An order computed here would describe the `/Annots` the page had
 before every action queued ahead of it was applied, and the engine refuses a
 stale permutation by name rather than applying it approximately.
+
+## Item notes
+
+### `fn destination`
+
+**`markup.` and not `arrange.`**, and the reason is a registry invariant
+rather than taste. `shell::commands::tests::every_handler_token_is_in_its_
+tabs_block` asserts that a command's handler token sits inside the hundred
+belonging to its id's prefix — `markup.` is 500-599 — and it panics by name
+for a prefix it does not know. A new `arrange.` prefix would therefore have
+meant editing that table, in a file three other tracks are editing today, to
+express a fact that is already true: **these are Markup-tab commands.**
+*Arrange* is the name of the group they sit in, not of a tab.
+
+### `fn the_predicate_and_the_mapping_are_one_statement`
+
+The property [`claims`]' doc rests on: the predicate and the mapping are
+one statement, so an id that answers `true` here and `None` there is
+unrepresentable rather than merely unlikely.
+
+### `fn no_two_commands_mean_the_same_end`
+
+A copy-paste that gave two ids one destination would be silent: both
+presses would produce a legal permutation, and only an operator watching
+the wrong mark come forward would notice.
+
+### `fn bring_to_front_means_the_end_of_the_array`
+
+The one place the label and the array end are related, and the place a
+reader thinking of `/Annots` as a list will get it backwards. `Front`
+is the **last** entry, because §12.5.6 paints in array order.

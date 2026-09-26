@@ -64,3 +64,38 @@ must be able to find out why, and [`current_owner`] is how.
 ## Rule 15
 
 No dimension of either kind appears in this module.
+
+## Item notes
+
+### `fn set`
+
+`value` is `None` for a key's default (`/ve`) and `Some` for a named one.
+
+`/f` on every write: these are idempotent declarations, not a
+conversation. A prompt from a subprocess with no console is a hang with no
+symptom.
+
+### `fn run`
+
+# Errors
+
+`reg.exe`'s own stderr, or the reason it could not be started.
+
+### `fn reg`
+
+`None` rather than an error, because every caller is asking a question
+about the machine that has a legitimate *"cannot tell"* answer — a key that
+does not exist makes `reg query` exit non-zero, and on a fresh machine that
+is the normal case rather than a fault worth a sentence.
+
+### `fn open_url`
+
+# Errors
+
+Whatever the shell said.
+
+### `fn open_with_progids_names_the_progid_rather_than_storing_it`
+
+Writing the ProgID as the *data* of a default value is the plausible
+mistake, and it produces a key that exists and an *Open with* menu that
+does not list pdfcer.

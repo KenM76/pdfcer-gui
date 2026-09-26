@@ -82,3 +82,30 @@ row that is clicked is the *first* addable row on a fixture whose page fonts
 are known, which is deterministic enough; and `format-text` landing is the
 claim that matters, because it is the one that says a `/Font` object was
 written into the operator's document.
+
+## Item notes
+
+### `const STYLE_EVENT`
+
+Named `-applied` rather than plain `text-style` because `vector_edit`'s
+label for the same edit is a sibling event and trace matching is on the exact
+event name — the mistake `tools/gates/check-trace-names.py` was written after
+this project made three times in three days.
+
+### `const VK_T`
+
+Not optional. In Edit mode `textsel::gate::takes_the_press` reads
+`tool.is_text() || (Select && !caps.edit_content)`, and the second disjunct
+is false there — so a drag with the Select tool is an object marquee and the
+check would report a working panel as broken.
+
+### `fn wait_for_verdict`
+
+A bounded poll rather than a fixed sleep, for `restyle_text`'s reason: a
+restyle re-resolves the pin per run from a fresh provenance extraction, a
+sweep across a title-block label is a dozen runs, and a fixed sleep long
+enough for that makes every run slow while a pleasant one fails on the
+operator's own drawings. Reaching the ceiling is not an error — the caller
+then reads a trace with neither line in it and reports the "nothing
+happened" verdict, which is the right answer if a restyle really can take
+twenty seconds.

@@ -26,25 +26,11 @@ const ANCHORS_EVENT: &str = "canvas-anchors";
 /// `canvas-handles n=…` — the BEZIER control handles, not the resize grips.
 const HANDLES_EVENT: &str = "canvas-handles";
 /// The box the eight resize grips are laid out on.
-///
-/// The measurement this whole sweep turns on. `overlay::visible_outline_rect`
-/// widens it to [`MIN_OUTLINE_EXTENT`] on each axis, and `handles::grip_at`
-/// then covers `GRIP_SIZE_PX / 2 + GRIP_GRAB_SLACK_PX` = 6 pt inward from each
-/// corner — so a box narrower than **12 pt has no body left to drag**, and
-/// every press on it is a grip.
 const OUTLINE_REGION: &str = "canvas.selection-outline";
 /// `resize-declined reason=…`.
 const RESIZE_DECLINED_EVENT: &str = "resize-declined";
 /// `resize-commit grip=… sx=… sy=… ax=… ay=…` — **a resize that went
 /// through**.
-///
-/// The worst of the three outcomes and the one this sweep was not
-/// watching for on its first two runs. A drag meant as a move that lands on a
-/// grip and is *refused* costs the operator a gesture; one that lands on a grip
-/// and **succeeds** costs them their artwork, silently. Measured on the
-/// banana's cells at 15,808 %: `resize-commit grip=SouthEast sx=3.9770
-/// sy=4.1891` — a 0.09 pt cell quadrupled on both axes by a drag that was aimed
-/// at the middle of it.
 const RESIZE_COMMIT_EVENT: &str = "resize-commit";
 /// `canvas-move-declined level=… sel=… reason=…`.
 const MOVE_DECLINED_EVENT: &str = "canvas-move-declined";
@@ -65,34 +51,13 @@ const RENDER_EVENT: &str = "render-async-done";
 /// The scrollable viewport the page sits inside.
 const VIEWPORT_REGION: &str = "canvas-viewport";
 /// `marquee-mode crossing=… mode=… hits=… …` — the band's own line.
-///
-/// It is also **the drag outcome that had no arm** until 2026-09-05, and
-/// its absence produced this check's whole headline. A press on blank paper
-/// inside a selection's bounding box draws a band rather than moving the
-/// selection (`OPERATOR_REQUESTS.md` O72); with nothing reading this line
-/// during the drag probe, that registered as *"nothing at all — no move, no
-/// decline, no resize"*, and the sweep filed *"mouse work dies at every render
-/// tier"* against a build in which the same drag moves the object every time it
-/// is pressed on the ink. See [`drag_selection`].
 const MARQUEE_EVENT: &str = "marquee-mode";
 /// What a marquee-committed selection calls itself.
 const VIA_MARQUEE: &str = "pv.marquee";
 /// `canvas-coverage covered=… sharp=… textured=… backdrop=…`.
-///
-/// The operator's own report of 2026-09-04 — *"the canvas does a fading
-/// around the edges on stuff shown at the edges of the view. I don't want this.
-/// it should render true."* — is a claim about exactly this line: `sharp` is
-/// the fraction of the viewport the SHARP raster covers, and anything below
-/// 1.000 is the low-resolution backdrop showing through.
 const COVERAGE_EVENT: &str = "canvas-coverage";
 
 /// The zoom rungs walked, as multipliers.
-///
-/// Chosen against the **US Letter** boundaries in the module header — 20.69×
-/// for the pixmap ceiling, 1,324× for the `f64` position anchor — and bracketed
-/// on both sides of each rather than merely stepped past. `strategy.rs`'s own
-/// test header states the rule these follow: a transition sampled only at its
-/// endpoints is a transition that cannot be seen.
 const DEFAULT_RUNGS: &[f32] = &[
     1.0,     // fit-ish, whole-page tier, the control
     8.0,     // the top of the named ladder, still whole-page
@@ -112,20 +77,9 @@ const DEFAULT_RUNGS: &[f32] = &[
 const PROBE_PX: f32 = 100.0;
 
 /// How much relative error the pointer probe tolerates.
-///
-/// The reported canvas point is printed to two decimals, so at a deep zoom the
-/// quantum of the *printout* is already a large fraction of the movement being
-/// measured — `100 px / 20000×` is `0.005` canvas units, which prints as `0.01`
-/// or `0.00`. So the probe is only asserted where the movement is legible in
-/// the printed precision, and this tolerance covers the rounding that remains.
 const PROBE_TOLERANCE: f32 = 0.25;
 
 /// The smallest printed movement the probe will assert on.
-///
-/// Below this the `{:.2}` printout, not the arithmetic, is the limit — see
-/// [`PROBE_TOLERANCE`]. Reported as "not measurable at this zoom" rather than
-/// as a pass or a failure, because either would be a claim the evidence cannot
-/// support.
 const PROBE_FLOOR: f32 = 0.05;
 
 /// How far a drag moves the subject, in logical points, on each axis.
@@ -133,37 +87,12 @@ const DRAG_PX: f32 = 40.0;
 
 /// How far the pointer may be from the sweep's target and still be treated as
 /// on it, in **screen pixels**.
-///
-/// Screen pixels, not canvas points: what every probe below needs is that
-/// the press lands on the same ink, and "the same ink" is a screen distance.
-/// The canvas's own pick tolerance is of this order, so a residual under it
-/// cannot change what a click hits; in canvas points the same tolerance would
-/// be meaninglessly tight at 100 % and meaninglessly loose at 200,000 %.
-///
-/// Above this the rung's pointer probes are **not run**, and the rung says
-/// so in its own words. The 2026-09-05 sweep ran them anyway and filed
-/// *"clicking directly on the content the zoom is anchored to selected
-/// nothing"* at five rungs — measured with the pointer **312 px** away from
-/// that content.
 const AIM_TOLERANCE_PX: f32 = 6.0;
 
 /// How many wheel notches the pan probe scrolls, and then scrolls back.
 const PAN_NOTCHES: i32 = 3;
 
 /// **Undo whatever the last gesture committed.**
-///
-/// The sweep holds ONE document across every rung and steers one aim point
-/// through it, so a rung that leaves the page changed hands the next rung a
-/// different document. Measured before this existed: the 107 % marquee move
-/// translated all 212 objects by 37.6 pt, and the three rungs above it then
-/// reported *"clicking directly on the content selected nothing"* — correctly,
-/// because the content had been moved out from under the aim by the check
-/// itself.
-///
-/// Undo rather than "do not test the move": the move IS the subject. What has
-/// to be true between rungs is that the document is the one the sweep started
-/// with, and the application's own undo is the only thing that can promise
-/// that.
 fn undo(session: &Session, driver: &Driver) -> Result<()> {
     driver.press_chord(&[vk::CONTROL], vk::Z)?;
     session.settle(24);
@@ -567,10 +496,6 @@ fn wanted_rungs() -> Vec<f32> {
 }
 
 /// **The linearity probe** — see the module header.
-///
-/// Moves the pointer a known distance and asks the application where it thinks
-/// the pointer went. A conversion that has lost its low bits answers with a
-/// movement that is too small, zero, or quantised.
 fn probe_pointer(
     session: &Session,
     driver: &Driver,
@@ -628,14 +553,6 @@ fn probe_pointer(
 
 /// How many objects the application says are selected, from its own layout
 /// line.
-///
-/// `canvas-selection` is **de-duplicated** — `trace_changed` suppresses a
-/// line identical to the last one in its slot — so a second click that selects
-/// the same object writes nothing, and a check counting those events reads
-/// "the click did nothing" about a click that worked. That produced three false
-/// findings on this sweep's first run. `canvas … sel=N` carries the count on a
-/// line whose other fields move, and `selection-set` is written
-/// unconditionally; between them there is no silence to misread.
 fn selection_count(session: &Session) -> Result<usize> {
     Ok(session
         .trace()?
@@ -710,53 +627,6 @@ fn click_select(
 }
 
 /// Drag whatever is selected and say what the gesture actually became.
-///
-/// # The FOUR outcomes, and why counting only `canvas-move` hid the real one
-///
-/// A drag on a selected object can become a **move**, a **resize** (the press
-/// landed on a grip), a **marquee** (the press landed on empty paper), or
-/// nothing. The first version of this counted `canvas-move` alone, so a drag
-/// that was routed to the resize machinery and then refused by it reported as
-/// *"the gesture was thrown away"* — true, and silent about the mechanism.
-/// `resize-declined reason=Degenerate` is the line that says what happened.
-///
-///
-///
-///
-/// > *"Grab it in the middle and move it" is the gesture the operator
-/// > described, and the middle of the object is a fact only the application
-/// > knows. It publishes it as `canvas.selection-outline`; aiming anywhere else
-/// > is the harness inventing a coordinate.*
-///
-/// **The middle of a bounding box is not the middle of an object.** The sweep
-/// fixture `polyline-nodes.pdf` is one open path — a zigzag and two Béziers
-/// from (100, 200) to (580, 320) — whose bounding box is 480 × 120 and whose
-/// centre, (340, 260), is **twelve points of blank paper above the stroke**.
-///
-/// And a press on blank paper inside a selection's bounding box is a
-/// **marquee**, deliberately, since `OPERATOR_REQUESTS.md` **O72**:
-///
-/// > *"Click and hold shouldn't select an object - it should allow me to draw a
-/// > box around objects to select."*
-///
-/// `canvas::pressing` downgrades `Grip::Move` to `None` unless `body_under`
-/// finds ink at the press point, and `(None, None)` is `DragKind::Marquee`. So
-/// this probe was measuring the operator's own feature and reporting it as
-/// *"dragging a selected object produced no traced outcome of any kind"* — at
-/// **every** rung including 104 %, which is what made it read as a
-/// zoom-dependent defect. Driven with the press moved to the aim point, the
-/// same build MOVES the object at 104 %, 942 %, 2,096 % and 2,559 %.
-///
-/// ⇒ **A uniform failure at every rung of a scale sweep is evidence about
-/// the probe, not about scale.** The one rung that is not the subject — the
-/// baseline — is the control, and a control that fails is the finding.
-///
-/// The aim point is the document coordinate the caller supplied and the one
-/// the click immediately before this selected the object from, so it is on the
-/// object by the same evidence that produced the selection. The old comment's
-/// worry — that the aim can sit on a **grip** — is answered rather than
-/// ignored: the resize arms below report which grip, and a resize at the aim
-/// point is a statement about where the aim is, not about the mouse.
 fn drag_selection(
     session: &Session,
     driver: &Driver,
@@ -907,20 +777,6 @@ fn drag_selection(
 }
 
 /// Rubber-band on empty paper, then move what it caught.
-///
-/// # ⚠ A press on ink is not a band, and finding that out cost a moved object
-///
-/// `canvas::presspick`'s rule is that a press on an object **selects it**, and
-/// a drag from there **moves it**. The first version of this started the band
-/// at a fixed fraction of the viewport; at 107 % that fraction landed on the
-/// banana's own outline, and the "marquee" dragged a 250-point object across
-/// the sheet — silently changing the document every later rung was measured
-/// against. The trace said so plainly (`selection-set … object=2 via=press`
-/// followed by `canvas-move … dx=254`) and the check did not look.
-///
-/// ⇒ So the origin is **probed** rather than assumed: candidates are clicked
-/// until one selects nothing, and only then is a band dragged from it. The
-/// probe is a click, which is reversible; a drag is not.
 fn marquee(
     session: &Session,
     driver: &Driver,
@@ -1221,22 +1077,6 @@ fn nodes_and_handles(
 }
 
 /// **Pan, and watch the leading edge stay sharp.**
-///
-/// The operator, 2026-09-04: *"the canvas does a fading around the edges on
-/// stuff shown at the edges of the view. I don't want this. it should render
-/// true."* `render::strategy::region_for`'s header records the fix that landed
-/// for it — the snap now centres the window on the grid instead of flooring its
-/// origin, so the guaranteed margin is a quarter of a viewport on **every** side
-/// instead of half a screen on two sides and nothing on the other two.
-///
-/// This is that claim, driven rather than computed: scroll, then read the
-/// **worst** `sharp=` the canvas reported over the frames that followed.
-/// `sharp=1.000` means the sharp raster covered the whole viewport; anything
-/// less is the backdrop showing through somewhere.
-///
-/// A **wheel** rather than a drag, because a drag on the canvas is a
-/// selection gesture and would be measuring something else. The status line
-/// says `wheel=scroll`, so a plain wheel here is a pan.
 fn pan_and_watch_the_edges(
     session: &Session,
     driver: &Driver,

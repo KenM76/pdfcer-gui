@@ -381,11 +381,6 @@ mod tests {
     use super::*;
 
     /// Every choice has a name and a note, and the note says what it reaches.
-    ///
-    /// The reach clause is the load-bearing half — see [`does_note`]'s comment
-    /// on why the four inert ones carry one too. A new variant added without a
-    /// note would fail to compile (the `match` is exhaustive); a new variant
-    /// added with an empty one would not, so this asserts non-emptiness.
     #[test]
     fn every_choice_is_named_and_explained() {
         for kind in ButtonDoesKind::ALL {
@@ -411,10 +406,6 @@ mod tests {
     }
 
     /// The submit disclosure must carry all four facts it claims to.
-    ///
-    /// Asserted by keyword rather than by exact text so a rewording does not
-    /// break it — but a rewording that DROPS one of the four will, which is the
-    /// point. These are the facts an operator cannot learn any other way.
     #[test]
     fn the_submit_disclosure_names_every_fact_it_owes() {
         let d = submit_disclosure();

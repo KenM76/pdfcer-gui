@@ -25,6 +25,8 @@
 //! someone who hand-edited a colour and typed it wrongly was trying to change
 //! it, and silently substituting the default would be the one outcome they did
 //! not ask for.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/app/prefs/ocrlayer.md`.
 
 /// Read a colour out of the preferences file.
 ///
@@ -102,10 +104,6 @@ mod tests {
     }
 
     /// A value this cannot read is refused, so the caller can report it.
-    ///
-    /// `"#CC00999"` is the one worth having: it is seven hex digits, so a
-    /// parser that read the first six and stopped would accept it and draw a
-    /// colour nobody typed.
     #[test]
     fn a_value_it_cannot_read_is_refused_rather_than_guessed() {
         for bad in [

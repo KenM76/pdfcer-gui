@@ -54,11 +54,6 @@ pub fn copy_row(ui: &mut Ui, doc: &OpenDoc, selected: &OutlineItem, actions: &mu
 }
 
 /// Put the selected bookmark and its subtree on the clipboard.
-///
-/// Returns whether it worked, so a cut can call off its own delete half — the
-/// ordering rule `canvas::clipboard::cut` established: *a cut that silently
-/// becomes a delete is a different verb wearing the operator's control, and
-/// they would find out by pasting.*
 fn take(ui: &Ui, doc: &OpenDoc, selected: &OutlineItem) -> bool {
     match doc.session.copy_outline_item(selected.id) {
         Ok(clip) => {

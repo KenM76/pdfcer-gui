@@ -14,21 +14,9 @@ use crate::report::CheckReport;
 
 /// The fixture that contradicts itself: one doubled `/PageMode` in the
 /// catalogue, `/UseOC` first and `/UseOutlines` second.
-///
-/// Built by `fixtures/contradicts-itself.PROVENANCE.py`, which computes its own
-/// xref offsets so that the file's cross-reference table is **sound** — that
-/// matters, because a scanned-and-rebuilt file lights `Document::recovery()`
-/// instead, which is a different disclosure with a different status region, and
-/// a check reading the wrong one would be green about a surface it never
-/// touched.
 const CONTRADICTS: &str = "contradicts-itself.pdf";
 
 /// The control: a file with nothing to disclose.
-///
-/// ⚠ Asserted clean through the engine by the shell's own
-/// `the_control_fixtures_a_driven_run_uses_are_genuinely_clean`. Do not swap it
-/// for another fixture without adding the new name there; an absence assertion
-/// against an unverified control is an assertion about nothing.
 const CLEAN: &str = "four-pages.pdf";
 
 /// The status bar's census region.
@@ -44,25 +32,10 @@ const REREAD_REGION: &str = "properties.load-anomalies.reread";
 
 /// The shell trace the control emits when it is pressed, and the one the
 /// loader emits when it acts on it.
-///
-/// **Two events and not one, because they are two different claims.** The
-/// first says a button was hit; the second says a re-load actually started.
-/// Between them sit both of `apply_reread_with_duplicate_keys`' guards, and a
-/// build where those guards mis-fire — a stale `save_pending`, an unsaved
-/// dialog raised over a document with nothing to save — traces the first and
-/// never the second. That gap is precisely what a unit test on the arm cannot
-/// see, and it is why this check exists at all.
 const REREAD_REQUESTED: &str = "reread-requested";
 /// See [`REREAD_REQUESTED`].
 const REREAD_BEGIN: &str = "reread-begin";
 /// The policy both of those events must name.
-///
-/// ⚠ Asserted as a **string**, against `crate::app::state::policy_token`'s
-/// output, and that function exists so this comparison is against a contract
-/// rather than against `{:?}` on somebody else's `#[non_exhaustive]` enum.
-/// A `Debug` rendering is not a machine-readable field and this project has
-/// already had one driven check report the opposite of the truth while
-/// quoting the truth in its own message.
 const KEEP_FIRST: &str = "keep-first";
 /// The metadata form's region — the panel's *other* content, used here only as
 /// proof that the panel itself is open on the control launch.
@@ -77,19 +50,6 @@ const STATUS_LINE: &str = "status";
 
 /// Where the window is put for the two no-input launches, as
 /// `PDFCER_DIAG_VIEWPORT` takes it: `x,y,w,h` in desktop pixels.
-///
-/// **Off the desktop, on purpose.** Neither status-bar launch reads a single
-/// pixel — the whole verdict comes from the trace — so the window does not need
-/// to be anywhere a human could see it, and putting it where a human cannot
-/// means this check can run while the operator is working. Every on-screen
-/// alternative either covers his window or races him for it.
-///
-///
-/// The size is the harness's usual 1400x900 and is not arbitrary: a narrower
-/// window folds status-bar groups away, and a folded group publishes no region
-/// — which would read as "the disclosure is missing" when it is merely elided.
-/// The `SAFE_ORIGIN + size` arithmetic that binds an on-screen check does not
-/// bind here precisely because nothing is ever aimed at this window.
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
 
 // ---------------------------------------------------------------------------
@@ -600,11 +560,6 @@ fn ui_rect_event(ctx: &CheckContext) -> Result<&'static str> {
 }
 
 /// This module's fixtures, resolved by [`crate::checks::driving::repo_fixture`].
-///
-/// The shared resolver carries the whole account of why the path comes from
-/// `CARGO_MANIFEST_DIR` and never from `--source-root`. What stays here is the
-/// sentence that is about THIS check: why its two documents are not
-/// substitutable for whatever `--pdf` happened to name.
 fn repo_fixture(name: &str) -> Result<PathBuf> {
     crate::checks::driving::repo_fixture(
         name,
@@ -663,12 +618,6 @@ fn base_spec(
 }
 
 /// Bring the Document properties panel to the front, if it is not already.
-///
-/// Reuses `properties_metadata`'s opener rather than spelling the two clicks
-/// again. It is the same ribbon item and the same toggle hazard — pressing
-/// `file.document_properties` while the panel is up CLOSES it — and two copies
-/// of that guard would be two places for the next ribbon move to have to be
-/// applied.
 fn open_properties(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
     if declared(&session.trace()?, ui_rect, PANEL_OPEN_WITNESS).is_some() {
         return Ok(());

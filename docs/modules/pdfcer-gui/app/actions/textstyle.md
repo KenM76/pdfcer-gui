@@ -156,3 +156,154 @@ Disclosed by the count rather than left to be discovered, and filed on the
 request channel. **Not** worked around here: a shell-side coalesce would
 work and would leave every other consumer with the same defect, which is the
 boundary rule above stated from the other side.
+
+## Item notes
+
+### `fn stamp`
+
+Its own function so the mapping from *a control the operator pressed* to
+*a field on `FormatRequest`* is one readable table, and so a sixth
+control cannot be added without appearing in it.
+
+### `fn request`
+
+Built fresh per run per step; see the module header on why a batch of these
+taken up front would be wrong.
+
+# Why there is no `find` string
+
+`FormatRequest::whole_operator(page, span)` is exactly
+`new(page, "").pinned(span)`, and the named constructor is used because it
+says what it means. The alternative is to pass the run's own text as
+`find`, which requires slicing that text into per-operator pieces — **a
+second locator living beside the engine's**, and the class of defect where
+two locators agree on every fixture and disagree on a ligature. There is no
+such slicing here and `pin::Operator` carries no `find`.
+
+An empty `find` with **no** pin is still refused by name, which is the right
+way round: a caller that forgot to pin gets a refusal rather than silent
+whole-operator behaviour.
+
+# What this deliberately closes off
+
+Restyling **part** of a run. A shorter `find` restyles a shorter span, and
+`whole_operator` shuts that door for this call site. `FormatRequest::new`
+with a real `find` remains for the day a sweep's byte offsets can be trusted
+across an extraction, which `TextSelection::runs` does not yet offer.
+
+### `fn resweep`
+
+# The defect, in the operator's own gesture
+
+Sweep three words. Press **Bold**: it applies. Press **Italic**: nothing
+happens, and nothing says why. The wash has also gone from the page.
+
+Bold is an edit, `super::apply::vector_edit` bumps `edit_epoch` on success,
+and `TextSelection::live` is an equality test against that number. From the
+frame after Bold the selection reports itself stale: it paints nothing and
+`TextSelection::runs` hands back an empty list, so Italic's operand is empty
+and `restyle` above declines with `NoRun`. Every pair of presses needed a
+re-sweep in between, which is not a thing any editor in the class asks for.
+
+# Why it is a re-resolution and not a re-stamp
+
+`canvas::textsel`'s header §7 is emphatic that painting stored geometry
+against a moved revision is the one thing rule 4 forbids outright, and it is
+right: a restyle that changed a point size moves every glyph after it, so
+the old quads would wash the wrong pixels and a subsequent restyle could act
+on the wrong runs. So nothing is re-stamped. `textsel::reresolve` re-runs the
+whole resolution from the operator's two positions against a fresh
+extraction, and refuses unless the characters covered are identical. See its
+docs for the argument; this function is only the wiring and the borrow
+discipline.
+
+# Called on every exit of `restyle`, including the refusals
+
+A gesture that applied eleven runs and then stopped left the document
+edited, so the selection is exactly as stale as a successful one. Wrapping
+`restyle` rather than appending to its tail is what makes that true without
+four call sites having to remember it — `restyle` has five early returns.
+
+A no-op when nothing was swept, which is the whole clicked-object rung:
+that operand comes from `app::textoperand`'s `Cache`, whose stamp includes
+the epoch, so it re-resolves itself and needs nothing here.
+
+# The cost, and why it is not a new one
+
+One page extraction. `OpenDoc::page_text` is the shared cache and the edit
+has just invalidated it, so this call pays for a rebuild — but the canvas
+asks for the same extraction on its very next frame to hit-test the pointer,
+so the work happens either way and this only moves it earlier by a frame.
+
+### `fn emit_carried`
+
+A second `vector_edit` would be a second undo entry, so this writes the
+disclosure slot directly. That is the one place in this module that reaches
+past the funnel, and it is sound because it changes **no document**: the
+epoch it stamps is the one the final edit already bumped.
+
+### `fn trace_rung`
+
+Its own function so every `None` arm above costs one readable line, and so
+the trace format is written once. `StyleRung` has a `Display` that spells the
+rung in words (*"rung 2: the standard-14 sibling"*), which is what a future
+session grepping a trace for an unhandled outcome needs to see.
+
+### `fn reflow_refusal`
+
+# The same shape as [`refusal_of`] above, and for the same rule
+
+The engine's error is a *diagnosis*; the operator needs a *next step*, and
+the two are not the same list. `ReflowApplyError` carries many more variants
+than there are things an operator can do — save and reopen, remove the
+protection, accept that this text cannot be addressed, or stop — so this
+maps rather than transcribes. Wording each engine variant separately would
+put operator-facing decisions inside an error type written for a library.
+
+# No wildcard, and that is the whole safety of the function
+
+`ReflowApplyError` is `#[non_exhaustive]`. A `match` on it ending in `_`
+therefore gains new variants **silently**, and the rule is stated in
+`text::textedit::reflow_refusal`'s header in exactly this shape:
+
+> *"any `match` of yours ending in `_` just gained a variant it will not
+> distinguish, and the one it will not distinguish is the one you care
+> about."*
+
+A wildcard here would route a newly carved-out refusal into
+[`ReflowRefusal::Other`] — the generic sentence, no cause, no remedy —
+while the engine's whole reason for carving it out was that it had one.
+
+⇒ So everything except [`ReflowApplyError::Encrypted`] routes through
+[`ReflowApplyError::decline`]. [`ReflowDecline`] is deliberately **not**
+`#[non_exhaustive]` — the engine made the same written promise it made for
+`RefusalKind` — so the `match` below is **compiler-proved complete**. A
+future engine *refusal* joins an existing arm and keeps its correct
+sentence; a future *decline* is a build failure here, which is the one place
+it should be.
+
+⚠ Never narrow an operator sentence onto a cause the engine can no longer
+produce. `Unsupported(String)` carries many distinct refusals under one
+discriminant, only one of which ever had *save and reopen* as its remedy, so
+it earns [`ReflowRefusal::EngineDeclined`] — which names no cause and
+promises no remedy — rather than a specific sentence that would be wrong for
+every other member of the set.
+
+`Encrypted` is matched by variant, above the discriminant and on purpose.
+`ReflowDecline::StructureForbids` covers *"encryption, **or** a save that
+the edit gates refused"*, and those need different sentences — one says
+*remove the protection*, the other cannot say anything so specific. Name the
+narrower cause wherever the engine gives a narrower variant, and nowhere
+else.
+
+| decline | shell refusal | why |
+|---|---|---|
+| [`ReflowDecline::RetryAfterSaveAndReopen`] | [`ReflowRefusal::PageAlreadyEdited`] | ⚠ **unreachable at engine `025d703d`** — its only source error has no producer in the engine. The arm is mandatory (this `match` is compiler-proved complete over an exhaustive enum) and the sentence is retained; `check-unreachable-refusals` is what notices if it comes back |
+| [`ReflowDecline::NotFound`] | [`ReflowRefusal::CannotTrace`] | *"glyphs cannot be traced back to their show operators"* is that sentence, verbatim |
+| [`ReflowDecline::NotReflowable`] | [`ReflowRefusal::EngineDeclined`] | permanent for this document; the operator did nothing wrong and can do nothing |
+| [`ReflowDecline::StructureForbids`] | [`ReflowRefusal::Other`] | reachable here only as a gate refusal, which this shell cannot describe more precisely than *"pdfcer could not, and nothing was changed"* |
+
+Note what this shell refuses to do throughout: read
+[`std::fmt::Display`]. The sentences are unchanged and are still
+implementer-voiced. The engine's own doc says *"Match this, never `Display`
+output"*, and that was this shell's position before the type existed.

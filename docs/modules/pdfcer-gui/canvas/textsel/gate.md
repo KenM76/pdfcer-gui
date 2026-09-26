@@ -201,3 +201,72 @@ answers it came too), and is still cleared if it is not. That comment in
 `gating` predicted this in terms: *"a future `CanvasTool::Text` widens this
 and the press rule together or widens neither"*. It widened both, and no line
 in that file changed.
+
+## Item notes
+
+### `fn the_caret_tool_never_takes_the_press_for_a_text_sweep`
+
+This is the assertion that keeps this file's §3 true after
+`CanvasTool::TextEdit` landed. The gate reads `is_text()`, which is
+`matches!(tool, CanvasTool::Text)`, so a new variant is false here **by
+construction** — and that is exactly the kind of property that is true
+until someone "tidies" the predicate into `tool.is_any_text_tool()`.
+
+It matters because the two would otherwise contend in Edit. With the
+caret tool armed, `caps.edit_content` is true and the operator has asked
+for text, which is the same both-facts-true shape the §3 section above
+records for the sweep tool — and the failure it would produce is worse:
+a press meant to place a caret would instead sweep a range and the
+keyboard would have nothing to type into.
+
+Asserted over **both** kinds and **all three shipped modes**, because a
+gate that answered differently for `Add` than for `Edit` would be a
+distinction nothing else in the crate makes.
+
+### `fn a_press_means_text_exactly_where_it_cannot_mean_content`
+
+The whole gate, asserted against the shipped manifest rather than against
+hand-written flags — so a change to a mode's tab list fails here and
+names it, exactly as `capability::the_built_in_modes_match_the_specified_gesture_table`
+is arranged to.
+
+The Edit row is the one that must not drift permissively: a build where
+Edit's select tool took the press for text would have silently removed
+object selection, marquee and move from the only mode that has them.
+
+### `fn the_two_selections_are_mutually_exclusive_under_the_select_tool`
+
+Asserted over every capability combination, not just the three shipped
+modes: a customized manifest can produce any of them, and the exclusivity
+has to be a property of the rule rather than of the modes that happen to
+ship.
+
+The tool is now named in the assertion rather than being *the* tool,
+and that narrowing is the point. This exclusive-or is what an **un-armed**
+canvas guarantees, and it is what makes Read and Review's behaviour
+unchanged by the addition. The armed case is a different guarantee with a
+different mechanism — precedence, in `press_kind` — and is asserted
+separately, immediately below and in `gesture::meaning`.
+
+### `fn the_armed_text_tool_takes_the_press_in_every_mode`
+
+The first disjunct of [`takes_the_press`], asserted over every capability
+combination rather than over the three shipped modes, for the reason the
+test above gives: a customized manifest can produce any of them, and a
+tool that answered `false` for one would be a control that arms, paints an
+I-beam, and marquees objects.
+
+The Edit row is the one that closes the two gaps this tool was built for
+— an editor who cannot sweep text, and three text-markup controls drawn on
+Edit's Markup tab that could never enable — so it is asserted by name
+against the shipped manifest as well as inside the sweep.
+
+### `fn an_armed_authoring_tool_is_not_a_text_gesture`
+
+The test's name was `an_armed_tool_is_not_a_text_gesture` until the text
+tool landed, at which point the general claim stopped being true: an armed
+tool *is* a text gesture when it is the text tool. What survives is the
+narrower and more useful statement — **the press belongs to whichever tool
+is armed** — and every arm below is one instance of it. The hand's row is
+the odd one and is kept for the same reason it always was: it does not
+reach the gesture machine at all.

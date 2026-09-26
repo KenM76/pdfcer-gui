@@ -62,3 +62,40 @@ rather than growing it from wherever the first one landed. That is the
 behaviour of every list that gets this right, and the difference is only
 visible when someone overshoots and corrects, which is exactly when it
 matters.
+
+## Item notes
+
+### `fn a_plain_click_replaces_the_selection_and_navigates`
+
+The navigation half is asserted because it is the only gesture that
+has it, and a regression that made every click navigate would cost a
+canvas re-render per click — ~0.8 s each on the benchmark drawing.
+
+### `fn correcting_an_overshoot_shrinks_the_range`
+
+The property the anchor rule exists for, and the only one that is
+invisible until somebody overshoots. If the anchor moved with each
+Shift+click, correcting an overshoot from 5→20 back to 5→8 would leave
+8–20 selected with no gesture that removes them.
+
+### `fn a_right_click_over_an_unpicked_page_picks_it`
+
+Without this, right-clicking page 9 while 1–3 are picked and choosing
+Delete destroys 1–3 — the pointer and the operand list disagreeing,
+with an irreversible verb between them.
+
+### `fn shrinking_the_document_drops_the_picks_that_fell_off_the_end`
+
+The document shrinking must drop the picks that no longer name a
+page. Keeping them would leave a selection pointing at a *different*
+sheet, and the next `pages.delete` would remove one nobody chose.
+
+### `fn a_reorder_carries_the_picked_pages_with_it`
+
+The property that makes the reorder arrows usable more than once: move
+four sheets up, and they are still the four sheets that are picked, so
+the next press moves the same four. A build that cleared here — or, far
+worse, one that left the indices alone — would leave the second press
+acting on whichever sheets happen to sit at those positions now, which
+is a *destructive* verb pointed at pages nobody chose the moment the
+operator reaches for Delete instead.

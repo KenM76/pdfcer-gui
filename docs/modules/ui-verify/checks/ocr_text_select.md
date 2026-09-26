@@ -52,3 +52,25 @@ Step C is the control point and is the half a careless fix would break.
 Making text win everywhere would take the image feature away again, which is
 the same defect facing the other direction — and a check asserting only B
 would pass against exactly that.
+
+## Item notes
+
+### `const TEXT`
+
+`canvas-text-selection`, and the first three drafts said `text-selection`
+— which is a SUBSTRING of it. Every `grep` used to confirm the name matched,
+the trace looked right, and the check reported *"selected no characters"*
+through a settle, a longer settle and a poll loop, because `events()` is an
+exact match and none of those three attempts was ever going to work.
+
+⇒ A harness constant confirmed by a substring grep is not confirmed. The
+instrument that finally answered it was the check reporting what it had
+SEEN — `saw 0 line(s): []` beside a file that plainly contained two.
+
+### `const ON_A_WORD`
+
+Measured off the engine's own extraction rather than guessed: the first
+run's box is `[9.6, 4.46, 15.84, 10.42]`, so its middle is about
+`(12.7, 7.4)`. A point picked by eye from a raster would be a point in
+raster space, which is not this space and is a coordinate-space error this
+harness has made before.

@@ -38,3 +38,18 @@ rather than upstairs, and are `pub` so the battery can share the ones it
 also needs — one definition, imported upward, so a rename in the
 application cannot leave one file corrected and the other quietly reading a
 name that is never printed.
+
+## Item notes
+
+### `const RE_AIM_STEPS`
+
+Each is one pointer move and one 70 ms settle, and the ordinary case
+exits after the first. Twelve is enough to close a full-viewport error at a
+third of the viewport per step with room to spare.
+
+### `const RE_AIM_TOLERANCE_PX`
+
+Screen pixels rather than canvas points, deliberately: what the next
+click needs is to land on the same ink, and "the same ink" is a screen
+distance. In canvas points the same tolerance would be meaninglessly tight
+at 100 % and meaninglessly loose at 200,000 %.

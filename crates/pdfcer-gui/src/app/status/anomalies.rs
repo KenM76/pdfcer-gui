@@ -51,11 +51,6 @@ impl Census {
 }
 
 /// One census count paired with the catalog entry that puts it into words.
-///
-/// A named type for the reason `super::notes`' own `NoteEntry` is one: it makes
-/// [`clauses`]' table read as a table, and the `fn(usize) -> String` half is a
-/// plain function pointer rather than a closure so the pairing is a *lookup* a
-/// reviewer can read straight down the page.
 type Clause = (usize, fn(usize) -> String);
 
 /// Count the anomalies by class.
@@ -229,12 +224,6 @@ mod tests {
     }
 
     /// The census is ordered by consequence, and the order is pinned whole.
-    ///
-    /// Every class at once, deliberately. A weaker fixture — two classes, one
-    /// of them absent — is satisfied by orderings that differ from the intended
-    /// one, so it would pass against a table somebody had shuffled. The property
-    /// being asserted is *"most consequential first, because the bar truncates
-    /// from the right"*, and only the full sequence states it.
     #[test]
     fn the_census_is_ordered_by_consequence() {
         let anomalies = vec![
@@ -281,11 +270,6 @@ mod tests {
     }
 
     /// Both values of a duplicate key survive all the way to the panel row.
-    ///
-    /// This is the assertion that distinguishes a built feature from a counted
-    /// one. The engine carries `kept` and `discarded` specifically so a shell can
-    /// show what pdfcer chose between; if only the count arrives, the operator's
-    /// question — *"what if it is the wrong one?"* — has no answer on screen.
     #[test]
     fn the_panel_row_shows_what_pdfcer_chose_between() {
         let rows = rows(&the_operators_file());
@@ -308,40 +292,6 @@ mod tests {
 
     /// **A REAL FILE, THROUGH THE REAL LOADER** — the one test here that is
     /// not this module talking to itself.
-    ///
-    /// Every test above builds its `LoadAnomaly`s by hand and asserts on the
-    /// prose. That is the right way to pin wording, and it proves **nothing at
-    /// all** about whether the engine ever hands this shell an anomaly, or
-    /// whether the variants it hands over are the ones these tests construct.
-    /// A build where `Document::load_anomalies()` always returned empty would
-    /// pass every one of them, and the operator would see a status bar that
-    /// never mentions his file.
-    ///
-    /// So this one opens `fixtures/contradicts-itself.pdf` — a catalog naming
-    /// `/PageMode` twice with two different values, the shape of engine
-    /// decision 145's own file — and asserts three things in order of what
-    /// they would cost if untrue:
-    ///
-    /// 1. **It loads.** Before `Pass 283.0` a file like this was refused
-    ///    whole. `open_local_fixture` panics if it does not, so this claim is
-    ///    made by the test existing.
-    /// 2. **Exactly one anomaly comes out**, and it is the duplicate key. Not
-    ///    "at least one": a loader that reported the same contradiction twice
-    ///    would put a wrong count in the status bar, and the count is the
-    ///    entire content of the census clause.
-    /// 3. **Both values survive the trip.** The kept value and the discarded
-    ///    one reach the panel row, which is what makes the operator's eventual
-    ///    override offerable rather than theoretical.
-    ///
-    /// ⚠ The kept value is `/UseOutlines` — the LAST occurrence, under the
-    /// engine's default `DuplicateKeyPolicy::KeepLast`. If a future engine
-    /// revision changed the winner this assertion would go red, which is
-    /// wanted: it is a change an operator can see.
-    ///
-    /// ⚠ It also asserts the recovery line stays SILENT. `recovery()` and
-    /// `load_anomalies()` are disjoint questions — the xref of this fixture is
-    /// sound and every offset correct — and a fixture that lit both would let
-    /// a check pass while reading the wrong disclosure.
     #[test]
     fn the_contradicting_fixture_produces_exactly_one_anomaly_through_the_engine() {
         let doc = crate::app::state::open_local_fixture(crate::app::state::CONTRADICTS_ITSELF);
@@ -386,26 +336,6 @@ mod tests {
 
     /// **The control: the fixtures a driven run uses as "a file that does NOT
     /// contradict itself" really do not.**
-    ///
-    /// Without this, `ui-verify`'s `load_anomalies_are_disclosed` is a check
-    /// that cannot fail in one direction. That check launches twice - once on
-    /// `contradicts-itself.pdf`, asserting the status line and the
-    /// Document-properties rows are THERE, and once on a clean file, asserting
-    /// they are NOT - and the second launch is the half that distinguishes
-    /// "the disclosure works" from "the disclosure is always on screen".
-    ///
-    /// If the control fixture quietly grew an anomaly of its own, that absence
-    /// assertion would start failing and the report would name the wrong
-    /// defect: it would say the disclosure leaks onto clean files, when what
-    /// actually happened is that the control stopped being clean. That is the
-    /// harness-input failure mode this project has paid for more than once -
-    /// a check whose verdict is about its own fixture, worded as a verdict
-    /// about the program.
-    ///
-    /// ⚠ So this is a tripwire for the harness's INPUT, not for this module's
-    /// logic, and both fixture names live here rather than only in the check:
-    /// a Rust test runs on every `cargo test`, and a driven check runs when
-    /// somebody has the machine's pointer to spare.
     #[test]
     fn the_control_fixtures_a_driven_run_uses_are_genuinely_clean() {
         // The names are spelled literally rather than through

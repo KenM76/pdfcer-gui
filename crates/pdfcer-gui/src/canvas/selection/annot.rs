@@ -380,16 +380,6 @@ impl Candidate {
 }
 
 /// Shortest distance from `p` to the segment `a`–`b`, in canvas units.
-///
-/// The standard projection-and-clamp. Clamping is what makes it a *segment*
-/// rather than an infinite line — without it, a click level with a dimension
-/// line but far off its end would still hit, which is exactly the
-/// claims-too-much failure this whole path exists to remove.
-///
-/// A degenerate segment (`a == b`) falls out correctly: the projection divides
-/// by a zero length, which is guarded, and the answer becomes the distance to
-/// the point. A zero-length segment is a real thing here — a perimeter does not
-/// de-duplicate its vertices — so this is a case rather than a defence.
 fn distance_to_segment(p: Pos2, a: Pos2, b: Pos2) -> f32 {
     let (abx, aby) = (b.x - a.x, b.y - a.y);
     let len_sq = abx.mul_add(abx, aby * aby);
@@ -463,12 +453,6 @@ mod tests {
     }
 
     /// **The topmost annotation wins, not the first one found.**
-    ///
-    /// `/Annots` is paint order, so a stamp dropped over a rectangle is drawn
-    /// last and is what the operator sees. A hit test that took the first
-    /// match would select the thing underneath — which looks like the click
-    /// missing entirely, because the outline appears somewhere the operator
-    /// was not pointing.
     #[test]
     fn the_last_painted_annotation_takes_the_click() {
         let candidates = vec![
@@ -515,15 +499,6 @@ mod tests {
     }
 
     /// **The operator's report of 2026-08-20, as one test.**
-    ///
-    /// > *"selecting space not actually occupied by the lines or text of the
-    /// > dimension still selects it if I am selecting within the box area it
-    /// > occupies — I can't select objects underneath it."*
-    ///
-    /// An L of two thin segments across a 100×100 box. A click in the middle of
-    /// that box is nowhere near either segment, and must miss — which is what
-    /// lets the click reach the drawing underneath. Under the old
-    /// `rect.contains` test it hit.
     #[test]
     fn a_click_in_a_dimensions_empty_space_does_not_select_it() {
         let l_shape = vec![
@@ -552,10 +527,6 @@ mod tests {
 
     /// The tolerance is what makes a hairline clickable at all, and it is
     /// bounded: a segment is a SEGMENT, not an infinite line.
-    ///
-    /// A click level with the horizontal arm but well past its end must miss.
-    /// Without the clamp in `distance_to_segment` it would hit, and a dimension
-    /// would claim a stripe across the whole sheet.
     #[test]
     fn a_segment_does_not_claim_the_line_it_lies_on() {
         let arm = vec![(Pos2::new(0.0, 50.0), Pos2::new(20.0, 50.0))];
@@ -587,10 +558,6 @@ mod tests {
     }
 
     /// A click on blank paper selects nothing.
-    ///
-    /// Stated because the alternative — nearest-match — is a plausible
-    /// implementation that would make it impossible to *deselect* by clicking
-    /// away, which is the gesture every operator tries first.
     #[test]
     fn a_click_outside_every_annotation_is_not_a_hit() {
         let candidates = vec![boxed(
@@ -602,12 +569,6 @@ mod tests {
     }
 
     /// The kind survives the hit test.
-    ///
-    /// The one property that routes a later restyle to `set_dimension_style`
-    /// rather than `set_markup_style`. If it were dropped here and re-derived
-    /// downstream, the re-derivation would be the thing that could be
-    /// forgotten — and forgetting it turns a recolour into a dimension that
-    /// loses its label.
     #[test]
     fn a_ce_dimension_stays_a_ce_dimension() {
         let candidates = vec![boxed(
@@ -618,38 +579,6 @@ mod tests {
         assert_eq!(hit.target.kind, AnnotKind::CeDimension);
     }
     /// **The selection layer asks the SAME question the painter asked.**
-    ///
-    /// # The defect
-    ///
-    /// `selectable_on` filtered on `flags.hidden()` — `/F` bit 2 alone — while
-    /// the renderer and the note pop-up both ask
-    /// `AnnotFlags::suppressed_on_screen()`, which is `hidden() || no_view()`
-    /// (§12.5.3, Table 165). So a **`/NoView`** annotation was **selectable
-    /// with nothing drawn under the pointer**: click blank paper and an outline
-    /// appears, with handles, around a mark the operator cannot see and did not
-    /// know was there.
-    ///
-    /// Found by the note-pop-up work, which noticed the two layers disagreeing
-    /// about which annotations exist on screen, and reported rather than fixed
-    /// because this file belonged to another track that afternoon.
-    ///
-    /// # Why no existing test could have caught it
-    ///
-    /// **Two predicates over the same flags, each self-consistent.** Every
-    /// test of the selection layer used the selection layer's own notion of
-    /// visible, and every test of the painter used the painter's. A
-    /// disagreement between two correct halves is invisible to any test of
-    /// either half — which is why this one asserts them **against each other**
-    /// rather than against a constant, and why the fix calls the engine's
-    /// predicate instead of re-spelling `hidden() || no_view()` here.
-    ///
-    /// # What it deliberately does NOT assert
-    ///
-    /// ⚠ That a `/NoView` annotation is unreachable. It is not, and must not be
-    /// — it still prints, the Comments panel still lists it, and the page's
-    /// notes still count it. R50: *"a page carrying content the operator cannot
-    /// see is a fact they are entitled to know."* The claim is narrower and
-    /// exact: **it is not clickable on a canvas that is not drawing it.**
     #[test]
     fn an_annotation_the_canvas_does_not_draw_cannot_be_clicked() {
         use pdfcer_core::annot::AnnotFlags;

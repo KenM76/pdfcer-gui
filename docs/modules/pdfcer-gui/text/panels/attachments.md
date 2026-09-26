@@ -48,3 +48,93 @@ decision, in the same words, that [`super::comments::comment_row_byline`]
 made for `/M` on an annotation.
 
 [`DeclaredSizeCheck::is_contradicted`]: pdfcer_core::attachments::DeclaredSizeCheck::is_contradicted
+
+## Item notes
+
+### `fn entry_count`
+
+A helper rather than seven hand-written `if`s, because seven copies of a
+plural rule is seven chances to ship *"1 entries"*, and that is the exact
+tell this catalog's header calls out.
+
+### `fn hazard`
+
+`NameHazard` is `#[non_exhaustive]`, so the catch-all is required and is
+deliberately the weakest claim available: *"it was not safe to use as a file
+name"* is true of any hazard a later engine adds, where guessing at a
+specific cause would not be.
+
+### `fn human_bytes`
+
+Delegates to [`super::byte_size`], which carries the argument for base-1024
+arithmetic with the colloquial `KB`/`MB` labels: this figure is read by
+operators comparing it against what Explorer tells them about the file they
+just attached, and matching that is worth more here than matching IEC.
+
+The cast is saturating rather than lossy: a `u64` byte count larger than
+`usize` cannot be produced by a file this application can read, and
+saturating is the answer that stays a number instead of wrapping to a small
+one on a 32-bit build.
+
+### `fn an_undamaged_listing_discloses_nothing`
+
+`AttachmentNotes`' own doc states the contract — *"all-zero/false means
+the listing is complete and everything parsed"* — and a
+[`listing_notes`] that returned a reassurance instead of nothing would
+put a permanent sentence above every ordinary document's list.
+
+### `fn a_well_formed_document_needs_no_caveat`
+
+The companion to [`an_undamaged_listing_discloses_nothing`], and the one
+that would catch a flag pdfcer sets over-eagerly: a `Default` is a value
+nobody produced, and a listing that quietly reported *"pdfcer stopped
+reading early"* about every well-formed document would still pass that
+test.
+
+### `fn one_is_never_spelled_as_a_plural`
+
+The tell this catalog's header names, checked on the panel's own first
+line and on the helper every counted note goes through — which is the
+point of that helper existing: seven hand-written plural rules would be
+seven chances to ship *"1 entries"*.
+
+### `fn the_removal_sentence_does_not_let_remove_imply_erasure`
+
+`detach_file`'s doc comment makes this a shell obligation in as many
+words, and the failure mode it guards against is an operator who removed
+a sensitive attachment, saved, and believes it is gone. Both halves are
+pinned: the fact, and the command that acts on it — a warning with no
+route out is half a disclosure.
+
+### `fn a_size_disagreement_is_reported_as_a_measurement`
+
+§7.11.4 attaches no `shall` to `/Size` (ambiguity EF-A2), so a
+disagreement is a measurement rather than a verdict. The words this
+forbids are the ones that would turn one into the other.
+
+### `fn an_unchecked_size_says_it_is_unchecked`
+
+The case `DeclaredSizeCheck` exists for: the stream is filtered, so its
+raw byte count is not its decoded byte count, and printing the
+declaration bare would present an unchecked claim as a measurement.
+
+### `fn a_renamed_save_says_both_names_and_the_reason`
+
+The gap this bridges is structural: the listing shows the raw name
+because a reader must not repair its evidence, and the filesystem gets
+the safe one because the failure mode is a file written outside the
+destination. Without this sentence the operator sees two different names
+and is told nothing.
+
+### `fn a_reasonless_rename_does_not_dangle`
+
+Reachable: `SafeName::changed` is true whenever the value differs from
+the input, and a future sanitiser step could change one without pushing
+a hazard. The failure this pins is the dangling em dash — a sentence
+that ends in punctuation waiting for a clause that never came.
+
+### `fn a_page_row_warns_that_deleting_the_page_takes_the_file`
+
+A `/FileAttachment` is destroyed with its page, this application can
+delete a page from three surfaces, and *"On page 3"* alone would leave
+an operator to discover that from a file that has lost something.

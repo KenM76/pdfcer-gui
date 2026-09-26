@@ -75,3 +75,42 @@ SKIP rather than being assumed.
 That the zoom is the largest one that still fits (that is `fit_metrics`'
 own subject and is unit-tested), that the spread's *gap* is right, or that
 anything is correct under a continuous mode — see the warning above.
+
+## Item notes
+
+### `const VIEWPORT`
+
+Fixed rather than maximised so the numbers below mean the same thing on
+every machine, and wide enough that a two-page spread at a readable zoom is
+a shape the fit can actually produce. `PDFCER_DIAG_VIEWPORT` switches
+`with_active` off, so the window lays out fully without taking the desktop.
+
+### `const CENTRE_TOLERANCE_PT`
+
+Generous on purpose. The page rect is rounded to the pixel grid, the fit
+divides in `f32`, and a scroll bar appearing or disappearing moves the
+viewport by its own width. The defect this check is about moves the strip by
+**half a page** — 300-plus points at the zoom this run reaches — so a
+tolerance two orders of magnitude below that separates the two states with
+room to spare, and a tighter one would report arithmetic rather than
+behaviour.
+
+### `const DISPLACED_PT`
+
+A precondition that is ASSERTED, not assumed. A run whose scroll did
+nothing would switch display modes from an already-centred start and pass
+while measuring nothing — the exact shape `fit_places_the_view`'s own pan
+precondition exists to prevent.
+
+### `const SPREAD_RATIO`
+
+1.5 rather than 2.0: the row is two pages **plus** a gap, so the true
+ratio is a little over 2, and a floor at 1.5 is unambiguous against the
+thing it has to exclude — a row of one page, ratio exactly 1.
+
+### `fn strip_and_viewport`
+
+Both are read from the **same** trace snapshot: reading them from two
+snapshots is how a check comes to compare a strip from one frame against a
+viewport from another, which on a frame where a scroll bar appeared is a
+difference of fifteen points for no reason at all.

@@ -43,3 +43,21 @@ same PDF corner is a different corner of what the operator sees, so the
 check asserts the click point is *a* corner rather than naming one. An
 assertion that named the corner would be a claim about the fixture's
 rotation dressed up as a claim about the feature.
+
+## Item notes
+
+### `const STEP_PT`
+
+Large enough that it cannot be confused with the jitter of a pointer
+landing on a pixel boundary — a page point is well under a screen pixel at
+the zoom a fitted A1 gets, so a one-pixel rounding is a fraction of a
+point — and small enough to stay on the sheet and inside the viewport from
+any aim point a caller would choose.
+
+### `const TOLERANCE_PT`
+
+The pointer is set in whole screen pixels and the ghost is computed from
+the pointer's canvas position, so the round trip through screen space
+quantises to one pixel. At a fitted A1 that is roughly two page points;
+four is one pixel of headroom on top, and it is still a twentieth of the
+motion being measured — a ghost that did not follow at all is out by 80.

@@ -23,6 +23,8 @@
 //! rail, and no drop this grammar can express changes it. Every target
 //! [`DockLayout::resolve_drop`](super::DockLayout::resolve_drop) produces names
 //! a compartment on a side that is already drawn.
+//!
+//! Design and rationale: `docs/modules/egui-shell/dock/preview.md`.
 
 use egui::{Rect, Vec2};
 
@@ -65,10 +67,6 @@ pub(super) fn stacks_down(area: Rect, shares: &[f32]) -> Vec<Rect> {
 }
 
 /// Resolve `shares` against `extent` and hand each span its offset.
-///
-/// The offset steps over a splitter after every span, including the last —
-/// where nothing reads it, which is why this is the same walk the draw path
-/// performs with the step inside an `if`.
 fn walk(shares: &[f32], extent: f32, min: f32, place: impl Fn(f32, f32) -> Rect) -> Vec<Rect> {
     let spans = plan::resolve_spans(shares, extent, min, plan::SPLITTER_THICKNESS);
     let mut offset = 0.0;
@@ -156,10 +154,6 @@ mod tests {
     }
 
     /// A left side of two columns: a lone stack, and a column split in two.
-    ///
-    /// The lone stack is the one the tests drag, because taking it out
-    /// **removes its column** — so a preview that merely echoed the target's
-    /// current rect would be wrong by half the side's width.
     fn layout() -> DockLayout {
         DockLayout::new(
             SideLayout::new([
@@ -197,13 +191,6 @@ mod tests {
     }
 
     /// **The one thing the calibration above cannot see.**
-    ///
-    /// It compares the walk against a frame that was drawn *by the walk*, so
-    /// an error in the step — dropping the splitter, double-counting it —
-    /// moves both together and every rect still matches. The step is
-    /// therefore asserted directly: compartments sit one splitter apart and
-    /// together fill the area they divide, with nothing left over at either
-    /// end.
     #[test]
     fn the_walk_leaves_exactly_one_splitter_between_compartments_and_no_slack() {
         let area = Rect::from_min_size(egui::pos2(10.0, 20.0), Vec2::new(600.0, 500.0));
@@ -252,12 +239,6 @@ mod tests {
     }
 
     /// **The calibration, and the reason the replay can be trusted.**
-    ///
-    /// Everything below asks the walk where a compartment *would* be. This
-    /// asks whether the walk agrees with where the dock *did* draw one — so
-    /// if the draw path ever stops calling [`columns_across`] and
-    /// [`stacks_down`], the divergence is red here rather than shown to an
-    /// operator mid-drag.
     #[test]
     fn the_frame_draws_every_compartment_where_the_walk_says_it_does() {
         let state = rendered();

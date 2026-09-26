@@ -95,3 +95,50 @@ it is `crate::render::settle::absorb`'s, at the one point a refusal is
 absorbed.
 Keeping the three apart is what lets the arithmetic be unit-tested with no
 document, no renderer and no frame.
+
+## Item notes
+
+### `fn a_page_that_has_never_refused_has_no_learned_ceiling`
+
+The load-bearing half of this is the `None`: every document the operator
+opens is in this state, and a ceiling that defaulted to a number would
+cap a zoom no measurement has anything to say about.
+
+### `fn the_ceiling_only_ever_ratchets_down`
+
+All three in one test because they are one property — `learn` keeps the
+minimum — and separating them would let a change satisfy two and break
+the third.
+
+The third clause is the one most likely to be got wrong and the most
+consequential: a page can be refused at a *larger* scale than one
+already learned (a render ordered before the ceiling took effect, or a
+stale request landing late), and raising the ceiling on that evidence
+would undo the correction the operator is standing at.
+
+### `fn a_degenerate_scale_teaches_nothing`
+
+A non-finite or non-positive scale cannot come from a real render, but a
+ceiling of zero or NaN would make the page unzoomable rather than
+bounded — a far worse failure than the one being guarded against, and
+one that would look like the document being broken.
+
+**A plausibly SMALL scale is deliberately not rejected here**, and the
+reason is worth stating because it looks like a hole. A raster scale
+below 1.0 is an ordinary render of a page zoomed out below 100 %, so a
+floor in this function would reject real measurements. The case that
+would be catastrophic — `BadRasterSize` firing because the pixmap is
+*empty* rather than too large, which happens at a tiny scale and would
+pin the zoom near zero — is excluded one layer up, where the width and
+height are actually known: see `crate::render::worker`'s
+`BadRasterSize` arm, which categorises an empty pixmap as
+`RefusalKind::Other` precisely so it can never arrive here.
+
+### `fn a_refusal_on_one_page_says_nothing_about_another`
+
+Stated as a test because the alternative is cheap, tempting and wrong:
+one ceiling for the document would be correct only if every page hit the
+rasterizer's wall at the same scale, and the engine's own measurement
+says two pages of one file differ by a factor of 28. A document-wide
+ceiling learned from the E-size sheet would cap the business card at
+3.5 % of where it can actually be drawn.

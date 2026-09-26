@@ -52,3 +52,19 @@ is the engine's own smoke fixture rather than a drawing improvised here. It
 is the disclosure the engine flagged as *"the one that produces a document
 that looks right and is not"*, so its absence from this check is a gap
 rather than a decision — recorded so the next session finds it named.
+
+## Item notes
+
+### `const LANDED`
+
+This is the oracle, and finding it changed the check. The first version
+read `open ok pages=N` at the start and hoped to read a second page count
+from somewhere at the end — but the application publishes its page count on
+**open** and not on every edit, so there was no "after" to read and the
+check would have compared a number to itself.
+
+`insert-pages-landed` carries **both numbers from the same moment**:
+`was=` is the count before the insert and `pages=` the count after. That
+removes the whole class of error where two readings straddle a frame and
+describe different states — and it comes from the insert path itself, so it
+cannot be present unless the document actually changed.

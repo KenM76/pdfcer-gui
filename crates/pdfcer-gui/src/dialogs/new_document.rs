@@ -25,58 +25,21 @@ const REGION_CREATE: &str = "new-document.create";
 
 /// One region per entry in the OPEN size list, indexed from zero in
 /// `pdfcer_core::paper::PaperSize::ALL` order, with `Custom…` last.
-///
-/// # Why the entries are published
-///
-/// The same argument the print dialog's paper list makes: an egui combo popup
-/// is an `Area` laid out at paint time, so nothing outside the process can
-/// compute where an entry is — and a check that can open a list but not choose
-/// from it can assert only that a control exists. "The control exists" is
-/// exactly what was true of the print dialog's tray checkbox for four months
-/// while it did nothing.
-///
-/// Here the property worth asserting is that **picking a size produces a page
-/// of that size**, end to end through `set_media_box`, a full rewrite and a
-/// re-parse. That needs a click on a specific entry.
 const REGION_SIZE_ITEM_PREFIX: &str = "new-document.size.item.";
 
 /// The Portrait radio.
-///
-/// Published because the transposition is the most likely defect in this
-/// window and the one a unit test cannot see end to end: `sheet_pt` is pinned
-/// in tests, and what is *not* pinned there is that the radio the operator
-/// clicks is the one that reaches it.
 const REGION_PORTRAIT: &str = "new-document.portrait";
 
 /// The Landscape radio. See [`REGION_PORTRAIT`].
 const REGION_LANDSCAPE: &str = "new-document.landscape";
 
 /// The smallest custom sheet this dialog will make, in millimetres.
-///
-/// ISO 32000-1 Annex C.2 advises a minimum of **3 units** (≈ 1.06 mm), so 1 mm
-/// would be marginally under it and 2 mm is comfortably over. Rounded up
-/// rather than to the letter of the advice because a sub-millimetre page is
-/// not a thing anybody wants and a bound an operator can remember is worth
-/// more than a bound derived to two decimal places.
 const MIN_CUSTOM_MM: i64 = 2;
 
 /// The largest custom sheet this dialog will make, in millimetres.
-///
-/// **5,080 mm = 200 inches = 14,400 default user space units**, which is
-/// ISO 32000-1 Annex C.2's advised maximum. See
-/// [`crate::text::new_document::custom_refused`] for the full sourcing,
-/// including the fact that ISO 32000-2 drops the number entirely and this is
-/// therefore 1.7-era portability advice pdfcer is choosing to honour.
 const MAX_CUSTOM_MM: i64 = 5080;
 
 /// Which sheet the operator has picked.
-///
-/// A separate type from `pdfcer_core::paper::PaperSize` rather than
-/// `Option<PaperSize>`, because "custom" is a *state of the dialog* — it opens
-/// two fields and changes what the summary line reads — and not a missing
-/// size. `Option` would have made the two fields' relevance depend on a `None`
-/// that also means "nothing chosen yet", which is a state this dialog never
-/// has.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Choice {
     /// One of `pdfcer_core::paper::PaperSize::ALL`.
@@ -174,20 +137,6 @@ impl NewDocumentDialog {
 
     /// The sheet this dialog currently describes, in points, **after**
     /// orientation.
-    ///
-    /// # One function, read by three callers, and that is the point
-    ///
-    /// The summary line, the validity check and the action all ask this. Three
-    /// separate computations of "what did they pick" is how a window comes to
-    /// promise 841 × 1189 and produce 1189 × 841 — and the transposition is
-    /// exactly the kind of arithmetic that is easy to write twice and hard to
-    /// notice once.
-    ///
-    /// A standard size comes from `PaperSize::rect_with`, which is the
-    /// engine's own table applying its own orientation rule. Nothing here
-    /// re-derives a sheet size: `594.0 * 72/25.4` is a number the engine
-    /// computes and a hand-rounded `1683.78` is a number that is *not* A1 and
-    /// will not compare equal to a CAD exporter's.
     fn sheet_pt(&self) -> (f64, f64) {
         let orientation = if self.landscape {
             pdfcer_core::paper::Orientation::Landscape
@@ -218,11 +167,6 @@ impl NewDocumentDialog {
     }
 
     /// Whether the current choice can be made.
-    ///
-    /// Only a custom size can fail: every entry in `PaperSize::ALL` is a real
-    /// sheet in range by construction. The check is on the **millimetre
-    /// fields** rather than on the computed points, so the message can name the
-    /// numbers the operator typed.
     const fn is_valid(&self) -> bool {
         match self.choice {
             Choice::Standard(_) => true,
@@ -363,11 +307,6 @@ mod tests {
     use super::*;
 
     /// Landscape transposes, and it transposes both kinds of sheet.
-    ///
-    /// The single most likely defect in this window: a standard size that
-    /// turns and a custom size that does not, or the reverse. Both go through
-    /// [`NewDocumentDialog::sheet_pt`] precisely so they cannot diverge, and
-    /// this is what holds that.
     #[test]
     fn landscape_transposes_a_standard_size_and_a_custom_one() {
         let mut dialog = NewDocumentDialog::open();
@@ -398,13 +337,6 @@ mod tests {
     }
 
     /// A standard size comes from the ENGINE's table, to the last decimal.
-    ///
-    /// Not a tautology test. The failure it exists for is a shell that
-    /// hand-rounds A1 to `1683.78 × 2383.94` — numbers that look right, are
-    /// wrong in the fourth significant figure, and will not compare equal to
-    /// the `/MediaBox` a CAD exporter writes. The engine converts from the
-    /// defining millimetres for exactly that reason and this pins that the
-    /// dialog does not re-derive it.
     #[test]
     fn a_standard_sheet_is_the_engines_own_number() {
         let mut dialog = NewDocumentDialog::open();
@@ -419,10 +351,6 @@ mod tests {
     }
 
     /// The bounds are checked on the millimetres the operator typed.
-    ///
-    /// Both directions, because a check written as `> 0` would let a 12-metre
-    /// sheet through and one written as `< MAX` would let a zero through, and
-    /// each is a single missing clause.
     #[test]
     fn an_out_of_range_custom_size_is_refused_in_both_directions() {
         let mut dialog = NewDocumentDialog::open();
@@ -448,11 +376,6 @@ mod tests {
     }
 
     /// The dialog opens on exactly what `file.new` makes.
-    ///
-    /// The two commands sit beside each other in one ribbon group, and the
-    /// difference between them must be "one asks" and nothing else. A default
-    /// that drifted to A3 here would make the sibling controls quietly
-    /// disagree about what a new document is.
     #[test]
     fn it_opens_on_the_size_the_plain_new_command_makes() {
         let dialog = NewDocumentDialog::open();

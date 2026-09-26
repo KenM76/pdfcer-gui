@@ -72,3 +72,94 @@ every one of them **in both dimensions**, so neither a no-op nor a
 transposition can pass vacuously. A4 would have been the lazy choice and is
 also the size the *other* size window opens on, which is precisely the
 coincidence a check should not rest on.
+
+## Item notes
+
+### `const A6_INDEX`
+
+**6 is A6**, the seventh entry: `A0, A1, A2, A3, A4, A5, A6, …`. An index
+because that is what the region name carries — the window publishes
+`page-size.size.item.<N>` — and because this crate deliberately cannot ask
+the engine: `ui-verify` has exactly one dependency, and a verification
+harness that pulls in the crate under test fails to build for reasons
+unrelated to the thing it is verifying, on the day it is most needed.
+
+⚠ **So the index is checked at RUN TIME instead**, against
+[`EXPECTED_SIZE_ID`] on the commit line. `PaperSize::ALL` is
+`#[non_exhaustive]` and its own doc comment says the table will grow (ARCH,
+JIS B, ISO B/C are all named as plausible); a size inserted before A6 would
+silently make this check click A5 and then assert A6's dimensions — a red
+run whose message would blame the application for a table that moved.
+
+### `const EXPECTED_SIZE_ID`
+
+Read from `size_id=` and **never** from the `choice=` field beside it.
+That one is a `Debug` spelling, present for a human reading a trace;
+Debug-formatting a domain type and then parsing it produced two false
+failure reports in this project in a single week.
+
+### `const A6_PT`
+
+Converted from the **defining millimetres** rather than written out as
+`297.64 x 419.53`, for the reason `dialogs::new_document`'s own test states:
+a hand-rounded number looks right, is wrong in the fourth significant
+figure, and will not compare equal to what the engine writes. Pinned against
+`PaperSize::A6.size_pt()` by [`tests::a6_is_where_this_check_thinks_it_is`],
+so the two cannot drift.
+
+### `const TOLERANCE_PT`
+
+A tenth of a point. The numbers are written by the engine and read by the
+engine, so the only slack that has to be absorbed is the two-decimal
+formatting of the trace line itself — 0.005 pt. A tolerance three orders of
+magnitude tighter than the smallest gap between any two entries in
+`PaperSize::ALL` cannot mask a wrong size.
+
+### `fn sheets`
+
+Reads the LAST line per index rather than the first. The window can be
+opened more than once in a run — phase B opens it, phase D opens it again —
+and the census is republished each time. Taking the first would hand phase D
+a fossil from phase B, which is the *"`.last()` returns a fossil"* trap
+`driving::declared` exists to solve for `ui-rect` and which applies to any
+republished line.
+
+### `fn open_and_census`
+
+Used **twice** — once on the fixture in process 1 and once on the saved copy
+in process 2 — which is the whole reason it is a call rather than eight
+lines inline: the two censuses must be produced by the identical sequence,
+or the comparison at the end is between two different measurements. That is
+`save_copy`'s own `comments_count` lesson, which it learned by carrying two
+copies of a census reader that were both wrong in the same way.
+
+### `fn a6_is_its_own_millimetres`
+
+The failure this exists for is the one `dialogs::new_document`'s own
+test names: a hand-rounded `297.64 × 419.53` looks right, is wrong in
+the fourth significant figure, and will not compare equal to what the
+engine writes. The engine converts from the defining millimetres for
+exactly that reason, and this pins that the harness does the same
+arithmetic rather than a similar-looking one.
+
+ⓘ It cannot assert against `PaperSize::A6.size_pt()` directly, and that
+is deliberate: this crate has **one** dependency, `windows-sys`, and its
+own manifest argues at length that a verification harness with a large
+dependency tree is one that fails to build for reasons unrelated to the
+thing under test. The agreement between this constant and the engine's
+table is asserted at run time instead, from
+[`EXPECTED_SIZE_ID`] on the window's own commit line, which is a
+stronger check than a compile-time one anyway: it verifies the size the
+**running program** committed rather than the one this file believes it
+will.
+
+### `fn the_fixture_can_carry_the_defect`
+
+Two requirements, and each is a way this check silently stops meaning
+anything: it needs **at least two pages**, or there is no negative
+control; and page 0 must not **already** be A6, or the positive arm
+passes on a build that writes nothing.
+
+Asserted from the fixture's bytes rather than from a remembered number,
+because the fixture is regenerated and a check that pinned 2383.94 would
+go red for a reason that has nothing to do with sheet sizes.

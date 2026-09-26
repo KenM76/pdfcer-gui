@@ -128,3 +128,68 @@ must turn this check red, at the step named:
 be noticed by a person opening the menu; (3) and (4) are silent, and a
 check that cannot distinguish them from a pass is not measuring the
 feature.
+
+## Item notes
+
+### `const MODE`
+
+The shell's default is Read, where a canvas click on content is refused BY
+DESIGN — and Read's right-click resolves `canvas.read_object`, a two-row
+menu (O71) that does not carry this command at all. A check that skipped
+this step would report the mode gate as a missing row.
+
+### `const PAGE_SIZE`
+
+Pinned with the fixture rather than read back, for the same reason: a
+mapping derived from a page size this check did not choose would silently
+aim somewhere else.
+
+### `const EXPECTED_RUNS`
+
+A hard fact about a 976-byte file committed to this repository, quoted in
+the module header from its own content stream. It is asserted rather than
+read back, because `of` is the denominator the operator is shown — *1 line
+of 6* — and a build that counted wrongly would state a wrong number to him
+while every mechanism in the chain still worked.
+
+⚠ **This number cannot tell lines from show operators**, and saying so is
+the point of the warning. `paragraph.pdf` writes a `Tm` in front of all six
+of its `Tj`s on six distinct baselines, so its run count and its line count
+are both 6 — a build that had never been re-keyed satisfies this assertion
+unchanged. The oracle that CAN tell them apart is
+`provider::line::tests::runs_sharing_a_baseline_are_one_line` (3 runs, 2
+lines); its driven twin is `move_line_of_text`, whose fixture holds five
+runs in four lines.
+
+### `const MODE_DECLINE_EVENT`
+
+Named only in a failure message, as one of the readings of a press that
+produced no [`COMMAND_EVENT`] line. A check that did not mention it would
+send a reader hunting a dispatch gap when the mode had simply changed.
+
+### `const ROW_REGION`
+
+Publishing is the only possible answer for a popup: a context menu is
+drawn **at the pointer** and `egui` may flip it to any of several
+alignments to keep it on screen. There is no fraction of the window it can
+be hard-coded to and no layout a harness could re-derive.
+
+### `fn run_of`
+
+`None` for `pick=elsewhere` and for anything malformed. The caller
+distinguishes those from the raw line rather than from this return: a parse
+failure and an honest *"the pointer was not on a line"* are different
+findings and must not share a message.
+
+Parsed rather than `Debug`-matched. A `{:?}` rendering of the pick would
+make this harness depend on a Rust enum's formatting, which is the defect
+recorded as *never `Debug`-format a field a machine reads* — a check there
+reported the opposite of the truth while quoting the truth in its own
+message. `RunPick::word` writes `line:N/M` as a deliberate, stable token for
+exactly this reason.
+
+### `fn drive`
+
+The three-way return is the SKIP/FAIL/PASS rule made structural: `Err` is a
+precondition that was absent (SKIP), `Ok(Some(_))` is an assertion that did
+not hold (FAIL), `Ok(None)` is a pass.

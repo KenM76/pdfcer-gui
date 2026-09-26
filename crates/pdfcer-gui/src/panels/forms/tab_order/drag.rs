@@ -55,19 +55,9 @@ pub(super) struct DropTarget {
 }
 
 /// How thick the insertion caret is drawn.
-///
-/// [`crate::panels::pages`]' `CARET_PTS` verbatim. The two panels draw the same
-/// mark and an operator who has learnt one has learnt the other; a caret that
-/// were a hair thinner here would read as a different, weaker kind of promise.
 const CARET_PTS: f32 = 2.0;
 
 /// How much of the caret's colour survives when the drop would change nothing.
-///
-/// **Dimmed, not hidden** — the page rail's argument, unchanged and load
-/// bearing: drawing nothing over a boundary that would not land cannot be told
-/// apart from the panel having stopped tracking the pointer, and the no-op
-/// boundary is where **every** drag begins, because a row starts out hovering
-/// over its own slot.
 const CARET_DIMMED: f32 = 0.35;
 
 /// The published region name for the caret, so a driven check can see it.
@@ -371,11 +361,6 @@ mod tests {
 
     /// The property this module exists for: a `/Link` between two widgets
     /// keeps its index while the widgets move around it.
-    ///
-    /// Slots `0` and `2` are widget rows; slot `1` is something else. Dragging
-    /// the first row past the second must swap entries 0 and 2 and leave entry
-    /// 1 exactly where it was — which is `non_widgets_moved == 0` at the
-    /// engine, by construction.
     #[test]
     fn an_annotation_that_is_not_a_row_never_moves() {
         let a = ids(3);
@@ -420,11 +405,6 @@ mod tests {
     }
 
     /// An out-of-range drag returns the array untouched rather than panicking.
-    ///
-    /// Not defensive decoration: the rows are rebuilt from the document every
-    /// frame, and an edit landing between the frame a drag began on and the
-    /// frame it is released on can shorten the list under it. The honest answer
-    /// to "the row you were dragging is gone" is to do nothing.
     #[test]
     fn a_drag_whose_row_has_vanished_does_nothing() {
         let a = ids(3);

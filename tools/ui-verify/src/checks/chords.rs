@@ -20,10 +20,6 @@ struct Chord {
 }
 
 /// The chords this check presses.
-///
-/// Read against `crates/pdfcer-gui/src/shell/ron/built_in.ron`'s keymap. A chord
-/// here that the manifest does not bind is a stale entry and will fail loudly,
-/// which is the intended direction: the manifest is the source of truth.
 const CHORDS: &[Chord] = &[
     // An Alt chord, the third modifier family.
     Chord {

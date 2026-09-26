@@ -98,3 +98,42 @@ can lose one of the two writes. The loss is one document's display
 preference, the window that lost it still shows what the operator chose,
 and the next change writes it again. A lock file would be a larger
 mechanism than the thing it protects.
+
+## Item notes
+
+### `fn parse`
+
+Every rejection is silent and local: a line with no separator, an unknown
+mode id, or an empty path is skipped and the rest of the file is kept. That
+is the whole error strategy, and it is the right one for a preferences
+cache — the alternative is discarding two hundred good entries because one
+line was edited badly by hand.
+
+### `fn absolute`
+
+The identical treatment `recent.rs` gives a path it is about to persist,
+and for the identical reason: `pdfcer-gui drawing.pdf` gives a relative
+`argv[1]`, and a relative path in a persisted file means something
+different — or nothing — the next time the application starts from another
+directory. [`std::fs::canonicalize`] would also resolve symlinks and, on
+Windows, return a `\\?\` extended-length path; it also requires the file to
+exist, and a document may be remembered and then moved.
+
+The consequence, stated rather than discovered: two spellings of one file
+(a mapped drive and its UNC path) are two entries with two remembered
+modes. That is a strictly better failure than de-duplicating with
+`canonicalize` and thereby refusing to remember anything on an unreachable
+share.
+
+### `fn re_recording_the_same_choice_writes_nothing`
+
+The radio raises its command on every click, including a click on the
+position that is already active, so without this a operator resting a
+finger on the mouse would write the file repeatedly.
+
+### `fn a_corrupt_line_is_dropped_and_the_rest_survives`
+
+Every rejection is local: a line with no separator, an unknown mode id
+and an empty path are each skipped and the rest is kept. The
+alternative — refusing the whole file — would discard two hundred good
+entries because one line was edited badly by hand.

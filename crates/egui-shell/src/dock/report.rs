@@ -36,6 +36,8 @@
 //! panel's identity survives being dragged to a different compartment and
 //! a harness looking for "the Pages panel" should not have to know where
 //! the operator put it.
+//!
+//! Design and rationale: `docs/modules/egui-shell/dock/report.md`.
 
 use egui::Rect;
 
@@ -510,12 +512,6 @@ mod tests {
 
     /// **The clip a region is reported against is the one in force on the
     /// `Ui` that drew it — not the region, and not the window.**
-    ///
-    /// Worth a test of its own because the failure mode is invisible: a
-    /// reporter that handed back `rect` as its own clip, or the screen
-    /// rectangle as everybody's clip, would make every consumer's
-    /// visibility fraction come out at exactly 1.0 and every check built
-    /// on it green forever.
     #[test]
     fn a_report_carries_the_clip_in_force_not_the_region_itself() {
         let region = Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(200.0, 200.0));

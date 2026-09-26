@@ -117,10 +117,6 @@ pub enum Combine {
 }
 
 /// Every variant must appear in [`Combine::ALL`].
-///
-/// The arms are counted by the compiler, so adding a variant to [`Combine`]
-/// stops this crate compiling and names the variant it is missing. `ALL` is
-/// the declaration immediately below, which is where the answer goes.
 const _: () = {
     const fn _combine_is_listed_in_all(combine: Combine) {
         match combine {
@@ -239,34 +235,6 @@ pub fn on_release(
 
 /// **A band released inside a text block takes that block's chunks**, and
 /// whether it did.
-///
-/// `OPERATOR_REQUESTS.md` O215 ask 4 asks for the usual three multi-select
-/// gestures on chunks. Shift-click and Ctrl-click were the click path's; this
-/// is the band, and without it a rubber-band drawn across four lines of a note
-/// ascended out of the block and selected the whole block instead — because
-/// [`SelectionState::marquee`] resolves to the Object rung by construction.
-///
-/// # Why this is not a contradiction of that function's reasoning
-///
-/// Its argument is that *a region of the page contains objects*, and that
-/// "every subpath of some other object this box happens to cover" has no
-/// sensible reading. Both still hold. This is the different case those words
-/// were not about: the operator has **entered** one object, and that object's
-/// chunks are **drawn as boxes on the canvas**. The band is then a region over
-/// a set of visible rectangles belonging to the one thing being worked on,
-/// which is what every isolation mode — Illustrator's, Inkscape's,
-/// PowerPoint's — does with a band drawn inside a group.
-///
-/// ⇒ The gate is `chunks::boxed`, so the rung is offered exactly where the
-/// boxes are. A band can never take a unit the operator cannot see.
-///
-/// # What a band that reaches no chunk does
-///
-/// With **no modifier**, nothing here claims it and the object-rung band runs:
-/// a plain band over empty paper clears, which is the convention and is what
-/// leaving a text block ought to feel like. With **Shift or Ctrl held** it is
-/// claimed and changes nothing — a modifier says *refine what I have*, and a
-/// refinement that reached nothing must not instead throw the set away.
 fn take_chunks(
     ctx: &egui::Context,
     doc: &OpenDoc,
@@ -317,11 +285,6 @@ fn take_chunks(
 
 /// What the band leaves selected: `held` combined with `reached` under
 /// `combine`, ascending and unique.
-///
-/// Split out with no borrows in it so the three arms can be tested directly.
-/// The arms are [`Combine`]'s and mean there exactly what they mean at the
-/// Object rung — the rung changes what a hit *is*, never what a modifier
-/// *does*.
 fn combined(held: &[usize], reached: &[usize], combine: Combine) -> Vec<usize> {
     let mut parts: Vec<usize> = match combine {
         Combine::Replace => reached.to_vec(),
@@ -438,11 +401,6 @@ mod tests {
 
     /// **Ctrl subtracts, Shift adds, neither replaces** —
     /// `OPERATOR_REQUESTS.md` O104.
-    ///
-    /// Pinned as a table rather than three separate tests because the value of
-    /// the rule is that the three answers are *distinct*: a modifier scheme
-    /// where two of them coincide is one an operator cannot use to mean two
-    /// different things.
     #[test]
     fn the_three_band_modes_are_distinct() {
         assert_eq!(mode(false, false), Combine::Replace);
@@ -451,10 +409,6 @@ mod tests {
     }
 
     /// **Shift wins when both are held.**
-    ///
-    /// Adding is the non-destructive answer, and a band dragged with every
-    /// modifier at once is an operator who has not decided yet — so the
-    /// tie-break is the one that cannot lose them a selection they built.
     #[test]
     fn holding_both_modifiers_adds_rather_than_subtracts() {
         assert_eq!(mode(true, true), Combine::Add);
@@ -463,12 +417,6 @@ mod tests {
 
     /// The two directions map to the two engine modes, and not to one of them
     /// twice.
-    ///
-    /// Trivial, and pinned anyway: the whole feature is one boolean choosing
-    /// between two enum variants, and a build in which both arms returned
-    /// `Enclosed` would behave exactly as this shell did before the change —
-    /// which is to say it would look like the feature had never been merged,
-    /// with every other test still green.
     #[test]
     fn the_direction_chooses_the_mode() {
         assert_eq!(mode_for(false), MarqueeMode::Enclosed);
@@ -477,10 +425,6 @@ mod tests {
     }
 
     /// **A page-sized wrapper is dropped; its contents are kept.**
-    ///
-    /// The case the failing test surfaced. `Object(0)` wraps `Leaf(1)`, and
-    /// `Object(0)` covers the page — so a crossing band takes the leaf and not
-    /// the sheet.
     #[test]
     fn a_wrapper_that_is_the_whole_sheet_is_dropped() {
         let hits = vec![TargetId::Object(0), TargetId::Leaf(1)];
@@ -494,12 +438,6 @@ mod tests {
     }
 
     /// **A container that is NOT the whole sheet survives.**
-    ///
-    /// The falsifying half, and the one that stops this from being "drop every
-    /// container". A 320×220 form on a 400×300 page is a real object an
-    /// operator selects on purpose — this project has a driven check that
-    /// demands exactly that on the click path, and a crossing band must not
-    /// disagree with it.
     #[test]
     fn a_container_worth_selecting_is_kept() {
         let hits = vec![TargetId::Object(0), TargetId::Leaf(1)];
@@ -513,17 +451,6 @@ mod tests {
     }
 
     /// **A lone page-covering object that contains nothing is KEPT.**
-    ///
-    /// The drawing border, and the reason the container set is derived from the
-    /// hits rather than by asking `worth_selecting` of everything. A border
-    /// covers the sheet and is not worth selecting *as a container* — but it is
-    /// not a container at all, it is a path the operator may well be reaching
-    /// for, and dropping it would be a second defect wearing the first one's
-    /// fix.
-    ///
-    /// This is the assertion that would fail against the obvious simpler
-    /// implementation (`hits.retain(worth_selecting)`), which is why it is
-    /// here.
     #[test]
     fn a_page_covering_object_that_contains_nothing_is_kept() {
         let hits = vec![TargetId::Object(0), TargetId::Object(1)];
@@ -553,10 +480,6 @@ mod tests {
     }
 
     /// Order is preserved.
-    ///
-    /// The selection's paint order is what the ladder and the Objects panel
-    /// both read, and a filter that reordered would change which object a
-    /// subsequent double-click descends into.
     #[test]
     fn the_surviving_order_is_the_order_it_arrived_in() {
         let hits = vec![
@@ -578,11 +501,6 @@ mod tests {
 
     /// **A plain band at the chunk rung replaces**, and what was held before it
     /// has no say.
-    ///
-    /// The arm a driven check cannot see on its own: a build that added instead
-    /// of replacing still ends up with the band's chunks selected, so the drag
-    /// that follows still moves several and the check still passes — while an
-    /// operator banding a second group of lines silently keeps the first.
     #[test]
     fn a_plain_chunk_band_replaces_what_was_held() {
         assert_eq!(
@@ -593,10 +511,6 @@ mod tests {
     }
 
     /// **Shift adds**, and the result is ascending and holds no chunk twice.
-    ///
-    /// The overlap is the point: a band dragged across lines the operator
-    /// already had must not select them twice, because every Part-rung verb
-    /// loops the entries and a duplicate would move one line the distance twice.
     #[test]
     fn a_shift_chunk_band_adds_without_duplicating() {
         assert_eq!(combined(&[2, 0], &[1, 2], Combine::Add), vec![0, 1, 2]);
@@ -617,20 +531,12 @@ mod tests {
     }
 
     /// **A subtracting band over the whole set empties it**, deliberately.
-    ///
-    /// The same answer Ctrl-clicking the last held chunk gives, and the
-    /// alternative — silently keeping one, or falling back to the whole block —
-    /// would be the program overruling an explicit gesture.
     #[test]
     fn subtracting_everything_leaves_nothing() {
         assert!(combined(&[0, 1], &[0, 1], Combine::Subtract).is_empty());
     }
 
     /// The three trace words are distinct.
-    ///
-    /// A check reads `combine=` by equality, so two arms spelled the same would
-    /// collapse *the band added* and *the band replaced* into one answer — the
-    /// pair the tests above exist to tell apart.
     #[test]
     fn every_combine_label_is_its_own_word() {
         let mut words: Vec<&str> = Combine::ALL.iter().map(|c| c.label()).collect();

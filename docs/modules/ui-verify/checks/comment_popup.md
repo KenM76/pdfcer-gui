@@ -110,3 +110,14 @@ against the same fixture in
 them would need a screenshot and an OCR pass. Named so nobody reads a green
 result here as *"the operator can read the note"* — it says *"a window
 opened, visibly, where and when it should."*
+
+## Item notes
+
+### `fn fixture`
+
+`tools/ui-verify/` → up two → the workspace root. The same resolution
+`crate::checks::ocr::default_fixture` uses, and for the reason recorded
+there at length: `--source-root` defaults to `crates`, so a fixture
+resolved through it lands at `crates/fixtures/…` and the check SKIPs; and a
+bare relative path depends on where the harness was invoked from, which on
+one occasion had a planted build overwrite the repository's real fixture.

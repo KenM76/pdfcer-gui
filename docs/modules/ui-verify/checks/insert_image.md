@@ -33,3 +33,25 @@ The picture is deliberately **wide and short**. A square would let a
 letterbox bug pass: `Contain` on a square picture in a square box is the
 identity, and the whole point of the last assertion is the case where the
 placed rectangle differs from the requested one.
+
+## Item notes
+
+### `const FIXTURE_W`
+
+**Wide and short, deliberately.** `Contain` on a square picture in a
+square box is the identity, so a square fixture would let a letterbox defect
+pass the last assertion — which is the assertion this check exists for.
+
+### `fn fixture_pixels`
+
+The colours are irrelevant to every assertion — nothing here reads a pixel
+back — and they are two rather than one so the saved artifact is legible as
+a picture rather than as a swatch.
+
+### `fn dpi_in`
+
+The sentence is *"At this size the picture is 300 dpi."* — so this looks for
+the token before `dpi` and parses it. Reading the operator's own words
+rather than a field carried beside them is the point: it proves the number
+**they see**, and a build that traced one figure and displayed another would
+pass a field comparison.

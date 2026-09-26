@@ -102,3 +102,151 @@ trade for the same reason: a cache would need invalidating on every edit,
 which is a correctness problem traded for a walk of a structure that is a
 handful of entries on any real document — and `MAX_ATTACHMENTS` bounds even
 a hostile one.
+
+## Item notes
+
+### `fn fmt`
+
+A description is the operator's own words about their own file, and this
+reaches a trace file a harness keeps. `panels::bookmarks::BookmarksUi`
+and `panels::docprops` make the same choice for the same reason.
+
+### `struct Published`
+
+# Why a struct rather than four `&mut bool`s
+
+It began as two, grew to four when the clipboard arrived, and tripped
+clippy's seven-argument limit — which was the right complaint about the
+wrong symptom. The four flags are **one fact**: *"the first visible row has
+been drawn"*, asked separately per control because a control that is absent
+on the first row (Remove, on a page-level attachment) must not consume the
+flag for the row that does have one.
+
+A region name is a key in a **flat** namespace. Publishing
+`attachments.save` from every row would emit one rectangle per row under one
+key, and a driven check would click whichever was written last — not the row
+it meant, and not stable between runs. These rows also live in a
+`ScrollArea`, where a control scrolled out of view still reports a rect, so
+the publish goes through [`crate::diag::ui_rect_visible`] as well.
+
+### `fn rows`
+
+# Why the two `published` flags exist
+
+A region name is a key in a flat namespace. Publishing `attachments.save`
+from every row would emit one rectangle per row under one key, and a driven
+check would click whichever was written last — which is not the row it meant
+and is not stable between runs. The Comments panel solved this the same way
+and its comment carries the other half of the reason: these rows live in a
+`ScrollArea`, and *"a control scrolled out of view still reports a rect. A
+harness clicking a coordinate that is behind the scroll edge clicks whatever
+IS there, which fails as something else entirely."* Hence
+[`crate::diag::ui_rect_visible`] rather than `ui_rect`.
+
+### `fn controls`
+
+# Every branch here is R9 applied to a different fact
+
+| state | what is drawn | why |
+|---|---|---|
+| no `/EF` at all | a sentence, no button | an **external** file reference (§7.11.3) is legal and has nothing to save |
+| an `/EF` that does not resolve | a different sentence, no button | `AttachmentNotes::unresolvable_streams` is documented as *"always a defect"*, and calling it the same thing as the legal case would either accuse a good document or excuse a damaged one |
+| a page annotation | Save, and a sentence instead of Remove | `detach_file` refuses one by name; it is removed as an annotation |
+| a document-level entry with bytes | Save and Remove | the full case |
+
+A control is **absent** in each case rather than greyed, because P3 reserves
+greying for something *temporarily* unavailable that can say when it will
+not be — and none of these will ever become available by waiting.
+
+### `fn display_name`
+
+An empty name is legal — `NameSource::None` is reachable when a filespec
+carries no `/F`, `/UF`, `/DOS`, `/Mac` or `/Unix` and there is no tree key
+to fall back on — and the row must still exist, because the bytes can still
+be saved out. A blank line where a name belongs reads as a rendering fault.
+
+Pure, so [`tests`] can hold it to that without a `Ui`.
+
+### `fn where_it_lives`
+
+Pure, so [`tests`] can hold the page numbering to being 1-based without a
+`Ui` — `page_index` is 0-based *"into `pages`"* and the off-by-one is the
+kind that looks like a document defect rather than a bug.
+
+### `fn addressable`
+
+`AttachmentKind::PageAnnotation::annot_id` is an `Option` — `None` when the
+`/Annots` entry was a direct dictionary rather than a reference — and a row
+pdfcer cannot name gets no button. That is R9 rather than caution: a control
+whose operand cannot be constructed is an affordance for something that
+cannot work.
+
+### `fn readable`
+
+# Two substitutions, and both are rendering rather than reporting
+
+- **`CR` becomes `LF`.** §12.5.6.2 makes carriage return the paragraph
+  separator in annotation `/Contents`, which is where a page-level
+  attachment's description comes from — and egui lays a bare `CR` out as
+  nothing at all, so a two-paragraph description would render as one long
+  run with a gap in it.
+- **Other C0 controls become a space.** A name or description from a
+  document is unconstrained text (see `Attachment::name`), and a `NUL` or a
+  `BEL` in a label is a glyph nobody can read.
+
+Neither is a disclosure case, and the distinction is worth stating because
+this crate's rule 4 posture is otherwise to disclose everything: pdfcer is
+not reporting a different *value* here, it is drawing the same value
+legibly. The value that reaches the **filesystem** goes through
+`sanitize_attachment_name` instead, and that one *is* disclosed — see the
+module header's third required disclosure.
+
+### `fn the_two_kinds_are_described_differently_and_the_page_is_one_based`
+
+Both halves fail invisibly. Describing them alike would tell an operator
+that a file pinned to page 2 belongs to the document and survives that
+page's deletion — which is exactly backwards, and is the one fact
+`AttachmentKind`'s own docs say *"bites hardest at save time and at
+page-delete time"*. And `page_index` is 0-based, so a row that printed
+it raw would name the wrong sheet on every document.
+
+### `fn only_a_nameable_attachment_gets_a_verb`
+
+The first half is what makes Remove possible at all. The second is the
+property that keeps a button from being drawn for an operand this code
+cannot construct — asserted by construction, because no fixture in the
+engine's tree carries a direct-dictionary `/Annots` entry and inventing
+one here would be testing a hand-built value rather than a document.
+
+### `fn an_unnamed_attachment_is_labelled_rather_than_blank`
+
+`NameSource::None` is reachable, the bytes are still saveable, and a
+blank line where a name belongs is indistinguishable from a rendering
+failure. Checked against the whitespace cases too — a name of three
+spaces is an invisible row, which is the same defect as no row.
+
+### `fn a_control_character_is_made_legible_without_changing_the_words`
+
+A name in a PDF is unconstrained text, `NUL` and `BEL` are authorable,
+and §12.5.6.2 makes `CR` the paragraph separator in the `/Contents` a
+page-level description comes from — which egui lays out as nothing.
+
+What is asserted is that the *substitution* happened, not that the
+string was censored: the visible characters are untouched, because this
+panel reports what the document says.
+
+### `fn a_hostile_name_is_shown_and_not_quietly_repaired`
+
+The bargain this panel makes, and both halves have to hold or neither is
+worth anything: the *listing* reports the raw name, because
+`sanitize_attachment_name`'s own docs say a reader that quietly repairs
+its evidence is not a reader and *"the operator investigating a
+suspicious file would be looking at pdfcer's cleaned-up version"*; the
+*save path* uses the sanitised one, which
+`crate::app::actions::attachments` asserts from the other side.
+
+### `fn the_row_regions_are_named_apart`
+
+One name from two controls would leave a driven check clicking whichever
+was published last, and the failure presents as *"the button does
+nothing"* on whichever run lost the race.

@@ -75,3 +75,97 @@ rather than `ui_rect`, and one per **switch** rather than one per block. A
 rect proves layout; only a rect measured against the clip in force proves
 the operator could reach it — and this panel is a `ScrollArea`, so a control
 scrolled past the fold has a perfectly healthy rectangle.
+
+## Item notes
+
+### `fn text_pen`
+
+Moved from `panels::tool::armed::options`, unchanged. The two notes that
+travelled with it, because both are the kind of thing a move loses:
+
+* The faces come from `pen::FACES`, **not** a hand-written list. Its own
+  test asserts all fourteen are offered exactly once — a list that quietly
+  held thirteen would be a face an operator could never reach, with no error
+  anywhere.
+* The size's range is the **store's** bounds rather than two local literals,
+  for `dialogs::settings`' reason: a control narrower than what the value
+  accepts silently rewrites a setting the operator never touched.
+
+### `fn measure_points`
+
+> *"we should be able to unselect points/clicked locations, and it should
+> have a box in the side panel showing what is part of our selection …
+> clicking on a point or location listed should allow us to remove it."*
+
+The canvas markers say *where* the points are. They cannot say **how many**,
+and on a dense CAD sheet a marker sitting on a junction is not
+distinguishable from the junction. The list is the only surface that answers
+*"what is actually in this fit?"*
+
+**The removal is applied AFTER the loop, never inside it.** `st` is a
+copy read out of `egui::Memory` and `points` borrows it; a removal that
+mutated mid-iteration would shift every row below the one pressed while the
+loop was still drawing them — the classic one-frame mis-aim, where the
+operator presses row 3, row 4 slides up under the pointer, and the next
+frame's press lands on something they did not choose.
+
+### `fn scale_switches`
+
+The order is by how often it is wanted: stroke width first (the one he asked
+for by name), insets second, and the distortion escape last, because it is
+the one that makes the result imperfect and a control that degrades the
+output belongs after the two that do not.
+
+**Always drawn, never greyed** while Select is armed — live with nothing
+selected and with a form field selected. An operator sets a modifier
+*before* the gesture it modifies; greying them until an annotation happens
+to be selected would hide the control exactly when somebody is deciding how
+to resize.
+
+**One published rect per switch**, not one for the block. A driven check
+aiming at "the options row" and then guessing which line is the second
+checkbox would be encoding a layout, and it goes wrong silently — by ticking
+the wrong switch — the day a label wraps to two lines at a narrower dock.
+
+### `fn each_moved_control_has_a_tool_that_reaches_it`
+
+Asserted against [`block_for`] — **the function [`section_in`] dispatches
+on**, not a copy of its `match`. That distinction is the test: a mirror
+in this module would go on passing while the shipped decision drifted,
+which is the shape of the defect that let three scale switches compile,
+read correctly and draw nothing.
+
+This is the unit half of the reachability claim. The other half is the
+driven check, because a branch that runs is still not a control on
+screen.
+
+### `fn all_three_blocks_are_reachable`
+
+The failure this catches is subtle and has happened here before: an arm
+written above another that would have matched, leaving the second
+unreachable with nothing to show for it. Sweeping every tool the
+application can arm and collecting the blocks that come back is the only
+way to see it.
+
+### `fn the_resting_tools_block_is_the_only_one_below_the_selection`
+
+This is the unit half of the placement decision, and it is worth a test
+because the rule is easy to misread: it is not
+*"tool settings go at the top"*, it is *"a block that draws with no
+reference to the selection must not sit above the sections that describe
+it"*, and the two read identically until you notice that `Select` — the
+RESTING state — is a tool. `Block::ScaleSwitches` is therefore on screen
+whenever an operator is doing the ordinary thing of clicking at objects,
+which is exactly when the sections below it matter most.
+
+Asserted through [`slot_of`], the function [`section_in`] dispatches
+on, rather than against a copy of its `match` — `block_for`'s own test
+gives the reason at length and it is the same reason.
+
+### `fn one_block_and_only_one_draws_at_the_foot_of_the_panel`
+
+A second one would stack two unrelated standing preferences under
+whatever the panel had just said about the selection, and — because
+`section_in` draws at most one block per call — the second would simply
+never appear. That is the `scale_switches` defect again in the other
+slot: a control that compiles, reads correctly and draws nothing.

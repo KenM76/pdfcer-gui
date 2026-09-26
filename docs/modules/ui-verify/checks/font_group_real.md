@@ -119,3 +119,15 @@ operator, on his own drawing, get to the controls at all. Whether pressing
 them works is a different question with its own check, and O198's sentence is
 about the first one — *"that entire area is always greyed out"* is a
 complaint about a surface, not about an outcome.
+
+## Item notes
+
+### `const PROPERTIES_TAB`
+
+Clicked before anything is asserted about the panel, and the reason is
+worth stating every time it appears: **a dock draws only its ACTIVE tab's
+body.** A pane that exists and is behind another publishes nothing at all, so
+a check reading the trace sees an absence that is indistinguishable from a
+panel with nothing to say. Three checks in this suite have reported an
+application defect that was this, and no application defect was present in
+any of the three.

@@ -39,3 +39,11 @@ reports malformed and unresolvable entries but says nothing about the
 the refusal arrives after the press, in words, through the ordinary decline
 path — honest, but one press worse than R9 wants. Filed rather than worked
 around.
+
+## Item notes
+
+### `fn the_replacement_note_names_the_file_and_the_consequence`
+
+Both halves. A note saying only *"a file of that name exists"* leaves the
+operator to guess what pressing the button does — and the answer is the
+surprising one.

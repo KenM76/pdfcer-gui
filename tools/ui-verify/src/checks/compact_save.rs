@@ -13,11 +13,6 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// The command under test.
-///
-/// `mode.edit` first, for the usual reason: driving from a named mode makes
-/// the run reproducible rather than dependent on whatever mode the last session
-/// left behind. Compaction is permitted in every mode — it is a save — so this
-/// is reproducibility rather than a gate.
 const INVOKE: &str = "mode.edit,file.save_compacted";
 /// The compacted window's body and button.
 const BODY: &str = "compact.body";

@@ -34,12 +34,6 @@ const PLAN_EVENT: &str = "print-plan";
 const DISMISS_EVENT: &str = "print-dismissed";
 
 /// The paper combo, and the entry inside it this check clicks.
-///
-/// `print.paper.auto` is deliberately outside the `print.paper.item.N`
-/// namespace — see that constant's own doc in `dialogs/print/mod.rs`, which
-/// says numbering it would have silently re-aimed an existing driven check.
-/// This check depends on that separation: it wants *pdfcer's policy*, at a
-/// fixed name, not the driver's first enumerated form.
 const PAPER: &str = "print.paper";
 const PAPER_AUTO: &str = "print.paper.auto";
 
@@ -48,38 +42,15 @@ const BUTTON_CANCEL: &str = "dialog.buttons.cancel";
 const BUTTON_KEEP: &str = "dialog.buttons.keep";
 
 /// The preferences file, beside the executable under test.
-///
-/// **Reset to the bare sandbox seed** before each of the two runs — never
-/// deleted. The two are not the same act: deletion takes `ask_default_app =
-/// false` with it, and the symptom is the O173 offer opening a real OS window
-/// in front of the very click this check is about to make. That cost
-/// `print_remembered` two sweeps and five documents' worth of wrong diagnosis;
-/// `sandbox::reset_prefs` exists to close the class.
-///
-/// Safe only because the suite is **never** pointed at a published build — that
-/// is the standing rule, and the two print checks are among the reasons for it.
-/// Pointed at the operator's own install, this one would leave his print
-/// settings holding whatever the Keep run chose.
 const PREFS_FILE: &str = "preferences.txt";
 
 /// The token `paper_key` gives the choice this check makes.
-///
-/// Written here rather than measured because it is not a claim about the
-/// application's *defaults* — it is the name of the thing being clicked. The
-/// Auto entry sets `PaperChoice::AutoFromPages`, and
-/// `app::prefs::printing::paper_key` spells that `match-pages`. If that
-/// spelling ever moves, this check goes red naming both strings rather than
-/// silently agreeing with the new one.
 const CHOSEN_TOKEN: &str = "match-pages";
 
 /// The `pick=` token `print-plan` reports once the Auto entry has been chosen.
 const CHOSEN_PICK: &str = "auto";
 
 /// **Which way out of the window a run takes.**
-///
-/// Two runs, two routes, and the pair is the assertion. Kept as a type rather
-/// than a `bool` so the failure messages can name the button the operator
-/// pressed rather than a flag.
 #[derive(Clone, Copy)]
 enum Route {
     /// The *Cancel* button. Also what the OS close button and Escape mean —
@@ -181,17 +152,6 @@ fn spec_for(ctx: &CheckContext, exe: &Path, pdf: &Path, trace: &str) -> LaunchSp
 }
 
 /// Click the ribbon's Print control and wait for the window.
-///
-/// Factored out because each run does it **twice** — once to set the window up
-/// and once to read what the next window opens on — and the two must reach the
-/// dialog by identical means. A reopen that arrived through a different route
-/// would not be measuring the same thing.
-///
-/// ⚠ It re-resolves the control every time rather than caching a rect. The
-/// ribbon can fold Print into its overflow menu at the harness's window width,
-/// and `declared_or_in_overflow` opens that menu — which changes the layout, so
-/// a rect captured before the first open is not guaranteed to be where the
-/// button is before the second.
 fn open_the_window(session: &Session, driver: &Driver, ui_rect: &str, which: &str) -> Result<()> {
     let Some(control) = declared_or_in_overflow(session, driver, ui_rect, SUBJECT)? else {
         let trace = session.trace()?;
@@ -212,12 +172,6 @@ fn open_the_window(session: &Session, driver: &Driver, ui_rect: &str, which: &st
 
 /// The `n`-th `print-open` line, or a message saying which of the causes
 /// applies.
-///
-/// `nth` is 0 for the window as opened and 1 for the window reopened after the
-/// dismissal. Reading by index rather than by `last()` is deliberate: a dock or
-/// a dialog that failed to close would leave the first line as the newest one
-/// this check could see, and `last()` would then quietly re-report the *before*
-/// value as the *after* value — an assertion that can only pass.
 fn open_line(trace: &Trace, nth: usize, which: &str) -> Result<TraceLine> {
     let line = trace.events(OPEN_EVENT).nth(nth).cloned().ok_or_else(|| {
         Error::new(format!(
@@ -698,12 +652,6 @@ mod tests {
     use super::*;
 
     /// **The two routes name different regions and different reasons.**
-    ///
-    /// A copy-paste in [`Route`] that gave both arms the same region would make
-    /// the cross-run assertion compare a button against itself — and it would
-    /// go green, because pressing Cancel twice does produce two identical
-    /// outcomes. The check would then be reporting agreement as a pass while
-    /// measuring nothing at all.
     #[test]
     fn the_two_routes_are_actually_two() {
         assert_ne!(Route::Cancel.region(), Route::Keep.region());
@@ -712,12 +660,6 @@ mod tests {
     }
 
     /// **Both regions are under the host's footer namespace.**
-    ///
-    /// `Host::footer` publishes all three footer buttons under
-    /// `dialog.buttons.`, and the failure message for a missing button lists
-    /// that prefix's live names to help whoever reads it. A region name that
-    /// drifted out of the prefix would produce a failure message that listed
-    /// the button it was looking for as absent while showing it present.
     #[test]
     fn both_buttons_are_in_the_footer_namespace() {
         for route in [Route::Cancel, Route::Keep] {
@@ -732,11 +674,6 @@ mod tests {
     }
 
     /// **The token the gesture produces is a single file token.**
-    ///
-    /// [`CHOSEN_TOKEN`] is compared literally against `print-open paper=`,
-    /// which is whitespace-split. A value carrying a space would be truncated
-    /// at the split and the comparison would fail against a perfectly correct
-    /// build.
     #[test]
     fn the_chosen_token_survives_a_whitespace_split() {
         assert!(!CHOSEN_TOKEN.is_empty());

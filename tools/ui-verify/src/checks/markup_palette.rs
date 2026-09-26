@@ -16,12 +16,6 @@ use crate::report::CheckReport;
 
 /// Review mode, then arm the rectangle tool — both through the harness seam
 /// rather than through ribbon clicks.
-///
-/// Review because markup is authored there, and naming the mode makes the run
-/// reproducible rather than dependent on whatever mode was last stored. With
-/// [`crate::sandbox`] there is no stored mode to inherit, and the invoke is kept
-/// anyway: a check should say which mode it drives rather than rely on the
-/// absence of state.
 const INVOKE: &str = "mode.review,markup.rectangle";
 
 /// The line the canvas writes when a shape is authored.
@@ -31,11 +25,6 @@ const COMMIT_EVENT: &str = "markup-commit";
 const APPLY_EVENT: &str = "add-markup";
 
 /// **Acrobat's markup red**, `#DB3425` — `canvas::markup::palette::MARKUP_RED`.
-///
-/// Spelled here as bytes rather than imported, deliberately and for the same
-/// reason every constant in this crate is: the harness must be able to fail
-/// against a binary built from a *different* source tree. An import would make
-/// the check assert that the application agrees with itself.
 const ACROBAT_RED: Rgb = Rgb {
     r: 219,
     g: 52,
@@ -44,12 +33,6 @@ const ACROBAT_RED: Rgb = Rgb {
 
 /// Two colours this shell has actually drawn shapes in, named so a failure can
 /// say *which* wrong answer it got.
-///
-/// The yellow is not hypothetical: `(1.0, 1.0, 0.0)` is what the highlighter
-/// carried in this shell until 2026-09-06, *"written from memory"*. The orange
-/// is Acrobat's real highlighter and is the near miss a careless fix would
-/// produce — 46 apart from the red in the green channel, which is inside a
-/// sloppy tolerance and outside this one.
 const NEAR_MISSES: [(&str, Rgb); 3] = [
     (
         "Acrobat's HIGHLIGHTER orange #FF6200 — the right table, the wrong row",
@@ -76,71 +59,26 @@ const NEAR_MISSES: [(&str, Rgb); 3] = [
 /// How far the measured **direction away from the paper** may sit from
 /// [`ACROBAT_RED`]'s, as a maximum absolute per-component difference on the
 /// 0–1 normalised vector [`hue_from_paper`] returns.
-///
-/// # Where the number comes from
-///
-///
-/// The nearest wrong answer this shell could plausibly produce is the
-/// highlighter's orange at **0.315**. `0.10` sits four times above the observed
-/// noise and three times below the nearest miss, which is the same shape of
-/// margin `markup_rectangle::MIN_PRESSED_DELTA` argues for and for the same
-/// reason: a threshold derived from one measured pair moves every time anything
-/// about the rendering changes, and one with a stated gap on both sides does
-/// not.
-///
-/// [`tests::the_tolerance_cannot_swallow_a_near_miss`] fails if this is ever
-/// widened to admit anything in [`NEAR_MISSES`]. That is what stops a future
-/// session making a red run green by moving a constant at four in the afternoon.
 const HUE_TOLERANCE: f64 = 0.10;
 
 /// The smallest `paper − ink` a channel may reach before the direction is
 /// treated as unmeasurable.
-///
-/// Normalising a vector near the origin amplifies noise without bound: two
-/// pixels of capture noise on a nearly-white box would produce a confident
-/// direction pointing anywhere. Below this the check reports that it could not
-/// read a colour — a SKIP — rather than reporting a wrong one.
-///
-/// 40 of 255, against a measured 105 on the first run. Well under what a real
-/// stroke produces at the worst zoom this suite drives, and well over anything a
-/// blank box can.
 const MIN_PAPER_GAP: f64 = 40.0;
 
 /// A pixel counts as ink when the sum of its channels is at least this far below
 /// the strip's paper, in the 0–765 space [`crate::pixels::ink_run_into`] uses.
-///
-/// The same 180 that oracle uses (`INK_CONTRAST` 60, times three channels), and
-/// for its stated reason: it separates a stroke from a border column without
-/// having to know what colour the theme is painting.
 const INK_BELOW_PAPER: i32 = 180;
 
 /// The fraction of the ink pixels, darkest first, that are averaged into the
 /// answer.
-///
-/// A quarter. Enough pixels for the mean to be stable — the strip is a hundred
-/// or more pixels long, so a quarter of its ink is tens of samples — and few
-/// enough that the skirt does not dominate. See [`TOLERANCE`] on why even this
-/// quarter is a composite at fit-page zoom.
 const CORE_FRACTION: f64 = 0.25;
 
 /// Where the shape is drawn, as fractions of the page: `((x0, y0), (x1, y1))` in
 /// PDF user space, origin bottom-left.
-///
-/// The middle third of the sheet, which on a CAD drawing is inside the frame
-/// and clear of the title block. `markup_move` places its shape in the same
-/// region for the same reason, and this check asserts the emptiness rather than
-/// assuming it.
 const SHAPE: ((f64, f64), (f64, f64)) = ((0.35, 0.35), (0.55, 0.50));
 
 /// Half-height of the strip laid along the top edge, as a fraction of the page
 /// **height**.
-///
-/// A fraction of the page and not a constant in points, because
-/// `markup_node_edit` measured what a points constant costs: 22 pt on its
-/// fixture at fit-page zoom is an 8 × 9 pixel window, too few pixels for any
-/// oracle to speak. This is roughly 1 % of the sheet, which is 8 px on an 800 px
-/// window — enough rows to contain the stroke wherever antialiasing puts it, and
-/// far too few to reach the shape's other edges.
 const STRIP_HALF: f64 = 0.005;
 
 /// How much of the top edge's length the strip covers, as a fraction of the
@@ -151,10 +89,6 @@ const STRIP_HALF: f64 = 0.005;
 const STRIP_SPAN: f64 = 0.6;
 
 /// Where the pointer is parked before the capture, as fractions of the page.
-///
-/// Blank paper near a corner of the sheet: nowhere near either sampled box, and
-/// carrying no annotation to hover. See the park's own note in [`drive`] for the
-/// tooltip that made it necessary.
 const PARK: (f64, f64) = (0.10, 0.90);
 
 /// The interior box, as fractions of the **shape**, `((x0, y0), (x1, y1))`.
@@ -163,13 +97,6 @@ const PARK: (f64, f64) = (0.10, 0.90);
 const INTERIOR: ((f64, f64), (f64, f64)) = ((0.25, 0.25), (0.75, 0.75));
 
 /// The smallest ink count that counts as *something is drawn here*.
-///
-/// Four, and the reasoning is `InkReport::is_text`'s: one or two pixels either
-/// way is antialiasing on an edge that did not move. Used in both directions —
-/// as the floor the strip must clear *after* the drag, and as the ceiling the
-/// strip and the interior must stay under *before* it — because a baseline
-/// asserted with a different threshold from the measurement is two claims about
-/// two different things.
 const INK_FLOOR: usize = 4;
 
 /// See the module documentation.
@@ -232,14 +159,6 @@ impl Core {
 }
 
 /// The direction from `paper` to `ink`, normalised by its largest component.
-///
-/// See the module header: compositing scales that vector and does not turn it,
-/// so this is the one property of a sub-pixel stroke's pixels that still names
-/// the ink that made them.
-///
-/// `None` when no channel reaches [`MIN_PAPER_GAP`] — there is nothing here far
-/// enough from the paper to have a direction, and normalising it would amplify
-/// capture noise into a confident wrong answer.
 fn hue_from_paper(ink: Rgb, paper: Rgb) -> Option<[f64; 3]> {
     let d = [
         f64::from(paper.r) - f64::from(ink.r),
@@ -278,15 +197,6 @@ fn hue_text(h: [f64; 3]) -> String {
 }
 
 /// The colour of whatever is drawn on the paper inside `region`.
-///
-/// The paper is the box's own **90th-percentile luminance** rather than its
-/// dominant bucket: a box lying along a stroke can be a third ink, and a mode is
-/// a fragile way to find the plate when the second population is that large. A
-/// percentile is not.
-///
-/// Returns `None` for a box with no pixels, which means the region resolved
-/// outside the captured window — a finding rather than a measurement, and the
-/// caller reports it as one.
 fn core_ink(img: &Image, region: PixRect) -> Option<Core> {
     let mut lumas: Vec<(i32, Rgb)> = img
         .pixels_in(region)
@@ -366,10 +276,6 @@ fn interior_box(page: PageGeometry) -> (DocPoint, DocPoint) {
 }
 
 /// One capture, both boxes.
-///
-/// Both from the **same** capture, which is what makes the interior reading a
-/// control on the strip reading rather than a second experiment: nothing that
-/// happened between two frames can satisfy one and not the other.
 fn read_both(
     session: &Session,
     mapping: &CanvasMapping,
@@ -400,10 +306,6 @@ fn read_both(
 
 /// Which known-wrong colour the measurement is nearest to, if any is nearer than
 /// [`ACROBAT_RED`].
-///
-/// Used only to sharpen a failure message. *"Measured `#FF6200`"* sends its
-/// reader to a hex table; *"measured the HIGHLIGHTER's orange"* sends them to
-/// `pen::PenSlot`, which is where the fix is.
 fn nearest_miss(measured: [f64; 3]) -> Option<&'static str> {
     let mine = hue_delta(measured, hue_of(ACROBAT_RED));
     NEAR_MISSES
@@ -676,12 +578,6 @@ mod tests {
     use super::*;
 
     /// An [`Image`] from a row-major list of colours.
-    ///
-    /// `Image` is BGRA because that is what the Windows capture hands over, so
-    /// a test that wants to state its subject in colours has to lay the bytes
-    /// out in that order. Written here rather than in `image` because it exists
-    /// for these three tests and a constructor on the type would be a second,
-    /// unused way to build one.
     fn image_of(w: u32, h: u32, px: &[Rgb]) -> Image {
         let mut bgra = Vec::with_capacity(px.len() * 4);
         for p in px {
@@ -691,12 +587,6 @@ mod tests {
     }
 
     /// **The check must be able to fail.**
-    ///
-    /// A tolerance wide enough to admit the highlighter's orange would make
-    /// every assertion in this file decoration — and widening a constant is
-    /// exactly what a future session does when a run goes red at four in the
-    /// afternoon. This test is what makes that widening cost something: it goes
-    /// red the moment [`TOLERANCE`] reaches the nearest wrong answer.
     #[test]
     fn the_tolerance_cannot_swallow_a_near_miss() {
         let red = hue_of(ACROBAT_RED);
@@ -712,11 +602,6 @@ mod tests {
 
     /// **The measure is unaffected by dilution** — the property the whole
     /// oracle rests on, asserted directly.
-    ///
-    /// Acrobat's red composited over white at every strength from 10 % to 100 %
-    /// must read as the same direction. If this ever fails, the check has
-    /// silently become sensitive to zoom, and a run at a different fit-page
-    /// scale would start reporting a palette defect that is not there.
     #[test]
     fn a_diluted_stroke_still_names_its_ink() {
         let red = hue_of(ACROBAT_RED);
@@ -740,12 +625,6 @@ mod tests {
     }
 
     /// And a diluted WRONG colour is still wrong.
-    ///
-    /// The pair with the test above is what makes either mean anything: a
-    /// measure invariant to dilution is worthless if it is invariant to
-    /// everything. The highlighter's orange at 20 % strength — a pale peach,
-    /// closer to Acrobat's red in raw bytes than the red is to itself undiluted
-    /// — must still be refused.
     #[test]
     fn a_diluted_wrong_colour_is_still_refused() {
         let red = hue_of(ACROBAT_RED);
@@ -761,10 +640,6 @@ mod tests {
     }
 
     /// The core reading takes the ink and not the paper.
-    ///
-    /// A synthetic strip: mostly white, a few pure-red pixels, and a band of
-    /// half-diluted red between them. The answer must be the red, not the mean
-    /// of the strip — which would be nearly white — and not the dilution.
     #[test]
     fn the_core_reading_finds_the_stroke_and_not_the_paper() {
         let (w, h) = (40u32, 10u32);

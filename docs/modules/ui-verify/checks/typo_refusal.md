@@ -187,3 +187,72 @@ control after it. What expired is the justification's tense, not the choice.
 > the canvas and expect to edit there?"* Driven here: clicks 215 pt to the
 > right of a run's box and 99 pt below it both resolved that same run. Filed
 > rather than worked around.
+
+## Item notes
+
+### `const INVOKE`
+
+`view.reset_layout` first, and it is not decoration. The application
+persists its dock layout across runs and the harness does not clear it, so a
+launch inherits whatever the previous launch left — including a previous
+*driven* launch. A check that reads a docked region without resetting is
+reading the last run's furniture; this project has filed one such report.
+The reset's arrival is asserted below rather than assumed.
+
+### `const SEED`
+
+Seeded rather than typed, for `enter_newline`'s reason: `sys::vk` is a
+deliberately closed list of non-character virtual keys and this machine
+cannot inject an arbitrary character. The keystroke is not the subject here
+— the refusal after the commit is — so a seam that puts the letter in the
+draft costs this check nothing it was measuring.
+
+### `const RESET_EVENT`
+
+Note `changed=false` is a perfectly good answer: it means the layout was
+already default. What matters is that the reset **ran**, not that it moved
+anything, so this is keyed on the line's presence and not on its field.
+
+### `const APPLIED_EVENT`
+
+The bare verb name, not `edit-text-applied`: `vector_edit` names its
+success line after the verb it was given, and this check is aimed at
+`"edit-text"`. Spelling it `edit-text-applied` here would look right, find
+nothing, and report a correct build as one whose edit never reached the
+engine — the failure mode `RESUME.md` records as *"ask what the check
+SAMPLED before asking what is broken"*.
+
+### `const MAX_SCROLL_STEPS`
+
+Generous: a three-page letter document needs two or three steps, and a
+check that gave up early would report "the page could not be reached" about
+a document it simply had not finished scrolling.
+
+### `fn scroll_to_page`
+
+## Why this exists rather than a page-number box or a thumbnail
+
+`text_selection::aim` refuses to convert a point whose page is not the page
+the application says it is drawing, and the refusal is one of this harness's
+best guards — mapping page 2's coordinates through page 1's rect produces a
+click that is plausible, precise and in the wrong place, which is
+indistinguishable from a broken feature and costs an investigation to
+disprove. So a check aiming at anything but the first page must **move the
+document**, not work around the guard.
+
+The wheel is chosen over the Pages panel and over the status bar's page box
+because it needs neither of them to be mounted, and this check has just
+reset the dock. It is chosen over a keyboard chord because there is none:
+`sys::vk` carries no `PAGE_DOWN`, deliberately.
+
+## It reads the application's own answer, not its own count
+
+The loop does not scroll "the right number of times". It scrolls, then asks
+the `canvas` line which page is on screen, and stops when that number is the
+one wanted — because how far one notch travels depends on the zoom, the page
+display mode and the platform, and a count derived from any of those is a
+proxy for the thing that actually matters.
+
+It also refuses to loop for ever on a document that cannot reach the page:
+a `--doc-point` naming page 9 of a three-page file would otherwise scroll to
+the end and spin. The failure says how far it got.

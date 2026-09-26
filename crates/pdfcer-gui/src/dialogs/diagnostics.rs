@@ -171,10 +171,6 @@ impl DiagnosticsDialog {
     }
 
     /// The separator and the Close button.
-    ///
-    /// Its own function because both bodies above need it and the early return
-    /// for "nothing drawn" must not be a window with no way out but the title
-    /// bar's cross.
     fn footer(&mut self, ui: &mut egui::Ui) {
         ui.separator();
         ui.horizontal(|ui| {

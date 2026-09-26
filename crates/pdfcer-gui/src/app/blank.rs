@@ -175,11 +175,6 @@ mod tests {
     use super::*;
 
     /// **The compiled-in template really is a document.**
-    ///
-    /// The one assertion that makes [`document`]'s error arm unreachable, and
-    /// therefore the one that lets `file.new` be described as a command that
-    /// cannot fail. Without it the claim would rest on the asset having been
-    /// correct on the day it was written.
     #[test]
     fn the_template_parses_and_holds_exactly_one_page() {
         let (_doc, pages) = document().expect("the compiled-in template must parse");
@@ -187,13 +182,6 @@ mod tests {
     }
 
     /// **The page is A4, to the tenth of a point.**
-    ///
-    /// This is the decision in §3 of the module header being *checked* rather
-    /// than merely written down. A future edit that regenerated the asset at
-    /// Letter — 612 × 792, which is what most minimal-PDF recipes on the
-    /// internet carry, including the engine's own `blank_page_doc` fixture —
-    /// fails here, naming both numbers, rather than shipping a silently
-    /// different default.
     #[test]
     fn the_template_page_is_a4() {
         let (_doc, pages) = document().expect("the template parses");
@@ -209,13 +197,6 @@ mod tests {
     }
 
     /// **The page has a content stream, empty though it is.**
-    ///
-    /// A page with no `/Contents` is legal (§7.7.3.3) and would render
-    /// identically — which is exactly why this needs an assertion rather than
-    /// an eyeball. Every real producer emits a content stream, so a template
-    /// without one would exercise a renderer path no other document in this
-    /// project takes, and would prove less than it appears to on the day
-    /// somebody uses New to reproduce a rendering defect.
     #[test]
     fn the_template_page_carries_a_content_stream() {
         let (_doc, pages) = document().expect("the template parses");
@@ -227,13 +208,6 @@ mod tests {
     }
 
     /// The asset stays a template rather than becoming a document.
-    ///
-    /// Not a change-detector: the failure it guards against is somebody
-    /// "improving" the template by embedding a font, a logo or a title block,
-    /// which would make every new document carry bytes the operator did not
-    /// ask for and would quietly move this directory out of the own-work
-    /// provenance it is declared under. Two kilobytes is roughly four times
-    /// the honest size and nowhere near a single embedded face.
     #[test]
     fn the_template_is_still_a_few_hundred_bytes() {
         assert!(

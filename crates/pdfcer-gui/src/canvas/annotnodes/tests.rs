@@ -28,10 +28,6 @@ use pdfcer_core::annot_author::{Color, LineEnding, MarkupSpec};
 
 /// A real document with one markup annotation authored into it, and a selection
 /// naming it.
-///
-/// **Through `add_markup`, not through a hand-built dictionary.** The
-/// preflight reads the annotation out of the session's own graph, so a fixture
-/// that faked one would be asking the engine about a shape that does not exist.
 fn authored(spec: &MarkupSpec) -> (crate::app::state::OpenDoc, ObjId) {
     let mut doc = crate::app::state::open_fixture(crate::app::state::FOUR_PAGES);
     let session = std::sync::Arc::get_mut(&mut doc.session).expect("the fixture is sole owner");
@@ -174,11 +170,6 @@ fn points_of(pairs: &[(f64, f64)]) -> Vec<Point> {
 
 /// **A `/Polygon` closes, a `/PolyLine` does not, and a `/Line` has two
 /// ends.**
-///
-/// The `closed` flag is what decides whether the preview draws the segment back
-/// to the first node, so getting it backwards would draw an open triangle over
-/// a closed one — a picture that is wrong in a way an operator would report as
-/// *"it looks like it lost a side"* and that no count assertion would catch.
 #[test]
 fn the_three_shapes_with_nodes_report_their_geometry() {
     let (doc, id) = authored(&polygon(triangle()));
@@ -230,13 +221,6 @@ fn the_three_shapes_with_nodes_report_their_geometry() {
 
 /// **R9: a shape with no editable nodes draws NOTHING** — not a greyed
 /// anchor, not a ghost anchor.
-///
-/// `/Ink` was the third row of this list until `pdfcer-core` `Pass 278.0`
-/// (2026-09-09), and the paragraph that kept it there is still true of the
-/// rule if not of the shape: `Annotation::ink_list` was **readable** while
-/// every edit on it was refused, so a shell that derived *"draggable"* from
-/// *"readable"* would have drawn anchors that refused every drag. The verbs
-/// exist now, so the anchors do; the ink assertions live in section 5 below.
 #[test]
 fn a_shape_with_no_editable_nodes_shows_no_anchors() {
     let rect = pdfcer_core::page_tree::Rect {
@@ -275,11 +259,6 @@ fn a_shape_with_no_editable_nodes_shows_no_anchors() {
 
 /// **A locked annotation offers no anchors either**, and the refusal is
 /// honoured here rather than left to the engine.
-///
-/// §12.5.3 Table 165 bit 8 is the *file* saying the user interface may not
-/// change this. An anchor drawn on it would be a promise the release cannot
-/// keep — `annotdrag::eligible` states the identical rule for the whole-shape
-/// drag, and this is that rule applied one level down.
 #[test]
 fn a_locked_shape_offers_no_anchors() {
     let (doc, id) = authored(&polygon(triangle()));
@@ -287,13 +266,6 @@ fn a_locked_shape_offers_no_anchors() {
 }
 
 /// **A ce dimension is not this module's business.**
-///
-/// The load-bearing half. A ce dimension is a `/Line` with
-/// `/IT /LineDimension`, so it passes every *"is this markup?"* test; reshaping
-/// one through `reshape_annotation` would move the drawn line and leave the
-/// sidecar record — and therefore the printed number — describing geometry that
-/// is no longer there. The engine refuses it by name as the backstop; this is
-/// what stops the backstop being reached.
 #[test]
 fn a_ce_dimension_is_dimdrags_and_not_this_modules() {
     let (doc, id) = authored(&polygon(triangle()));
@@ -310,10 +282,6 @@ fn a_ce_dimension_is_dimdrags_and_not_this_modules() {
 
 /// **A closed shape's preview carries the closing segment; an open one's does
 /// not.**
-///
-/// Four nodes closed is four segments; four nodes open is three. Getting this
-/// wrong draws a shape the release does not commit, which is the one thing the
-/// honesty contract in this module's header forbids.
 #[test]
 fn a_closed_shape_previews_its_closing_segment() {
     let pts = points_of(&square());
@@ -322,16 +290,6 @@ fn a_closed_shape_previews_its_closing_segment() {
 }
 
 /// **A single-list shape's `Geometry::segments` is `preview_of`, exactly.**
-///
-/// `Geometry::segments` replaced the direct `preview_of` call when `/Ink`
-/// needed a segment list that respects stroke boundaries, and this is the
-/// assertion that the polygon and polyline paths came through that change
-/// **byte-identical**: same pairs, same order, same closing rule. A closed
-/// square and an open one, because the closing segment is the only place the
-/// two derivations could have disagreed.
-///
-/// Falsified: dropping the `closed && n >= 3` push in `segment_pairs` makes
-/// the closed comparison fail on length.
 #[test]
 fn a_single_list_shapes_segments_are_preview_of_unchanged() {
     let pts = points_of(&square());
@@ -368,10 +326,6 @@ fn a_single_list_shapes_segments_are_preview_of_unchanged() {
 
 /// **A node moves to where the pointer resolved, and its neighbours do
 /// not.**
-///
-/// Asserted on the resulting geometry rather than on the action's `dx`/`dy`
-/// alone, because a build that raised the right delta and previewed the wrong
-/// node would pass an argument check and show the operator the wrong picture.
 #[test]
 fn moving_a_node_moves_that_node_and_no_other() {
     let (doc, id) = authored(&polygon(square()));
@@ -394,10 +348,6 @@ fn moving_a_node_moves_that_node_and_no_other() {
 
 /// **A frame in flight raises nothing, and the release raises exactly one
 /// action.**
-///
-/// `drag-moves` D4: one gesture is one `Ctrl+Z`. A build that raised per frame
-/// would fill the undo stack with sixty entries a second and would look
-/// perfectly correct on screen.
 #[test]
 fn only_the_release_raises_an_action_and_it_raises_one() {
     let (doc, id) = authored(&polygon(square()));
@@ -421,11 +371,6 @@ fn only_the_release_raises_an_action_and_it_raises_one() {
 }
 
 /// **A move sends a DELTA measured from the node, not from the pointer.**
-///
-/// The node at `(300, 100)` dragged to `(150, 150)` is `dx = -150, dy = +50`.
-/// A build that sent the absolute target would move the shape by the target's
-/// distance from the origin — a very large jump, and one that looks like a
-/// coordinate-space bug rather than an arithmetic one.
 #[test]
 fn a_move_sends_the_displacement_of_the_node() {
     let (doc, id) = authored(&polygon(square()));
@@ -443,16 +388,6 @@ fn a_move_sends_the_displacement_of_the_node() {
 // ===========================================================================
 
 /// **A three-node polygon refuses to lose one, and SAYS SO.**
-///
-/// The floor is the engine's (`/Polygon` keeps three) and this test drives the
-/// real `reshape_annotation_preview` against a real annotation, so it fails the
-/// day the engine's ruling changes — which is the property that makes it worth
-/// more than an assertion about a constant in this crate.
-///
-/// Both halves are asserted deliberately. A build that simply dropped the
-/// gesture would pass the first and fail the second, and **it is the second
-/// that is the operator's actual complaint**: a node drag that is refused with
-/// nothing said anywhere is the founding defect of this project.
 #[test]
 fn a_triangle_refuses_to_lose_a_node_and_says_why() {
     let (doc, id) = authored(&polygon(triangle()));
@@ -484,11 +419,6 @@ fn a_triangle_refuses_to_lose_a_node_and_says_why() {
 }
 
 /// …and the preview does not lie about it either.
-///
-/// The frame before the release draws the shape it would commit, and here that
-/// is the shape already on the page. A build that drew the node vanishing and
-/// then refused would be showing an edit that never happens — which looks like
-/// it worked until the next repaint.
 #[test]
 fn a_refused_removal_previews_the_shape_that_is_already_there() {
     let (doc, id) = authored(&polygon(triangle()));
@@ -511,11 +441,6 @@ fn a_refused_removal_previews_the_shape_that_is_already_there() {
 }
 
 /// **The same three points, OPEN, and the answer is the opposite one.**
-///
-/// A `/PolyLine` keeps two, so this removal is legal and what it leaves is a
-/// straight line: one segment, from the first node to the last. This is what
-/// proves the test above measures the shape's own floor rather than a blanket
-/// refusal on three-node shapes.
 #[test]
 fn an_open_three_point_path_may_lose_a_node_and_becomes_a_line() {
     let (doc, id) = authored(&polyline(triangle()));
@@ -557,10 +482,6 @@ fn an_open_three_point_path_may_lose_a_node_and_becomes_a_line() {
 /// **A node is added AFTER the one grabbed**, which is what makes the
 /// gesture mean *"put a point on this segment"* rather than *"put a point
 /// somewhere on this shape"*.
-///
-/// Asserted on the geometry rather than on the action's `after` field alone,
-/// because a build that raised `after: 1` and previewed the point at index 0
-/// would pass an argument check and show the operator the wrong thing.
 #[test]
 fn a_node_is_added_after_the_one_that_was_grabbed() {
     let (doc, id) = authored(&polygon(square()));
@@ -607,11 +528,6 @@ fn a_node_is_added_after_the_one_that_was_grabbed() {
 
 /// **A `/Line` moves either end and cannot gain or lose one — and the
 /// refusal NAMES the shape.**
-///
-/// This is the brief's own case: *a refusal that names a shape type is a real
-/// refusal and should be shown as a sentence, not a grey anchor.* The anchors
-/// are drawn (a Line's two ends are draggable), the count edit is refused, and
-/// what the operator gets is a sentence about lines rather than silence.
 #[test]
 fn a_line_moves_its_ends_and_refuses_to_gain_one_by_name() {
     let (doc, id) = authored(&MarkupSpec::Line {
@@ -669,12 +585,6 @@ fn a_line_moves_its_ends_and_refuses_to_gain_one_by_name() {
 // ===========================================================================
 
 /// **Every refusal sentence is about a shape, never about a measurement.**
-///
-/// R8b rule 15. `crate::text::measure::VertexEditRefusal` says *"measurement"*
-/// because its subject is a **ce dimension**; this enum's subject is a comment
-/// somebody drew, and reusing those words would tell an operator their polygon
-/// was measuring something. This is the assertion that stops a future tidy-up
-/// merging the two enums.
 #[test]
 fn no_node_refusal_calls_a_markup_shape_a_measurement() {
     use crate::text::markup::ShapeWord as W;
@@ -728,10 +638,6 @@ fn no_node_refusal_calls_a_markup_shape_a_measurement() {
 }
 
 /// **The subtype word is the operator's, not the file's.**
-///
-/// `/Square` is what pdfcer's own Rectangle tool authors, and telling an
-/// operator "Square" for the thing they drew with the Rectangle button is the
-/// surface disagreeing with itself about what it just did.
 #[test]
 fn a_square_is_called_a_rectangle_and_a_circle_an_ellipse() {
     use crate::text::markup::ShapeWord as W;
@@ -755,26 +661,6 @@ fn a_square_is_called_a_rectangle_and_a_circle_an_ellipse() {
 }
 
 /// **THE COUPLING THIS FEATURE HANGS ON, asserted rather than trusted.**
-///
-/// The count gestures require the **Points tool** to be armed — `Ctrl` alone
-/// with the Select tool still moves the node, which is the safety that stops a
-/// mis-held modifier destroying a node during an ordinary nudge. That tool's
-/// arming predicate is `edit_content || author_measure`
-/// (`canvas::tool::arm::retire_forbidden`, and an identical copy in
-/// `app::dispatch::navigate`), and **it does not name `author_markup`**.
-///
-/// Markup is authored in **Review**, so if Review ever lost `author_measure`
-/// the Points tool would stop arming there and adding or removing a node of a
-/// comment shape would become unreachable — silently, with the anchors still
-/// drawn and still draggable for a plain move. This test is the tripwire for
-/// that, and it is here rather than in a paragraph because a paragraph cannot
-/// go red.
-///
-/// Why the predicate was not simply widened: the two copies of it must stay
-/// identical, and a disagreement shows as a tool that arms and is retired on
-/// the next frame — a flicker with no sentence attached. One of the two copies
-/// lives in `app::dispatch`, which this session did not own. Reported rather
-/// than half-changed.
 #[test]
 fn the_points_tool_arms_wherever_a_markup_shape_can_be_authored() {
     let shell = crate::shell::manifest::built_in();
@@ -809,15 +695,6 @@ fn the_points_tool_arms_wherever_a_markup_shape_can_be_authored() {
 
 /// **A two-stroke freehand mark yields one anchor per point of every
 /// stroke, and its preview draws NO segment between the strokes.**
-///
-/// Five points, three segments: `(0,1)`, `(1,2)` in the first stroke and
-/// `(3,4)` in the second. A naive flat preview would draw four — the fourth
-/// being a bridge from `(160,150)` to `(300,300)` that the file does not hold
-/// and the release would not commit, which is exactly what the honesty
-/// contract in the module header forbids.
-///
-/// Falsified: replacing `segment_pairs` with the single-list rule makes the
-/// count assertion read 4 and the bridge assertion find the segment.
 #[test]
 fn an_ink_with_two_strokes_yields_every_point_and_draws_no_bridge() {
     let (_, shape) = authored_ink();
@@ -844,15 +721,6 @@ fn an_ink_with_two_strokes_yields_every_point_and_draws_no_bridge() {
 
 /// **Flat anchor index ↔ `(stroke, point)` round-trips, INCLUDING the
 /// first point of the second stroke.**
-///
-/// Index 3 is the one that matters: it is `(1, 0)`, and an off-by-one in
-/// either direction makes it `(0, 3)` — a point stroke 0 does not have, which
-/// the engine would refuse — or `(1, 1)`, the wrong point, which the engine
-/// would accept and move. The second is the dangerous one: it looks like a
-/// working gesture on the wrong node.
-///
-/// Falsified: changing `flat < start + len` to `<=` in `address` reports
-/// index 3 as `(0, 3)`.
 #[test]
 fn an_ink_anchor_index_round_trips_through_stroke_and_point() {
     let (_, table) = ink::StrokeTable::flatten(&two_strokes());
@@ -872,17 +740,6 @@ fn an_ink_anchor_index_round_trips_through_stroke_and_point() {
 
 /// **Insert after a stroke's LAST point extends that stroke and never
 /// crosses into the next** — the engine's rule on `InkEdit::InsertPoint`.
-///
-/// Index 2 is stroke 0's last point. After the insert the mark has six
-/// points, stroke 0 has four, stroke 1 still has two, and the preview's
-/// segments are `(0,1) (1,2) (2,3) (4,5)`: the new point at flat index 3
-/// joins the old last point of stroke 0 and does **not** join stroke 1's
-/// first point, now at flat index 4. The release raises
-/// `InsertInkPoint { stroke: 0, after: 2 }`.
-///
-/// Falsified: a stroke table that did not grow stroke 0 (`after_edit`
-/// returning `self.clone()`) shifts the boundary and the preview draws a
-/// segment from the new point into stroke 1.
 #[test]
 fn inserting_after_a_strokes_last_point_extends_that_stroke() {
     let (doc, shape) = authored_ink();
@@ -936,12 +793,6 @@ fn inserting_after_a_strokes_last_point_extends_that_stroke() {
 
 /// **A move on the first point of the second stroke raises the ENGINE'S
 /// address, not the flat index**, with the delta measured from that point.
-///
-/// Flat index 3 is `(300, 300)`; dragged to `(150, 150)` it is
-/// `dx = -150, dy = -150`. A build that sent `index: 3` to a vertex verb would
-/// be refused by name; a build that converted it to `(0, 3)` would be refused
-/// as out of range; a build that converted it to `(1, 1)` would move the wrong
-/// point and pass every test that only counted anchors.
 #[test]
 fn moving_an_ink_point_raises_the_engines_address_not_the_flat_index() {
     let (doc, shape) = authored_ink();
@@ -984,12 +835,6 @@ fn moving_an_ink_point_raises_the_engines_address_not_the_flat_index() {
 /// **The floor is the STROKE'S: the same mark accepts a removal from its
 /// three-point stroke and refuses one from its two-point stroke — and SAYS
 /// SO, per stroke.**
-///
-/// Both halves asserted, as for the triangle: a build that merely dropped the
-/// gesture would pass the first and fail the second, and the second is the
-/// operator's actual complaint. The sentence is `StrokeWouldLeaveTooFew`, not
-/// `WouldLeaveTooFew`, because *"the shape has as few corners as it can have"*
-/// is false of a mark whose other stroke has three.
 #[test]
 fn a_two_point_stroke_refuses_to_lose_a_point_and_names_the_stroke() {
     let (doc, shape) = authored_ink();
@@ -1044,11 +889,6 @@ fn a_two_point_stroke_refuses_to_lose_a_point_and_names_the_stroke() {
 
 /// **Every one of the engine's five ink refusals maps to a sentence**, and
 /// the two that have a specific next act get it.
-///
-/// Built from the variants directly rather than provoked through the engine,
-/// because three of them cannot be provoked from an anchor this shell drew —
-/// which is the whole point: a refusal that becomes reachable silently must
-/// already have words waiting.
 #[test]
 fn every_ink_refusal_is_a_sentence() {
     let id = ObjId::new(7, 0);
@@ -1137,10 +977,6 @@ fn the_menu_rows_follow_the_strokes_floor() {
 
 /// **A malformed ink — no readable `/InkList` — draws no anchors and is the
 /// one case the freehand "no nodes" sentence still describes.**
-///
-/// Exercised on the table rather than on a file, because pdfcer's own verbs
-/// cannot author an `/Ink` without strokes: an empty stroke list flattens to
-/// no anchors and no segments, which is what `geometry` hands the painter.
 #[test]
 fn an_ink_with_nothing_readable_has_no_anchors_and_no_segments() {
     let (points, table) = ink::StrokeTable::flatten(&[]);

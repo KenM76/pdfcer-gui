@@ -63,3 +63,65 @@ semantics in every edit below, and its own interaction with the clipboard —
 and folding it in half-done would give the operator a highlight that some
 keys respect and others silently ignore. It is recorded as its own row in
 `OPERATOR_REQUESTS.md` rather than left as an implied gap.
+
+## Item notes
+
+### `fn splice`
+
+The shared body of [`insert`] and [`newline`], so there is one statement of
+*"caret indices are CHARACTERS, not bytes"* rather than two. `é` is one
+keystroke and two bytes, and a byte-indexed splice would panic on the next
+one.
+
+### `fn an_empty_selection_is_no_selection`
+
+The state after Shift+Right then Shift+Left, and it is reached by every
+operator who changes their mind. If it answered `Some((n, n))` then
+Backspace would take the "delete the selection" branch, delete nothing,
+and leave the character it was supposed to remove — a key that stopped
+working, silently, at one specific caret position.
+
+### `fn removing_a_selection_counts_characters_not_bytes`
+
+Asserted on a string with an accent in it, because a byte-indexed
+`drain` compiles, passes on ASCII, and panics on the first document with
+a `café` in it — which is the failure this module has now avoided in
+four separate functions for the same reason.
+
+### `fn a_nonsense_range_removes_nothing`
+
+Not defensive programming for its own sake: this runs inside the
+keystroke path, and a panic there is a crash in the middle of typing —
+the one place a program must not crash, because the operator's work is
+in the thing that died.
+
+### `fn the_first_shifted_move_plants_the_mark_where_the_caret_was`
+
+Planting the mark where the caret *ends up* would select nothing on the
+first press and one character on the second — an off-by-one that looks
+like the key being ignored.
+
+### `fn a_control_character_is_not_typed_into_the_page`
+
+Enter and Escape arrive as `Key` events and mean something; a control
+byte arriving as text means nothing this shell can author, and putting
+it in a PDF show string would be authoring a glyph the operator cannot
+see.
+
+### `fn a_character_in_the_middle_can_be_changed_without_retyping_the_tail`
+
+> *"the cursor just sits at the end of a text line. It can't be moved to
+> the center of an existing text block."*
+
+A title-block cell, edited the way he would edit one: put the caret in
+the middle, remove the character before it, type a different one. Before
+the caret existed this was impossible — the only reachable edit was to
+Backspace from the end and retype everything after the change, which on
+a drawing sheet full of `SHEET n OF m` cells is why the feature was
+reported as not working at all.
+
+### `fn the_caret_cannot_be_pushed_past_either_end`
+
+The last assertion is the one that matters most: a caret index taken
+before the text was replaced can legitimately be past the end, and the
+answer is to clamp rather than to panic. See the module header.

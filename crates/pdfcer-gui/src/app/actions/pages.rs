@@ -473,38 +473,6 @@ pub(super) fn resync(doc: &mut OpenDoc) {
 // ---------------------------------------------------------------------------
 
 /// **What removing these pages broke, as operator-facing sentences.**
-///
-/// `vector_edit`'s disclosure channel carries exactly this shape of thing —
-/// *"the drawing is unchanged but the file is not, and rule 4 forbids letting
-/// the operator find that out from a diff"* — and a page delete is the verb
-/// with the most to disclose in the whole application.
-///
-/// `EditSession::delete_pages` computes the census and deliberately does **not**
-/// repair; its own documentation names surfacing the result as the front end's
-/// job and calls Acrobat's silence *"a low bar, not a target to literally
-/// copy."* This is that half.
-///
-/// # Returns
-///
-/// One sentence per fact that is true, in the order an operator would care
-/// about them: the references they navigate by first, then the numbering, then
-/// the prepress structure. **Empty** when nothing was broken, which is the
-/// ordinary case for a drawing set and which makes `vector_edit` record no
-/// sentence at all rather than an empty one — see its own docs on why that
-/// distinction matters.
-///
-/// The wording is [`crate::text::pages`]', under rule R1. This function decides
-/// *which* sentences and in what order, and no words at all.
-///
-/// # Why the two halves arrive separately
-///
-/// `DeleteOutcome` is `#[non_exhaustive]`, so no test outside `pdfcer-core` can
-/// build one — and a rule-4 disclosure whose *selection* logic cannot be
-/// asserted is a rule-4 disclosure nobody has checked. `DanglingReport` is
-/// `Default` and constructible field by field, so taking it plus the one
-/// separation count keeps the decision testable. The caller does the
-/// destructuring, which is one line and is the line that would not compile if
-/// the engine's shape changed.
 fn delete_disclosures(
     dangling: &pdfcer_core::pageops::DanglingReport,
     sets_split: usize,
@@ -1129,12 +1097,6 @@ mod tests {
     use crate::app::state::{FOUR_PAGES, open_fixture};
 
     /// Apply one engine verb to a fixture, the way `vector_edit` does.
-    ///
-    /// The four-step protocol is not re-run here — there is no render worker in
-    /// a unit test and nothing else holds the `Arc` — but the two steps the
-    /// assertions depend on are: the mutation, and the epoch bump that
-    /// [`resync`] traces. Anything that needs the *whole* protocol is
-    /// `tools/ui-verify`'s job, which is where the join is proven.
     fn edit(doc: &mut OpenDoc, verb: impl FnOnce(&mut EditSession)) {
         let session = std::sync::Arc::get_mut(&mut doc.session)
             .expect("nothing else holds the session in a test");
@@ -1144,26 +1106,12 @@ mod tests {
     }
 
     /// Put one object on `page` into the canvas selection.
-    ///
-    /// Through [`crate::canvas::selection::SelectionState::marquee`], which is
-    /// a real gesture entry point, rather than by reaching into the struct:
-    /// there is no setter, deliberately — the canvas is the only writer — and a
-    /// test that needed one would be asking for an API the application does not
-    /// have. A marquee of one target lands at the Object rung, which is the
-    /// state a page edit has to invalidate.
     fn select_object_on(doc: &mut OpenDoc, page: usize) {
         use crate::panels::objects::provider::TargetId;
         doc.selection.marquee(page, &[TargetId::Object(0)], false);
     }
 
     /// **A delete shortens the page vector, and the view follows it.**
-    ///
-    /// The defect this catches is silent and total: `OpenDoc::pages` is
-    /// *"resolved once at open"*, so without [`resync`] the panel would go on
-    /// saying "4 pages", the status bar would go on saying `n/4`, and the
-    /// canvas would go on rendering a `Page` whose object the engine has
-    /// **freed**. Every test in the crate would pass, because nothing else in
-    /// the application ever re-reads that vector.
     #[test]
     fn a_delete_shortens_the_page_vector_and_clamps_the_view() {
         let mut doc = open_fixture(FOUR_PAGES);
@@ -1189,12 +1137,6 @@ mod tests {
 
     /// **A delete clears the canvas selection, because its page index now
     /// names a different sheet.**
-    ///
-    /// A selection is an identity, not a position, and this is that rule at
-    /// page level: an entry that survived would resolve against another
-    /// sheet's decomposition
-    /// on the next frame and draw an outline round an object nobody selected —
-    /// with `format.delete` one keystroke away.
     #[test]
     fn a_delete_clears_the_canvas_selection() {
         let mut doc = open_fixture(FOUR_PAGES);
@@ -1213,11 +1155,6 @@ mod tests {
     }
 
     /// **A reorder renumbers without shortening, and is treated as such.**
-    ///
-    /// The middle case, and the one a length comparison alone would miss
-    /// entirely: the page count is unchanged, so a resync that only watched
-    /// `len()` would leave every strip raster and the canvas selection pointing
-    /// at sheets that have moved.
     #[test]
     fn a_reorder_renumbers_and_clears_the_canvas_selection() {
         let mut doc = open_fixture(FOUR_PAGES);
@@ -1243,15 +1180,6 @@ mod tests {
     }
 
     /// **A rotation is NOT a renumbering, and the selection survives it.**
-    ///
-    /// The falsifying half of the two tests above. A resync that cleared the
-    /// selection on any change at all would pass both of them and would make
-    /// every rotate throw away work the operator had done — and no assertion
-    /// anywhere else would notice, because a cleared selection is a valid
-    /// state.
-    ///
-    /// `crate::canvas::interact`'s header states the rule this pins: a verb
-    /// that adds and removes no operator renumbers nothing.
     #[test]
     fn a_rotation_refreshes_the_pages_without_clearing_the_selection() {
         let mut doc = open_fixture(FOUR_PAGES);
@@ -1292,11 +1220,6 @@ mod tests {
 
     /// A delete with nothing to disclose produces **no** sentence, and one with
     /// something to disclose produces one per fact.
-    ///
-    /// The empty case matters as much as the full one: `vector_edit` records
-    /// `None` for an empty list, so a build that returned a placeholder
-    /// sentence would put a line under every page delete and train the operator
-    /// to ignore the ones that mean something.
     #[test]
     fn a_delete_discloses_one_sentence_per_broken_thing() {
         let mut dangling = pdfcer_core::pageops::DanglingReport::default();

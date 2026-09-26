@@ -105,3 +105,23 @@ made possible.
 Step B asserts its own precondition, for the reason the sibling states: a
 pan that did nothing would leave the page centred, and step D would then
 pass against a build that re-centres on every resize — measuring nothing.
+
+## Item notes
+
+### `const PAN_BY`
+
+A fraction, not a distance. `the_line_weight_switch_reaches_the_resize`
+got the same class of constant wrong three times in one evening — page
+fractions, then points, then fractions of the operand — and the lesson
+generalises: **the space a travel is expressed in has to be the space the
+thing being measured lives in.** Here the subject is *"did the page move
+within the canvas"*, so the canvas is the space.
+
+0.25 of the canvas is far past [`CENTRED_TOLERANCE`] at any window size
+this harness will produce.
+
+### `const CENTRED_TOLERANCE`
+
+The same role as the sibling's `EDGE_TOLERANCE`: it absorbs the `f32` fit
+division and pixel-grid rounding, and nothing else. The pan moves the page
+by [`PAN_BY`], which is thirty times this.

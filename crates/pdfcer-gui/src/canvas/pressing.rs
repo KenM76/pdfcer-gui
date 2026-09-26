@@ -137,11 +137,6 @@ pub fn markup_grips(subtype: &str) -> handles::GripSet {
 }
 
 /// The `/Subtype` of a sticky note, whose marker is a fixed size.
-///
-/// Compared against the engine's own string rather than mapped through an
-/// enum here: `AnnotSelection::subtype` carries `/Subtype` verbatim, and a
-/// local enum would be a second vocabulary that has to be kept in step with a
-/// standard that keeps adding to it.
 const STICKY_SUBTYPE: &str = "Text"; // ui-text-exempt: a PDF /Subtype name, never displayed
 
 /// What the pointer may grab, given what is selected.
@@ -393,13 +388,6 @@ pub fn body_under(
 }
 
 /// The pick filter [`body_under`] asks with.
-///
-/// **Everything, deliberately, and not the operator's filter.** The question
-/// is *"is the press on the thing I have selected?"*, and the answer must not
-/// depend on whether that kind of object is currently pickable — an operator
-/// who selects an image, then switches images off in the selection filter, has
-/// not thereby asked for the image to become undraggable. The filter governs
-/// what a press may *acquire*; this asks about what is already held.
 fn pick_for_body() -> crate::canvas::pick::PickFilter {
     crate::canvas::pick::PickFilter::all()
 }
@@ -788,10 +776,6 @@ pub fn look(
 }
 
 /// Trace slot for the once-per-change press summary.
-///
-/// Its own slot rather than sharing one: `trace_changed` keys on the slot, so
-/// two unrelated lines sharing one would suppress each other, and the
-/// suppression looks exactly like the event never happening.
 const PRESS_SLOT: &str = "canvas-press"; // ui-text-exempt: trace slot name, never displayed
 
 #[cfg(test)]
@@ -801,12 +785,6 @@ mod o69_outline_tests {
 
     /// **The four rows of `grabbable`'s table, and what each says about
     /// the outline** — `OPERATOR_REQUESTS.md` O69.
-    ///
-    /// Asserted as `Grabbable` literals rather than by driving `grabbable`,
-    /// which needs a `Context` and an `OpenDoc`. What is under test is the
-    /// *relationship between the three flags*, which is where a mistake would
-    /// hide: the whole point of `outline` is that it is not expressible as
-    /// either of the other two.
     #[test]
     fn the_outline_flag_is_not_the_content_flag_nor_the_grip_set() {
         // Page content at the OBJECT rung: the box is the subject, it is
@@ -860,17 +838,6 @@ mod tests {
 
     /// **A STICKY NOTE IS OFFERED NO RESIZE GRIPS, AND EVERY OTHER MARKUP
     /// STILL IS** — `OPERATOR_REQUESTS.md` O155.
-    ///
-    /// `/Text`'s `/Rect` says **where** the marker is, not **how big**: a
-    /// conforming reader draws it as though `NoZoom/NoRotate` were set and
-    /// anchors it at the rect's upper-left corner, so `resize_annotation`
-    /// declines a corner drag by name. Eight squares round it would be the
-    /// *visible control, silently inert* failure this shell exists to remove.
-    ///
-    /// ⚠ **Three assertions, and the third is the one that keeps this honest.**
-    /// A build that answered `move_only` for *everything* satisfies the first
-    /// two and silently removes the resize from rectangles, clouds and arrows —
-    /// the kinds that do resize, and did before this change.
     #[test]
     fn a_sticky_note_gets_no_resize_grips_and_every_other_markup_still_does() {
         let sticky = markup_grips("Text");
@@ -898,10 +865,6 @@ mod tests {
     }
 
     /// The subtype is matched EXACTLY, not by prefix or case.
-    ///
-    /// `/Text` is a sticky note; `/FreeText` is a text box and resizes. A
-    /// `contains` or a case-insensitive compare catches the second with the
-    /// first and silently removes the resize from every text box.
     #[test]
     fn freetext_is_not_caught_by_the_sticky_rule() {
         assert!(markup_grips("FreeText").resize);

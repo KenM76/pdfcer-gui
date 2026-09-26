@@ -77,3 +77,58 @@ stamps by page instead of by name-tree position, would pass here. Both are
 asserted in the shell's own tests against the same fixture through the same
 engine call — deliberately, because a string and an ordering are exactly
 what a unit test CAN see. What it cannot see is the window.
+
+## Item notes
+
+### `const COLLECTION`
+
+Built by `fixtures/stamp-collection.PROVENANCE.py`, which computes its own
+xref offsets. Its name tree is deliberately **not** in page order — `#`
+sorts before `S`, so the dynamic stamp is tree entry 0 and page 3 — because
+the rows are indexed by tree position and a fixture sorted the lazy way
+would let a build that enumerated pages pass.
+
+### `const PLAIN`
+
+⚠ Asserted through the engine by the shell's
+`the_driven_checks_fixtures_are_what_the_check_believes_they_are`. Do not
+swap it for another fixture without adding the new name there.
+
+### `const ROW_PREFIX`
+
+⚠ It is `SECTION_REGION` plus a dot, and the shell asserts that relationship
+in its own test: several checks dump every region under a prefix when they
+cannot find the one they wanted, and a row prefix that drifted out from
+under the section's would vanish from that dump.
+
+### `const SOURCE_PAGES`
+
+⚠ Every row is included by default (`Plan::new` sets `include: true`), so a
+build that silently dropped a page would still write a valid collection —
+one sheet short, with no error anywhere. That is why this number is
+asserted three times over: on the window's `pages=`, on the request's
+`stamps=`, and on the row count when the written file is read back.
+
+### `const WROTE`
+
+⚠ Exactly `stamp-collection`, and the trace parser matches event names by
+**equality** — so this does not also match `stamp-collection-open`,
+`-requested`, `-failed`, `-declined`, `-cancelled` or `-unavailable`. That
+is load bearing rather than incidental: a prefix match here would let the
+window merely *opening* satisfy the assertion that a file was written.
+
+### `fn launch_on`
+
+Takes a `&Path` rather than a fixture name because the author half's third
+launch opens a file that did not exist when the check started — the
+collection pdfcer itself just wrote, under `--out`. A helper that could only
+open things in `fixtures/` would have made the round trip unwritable, and the
+round trip is the only assertion in this file that reads the produced bytes
+with the reader Acrobat's own structure demands.
+
+### `fn open_properties`
+
+Reuses `properties_metadata`'s opener rather than spelling the two clicks
+again. It is the same ribbon item and the same toggle hazard — pressing
+`file.document_properties` while the panel is up CLOSES it — and two copies
+of that guard would be two places for the next ribbon move to be applied.

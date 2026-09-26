@@ -36,19 +36,9 @@ const PASTE_LINE: &str = "fieldclip-paste";
 const APPLIED_LINE: &str = "paste-field-applied";
 
 /// Where the first field is placed, as page fractions.
-///
-/// Well inside the sheet on both axes, because two pastes each displace the
-/// copy ten points down and to the right and all three boxes must stay on
-/// paper — a box pasted off the sheet would produce no `form-target` line and
-/// the check would report a clipboard defect for a geometry problem.
 const PLACE_AT: (f64, f64) = (0.30, 0.45);
 
 /// The paste order a run is driving, and the chord it expects for each sense.
-///
-/// Carried rather than assumed, because the whole subject of the second
-/// check is that the SAME keystroke means the OTHER thing. A check that hard-
-/// coded `Ctrl+V` -> new field could only ever test one of the two orders, and
-/// would pass against a build whose setting did nothing at all.
 #[derive(Clone, Copy)]
 struct Order {
     /// `PDFCER_DIAG_PASTE_CHORDS`, or `None` for the operator's default.
@@ -179,10 +169,6 @@ impl Check for AFormFieldCanBeCopiedAndPastedBothWays {
 }
 
 /// Every widget box the canvas named, as `(page, field, canvas centre)`.
-///
-/// The same reader `field_menu` uses, kept in step with it deliberately: two
-/// parsers of one trace line is how two checks come to disagree about what the
-/// program said.
 fn boxes(trace: &Trace) -> Vec<(usize, String, (f64, f64))> {
     trace
         .events(BOX_LINE)
@@ -200,11 +186,6 @@ fn boxes(trace: &Trace) -> Vec<(usize, String, (f64, f64))> {
 }
 
 /// How many DISTINCT field names have a box on page 0.
-///
-/// Distinct **names**, not lines. The census is re-emitted every frame it
-/// changes, so counting lines counts repaints. And it is names rather than
-/// boxes because a paste-as-new must raise the count and this is the number
-/// that says so unambiguously.
 fn field_names(trace: &Trace) -> std::collections::BTreeSet<String> {
     boxes(trace)
         .into_iter()
@@ -214,26 +195,6 @@ fn field_names(trace: &Trace) -> std::collections::BTreeSet<String> {
 }
 
 /// The DISTINCT boxes on page 0 — a set of `(field, centre)`, not a line count.
-///
-/// **The first version of this function counted trace lines and it was
-/// wrong, and it was wrong in the direction that still passes.** The census is
-/// re-emitted on every frame it changes, so the cumulative line count went
-/// 1 → 3 → 6 across the two pastes: 1, then 1+2, then 3+3. Both assertions held
-/// — the number did rise each time — and the check reported PASS while measuring
-/// *repaints* rather than *widgets*.
-///
-/// That is this project's standing failure: **ask what the check SAMPLED before
-/// believing what it says.** A build that pasted nothing but repainted twice
-/// would have satisfied the old version exactly as well.
-///
-/// A set of `(field, centre)` is immune, because a re-emitted census re-states
-/// the same pairs. Two widgets of one field differ by centre — the paste offset
-/// guarantees it — so a duplicate raises this count without raising
-/// [`field_names`], which is the distinction the whole feature is about.
-///
-/// The centre is rounded to whole canvas pixels before it enters the set: the
-/// census prints one decimal, and a scroll of a fraction of a pixel between two
-/// frames would otherwise make one box look like two.
 fn distinct_boxes(trace: &Trace) -> std::collections::BTreeSet<(String, i64, i64)> {
     boxes(trace)
         .into_iter()

@@ -75,3 +75,138 @@ rather than measuring a fixture's own linework.
   the one under test;
 * the width field was drawn but the drag did not change its value, so there
   was no restyle to observe.
+
+## Item notes
+
+### `const RESTYLE_EVENT`
+
+The bare name and not `-applied`: `apply::vector_edit` names the edit
+itself, and a refusal traces `set-markup-style-refused`, which the failure
+message points at.
+
+### `const EXPECTED`
+
+A `/Square` and not "a markup", because which controls apply is a property
+of the subtype: a highlight has no border to widen, an arrow has no interior
+to fill. This check draws a rectangle, so this is the list for a rectangle.
+
+### `const ABSENT_FOR_A_SQUARE`
+
+`/LE` is meaningful for a `/Line` alone. `manifest::format` deliberately gives
+this item no condition and lets `markupband::endings` decide its own absence
+from the value it read — *"a control that decides its own absence from the
+value it reads, in the one place that has read it"* — so the only way to
+check that decision is to look at how much room it took.
+
+### `const MIN_CONTROL_EXTENT`
+
+# Why "declared" is not enough, in both directions
+
+`markupband::draw` publishes its `ui-rect` from the response of an
+`add_enabled_ui` **whether or not the closure drew anything**, so an absent
+control still declares a rect — a degenerate one. Presence and absence are
+therefore both statements about *area*, not about the name appearing in the
+trace, and a check that only asked "is it declared" would pass on a build
+where every one of the six drew nothing.
+
+The number is a floor on the smaller of the two dimensions rather than on the
+area, because the failure this guards against is a control laid out with **no
+usable extent in one axis** — which is the redaction panel's apply button
+shipped below the bottom of its own pane, a defect this project has already
+had once. 10 logical px is under half the height of the smallest control in
+the band and an order of magnitude over the ~0 an empty `add_enabled_ui`
+allocates.
+
+### `const WIDTH_DRAG_PX`
+
+`DragValue::speed(0.1)` means 0.1 pt per pixel, so 200 px is +20 pt against a
+field whose range is 0.25–12 pt. **Deliberately past the ceiling**: the
+commit is compared against the range's own maximum rather than against an
+arithmetic prediction, so this check does not have to track the speed
+constant, and a clamp that stopped working would show up as a value over 12
+rather than as a check that had to be re-tuned.
+
+### `const GRAB_FRACTION`
+
+A third. `markupband::FIELD_WIDTH` is 46 logical px and a two-digit
+`DragValue` with a ` pt` suffix is comfortably wider than 15, so the left
+third is inside the spinner on any theme this shell has had. See the drag's
+note for what the centre cost.
+
+### `const MAX_WIDTH_PT`
+
+Spelled here rather than imported, like every other constant in this crate:
+the harness must be able to fail against a binary built from a different
+tree, and an import would make the check assert that the application agrees
+with itself.
+
+### `const MIN_THICKENING`
+
+# Why 1.5 and not 6
+
+The width goes from 2 pt to 12 pt, which is **six times** the line — and the
+ink count does not go up sixfold, because the strip is a fixed box and a
+thicker line fills more of its height but no more of its length. Measured on
+this fixture at fit-page zoom (20 %), a 2 pt line covers about one row of the
+strip and a 12 pt line about two: the honest expectation is a doubling, not a
+sextupling.
+
+⇒ **A floor derived from what the geometry can actually produce**, not from
+the ratio of the numbers that were typed. A check demanding six times would
+go red on a working build, and the session that met it would go looking for a
+rendering defect. This project has already spent a morning on exactly that
+mistake in the other direction (`markup_rectangle`'s note on three candidate
+palettes).
+
+1.5 is comfortably under the measured doubling and comfortably over the ±2
+pixels an antialiased edge moves by, on a strip that starts with tens of ink
+pixels.
+
+### `const STRIP_HALF`
+
+Four times `markup_palette`'s, and the difference is the subject: that
+check reads a *colour* and wants as little paper in the box as possible, this
+one reads a *thickness* and needs room above and below for the line to grow
+into. A strip only as tall as the thin line would saturate at the first
+widening and report nothing about the rest.
+
+### `const PARK`
+
+Blank paper in a corner, and `markup_palette`'s first run is why: a
+pointer left on the shape pops the *"No note has been written on this
+markup."* tooltip, a floating dark panel that lands on the very box being
+measured and reads as ink. A driven check photographs the pointer as well as
+the program.
+
+### `const ELSEWHERE`
+
+Far from the shape and far from the strip, so it can neither re-select the
+mark nor add ink to what is about to be measured. Distinct from [`PARK`] on
+purpose: the click lands here and the pointer then moves on, so the tooltip
+question and the deselection question do not share an answer.
+
+### `fn edge_ink`
+
+The mapping is re-derived by the caller for every reading rather than cached:
+a cached mapping is a stale coordinate, and a stale coordinate is
+symptom-identical to a broken conversion — the confusion behind one
+filed-then-retracted defect in this codebase.
+
+### `fn left_part`
+
+See the drag's own note: a band item's published rect is the widget **plus**
+whatever padding the renderer allocated to make the row line up, and the
+padding is always on the right.
+
+### `fn an_empty_control_is_not_substantial`
+
+The property the whole of link 4 rests on: `markupband::draw` publishes
+a `ui-rect` for an item whose closure drew nothing, so *declared* and
+*drawn* are different questions and this is what tells them apart.
+
+### `fn the_strip_lies_on_the_top_edge_and_clear_of_the_corners`
+
+A check aimed at the wrong box produces an articulate failure message
+about nothing, which is this project's commonest wasted afternoon. The
+arithmetic that decides where this one looks is therefore asserted rather
+than eyeballed.

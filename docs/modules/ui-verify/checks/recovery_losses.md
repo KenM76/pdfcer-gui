@@ -65,3 +65,29 @@ described a routine false positive in the language reserved for a real loss,
 would pass. Those are asserted in `crate::text::panels::docprops`' own tests
 against the same report — deliberately, because a string is exactly what a
 unit test CAN see. What it cannot see is the window.
+
+## Item notes
+
+### `const DAMAGED`
+
+Built by `fixtures/recovered-with-losses.PROVENANCE.py`, which records why
+each of the two exists — one is a real truncated object, the other is the
+bytes `9 0 obj` sitting inside the content stream's own drawn text, which the
+scan is obliged to try. Those are the two different stories the disclosure
+has to keep apart, and the fixture carries both on purpose.
+
+### `fn launch`
+
+⚠ Unlike `load_anomalies`' status-bar half there is no off-desktop variant
+here: every assertion in this file needs the properties panel open, the panel
+is opened by clicking, and a click needs a window a pointer can reach. So
+this check cannot run while the operator is at the machine, and that is a
+cost rather than an oversight.
+
+### `fn open_properties`
+
+Reuses `properties_metadata`'s opener rather than spelling the two clicks
+again. It is the same ribbon item and the same toggle hazard — pressing
+`file.document_properties` while the panel is up CLOSES it — and a second
+copy of that guard would be a second place for the next ribbon move to have
+to be applied.

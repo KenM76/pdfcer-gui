@@ -78,3 +78,50 @@ The button writes `egui::Memory` directly rather than raising an
 [`crate::app::actions::Action`], on the same licence the Find toggle takes:
 nothing here touches a document, so there is nothing for the undo log to hold
 and nothing to order against.
+
+## Item notes
+
+### `const EXIT_WIDTH_FRACTION`
+
+Wider than [`super::NOTES_WIDTH_FRACTION`] (0.45) on purpose — see the
+module header's ranking argument. Bounded all the same, because the controls
+on the right are what an operator uses to *read* the document they are in
+read mode to read.
+
+### `const EXIT_SLOT`
+
+It carries the **sentence**, not a boolean, and that is what makes a
+driven check able to fail correctly. `read-mode-exit shown=true` is
+identical for a build that names the right chord, a build that names a chord
+nothing is bound to, and a build that names no chord at all — so a check
+reading it could only assert *something appeared*, which is the vacuous
+shape this project has shipped before. The text is the claim; the trace
+carries the claim.
+
+### `fn statement`
+
+The same four rules `super::disclosure::disclosure_line` applies — bounded
+width, fixed row, elide rather than wrap, full text on hover — written here
+rather than reused because that helper draws `.small()`, which is right for
+narration the operator did not ask for and wrong for the one sentence they
+are hunting.
+
+### `fn the_ordinary_state_says_nothing_about_read_mode`
+
+A check that only asserted the sentence *appears* would pass on a build
+that showed it permanently — which would be furniture, and would be a
+false statement for every minute the mode is off.
+
+### `fn the_sentence_names_the_binding_the_keymap_holds`
+
+The vacuous shape this forbids: a test that asserts a sentence exists
+passes on a sentence naming the wrong key. What is asserted is the
+identity of two derivations — the one this module draws, and the one
+taken from `shell::manifest::built_in`'s keymap — so a rebind moves both
+or fails here.
+
+### `fn an_unpublished_context_names_no_key`
+
+The failure this forbids is a default: `Ctrl+H` as a fallback would be a
+second spelling of the binding wearing a fallback's clothes, and it would
+be wrong in exactly the case it was reached for.

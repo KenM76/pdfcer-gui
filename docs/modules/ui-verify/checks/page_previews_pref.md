@@ -130,3 +130,163 @@ means no keystroke reached the window and nothing typed below would mean
 anything; or the starting state not being the planted one, which means
 either the seed was not read or something outside this check reached the
 sandbox.
+
+## Item notes
+
+### `fn launch`
+
+`tag` names the artefact, so a failing run leaves all three traces side by
+side — which is the first thing anybody reading a failure here will want,
+because every assertion in this file is a comparison between two launches.
+
+### `fn open_panel`
+
+⚠ The `GRID` test is not an optimisation. The Pages panel is docked by
+default, and its ribbon item is a **toggle** — pressing it on a panel that
+is already up would CLOSE the surface under test, and every assertion below
+would then report a missing control. `pages_drag::open_pages_panel` carries
+the same guard at its call site and this is the same rule, stated here
+because this module has three call sites for it.
+
+### `fn click_region`
+
+Through [`stable_rect`] rather than [`driving::declared`], because raising
+a dock panel re-lays the dock out over several frames and `ui-rect` is a
+change log: reading it the frame after a panel opens answers *where that
+control was*, and a click aimed at a stale coordinate lands on the canvas
+with no error anywhere. This project has that failure on record twice.
+
+And through [`frame_of`] rather than `session.frame()`, which costs
+nothing on a main-window region and survives the day this panel is allowed
+to float into its own OS window — at which point its rectangles become
+relative to *that* window's origin and every click would land hundreds of
+pixels away, with plausible numbers and no error. Thirteen checks learned
+that on one day.
+
+### `fn keyboard_reaches_the_window`
+
+Without this, a build in which the pointer works and the keyboard does
+not would produce *"typing `0` into the limit wrote nothing"* — a confident,
+detailed and entirely wrong report naming O187 as the culprit. `find_bar`'s
+first run did exactly that against a build in which `Ctrl+F` worked.
+
+`Ctrl+2` is bound to `mode.review` in the application's key table, and this
+check is already in Review mode by the time it gets here. So the probe is
+idempotent: it proves the channel without changing a thing the assertions
+below depend on.
+
+# Errors
+
+No new `chord-command` line — reported as a SKIP at the call site, because a
+check that types into nothing must never name a feature as the culprit.
+
+### `fn type_the_zero`
+
+**No `Ctrl+A` first, deliberately.** egui's `DragValue` selects the whole
+of its displayed text the frame its edit gains focus, so the click has
+already done it — and `Ctrl+A` is bound in this application to a document
+verb whose guard depends on a text field being focused. Pressing it here
+would make the check's own setup depend on the very guard that a sibling
+defect in this project once broke, which is a dependency worth not having
+when the alternative is nothing at all.
+
+`Enter` rather than clicking elsewhere. The commit is on `ended` —
+`lost_focus` — because `app::spinnerdraft` exists to stop a re-seeded value
+throwing a drag away, and Enter is the only way to end the edit that does
+not also press something else.
+
+### `fn panel_state`
+
+⚠ `last`, and the panel emits through `trace_changed` — one line per change
+rather than one per frame — so the last one is the current state and not a
+fossil from the frame the panel happened to be drawn on.
+
+### `fn persisted_after`
+
+Counted rather than compared against an absolute absence, because this
+check performs two write-through gestures in two processes and a naive
+`last()` would happily return the previous one. An absence assertion is only
+as good as when its baseline was taken.
+
+### `fn read_prefs`
+
+# Errors
+
+Unreadable — reported as a SKIP at every call site, because a file this
+harness cannot read is a harness problem and must never be named as a defect
+in the program.
+
+### `fn value_of`
+
+Deliberately a five-line parser rather than a call into the application's
+own reader: the point of reading this file is to observe it with something
+the program under test did not write. A harness that parsed it with the
+crate's own parser would agree with the program by construction.
+
+### `const SEED_BUDGET_MS`
+
+Two seconds. Any legal, non-zero value would do — see the module header's
+section on why it is planted at all. It is the harness's own number and is
+not required to match anything the shell compiles in.
+
+### `fn write_prefs`
+
+Through `sandbox::write_prefs`, never `fs::write`, and never a delete.
+The header it prepends carries `ask_default_app = false`; three checks that
+wrote the file directly re-enabled the O173 startup offer in front of their
+own launches, and deleting it does the same thing by omission — every absent
+key takes its compiled-in default, and that one's is `true`.
+
+The previews tick is left absent and takes its compiled-in default, which
+is on. The limit is written, because its compiled-in default is the value
+this check types — the module header carries that argument in full.
+
+# Errors
+
+The directory could not be created or the file could not be written. A SKIP
+at the call site: a preference that could not be written means the check
+never began.
+
+### `struct RestorePrefs`
+
+A guard rather than a line at the end, because there are a dozen returns
+above and the one that gets forgotten is the one that leaves this check's
+gestures — the previews tick cleared, a planted time limit — standing in
+front of every check that runs afterwards. The next check to draw a Pages
+panel would then find a grid that draws nothing, and report it. A suite that
+shares state measures the order it ran in.
+
+Reset rather than deleted, for the reason `ui_scale` records: a *missing*
+file exercises the absent-file path, which is a different state and not the
+one the other checks were written against.
+
+Failure to restore is warned about rather than fatal — this type runs during
+unwinding as well as on the ordinary path, and a harness that turned its own
+housekeeping problem into a verdict would be reporting itself as a defect in
+the program.
+
+### `fn the_check_types_the_one_value_that_is_a_sentinel`
+
+Pinned because every other number this control accepts is clamped to a
+floor, and a check that typed `1` would pass against a build with O187's
+second half missing entirely — `1` and `100` are both *a limit*, and the
+operator would never know. Only `0` can tell the two builds apart.
+
+### `fn the_regions_named_are_the_panels_own_controls`
+
+A check that named `ribbon.item.view.panel_pages` as its control would
+be asserting that a menu entry exists, which is true in every build that
+has ever shipped and says nothing about the preference.
+
+### `fn the_control_chord_changes_nothing_the_check_measures`
+
+`Ctrl+2` puts the application into the mode it is already in, so the
+probe cannot change any state an assertion reads. A probe bound to a
+verb with a side effect would be a setup step pretending to be a
+measurement.
+
+### `fn the_file_oracle_reads_past_the_comments`
+
+The header is comment lines and a blank; a parser that took the first
+`=` it saw anywhere would read one of them. This is the assertion that
+the independent oracle is actually independent *and* correct.

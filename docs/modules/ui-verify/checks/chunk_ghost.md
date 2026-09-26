@@ -151,3 +151,19 @@ inner rung.
    a wrong one.
 8. **Require the `[FAIL]` line**
    PASS does.
+
+## Item notes
+
+### `const ANCHOR_CHUNK`
+
+**Line 4, not line 0**, and the reason is step E: the band in step D sweeps
+lines 0, 1 and 2, and its rectangle is stated in document space against
+their *original* baselines. Dragging line 0 first would move the very lines
+the band is aimed at, and the band would then reach a set nobody can state.
+Line 4 is clear of the band by 5.2 pt below and 5.6 pt above.
+
+### `const DWELL_MS`
+
+The ghost is drawn on the frames a move is in flight, so the gesture has to
+spend frames in flight. A press-and-release with no dwell relies on the
+walk's intermediate steps landing on repaints, which is scheduler luck.

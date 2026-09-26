@@ -19,26 +19,12 @@ use crate::trace::Trace;
 
 /// How many Ctrl+wheel notches out this part will spend before calling the way
 /// back down unreachable.
-///
-/// Budgeted against the climb rather than guessed: part B spends at most
-/// `CLIMB_NOTCHES_B` (160) plus `EXTRA_NOTCHES_B` (12) getting up there, and a
-/// symmetric wheel cannot need more than that to come down. The margin is for
-/// the learned ceiling's pull-back, which moves the view without costing a
-/// notch.
 const BACKOUT_NOTCHES: usize = 200;
 
 /// Notches per posted batch.
-///
-/// Matches part B's `CLIMB_BATCH_B` so the two directions cost the same per
-/// settle, which is what makes *"it came down in about as many notches as it
-/// went up"* a sentence worth reading in the report.
 const BACKOUT_BATCH: usize = 4;
 
 /// How far the zoom has to fall for a batch to count as having done anything.
-///
-/// A notch is a multiplicative step, so any real response clears this by orders
-/// of magnitude; the tolerance exists only so a float that came back
-/// bit-identical is not read as a fall.
 const MIN_FALL: f32 = 1.0e-3;
 
 /// The state part B left behind, as the trace reports it.

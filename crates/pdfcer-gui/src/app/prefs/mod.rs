@@ -149,11 +149,6 @@ pub const MAX_MAX_ZOOM_PERCENT: f32 = 1e12;
 
 /// Format a percentage for the preferences file without an exponent or a
 /// trailing `.0`.
-///
-/// `1e12` is what `f32::to_string` produces for a trillion, and a file the
-/// operator opens in a text editor should say `1000000000000`. The file is
-/// his to read and edit; a machine-shaped number there is a small rudeness
-/// with a real cost, because he cannot tell at a glance what he set.
 fn format_percent(value: f32) -> String {
     format!("{value:.0}")
 }

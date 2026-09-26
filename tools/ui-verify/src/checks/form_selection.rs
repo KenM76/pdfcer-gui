@@ -26,11 +26,6 @@ const PAGE: PageGeometry = PageGeometry {
 };
 
 /// The centre of the middle square (PDF user space, 80,80 → 120,120).
-///
-/// The **middle** one deliberately: it is furthest from every page edge, so a
-/// small error in the coordinate hop lands on paper rather than off-window,
-/// and the check fails with "selected nothing" rather than with "the click
-/// went outside the client area", which are different diagnoses.
 const ON_A_SQUARE: (f64, f64) = (100.0, 100.0);
 
 /// A point inside the form and outside every square (the gap between the first
@@ -68,22 +63,12 @@ impl Check for AClickInsideAFormSelectsWhatIsDrawnThere {
 }
 
 /// Resolve a fixture under the engine repository's synthetic corpus.
-///
-/// The path is derived, not configured. `D:\Dev\pdfcer` is READ-ONLY to this
-/// project and its corpus is the only place this shape exists, so the check
-/// reads from it and writes nowhere near it. `None` rather than a panic turns
-/// a missing corpus into a SKIP with a reason instead of a crash mid-suite.
 fn engine_fixture(rel: &str) -> Option<std::path::PathBuf> {
     let path = std::path::Path::new("D:/Dev/pdfcer/fixtures/synthetic").join(rel);
     path.is_file().then_some(path)
 }
 
 /// Run the sequence.
-///
-/// The three-way return is the SKIP/FAIL/PASS rule made structural: `Err` is a
-/// precondition that was absent (SKIP), `Ok(Some(_))` is an assertion that did
-/// not hold (FAIL), `Ok(None)` is a pass. An author who reaches for `?` gets a
-/// SKIP, which is the safe default — the unsafe default would be a pass.
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
     let vocab = &ctx.profile.vocab;
 
@@ -264,10 +249,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
 /// A page-space point, through the mapping and the window frame, to a desktop
 /// point.
-///
-/// Its own function so the two call sites cannot hop differently — the class of
-/// error `crate::coords` exists to prevent, and the one a literal screen
-/// coordinate always is.
 fn aim(mapping: &CanvasMapping, frame: &WindowFrame, point: (f64, f64)) -> Result<ScreenPoint> {
     let window = mapping.doc_to_window(DocPoint {
         page: 0,
@@ -278,12 +259,6 @@ fn aim(mapping: &CanvasMapping, frame: &WindowFrame, point: (f64, f64)) -> Resul
 }
 
 /// The `first=` value of the most recent `canvas-selection` line, if any.
-///
-/// The **last** line rather than a count of new ones. `canvas-selection` is
-/// emitted through `diag::trace_changed`, so a click producing the same
-/// selection as the previous one emits nothing — a consumer that counted lines
-/// would read a legitimate no-change as a dropped event. Reading the last line
-/// asks the question this check actually has: *what is selected now?*
 fn last_first(trace: &crate::trace::Trace) -> Option<String> {
     trace
         .last(SELECTION_EVENT)

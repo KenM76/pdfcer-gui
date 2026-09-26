@@ -117,3 +117,101 @@ everywhere: `ribbon::qat::shows_label` refuses to go icon-only unless the
 application can actually paint. See [`paint`]'s header — supplying a
 painter is what turns the ribbon from a row of text buttons into a
 ribbon.
+
+## Item notes
+
+### `fn every_icon_parses`
+
+This is the gate that makes the hand-rolled parser safe to rely on: a
+malformed or out-of-subset icon fails `cargo test` rather than
+shipping as a blank button. It walks [`Icon::ALL`], which is why
+`catalog::tests::all_is_exhaustive_and_free_of_duplicates` exists —
+a variant missing from `ALL` is not merely untested, it is *silently*
+untested.
+
+### `fn fill_is_semantic_and_the_set_that_uses_it_is_closed`
+
+A future "style cleanup" must not quietly turn redaction's honest
+solid bar into an outline, and no other icon may drift into being
+filled. The fill is semantic, not decorative: every other tool in
+this application draws or measures, and this one obliterates.
+
+It is also the pipeline's only coverage of the fill path, so an
+"audit" that outlined it would silently delete a test as well as a
+meaning.
+
+**The assertion is membership of a NAMED SET with a reason per
+member**, not `icon == Icon::Redact`. The rule it enforces is *fill is
+semantic, never decorative*, and the black-arrow / white-arrow pair is
+the purest available instance of it: `cursor` and `cursor-node` have
+**byte-identical outlines** and differ only in fill, and that difference
+has meant "the whole object" versus "the points inside it" in every
+vector editor since Illustrator 88. An audit that outlines any member of
+the set deletes a meaning as well as a test.
+
+### `const FILLED`
+
+- [`Icon::Redact`] — every other tool draws or measures; this one
+  obliterates.
+- [`Icon::Cursor`] — the filled half of the arrow pair. Its hollow
+  twin is the ONLY thing distinguishing the two tools.
+- [`Icon::CursorNode`] — the hollow arrow, plus one filled anchor
+  square among three outlined ones, which says *this is the point
+  you picked* in the same language `canvas::overlay` draws on the
+  page itself.
+- [`Icon::RedactSelection`] and [`Icon::ApplyRedactions`] —
+  **they inherit the reason rather than extending it.** Both are
+  members of the redaction family, both draw the
+  same solid bar [`Icon::Redact`] draws, and both act on the same
+  irreversible thing. An outline-only redaction glyph understates a
+  feature that removes content permanently, and that argument does
+  not weaken because the command is scoped to a selection or is the
+  apply step. Adding them was a decision, not a formality: the
+  honest alternative was to outline these two and leave the fill to
+  the parent tool, and it was rejected because it would make the
+  family's most destructive member — Apply, the one that cannot be
+  undone — the palest picture of the three.
+
+### `const DELIBERATELY_ALIKE`
+
+- The **magnifier family**. `zoom-in`, `zoom-out` and `zoom-region`
+  share a lens because they are three aims of one act, and every
+  application that has ever had a zoom control draws them that way.
+  Their whole distinction is the mark inside the lens, which is a
+  few pixels at 16 px by construction. ⚠ `zoom-out ~ zoom-in`
+  measures **0.103**, which is genuinely tight — it is recorded here
+  rather than smoothed away, and if the operator ever reports that
+  the two zoom buttons are hard to tell apart, this line is the
+  evidence that it was known and where to look.
+- The **arrow-leaves-container family**. `upload` (worn by
+  `insert-pages` and `import-form-data`) and `export` both show
+  content crossing a boundary, because both commands move data
+  across the document's edge. They differ in direction, which is the
+  distinction that matters and is the one an operator reads.
+
+### `fn crlf_line_endings_parse_identically`
+
+The assets are ordinary text files, so a repository with
+`* text=auto` converts them to CRLF on checkout under
+`core.autocrlf=true` — which means the `&'static str` every
+`include_str!` in [`assets`] produces gains a `\r` before every `\n`
+on a fresh clone, on a machine that has never built this tree before.
+
+SVG is text and CRLF is harmless *provided* the scanner treats `\r`
+as a separator everywhere `\n` is one. This pins that: the same asset
+with every line ending doubled must produce identical geometry AND an
+identical raster, so a fresh clone on a machine with autocrlf on
+cannot ship blank icons.
+
+### `fn every_command_icon_key_exists_in_the_catalogue`
+
+This is the mismatch that puts blank boxes back in the ribbon, and it
+is invisible to the compiler: `Command::with_icon` takes a `String`,
+so a key with no glyph is a perfectly well-typed program that draws a
+slashed box where an operator expects a control.
+
+The check is done against the real command registry rather than
+against a hand-maintained list, because a hand-maintained list is one
+more thing to forget to update — and forgetting it would make this
+test pass while the ribbon was wrong, which is worse than not having
+it.

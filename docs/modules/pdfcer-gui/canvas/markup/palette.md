@@ -107,3 +107,44 @@ bytes are the code, which is the behaviour.
   the markup palette would be the exact conflation that rule forbids.
 * **A redaction colour.** `cRedact` is likewise present and likewise not
   markup; `crate::text::redact` owns that surface and its own vocabulary.
+
+## Item notes
+
+### `fn every_shipped_default_is_one_click_away_in_the_grid`
+
+The property that makes the palette a palette rather than a decoration:
+an operator who changes the highlighter to red and wants it back must be
+able to click the value it shipped with. If a default is not in the grid
+there is no way back to it except by remembering three numbers and typing
+them into the full picker — which is the state a "restore defaults" bug
+report describes.
+
+⚠ Note which cell is load-bearing here, because it is not the obvious
+one: [`CLASSIC_YELLOW`] is **not** a default any more (the highlighter
+ships at [`HIGHLIGHTER_ORANGE`]), so removing the yellow row would not
+fire this. The cells this test actually protects are the five a slot
+ships at.
+
+Falsified by changing [`ACROBAT`]'s orange cell to `[254, 98, 0]` — one
+byte off the highlighter's default: the assertion fired naming
+`Highlighter`. Restored.
+
+### `fn each_constant_is_the_registry_value_it_claims_to_be`
+
+This is the test that keeps the module header honest. The header claims
+each byte triple is the registry's float triple; a typo in either would
+make the claim false and nothing else would notice, because a wrong-but-
+plausible red still looks like a red.
+
+The tolerance is a **half a byte** — the largest error a correct
+conversion can have — so a value that is one byte out fails.
+
+Falsified by changing [`UNDERLINE_BLUE`]'s green from 115 to 116: the
+assertion fired on the `cUnderline` row. Restored.
+
+### `type Reading`
+
+A named type because the tuple is three unrelated things and clippy
+is right that an inline `[([u8; 3], (f64, f64, f64), &str); 7]` is
+unreadable — but the *shape* is the point of the test, so it is named
+rather than simplified away.

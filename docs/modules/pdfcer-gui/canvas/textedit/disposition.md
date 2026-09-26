@@ -112,3 +112,62 @@ module does not pretend otherwise: it answers `Reflow` and records
 than a claim. Widening it would need a block-relative or margin-relative
 signal that `pdfcer-core` does not publish, and inventing one here would be
 the shell deciding a question the engine owns.
+
+## Item notes
+
+### `fn a_rotated_ctm_is_not_upright_even_with_an_upright_text_matrix`
+
+The case a `Tm`-only guard would miss, and the one that matters most
+here: a landscape CAD plot rotates the whole content stream with one
+`cm`, leaving every `Tm` on the page reading as identity. A guard that
+looked only at the text matrix would answer "upright" for every glyph on
+such a sheet and the defect would survive the fix intact.
+
+### `fn a_rotated_run_pins_regardless_of_alignment`
+
+The rung-order assertion. It is written against `None` and against a
+real left-aligned detection in `the_engines_own_findings_drive_the_choice`,
+so a future edit that moved the alignment test above the rotation test
+fails here by name rather than by producing a subtly displaced tail on a
+document nobody re-opens.
+
+### `fn an_unresolvable_block_is_an_undetectable_alignment_and_not_a_left_one`
+
+Both answer `Reflow`, so the disposition alone cannot tell them apart —
+which is why [`Reason`] exists and why this asserts the *reason* rather
+than only the disposition.
+
+### `fn a_line_made_of_several_pieces_pins_over_a_left_alignment`
+
+The failure it forbids is concrete: a SolidWorks parts table writes one
+show operator per cell, and every cell is left-flush, so the alignment
+detector answers `Left` and `LeftAligned` reflows. Under `Reflow` the
+engine adds `ΔA` to the `e` of every following absolute `Tm` in the text
+object — so widening `PART` to `PARTS` slides `DESCRIPTION` and `QTY`
+sideways. **Content the operator did not touch, moved by an edit that did
+not mention it.**
+
+Written against a real left-aligned *detection* rather than against
+`None`, because `None` would pass on a build where the rung sat below
+alignment: `AlignmentUndetectable` also reflows, so only a positive
+`Left` finding can prove the rung order.
+
+### `fn rotation_outranks_the_multi_run_rung`
+
+Both pin, so the *disposition* cannot tell them apart — which is exactly
+why `Reason` exists and why this asserts the reason. A reader who sees
+`Rotated` is being told the sharper fact: a follower shift computed in
+user-space x on a rotated baseline is wrong in a way that has nothing to
+do with how many pieces the line has.
+
+### `fn the_fallback_is_byte_identical_to_what_the_old_shell_passed`
+
+This is the assertion that says the rule adds a decision rather than
+changing one: an upright, left-aligned or unclassifiable run commits with
+exactly the options `EditOptions::default()` carries.
+
+### `fn pins_the_tail_agrees_with_the_disposition_for_every_reason`
+
+An arithmetic-identity test: two derived facts about one value, asserted
+to agree, rather than a comment asking the next reader to keep them in
+step.

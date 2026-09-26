@@ -299,11 +299,6 @@ mod tests {
     }
 
     /// The engine's wording passes through UNCHANGED.
-    ///
-    /// No prefix, no suffix, no rewording. A shell that decorated the engine's
-    /// refusal would be maintaining a second copy of a taxonomy that moves - and
-    /// this variant exists because two of this file's own hand-written refusals
-    /// went stale within an hour of being written.
     #[test]
     fn an_engine_refusal_is_passed_through_verbatim() {
         let engine = "a signed signature field cannot be copied";

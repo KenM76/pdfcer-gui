@@ -93,3 +93,20 @@ incremental update from rewriting the base revision, so the original `Tm` is
 still in the first `source.len()` bytes of *every* build's output. A scan
 over the whole file answers "unmoved" for a correct build and a broken one
 alike.
+
+## Item notes
+
+### `const MODE`
+
+`edit.text` is gated on `Capabilities::edit_content`, which the shipped
+manifest gives to Edit alone — and the application opens in **Read** (its
+remembered default), so a check that did not switch would be measuring the
+mode gate rather than the tool. That is exactly what this check's first run
+did: `command-declined id=edit.text reason=mode-cannot-edit-content`.
+
+### `const AIM`
+
+The middle of `REVISION B`, which the generator reports as spanning
+x = 431.31…500.00 at y = 700 on a 612 x 792 page. Written as fractions
+because `crate::checks`' rules allow a check only `DocPoint` and `FracRect`
+literals — a screen coordinate would be a number about this machine.

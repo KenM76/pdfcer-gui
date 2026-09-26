@@ -42,3 +42,13 @@ every other assertion here and fails this one.
 It is the same shape as `pages_drag`'s caret-versus-gap cross-check, and for
 the same reason: two values that are *supposed* to describe one thing are
 exactly the pair a refactor separates.
+
+## Item notes
+
+### `const MODE`
+
+**Read**, deliberately, and it is an assertion rather than a convenience.
+An export reads the document and writes elsewhere, so there is no mode in
+which it should be refused — and a reading stance exporting a drawing is
+exactly what a reading stance is for. If a capability gate ever creeps onto
+this command, this is where it shows up.

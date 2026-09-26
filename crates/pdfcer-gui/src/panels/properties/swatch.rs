@@ -36,11 +36,6 @@ pub(super) enum Value {
 const NO_PARTICULAR_COLOUR: [u8; 3] = [0, 0, 0];
 
 /// The width of the swatch, as a multiple of the row height.
-///
-/// Wider than tall, which is what a colour *swatch* looks like everywhere
-/// this operator works — Word's font-colour button, Illustrator's fill chip,
-/// SolidWorks' line-colour control. A square reads as a button with a coloured
-/// glyph; a bar reads as a sample of the colour itself.
 const ASPECT: f32 = 1.7;
 
 /// One frame of the control. `Some(rgb)` **only** on the frame the picker
@@ -395,13 +390,6 @@ pub(crate) fn show_mk(
 }
 
 /// A round swatch, for a control whose background the engine fills as a circle.
-///
-/// Hand-drawn rather than a `Button` with a rounded corner radius, because a
-/// rounded rectangle at this size reads as a button with a tint and the point
-/// of the shape is that the operator sees a **disc** — the thing a radio
-/// button's background will actually be. It keeps the button's own interaction
-/// (a click opens the popup) by allocating an interactive rect of the same size
-/// and painting into it.
 fn disc(ui: &mut Ui, size: egui::Vec2, fill: egui::Color32) -> egui::Response {
     let (rect, response) = ui.allocate_exact_size(size, egui::Sense::click());
     if ui.is_rect_visible(rect) {
@@ -420,13 +408,6 @@ fn disc(ui: &mut Ui, size: egui::Vec2, fill: egui::Color32) -> egui::Response {
 }
 
 /// The picker's in-progress value, across the frames it is open for.
-///
-/// In `egui`'s temp data rather than on a draft struct, and that is a
-/// deliberate difference from [`super::text::TextStyleDraft`]. A draft holds a
-/// *reading of the document*, which has to be invalidated when the document
-/// moves; this holds *where the operator's finger is*, which is meaningless the
-/// moment the popup closes and must never outlive it. Storing it beside the
-/// document reading would invite a stale finger position to be read as a value.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct Editing {
     /// The colour the picker is showing right now.
@@ -447,11 +428,6 @@ mod tests {
     use super::*;
 
     /// **The mixed state must not carry a colour.**
-    ///
-    /// The one assertion this type exists for. If [`Value`] ever gained a way
-    /// to represent "mixed, and here is a colour anyway", the next caller would
-    /// pass the first member's — which is precisely the flattening O89 refused
-    /// to ship, and it would look completely normal while it happened.
     #[test]
     fn mixed_carries_no_colour() {
         // A compile-time fact asserted at runtime, because the thing being

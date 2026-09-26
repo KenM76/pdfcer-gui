@@ -40,3 +40,18 @@ advocacy. What they cannot see is what is being dropped: a revision history
 they may never have known was there, and signatures whose invalidation shows
 up in somebody else's reader rather than in this one. Rule 4's surviving
 half, applied to a save.
+
+## Item notes
+
+### `fn a_tidy_file_is_told_it_is_tidy`
+
+The failure this guards is *"this will save 0 KB"*, which is accurate and
+reads as the feature failing. It is also the case a rewrite can come out
+LARGER — §7.5.4's table pays for gaps in object numbering — so a sentence
+built from a subtraction would underflow or print a negative saving.
+
+### `fn the_signature_warning_says_it_is_irreversible`
+
+Every other disclosure in this shell describes something an operator can
+undo or redo. This one cannot, and the word that says so is the whole
+difference between a warning and a note.

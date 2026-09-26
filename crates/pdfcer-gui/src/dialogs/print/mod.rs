@@ -53,16 +53,6 @@
 //!   not surfaced. **GAP.**
 
 /// **Where a rendered sheet actually carries ink** — operator request O113.
-///
-/// Split out of [`preview`] rather than added to it, at the seam between
-/// *"what do these pixels say"* and *"how is the preview painted"*. The first
-/// is pure arithmetic over a byte slice and is fully testable with no GUI at
-/// all; the second needs an `egui::Ui`. Keeping them in one file would have
-/// put a page of pixel-threshold reasoning in the middle of a painting
-/// routine and pushed `preview.rs` toward R2's 1500-line ceiling.
-/// **Which sheet the pages want** — operator request O167, 2026-09-10. Pure
-/// arithmetic over the driver's form list and the job's rotated page extents,
-/// separated from the dialog because it is the half a unit test can drive.
 mod autopaper;
 pub(crate) mod ink;
 pub(crate) mod layout;
@@ -105,12 +95,6 @@ mod commit;
 /// **The dialog projected back into the preferences file** —
 /// `OPERATOR_REQUESTS.md` **O166**, his words of 2026-09-10: *"the printer
 /// dialogue box needs to remember our last settings."*
-///
-/// Two functions, and they are here rather than beside [`commit`] (which is
-/// what calls them) because the judgement they encode is a different
-/// subject: *which* of this window's twenty controls describe the operator
-/// rather than the document. See [`crate::app::prefs::printing`] for the
-/// rule and the argument for every inclusion and every omission.
 mod remembered;
 
 /// **Poster printing** — O238: one page across many sheets, as Acrobat does.
@@ -730,28 +714,6 @@ impl PrintDialog {
     }
 
     /// Draw one frame of the dialog. Returns `false` when it should close.
-    ///
-    /// Everything the job depends on is recomputed here, every frame, from
-    /// the operator's current answers — there is no cached plan that could
-    /// describe a different job from the one the preview is showing. That is
-    /// affordable because planning is arithmetic over a page-size list; the
-    /// two things that are *not* affordable per frame (enumerating printers,
-    /// asking a driver about duplex) are the two that are not done here.
-    /// This dialog's window: what it is called, how big it opens, and the
-    /// floor it may not be dragged below.
-    ///
-    /// Built fresh each frame and owning nothing — the position the operator
-    /// drags it to lives in `egui::Memory`, keyed on the id string. See
-    /// [`crate::dialogs::host`]'s header for why that is what let the other
-    /// thirteen dialogs be converted in one line each.
-    ///
-    /// The size argument is unchanged and carried verbatim from the
-    /// `egui::Window` this replaced. The floor is not a preference:
-    /// `resizable` with no minimum lets the operator drag the window down to a
-    /// title bar and a scrollbar, which is a state with no way back except
-    /// closing it — and closing this dialog discards the job they were
-    /// configuring. 520 x 380 is the smallest size at which one column and
-    /// both scrollbars are still usable.
     fn host() -> crate::dialogs::host::Host {
         crate::dialogs::host::Host::new(
             "print", // ui-text-exempt: a viewport key, never displayed.
@@ -1049,38 +1011,6 @@ impl PrintDialog {
     }
 
     /// Re-read everything that belongs to the selected device.
-    ///
-    /// See [`Self::features_for`] for the defect this closes: the old shell
-    /// read capabilities only for the *initially* selected device and never
-    /// again, while letting the operator change printer, so a duplex control
-    /// could survive onto a simplex device and produce a job that came out
-    /// single-sided with nothing to say why.
-    ///
-    /// Called once per **change of selection**, never per frame: three of the
-    /// four things it does open a device context, and doing that sixty times
-    /// a second while a dialog sits open would be rude to a service other
-    /// applications share.
-    ///
-    /// # Two things are DROPPED here, for two different reasons
-    ///
-    /// **The configuration**, because a `DEVMODE`'s private tail is one
-    /// driver's private format and handing it to another device is undefined
-    /// rather than degraded. The engine refuses it by name; dropping it here
-    /// means the refusal is never reached.
-    ///
-    /// **The paper choice**, and this one is subtler and worth stating in
-    /// full. [`PaperChoice::Form`] holds a `dmPaperSize` integer, and those
-    /// are only standard up to a point: the low ids are Win32 constants
-    /// (`DMPAPER_LETTER` is 1, `DMPAPER_A3` is 8), but everything a vendor
-    /// defines lives above `DMPAPER_USER` and means whatever that one driver
-    /// says. Carrying `Form(257)` from an EPSON to a plotter would silently
-    /// request a different sheet under the same number — no error, no
-    /// mismatch, just the wrong paper. It resets to
-    /// [`PaperChoice::DeviceDefault`], which is the only value that means the
-    /// same thing on every device.
-    ///
-    /// A failed read of either falls back to the safe direction: no features
-    /// (so no duplex control) and no forms (so no paper list).
     fn refresh_device(&mut self) {
         if self.features_for == Some(self.selected) {
             return;
@@ -1130,35 +1060,6 @@ impl PrintDialog {
     }
 
     /// **The device settings a job is actually planned and spooled with.**
-    ///
-    /// Identical to [`Self::device`] in every respect but one: a `paper` of
-    /// [`PaperChoice::AutoFromPages`] is replaced by whatever
-    /// [`Self::auto_paper`] resolved it to this frame — a concrete
-    /// [`PaperChoice::Form`] when a sheet was chosen, or
-    /// [`PaperChoice::DeviceDefault`] when there was no basis for one.
-    ///
-    /// # Why the resolution is a function and not an assignment
-    ///
-    /// Because [`Self::device`] is what the **operator** chose and it must
-    /// survive. Collapsing `AutoFromPages` into `Form(9)` in place would mean
-    /// the combo stopped reading *"Match the pages in this document"* the
-    /// instant it was chosen: the operator would pick auto, watch the control
-    /// jump to "A4", and have no way to tell whether pdfcer had matched the
-    /// pages or simply ignored them. Worse, opening a second document in the
-    /// same session would then print on the first document's sheet under a
-    /// label that named no policy at all.
-    ///
-    /// So the choice is stored once and resolved on every read. The cost is a
-    /// struct copy per frame; the property bought is that *the control always
-    /// says what the operator asked for and the job always uses what pdfcer
-    /// worked out*, and neither can drift into the other.
-    ///
-    /// # Callers, and why there must be no others
-    ///
-    /// Three: [`Self::show`] (which plans with it), [`Self::commit`] (which
-    /// spools with it), and [`Self::trace_plan`] (which reports it). Any
-    /// fourth site reading `self.device` for a paper value is a site that can
-    /// hand `AutoFromPages` to something that has no meaning for it.
     fn effective_device(&self) -> DeviceSettings {
         let mut device = self.device;
         if device.paper == PaperChoice::AutoFromPages {
@@ -1168,33 +1069,6 @@ impl PrintDialog {
     }
 
     /// Open the driver's own properties dialog and keep what it produces.
-    ///
-    /// Runs **after** the window's closure has returned — see
-    /// [`Self::properties_requested`] for why a nested modal message loop
-    /// cannot be started from inside an egui layout pass.
-    ///
-    /// # What happens to the three outcomes
-    ///
-    /// | outcome | effect |
-    /// |---|---|
-    /// | accepted | the configuration is stored, and the paper combo adopts whatever sheet it names |
-    /// | cancelled | **nothing at all** — no message, no state change. The operator declined |
-    /// | refused | [`Self::properties_error`] is set and shown; whatever configuration was already held survives |
-    ///
-    /// # Why the paper combo follows the driver's dialog
-    ///
-    /// Because otherwise two surfaces describe the same job differently. An
-    /// operator who picks A3 in the driver's dialog and returns to a combo
-    /// still reading *"From the printer's own settings"* has been told
-    /// something false by a control they can see, about a setting they just
-    /// changed. Adopting the id makes the combo a report of the truth rather
-    /// than a competing claim — and because the engine amends rather than
-    /// replaces, asserting the same value changes nothing about the job.
-    ///
-    /// A configuration naming a **custom** sheet has no id to adopt, so the
-    /// combo stays on `DeviceDefault` — which is correct: `DeviceDefault`
-    /// asserts no paper, so the configuration's own custom sheet stands. The
-    /// disclosure line reports it rather than the combo.
     fn open_properties(&mut self, parent: Option<isize>) {
         let Some(printer) = self.printers.get(self.selected).map(|p| p.name.clone()) else {
             return;
@@ -1237,10 +1111,6 @@ impl PrintDialog {
     }
 
     /// Turn the operator's answers into a [`JobSpec`].
-    ///
-    /// The custom scale is materialised here rather than stored live, so the
-    /// percentage spinner can be edited while some other sizing mode is
-    /// selected without the mode changing under the operator's hand.
     fn job_spec(&self, page_sizes: &[(f64, f64)], current_page: usize) -> JobSpec {
         let mode = match self.scale {
             _ if self.poster.on => ScaleMode::Custom(poster::plan_scale(self.poster)),
@@ -1265,23 +1135,6 @@ impl PrintDialog {
     }
 
     /// The options column: the printer, then one of three tabs.
-    ///
-    /// # The printer selector is OUTSIDE the tabs, always visible
-    ///
-    /// It is not a setting like the others — it is the thing that decides
-    /// which of the others exist. [`Self::features`] is read from the selected
-    /// device and gates the duplex radios (R83), so a tab that could hide the
-    /// printer name would let the operator change device, watch controls
-    /// appear and disappear, and have no way to see what they had changed it
-    /// to without going looking.
-    ///
-    /// # The tab strip reuses the ribbon's widget, deliberately
-    ///
-    /// `egui::Button::selectable` plus a bold weight on the active one is what
-    /// the ribbon already draws for its own tabs. Inventing a different tab
-    /// affordance for the second tabbed surface in the application would teach
-    /// the operator that "tab" looks like two different things. The bold
-    /// weight is not decoration: R84 forbids state carried by colour alone.
     fn options_column(
         &mut self,
         ui: &mut Ui,
@@ -1388,8 +1241,4 @@ impl PrintDialog {
 }
 
 /// The page size assumed for a job that plans no pages.
-///
-/// Mirrors `pdfcer_print::US_LETTER_PORTRAIT_PT`. Such a job spools nothing, so
-/// the value never reaches paper; it exists so the commit path carries no
-/// `Option` for a case that cannot print.
 const US_LETTER_PORTRAIT_PT: (f64, f64) = (612.0, 792.0);

@@ -43,3 +43,68 @@ for the second feature in a row.
 A click on a comment pop-up is resolved **before** the ladder and returns,
 rather than being a rung: it is a click on a floating surface the shell drew
 over the page, not a click on the page.
+
+## Item notes
+
+### `struct CycleCursor`
+
+# What this closes
+
+The operator, 2026-08-26: *"when I click on one of the objects all I get is
+the page selected."* The engine already computed the whole front-to-back
+list of what a click is over; this shell took the first entry and discarded
+the rest, so anything underneath anything was unreachable at every point,
+for ever.
+
+`Alt`+click at the same place now steps one deeper each time and wraps —
+which is Illustrator's *Select Behind* (`Ctrl`+click there) and Figma's
+deep-select, the two conventions for exactly this.
+
+# Why it resets on pointer travel, and why the threshold is generous
+
+A depth is only meaningful *at a point*: three clicks in three different
+places are three first clicks, not a walk into a stack. So the cursor
+remembers where it was established and resets when the pointer has moved
+away from there.
+
+[`CYCLE_RESET_PTS`] is the radius. It is deliberately larger than a pixel:
+an operator holding `Alt` and clicking repeatedly does not hold the mouse
+perfectly still, and a one-pixel threshold would silently restart the cycle
+on the second click and make the feature look broken in the most confusing
+possible way — it would work, sometimes, depending on how steady their hand
+was.
+
+### `fn cycle_depth`
+
+`alt` is the operator asking to go deeper. Without it the cursor is reset,
+so an ordinary click always lands on the front-most candidate — which is
+what makes this feature invisible to anyone not using it.
+
+### `fn text_under`
+
+# The one question that keeps the Read-mode image arm off a scan
+
+Added 2026-09-01 on the operator's report — *"I can't seem to copy and paste
+text we have OCRed"* — hours after the image arm shipped. That arm was
+narrowed to images because a CAD sheet has a path under the pointer almost
+everywhere and allowing paths would have made text unreachable. The case it
+did not anticipate is the one where the narrowing does not help at all: **a
+scanned page IS one image**, edge to edge, so every click hits it, and an OCR
+layer is invisible text lying exactly on top of it.
+
+⇒ The document class where selecting text matters most was the one where the
+arm swallowed it.
+
+## Asked of the SAME `PageText` the sweep would use
+
+Not of a second extraction and not of a cached copy taken elsewhere. Two
+extractions under two configurations segment differently, so a second
+opinion here would produce a click that takes the image and a drag that
+takes text — from one pixel, with nothing on screen to explain it.
+
+## Absent page text answers `false`, which yields to the image
+
+That is the honest direction. `page_text` is `None` before the extraction has
+run for this page; treating "I do not know yet" as "there is text here" would
+make the image unclickable for the first frames after a page turn, which is
+the flicker an operator reports as *"sometimes it does not work"*.

@@ -66,10 +66,6 @@ pub fn release(ctx: &egui::Context) {
 }
 
 /// The published owner, if it still holds egui's keyboard focus.
-///
-/// The identity test the module header argues for, in one place because two
-/// callers need it: [`claim`], and [`owns_focus`] for the surfaces that have to
-/// stand aside from a key the ring is about to read.
 fn owner(ctx: &egui::Context) -> Option<Owner> {
     let owner = ctx.data(|d| d.get_temp::<Owner>(Id::new(OWNER_KEY)))?;
     (ctx.memory(|m| m.focused()) == Some(owner.id)).then_some(owner)

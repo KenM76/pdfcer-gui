@@ -57,3 +57,29 @@ The remaining seven fall to a catch-all carrying the engine's own message,
 which is the posture `annots::refusal_for` argues at length: a catch-all
 that says *the page is exactly as it was* is honest, where a catch-all that
 shrugged would not be.
+
+## Item notes
+
+### `fn import`
+
+# Errors are worded, never dropped
+
+Three of them: the file cannot be read, its bytes are not UTF-8, and the
+engine refused. All three reach the status row, because a File ▸ Import that
+does nothing and says nothing is this project's founding defect wearing a
+different hat.
+
+### `fn disclosures`
+
+Ordered by what an operator would act on, not by the struct's field
+order. The count of pages comes first because it is the answer to *"did that
+work?"*; the undo warning comes second because it is the only one with a
+deadline on it; the six judgements follow, and the engine's self-check is
+last because it is a defect report rather than a disclosure and should not
+be read as one of the six.
+
+### `fn refusal_for`
+
+See the module header for why exactly three are named. The catch-all carries
+the engine's own message rather than a shrug, which is
+`annots::refusal_for`'s posture and its argument applies here unchanged.

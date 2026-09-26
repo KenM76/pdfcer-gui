@@ -169,3 +169,11 @@ is ~11 s of UI-thread work, spread one page per frame with the window
 repainting between each. It is a slow grid, not a frozen one, and it was
 **precisely the thing the old rule bought by unticking the box**. The box
 is how the operator buys it back.
+
+## Item notes
+
+### `fn default`
+
+`#[derive(Default)]` would give `on: false`, a build that draws nothing
+and says nothing about why. That is the kind of default only ever
+discovered by an operator.

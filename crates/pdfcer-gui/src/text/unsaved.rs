@@ -25,6 +25,8 @@
 //! [`crate::dialogs::unsaved`]'s header — and the note under the buttons exists
 //! to make sure nobody presses the first button believing something false about
 //! which file their work ended up in.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/text/unsaved.md`.
 
 /// The window title.
 ///
@@ -243,10 +245,6 @@ mod tests {
     }
 
     /// No button says "Save", and no sentence says "changes".
-    ///
-    /// Both halves of this module's header, mechanised. The first is the more
-    /// important: a *Save* label here would be a claim that the open file is
-    /// written, and this build cannot write it.
     #[test]
     fn nothing_promises_a_save_this_build_cannot_do() {
         // The predicate is **"if it says Save, it must say what it saves"**,
@@ -317,11 +315,6 @@ mod tests {
     }
 
     /// The three questions each name what will happen to the OPEN document.
-    ///
-    /// Asserted on the shared property rather than on the wording, because the
-    /// wording will change and the property must not: an operator who pressed
-    /// Open must be told that opening closes what they have, which is the fact
-    /// they are missing.
     #[test]
     fn every_question_says_the_open_document_is_going_away() {
         assert!(question_close().contains("Close"));

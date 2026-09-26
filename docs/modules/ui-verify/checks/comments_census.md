@@ -102,3 +102,11 @@ states it on screen; since the same day it states it on the trace as
 comparing it. A narrowed list is not a census of the document, and reading
 one as though it were is exactly how a check reports a document as having
 lost annotations it still has.
+
+## Item notes
+
+### `const MODE_CHANGED_EVENT`
+
+Not the shell's `ribbon-mode-selected`, which says a segment was pressed.
+The distinction matters here: the anchor has to be the moment the dock this
+check reads was rearranged, not the moment the click landed.

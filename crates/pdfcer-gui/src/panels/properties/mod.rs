@@ -31,18 +31,9 @@ pub mod annotdelete;
 pub mod choiceopts;
 /// The **selected ce dimension's** own properties — a contextual section
 /// drawn above this panel's object form.
-///
-/// It makes this panel's founding premise false and says so: the ui-spec's
-/// *"nothing else competed for the word Properties"* stopped holding the day a
-/// canvas selection became a second claimant on it. Its own header carries the
-/// argument for broadening this panel's purpose rather than inventing a ninth.
 mod dimension;
 /// **The Tool panel's disclosure block, re-homed** —
 /// `OPERATOR_REQUESTS.md` O123.
-///
-/// The 47-word refusal sentence that has never been readable needed a surface
-/// whose width is decided before its body draws. The status bar is not one
-/// (R128), and its own header checks that rather than assuming it.
 mod disclose;
 /// The **face chooser**, which is one control drawn on two surfaces — this
 /// panel's [`text`] section and the ribbon's Format ▸ Font group in
@@ -75,10 +66,6 @@ pub mod geometry;
 // this panel keeps because of it.
 /// Restyling a markup that is already on the page — colour, line width and
 /// opacity, through `EditSession::set_markup_style`.
-///
-/// Its header carries why this is the PANEL rather than the Format tab
-/// (`RIBBON_IA.md` §5.8) and why every control raises one action carrying one
-/// field.
 mod markup;
 /// **One colour control, three honest states** — a swatch, an
 /// indeterminate swatch, and nothing at all over an ink pdfcer will not
@@ -268,11 +255,6 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
 }
 
 /// The panel's sections, inside the scroll area [`body`] wraps them in.
-///
-/// Split out so the scroll area is impossible to forget: a section added to
-/// this function is inside it by construction, where a section appended to
-/// `body` after the `.show(..)` call would silently be outside it again — which
-/// is the defect this arrangement exists to make unwritable.
 fn body_sections(
     ui: &mut egui::Ui,
     doc: &OpenDoc,
@@ -468,30 +450,6 @@ fn body_sections(
 }
 
 /// The focused page object's read-only facts.
-///
-/// `something_drew` is passed rather than re-derived so this function knows
-/// whether the panel is already saying something — see the *nothing focused*
-/// arm.
-///
-/// The parameter is named `something_drew` and not after any one section: it
-/// carries a disjunction of every section above, and a name that points at one
-/// of them is a trap for the next reader.
-///
-/// # It returns whether it DREW, and nothing reads that
-///
-/// `true` on the two paths that draw property rows, `false` on both early
-/// returns **including** the *nothing is selected* label — that sentence draws,
-/// but it is not a description of a selection.
-///
-/// This is the last thing in the panel, so the value is bound to `_drew_object`
-/// at the call site rather than deleted: the distinction it encodes is real, it
-/// is one line, and the next section appended here will want it. Deleting it
-/// leaves the next author to rediscover that *"nothing is selected"* must not
-/// count as having spoken.
-/// **No `PanelsState`**, deliberately. Taking one to read a panel-local
-/// `focus` is what the read below replaces; the absent parameter is what keeps
-/// a future reader from wiring panel-local state back in without noticing they
-/// are recreating it.
 fn object_section(ui: &mut egui::Ui, doc: &OpenDoc, something_drew: bool) -> bool {
     // **THE CANVAS SELECTION**, and never a panel-local focus.
     //
@@ -614,11 +572,6 @@ fn object_section(ui: &mut egui::Ui, doc: &OpenDoc, something_drew: bool) -> boo
 
 /// The region [`object_section`] publishes when it has drawn an object's
 /// properties — `OPERATOR_REQUESTS.md` O75.
-///
-/// Published only on the frames it draws, so its ABSENCE is evidence that
-/// the panel is not describing a selection. That is the distinction the row is
-/// about, and without a region a driven check could only observe the document
-/// section being present — which it always was.
 const REGION_OBJECT: &str = "properties.object"; // ui-text-exempt: trace region name, never displayed
 
 /// The panel's field list, as `(label, value)` pairs in display order.
@@ -747,15 +700,6 @@ mod tests {
 
     /// **The four facts `RIBBON_IA.md` §5.8 commissions this panel for are
     /// all present.**
-    ///
-    /// > the read-only facts (winding rule, node count, embedded-font
-    /// > status, exact geometry) that belong beside the Objects panel's
-    /// > inventory rather than in a ribbon band
-    ///
-    /// Three of them are on a path and the fourth is on text, so the check
-    /// takes two objects. This is the panel's acceptance criterion, and it
-    /// is the one a later refactor is most likely to erode a field at a
-    /// time.
     #[test]
     fn the_four_commissioned_facts_are_all_reported() {
         // Winding rule, node count, exact geometry — on a filled path.
@@ -777,11 +721,6 @@ mod tests {
 
     /// **A field is omitted when the object has no such property, and
     /// present-but-unstated when it has one the file does not give.**
-    ///
-    /// The distinction the panel's whole legibility argument rests on. A
-    /// path has no font — the row must not exist. An object with no finite
-    /// bounds *has* a position the file does not state — the row must exist
-    /// and say so, or the operator is left to notice an absence.
     #[test]
     fn an_absent_property_is_omitted_and_an_unstated_one_says_so() {
         let path = describe(b"10 10 80 80 re f");
@@ -803,11 +742,6 @@ mod tests {
 
     /// **A path that paints nothing reports no colour, and does not invent
     /// one.**
-    ///
-    /// Its fill colour is default black and appears nowhere on the page.
-    /// Printing it would be a confidently wrong answer about a real,
-    /// addressable object — the exact class of error the panel exists to
-    /// avoid.
     #[test]
     fn a_no_paint_path_reports_no_colour_at_all() {
         let clip = describe(b"10 10 80 80 re n");
@@ -823,10 +757,6 @@ mod tests {
     }
 
     /// **A stroke-only path reports the STROKE colour.**
-    ///
-    /// The one-description rule at work: the resolution happens once, in
-    /// `describe_object`, so this panel and the Objects row cannot name
-    /// different colours for one object.
     #[test]
     fn a_stroked_path_reports_the_colour_a_viewer_sees() {
         let stroked = describe(b"1 0 0 RG 0 0 1 rg 2 w 10 10 m 90 90 l S");
@@ -840,15 +770,6 @@ mod tests {
     }
 
     /// **An ambiguous font name is disclosed, never resolved.**
-    ///
-    /// The join is by `/BaseFont`, and a name is not a key. Two dictionaries
-    /// with one name need not agree about embedding, so pdfcer declines —
-    /// because a confidently wrong "Yes" is indistinguishable from a right
-    /// one, which makes this the one field on the panel that could mislead
-    /// silently.
-    ///
-    /// Driven through a real inventory rather than a hand-built one, so the
-    /// `/BaseFont` values are the ones a document actually produces.
     #[test]
     fn the_embedded_font_join_declines_when_the_name_is_not_a_key() {
         let path = engine_fixture("text/subset-simple-embedded.pdf");
@@ -887,11 +808,6 @@ mod tests {
     }
 
     /// Every row has a non-empty value.
-    ///
-    /// A blank value is indistinguishable from a field pdfcer forgot to fill
-    /// in, and the panel's whole value is that its silences are as legible
-    /// as its numbers. Swept across several object kinds so a kind-specific
-    /// arm cannot slip through.
     #[test]
     fn no_field_is_ever_rendered_blank() {
         for src in [
@@ -916,10 +832,6 @@ mod tests {
 
     /// **A text object's disclosure list is never empty**, so the notes
     /// heading always has something under it when it is drawn.
-    ///
-    /// Text is always approximate, so it always carries at least the
-    /// bounds-basis note. This pins the panel's most-used disclosure path:
-    /// if it ever came out empty, the heading would draw over nothing.
     #[test]
     fn a_text_object_always_has_something_to_disclose() {
         let text = describe(b"BT /F1 12 Tf 40 40 Td (Hi) Tj ET");

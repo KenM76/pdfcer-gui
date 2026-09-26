@@ -54,3 +54,12 @@ grouping entry — so a destination-less bookmark is a legal, honest shape.
 nothing is selected. That is `add`'s rule exactly, and reusing it is the
 point: an operator who has learned where a new bookmark appears already
 knows where a pasted one will.
+
+## Item notes
+
+### `fn take`
+
+Returns whether it worked, so a cut can call off its own delete half — the
+ordering rule `canvas::clipboard::cut` established: *a cut that silently
+becomes a delete is a different verb wearing the operator's control, and
+they would find out by pasting.*

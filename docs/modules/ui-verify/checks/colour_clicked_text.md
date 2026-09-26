@@ -86,3 +86,82 @@ and that is this check's calibration point: a 5 pt title-block run at PDF
 (1135.7, 58.4)–(1190.5, 63.4). Anything else and step 0 skips.
 
 # THE FALSIFICATION TABLE — what to break, and what must go red
+
+## Item notes
+
+### `const STYLE_ROWS`
+
+THIS REPLACED A CONSTANT CALLED `ROUTE`, AND THE REPLACEMENT IS O198.
+
+`ROUTE` was spelled `properties.text.route`: a sentence saying *"press T for
+the Text tool and sweep across them"*, which was the only surface in the
+program that told an operator how to reach the face, size, bold and italic
+controls for text they had clicked. O198 (2026-09-14) removed the reason for
+it -- `app::textoperand` resolves a clicked text object's byte span into the
+run indices the five Font verbs take -- so the sentence was deleted and the
+controls themselves are what this step now asserts.
+
+Asserted as a LIST rather than as the section region, for the reason
+`font_group`'s `FONT_ITEMS` gives: a section that draws its heading and
+returns before any control publishes the section region and nothing else,
+which is exactly the regression this step exists to catch.
+
+### `const PROPERTIES_TAB`
+
+Not optional. The dock draws only the ACTIVE tab's body, so a pane behind
+another tab publishes **nothing** — indistinguishable, from here, from a
+panel with nothing to say. `font_group`'s own note records the false bug
+report that cost.
+
+### `const APPLIED`
+
+The second half of the two-line oracle. `text-style-applied` alone says a
+module decided to act; this says the act landed in the document. A build
+where the two disagree is exactly the shape `RESUME.md` records for
+`import-form-data`, twice.
+
+### `fn aim_verdict`
+
+Order is *what* before *how many*. A click that lands on a path inside a
+marquee of eleven is an aim problem twice over, and the kind is the half
+that names the fixture coordinate to change.
+
+### `fn aimed_at_one_text_object`
+
+SKIPPED, never failed. A `--doc-point` that is not on text is the
+harness's aim, and a harness that reports its own aim as the program's
+behaviour is worse than one that reports nothing — `RESUME.md` records that
+costing a day on `font_group`, about a program that was working.
+
+### `fn wait_for_verdict`
+
+A bounded poll rather than a fixed sleep, for `restyle_text`'s reason: a
+restyle re-resolves its pin from a fresh provenance extraction **per run**,
+and this route's operand is a whole text object, which can be many runs. A
+fixed sleep long enough for the worst case makes every run slow, and a short
+one reads the trace mid-gesture and reports *"nothing happened"* about a
+gesture that is still running.
+
+### `const ON_ONE_TEXT_OBJECT`
+
+Written with `concat!` rather than as a multi-line literal, and it is
+not style: an indented continuation line inside a `"…"` keeps its
+leading spaces, `Trace::parse` strips the prefix from the **start** of
+the line, and the fixture silently becomes a trace with one line in it.
+That cost a red on the first run of these tests.
+
+### `fn the_aim_read_tells_its_four_answers_apart`
+
+The guard that stops this check reporting its own aim as the program's
+behaviour, tested without a running program — which is the only way it
+can be tested at all in a session forbidden to drive the GUI. If these
+four collapsed to one, the SKIP messages would be interchangeable and a
+reader would be sent to the wrong place.
+
+### `fn a_missing_selection_line_is_not_a_selection_of_one`
+
+`canvas-selection` is written through `trace_changed`, so a run with no
+line is a run where the selection never changed. A guard that defaulted
+to one would pass on a click that selected nothing, and every oracle
+below it would then be asserting sentences about a selection that does
+not exist.

@@ -15,10 +15,6 @@ use crate::report::CheckReport;
 /// The command, invoked through the harness seam.
 const INVOKE: &str = "mode.edit,tools.embed_fonts";
 /// The variable this check deliberately does **not** set.
-///
-/// Named as a constant it never uses, so a reader grepping for the font-dir
-/// seam finds this file and its reason rather than concluding it was forgotten.
-/// The whole point of this run is that no folder is configured.
 #[allow(dead_code)]
 const DELIBERATELY_UNSET: &str = "PDFCER_DIAG_FONT_DIR";
 /// The window body's region.
@@ -37,10 +33,6 @@ const OWN_FONTS_TOGGLED: &str = "embed-fonts-own-fonts";
 /// position of the switch that chose the request.
 const REQUESTED: &str = "embed-fonts-requested";
 /// The line the dispatcher writes when there is nothing to open.
-///
-/// Since O47 this has exactly ONE meaning — *every font in this document
-/// is already embedded* — so it aims the check, it does not fail it. See the
-/// module header.
 const DECLINED: &str = "embed-fonts-declined";
 
 /// See the module documentation.

@@ -234,21 +234,11 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 }
 
 /// A logical point, for building a sub-rect of a declared one.
-///
-/// Exists only so the drag endpoints above can be expressed as *parts of a
-/// rectangle the application published* rather than as coordinates this file
-/// invented — see the comment at the call site.
 fn egui_point(x: f32, y: f32) -> crate::geom::Pt {
     crate::geom::Pt { x, y }
 }
 
 /// How many `markup-pen` lines the application has written so far.
-///
-/// Counted rather than compared by value, for the reason
-/// `checks::delete_key`'s header sets out about absences: a count that goes up
-/// is positive evidence that a control acted, whereas an unchanged *value*
-/// could mean the control did nothing or that it was dragged back to where it
-/// started.
 fn shell_pen_lines(session: &Session) -> Result<usize> {
     Ok(session.trace()?.events(PEN_EVENT).count())
 }

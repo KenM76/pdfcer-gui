@@ -16,13 +16,6 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// The mode whose tab list contains Measure, and the segment to click.
-///
-/// Read is the default and its tabs are `["file", "view"]`; Measure is in
-/// Review's list and in Edit's. Review rather than Edit because it is the
-/// weaker claim — a dimension that places in Review places in Edit — and
-/// because Review is the row of `MODES_AND_PANELS.md`'s gesture table that
-/// proves the mode gate is per-capability rather than a single on/off: a
-/// reviewer places dimensions and does **not** select page content.
 const MODE: &str = "review";
 
 /// The tab that carries the Dimension group.
@@ -39,22 +32,9 @@ const SUBJECT_ID: &str = "measure.linear";
 
 /// **The control that must NOT change** — the sibling in the same group,
 /// drawn by the same code, in the same capture, on the same frame.
-///
-/// The sibling has to be a control that is enabled and unpressed for as long
-/// as Linear is armed, so the Dimension group's `measure.finish` cannot serve:
-/// it is `enabled_when("measure.finishable")` and is greyed except mid-fit,
-/// and a greyed control is not a stable "unchanged" half of a differential.
-/// `measure.two_line` is a registered, dispatching tool in the same group, so
-/// its absence from the band fails the check loudly rather than silently.
 const SIBLING: &str = "ribbon.item.measure.two_line";
 
 /// Where the pointer is parked before each capture.
-///
-/// The Dimension group's caption, which is an `egui::Label` and therefore has
-/// no hover styling of its own, sitting directly beneath the controls being
-/// measured. Parking matters: after a click the pointer is *on* the control,
-/// `egui` paints it in its hovered visuals, and a before/after comparison
-/// would then be measuring a hover as well as a selection.
 const PARK: &str = "ribbon.group.measure.dimension.caption";
 
 /// `measure-tool tool=…` — the application reporting which measure tool the
@@ -83,81 +63,22 @@ const PICK_KIND: &str = "Linear";
 
 /// The `outcome=` value that means *the click found an inference and is asking
 /// before acting on it* — `ClickOutcome::Promoted`.
-///
-/// Matched on the field rather than on the raw line so a future addition to the
-/// message cannot silently stop this check recognising a promotion; a
-/// promotion it failed to recognise would be counted as a resolved pick with no
-/// `committed=` field, and the sequence assertion would then fail against a
-/// working build.
 const PICK_PROMOTED: &str = "Promoted";
 
 /// How many clicks one pick may take before this check calls the two-click
 /// confirm broken.
-///
-/// **Two**, and the number is `snap_commit_clicks`'s own: a routine candidate
-/// commits on the first click, a derived one on the second. A third would mean
-/// `MeasureState::resolve_click` is not converging — its promote branch
-/// compares `derived_promoted != Some(point)`, so a click at the same screen
-/// pixel that promoted again would mean the resolved point is *moving* between
-/// two clicks of a stationary pointer, which is a real finding and not a reason
-/// to keep clicking.
 const MAX_CLICKS_PER_PICK: usize = 2;
 
 /// `add-dimension page=… n=… epoch=… disclosures=…` — **the engine accepted
 /// the dimension and the document changed.**
-///
-/// Built by `app/actions.rs`'s `vector_edit` from the label its
-/// `Action::CommitDimension` arm passes (`"add-dimension"`), on the `Ok` path
-/// only. See the module header's §"link 6".
 const COMMIT_EVENT: &str = "add-dimension";
 
 /// `add-dimension-refused page=… …` — the same funnel's `Err` path, where the
 /// engine declined and the document was left alone.
-///
-/// Read only to improve a failure message. Two shapes reach it: a structured
-/// `EditError` from `add_dimension` (`detail=`), and the borrow guard
-/// (`reason=session-borrowed`), which means another holder of the
-/// `Arc<EditSession>` was alive when the action was applied.
 const REFUSED_EVENT: &str = "add-dimension-refused";
 
 /// **The three clicks that place a linear dimension**, as fractions of the
 /// page box: *what*, *to what*, and *where it sits*.
-///
-/// # Why fractions rather than absolute points
-///
-/// [`crate::checks`] rule 2 permits a [`DocPoint`] literal, and this is one —
-/// resolved against the fixture's own `/MediaBox` at run time rather than
-/// against a page size written down here. That makes the check fixture-
-/// agnostic in the one way that matters: a dimension needs no *content* under
-/// it, only somewhere on the page to put it, so any fixture large enough to
-/// have a middle will do. Absolute points would silently move off the page the
-/// first time somebody pointed `--pdf` at a letter-size document.
-///
-/// # These are where the pointer goes, not necessarily what is committed
-///
-/// Since snapping landed, `canvas::measure::snapped` resolves each click to the
-/// nearest snap candidate within `PageMapping::snap_tolerance` and commits
-/// *that*, which is what makes a dimension measure a line rather than *near*
-/// one. So these fractions are the aim, and the committed geometry is the
-/// application's answer to it. Nothing in this check asserts on the committed
-/// coordinates, deliberately: that is `pdfcer-core`'s snap query, it has its own
-/// tests, and re-deriving the expected snap here would be this harness
-/// reimplementing the thing it is supposed to be observing.
-///
-/// # Why these three
-///
-/// A and B are 35 % of the page width apart on the same horizontal line, which
-/// is comfortably longer than any degeneracy threshold and gives the third
-/// click an unambiguous perpendicular to resolve a standoff against. The third
-/// sits above the pair and off the midpoint, so `placement_from_point` returns
-/// a non-zero **offset** and a non-zero **text_along** — the two components
-/// `LinearPick::placing_kind` computes, and the two that would both read zero
-/// if the third click were being ignored and the dimension committed on the
-/// second.
-///
-/// The y values are PDF user space: origin bottom-left, y growing **up**. The
-/// one flip in this crate happens inside
-/// [`CanvasMapping::doc_to_window`](crate::coords::CanvasMapping::doc_to_window).
 const PICKS: [(f64, f64); 3] = [
     (0.30, 0.45), // A — what
     (0.65, 0.45), // B — to what
@@ -197,12 +118,6 @@ impl Check for MeasureLinearPlacesADimension {
 }
 
 /// Run the sequence.
-///
-/// The three-way return is [`crate::report`]'s rule made structural: `Err` is
-/// a precondition that was absent (SKIP), `Ok(Some(_))` is an assertion that
-/// did not hold (FAIL), `Ok(None)` is a pass. Reaching for `?` therefore
-/// yields a SKIP, which is the safe default; the unsafe default would be a
-/// pass.
 #[allow(clippy::too_many_lines)]
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
     // --- preconditions -----------------------------------------------------
@@ -879,19 +794,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 }
 
 /// Turn the collected assertion failures into one verdict.
-///
-/// # Why the failures are collected rather than returned one at a time
-///
-/// A [`CheckReport`] carries one outcome, so a check that returned at its first
-/// failed assertion would answer only the first question it happened to ask. On
-/// this check that is a real loss: the pressed rendering and the placed
-/// dimension are independent facts about one feature, and a run that stopped at
-/// "the control does not look pressed" would leave "and does a dimension get
-/// placed?" unanswered — which is the more interesting half, and the half a
-/// reader would then have to go and drive by hand.
-///
-/// Numbered when there is more than one, because a wall of prose with two
-/// distinct findings in it reads as one long finding.
 fn verdict(failures: Vec<String>) -> Option<String> {
     match failures.len() {
         0 => None,
@@ -912,14 +814,6 @@ mod tests {
     use super::*;
 
     /// The names this check greps for are the ones the two crates build.
-    ///
-    /// Pinned here as well as in `egui-shell`'s own
-    /// `the_reported_names_are_a_stability_contract`, because the crates are
-    /// joined by a **string** and nothing else: this crate drives a process,
-    /// so it cannot import the constant, and a rename would leave both sides
-    /// compiling while every assertion here quietly stopped matching. A check
-    /// that matches nothing passes vacuously, and that is the failure this
-    /// test exists to make impossible.
     #[test]
     fn the_selectors_match_the_shells_own_spelling() {
         assert_eq!(SUBJECT, format!("ribbon.item.{SUBJECT_ID}"));
@@ -937,11 +831,6 @@ mod tests {
     }
 
     /// **Three picks, and the third is the only commit.**
-    ///
-    /// The sequence is the feature, so it is pinned as data here as well as
-    /// asserted against the running binary: someone re-ordering [`PICKS`] or
-    /// adding a fourth entry has to come past this test and decide what the
-    /// expected `committed=` sequence now is.
     #[test]
     fn a_linear_dimension_is_exactly_three_clicks() {
         assert_eq!(PICKS.len(), 3, "what, to what, and where");
@@ -967,13 +856,6 @@ mod tests {
 
     /// **The success and refusal events are two different event names**, which
     /// is what lets `Trace::events` tell them apart.
-    ///
-    /// `vector_edit` builds both from one label, so `add-dimension-refused`
-    /// begins with `add-dimension` as a *string* — and a check that matched on
-    /// a prefix would read every refusal as a success and report a placed
-    /// dimension for a document nothing was written to. `Trace::parse` splits
-    /// the event at the first space and compares it whole, so the two are
-    /// distinct; this test is what says so out loud.
     #[test]
     fn a_refusal_is_not_read_as_a_commit() {
         let trace = crate::trace::Trace::parse(
@@ -1010,14 +892,6 @@ mod tests {
     }
 
     /// **A promotion is not a pick, and it is not a failure either.**
-    ///
-    /// The two shapes share one event name, so the classification is a field
-    /// read. Getting it wrong in either direction is a real hazard: a
-    /// promotion counted as a resolved pick has no `committed=` field and
-    /// would read as `"?"`, failing the sequence assertion against a build
-    /// that is doing exactly what `pdfce_FeatureRequests/README.md` rule 4
-    /// asks of it; and a resolved pick mistaken for a promotion would make the
-    /// check click again and lose count.
     #[test]
     fn a_promotion_is_told_apart_from_a_resolved_pick() {
         let trace = crate::trace::Trace::parse(

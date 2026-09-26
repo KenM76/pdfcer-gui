@@ -53,18 +53,6 @@ pub(crate) fn dispatch(app: &mut PdfcerApp, id: &str, _actions: &mut [Action]) {
 }
 
 /// `tools.merge_files` — ask for the sources, ask where it goes, write it.
-///
-/// # Nothing is gated on a document being open, and that is deliberate
-///
-/// This is one of the handful of commands live with an empty window, and it
-/// belongs there: it produces a document **from files on disk**, so requiring
-/// one to be open first would be a precondition with no reason behind it. An
-/// operator who has just launched pdfcer in order to combine four drawings is
-/// exactly the person this command is for.
-///
-/// The consequence is recorded rather than hidden: with nothing open there is
-/// no status row to put a sentence on, so a merge from an empty window reports
-/// only to the trace. See `app::actions::merge`'s note on the gap.
 fn merge_files(app: &mut PdfcerApp) {
     let sources = crate::app::files::pick_merge_sources();
     if sources.is_empty() {

@@ -121,10 +121,6 @@ pub fn body(
 }
 
 /// One font's expanded body — the verdict's reason first, then the facts.
-///
-/// Split out so [`body`]'s loop stays readable, and because the reason
-/// ladder is the substantive part of the panel: it is where the sentence
-/// this panel exists to say actually gets said.
 fn row_body(ui: &mut egui::Ui, f: &pdfcer_core::fontinfo::FontRecord) {
     use pdfcer_core::fontinfo::{Program, Removability, RemovabilityUnknown, Surface};
 
@@ -231,17 +227,6 @@ fn row_body(ui: &mut egui::Ui, f: &pdfcer_core::fontinfo::FontRecord) {
 }
 
 /// Render one font's `fsType` state.
-///
-/// Four states, and **none of them may look like `0`.** `fsType == 0`
-/// genuinely *means* Installable — the most permissive value the field can
-/// express — so a blank, a dash, or an empty line for "we could not read it"
-/// would assert the broadest embedding right there is on the strength of
-/// bytes nobody read. The OpenType specification defines no default for the
-/// absent case, so pdfcer defines none either: unknown says the word
-/// "Unknown" in its own sentence, and "this format has no such field" says
-/// that instead.
-///
-/// A free function because it needs nothing but the bits and a `Ui`.
 fn fs_type_lines(ui: &mut egui::Ui, fs: &pdfcer_core::fontinfo::FsType) {
     use pdfcer_core::fontinfo::{EmbeddingPermission, FsType};
     match fs {
@@ -294,14 +279,6 @@ mod tests {
 
     /// **A font whose codes are glyph indices into its own program is
     /// reported as blocked, with a reason.**
-    ///
-    /// The sentence this panel exists to say, asserted against a real file.
-    /// Acrobat refuses the same font and shows no reason at all; a shorter
-    /// list is not actionable and this is the difference.
-    ///
-    /// Asserted on the verdict and on `to_unicode`, not on the wording:
-    /// `crate::text::panels::fonts` already tests that the two tiers of the
-    /// sentence differ, and a copy edit should not break a panel test.
     #[test]
     fn an_identity_encoded_font_is_blocked_and_says_which_tier() {
         // The fixture must **embed** the program: a font that is not
@@ -350,13 +327,6 @@ mod tests {
 
     /// **The panel's "n fonts have no program" count and the row verdicts
     /// agree.**
-    ///
-    /// Two independent readings of the same inventory — the summary counts
-    /// `Program::NotEmbedded`, the rows print `Removability::NotEmbedded` —
-    /// and they are computed in different places. `Removability`'s own docs
-    /// promise they mean the same thing ("There is no embedded program"), so
-    /// a document where they disagree is a document where the summary is
-    /// lying about the list beneath it.
     #[test]
     fn the_missing_program_count_matches_the_row_verdicts() {
         for fixture in ["text/simple-winansi.pdf", "vector/mixed.pdf"] {
@@ -380,11 +350,6 @@ mod tests {
     }
 
     /// **The document total is the sum of the rows.**
-    ///
-    /// `embedded_bytes()` and the per-row `stored_bytes()` are two
-    /// computations over one inventory, and the panel prints both. A total
-    /// that does not add up is the fastest way to lose an operator's trust
-    /// in every other number on the panel.
     #[test]
     fn the_document_total_is_the_sum_of_the_rows() {
         let inv = inventory("text/subset-simple-embedded.pdf");
@@ -400,11 +365,6 @@ mod tests {
 
     /// **A row's collapsed header is enough to answer "which of these can
     /// go", without opening anything.**
-    ///
-    /// The panel's discoverability argument in one assertion: every font
-    /// gets a verdict word, so the question is answerable from the collapsed
-    /// list. A record that fell through to no verdict at all would be a row
-    /// an operator has to open to learn nothing.
     #[test]
     fn every_font_gets_a_verdict_word_in_its_collapsed_header() {
         use crate::text::panels::fonts as t;

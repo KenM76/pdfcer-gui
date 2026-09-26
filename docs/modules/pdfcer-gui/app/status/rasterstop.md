@@ -64,3 +64,79 @@ one decisive:
    fact as [`super::filter`]'s empty-filter note, *why every gesture will do
    nothing* rather than *why that one did*, which is why it is drawn
    immediately after that note and before the decline.
+
+## Item notes
+
+### `const NEAR`
+
+A fraction rather than an absolute, because the ceiling varies by better than
+an order of magnitude across page geometries — measured at scale 284,964 on
+an E-size sheet against 8,053,069 on a business card — so any fixed epsilon
+would be meaningless at one end and a gate at the other.
+
+Generous at one part in a thousand rather than tight at `f32::EPSILON`, and
+the asymmetry is deliberate. The clamp lands on the ceiling by way of
+[`crate::viewer::clamp_zoom`] and a division by `pixels_per_point`, so the
+stored value and the live value are the same number arrived at by two routes
+and need not be bit-identical. **The two errors do not cost the same**: too
+tight and the sentence silently fails to appear in exactly the state it exists
+for — a silence nobody reports, because the operator has no way to know a
+sentence was owed — while too loose shows it a thousandth of a percent early,
+which is true enough to be unnoticeable.
+
+### `fn a_document_that_has_refused_nothing_says_nothing`
+
+The test that makes the module safe rather than the one that makes it
+work. `RasterCeiling` is empty for every document except the handful
+zoomed past a rasterizer wall, so a predicate that answered `true` by
+accident would put a permanent, false sentence on every file's bar.
+
+### `fn the_sentence_appears_at_the_ceiling_and_not_below_it`
+
+Both halves are asserted together because either alone is satisfied by a
+constant: a predicate hard-wired to `true` passes the first and one
+hard-wired to `false` passes the second.
+
+### `fn zooming_out_retires_the_sentence_with_nothing_remembering_to`
+
+Asserted rather than argued: "it cannot go stale" is a claim about a
+mechanism that does not exist, and the only way to keep such a claim true
+is to measure the condition it rests on.
+
+### `fn an_edit_to_the_page_retires_the_sentence`
+
+The invalidation rule [`crate::render::ceiling::RasterCeiling`] owns,
+asserted from this side of the boundary: a reader asking with a stale
+epoch — or with none — would keep the sentence on a page whose content has
+been replaced, where the old measurement says nothing.
+
+### `fn the_density_conversion_is_applied_here_too`
+
+The disclosure-side twin of
+`viewer::ceiling::tests::the_learned_ceiling_is_a_raster_scale_and_not_a_zoom`.
+Both are needed: if only one reader divided, the shell would clamp at one
+zoom and explain itself at another, and on a high-DPI screen the sentence
+would be a factor of two away from the number beside it.
+
+### `fn a_nonsense_display_density_does_not_silence_the_disclosure`
+
+A bad density makes the permitted zoom infinite, so the predicate answers
+`false` forever: the sentence vanishes in exactly the state it exists for,
+and the operator is back at a control that stops responding in silence.
+That failure mode is **invisible** — nobody reports a sentence they were
+never told was owed.
+
+Every row is asserted unconditionally, with no `||` anywhere: an `||`
+between a measurement and an excuse (`at_the_ceiling(&doc, bad) ||
+bad.is_nan()`) measures neither, and passes whatever the `NaN` case does.
+
+**Both directions, and the second half is not redundant.** A bad density
+must not silence the sentence *and* must not conjure it; the loops falsify
+different clauses of the guard:
+
+* the first fails under `.max(f32::MIN_POSITIVE)`, because the permitted
+  zoom becomes infinite and nothing ever reaches it;
+* the second fails under a guard that checks only `> 0.0` and forgets
+  `is_finite`, because an infinite density makes the permitted zoom **zero**
+  and the sentence then appears at every zoom on the page — worse than its
+  absence, since a line that is always on stops being read.

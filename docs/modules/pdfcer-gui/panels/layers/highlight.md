@@ -169,3 +169,180 @@ a supplement.
 because indicating them means **marking the canvas**, which Rule 4 forbids
 for an inference. The shape it would have to take (a count, off-canvas, in
 the row's tooltip) is a separate decision and a separate landing.
+
+## Item notes
+
+### `fn for_target`
+
+Both index spaces are resolved **by the [`TargetId`] itself** rather than
+by a caller that had to remember which list it was holding — the same
+discipline `app::status::selected` uses, and for the same reason: the two
+spaces are both `u64` and a mix-up is silent.
+
+### `fn index_of_bbox`
+
+Chosen by **geometry**, never by `oc()`. Picking the object by the
+very field under test would make the assertion circular — it would
+prove that `resolve` returns what `oc()` returns, which is a restatement
+rather than a test.
+
+**Exact bounds and not "contains this point", and the difference is
+a defect this helper already had.** The first version took a point and
+took the FIRST object covering it, which is how
+`an_object_outside_every_section_is_on_no_layer` came to select the
+fixture's `0 0 300 792 re W n` **clip path** — a real `PathObject`, on
+layer *Clip Only*, whose bbox covers most of the page and which is
+painted before the grey bar. The test failed with `Group(6)` where it
+expected `None`, and the report would have been *"the shell reports the
+wrong layer"* about a shell that was right and a helper that was
+pointing at something else.
+
+⇒ *Ask what the test SAMPLED before asking what is broken.* A rectangle
+names one object; a point names whichever of several the helper's
+tie-break happened to reach.
+
+### `fn selecting_a_page_object_names_the_layer_it_is_painted_on`
+
+The operator's ask, in a headless test: click the square inside
+`/OC /L1` and the answer is *Visible Box*. Before `Pass 250.0` this was
+unanswerable and this module returned `Unknown` for every content
+object.
+
+### `fn an_object_outside_every_section_is_on_no_layer`
+
+This is the half a build cannot fake. Everything in the test above
+passes against an implementation that ignores the selection and always
+answers with the first group in the document; nothing here does.
+
+### `fn the_innermost_section_is_the_layer_not_the_outer_one`
+
+The square at (400,220) sits inside `/OC /L2 BDC … /OC /L4 BDC … EMC
+EMC`. Answering *Hidden Box* — the outer section — would be a wrong
+highlight rather than a missing one, and the operator's own bar rates
+that worse.
+
+It is selected directly rather than clicked, because both L2 and L3
+are in the document's `/OFF` array: this object is in the model and is
+not drawn. The membership relation is what is under test, not the
+visibility one.
+
+### `fn a_one_part_object_says_nothing_about_its_parts`
+
+It is a measurement, not a disclaimer: the sentence exists because one
+object on the operator's own drawing holds 1,194 subpaths, and a
+warning printed on every single-part rectangle would teach him to skip
+the line before he ever met one that mattered.
+
+### `fn the_driven_checks_two_aim_points_land_where_it_thinks`
+
+# Why a unit test owns a driven check's coordinates
+
+Because a miscalibrated aim is this project's most expensive harness
+failure and it is **silent**: the check clicks, something is selected,
+an answer comes back, and the report is an articulate paragraph about
+the wrong object. `RESUME.md` records it three times in one day, and
+once as *"a wrong aim that happens to hit is a green result reporting
+nothing"*.
+
+This test asks the engine's own deep hit test — the one the canvas
+uses — what is under each point, and pins the answer. It runs in the
+sweep with no window open, so the driven check can never be quietly
+aiming at something else.
+
+# What it established, and it was not obvious
+
+The fixture's `0 0 300 792 re W n` **clip path** decomposes into a real
+`PathObject` on layer *Clip Only* whose bbox covers `(0,0)..(300,792)`
+— so it sits under BOTH aim points geometrically. It is **not** a hit
+candidate, because `n` paints nothing and `hit_test_point_deep` answers
+with ink rather than with bounds. Measured, not assumed: the sibling
+helper `index_of_bbox` had already been caught selecting that very
+object by bounds.
+
+### `fn not_on_a_layer_is_not_the_same_answer_as_cannot_tell`
+
+If this ever fails to compile because the two were merged, the panel
+has lost the ability to distinguish *"this mark is on no layer"* from
+*"nobody can tell you"* — and the operator reads the second as the
+first.
+
+### `fn two_reasons_are_two_answers`
+
+Two `Unknown`s with different causes must not compare equal, or the
+panel could print one reason while holding another and no test would
+see it.
+
+### `fn only_a_known_group_highlights_anything`
+
+The operator's bar, made mechanical: highlighting the wrong layer is
+worse than highlighting none, so every state that is not a *positively
+established* group must highlight nothing.
+
+### `fn the_trace_vocabulary_separates_every_state`
+
+`ui-verify selecting_an_object_names_its_layer` matches on `answer=`,
+so these strings are a harness contract rather than decoration. Two
+states sharing a word would make the check unable to tell them apart —
+and the pair that matters is `no-layer` against `unknown`, which is the
+whole distinction this type exists for arriving in the diagnostic
+channel.
+
+The empty-string assertion is about line SHAPE: a field whose value is
+empty puts two spaces where every other line has one, and a parser that
+gives a space structural meaning is entitled to read that differently.
+
+### `fn an_unresolvable_section_demotes_no_layer_to_cannot_tell`
+
+This is the engine's own contract consumed: *"`oc_unresolved` … is how
+a shell tells the two apart"*. Without this arm an unnameable group
+renders as the positive claim *"not on a layer"*.
+
+### `fn a_leaf_one_form_deep_inherits_the_forms_layer`
+
+`FormLeaf::oc()` delegates to the wrapped object and the engine's own
+doc comment calls the omission *"a documented partial"*. Without this
+arm, everything inside a form on layer *Grid* reports **"on no
+layer"** — a wrong positive, not a missing answer.
+
+### `fn a_leaf_two_forms_deep_is_not_guessed_from_the_outer_one`
+
+The intermediate form's own `/OC` has no representative in
+`PageObjects` — `collect_form_leaves` drops nested containers — so the
+outermost form's group is *not* evidence about this leaf. Answering
+`Group(4)` here would be the exact wrong-highlight the operator's bar
+forbids.
+
+### `fn a_layered_and_an_unlayered_object_are_mixed`
+
+This is the marquee case on the operator's own drawings and the one a
+naive `find_map` implementation gets wrong: it would report the first
+group it saw and light a row, claiming a whole selection is on a layer
+half of it is not on.
+
+### `fn an_unknown_outranks_even_an_established_disagreement`
+
+The first draft asserted `Mixed ⊔ Unknown = Mixed`, on the reasoning
+that *"this selection spans several layers"* is a fact an unanswerable
+third member cannot take back. The reasoning is sound and the rule is
+**not associative** — `the_fold_does_not_depend_on_selection_order`
+found it within a minute of being written, with the message
+*"join is not associative: Group(1) Group(2) Unknown(Stale) — left:
+Mixed, right: Unknown(Stale)"*.
+
+⇒ A highlight that depends on the order the operator added objects to
+the selection is a highlight that flickers for reasons nobody can
+diagnose. `Unknown` is the top. See [`Membership::join`].
+
+### `fn two_reasons_merge_by_priority_rather_than_by_position`
+
+`Unknown(a) ⊔ Unknown(b)` taking the left operand would be
+non-commutative, which is the same order-dependence one level down —
+and invisible to any property test whose sample set held a single
+`Unknown`, which the first one did.
+
+### `fn the_fold_does_not_depend_on_selection_order`
+
+Exhaustive over a representative set rather than argued in prose: a
+fold whose result depended on selection order would produce a highlight
+that flickered between two rows as the operator added objects, and no
+single-pair test would catch it.

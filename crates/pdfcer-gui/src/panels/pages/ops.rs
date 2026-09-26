@@ -331,21 +331,12 @@ mod tests {
     use super::*;
 
     /// A drop's landing, as the page order the document ends up in.
-    ///
-    /// `drop_order` returns the engine's permutation — *which page is at
-    /// position i* — and every assertion below is easier to read as the page
-    /// sequence itself, which is what an operator sees in the grid.
     fn landing(pages: &[usize], count: usize, gap: usize) -> Vec<usize> {
         drop_order(pages, count, gap).expect("the drop was expected to land")
     }
 
     /// A contiguous block moves forward, and the gap is read against the
     /// document as it was before the lift.
-    ///
-    /// The case that catches an off-by-one: dragging pages 0–1 to gap 4 in a
-    /// five-page document. Naively splicing at 4 into the three remaining
-    /// pages would put them after page 4, not before it. The lift-count
-    /// correction is what makes the answer `[2, 3, 0, 1, 4]`.
     #[test]
     fn a_block_dragged_forward_lands_at_the_boundary_that_was_pointed_at() {
         assert_eq!(landing(&[0, 1], 5, 4), vec![2, 3, 0, 1, 4]);
@@ -372,12 +363,6 @@ mod tests {
 
     /// **A scattered selection gathered at its own first page is a real
     /// edit**, and refusing it would cost the most useful thing a drag does.
-    ///
-    /// Pages 0, 4 and 8 dropped at gap 0 become adjacent at the top. A
-    /// predicate that only compared the drop against the block's endpoints
-    /// would call this a no-op, because gap 0 is the lower lip of the
-    /// selection's range — and the operator would drag, release, and watch
-    /// nothing happen.
     #[test]
     fn gathering_scattered_pages_at_their_own_first_page_is_not_a_no_op() {
         assert!(!drag_is_a_no_op(&set(&[0, 4, 8]), 0));
@@ -386,11 +371,6 @@ mod tests {
 
     /// A contiguous block dropped on itself, on either lip or anywhere inside,
     /// is refused rather than recorded.
-    ///
-    /// The engine would accept the identity permutation and write an undo
-    /// entry for it, so an operator who picked a page up and put it back would
-    /// get a document marked as edited and a `Ctrl+Z` that changes nothing
-    /// they can see.
     #[test]
     fn a_block_dropped_on_itself_is_refused_at_every_boundary_it_spans() {
         for gap in 4..=7 {
@@ -406,11 +386,6 @@ mod tests {
 
     /// Every result is a permutation of `0..page_count`, which is what
     /// `reorder_pages` refuses anything else for.
-    ///
-    /// Swept over every operand set and every gap in a small document rather
-    /// than spot-checked: the failure this guards against is not one wrong
-    /// answer, it is a whole family of drags producing a vector the engine
-    /// declines for a reason no operator could act on.
     #[test]
     fn every_landing_is_a_permutation() {
         const COUNT: usize = 6;
@@ -433,11 +408,6 @@ mod tests {
 
     /// The operands stay in document order and stay together, however
     /// scattered they were.
-    ///
-    /// A drag says *"put these here"*, and "these" is a set the operator built
-    /// by clicking. Re-ordering them relative to each other would be the panel
-    /// inventing an intention; leaving gaps between them would make the drag
-    /// do half of what it looks like it does.
     #[test]
     fn the_moved_pages_arrive_adjacent_and_in_document_order() {
         let order = landing(&[1, 3, 5], 7, 7);
@@ -465,12 +435,6 @@ mod tests {
     }
 
     /// **With nothing picked, a verb acts on the current page.**
-    ///
-    /// The rule `PanelsState::selected_pages` states in words — *"Empty is a
-    /// defined answer, not a missing one"* — as a mechanism. A build that
-    /// returned an empty operand list here would make every ribbon Pages
-    /// control do nothing until the operator discovered the panel, which is the
-    /// exact "live control, no effect" defect this work exists to close.
     #[test]
     fn with_nothing_picked_the_operand_is_the_current_page() {
         assert_eq!(operands(&set(&[]), 2, 4), vec![2]);
@@ -484,12 +448,6 @@ mod tests {
     }
 
     /// **An operand past the end of the document is dropped, not passed on.**
-    ///
-    /// `EditSession::delete_pages` resolves **every** index before planning
-    /// anything and returns `PageOutOfRange` for the whole batch if one is bad,
-    /// so a stale pick would turn "delete these three" into "delete nothing,
-    /// silently". Reachable by chord: the panel clamps on its next frame and a
-    /// keyboard verb can arrive before that frame is drawn.
     #[test]
     fn a_stale_pick_is_dropped_rather_than_refusing_the_whole_batch() {
         assert_eq!(operands(&set(&[0, 9]), 0, 4), vec![0]);
@@ -527,13 +485,6 @@ mod tests {
     }
 
     /// **A contiguous run moves as a run, keeping its internal order.**
-    ///
-    /// The property a naive "swap each with its neighbour" loop gets wrong: run
-    /// it ascending without the ceiling and pages 1 and 2 swap with each other
-    /// twice and end up back where they started. This asserts the *magnitude*
-    /// as well as the direction — the run really is one place earlier —
-    /// because a test that only checks the direction is satisfied by a loop
-    /// that moves the run twice as far.
     #[test]
     fn a_contiguous_run_moves_as_a_run() {
         assert_eq!(
@@ -554,11 +505,6 @@ mod tests {
     }
 
     /// **A non-contiguous pick moves as separate items, each by one.**
-    ///
-    /// The alternative — gathering the set at its topmost member — would
-    /// reorder pages the operator never named, which is the same class of
-    /// error `select::PageSelection::right_click` exists to prevent from the
-    /// pointer's side.
     #[test]
     fn a_non_contiguous_pick_moves_each_item_by_one() {
         assert_eq!(
@@ -574,11 +520,6 @@ mod tests {
 
     /// **The first page cannot move up, and it says so rather than
     /// producing an identity the engine would silently accept.**
-    ///
-    /// `reorder_pages` returns `Ok(())` for the identity, having recorded
-    /// nothing. Handing it one would be a control the operator pressed that
-    /// changed nothing and said nothing — which is the defect this project is
-    /// named after, so the refusal is the result rather than a detail.
     #[test]
     fn the_top_of_the_document_refuses_a_move_up() {
         assert_eq!(
@@ -601,11 +542,6 @@ mod tests {
     }
 
     /// **A partly-blocked run still moves the part that can move.**
-    ///
-    /// Pages 1 and 3 picked, moved up: page 1 is pinned, page 3 is not. The
-    /// alternative — refusing the whole gesture because one member is at the
-    /// edge — would make a large selection increasingly hard to move, which is
-    /// the opposite of what a reorder control is for.
     #[test]
     fn a_partly_blocked_run_moves_the_part_that_can() {
         assert_eq!(
@@ -635,13 +571,6 @@ mod tests {
 
     /// **Every order this module produces is a permutation of
     /// `0..page_count`.**
-    ///
-    /// The one property `EditSession::reorder_pages` checks and refuses over,
-    /// and therefore the one whose failure would be a verb that declines with
-    /// nothing an operator could do about it. Asserted exhaustively over every
-    /// non-empty subset of a five-page document, in both directions — 62 cases,
-    /// which is cheap and is the difference between "the examples above work"
-    /// and "the rule is sound".
     #[test]
     fn every_order_is_a_permutation_and_moves_by_exactly_one() {
         const N: usize = 5;

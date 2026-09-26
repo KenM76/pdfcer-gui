@@ -56,3 +56,26 @@ as something else, and the pair is asserted exhaustively by
 [`PageDisplay::ALL`] — so adding a variant and forgetting its spelling is a
 test failure rather than a silent data loss the operator discovers on the
 next launch.
+
+## Item notes
+
+### `fn all_lists_every_variant`
+
+Everything below iterates `ALL`, so a variant missing from it would
+make those tests vacuously pass about the variant that matters. The
+exhaustive `match` is what makes this fail to *compile* when a variant
+is added, which is stronger than failing to run.
+
+### `fn every_mode_round_trips_through_its_on_disk_spelling`
+
+The persistence format's whole correctness. A variant with no `id` arm
+would not compile; a variant whose `id` collides with another's would
+fail here, and the symptom in the field would be an operator's
+remembered choice quietly becoming a different mode on the next launch.
+
+### `fn facing_pairs_pages_after_a_solitary_cover`
+
+The spread rule, stated as the mapping a reader can check by eye
+against a physical document. Getting the parity backwards puts page 3
+on the right of a spread it should open, which on a drawing set with a
+title sheet is visibly wrong.

@@ -52,3 +52,11 @@ The assertion is on `chord-command chord=… id=…`, the line
 `app::keyboard::commands` traces the moment a chord resolves. That is the
 link under test; whether the command then does its work is each feature's
 own check.
+
+## Item notes
+
+### `const CHORDS`
+
+Read against `crates/pdfcer-gui/src/shell/ron/built_in.ron`'s keymap. A chord
+here that the manifest does not bind is a stale entry and will fail loudly,
+which is the intended direction: the manifest is the source of truth.

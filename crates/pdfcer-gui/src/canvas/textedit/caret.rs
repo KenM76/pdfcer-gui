@@ -87,11 +87,6 @@ pub fn newline(text: &mut String, caret: usize) -> usize {
 }
 
 /// Put `chars` into `text` at `caret`, and answer the caret after them.
-///
-/// The shared body of [`insert`] and [`newline`], so there is one statement of
-/// *"caret indices are CHARACTERS, not bytes"* rather than two. `é` is one
-/// keystroke and two bytes, and a byte-indexed splice would panic on the next
-/// one.
 fn splice(text: &mut String, caret: usize, chars_to_add: Vec<char>) -> usize {
     let mut chars: Vec<char> = text.chars().collect();
     let at = caret.min(chars.len());
@@ -307,12 +302,6 @@ mod tests {
     // ---------------------------------------------------------------------
 
     /// **A mark sitting on the caret is not a selection.**
-    ///
-    /// The state after Shift+Right then Shift+Left, and it is reached by every
-    /// operator who changes their mind. If it answered `Some((n, n))` then
-    /// Backspace would take the "delete the selection" branch, delete nothing,
-    /// and leave the character it was supposed to remove — a key that stopped
-    /// working, silently, at one specific caret position.
     #[test]
     fn an_empty_selection_is_no_selection() {
         assert_eq!(super::range(Some(3), 3), None);
@@ -327,11 +316,6 @@ mod tests {
     }
 
     /// **Removing a selection is by CHARACTER**, like everything else here.
-    ///
-    /// Asserted on a string with an accent in it, because a byte-indexed
-    /// `drain` compiles, passes on ASCII, and panics on the first document with
-    /// a `café` in it — which is the failure this module has now avoided in
-    /// four separate functions for the same reason.
     #[test]
     fn removing_a_selection_counts_characters_not_bytes() {
         let mut text = String::from("café au lait");
@@ -341,11 +325,6 @@ mod tests {
     }
 
     /// A reversed or out-of-range pair removes nothing rather than panicking.
-    ///
-    /// Not defensive programming for its own sake: this runs inside the
-    /// keystroke path, and a panic there is a crash in the middle of typing —
-    /// the one place a program must not crash, because the operator's work is
-    /// in the thing that died.
     #[test]
     fn a_nonsense_range_removes_nothing() {
         let mut text = String::from("abc");
@@ -358,10 +337,6 @@ mod tests {
 
     /// **The first Shift+Right selects one character**, which is the whole
     /// reason [`super::moved`] takes the caret's position BEFORE the movement.
-    ///
-    /// Planting the mark where the caret *ends up* would select nothing on the
-    /// first press and one character on the second — an off-by-one that looks
-    /// like the key being ignored.
     #[test]
     fn the_first_shifted_move_plants_the_mark_where_the_caret_was() {
         assert_eq!(super::moved(None, 4, true), Some(4));
@@ -398,11 +373,6 @@ mod tests {
     }
 
     /// **Control characters never reach the draft.**
-    ///
-    /// Enter and Escape arrive as `Key` events and mean something; a control
-    /// byte arriving as text means nothing this shell can author, and putting
-    /// it in a PDF show string would be authoring a glyph the operator cannot
-    /// see.
     #[test]
     fn a_control_character_is_not_typed_into_the_page() {
         let mut s = String::new();
@@ -411,16 +381,6 @@ mod tests {
     }
 
     /// **The whole of the operator's 2026-08-20 report, as one test.**
-    ///
-    /// > *"the cursor just sits at the end of a text line. It can't be moved to
-    /// > the center of an existing text block."*
-    ///
-    /// A title-block cell, edited the way he would edit one: put the caret in
-    /// the middle, remove the character before it, type a different one. Before
-    /// the caret existed this was impossible — the only reachable edit was to
-    /// Backspace from the end and retype everything after the change, which on
-    /// a drawing sheet full of `SHEET n OF m` cells is why the feature was
-    /// reported as not working at all.
     #[test]
     fn a_character_in_the_middle_can_be_changed_without_retyping_the_tail() {
         let mut s = String::from("SHEET 1 OF 4");
@@ -443,10 +403,6 @@ mod tests {
     }
 
     /// Both ends refuse to run off, rather than panicking or wrapping.
-    ///
-    /// The last assertion is the one that matters most: a caret index taken
-    /// before the text was replaced can legitimately be past the end, and the
-    /// answer is to clamp rather than to panic. See the module header.
     #[test]
     fn the_caret_cannot_be_pushed_past_either_end() {
         let mut s = String::from("ab");

@@ -56,3 +56,20 @@ it was. Order is a manifest question and is asserted where the manifest is
 tested; width is what two rows buys and is not independently measured here,
 because "narrower than the one-row version" would need a second run of a
 build that does not exist.
+
+## Item notes
+
+### `const VIEWPORT`
+
+**The width IS the precondition of the assertion**, not a convenience.
+See the module header's point 4. It also does not steal the desktop:
+`PDFCER_DIAG_VIEWPORT` switches `with_active` off, so the window lays out
+fully without taking focus.
+
+### `const SAME_ROW_PT`
+
+Deliberately small. Buttons on one row share a `y` exactly in `egui`'s
+layout, so any tolerance at all is generous; 4 pt allows for the harness
+rounding a scaled coordinate and nothing else. A large tolerance here would
+quietly merge two genuinely-stacked rows on a compact theme and report the
+feature missing on a correct build.

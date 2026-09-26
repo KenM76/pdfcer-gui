@@ -13,11 +13,6 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// Review mode, then arm the rectangle tool.
-///
-/// `mode.review` because markup is authored there — and because it is the
-/// mode where `caps.edit_content` is **false**, which is precisely the mode the
-/// new rung had to fire in. Driving this in Edit would pass on a build whose
-/// rotate handle only worked where the content branch could catch it.
 const INVOKE: &str = "mode.review,markup.rectangle";
 /// The line the canvas writes when a shape is authored.
 const COMMIT_EVENT: &str = "markup-commit";
@@ -27,74 +22,30 @@ const SELECT_EVENT: &str = "annot-select";
 /// verb.
 const ROTATE_EVENT: &str = "rotate-annot-commit";
 /// The line the rotate drag writes when it routes to **page content**.
-///
-/// Asserted **absent**. See the module header, link 5: a press that fell
-/// through to `caps.edit_content` produces this line instead, and the resulting
-/// build has a rotate handle that works perfectly on the wrong subject.
 const CONTENT_ROTATE_EVENT: &str = "rotate-commit";
 /// The line the apply arm writes when the engine has turned it.
-///
-/// `-applied`, per the convention this project adopted after making the
-/// same-name mistake twice: `vector_edit` writes its own bare
-/// `rotate-annotation …` line for the identical edit, and `.last()` on the bare
-/// name reads that one.
 const ROTATED_EVENT: &str = "rotate-annotation-applied";
 /// The line a drag on a markup's **body** writes — asserted absent.
-///
-/// The other half of link 3. A build whose `annot_rotate` was computed from
-/// the live pointer rather than from `press_origin` finds `None` on every real
-/// drag (egui does not call an interaction a drag until the pointer has
-/// travelled a threshold, by which time it is ~20 pt from an 8 pt handle) — and
-/// the press then means whatever the rungs below say. If that came out as a
-/// MOVE, this line appears and the shape slides across the sheet.
 const MOVE_EVENT: &str = "annot-drag";
 /// The region the selection outline publishes.
 const OUTLINE_REGION: &str = "canvas.selection-outline";
 /// The line the painter writes stating whether the outline it just drew was
 /// TURNED, and where its four corners are - `OPERATOR_REQUESTS.md` O147.
-///
-/// # Why a trace line and not a screenshot
-///
-/// Because the two builds this has to tell apart are *"drew the upright box"*
-/// and *"drew a quad that happens to coincide with the upright box"*, and on an
-/// unturned mark those are the same picture - so a pixel oracle is blind
-/// exactly where the regression would land. The line carries `turned=` **and**
-/// the corners, because a check reading only the flag would pass on a build
-/// that took the turned branch and then drew the upright box's corners.
 const ANGLE_EVENT: &str = "canvas-selection-angle";
 /// The line the Properties panel writes carrying the **Angle** field's value,
 /// its seed, and the turn Apply would commit - `OPERATOR_REQUESTS.md` O146.
 const ANNOT_GEOMETRY_EVENT: &str = "annot-geometry-draft";
 /// The right dock's **Properties** tab, which has to be clicked before the
 /// geometry section is laid out at all.
-///
-/// A dock draws only its ACTIVE tab, and in Review the right dock opens on
-/// Comments. Reading the trace without bringing this forward reports "the panel
-/// published no angle" about a build whose panel is correct.
 const PROPERTIES_TAB_REGION: &str = "dock.tab.file.properties";
 /// The region the **rotate handle** publishes, and only when it is drawn.
 const HANDLE_REGION: &str = "canvas.rotate-handle";
 /// The canvas viewport's own declared region.
-///
-/// Read so a failure can tell *the handle is off-canvas* from *the handle is on
-/// the canvas and the press was routed wrongly*. Those are different defects in
-/// different files and they produce the identical symptom. `checks::rotate`
-/// records the run where that distinction was missing and three confident,
-/// specific, wrong causes were named instead.
 const CANVAS_REGION: &str = "canvas-viewport";
 /// The page's own region, so a failure can say whether a sheet was even drawn.
 const PAGE_REGION: &str = "page";
 
 /// Where the shape is drawn, as fractions of the page.
-///
-/// **Well below the top of the sheet**, which is this check's own version of
-/// `checks::rotate`'s O22 hazard: the rotate handle sits `ROTATE_STEM_PX` above
-/// the selection box, so a shape near the top of the viewport has its handle
-/// clipped away by the painter and the press lands on the ribbon. 0.35 down the
-/// page is comfortably clear of it on any sheet size.
-///
-/// And away from the edges, so the drag in step 5 — which swings out to a
-/// radius of half the box plus the stem — has somewhere to go.
 const SHAPE: ((f64, f64), (f64, f64)) = ((0.35, 0.35), (0.55, 0.50));
 
 /// See the module documentation.

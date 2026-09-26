@@ -125,3 +125,76 @@ invalidates a signature is not in that class: the file the operator started
 from is still on disk (a copy) or still contains its earlier revision (an
 in-place incremental save), so the situation is recoverable and the copy
 should not imply otherwise.
+
+## Item notes
+
+### `fn the_preserved_note_pairs_the_fact_with_the_uncertainty`
+
+The one assertion in this file that is about a *prohibition* rather
+than about content, and it is the engine's own: a front end that
+renders `ByteRangePreserved` as "the signature is still valid" commits
+the specific error §12.8.2.2.2's two-stage split exists to prevent.
+
+Asserted as the presence of the negation rather than as the absence of
+the phrase, because the absence is the weaker property: a rewrite that
+dropped the qualifying half would still contain no such phrase and
+would still be a reassurance by implication. What makes the sentence
+safe is that it *names the open question*, so that is what is checked.
+
+### `fn the_two_footings_are_worded_differently`
+
+`SignatureImpact::documentation_basis` exists *"because the two deserve
+different operator-facing wording and a front end cannot tell them
+apart from the variant alone"*. A build that called the same function
+for both would satisfy every other test in this file, so the divergence
+is asserted directly.
+
+The second half is the substantive one: the word *invalidate* may
+appear as an assertion about the future only where Table 254 supports
+it. `basis_approval` names the verdict too, but attributes it — hence
+the check is on the **headline**, which is the sentence read first and
+often alone.
+
+### `fn the_approval_footing_attributes_the_verdict_to_pdfcer`
+
+The engine's headline negative result, guarded. A sentence that
+reported `Invalidated` for an approval signature without saying that
+the standard is silent would be pdfcer citing a clause that does not
+exist — and it would read as more authoritative than the certified
+case, which is exactly backwards.
+
+### `fn nothing_here_claims_what_another_reader_will_say`
+
+The engine names the claim and forbids citing it: that Acrobat and the
+PAdES family report such a document as *"signed, but altered since
+signing"* is empirical tool behaviour, explicitly not sourced in the
+spec RAG. It is the single most tempting sentence to add here, because
+it is the most useful thing an operator could be told — which is why it
+is guarded by a test rather than by a paragraph.
+
+### `fn no_string_claims_a_signature_is_valid_or_was_verified`
+
+`pdfcer-core`'s signature module opens *"This module verifies nothing."*
+So the affirmative forms are forbidden outright and the negative ones
+are the point — which is why this test hunts **phrases** rather than
+the word *valid*. The word itself is unavoidable: *invalidate* and
+*invalidated* are the verdict's own vocabulary and contain it, and a
+substring check would fail on the two sentences the file most needs.
+
+The forbidden list is therefore the set of ways a sentence could assert
+the thing pdfcer has not established, plus *verified* and *we checked*,
+which claim an act that never happened.
+
+### `fn the_counts_read_as_sentences`
+
+The `(s)` form this file deliberately does not use would pass a test
+that only checked the count appeared, which is why the assertion is
+that the two forms **differ** and that neither carries the template
+marker.
+
+### `fn the_in_place_sentence_names_the_file`
+
+The one string here that takes an operand, and the operand is the whole
+point: *"this writes over your file"* is a different statement from
+*"this writes over `D:\jobs\4471\Sheet 1.pdf`"* to an operator with
+four documents open, and the tab strip makes that the ordinary case.

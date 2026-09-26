@@ -87,6 +87,8 @@
 //! from text alone would collapse to zero in exactly the environment its
 //! tests run in. See `dock::width_tests` for why the floor is
 //! necessary but *not sufficient*, and what is done about that.
+//!
+//! Design and rationale: `docs/modules/egui-shell/dock/plan.md`.
 
 /// The narrowest a dock column may become by dragging.
 ///
@@ -618,11 +620,6 @@ fn fill_forward(widths: &[f32], from: usize, budget: f32, gap: f32) -> usize {
 
 /// The smallest `start` such that the tabs `start..=active` fit in
 /// `budget`.
-///
-/// Returns `active` itself when even the active tab alone does not fit —
-/// the caller's [`fill_forward`] then yields `shown == 0`, and the bar
-/// becomes the lone overflow control. That is the intended degradation,
-/// not an error case.
 fn fill_backward(widths: &[f32], active: usize, budget: f32, gap: f32) -> usize {
     let mut used = sane_length(widths[active]);
     if used > budget {
@@ -678,11 +675,6 @@ mod tests {
 
     /// **A child that would fall below the minimum is pinned at it, and
     /// the remainder is redistributed among the others.**
-    ///
-    /// This is the "pinned minimums" half of failure mode #6's rule. A
-    /// proportional split alone would let a 0.02-share column render two
-    /// points wide, which has no grabbable splitter and is therefore a
-    /// state the operator cannot leave.
     #[test]
     fn a_child_below_the_minimum_is_pinned_and_the_rest_redistribute() {
         let spans = resolve_spans(&[0.02, 1.0, 1.0], 300.0, 50.0, 0.0);
@@ -704,10 +696,6 @@ mod tests {
     /// When the container cannot satisfy every minimum, the split is
     /// **equal** — and, critically, still sums to the content, so no
     /// child is drawn outside the container.
-    ///
-    /// The alternative (honour the minimums, overflow the container) puts
-    /// a child where nobody can reach it, which is the same class of
-    /// defect as failure mode #8.
     #[test]
     fn a_container_too_small_for_its_minimums_splits_equally_and_still_fits() {
         let spans = resolve_spans(&[5.0, 1.0], 60.0, 100.0, 0.0);
@@ -718,13 +706,6 @@ mod tests {
 
     /// **Failure mode #6, asserted directly: resolving is idempotent
     /// under a round trip through a narrow window.**
-    ///
-    /// The defect it names is that un-maximising and re-maximising loses
-    /// the panel proportions. That can only happen if some pass writes a
-    /// *computed* size back into the model. This test states the property
-    /// that forbids it: the shares are the input, they are never an
-    /// output, and therefore the spans at 900 are the same whether or not
-    /// the window visited 200 first.
     #[test]
     fn resolving_is_idempotent_under_a_round_trip_through_a_narrow_window() {
         let shares = [3.0_f32, 1.0, 2.0];
@@ -761,11 +742,6 @@ mod tests {
 
     /// **Failure mode #7, asserted directly: a splitter affects its two
     /// neighbours only.**
-    ///
-    /// The defect it names is that dragging one divider resizes every
-    /// column. Four columns, drag the first boundary, and columns three
-    /// and four must be **bit-identical** — not "close", identical, because
-    /// the function is required not to touch them at all.
     #[test]
     fn a_splitter_moves_exactly_two_neighbours_and_no_others() {
         let mut spans = [100.0_f32, 100.0, 100.0, 100.0];
@@ -876,11 +852,6 @@ mod tests {
 
     /// **Failure mode #8: the visible tabs plus the reservation never
     /// exceed the bar.**
-    ///
-    /// This is the invariant that stops the overflow control from being
-    /// drawn past the right edge — present, but partly or wholly
-    /// unclickable, which is exactly what "the overflow button itself
-    /// gets hidden" means.
     #[test]
     fn the_visible_tabs_never_encroach_on_the_reservation() {
         let widths = [90.0_f32, 70.0, 130.0, 55.0, 160.0, 44.0, 120.0];
@@ -932,10 +903,6 @@ mod tests {
 
     /// **The active tab is always in the visible window** whenever the
     /// window is non-empty.
-    ///
-    /// A prefix plan would fail this the moment the operator selects a
-    /// late tab and narrows the dock, leaving a panel body on screen with
-    /// no tab naming it anywhere.
     #[test]
     fn the_active_tab_is_never_the_one_that_gets_hidden() {
         let widths = [90.0_f32, 70.0, 130.0, 55.0, 160.0, 44.0, 120.0];
@@ -971,11 +938,6 @@ mod tests {
     /// **At a width narrower than the reservation, the bar degrades to
     /// the affordance alone — the affordance is never what is squeezed
     /// out.**
-    ///
-    /// Failure mode #8 is the overflow button itself getting hidden,
-    /// leaving no route to the hidden tabs. Here the route survives and
-    /// the tabs are what give way, which is the reverse of it and the
-    /// whole reason the reservation is the first subtraction.
     #[test]
     fn a_bar_narrower_than_its_reservation_keeps_the_affordance_and_drops_the_tabs() {
         let widths = [100.0_f32; 8];
@@ -1008,10 +970,6 @@ mod tests {
     }
 
     /// An unbounded available width does not silently disable overflow.
-    ///
-    /// `INFINITY − overflow_width` is still infinity, so a naive
-    /// implementation shows every tab in a container that will then clip
-    /// them, with no affordance.
     #[test]
     fn an_infinite_available_width_is_treated_as_none_at_all() {
         let plan = plan_tabs(&[100.0; 5], 0, f32::INFINITY, TAB_GAP, 70.0);
@@ -1030,13 +988,6 @@ mod tests {
 
     /// The reservation is the widest label the control can EVER show, not
     /// the label for the largest count.
-    ///
-    /// Exercised here with a deliberately non-monotonic measure — the
-    /// shape a real proportional face has, where `"⏷ 8 more"` is wider
-    /// than `"⏷ 9 more"`. A `max` over `1..=total` is right; measuring
-    /// `total` alone is wrong, and the difference is invisible with no
-    /// font installed. [`super::width_tests`] repeats this against real
-    /// metrics.
     #[test]
     fn the_reservation_covers_the_widest_reachable_label_not_the_longest() {
         let measure = |s: &str| if s.contains('8') { 200.0 } else { 40.0 };
@@ -1053,13 +1004,6 @@ mod tests {
 
     /// **Failure mode #3: no minimum in this module is a function of a
     /// tab label.**
-    ///
-    /// The defect it names is an invisible, inactive tab whose width
-    /// holds the whole dock open — you cannot see it and you cannot
-    /// narrow the dock until you close it. It can only arise if a
-    /// minimum-size computation walks the tab list. This test states the
-    /// property mechanically: give a stack a preposterous label and every
-    /// minimum is unchanged, because they are constants.
     #[test]
     fn the_minimum_column_width_ignores_tab_labels_entirely() {
         let modest = tab_width(40.0);
@@ -1079,11 +1023,6 @@ mod tests {
     }
 
     /// **Failure mode #4, budgeted and tested at 1280 points wide.**
-    ///
-    /// Failure mode #4 is a single dock whose minimum consumes a third of
-    /// the screen. Both of this shell's docks at their minimum must leave
-    /// the application the majority of a 1280-point window — the width the
-    /// design rule names.
     #[test]
     fn both_docks_at_their_minimum_leave_most_of_a_1280_point_window() {
         let both = MIN_SIDE_WIDTH * 2.0;
@@ -1095,10 +1034,6 @@ mod tests {
 
     /// The presentation clamp keeps a huge restored width usable without
     /// the model ever learning about it.
-    ///
-    /// The clamp itself lives in [`super::mod`]'s renderer; this asserts
-    /// the constant it is built from is a sane fraction, so a change to it
-    /// is a deliberate one.
     #[test]
     fn the_side_clamp_leaves_the_application_the_majority_of_the_window() {
         let fraction = MAX_SIDE_FRACTION;

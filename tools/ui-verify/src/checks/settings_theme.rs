@@ -34,80 +34,20 @@ const DARK_RADIO: &str = "settings.theme.dark";
 pub(super) const THEME_PREFIX: &str = "settings.theme.";
 
 /// The application's own central area — `crate::app::REGION_CENTRAL_PANEL`.
-///
-/// Sampled by the Cancel half of [`SettingsThemeTakesEffect`], which runs with
-/// **no document**: with nothing open the central panel is the application's
-/// own surface and takes the preset's colour directly, so it is the cheapest
-/// honest witness that a live theme change reached the application window
-/// rather than only the dialog that chose it.
 const CENTRAL_PANEL: &str = "central-panel";
 
 /// The Appearance group's collapsible heading.
-///
-/// **It has to be clicked, because that group is CLOSED when the window
-/// opens** — and that is a deliberate design decision rather than an oversight,
-/// so the check accommodates it rather than the application being changed to
-/// suit the check.
-///
-/// The window collapses thirteen settings into seven subject groups because an
-/// operator arrives with a *symptom* and the headings are how a symptom finds
-/// its setting. Exactly one starts expanded, and it is **Colour** — it holds
-/// the setting most likely to have brought someone here and the only default
-/// that knowingly differs from other PDF viewers.
-///
-/// This check found the consequence on its second run: the window opened, the
-/// body published its rect, and no theme radio existed, because a collapsed
-/// `CollapsingHeader` does not run its body closure at all. The failure message
-/// said *"the window has no theme picker in it"*, which was a true statement
-/// about the frame and a false one about the build.
 const APPEARANCE_HEADING: &str = "settings.heading.appearance";
 
 /// How much darker the window must get before the change counts as a theme
 /// rather than as a hover highlight or a repaint artefact.
-///
-/// The `quiet` preset's panel is a light grey around `#E8E8EA`; the `dark`
-/// preset's is in the forties. That is a gap of roughly 190 per channel, so a
-/// floor of **60** is comfortably inside it while being far outside anything a
-/// selection highlight, a focus ring or an antialiasing difference produces.
-///
-/// Stated as a *minimum drop* rather than as a target colour deliberately — see
-/// the module header on why pinning an exact value would fail on a machine
-/// where the feature works.
 const MIN_DARKENING: i32 = 60;
 
 /// Above this mean channel value, the window that opened is a **light** one.
-///
-/// A guard against a vacuous run, and against the worse thing a vacuous run
-/// does here: a **false defect report**.
-///
-/// This check launches the operator's own binary against the operator's own
-/// `settings.txt`, and if that file already says `theme = dark` then the window
-/// opens dark, clicking Dark changes nothing, and every assertion below reads
-/// as *"the picker writes a token nothing installs"* — `DEFECTS.md` D10, filed
-/// against a build in which the feature works perfectly. A fixture cannot
-/// defeat this, because the condition is not a default but a **starting
-/// state**.
-///
-/// 140 sits above the darkest light preset (`quiet`'s surface measures ≈ 241)
-/// by a hundred levels and above the lightest dark one (`dark`'s surface
-/// measures ≈ 38) by the same again, so no plausible palette lands on it.
 const LIGHT_START_FLOOR: i32 = 140;
 
 /// How far the application may drift from its opening colour after the window
 /// is dismissed, before the revert counts as not having happened.
-///
-/// **Zero is the expected reading.** The theme token after Cancel is the same
-/// `String` it was before the window opened, so the same style is written, the
-/// same fill is painted, and a lossless BGRA capture of it differs by nothing
-/// at all. This is not a tolerance for a real difference; it is a tolerance for
-/// the sampler, which reports the *mean of a quantised bucket* and can therefore
-/// move by a level or two if a scrollbar, a focus ring or a hover highlight
-/// falls inside the region on one capture and not the other.
-///
-/// **6** is one quantisation bucket ([`crate::pixels`] quantises to 5 bits, so a
-/// bucket is 8 levels wide) and is two orders below the ≈ 200 that separates the
-/// light presets from Dark — so a Cancel that failed to revert cannot hide under
-/// it, and a repaint artefact cannot trip it.
 const MAX_REVERT_DRIFT: u16 = 6;
 
 pub struct SettingsThemeTakesEffect;
@@ -469,13 +409,6 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 }
 
 /// The mean of a colour's three channels, `0..=255`.
-///
-/// Every luminance claim in this file is stated as a mean channel rather than as
-/// a perceptual luminance, and deliberately: the question here is *"did this
-/// surface change colour"*, not *"can this be read"*. [`crate::pixels`] answers
-/// the second, weights the channels for the eye, and would report a green and a
-/// blue of equal brightness as the same — which is exactly wrong for detecting
-/// a theme that tinted something.
 fn mean_channel(c: Rgb) -> i32 {
     (i32::from(c.r) + i32::from(c.g) + i32::from(c.b)) / 3
 }

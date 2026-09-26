@@ -102,3 +102,15 @@ from this crate's mirrored types into the engine's is pinned by
 last link — that the bytes reach paper — is verified by a human pressing
 the button once, which is the correct amount of automation for an
 irreversible act.
+
+## Item notes
+
+### `const TAB_ID`
+
+**File, and that is load-bearing rather than incidental.** `file.print`
+sits on the File tab, which is in *every* mode's tab list including Read's
+(`["file", "view"]`) — so unlike the render-diagnostics check, this one
+needs no mode change before it can find its control. If Print ever moved to
+a tab Read does not carry, this check would begin skipping with *"the tab
+strip is too narrow"*, which is a confident wrong diagnosis; the constant is
+spelled out here so the failure names the real cause.

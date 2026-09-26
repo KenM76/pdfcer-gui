@@ -319,19 +319,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
 /// The share of sampled pixels that must differ for the annotation to count as
 /// drawn.
-///
-/// Two characters of 12 pt text in a 220 pt box cover well under a percent of
-/// it, so this floor is deliberately tiny — it separates *nothing at all* from
-/// *something*, and is not a measurement of how much was drawn. Anti-aliasing
-/// and the canvas's own re-render jitter are what it has to clear.
 const MIN_CHANGED_RATIO: f64 = 0.001;
 
 /// Count pixels of `region` that differ between two captures.
-///
-/// A plain per-channel threshold rather than a perceptual difference: the
-/// question is *"did anything appear here"*, and text on paper is a large
-/// contrast wherever it lands. The threshold exists only to ignore the
-/// one-or-two-level noise a re-render produces on identical content.
 fn changed_pixels(
     before: &crate::image::Image,
     after: &crate::image::Image,

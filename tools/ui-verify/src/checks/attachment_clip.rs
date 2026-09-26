@@ -11,16 +11,6 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// Edit mode, then the panel, through the harness seam.
-///
-/// NOT `click_mode_segment` plus a ribbon click. The ribbon shows one tab at
-/// a time and this check leaves the operator on whichever tab the mode selector
-/// last drew — which on the first run was File, so
-/// `ribbon.item.edit.attachments` was simply not on screen and the check
-/// skipped on a build where the feature worked. A region absent because it is
-/// on another tab looks exactly like one absent because the feature is missing.
-///
-/// The seam reaches the command wherever it lives, which is the same reason
-/// `checks::attachments` uses it.
 const INVOKE: &str = "mode.edit,edit.attachments";
 /// The command that opens the panel.
 const PANEL_ITEM: &str = "ribbon.item.edit.attachments";
@@ -39,20 +29,6 @@ const COPY_REGION: &str = "attachments.copy"; // ui-text-exempt: a trace region 
 /// The Paste control — absent, per R9, when the clipboard holds nothing.
 const PASTE_REGION: &str = "attachments.paste"; // ui-text-exempt: a trace region name
 /// The paste's verdict about replacement, as ONE of a pair.
-///
-/// The first version of this check asserted `attachments.paste.replaces` was
-/// **absent** in the second document, and FAILED against a correct build —
-/// because `ui_rect` is a change log and the panel had legitimately declared
-/// that name several frames earlier, in the FIRST document, where a file of
-/// that name really was present. A region that stops being drawn does not
-/// un-declare itself.
-///
-/// ⇒ The panel now publishes exactly one of two names every frame, and this
-/// check reads whichever came last. **An absence assertion became a presence
-/// assertion**, which is the only kind a change log can answer. The finding
-/// is already in `D:/dev/rag/egui/` under
-/// `a_change_log_ui_rect_trace_cannot_report_that_a_widget_stopped_being_drawn.md`,
-/// and this reproduced it within the hour.
 const REPLACES_REGION: &str = "attachments.paste.replaces"; // ui-text-exempt: a trace region name
 /// The other half of the pair — nothing would be displaced.
 const FRESH_REGION: &str = "attachments.paste.fresh"; // ui-text-exempt: a trace region name
@@ -379,11 +355,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 }
 
 /// The panel's `count=`, or `None` when the panel has not drawn.
-///
-/// `None` and `Some(0)` are different answers and the distinction is the
-/// whole of the ask-then-toggle rule above: *"the panel is not on screen"* and
-/// *"the panel is on screen and this document has no attachments"* look
-/// identical to any check that collapses them, and the remedies are opposite.
 fn census(session: &Session) -> Result<Option<usize>> {
     Ok(session
         .trace()?

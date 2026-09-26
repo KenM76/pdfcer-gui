@@ -173,13 +173,6 @@ impl ExportTextDialog {
 
     /// **This window's state, reduced to what a different document would still
     /// want** — the producing half of `OPERATOR_REQUESTS.md` **O196**.
-    ///
-    /// The membership rule and the argument for every inclusion and every
-    /// omission live on [`crate::app::prefs::ExportTextPrefs`], which is the
-    /// type this returns; this function is only the projection. It is one
-    /// struct literal with **no `..Default::default()`**, so a field added to
-    /// `ExportTextPrefs` is a compile error here rather than a preference
-    /// written to disk as its own default and never actually remembered.
     fn habits(&self) -> crate::app::prefs::ExportTextPrefs {
         crate::app::prefs::ExportTextPrefs {
             scope: self.scope,
@@ -249,11 +242,6 @@ impl ExportTextDialog {
 
     /// The pages this window is currently offering, or `None` when the typed
     /// range names none.
-    ///
-    /// Called twice per frame — once to grey the Export button, once on the
-    /// press — and it is cheap: a parse of a short string. Computing it live is
-    /// what keeps the button and the sentence beside the box from ever
-    /// disagreeing.
     fn pages(&self) -> Option<Vec<usize>> {
         resolve_pages(
             self.scope,
@@ -348,13 +336,6 @@ impl ExportTextDialog {
     }
 
     /// What goes between one page and the next.
-    ///
-    /// Two radios rather than a checkbox, because the operator is choosing
-    /// between **two things that go in the file**, one of which is the standard
-    /// character and one of which is prose pdfcer wrote. A checkbox labelled
-    /// "add page markers" would make the second look like a formatting
-    /// preference rather than like added content, which is precisely the
-    /// distinction rule 4 exists to keep visible.
     fn separator_group(&mut self, ui: &mut Ui) {
         ui.label(t::separator_heading());
         // Each radio's OWN rectangle, for O196 — see
@@ -408,12 +389,6 @@ impl ExportTextDialog {
 
     /// The standing losses — true of every text export of every document, and
     /// therefore sayable before the press.
-    ///
-    /// Drawn as ordinary labels rather than `weak`, and above the buttons
-    /// rather than below them. This is the paragraph that decides whether the
-    /// operator should be doing this at all — a drafter who needs the title
-    /// block's *layout* wants the DXF export or the image export, and this is
-    /// where they find that out.
     fn losses_group(&mut self, ui: &mut Ui) {
         ui.label(t::loses_heading());
         ui.label(t::loses_layout());

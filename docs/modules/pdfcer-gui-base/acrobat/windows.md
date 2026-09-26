@@ -52,3 +52,57 @@ the specified registry key or value.` when a key is absent. That is the
 `None` and nothing is traced as a failure. Verified here: querying
 `App Paths\AcroRd32.exe` on this machine exits 1, and this machine simply
 has no Reader.
+
+## Item notes
+
+### `const APP_PATHS_ROOTS`
+
+`HKCU` last rather than first, which is the one non-obvious entry: a
+per-user registration is the least common by far, and the two `HKLM`
+spellings are what a machine-wide Adobe installer writes. All three are
+consulted because a per-user install is exactly the case a hard-coded
+`C:\Program Files\…` would miss, and missing it is the failure §4 of
+[`super`] exists to prevent.
+
+The `WOW6432Node` mirror is separate rather than implied: a 64-bit process
+reading `HKLM\SOFTWARE\…` does **not** see what a 32-bit installer wrote,
+and Acrobat has shipped 32-bit for most of its life. `reg.exe` inherits the
+bitness of the caller, so the mirror has to be named.
+
+### `const CREATE_NO_WINDOW`
+
+Spelled as a literal rather than taken from a crate because pdfcer-gui
+depends on no Windows crate and is not permitted to gain one. The value is
+fixed by the Win32 ABI (`processthreadsapi.h`) and has never changed.
+
+### `fn reg_query`
+
+Every failure is `None` and none of them is traced as a fault: `reg.exe`
+missing, the key absent, the output unparseable and the value empty are all
+the same fact from this module's point of view — *Windows does not register
+that here* — and a start-up path that logged an error for the ordinary case
+of "no Acrobat installed" would train a reader to ignore the log.
+
+### `fn the_separator_is_whitespace_of_any_width`
+
+The four spaces `reg.exe` prints on the machine the fixture came from
+are not a documented promise, so nothing may split on a fixed width. A
+build of Windows, a locale, or a longer type name that padded
+differently would yield a parser that silently found no value — and "no
+value" is indistinguishable from "no Acrobat installed", so the button
+would simply never appear and nothing would say why.
+
+### `fn output_with_no_value_line_yields_nothing`
+
+`reg.exe` also exits non-zero in that case and [`reg_query`] returns
+before reaching here, so this is the second of two guards. It is kept
+because the exit code is the platform's promise and this is ours.
+
+### `fn an_expandable_value_is_read_as_the_string_it_holds`
+
+pdfcer does **not** expand the variable, and does not need to:
+[`super::super::Registrations::exists`] will answer `false` for a path
+with a literal `%ProgramFiles%` in it, so such a registration is
+declined rather than launched. Saying so here is the honest thing —
+this is a known, bounded gap, not an oversight — and the operator's
+escape hatch is the Settings field.

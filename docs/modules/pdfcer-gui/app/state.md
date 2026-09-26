@@ -90,3 +90,13 @@ lifetime bounds them and no identity key is needed — see
 [`OpenDoc::page_objects`] — and, from the same stage, the **canvas
 selection**, moved off `egui::Memory` for the same reason. See
 [`OpenDoc::selection`].
+
+## Item notes
+
+### `fn assemble`
+
+[`Self::new`]'s own argument — *"a `reset()` method would be a second,
+weaker way to achieve the same thing"* — applies with equal force to a
+second struct literal. Two constructors that each listed thirty fields
+would drift the moment one of them gained a field, and the drift would
+be invisible: the compiler is satisfied by both.

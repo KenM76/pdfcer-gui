@@ -15,27 +15,12 @@ use crate::canvas::strip::DrawnPage;
 use crate::panels::pages::ops;
 
 /// How thick the insertion caret is drawn.
-///
-/// `panels::pages`' `CARET_PTS`, restated rather than imported, because the two
-/// are the same *number* and not the same *decision*: this one is measured
-/// against a rendered page at the operator's zoom and that one against a
-/// thumbnail tile. If a future zoom-aware caret makes one of them change, the
-/// other must not follow by accident.
 const CARET_PTS: f32 = 2.0;
 
 /// How far outside the page edge the caret sits, in points.
-///
-/// Enough to read as *"in the gap"* rather than as a border the sheet has
-/// grown, which is the same reason the grid's caret sits half the inter-tile
-/// spacing beyond the tile.
 const CARET_INSET_PTS: f32 = 4.0;
 
 /// How much of the caret's colour survives when the drop would change nothing.
-///
-/// `panels::pages::CARET_DIMMED`, and the argument travels with it: **dimmed,
-/// not hidden**, because drawing nothing over a boundary that would not land
-/// cannot be told apart from the canvas having stopped tracking the pointer —
-/// and the no-op boundary is where every same-document drag begins.
 const CARET_DIMMED: f32 = 0.35;
 
 /// Named region: the caret, when one is drawn.
@@ -179,11 +164,6 @@ pub(super) fn offer(
 }
 
 /// Which boundary the pointer is aiming at, and where to draw it.
-///
-/// `None` when the pointer is outside the page view, or over no page — the
-/// margin around a page that is smaller than the viewport is not a gap, and
-/// treating it as one would let a drop land somewhere the operator was not
-/// pointing.
 fn resolve(
     ui: &egui::Ui,
     drag: &crate::pagedrag::PageDrag,

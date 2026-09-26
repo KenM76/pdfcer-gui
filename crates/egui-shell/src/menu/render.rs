@@ -101,6 +101,8 @@
 //! does not consume input for it. Chord dispatch belongs with the
 //! application's input pass, which is the only party that knows what has
 //! focus — the same boundary [`crate::ribbon`] draws.
+//!
+//! Design and rationale: `docs/modules/egui-shell/menu/render.md`.
 
 use egui::{Atoms, RichText, TextStyle, UiKind, Vec2, vec2};
 
@@ -452,12 +454,6 @@ impl Menu {
 // ---------------------------------------------------------------------
 
 /// Everything one command row needs to draw itself.
-///
-/// A struct rather than eight parameters, and not only for the lint: every
-/// field here is a *decision already taken* — by [`plan::resolve`], by
-/// [`measure`], by [`plan::icon_slot`] — and a positional list of
-/// interchangeable flags is the shape where two of them get swapped and the
-/// result still compiles.
 struct RowPlan<'a> {
     /// The registration: label, tooltip, icon key, handler token.
     command: &'a crate::commands::Command,
@@ -635,13 +631,6 @@ fn custom_row(ui: &mut egui::Ui, ctx: &mut Ctx<'_>, kind: &str, payload: Option<
 // ---------------------------------------------------------------------
 
 /// The width this body will be laid out at.
-///
-/// Measured with [`crate::ribbon::measure::text_width`] and
-/// [`crate::ribbon::measure::button_padding`] — **the ribbon's own
-/// functions**, not copies. A menu row and a band control are both
-/// `egui::Button`s, and two surfaces that measured the same text with
-/// different constants would disagree about how wide the same command is
-/// for no reason a reader could find.
 fn measure(
     ui: &egui::Ui,
     ctx: &Ctx<'_>,
@@ -688,11 +677,6 @@ fn measure(
 // ---------------------------------------------------------------------
 
 /// Close a popup id if `egui` currently believes it is open.
-///
-/// The second half of decision 1. `egui` tracks a popup's open state in
-/// memory, not by whether anyone drew it, so a menu that stops being drawn
-/// stays "open" and reappears the moment it is drawn again — at the old
-/// pointer position, with no right-click behind it.
 fn close_if_open(ctx: &egui::Context, popup_id: egui::Id) {
     if egui::Popup::is_id_open(ctx, popup_id) {
         egui::Popup::close_id(ctx, popup_id);
@@ -700,12 +684,6 @@ fn close_if_open(ctx: &egui::Context, popup_id: egui::Id) {
 }
 
 /// Ask the containing menu popup to close, if there is one.
-///
-/// Guarded rather than calling [`egui::Ui::close`] unconditionally,
-/// because `close` logs a warning when there is no closable parent — and
-/// [`ContextMenu::render`] is explicitly allowed to be called on a `Ui`
-/// that is not a popup at all. A warning on a supported use is a warning
-/// that teaches people to ignore warnings.
 fn close_containing_menu(ui: &egui::Ui) {
     if ui
         .stack()

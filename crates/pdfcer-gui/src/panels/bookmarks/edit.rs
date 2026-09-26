@@ -47,38 +47,6 @@ pub fn show(
 }
 
 /// The name field and its Rename button.
-///
-/// # The draft carries its own `ObjId`, and that is not tidiness
-///
-/// A half-typed name must not follow the operator to a different bookmark.
-/// Holding the id **with** the text makes a stale pair detectable, so clicking
-/// another row re-seeds the field from the bookmark actually on screen rather
-/// than offering to rename *it* to a name meant for the last one.
-///
-/// It is the same hazard `dialogs::scale` names for its captured group — a
-/// picker that moves underneath an open dialog lets the operator type a number
-/// for one group and commit it to another — one control smaller, and worse here
-/// than there because the row list is one click away rather than behind a
-/// window.
-///
-/// # Why the button is ABSENT rather than greyed when there is nothing to do
-///
-/// A Rename button beside a field holding the bookmark's current name is a
-/// control whose only possible effect is an undo entry the operator did not
-/// earn. The field alone reads as *"this is what it is called"*, which is true.
-/// That is the same call `panels::dimension_groups::identity` makes for the
-/// identical control, and it is deliberately the **opposite** of the Add
-/// button's one block up: that one is the whole of its feature, so it stays and
-/// explains itself.
-///
-/// The blank-name case is the one worth a sentence rather than a silence, so it
-/// is on the field's hover text.
-///
-/// # Enter commits
-///
-/// Because a name is a thing people type and then press Enter on. Checking only
-/// the button would make that keystroke do nothing and send the operator back
-/// to a mouse they had just put down.
 fn rename_row(
     ui: &mut Ui,
     selected: &OutlineItem,
@@ -133,42 +101,6 @@ fn rename_row(
 }
 
 /// The Remove button, and the blast radius stated before it is pressed.
-///
-/// # The subtree count is the disclosure, and it is said twice on purpose
-///
-/// **Before the press**, from the tree this panel already drew: *"Removing this
-/// also removes the 11 bookmarks filed under it."* The operator cannot get that
-/// number any other way — a collapsed heading shows nothing beneath it, and
-/// §12.3.3 gives a closed item's ancestors a `/Count` contribution of exactly
-/// one however large its subtree is.
-///
-/// **After the press**, from the count `EditSession::delete_outline_item`
-/// returns, in the status line where every other verb's disclosure goes. See
-/// `crate::app::actions::bookmarks::delete`.
-///
-/// **The two numbers are allowed to differ, and that is why both are said.**
-/// `read_outline` gives up part-way on a cycle, on excessive depth, or on
-/// exhausting its item budget — this panel draws a truncation notice above the
-/// list when it does — so the number here counts *what pdfcer could read* and
-/// the number afterwards counts *what the engine removed*. On any ordinary
-/// document they agree. On a damaged one, an operator who was promised 3 and
-/// told 47 has learned something real about their file, which is strictly
-/// better than being shown one number and trusting it.
-///
-/// # Why the leaf case says nothing extra
-///
-/// A bookmark with no children removes exactly itself, and there is no hidden
-/// consequence to disclose. *"Removing this also removes the 0 bookmarks filed
-/// under it"* is the shape of sentence that makes a program look like it is
-/// filling in a template, so the sentence is simply not drawn.
-///
-/// # The pages line is a fact, not reassurance
-///
-/// An outline is a document-level structure reached from the catalogue's
-/// `/Outlines`, never from a page. Removing a bookmark removes a way of
-/// *reaching* a page. It is worth saying beside a control that takes several
-/// things at once, because the operator's reasonable fear at that moment is
-/// that the pages are what is going.
 fn delete_row(
     ui: &mut Ui,
     selected: &OutlineItem,

@@ -263,12 +263,6 @@ pub(super) fn line(
 }
 
 /// Commit the draft being left and open one on `to_run`.
-///
-/// The order is load-bearing: **commit first**. A caret that walks out of a
-/// run with unsaved keystrokes in it silently discards them, which is this
-/// project's defining defect class — and `commit_into` writes nothing when the
-/// text is unchanged, so an operator merely *reading* with the navigation keys
-/// puts nothing on the undo stack.
 fn land(
     ctx: &egui::Context,
     doc: &OpenDoc,
@@ -306,16 +300,6 @@ fn land(
 mod tests {
     /// **The two conversions are inverses**, which is the only property in
     /// this module a test can reach without a document.
-    ///
-    /// Everything else here is `pdfcer-core`'s recognition, which has its own
-    /// tests and needs a real page. What is *this* module's own is the
-    /// character ⟷ byte hop, and it is exactly the kind of arithmetic that
-    /// compiles either way round and puts the caret inside a multi-byte
-    /// character on the first document with an accent in it.
-    ///
-    /// Asserted on a string that has one: `"café"` is five bytes and four
-    /// characters, so a caret index of 4 is a byte offset of 5 and any
-    /// implementation that confused them would be off by one at the end.
     #[test]
     fn characters_and_bytes_round_trip_through_an_accent() {
         let s = "café";

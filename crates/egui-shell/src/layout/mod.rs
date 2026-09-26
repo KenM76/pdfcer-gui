@@ -107,6 +107,8 @@
 //! why: a single global reset has a blast radius always larger than the
 //! problem, and *"an operator who only wanted the right dock back must
 //! not lose their left one."*
+//!
+//! Design and rationale: `docs/modules/egui-shell/layout/mod.md`.
 
 pub mod reset;
 pub mod skip;
@@ -524,12 +526,6 @@ mod tests {
     }
 
     /// **A layout round-trips through text unchanged.**
-    ///
-    /// The property everything else in this module depends on. Asserted
-    /// against a *rich* arrangement — two columns, a tabbed stack, a
-    /// non-default width, both sides — because a round trip over a
-    /// one-panel layout is satisfied by a serializer that drops almost
-    /// everything.
     #[test]
     fn a_rich_layout_round_trips_through_text_unchanged() {
         let document = LayoutDocument::new(rich());
@@ -587,10 +583,6 @@ mod tests {
     /// **A missing field is a default, and an unknown field is
     /// ignored** — the two halves of surviving a version change in either
     /// direction.
-    ///
-    /// Without the first, every field ever added is a day on which
-    /// everybody's layout resets. Without the second, a file touched by a
-    /// newer build is unreadable by the one the operator rolled back to.
     #[test]
     fn a_file_from_another_version_still_loads() {
         // No `schema`, no `workspaces`, no `share` on the stack, and a
@@ -614,11 +606,6 @@ mod tests {
 
     /// **A panel this build does not offer loses its tab and nothing
     /// else.**
-    ///
-    /// The `SHELL_FRAMEWORK.md` §7 case: a capability compiled out
-    /// registers no panel, so its saved mount is dropped — with the
-    /// operator's arrangement of everything else intact, and with no
-    /// `#[cfg]` anywhere in this crate.
     #[test]
     fn a_panel_this_build_does_not_offer_loses_its_tab_and_nothing_else() {
         let document = LayoutDocument::new(rich());
@@ -751,12 +738,6 @@ mod tests {
 
     /// **An arrangement sanitized to nothing falls back rather than
     /// leaving an empty dock.**
-    ///
-    /// A build with none of the saved panels — every capability compiled
-    /// out, or an application that renamed all of its ids — must not
-    /// present a dock with nothing in it, which is indistinguishable from
-    /// a broken application. Every individual drop has already been
-    /// disclosed, so the fallback adds no new reason.
     #[test]
     fn an_arrangement_left_with_nothing_falls_back_to_the_default() {
         let document = LayoutDocument::new(rich());
@@ -767,11 +748,6 @@ mod tests {
     }
 
     /// **Sanitizing and normalizing agree.**
-    ///
-    /// They are two implementations of one set of invariants — one with a
-    /// voice, one without — and an arrangement that changed shape between
-    /// being loaded and being drawn would be a defect no test of either
-    /// alone could find.
     #[test]
     fn sanitizing_leaves_nothing_for_normalize_to_do() {
         let text = r#"LayoutDocument(active: (

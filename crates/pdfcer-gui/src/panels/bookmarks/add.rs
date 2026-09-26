@@ -142,11 +142,6 @@ mod tests {
     }
 
     /// An untitled parent is named by the stand-in, not by a gap in a sentence.
-    ///
-    /// An untitled bookmark is **legal** - `OutlineItem::title`'s own doc says
-    /// a file may carry one - so `bookmark_add_under` must never be handed an
-    /// empty string. That is [`display_title`]'s job, and this pins the pairing
-    /// at the call site's own spelling.
     #[test]
     fn an_untitled_parent_is_still_nameable() {
         let sentence = t::bookmark_add_under(&display_title("   "));

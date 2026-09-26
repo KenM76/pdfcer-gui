@@ -61,3 +61,19 @@ operator's standing instruction is that missing driven verification must not
 stop the work or the release — it must be *named*. It is named here and in
 the report, and until a run happens every claim above is a claim about the
 code rather than about the program.
+
+## Item notes
+
+### `const STRIP`
+
+`toolrail`, **not** `dock.left.rail` — that name belongs to the sliver a
+*collapsed* side leaves behind, which is a different surface. Reading the
+wrong one is the failure
+`two_trace_lines_sharing_an_event_name_make_a_check_read_the_wrong_one`
+records.
+
+### `const TABS`
+
+**Not the whole group.** The rail's `RailFold::Never` group also holds
+`rail.tabs.markup.comments`, and it is absent here, so the Comments tab's
+reachability is asserted in no mode. `DEFECTS.md` D30.

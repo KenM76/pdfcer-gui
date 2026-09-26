@@ -255,12 +255,6 @@ fn plan_from_set(set: &'static RegionSet) -> RegionPlan {
 }
 
 /// One region's measurement.
-///
-/// `contrast` is `None` for a region that could not be sampled at all — an
-/// off-surface region. Deliberately an `Option` rather than a contrast of
-/// 1.0 over zero pixels: the two are the same number and completely different
-/// findings, and this crate's whole thesis is that a measurement of nothing
-/// must not be presentable as a measurement.
 struct Measurement {
     name: String,
     contrast: Option<ContrastReport>,
@@ -375,12 +369,6 @@ pub fn assess(
 
 /// Intersect a pixel rect with the surface, returning a zero-area rect when
 /// they do not overlap at all.
-///
-/// A traced rect is already clamped to the client area by
-/// [`crate::coords::WindowFrame::logical_to_capture_pixels`]; this repeats the
-/// clamp against the *image* because the two can differ by a pixel when a
-/// window is resized between the measurement and the capture, and because
-/// `--image` mode can hand a plan a surface of an entirely different size.
 fn clip(r: PixRect, width: u32, height: u32) -> PixRect {
     let x0 = r.x.min(width);
     let y0 = r.y.min(height);

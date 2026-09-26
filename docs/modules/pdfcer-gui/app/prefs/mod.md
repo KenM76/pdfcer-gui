@@ -75,3 +75,12 @@ wishlist of what it might.**
 Cancel. See its `working_prefs` field, which states the rule: *"one Cancel
 discards both, one Save writes both, and `is_dirty` is true if either
 moved."*
+
+## Item notes
+
+### `fn format_percent`
+
+`1e12` is what `f32::to_string` produces for a trillion, and a file the
+operator opens in a text editor should say `1000000000000`. The file is
+his to read and edit; a machine-shaped number there is a small rudeness
+with a real cost, because he cannot tell at a glance what he set.

@@ -159,3 +159,110 @@ unsandboxed behaviour. Sandboxed, both checks pass in either order;
 `--shared-profile` makes the second one's verdict depend on what the first
 one left in `userdata/`. If that difference ever stops appearing, the
 isolation has been lost and this module is no longer doing its job.
+
+## Item notes
+
+### `const SIBLING_DIRS`
+
+See the module header. This is an allowlist rather than "every sibling
+directory": a `--exe` pointed at `target/release/` has `deps/`, `build/` and
+`incremental/` beside it, which are gigabytes and which the application never
+looks at.
+
+### `const PREFS_FILE`
+
+Spelt out rather than imported: `ui-verify` deliberately does not link the
+shell, so this is a **copy of somebody else's constant** and can go stale.
+The tripwire is loud rather than subtle — a stale name here means the seed
+below silently stops working and the sweep grows a dialog in front of every
+check, which is the failure it exists to prevent. If that ever happens, the
+truth is `crate::app::prefs::PREFS_FILE` in `pdfcer-gui`.
+
+### `fn seed_prefs`
+
+The module header says `userdata/` is not brought across, and that is still
+true — nothing of the operator's is copied here. This writes a *new*
+`userdata/preferences.txt` containing a single key.
+
+## Why
+
+`dialogs::defaultapp` (O173) offers, **once per launch on a fresh profile**,
+to make pdfcer the default PDF program. Every sandbox is by construction a
+fresh profile, so without this the offer would open in front of **every
+check in the sweep** — a window over the canvas, taking the pointer presses
+the check is about to make. That is the failure this project has already
+paid for once and written down: a window over the thing it describes takes
+that thing's gestures, and the object underneath becomes unreachable in
+silence.
+
+## ⚠ What this costs, stated rather than hidden
+
+The sandbox's starting state is now *"a fresh install that has already
+declined the default-app offer"* rather than *"a fresh install"*. **A check
+written to drive that offer must delete this file first**, or it will assert
+against a starting state that defeats the very thing it measures — the
+standing lesson that a fixture defeating a default does not defeat a
+starting state.
+
+## Why one key and not a whole file
+
+Every unknown key is preserved by `app::prefs`' reader and every absent one
+takes its compiled-in default, so a one-line file leaves the other
+forty-odd settings exactly where a fresh install would leave them. A fuller
+seed would silently pin settings the checks are supposed to be measuring.
+
+## Best effort, deliberately
+
+Every failure here is swallowed. A sandbox that refused to exist because
+one preference could not be written would turn a cosmetic problem into a
+check that cannot run, and the symptom of the swallowed failure is loud
+anyway: the dialog appears and the check fails on a rect it cannot reach.
+
+### `const PREFS_HEADER`
+
+**A header of the only write path, rather than a line each caller
+remembers to add.** That distinction is the whole point — see
+[`write_prefs`].
+
+### `fn place`
+
+# Errors
+
+Neither the link nor the copy could be made. The message carries **both**
+errors, because the link failure alone is usually the uninteresting one — a
+cross-volume `--exe`, expected and handled — and the copy failure is the one
+that says what is actually wrong.
+
+### `fn place_tree`
+
+# Errors
+
+The destination could not be created, or the source could not be read.
+
+### `fn siblings_matching`
+
+A packaged portable build may ship a runtime DLL beside the executable; a
+`cargo build` output does not. Asking the directory rather than assuming
+either shape means the same sandbox code serves both.
+
+### `fn two_checks_get_two_directories`
+
+This is the property the whole module is for, asserted at the level a
+unit test can reach: **two different check names produce two different
+directories**. What a unit test cannot reach — that the *application*
+resolves its `userdata/` from that directory — is what the driven
+falsification in the module header is for.
+
+### `fn what_one_sandbox_writes_the_next_does_not_see`
+
+Stands in for the real defect: `userdata/layout.ron` written by a check
+that clicked the Edit segment must not be there when the next check
+launches.
+
+### `fn the_sandboxed_binary_keeps_the_sources_timestamp`
+
+Load-bearing: [`crate::launch::staleness_complaint`] compares that
+timestamp against the sources and is on by default, because *a missing
+trace from an unbuilt change looks exactly like a broken feature*. A
+sandbox that refreshed the mtime would disarm the gate for every check
+in the suite.

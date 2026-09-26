@@ -92,3 +92,24 @@ marking action discloses what Undo will do, and a page whose content would
 not decode is reported as *unchecked* rather than folded into a clean bill.
 
 ## What it does NOT do
+
+## Item notes
+
+### `const PAGES_PER_FRAME`
+
+One, and the constant exists to be *named* rather than to be tuned. The
+worst sheet this project has measured costs 469 ms to decompose; two per
+frame would be a second of unresponsiveness per frame on that document,
+which is the freeze this design exists to avoid, merely chopped up.
+
+A cheap document scans at frame rate, which for a sixty-page office PDF is
+one second. There is no configuration here because there is no trade to make:
+the slow case is the one that matters and it wants the smallest step.
+
+### `fn advance`
+
+The bounds check against the **live** `doc.pages` rather than against
+the snapshotted total is the guard described on [`Self::total_pages`]: a
+page deleted under an open window ends the walk where the document now
+ends, and the window then shows a complete answer about a shorter
+document rather than panicking on an index that no longer exists.

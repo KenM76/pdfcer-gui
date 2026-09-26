@@ -18,11 +18,6 @@
 use crate::panels::objects::provider::TargetId;
 
 /// Whether Smart-Selector is on. Memory key.
-///
-/// Application-scoped rather than per document, like the armed tool and the
-/// pick filter: it is a statement about how this operator works, not about a
-/// file, and re-answering it per document would be a question asked again for
-/// no new reason.
 const ENABLED_KEY: &str = "pdfcer.smart-select.enabled"; // ui-text-exempt: a memory key, never displayed
 
 /// The container the pointer is currently working inside. Memory key.
@@ -307,10 +302,6 @@ mod tests {
     }
 
     /// …**and once inside it, the same click selects the line.**
-    ///
-    /// Without this the feature would be a cage: the operator could select a
-    /// container and never anything in it, which is strictly worse than the
-    /// behaviour it replaces.
     #[test]
     fn inside_a_container_a_leaf_resolves_to_itself() {
         let ctx = egui::Context::default();

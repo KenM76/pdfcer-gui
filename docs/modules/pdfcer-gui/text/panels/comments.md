@@ -77,3 +77,97 @@ the rule this cost is: **where a claim about a capability can be an
 ASSERTION, it must be one.** Here it is
 `crate::panels::comments::tests::the_delete_control_reaches_the_engine`,
 which goes red the day the wiring stops being real — which prose cannot.
+
+## Item notes
+
+### `fn all_fixed`
+
+Hand-written, like every enumeration of things Rust cannot enumerate
+for us. It is only used by tests, so an entry missed here weakens a
+check rather than shipping a defect — but it is listed in the order
+the panel draws them so a reader can diff the two.
+
+A function rather than a `const`, for the same reason
+`crate::app::modes::defaults`' `SideSpec` is owned rather than
+`&'static`: these are ordinary functions, and an ordinary call cannot
+be promoted into a `const` initializer.
+
+### `fn nothing_excluded_draws_nothing`
+
+The alternative — an empty string — still reserves a label's height,
+which on a narrow dock reads as a rendering fault, and it is the
+no-placeholders rule applied to prose.
+
+### `fn the_exclusion_line_names_where_each_kind_went`
+
+The failure this stops is the one-clause version that says "12 items
+were not listed": the count without the destination, which tells an
+operator something is missing and not where to look for it.
+
+### `fn a_byline_with_neither_half_is_not_drawn`
+
+Both halves are legitimately absent — `/T` is a Table 170 markup key
+and means "this subtype has no such concept" on a `/Link` — so all four
+combinations are reachable on real documents and each has to render
+correctly. The `(None, None)` case in particular must not become an
+empty line.
+
+### `fn a_modification_date_is_never_reformatted`
+
+§12.5.2 makes `/M` *"date or text string"* and requires a reader to
+accept any format, so `pdfcer-core` stores it raw. A catalog entry that
+tidied it would either reject a value the standard requires be accepted
+or silently mangle it — and the mangling would look like a document
+fact rather than pdfcer's own edit.
+
+### `fn an_absent_note_is_never_described_as_missing_or_broken`
+
+The whole point of the sentence. Note text is absent on every shape
+pdfcer itself drew — `MarkupSpec` carries no contents field, deliberately
+— so this caption is the *ordinary* case on a pdfcer-marked document, and
+a word like "missing" or "error" would send an operator hunting for
+damage in a file that has none.
+
+### `fn prose_is_punctuated_and_the_one_label_is_not`
+
+`crate::text`'s convention: a label is a name and carries no trailing
+period; a message is a statement and does. [`comment_row_goto`] is the
+only label here, and it is the only entry allowed to end without
+punctuation.
+
+### `fn every_row_state_says_something_different`
+
+Each one distinguishes a *different* state — an absent note, a hidden
+annotation, an unresolved appearance, a reply, a group member — and two
+that read alike would collapse two states the operator has to be able
+to tell apart. Same reasoning as
+`crate::panels::bookmarks`' three-row-state check, which exists because
+a heading and a broken destination rendering identically would send an
+operator hunting for damage in an ordinary document.
+
+### `fn a_page_number_reaches_the_string_unchanged`
+
+The off-by-one guard, from the other side. `Action::GoToPage` takes a
+**0-based** index and these take a **1-based** human page number, so the
+`+ 1` happens exactly once, at the call site — see
+`crate::panels::comments`' own test for the half of this that pins the
+action.
+
+### `fn a_replys_own_popup_is_disclosed_only_when_the_engine_reports_one`
+
+# The fact, and why nothing on screen can carry it
+
+`add_reply` authors a `/Popup` companion for the reply it creates, and
+`ReplyAdded::reply_has_popup` reports it because this shell asked to be
+told. pdfcer does **not** draw that window —
+`canvas::notepopup::model::notes_on` excludes replies, so an answer
+appears inside the thread of the comment it answers and never as a
+second bubble on top of it — which means an operator who has only ever
+seen this program has no way to learn the window is in their file.
+Another reader will draw it.
+
+The `false` case is asserted beside it because the sentence is a
+**claim about the file**: firing it unconditionally would tell the
+operator about a window pdfcer had not established was there, which is
+rule 4 broken in the direction that is hardest to notice — a disclosure
+that is wrong reads exactly like one that is right.

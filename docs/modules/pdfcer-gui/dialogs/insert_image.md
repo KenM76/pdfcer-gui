@@ -69,3 +69,104 @@ It also means the window can state the picture's real facts: its format, its
 pixel dimensions **as displayed** (an EXIF-rotated photograph is transposed
 by the importer), and whether the resolution it reports is one the file
 declared or one pdfcer assumed.
+
+## Item notes
+
+### `const MIN_MM`
+
+One millimetre. Below that the picture is not a picture on any sheet this
+application is for, and a zero-area box is refused separately with its own
+sentence — `no_area` — because *"give it a size"* and *"that is too small"*
+are different instructions.
+
+### `fn spec`
+
+The builder rather than a struct literal — `NewImage` is
+`#[non_exhaustive]`, so a downstream crate cannot construct it
+field-by-field, and the constructor is what keeps a field added upstream
+from silently defaulting here.
+
+**One function, three readers**: the landing preview, the resolution
+preview, and the trace the harness cross-checks against the outcome. The
+apply arm builds it the same way, which is what makes `placed_rect()`
+here and the rectangle written there the same answer rather than two —
+and it is the same argument [`rect_pt`] makes about the millimetre
+conversion, one layer up.
+
+### `fn refusal`
+
+**Refused rather than clamped**, and the refusal names the problem.
+A box silently moved back onto the sheet is a placement the operator did
+not make, and they would discover it by looking at the drawing rather
+than at this window — which is `Tolerance::validate`'s rule applied one
+feature along: *"a corrected value the operator never saw is exactly the
+sneaky case."*
+
+### `fn rect_pt`
+
+# Free rather than a method, and `#[non_exhaustive]` is what forced it
+
+`ImportedImage` is `#[non_exhaustive]`, so **this crate cannot construct
+one** — which means it cannot construct an [`InsertImageDialog`] either, and
+a method on it could not be tested without a real decoded picture on disk.
+
+The constraint pushed toward the better shape, which is the part worth
+recording. These two functions are the whole of this window's arithmetic,
+they are pure, and they are the same shape
+`crate::text::measure::two_line_reading` was pushed into for the same reason
+one feature along. A rule stated as a function is a rule that can be
+asserted; a rule stated as a method on an unconstructible type is a rule
+nobody checks.
+
+It is also the ONE conversion in this window. The validity check, the
+landing preview and the action all read it, because three separate
+conversions is how a window comes to promise one rectangle and produce
+another.
+
+### `fn refusal`
+
+**Refused rather than clamped**, and the refusal names the problem. A box
+silently moved back onto the sheet is a placement the operator did not make,
+and they would discover it by looking at the drawing rather than at this
+window — `Tolerance::validate`'s rule applied one feature along: *"a
+corrected value the operator never saw is exactly the sneaky case."*
+
+**An overhang is NOT refused.** Bleeding a picture past the crop box is a
+real thing to do deliberately, and refusing it would make this window
+stricter than the format — the class of helpfulness that makes an operator
+fight their tool. Only a box **wholly** off the sheet is declined, because
+that one cannot be anything but a mistake.
+
+### `fn spinner`
+
+One tenth of a millimetre per drag step: a logo in a title block is
+positioned to the millimetre and a photograph is not positioned at all, so
+finer would be motion nobody uses and coarser would make the common case
+need typing.
+
+### `fn a_millimetre_is_the_definition`
+
+A hand-rounded `2.8346` would be wrong in the sixth decimal, and a
+picture placed at 210 mm would land 0.0004 mm off A4's edge — invisible,
+permanent, and different from every other number in this application.
+`dialogs::new_document` makes the same point about `594.0 * 72/25.4`.
+
+The constant this once asserted was a private `PTS_PER_MM` in this
+file — the third of six copies. The argument above is why the
+replacement is [`crate::units`] and not a fourteenth spelling: of every
+surface in this program, this dialogue is the one whose numbers go
+STRAIGHT INTO `pdfcer-core` as a rectangle, so it is the one that most
+needs the engine's own value rather than its own.
+
+### `fn off_the_sheet_is_refused_and_an_overhang_is_not`
+
+The second half is the decision worth pinning. Bleeding a picture past
+the crop box is a real thing to do deliberately, and refusing it would
+make this window stricter than the format — the class of helpfulness
+that makes an operator fight their tool.
+
+### `fn a_sizeless_box_gets_its_own_refusal`
+
+Different from off-the-page because the instruction is different — *give
+it a size* rather than *move it back* — and one message covering both
+would tell half the operators the wrong thing to do.

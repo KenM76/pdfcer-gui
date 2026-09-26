@@ -1,3 +1,4 @@
+//! Design and rationale: `docs/modules/pdfcer-gui-base/acrobat/tests.md`.
 #![cfg(test)]
 //! Tests for [`super`] — the decisions, over values.
 //!
@@ -22,12 +23,6 @@ use std::path::{Path, PathBuf};
 use super::{Edition, Launcher, Prompt, Registrations, Source, Viewer, prompt_for, resolve};
 
 /// A machine described by a table rather than discovered.
-///
-/// `app_paths` is keyed by executable name — `"Acrobat.exe"` — exactly as
-/// [`Registrations::app_path`] is asked. `present` is the set of paths that
-/// exist; **a path not in it does not exist**, which is how "the registry
-/// names an Acrobat that has been uninstalled" is expressed without creating
-/// and deleting real files.
 #[derive(Debug, Default)]
 struct Machine {
     app_paths: BTreeMap<String, String>,
@@ -82,14 +77,6 @@ const ELSEWHERE: &str = r"D:\Apps\Acrobat\Acrobat.exe";
 const RIVAL: &str = r"C:\Program Files\PDF Studio\PDFStudio.exe";
 
 /// **Nothing found and nothing configured ⇒ no button.**
-///
-/// R9, and the reason the whole capability is expressed as a `visible_when`
-/// rather than as an `enabled_when`: *an unavailable capability renders
-/// nothing; greying is reserved for **temporarily** unavailable and is always
-/// explained on hover.* A machine with no Acrobat is not temporarily anything.
-///
-/// The decision the ribbon makes is `resolve(...).is_some()`, so this is the
-/// button-visibility test in the only form it has outside a window.
 #[test]
 fn a_machine_with_no_acrobat_offers_no_viewer_and_therefore_no_button() {
     let bare = Machine::default();
@@ -110,10 +97,6 @@ fn a_machine_with_no_acrobat_offers_no_viewer_and_therefore_no_button() {
 }
 
 /// **Pro beats Reader when both are installed.**
-///
-/// `OPERATOR_REQUESTS.md` O122: *"acrobat reader or pro depending on what is
-/// installed"*, decided in favour of Pro because Pro is the superset and is
-/// what somebody who owns both reaches for.
 #[test]
 fn pro_beats_reader_when_both_are_installed() {
     let both = Machine::default()
@@ -132,11 +115,6 @@ fn pro_beats_reader_when_both_are_installed() {
 
 /// **Edition outranks source: a Pro found through the `.pdf` handler beats a
 /// Reader found in `App Paths`.**
-///
-/// The ordering that makes [`Source::rank`] a tie-break rather than the first
-/// sort key. Sorting by source first would answer *Reader*, on the reasoning
-/// that `App Paths` is the better-quality registration — which is true and
-/// beside the point, because the operator asked for Pro when Pro is there.
 #[test]
 fn pro_beats_reader_even_when_reader_is_the_registered_handler() {
     let mixed = Machine::default()
@@ -149,12 +127,6 @@ fn pro_beats_reader_even_when_reader_is_the_registered_handler() {
 }
 
 /// **A configured path beats discovery, and does not fall back to it.**
-///
-/// The escape hatch of O122 point 4, and the two halves are equally
-/// load-bearing. Beating discovery is what makes the setting mean anything at
-/// all. *Not falling back* is what stops a person who deliberately pointed
-/// pdfcer at their second installation from being silently sent to their
-/// first — which would undo the setting with nothing on screen saying so.
 #[test]
 fn a_configured_path_beats_discovery_and_never_falls_back_to_it() {
     let machine = Machine::default()
@@ -183,10 +155,6 @@ fn a_configured_path_beats_discovery_and_never_falls_back_to_it() {
 }
 
 /// **A registration whose file is gone is not offered.**
-///
-/// An uninstall that leaves its `App Paths` key behind is ordinary. Offering
-/// the button anyway would produce a control that is present, enabled, and
-/// does nothing when pressed — R9's failure reached from the other direction.
 #[test]
 fn a_stale_registration_is_not_offered() {
     let stale = Machine::default().with_stale_app_path("Acrobat.exe", PRO);
@@ -202,13 +170,6 @@ fn a_stale_registration_is_not_offered() {
 
 /// A configured path is labelled by its file name, and an unrecognisable one
 /// is still honoured.
-///
-/// The deliberate asymmetry with discovery: [`super::discover::edition_of`]
-/// is a **filter** on what the registry offers and a **label** on what the
-/// operator typed. Somebody who points this setting at a renamed executable,
-/// a launcher script wrapper or a portable install has answered the question
-/// the filter exists to ask, and refusing them would make the escape hatch
-/// narrower than the thing it is an escape from.
 #[test]
 fn a_configured_path_is_honoured_even_if_its_name_is_not_one_we_know() {
     let odd = r"D:\Apps\acrobat-portable\launch.exe";
@@ -278,11 +239,6 @@ impl Launcher for Recorder {
 }
 
 /// **The launch hands the viewer the document, and exactly that.**
-///
-/// Thin, and worth having anyway: it is the assertion that the two paths are
-/// not transposed. Inside a [`Launcher`] both are paths, so an implementation
-/// that started the document and handed it the program compiles and runs, and
-/// fails only on a real machine — where it would try to execute a PDF.
 #[test]
 fn launching_passes_the_document_to_the_viewer() {
     let recorder = Recorder::default();

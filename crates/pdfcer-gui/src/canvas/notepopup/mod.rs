@@ -14,10 +14,6 @@ pub mod open;
 
 /// **Everything in the window that CHANGES something** — the note
 /// editor's controls, *Delete comment*, and the `/Open` write-back.
-///
-/// Its header carries the seam: the rest of this module **reads** — a heading,
-/// a byline, the words, the thread, a tooltip, a placement — and that one is
-/// the only part that produces an `Action`.
 mod controls;
 
 use egui::{Pos2, Rect};
@@ -73,38 +69,12 @@ pub const REGION_DELETE: &str = "notepopup.delete"; // ui-text-exempt: trace reg
 pub const REGION_OPEN_DEFAULT: &str = "notepopup.open_default"; // ui-text-exempt: trace region name, never displayed
 
 /// The pop-up's width, in **screen points**.
-///
-/// # Screen points, not page points, and that is the rule-4 half
-///
-/// A pop-up sized in page space would grow to fill the sheet at 800 % and
-/// vanish at 20 %, which is what *content* does. Chrome does not. 260 pt is
-/// about forty characters of the shell's body face — wide enough for a
-/// sentence of review prose without wrapping every third word, narrow enough
-/// that four open pop-ups on a D-size sheet do not tile over the drawing.
-///
-/// The `/Popup`'s own `/Rect` is still honoured **for position** (see
-/// [`popup_origin`]). Its width is not, deliberately: `pdfcer-core`'s
-/// `annot_author::sticky_note` authors 150 pt, which at 100 % zoom is under
-/// twenty-five characters, and a producer's chosen width is a statement about
-/// their reader's font rather than about ours.
 const POPUP_WIDTH: f32 = 260.0;
 
 /// The tallest a pop-up's body may grow before it scrolls, in screen points.
-///
-/// A note is arbitrary operator text and can be a page of it. Without a
-/// ceiling one long comment would produce a window taller than the canvas,
-/// whose Save button is off screen — a control that exists, is enabled, and
-/// cannot be reached. The body scrolls; the title row, the
-/// byline and the controls never do, so the two things an operator needs
-/// (whose note is this, and how do I close it) are always in view.
 const POPUP_MAX_BODY: f32 = 220.0;
 
 /// How far a pop-up sits from its note when the file gives no `/Popup` rect.
-///
-/// To the right of the annotation's box, which is where `pdfcer-core`'s own
-/// author places one and where every reader in the class puts it. Eight points
-/// of gap so the window does not touch the mark it belongs to — a pop-up flush
-/// against a cloud reads as part of the drawing.
 const POPUP_GAP: f32 = 8.0;
 
 /// **Draw every open pop-up, and the hover tooltip.**
@@ -192,11 +162,6 @@ pub fn show(ctx: &egui::Context, doc: &OpenDoc, caps: Capabilities, actions: &mu
 }
 
 /// Everything one pop-up needs that is the same for all of them.
-///
-/// A struct rather than eight parameters, and the grouping is a statement:
-/// every member is a property of *the frame*, while the two arguments that
-/// stay loose — the note and the draft — are what distinguishes one window
-/// from the next.
 struct Ctx<'a> {
     doc: &'a OpenDoc,
     caps: Capabilities,
@@ -248,104 +213,9 @@ fn popup(
 
 /// The pop-up's **outer** width — the box `Area::constrain_to` has to fit —
 /// as distinct from [`POPUP_WIDTH`], which is the width of its *contents*.
-///
-/// `popup` sets `ui.set_max_width(POPUP_WIDTH)` twice: once on the `Area`'s
-/// own `Ui` and once inside `egui::Frame::popup`, whose inner margin and
-/// stroke sit **outside** the contents. Measured on a real build the drawn
-/// window is 274 pt for a 260 pt content width — fourteen points of frame.
-/// Sixteen is used here rather than fourteen because the frame is a *style*
-/// value and a theme with a fatter popup margin must not silently reintroduce
-/// the overlap [`popup_origin`] exists to prevent. Erring wide costs at most a
-/// two-point gap; erring narrow costs the gesture.
 const POPUP_BOX_WIDTH: f32 = POPUP_WIDTH + 16.0;
 
 /// **Where a pop-up's top-left corner goes**, in screen space.
-///
-/// Two sources of a *preferred* origin, in priority order:
-///
-/// 1. **The `/Popup`'s own `/Rect`**, when the file gives a usable one. The
-///    producer said where the window belongs and honouring it is what makes a
-///    document look here the way it looked in the reader that wrote it.
-/// 2. **Beside the note**, to the right and top-aligned, when there is no
-///    `/Popup` or its rectangle is unusable. Where `pdfcer-core`'s own sticky
-///    author puts one — 150 pt wide, to the right of the note — and where
-///    every reader in the class puts one.
-///
-/// …and then one **invariant that outranks both**:
-///
-/// > ### A pop-up must never be laid over the annotation it belongs to
-///
-/// # Why the clamp cannot be left to place a window
-///
-/// An `egui::Area` at `Order::Middle` takes every press inside it: egui
-/// resolves interaction on the topmost layer, so a window drawn over its own
-/// note means the canvas response never sees the press at all. The symptom is
-/// asymmetric and misleading — the move drag and the grip drag never arrive,
-/// rotation still works, because the rotate handle is drawn *above* the box's
-/// top edge and clear of the window — and it reads as a fork in
-/// `canvas::interact` eating the gesture rather than as a placement.
-///
-/// `Area::constrain_to` produces exactly that state on its own, and the
-/// measured case is ordinary: `beside` puts the origin at
-/// `anchor.max.x + POPUP_GAP` = 559.7, a 274 pt window does not fit in a
-/// viewport ending at 772, and the clamp slides it **left** to 498 — back
-/// over the anchor. The clamp is doing exactly what it was written to do, and
-/// *sliding is the wrong recovery*: the one direction a pop-up must not be
-/// pushed is onto its own subject.
-///
-/// ⇒ **Flip, do not slide.** The candidates are tried in order and the
-/// first that clears the anchor *and fits* wins:
-///
-/// 1. The preferred origin — the file's, else right of the note — taken
-///    as-is when the box it implies does not intersect the anchor.
-/// 2. **Left** of the note, right-aligned to its left edge. Horizontal.
-/// 3. **Below** or **above**, whichever side of the anchor has more room, x
-///    pinned into the viewport. Vertical.
-///
-/// Candidates 1 and 2 separate on **x alone**, which makes them independent
-/// of the window's height — and the height is the one dimension this function
-/// cannot know, because it is decided by the note's own words during layout.
-/// A placement that needed the height would have to read the *previous*
-/// frame's measured rect, and `D:/dev/rag/egui/` records what that costs: a
-/// surface whose position depends on its own size oscillates, and the
-/// oscillation is invisible to unit tests and to screenshots alike. Candidate
-/// 3 needs a vertical decision and takes it from the **room available**
-/// (`clip.max.y - anchor.max.y` against `anchor.min.y - clip.min.y`) rather
-/// than from the window's height, for the same reason: room is a property of
-/// the page and the viewport, and nothing about it moves when the window does.
-///
-/// # ⚠ The case that has no answer, named rather than hidden
-///
-/// When the anchor is wider than the viewport minus a pop-up **and** taller
-/// than half of it — an annotation zoomed until it fills the screen — no
-/// candidate clears it, and the preferred origin is used unchanged. That is
-/// honest: at that zoom every position covers part of the subject, and the
-/// operator has the whole rest of the shape to press on. It is stated because
-/// the alternative — refusing to draw the pop-up at all — would make a note
-/// unreadable at exactly the zoom an operator uses to read one.
-///
-/// Only the **origin** comes from the file; the size does not. See
-/// [`POPUP_WIDTH`] for why, and note the consequence: a pop-up whose `/Rect`
-/// is 150 pt wide is drawn 260 pt wide from the same top-left corner, so it
-/// extends further right than the file's rectangle. That is correct — the
-/// rectangle is where the window *is*, and how big a window needs to be is a
-/// property of the reader's typeface.
-///
-/// The file's own rectangle is a *preference*, not a licence to overlap.
-/// A producer that placed a `/Popup` over its own note is asking for a window
-/// the annotation cannot be grabbed through, and honouring that would be
-/// honouring a defect. Candidate 1 keeps the file's origin whenever it clears
-/// the anchor, which is what every `/Popup` a real producer writes does.
-///
-/// # The clamp is still here, and still a fallback
-///
-/// Whatever candidate wins is clamped into a viewport grown by the window's
-/// own size, so that an `Area` is never handed a position off in the millions:
-/// at deep zoom a page point maps to a screen coordinate far outside any
-/// viewport, and an `Area` positioned there is constrained back to the edge —
-/// every pop-up on the sheet stacked in one corner. Clamping into a
-/// slightly-grown viewport first means an off-screen note's window arrives at
-/// the edge *nearest to it*, which is at least a direction.
 fn popup_origin(note: &NoteView, map: &PageMapping, clip: Rect) -> Pos2 {
     let anchor = map.rect_to_screen(note.anchor);
     let preferred = note.popup.and_then(|p| p.rect).map_or_else(
@@ -363,16 +233,6 @@ fn popup_origin(note: &NoteView, map: &PageMapping, clip: Rect) -> Pos2 {
 }
 
 /// Move `preferred` off `anchor` if the window it implies would cover it.
-///
-/// Separated from [`popup_origin`] so it can be tested without a
-/// `PageMapping` — the decision is pure rectangle arithmetic and every
-/// interesting case is a specific arrangement of three rectangles, which is
-/// exactly the shape a unit test can state and a driven check cannot.
-///
-/// See [`popup_origin`]'s header for the candidate order and for why the
-/// first two separate on **x alone**. `width` is [`POPUP_BOX_WIDTH`]; the
-/// height is deliberately not a parameter, because this function must not
-/// depend on a quantity that is decided by the window's own contents.
 fn clear_of_anchor(preferred: Pos2, anchor: Rect, clip: Rect) -> Pos2 {
     // **An anchor that is not on screen cannot be covered**, and the
     // invariant is about a visible one. A note scrolled out of the viewport, or
@@ -446,18 +306,6 @@ fn clear_of_anchor(preferred: Pos2, anchor: Rect, clip: Rect) -> Pos2 {
 
 /// The pop-up's contents: the title row, the byline, the note, the thread and
 /// the controls.
-///
-/// # The order, and why it is this one
-///
-/// Top to bottom in the order a reviewer needs them: **who and what** (so they
-/// know whose comment they opened), **the words** (what they came for), **the
-/// thread** (the rest of the conversation), then **the controls** — last,
-/// because an operator scanning downward reads and stops when they reach a
-/// button.
-///
-/// The close control is the exception and sits on the title row at the right,
-/// which is where every window in the class puts it and where a hand reaches
-/// for it without reading.
 fn body(
     ui: &mut egui::Ui,
     f: &Ctx<'_>,
@@ -562,32 +410,6 @@ fn body(
 }
 
 /// The replies hanging off this comment, read from `/IRT`.
-///
-/// # Read-only HERE, which is a scope decision and not a limit
-///
-/// `EditSession::add_reply` writes `/IRT` and `/RT /R`, and this shell authors
-/// replies from the **Comments panel** (`crate::panels::comments::editor`'s
-/// `reply_control`), which is where a reviewer's work list already lives.
-///
-/// ⇒ So what is absent here is a *control*, not a *capability*, and the two
-/// expire on different events. Adding composition to this window is wiring: the
-/// thread is already gathered, already drawn, and the action bus already
-/// carries `AnnotAction::Reply`.
-///
-/// **Every reply in this list is transitive**, which is why it can afford
-/// to be flat. [`model::replies_to`] gathers anything whose `/IRT` chain
-/// reaches the root, so an answer to an answer appears here beside the answer
-/// rather than being lost — and the panel makes the same choice for the same
-/// reason. `crate::panels::comments::body`'s threading section carries the
-/// argument and the cost.
-///
-/// # Cost
-///
-/// [`model::replies_to`] walks every page, because a reply may legally live on
-/// a different page from the comment it replies to. It runs only for a pop-up
-/// that is **open**, which is the gate that makes it affordable: closed notes
-/// cost nothing at all. `crate::panels::comments` pays a comparable walk on
-/// every frame it is visible and states so in its own header.
 fn thread(ui: &mut egui::Ui, f: &Ctx<'_>, note: &NoteView) {
     let view = f.doc.session.view();
     let replies = model::replies_to(&view, &f.doc.pages, note.id);
@@ -634,24 +456,6 @@ fn thread(ui: &mut egui::Ui, f: &Ctx<'_>, note: &NoteView) {
 }
 
 /// **The hover tooltip** — the cheap half of the same affordance.
-///
-/// Returns whether one was shown, for the trace.
-///
-/// # Why it is suppressed over an open pop-up
-///
-/// Because the answer is already on screen, three inches away and in full. A
-/// tooltip repeating a truncated copy of it would be noise, and it would
-/// appear *under the operator's pointer* at the moment they are reaching for
-/// the window's own controls.
-///
-/// # Why it is drawn as an `Area` rather than through `Response::on_hover_text`
-///
-/// Because there is no `Response` to hang it off. The thing being hovered is a
-/// rectangle inside a page raster, not an egui widget — the canvas is one
-/// `Image` response covering the whole strip. An `Area` at `Order::Tooltip` is
-/// what egui's own tooltip machinery resolves to anyway, and building it
-/// directly means the offset, the constraint and the layer are this module's
-/// to state rather than inherited from a widget that does not exist.
 fn tooltip(
     ctx: &egui::Context,
     notes: &[NoteView],
@@ -776,23 +580,6 @@ pub fn clicked_on(
 }
 
 /// One `note-popup` line per frame that has something to say.
-///
-/// # Why this is more than a debug print
-///
-/// Because the two things that could be wrong here are both **invisible in a
-/// screenshot**. A pop-up that is open because the file said `/Open` and one
-/// that is open because the operator clicked look identical, and the whole of
-/// [`open`]'s contract is the difference between them — an implementation that
-/// silently defaulted `/Open` to `false` would look perfect until somebody
-/// opened a file another product authored. `from_file` is the only oracle for
-/// that available from outside the process.
-///
-/// `with_note` is the second: a page of markup pdfcer drew carries no
-/// `/Contents` at all, so *"the pop-up showed nothing"* has two causes — the
-/// note is empty, or the reader is broken — and they need opposite responses.
-///
-/// Silent when there is nothing open and nothing hovered, so a trace of a
-/// reading session is not one line per frame of noise.
 fn trace(notes: &[NoteView], open_count: usize, from_file: usize, tipped: bool) {
     if open_count == 0 && !tipped {
         return;
@@ -813,23 +600,11 @@ fn trace(notes: &[NoteView], open_count: usize, from_file: usize, tipped: bool) 
 }
 
 /// The egui id this document's canvas note draft is stored under.
-///
-/// Per document, exactly as [`open`]'s overrides are and for the same reason:
-/// object ids collide freely between files, so a shared draft would put one
-/// document's half-typed note into another's pop-up.
 fn draft_key(path: &std::path::Path) -> egui::Id {
     egui::Id::new(("pdfcer-note-popup-draft", path)) // ui-text-exempt: internal widget id, never displayed
 }
 
 /// Read the canvas pop-up's note draft.
-///
-/// **A second draft from the Comments panel's, deliberately.** They are two
-/// editors on two surfaces and an operator may legitimately have one open in
-/// each; sharing one draft would mean typing in the panel silently rewriting
-/// what is in the window. `NoteDraft`'s own `(annotation, edit epoch)` stamp
-/// is what keeps *this* one honest — a draft stamped at an older epoch
-/// describes a document that no longer exists, and [`show`] calls `sync`
-/// before anything is drawn.
 fn load_draft(ctx: &egui::Context, path: &std::path::Path) -> NoteDraft {
     ctx.data(|d| d.get_temp::<NoteDraft>(draft_key(path)).unwrap_or_default())
 }
@@ -851,26 +626,11 @@ mod placement_tests {
     };
 
     /// The rectangle the pop-up would occupy, given the origin under test.
-    ///
-    /// Height is a stand-in: [`clear_of_anchor`] is specified to separate on
-    /// **x alone** for its first two candidates, so a test that asserted with a
-    /// real height would be asserting something weaker than the contract.
     fn window(origin: Pos2, height: f32) -> Rect {
         Rect::from_min_size(origin, egui::vec2(POPUP_BOX_WIDTH, height))
     }
 
     /// **The overlap that swallows a drag, as an assertion.**
-    ///
-    /// Measured geometry: a markup selected at
-    /// `[[464.0 464.5] - [551.7 550.2]]` whose pop-up, left to the clamp, is
-    /// drawn at `[[498.0 465.0] - [772.0 565.0]]` — on top of it, so every
-    /// press meant for the shape goes to the window instead and neither the
-    /// move nor the resize reaches the canvas.
-    ///
-    /// With the anchor at x 464–551.7 there is no room on the right
-    /// (551.7 plus 8 plus 276 = 835.7, past the viewport's 772) and none on the
-    /// left (464 minus 8 minus 276 = 180, before the viewport's 288), so this
-    /// exercises candidate 3.
     #[test]
     fn the_popup_that_ate_the_drag_is_placed_clear_of_its_annotation() {
         let anchor = Rect::from_min_max(Pos2::new(464.0, 464.5), Pos2::new(551.7, 550.2));
@@ -902,10 +662,6 @@ mod placement_tests {
     }
 
     /// **Candidate 1: a preference that already clears the anchor is kept.**
-    ///
-    /// This is the ordinary case and the one that must not move: a note near
-    /// the left of the sheet has room on its right, and the window goes there,
-    /// byte for byte where it went before this function existed.
     #[test]
     fn a_note_with_room_beside_it_keeps_the_placement_it_always_had() {
         let anchor = Rect::from_min_max(Pos2::new(300.0, 300.0), Pos2::new(360.0, 340.0));
@@ -943,10 +699,6 @@ mod placement_tests {
     }
 
     /// **Candidate 3 the other way up: more room above than below.**
-    ///
-    /// A note low on the sheet, too wide for either side. The window goes to
-    /// the top of the viewport, which is where every point of the available
-    /// room is.
     #[test]
     fn a_wide_note_low_on_the_sheet_puts_its_window_above() {
         let anchor = Rect::from_min_max(Pos2::new(300.0, 700.0), Pos2::new(760.0, 740.0));
@@ -966,10 +718,6 @@ mod placement_tests {
     }
 
     /// **The file's `/Popup` rectangle is honoured — until it overlaps.**
-    ///
-    /// Two documents, one function. The first names a rectangle beside its
-    /// note and gets exactly that; the second names one on top of its note and
-    /// is overruled, because honouring it would be honouring a defect.
     #[test]
     fn a_producers_popup_rectangle_is_kept_unless_it_covers_the_note() {
         let anchor = Rect::from_min_max(Pos2::new(400.0, 300.0), Pos2::new(440.0, 340.0));
@@ -992,18 +740,6 @@ mod placement_tests {
     }
 
     /// **The outer box is wider than the contents, and the gap depends on it.**
-    ///
-    /// [`POPUP_BOX_WIDTH`] exists because `egui::Frame::popup`'s margin sits
-    /// outside `ui.set_max_width(POPUP_WIDTH)`. If the two were ever collapsed
-    /// into one constant the separation would be short by the frame and the
-    /// overlap would come back at the margin — silently, on exactly the notes
-    /// nearest the edge.
-    /// A `const` assertion rather than a runtime one: clippy refuses
-    /// `assertions_on_constants`, because an `assert!` over two constants is
-    /// decided when the crate is compiled and a test that cannot fail is not
-    /// evidence. `const _: () = assert!(..)` states the same fact where it is
-    /// actually checked — the build stops, with this message, and no test
-    /// has to run at all.
     const _: () = assert!(
         POPUP_BOX_WIDTH > POPUP_WIDTH,
         "the box a pop-up occupies is its contents plus `Frame::popup`'s margin and stroke"
@@ -1015,11 +751,6 @@ mod tests {
     use super::*;
 
     /// The region names the sweep below checks.
-    ///
-    /// ⚠ A hand-written list inside a completeness check is itself the
-    /// known weakness: a name added to the constants and not to this list is
-    /// simply not checked. [`REGION_OPEN_DEFAULT`] is published and is **not**
-    /// in this list, which is that drift in the present tense.
     const REGIONS: &[&str] = &[
         REGION_POPUP,
         REGION_CLOSE,
@@ -1030,11 +761,6 @@ mod tests {
     ];
 
     /// **Every region name is unique and namespaced to this module.**
-    ///
-    /// A region name is a key a driven check aims a real pointer at. Two
-    /// controls publishing one name leaves the harness clicking whichever was
-    /// drawn last — a coordinate nobody chose — and the failure looks like the
-    /// feature being broken rather than like the check being blind.
     #[test]
     fn the_region_names_are_unique_and_namespaced() {
         let mut seen = std::collections::BTreeSet::new();
@@ -1082,13 +808,6 @@ mod tests {
 
     /// **With no `/Popup` rect, the window goes BESIDE the note — never
     /// over it.**
-    ///
-    /// The one placement failure an operator would report as the feature being
-    /// broken: a pop-up drawn on top of the icon that opened it hides the
-    /// thing they just clicked, and the second click — which they will
-    /// certainly try — lands on the window rather than on the note, so it does
-    /// not close. Asserting *strictly* to the right of the anchor's right edge
-    /// is what forbids the whole family of "close enough" placements.
     #[test]
     fn a_note_with_no_popup_rect_opens_beside_itself() {
         let anchor = Rect::from_min_size(Pos2::new(100.0, 100.0), egui::vec2(20.0, 20.0));
@@ -1108,13 +827,6 @@ mod tests {
     }
 
     /// **The file's own `/Popup` rectangle wins.**
-    ///
-    /// §12.5.6.14 makes the pop-up a separate annotation *with its own
-    /// placement*, and a producer who moved a note's window across the sheet
-    /// meant it. Ignoring that and always placing beside would make every
-    /// document laid out in Acrobat look rearranged here — and it is the
-    /// mistake an implementation makes by default, because "beside" is the
-    /// easier code path and it looks fine on a file pdfcer itself wrote.
     #[test]
     fn the_files_own_popup_rectangle_is_honoured() {
         let anchor = Rect::from_min_size(Pos2::new(100.0, 100.0), egui::vec2(20.0, 20.0));
@@ -1128,14 +840,6 @@ mod tests {
 
     /// **A note far off the viewport does not put its window in the
     /// opposite corner.**
-    ///
-    /// The deep-zoom failure, and it is not hypothetical: at 300,000 % a page
-    /// point maps to a screen coordinate in the millions, and an `Area` handed
-    /// one is constrained back to the nearest edge — so every pop-up on the
-    /// sheet stacks in one corner, all of them claiming to belong to marks
-    /// nowhere near it. Clamping the origin first means an off-screen note's
-    /// window arrives at the edge *nearest to it*, which is at least a
-    /// direction.
     #[test]
     fn a_note_far_off_screen_is_clamped_towards_itself() {
         let far = Rect::from_min_size(Pos2::new(9.0e6, -9.0e6), egui::vec2(20.0, 20.0));

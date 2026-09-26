@@ -17,20 +17,12 @@ use crate::canvas::formfield::action::{
 use crate::text::buttonaction as t;
 
 /// The trace event the chooser writes when the operator changes it.
-///
-/// Written on **change**, not every frame. A driven check needs to know the
-/// chooser was reached and what it was set to, and a per-frame line would bury
-/// that in thousands of identical ones.
 const CHOSE: &str = "button-action-chose"; // ui-text-exempt: a trace event name, never displayed
 
 /// The closed chooser's rectangle, so a driven check can open it.
 const COMBO_REGION: &str = "form.button.action"; // ui-text-exempt: a trace region name, never displayed
 
 /// The prefix each popup row is published under, suffixed with the kind.
-///
-/// A driven check reads `form.button.action.row.ResetForm`, not `…row.1`.
-/// See the publisher for why: an index survives a reordering of
-/// `ButtonDoesKind::ALL` and goes on passing while aiming at the wrong row.
 const ROW_REGION: &str = "form.button.action.row"; // ui-text-exempt: a trace region name, never displayed
 
 /// Draw the chooser and its parameters into `ui`, editing `does` in place.
@@ -112,11 +104,6 @@ pub fn rows(ui: &mut Ui, does: &mut ButtonDoes) {
 }
 
 /// **Go to a page** — the number, and where on it to land.
-///
-/// The number box is a plain text field rather than a `DragValue`, and that is
-/// deliberate: a `DragValue` cannot be empty, so it would have to open at some
-/// page, and opening at page 1 is pdfcer choosing a destination. An empty box is
-/// the honest starting state and [`ButtonDoes::blocker`] refuses it.
 fn page_rows(ui: &mut Ui, does: &mut ButtonDoes) {
     ui.horizontal(|ui| {
         ui.label(t::page_number_label());
@@ -159,13 +146,6 @@ fn named_rows(ui: &mut Ui, does: &mut ButtonDoes) {
 }
 
 /// **Show or hide fields** — the names, and which direction.
-///
-/// Two radio buttons rather than one *Hidden* checkbox, and the engine's own
-/// CLI made the same choice for the same reason: *show* is the value that has
-/// to be written out to exist (Table 210's `/H` defaults to **true**, so an
-/// absent entry means HIDE), and a single `Hidden` checkbox left unticked is
-/// one misreading away from an operator believing they configured "show" when
-/// they configured nothing.
 fn show_hide_rows(ui: &mut Ui, does: &mut ButtonDoes) {
     ui.horizontal(|ui| {
         ui.radio_value(&mut does.hide, true, t::hide_them());
@@ -195,18 +175,6 @@ fn url_row(ui: &mut Ui, does: &mut ButtonDoes) {
 }
 
 /// **The submit's disclosure**, drawn under the address it is about.
-///
-/// Two blocks, and the second is conditional:
-///
-/// - **Always**: what the declaration would cover — the six §12.7.5.2 facts
-///   nobody can guess, in `text::buttonaction::submit_disclosure`.
-/// - **When the address is not `https:`**: that it is unencrypted. A
-///   **statement**, never a refusal — no scheme is blocked anywhere, because
-///   `https` appears zero times in ISO 32000-1 and refusing one would be pdfcer
-///   inventing a conformance requirement.
-///
-/// Both are off-canvas by construction: they are in a dialog, and the button
-/// they describe is drawn on the page exactly as the saved file will draw it.
 fn submit_disclosure(ui: &mut Ui, does: &ButtonDoes) {
     ui.add_space(6.0);
     ui.small(t::submit_disclosure());

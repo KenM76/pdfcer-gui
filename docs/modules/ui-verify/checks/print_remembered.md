@@ -158,3 +158,73 @@ no ui-rect channel; the ribbon control not declared; the dialog not opening;
 the spooler refusing on this machine; or a seeded value that turns out to
 equal the shipped default. Each says which, and none of them is reported as
 a pass.
+
+## Item notes
+
+### `const PREFS_FILE`
+
+**Reset to the bare sandbox seed** before the control run and rewritten
+before the second — never deleted. Those are not the same act, and the
+difference cost this check two sweeps: deletion takes `ask_default_app = false`
+with it, and the symptom is the O173 offer opening a real OS window in front of
+the very click this check is about to make. See [`sandbox::reset_prefs`].
+
+Safe only because the suite is **never** pointed at a published build — that
+is the standing rule, and this check is one of the reasons for it. Pointed at the
+operator's own install it would overwrite his real print settings.
+
+### `const SEED`
+
+The two columns are deliberately the same string. The trace spells every
+remembered value with the preferences file's own `*_key` function, so the
+value written into the file and the token read out of the trace are
+identical by construction — and a build that started translating one of them
+on the way through would be caught by that identity rather than by a second
+table here that could be edited to agree with the defect.
+
+The third column is the trace field the token appears under, which is *not*
+always the file's key: the file says `print_markup` and the trace says
+`markup=`, the file says `print_tray_by_page_size` and the trace says
+`tray=`. Those are two vocabularies with different constraints — a
+hand-editable file wants a self-describing key, a whitespace-split trace
+wants a short one — and this table is the seam.
+
+⚠ **`print_printer` is not here.** A printer name is machine-specific and a
+name that does not resolve falls silently back to the Windows default, which
+is correct behaviour and would make this row unassertable. `remembered=` is
+checked instead: `none` on the control run, and a *seeded* run leaves it
+`none` too because no name is seeded. The printer-by-name path is exercised
+by `print_dialog`'s own selection assertions.
+
+### `fn launch_and_open`
+
+Factored out because this check does it twice with different files on disk,
+and the two runs must reach the dialog by **identical** means — a control
+that arrived through a different route would not be a control.
+
+### `fn every_seeded_value_is_a_single_file_token`
+
+The seed is written straight into `preferences.txt` and compared straight
+against the trace, and both sides use the preferences module's `*_key`
+vocabulary. A value here that the parser does not recognise would be
+dropped with a `PrefNote::BadValue`, the field would come back as the
+default, and this check would report a defect in the application that is
+really a typo in this file.
+
+This test cannot call `pdfcer-gui`'s parser — `ui-verify` does not depend
+on it — so it pins the shape instead: every token is non-empty, lower
+case, and free of the whitespace that would split it into two trace
+fields.
+
+### `fn the_seed_touches_only_printing`
+
+The file this check writes replaces the operator's whole preferences
+file. Seeding a non-print key would be this check quietly changing
+something outside its subject — and, worse, changing it for every check
+that runs after it in the suite, since `userdata` is shared.
+
+### `fn each_seeded_row_reads_a_different_trace_field`
+
+Two rows naming the same trace field would make one of them unassertable
+and the other one duplicated, and the count in the failure message would
+still read as 12.

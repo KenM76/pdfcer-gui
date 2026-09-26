@@ -51,3 +51,36 @@ Every claim here is of the form *the page number changed*, so a one-page
 document makes the correct behaviour indistinguishable from the defect. The
 count is also asserted, because a pinned fixture is only a claim about what
 is on disk.
+
+## Item notes
+
+### `const NOTCHES`
+
+One physical detent is 50 logical points on this platform and the
+application's threshold is 40, so one notch is enough — but the harness's
+wheel and the platform's may disagree about how much a "notch" is, and a
+run that under-delivered would report "the wheel does not flip" for a build
+where it does. Two notches is comfortably over one threshold and, because
+the accumulator is **zeroed** on each turn rather than decremented, still
+buys exactly one page.
+
+### `fn wheel`
+
+The instrument that makes this check **re-runnable**, and it did not
+exist until this check needed it. The setting is PERSISTED, so a run that
+turned it on left it on, and the second run of this check inherited the
+first one's choice and reported the shipped default as broken — a
+confident, specific, wrong accusation aimed at the part of the build a
+reader can least easily check.
+
+The standing rule this repeats: **a driven check that mutates persisted
+state must normalise at the START**, and to normalise it must first be able
+to read. A setting a check can change is a setting the trace must state.
+
+### `const FIXTURE`
+
+A wheel that turns pages needs a page to turn to, and the sweep's shared
+fixture has exactly one. Run against it, every claim up to the toggle passed
+and then the check accused the application of ignoring its own preference,
+in three confident paragraphs, on a document where the correct behaviour is
+to do nothing. Pinned rather than tabled so a hand invocation gets it too.

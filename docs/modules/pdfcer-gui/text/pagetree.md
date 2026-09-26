@@ -108,3 +108,35 @@ already carried a paragraph predicting exactly that it would go stale.
 job is to say *pdfcer did not do this and undo will not help*, which is a
 statement about the file rather than about pdfcer's record, and getting it
 wrong costs him his undo stack as well as his time.
+
+## Item notes
+
+### `fn the_root_sentence_names_the_symptom_he_reported`
+
+He wrote *"blank pages at the end of the document equalling the number
+of pages I deleted"*. A sentence that described a page-tree
+inconsistency without saying "blank pages" would be true, accurate, and
+unrecognisable to the person it is for.
+
+### `fn only_the_sentences_pdfcer_can_undo_offer_undo`
+
+The whole reason the third sentence exists. Undo is the remedy exactly
+when pdfcer caused the damage; on a file that arrived broken it is a
+circle, and an operator who empties his undo stack against a refusal he
+was told undo would fix has been misled by his own tool. This is the
+assertion that stops the three sentences being consolidated back into
+one on the grounds that they say nearly the same thing.
+
+### `fn both_sentences_say_the_work_survives`
+
+The claim is true — `to_incremental_bytes` takes `&self` and the
+refusal happens before `std::fs::write` — and it is the one an operator
+most needs and is least likely to assume. A future edit that dropped
+this clause would leave a refusal that reads as data loss.
+
+### `fn neither_sentence_speaks_pdf`
+
+Rule: the operator is never shown `/Count`, `/Kids`, `/Pages`, "page
+tree" or "node". Those are in the trace, where a reader of a machine
+wants them. This is the check that stops the next edit reaching for the
+precise word.

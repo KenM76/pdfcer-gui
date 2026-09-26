@@ -77,3 +77,42 @@ release and again after it.
 Within one document the drag is the reorder it always was, a reorder is one
 undoable command, and no modifier applies — there is nothing for it to
 select between.
+
+## Item notes
+
+### `fn landing_shown_key`
+
+## Why there are two slots and one rotation, rather than a shared flag
+
+Two surfaces can resolve a landing — the Pages panel's grid and the page
+view — and only one of them can have the pointer inside it, so at most one
+writes per frame. The hard case is **neither**: the pointer is over the
+ribbon, or a dock splitter, or off the window. Nobody writes, and nobody is
+in a position to *clear* either, because "the pointer is not in my region"
+is a thing every surface can say about itself and none can say about the
+others. A surface that cleared on its own behalf would erase the answer the
+other one had just written.
+
+So the clear is not a surface's job. [`begin_frame`] rotates: whatever was
+written last frame becomes what the caption reads, and the write slot goes
+empty for this frame's surfaces to fill. One writer for the rotation, at a
+known point, before anything draws.
+
+That the caption is therefore **one frame late** is not a cost this design
+introduced. It is the same one-frame lateness `PagesUi::drag_landing` was
+documented as having, for the same unavoidable reason: *a gap has no
+position until the rows have been placed, and the rows are placed below the
+header.*
+
+### `fn ending_a_drag_clears_where_it_would_have_landed`
+
+The failure this closes is one `panels::pages` already names: a caret
+that survives the gesture that produced it is a caret nobody can get
+rid of. Here it would additionally make the status row describe a drop
+that had already happened.
+
+### `fn a_gap_maps_onto_an_insert_position`
+
+The ends matter more than the middle: `End` survives the document
+changing length between the gesture and the edit, and `Before(count)`
+does not.

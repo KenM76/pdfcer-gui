@@ -111,3 +111,91 @@ one than this feature is worth today.
   different feature with a different lifetime and a different file; a
   recent list that quietly became a session store would be the thing
   nobody could later separate.
+
+## Item notes
+
+### `fn parse`
+
+Blank lines are skipped and the result is capped and de-duplicated,
+so a hand-edited file cannot produce a list this module would not
+itself have written. Only the line ending is trimmed — a leading or
+trailing space is a legal part of a file name on some platforms, and
+trimming it would silently rename the operator's file.
+
+### `fn render`
+
+A path that is not valid Unicode is **dropped here**, which is the one
+place in this module where dropping at save time is correct: it is not
+a judgement about whether the file still exists, it is the format
+admitting it cannot spell the name. The alternative — a lossy
+conversion — would write a path that names a *different* file, or no
+file, and would look exactly like a real entry when it came back.
+
+### `fn write`
+
+**A failure clears nothing and retries nothing.** The next `remember`
+tries again, which is the same posture
+[`crate::app::persistence::LayoutStore`] takes towards a path
+that cannot be written: retrying a read-only share on a schedule
+produces the same error at a cost, and the operator has already lost
+nothing they can see.
+
+### `fn the_recent_file_lives_beside_the_layout_file`
+
+Asserted against `LayoutStore`'s own resolution rather than against a
+path spelled out here — a second spelling is exactly how two files
+that were supposed to share a directory end up in different ones, and
+`persistence`'s header explains why the directory decision belongs to
+`pdfcer-core` and to nothing else.
+
+### `fn the_newest_document_is_first_and_a_repeat_open_moves_it`
+
+The property that makes this a most-recently-used list rather than a
+log of opens. Without the move-to-front, opening the same drawing
+twice fills the menu with one file.
+
+### `fn a_missing_file_leaves_the_menu_and_stays_in_the_file`
+
+The rule the module header argues: a network drive that is temporarily
+absent is not a file the operator wants forgotten. Asserted from both
+ends — the menu does not offer it, and the *file on disk* still holds
+it — because an assertion on the in-memory list alone would pass even
+if the save path had quietly pruned it.
+
+### `fn the_presence_answer_is_reused_until_the_window_passes`
+
+`Path::is_file` on a dead network path blocks for as long as the
+filesystem takes to give up, on the UI thread. Without the throttle
+the menu would take that answer on every frame it is open, which is
+not slowness but a frozen application.
+
+Asserted by removing a file and watching the answer *not* change until
+the window has passed — the only way to prove a cache is a cache.
+
+### `fn a_default_store_points_nowhere_and_writes_nothing`
+
+`Default` exists so `PdfcerApp` keeps deriving it, and because
+`PdfcerApp::new` deliberately uses it under `cfg(test)` so a unit test
+that opens a fixture cannot scribble fixture paths into the operator's
+own list. The hazard it must not have is a store that looks loaded and
+points at the real file.
+
+### `fn opening_a_document_records_it_and_a_failed_open_does_not`
+
+The recording lives in [`crate::app::PdfcerApp::open_path`] — the one
+function that opens documents, and the one `argv` reaches without an
+action, so the first document of a session is recorded too.
+
+The negative half is the decision worth pinning: a file that would not
+open is not a *document* the operator had, and offering it from a menu
+whose whole promise is "this worked before" invites the same failure
+from the one surface that should be reliable.
+
+### `fn the_recent_command_opens_the_parked_choice_or_the_newest_reachable`
+
+Two routes into one command, which is the whole reason the menu is a
+custom *item* rather than a command of its own: the item asks which,
+the command acts. The fallback is not a guess — it is the defined
+answer for an invocation that carries no operand, which an operator
+reaches by binding a chord or adding the command to their quick-access
+toolbar, neither of which draws a menu.

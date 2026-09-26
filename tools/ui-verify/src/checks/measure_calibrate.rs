@@ -15,24 +15,9 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// How far apart the two picked points are, in PDF points along x.
-///
-/// 400 pt is roughly a quarter of the benchmark sheet's width — long enough
-/// that a snap landing on nearby content cannot account for the whole
-/// distance, short enough to stay on the page at any fit this check may meet.
 const SPAN_PT: f64 = 400.0;
 
 /// How far the measured length may sit from [`SPAN_PT`] and still pass.
-///
-/// Deliberately wide. The picks go through the **snap** machinery, which is
-/// correct behaviour and is the entire point of calibrating against a drawing:
-/// pdfcer moves the click to the endpoint the operator meant. So the measured
-/// length is the distance between two *snapped* points and is not required to
-/// equal the raw span.
-///
-/// What a wide bound still catches is the failure that matters — zero, or a
-/// value an order of magnitude out from a coordinate-space mix-up. A tighter
-/// bound would fail on a correct build whenever the fixture had geometry near
-/// a pick, which on a real drawing is most of the time.
 const SPAN_TOLERANCE_PT: f64 = 150.0;
 
 /// See the module documentation.

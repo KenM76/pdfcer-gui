@@ -56,3 +56,35 @@ document's own directory — the same graceful nothing
 `crate::acrobat::resolve` produces when Acrobat is not installed, and for
 the same reason: **R9**, an unavailable capability renders nothing rather
 than a broken suggestion.
+
+## Item notes
+
+### `const NOT_A_GENERATION`
+
+A deny-list rather than an allow-list of known generations, because a new
+generation name is a thing that will happen and a new sibling utility
+folder is a thing that already has. Getting the deny-list wrong costs a
+wrong suggestion in a picker the operator is looking at; getting an
+allow-list wrong costs the feature entirely on a future Acrobat.
+
+### `fn pick_generation`
+
+The rule, in order:
+
+1. **A folder that already holds `Stamps` wins outright.** Acrobat made it,
+   which means the operator has made a stamp with that generation.
+2. Otherwise, the shortest name that is not on [`NOT_A_GENERATION`].
+   Generation keys are short (`DC`, `11.0`, `2020`); the sibling utility
+   folders are long descriptive phrases. Shortest-wins is a heuristic and
+   is admitted as one — it only ever decides a *suggestion* in a picker the
+   operator can overrule.
+
+⚠ Ties are broken by name order so the answer is deterministic. A
+suggestion that differs between two runs on an unchanged machine is a
+defect even when both answers are defensible.
+
+### `fn is_path_hostile`
+
+The set is §"Naming Files, Paths, and Namespaces"'s reserved list. A
+category name is free text an operator typed and `Approved / Rejected` is
+an entirely reasonable thing to type.

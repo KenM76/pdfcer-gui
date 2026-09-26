@@ -50,3 +50,17 @@ display, because the flag lives in [`crate::viewer::ViewState`] alongside
 zoom and the overlays; this module holds only the *opening* answer and the
 operator's last word per mode. A per-document memory would be a different
 feature and would fight this one — see the mode-change note above.
+
+## Item notes
+
+### `fn read_ships_off_and_the_working_modes_ship_on`
+
+Read off, Review and Edit on, asserted against the *ids the manifest
+uses* rather than against display names, because those ids are what
+reaches [`OffPagePrefs::default_for_mode`] at runtime.
+
+### `fn choosing_the_default_is_still_an_answer`
+
+See [`OffPagePrefs::set`]: *chose the default* and *never answered* are
+the same value and different facts, and only the stored one survives a
+later build changing its mind.

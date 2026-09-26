@@ -66,6 +66,8 @@
 //! publishes nothing until something gets past the guard, at which point
 //! it names the widget rather than leaving the next reader a wobble to
 //! hunt.
+//!
+//! Design and rationale: `docs/modules/egui-shell/dock/overflow_probe.md`.
 
 use egui::Rect;
 
@@ -74,10 +76,6 @@ use super::model::DockSide;
 use super::report;
 
 /// How far past the parent's edge counts as an overflow, in points.
-///
-/// The overflow this catches measures 0.3–0.4 pt, a 1/32-grid multiple;
-/// `0.05` is well under it and well over f32 noise at coordinates near
-/// 1400.
 const OVERFLOW_TOLERANCE_PT: f32 = 0.05;
 
 /// Publish the side's allocated frame rect, and — on a frame where it
@@ -157,10 +155,6 @@ mod tests {
     /// point. Without `draw_stack`'s child ui this reports
     /// `dock.right.frame` at `[1080.4 .. 1400.4]` instead of
     /// `[1080.0 .. 1400.0]`.
-    ///
-    /// Two assertions, and the second is not implied by the first: the frame
-    /// staying put says the guard held; no `overflow.*` region says the
-    /// tripwire agrees nothing got past it.
     #[test]
     fn a_body_that_overflows_its_pane_does_not_move_the_sides_frame() {
         use crate::dock::{Dock, DockLayout, DockState, SideLayout};

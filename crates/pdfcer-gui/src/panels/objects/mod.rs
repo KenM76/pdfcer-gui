@@ -440,14 +440,6 @@ pub fn body(
 }
 
 /// **Everything [`body`] has decided about one row's text before it draws it.**
-///
-/// A named struct rather than the `(row, String, Option<String>)` tuple it
-/// replaced, and the reason is the third string: with three fields of which two
-/// are `String`-ish and one is `Option<String>`, a tuple destructure at the
-/// draw site is one transposition away from hanging the *headline* on the hover
-/// and drawing the *description* — which would look almost right, and would
-/// reintroduce the defect this change fixes. Named fields cannot be
-/// transposed.
 struct RowText {
     /// Which row this is, and therefore which arm of the draw match it takes.
     row: ObjectTreeRow,
@@ -466,34 +458,11 @@ struct RowText {
 }
 
 /// **How much width a row's TEXT actually has**, in points.
-///
-/// The pane, less the indentation this row will spend before its first
-/// character and less the expander column it holds whether or not it draws one.
-///
-/// # Why this is a function
-///
-/// Because it is the arithmetic the elision decision is made against, and a
-/// row-depth term that is silently dropped reintroduces clipping **for exactly
-/// the deepest rows** — the ones an operator had to work hardest to reach. That
-/// is not hypothetical: the same term was the subject of
-/// `indentation_counts_toward_the_row_width` under the previous mechanism, and a
-/// term that mattered under one mechanism matters under its replacement.
-///
-/// ⚠ It is not the whole call site, and the difference is worth stating: no
-/// unit test can see whether [`body`] still **calls** `elide_to_width` at all.
-/// Deleting that call leaves every test in this module green. That is the gap
-/// `the_inspector_is_one_master_detail_column` exists to close, and it is why
-/// it samples pixels rather than only reading a trace.
 fn row_text_room(viewport: f32, row: ObjectTreeRow) -> f32 {
     viewport - row_indent(row) - EXPANDER_SPACE
 }
 
 /// The change-log slot [`body`]'s per-frame elision report is keyed on.
-///
-/// Its own slot rather than sharing `objects-panel`'s, because the two lines
-/// change on different events: the panel line moves when the page does, and
-/// this one moves when the dock is dragged. Sharing a slot would make each
-/// suppress the other's changes.
 const ROWS_SLOT: &str = "objects-rows"; // ui-text-exempt: trace slot name, never displayed
 
 /// Leading space on a point row: two indents plus the expander column a
@@ -501,23 +470,9 @@ const ROWS_SLOT: &str = "objects-rows"; // ui-text-exempt: trace slot name, neve
 const POINT_ROW_INDENT: f32 = t::OBJECT_TREE_INDENT * 2.0 + t::OBJECT_TREE_EXPANDER_WIDTH;
 
 /// Horizontal space an expander occupies, whether or not one is drawn.
-///
-/// Added to every measured row width so the container is wide enough for the
-/// control as well as the text. Held even for a leaf, so labels stay aligned
-/// down the column (R83: hold the space, draw no dead control).
 const EXPANDER_SPACE: f32 = t::OBJECT_TREE_EXPANDER_WIDTH;
 
 /// One expander button.
-///
-/// A **separate control** from the row, not a click on the label: expanding
-/// to look inside and pointing the Properties panel at the object are
-/// different intents, and one gesture cannot mean both without one of them
-/// being a surprise.
-///
-/// Drawn as ASCII rather than as chevron art, which is an interim rather than
-/// a preference: `crate::icons` carries `Icon::ChevronDown` and
-/// `Icon::ChevronRight`, and this control does not yet read them. It is a
-/// real, clickable, tooltipped control either way; only the glyph changes.
 fn expander(ui: &mut egui::Ui, open: bool) -> egui::Response {
     let glyph = if open { "v" } else { ">" };
     ui.add_sized(
@@ -542,18 +497,6 @@ fn row_indent(row: ObjectTreeRow) -> f32 {
 }
 
 /// **The text one row DRAWS**, before elision.
-///
-/// Object rows go through [`summary::describe_object`] and
-/// [`crate::text::panels::objects::object_row_headline`], the master form of
-/// the **single description path** the Properties panel also reads — so a fill
-/// colour cannot be described one way here and another way there.
-///
-/// Deliberately the headline and not
-/// [`crate::text::panels::objects::object_row`], the *full* description —
-/// `OPERATOR_REQUESTS.md` O123 defect 2: at the width this panel opens at,
-/// **every** row of the full form elides. The full description is not lost;
-/// [`row_description`] returns it and [`body`] hangs it on the row's hover.
-/// See `object_row_headline`'s header for the measurement.
 fn row_label(provider: &ObjectModelProvider, row: ObjectTreeRow) -> String {
     match row {
         ObjectTreeRow::Object { index } => provider
@@ -577,16 +520,6 @@ fn row_label(provider: &ObjectModelProvider, row: ObjectTreeRow) -> String {
 
 /// **The full description of the object a row names**, for the hover — or
 /// `None` for a row that has no second, longer form.
-///
-/// The counterpart to [`row_label`], which draws the headline. Only an
-/// **object** row has a longer form: a part row reads
-/// *"Subpath 3"* and a point row *"Node 12"*, and there is nothing longer to
-/// say about either — attaching a tooltip that repeated the row would be the
-/// noise [`body`] already refuses on a row that fits.
-///
-/// Returned as an `Option` rather than as an empty string so the call site
-/// cannot hang a blank tooltip on a row by forgetting to test it. An empty
-/// popup is a control that opens and says nothing, which is worse than none.
 fn row_description(provider: &ObjectModelProvider, row: ObjectTreeRow) -> Option<String> {
     match row {
         ObjectTreeRow::Object { index } => provider
@@ -728,14 +661,6 @@ mod tests {
 
     /// A provider over a fixture's first page, through the real
     /// `decompose_page`.
-    ///
-    /// **Necessary for anything about text runs.** The resolver-free
-    /// `decompose` used by [`provider`] above reports `runs.len() == 0` for
-    /// every text object by construction — the run layout needs the font
-    /// resolver — so a content-stream literal cannot exercise the text side
-    /// of the part rung at all. That is a property of the seam, not of the
-    /// panel, and it is why the geometry cases use one helper and the text
-    /// cases use the other.
     fn fixture_provider(rel: &str) -> ObjectModelProvider {
         let path = test_support::engine_fixture(rel);
         let doc = pdfcer_core::document::Document::load(&path).expect("the fixture loads");
@@ -744,11 +669,6 @@ mod tests {
     }
 
     /// **A collapsed tree is exactly the object count, front-most first.**
-    ///
-    /// Two invariants in one, and the second is the panel's whole diagnostic
-    /// premise: row 0 is the object painted LAST, because that is the one a
-    /// click resolves to first. Getting it backwards buries the answer at
-    /// the bottom of a thousand rows.
     #[test]
     fn a_collapsed_tree_lists_every_object_once_topmost_first() {
         // Three rectangles, painted 0, 1, 2.
@@ -767,10 +687,6 @@ mod tests {
 
     /// **Expanding an object adds its parts, and expanding a part adds its
     /// points — object-scoped numbering intact.**
-    ///
-    /// The point indices are the ones `node-move --node N` takes, and they
-    /// keep counting across a part boundary. A tree that restarted them at 0
-    /// per part would print numbers that address a different point.
     #[test]
     fn expanding_walks_object_then_part_then_point() {
         // One object, two parts of two anchors each: points 0,1 then 2,3.
@@ -803,11 +719,6 @@ mod tests {
     }
 
     /// **A text object nests one level, not two.**
-    ///
-    /// Its parts are runs, and a run has no anchors — so the point rung is
-    /// unreachable for text *by construction* rather than by a guard. If
-    /// this ever produced a point row, something would have started matching
-    /// on the object's kind in a second place.
     #[test]
     fn a_text_objects_parts_are_runs_and_have_no_points() {
         // Two explicitly-positioned runs in one text object — the shape a
@@ -855,11 +766,6 @@ mod tests {
     }
 
     /// **A capped point list discloses BOTH numbers.**
-    ///
-    /// The measured case is 6,681 anchors in one path object. A list quietly
-    /// shortened to its first N is indistinguishable from a list that is N
-    /// long, which is the same defect `bookmarks_truncated` exists to
-    /// prevent one panel over.
     #[test]
     fn a_capped_point_list_says_how_many_it_hid() {
         // Four anchors in one part; cap at two.
@@ -906,24 +812,6 @@ mod tests {
 
     /// **A long row is SHORTENED to the pane, and the whole of it stays
     /// reachable** — `OPERATOR_REQUESTS.md` O123.
-    ///
-    /// The requirement is **nothing is lost silently**: the drawn row fits the
-    /// pane, it ends in the ellipsis so the eye knows it was cut, and it is a
-    /// prefix of the full row the hover carries. The alternative mechanism —
-    /// `crate::panels::content_width` growing the container past the viewport
-    /// so `ScrollArea::both` draws a horizontal bar — satisfies the letter of
-    /// that and not the request: *"rows that ellipsise with a tooltip instead
-    /// of hard-clipping mid-character."*
-    ///
-    /// ⚠ **The pane is narrow on purpose.** The drawn row is the headline,
-    /// which is 32 characters for this fixture's object against 51 for the
-    /// full description, so a wider pane fits it and the test would assert
-    /// nothing. The pane is narrowed rather than the fixture lengthened,
-    /// because the subject of this test is the **mechanism**, not the width:
-    /// any row wider than its room must be shortened and stay recoverable, and
-    /// a narrow dock is the ordinary way that happens.
-    /// `every_object_row_of_the_a1_sheet_fits_the_measured_pane` is the test
-    /// that owns the width question.
     #[test]
     fn a_long_row_is_shortened_to_the_pane_and_stays_recoverable() {
         // A row whose text is genuinely long: a filled-and-stroked path with
@@ -975,11 +863,6 @@ mod tests {
 
     /// **A deeper row gets LESS text room, and the difference is exactly the
     /// indent.**
-    ///
-    /// The term this arithmetic is most likely to lose. Dropping `row_indent`
-    /// leaves every object row correct and clips every point row by 28 pt —
-    /// which reads as "the deep rows are broken" rather than as an arithmetic
-    /// slip, and is the reason the sum is a function.
     #[test]
     fn a_deeper_row_has_less_room_for_its_text() {
         const PANE: f32 = 360.0;
@@ -1013,11 +896,6 @@ mod tests {
     }
 
     /// …and the indent is part of that width.
-    ///
-    /// A point row indented twice needs 28 pt more container than its text
-    /// alone. Measuring the text and forgetting the indent reintroduces
-    /// clipping for exactly the deepest rows, which are the ones an operator
-    /// had to work hardest to reach.
     #[test]
     fn indentation_counts_toward_the_row_width() {
         assert!((row_indent(ObjectTreeRow::Object { index: 0 })).abs() < f32::EPSILON);
@@ -1038,15 +916,6 @@ mod tests {
 
     /// **An object row DRAWS the headline and HOVERS the description**, and
     /// both come from the one shared record.
-    ///
-    /// One description path: the row and the Properties panel read the same
-    /// `ObjectSummary`, so a fill colour cannot be described one way here
-    /// and another way there.
-    ///
-    /// It asserts the **pair**, not the drawn text alone: the drawn text and
-    /// the hovered text are two different renderings of that one record, and a
-    /// test naming only one of them passes on a build that hangs the wrong
-    /// string on the hover.
     #[test]
     fn an_object_row_draws_the_headline_and_hovers_the_description() {
         let p = provider(b"0 0 1 rg 10 10 80 80 re f");
@@ -1058,10 +927,6 @@ mod tests {
     }
 
     /// **Only an object row has a longer form.**
-    ///
-    /// A part row reads *"Subpath 3"* and a point row *"Node 12"*: there is no
-    /// second, fuller sentence to put behind either, and a tooltip that
-    /// repeated the row would be a popup that opens and says nothing.
     #[test]
     fn a_part_or_point_row_has_no_description_to_hover() {
         let p = provider(b"10 10 80 80 re f");
@@ -1084,36 +949,6 @@ mod tests {
 
     /// **Every object row of the operator's own A1 sheet fits the pane the
     /// inspector opens at** — `OPERATOR_REQUESTS.md` **O123**, defect 2.
-    ///
-    /// # The measurement this test is built from, and its provenance
-    ///
-    /// The driven check `the_inspector_is_one_master_detail_column` reported
-    /// **8 of 8 object rows do not fit**, and the panel's own `objects-rows`
-    /// line said how far: `pane=314.0 overflow=473.6`. Re-measured headlessly
-    /// here at the same 314 pt pane (`room` = 296 pt after the expander
-    /// column), against `fixtures/a1-titleblock.pdf` page 0:
-    ///
-    ///
-    /// Every description was over the 296 pt room — which is why *every* row
-    /// was elided — and the widest headline uses 70 % of it.
-    ///
-    /// ⚠ **314 pt is not "the default width", and the driven check's failure
-    /// message said it was.** That run's trace reads `mode-changed …
-    /// remembered=true`: the dock restored a saved workspace, so
-    /// `EDIT_INSPECTOR_WIDTH`'s 360 was never applied. Which is the second
-    /// reason widening a constant could not have fixed this — a remembered
-    /// layout does not read it.
-    ///
-    /// # Why this is a unit test as well as a driven one
-    ///
-    /// The driven check owns *"the dock drew it"*; this owns *"the arithmetic
-    /// says it fits"*, and it is the half that runs on every commit. Neither
-    /// substitutes for the other: this test cannot see whether [`body`] still
-    /// calls `elide_to_width` at all (see [`row_text_room`]'s ⚠), and the
-    /// driven check cannot run headless.
-    ///
-    /// The fixture is pinned for the reason the driven check pins it: on a
-    /// document of short rows this assertion could not fail.
     #[test]
     fn every_object_row_of_the_a1_sheet_fits_the_measured_pane() {
         /// The pane the Objects panel measures at in the driven run, in
@@ -1170,12 +1005,6 @@ mod tests {
 
     /// **…and a row that quotes a full-length string is still elided**, so
     /// the mechanism O123 asked for is still there to be used.
-    ///
-    /// The complement of the test above, and the reason it is needed: an
-    /// implementation that made every row fit by *deleting the elision call*
-    /// would satisfy that one and be a regression of the request that produced
-    /// it. Measured at the same 296 pt room: a text row quoting
-    /// [`ROW_TEXT_CHARS`]-worth of wide characters wants **457.1 pt**.
     #[test]
     fn a_row_quoting_a_full_length_string_still_elides() {
         let ctx = egui::Context::default();
@@ -1199,12 +1028,6 @@ mod tests {
 
     /// A row for an object that is no longer there labels as empty rather
     /// than panicking.
-    ///
-    /// The rows are materialised from one snapshot of the provider, so this
-    /// cannot happen today. It is asserted because the row builder and the
-    /// row renderer are separate functions, and the day something rebuilds
-    /// one without the other, an index panic in a draw closure is a crash
-    /// with no useful stack.
     #[test]
     fn a_row_naming_a_missing_object_does_not_panic() {
         let p = provider(b"10 10 80 80 re f");

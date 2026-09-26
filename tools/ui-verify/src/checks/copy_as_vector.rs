@@ -31,13 +31,6 @@ const REFUSED: &str = "clipboard-copy-out-refused";
 
 /// The four format names in placement order, as `crate::clipboard::ClipFormat`
 /// spells them.
-///
-/// Written out here rather than imported, deliberately. `ui-verify` drives
-/// the built binary through the operating system and must not link the crate
-/// under test — an expected value taken from the code being checked is a
-/// tautology, and this list is the *engine's measurement*, which is the
-/// independent source. If these two ever disagree, one of them is wrong and the
-/// check is the only thing that would say so.
 const EXPECTED: [&str; 4] = ["image/svg+xml", "CF_ENHMETAFILE", "PNG", "CF_DIBV5"];
 
 /// `CF_ENHMETAFILE`, which Windows has no *name* for — predefined formats are
@@ -72,11 +65,6 @@ impl Check for CopyAsVectorPlacesTheMeasuredOrder {
 }
 
 /// Whether a clipboard entry is the format `want` names.
-///
-/// Registered formats are matched by **name**, because their numeric ids are
-/// assigned at run time and differ between boots. Predefined ones are matched
-/// by **id**, because Windows gives them no name at all — see
-/// `sys::clipboard_formats`.
 fn is_format(entry: &(u32, String), want: &str) -> bool {
     match want {
         "CF_ENHMETAFILE" => entry.0 == CF_ENHMETAFILE,

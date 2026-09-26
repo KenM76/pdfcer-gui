@@ -340,10 +340,6 @@ pub struct ThumbnailCache {
 impl Default for ThumbnailCache {
     /// **Previews on, with no time limit** — hand-written because the derive
     /// cannot express the first.
-    ///
-    /// `#[derive(Default)]` would give `on: false`, a build that draws nothing
-    /// and says nothing about why. That is the kind of default only ever
-    /// discovered by an operator.
     fn default() -> Self {
         Self {
             ready: HashMap::new(),

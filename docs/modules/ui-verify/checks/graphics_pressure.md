@@ -73,3 +73,39 @@ a night nobody is using it.
   would mean nothing at all. `render::pressure`'s own header carries the
   same warning; it is repeated because this is the consuming end, and the
   consuming end is where a silence gets mistaken for a clean reading.
+
+## Item notes
+
+### `const FIXTURE`
+
+Pinned, and `--pdf` ignored: the subject is the **device**, not the file,
+and the ladder's first rung is defined as *one ordinary document at fit
+zoom*. A suite-wide fixture could be the dense site plan, whose fit-zoom
+raster is large enough that a silent `gl-pressure` would stop being a
+control and start being a result.
+
+### `const EGUI_DEFAULT_SIDE`
+
+The number this check exists to distinguish from a device reading.
+Spelled here because the failure text has to be able to say *"this is
+exactly the framework's pre-backend default"*, which is the sentence that
+tells the reader where to look.
+
+### `const CREDIBLE_FLOOR`
+
+Not derived from any engine constant, and deliberately not:
+`tools/ui-verify` has exactly one dependency and cannot import
+`pdfcer_render::MAX_PIXMAP_EDGE`, so a harness constant *naming* an engine
+constant would be a copy that decays the day the engine's moves. This is a
+**plausibility floor** instead — one doubling above the framework default,
+far under every limit a card running this shell reports — and it is
+therefore correct for as long as the framework's default is 2048, which is
+the only fact it depends on.
+
+### `const OFFSCREEN`
+
+Nothing is ever aimed at this window, so the `SAFE_ORIGIN + size` arithmetic
+that binds an on-screen check does not bind here. The size is kept at the
+usual figure anyway so that the window's frames cost what every other
+check's frames cost — a tiny window would raster a tiny page, and the
+pressure reading would be about a surface no operator ever sees.

@@ -83,3 +83,36 @@ trip through disk sit between those two facts.
 # Rule 15
 
 No dimension of either kind appears in this module.
+
+## Item notes
+
+### `const SEEDED_PREFS`
+
+A third copy of `app::prefs::PREFS_FILE`, and the third copy is where a
+constant starts to rot. It is spelled again rather than imported for the
+same reason the sandbox spells it: this crate does not link the shell. If
+the offer ever stops appearing here for no reason anybody can explain,
+suspect this name first.
+
+### `fn clear_seed`
+
+Returns the path it removed, so the caller can say so in a note: a
+precondition that is not stated is one nobody thinks of when the check later
+reports that nothing opened.
+
+A missing file is success, not failure. This check is also runnable
+against a profile that was never seeded — `--no-isolate`, or a hand-pointed
+`--exe` — and refusing to run there would make the coverage depend on how
+the harness happened to be invoked.
+
+### `fn launch`
+
+No `--pdf`, in either phase. The launch this offer fires on is
+overwhelmingly a launch with nothing open: the operator has just installed
+pdfcer and started it from the Start menu, *because* double-clicking a
+drawing is the thing they cannot yet do. Driving it with a document open
+would exercise a case the feature is not for.
+
+# Errors
+
+Whatever [`Session::launch`] refuses on — a missing binary, a stale one.

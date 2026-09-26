@@ -75,3 +75,18 @@ carries the measurements above and why each dimension is what it is.
 The real drawings keep their checks — this suite drives them for
 everything whose subject IS a real drawing. This one's subject is a
 containment relationship, and a fixture states it exactly.
+
+## Item notes
+
+### `const FIXTURE`
+
+`form_groups` records that trap: written with a third `../` it resolves to a
+`D:/Dev/fixtures/` that does not exist, and the check SKIPs on every run
+while telling the reader to run a generator that writes somewhere else.
+
+### `const POINT`
+
+The form is placed at `(40, 40)` and the bar runs at `y = 110` in the form's
+own space, so it is at `y = 150` on the page. `x = 100` is well clear of the
+vertical bar at `x = 200` and of the diagonal, so a click here can only mean
+one of the three strokes.

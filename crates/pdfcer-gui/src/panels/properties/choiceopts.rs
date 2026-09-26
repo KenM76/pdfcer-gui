@@ -45,12 +45,6 @@ pub const SPELL_REGION: &str = "properties.choice_opts.spell_check";
 pub const COMMIT_REGION: &str = "properties.choice_opts.commit_now";
 
 /// Per-row regions, for the first three rows only.
-///
-/// Three because a driven check needs two rows to prove a reorder and a third
-/// to prove it is a swap rather than a rotation. A region per row would cost a
-/// `format!` per row per frame, on a channel-off build too, since
-/// [`crate::diag::ui_control`] takes `&str`. Rows past the third publish
-/// nothing, which is a stated limit rather than a silent one.
 const ROW_REGIONS: [[&str; 5]; 3] = [
     [
         // ui-text-exempt: trace region name, never displayed
@@ -106,15 +100,6 @@ pub struct OptionRow {
 }
 
 /// Reorder the panel's rows into the engine's own `/Opt` order.
-///
-/// Delegates to `pdfcer_core::edit::sort_choice_options`, which is exported so
-/// that a shell cannot hold a second opinion about what "sorted" means: the
-/// same comparator decides the order here, the order `add_choice_field` writes
-/// at placement, and the order `edit_field` tests the bit-20 claim against.
-///
-/// The round trip through [`to_engine`] is the price of [`OptionRow`] being a
-/// third type; the list is an `/Opt` array, so it is bounded by what a person
-/// will read from a drop-down.
 fn sort_by_display(list: &mut [OptionRow]) {
     let mut engine = to_engine(list);
     pdfcer_core::edit::sort_choice_options(&mut engine);
@@ -125,11 +110,6 @@ fn sort_by_display(list: &mut [OptionRow]) {
 }
 
 /// The panel's rows, as the engine's writer takes them.
-///
-/// `ChoiceOption::new(export, display)` — that argument order, and it is the one
-/// thing here a reader cannot check by eye, because both halves are `String` and
-/// swapping them compiles. The engine collapses an equal pair to a bare `/Opt`
-/// string itself, so there is no need to choose `plain`.
 fn to_engine(list: &[OptionRow]) -> Vec<pdfcer_core::edit::ChoiceOption> {
     list.iter()
         .map(|r| pdfcer_core::edit::ChoiceOption::new(&r.export, &r.display))
@@ -188,10 +168,6 @@ impl ChoiceOptsDraft {
 }
 
 /// What one frame's presses asked for, beyond whatever was typed.
-///
-/// One value rather than a set, because a frame has one press in it. The typed
-/// boxes are not here — they are read out of the draft — so [`Op::None`] still
-/// means the list may have changed.
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum Op {
     /// Nothing pressed.
@@ -360,10 +336,6 @@ const TOUCHED_REMOVE: &str = "remove option";
 const TOUCHED_MOVE: &str = "move option";
 
 /// Which control a refusal should name.
-///
-/// `fieldedit`'s header carries why this exists: the engine's refusals arrive
-/// from a direction the request does not name, so the decline is shown against
-/// the control the operator touched.
 const fn touched_for(op: &Op) -> &'static str {
     match op {
         Op::None => TOUCHED_LIST,
@@ -374,24 +346,6 @@ const fn touched_for(op: &Op) -> &'static str {
 }
 
 /// The first repeated **sent** value, if any.
-///
-/// Compared on `export`, not on `display`: it is the export a fill resolves
-/// against, so two options reading *Ontario* and *Ontario (ON)* that both send
-/// `ON` are the broken pair, while two that read the same and send `ON` and `QC`
-/// are merely confusing. §12.7.4.4 permits the second; nothing can select the
-/// second half of the first — and that paragraph is the engine's, not this
-/// panel's: the rule is `pdfcer_core::edit::duplicate_choice_export`, which
-/// `edit_field` refuses on and which this asks with.
-///
-/// This still asks first, because it is the WORDING that is the shell's half:
-/// an `EditError` reaching `vector_edit` renders as *"That change was
-/// refused"*, naming neither the rule nor the value, and finding the repeat
-/// unaided in a thirty-row list is the whole difficulty. Asking with the
-/// engine's own predicate is what makes that a translation rather than a
-/// second opinion.
-///
-/// The list is converted through [`to_engine`] rather than compared in place,
-/// so the values tested are byte-for-byte the ones `with_options` sends.
 fn refuse_duplicate(list: &[OptionRow]) -> Option<String> {
     let engine = to_engine(list);
     pdfcer_core::edit::duplicate_choice_export(&engine).map(ToOwned::to_owned)
@@ -418,17 +372,6 @@ fn column_headers(ui: &mut Ui) {
 const BUTTON_WIDTH: f32 = 22.0;
 
 /// The width each of the two text boxes gets.
-///
-/// A measurement feeding a size, which is R128's shape — but it cannot loop:
-/// `available_width()` here is the dock's decision, made before the body draws
-/// and unaffected by anything drawn into it, so the derived width cannot widen
-/// the container that produced it.
-///
-/// `MIN_BOX` is the floor anyway, and the rows are `horizontal_wrapped`, so a
-/// dock squeezed below two boxes plus the buttons moves the buttons to a second
-/// line. That matters because the Properties panel's `ScrollArea` is
-/// `vertical()` only: anything past the right edge is not below a fold, it is
-/// unreachable.
 fn box_width(ui: &Ui) -> f32 {
     /// The narrowest a text box may get before the row wraps instead.
     const MIN_BOX: f32 = 40.0;
@@ -439,10 +382,6 @@ fn box_width(ui: &Ui) -> f32 {
 }
 
 /// Every option, one row each, and what was pressed.
-///
-/// The two boxes are explicitly sized so the buttons land in the same column on
-/// every row, which is what makes a column of remove buttons readable as a
-/// column.
 fn option_rows(ui: &mut Ui, rows: &mut [OptionRow], sorted: bool) -> Op {
     let width = box_width(ui);
     let last = rows.len().saturating_sub(1);
@@ -521,11 +460,6 @@ fn button(ui: &mut Ui, label: &str) -> egui::Response {
 }
 
 /// [`button`], allocated inside a disabled scope when it should not respond.
-///
-/// The scope and not a greyed fill: `egui_shell::ribbon::sizing` measured that
-/// a response from an enabled `Ui` reports itself enabled however it is
-/// painted, which both kills `on_disabled_hover_text` and lets the click
-/// through. A greyed control that still fires is worse than a live one.
 fn enabled_button(ui: &mut Ui, enabled: bool, label: &str) -> egui::Response {
     ui.add_enabled_ui(enabled, |ui| button(ui, label)).inner
 }
@@ -593,17 +527,6 @@ fn sort_row(ui: &mut Ui, sorted: bool) -> Option<bool> {
 
 /// `/DV` for a choice field. Returns the chosen export value when the chooser
 /// moved, with `None` meaning *remove the default*.
-///
-/// # `/DV` holds the EXPORT value, and getting that wrong is invisible
-///
-/// `set_choice_value` writes the export value to `/V`, and `edit_field`'s
-/// `value_fit_complaint` checks a selection against `option.export`. `/DV` takes
-/// the same type as `/V` (Table 228), so it holds an export too. A default
-/// written as the display string would look right in this panel, look right in
-/// the drop-down, and fail to match any option the day someone pressed Reset.
-///
-/// No draft: `FieldPropsDraft`'s rule is that a draft exists only for controls
-/// that take typing, and a chooser is a press.
 fn default_row(ui: &mut Ui, field: &Field, list: &[OptionRow]) -> Option<Option<String>> {
     let current = current_default(field);
     let mut chosen = current.clone();
@@ -633,13 +556,6 @@ fn default_row(ui: &mut Ui, field: &Field, list: &[OptionRow]) -> Option<Option<
 }
 
 /// The field's current `/DV`, as an export value.
-///
-/// `FieldValue::Choice` rather than `display_text()`, which joins several
-/// selections with `", "` — a sentence, not a value, and it would round-trip a
-/// two-selection default into one option named *"A, B"*. Several defaults are a
-/// real state on a multi-select list box; this chooser offers one, so it reads
-/// the first and the rest are left alone rather than silently discarded, which
-/// is why it reports a change only when the operator moves it.
 fn current_default(field: &Field) -> Option<String> {
     match &field.default_value {
         pdfcer_core::forms::FieldValue::Choice(items) => items
@@ -650,23 +566,6 @@ fn current_default(field: &Field) -> Option<String> {
 }
 
 /// `/Ff` bit 19 — typing an answer that is not in the list.
-///
-/// # Live in three of the four states, and the fourth is the interesting one
-///
-/// Table 230 makes bit 19 legal only alongside bit 18, and `edit_field` checks
-/// it against the **resulting** field:
-///
-/// | drop-down | typing | control | why |
-/// |---|---|---|---|
-/// | on | either | live | both directions are legal |
-/// | off | off | greyed | turning it on would be refused |
-/// | off | on | live | the file already breaks Table 230 |
-///
-/// The last row is why this is not `add_enabled_ui(combo, …)`. A file can arrive
-/// with `Edit` set and `Combo` clear — pdfcer reads what is there — and greying
-/// the control there would leave the operator looking at a nonconforming field
-/// with no way to fix it. Clearing the flag *is* the fix, and `edit_field`
-/// accepts it because the post-state conforms.
 fn editable_row(ui: &mut Ui, combo: bool, editable: bool, fqn: &str, actions: &mut Vec<Action>) {
     let live = combo || editable;
     let mut on = editable;
@@ -695,11 +594,6 @@ fn editable_row(ui: &mut Ui, combo: bool, editable: bool, fqn: &str, actions: &m
 }
 
 /// `/Ff` bit 23, drawn as its own inverse.
-///
-/// The flag is `DoNotSpellCheck` and the checkbox says *Check spelling*, so
-/// `checked` is `!flag` and the write is `!checked`. Worth the inversion — it is
-/// what every application says — and confined to these lines so there is one
-/// place to read it.
 fn spell_check_row(ui: &mut Ui, field: &Field, fqn: &str, actions: &mut Vec<Action>) {
     let mut on = !field.flags.has(FieldFlags::DO_NOT_SPELL_CHECK);
     let response = ui.checkbox(&mut on, t::flag_spell_check());
@@ -751,15 +645,6 @@ mod tests {
 
     /// The panel's sort must satisfy the test `edit_field` applies to the
     /// bit-20 claim, or the flag is set over a list the engine calls unsorted.
-    ///
-    /// [`sort_by_display`] delegates to the engine's exported sorter, so this
-    /// can no longer drift by accident — it can still drift by someone
-    /// re-hand-rolling the comparator, which is what it now guards. Asserted as
-    /// the engine's own expression rather than as "it is sorted": `edit_field`
-    /// computes `flags.has(SORT) && !effective.is_sorted()` over the
-    /// **display** strings, so this asserts `is_sorted()` on exactly that
-    /// projection. A case-insensitive or natural ordering would satisfy a human
-    /// reading of "sorted" and fail this.
     #[test]
     fn the_panels_sort_satisfies_the_engines_own_sorted_test() {
         let mut list = vec![row("Quebec", "QC"), row("Alberta", "AB"), row("Ba", "BA")];
@@ -779,12 +664,6 @@ mod tests {
     }
 
     /// A duplicate SENT value is refused; a duplicate SHOWN value is not.
-    ///
-    /// Both directions, because a gate that refused both would look correct and
-    /// would block a legitimate list: two options that read the same and send
-    /// different codes are permitted by §12.7.4.4. What nothing can select is
-    /// the second half of a repeated export, which is what `add_choice_field`
-    /// refuses.
     #[test]
     fn only_a_repeated_sent_value_is_refused() {
         assert_eq!(
@@ -800,12 +679,6 @@ mod tests {
     }
 
     /// [`to_engine`] must not swap the pair.
-    ///
-    /// Both halves are `String`, so swapping them compiles and produces a file
-    /// that opens, reads correctly in the drop-down, and submits the wrong
-    /// data — the failure the engine's own note calls something that *"would
-    /// silently break forms"*. The only thing between this crate and that is one
-    /// line's argument order, so it is asserted rather than read.
     #[test]
     fn to_engine_keeps_shown_and_sent_on_the_right_halves() {
         let out = to_engine(&[row("Ontario", "ON")]);

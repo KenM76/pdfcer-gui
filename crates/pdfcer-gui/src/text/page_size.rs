@@ -439,12 +439,6 @@ mod tests {
 
     /// **The crop-not-scale rule is stated, in the operator's words, in
     /// the first line of the window.**
-    ///
-    /// The single most important property of this whole catalogue, and the one
-    /// a reword could quietly destroy: a future editor tidying [`intro`] for
-    /// length could drop the clause that says nothing is scaled, and every
-    /// test in the workspace would stay green while the window started lying
-    /// by omission. This fails instead.
     #[test]
     fn the_intro_says_the_drawing_does_not_move_and_is_not_scaled() {
         let intro = intro();
@@ -460,18 +454,6 @@ mod tests {
     }
 
     /// **The overhang line names every edge it was given, and only those.**
-    ///
-    /// Both directions. A line that named all four edges regardless would read
-    /// as alarming nonsense on a sheet that overhangs only to the right; one
-    /// that named the first would silently under-report a drawing hanging off
-    /// two edges, which is what a wrongly-oriented sheet produces.
-    ///
-    /// ⚠ **The absence assertions match `"past the top"`, not `"top"`**, and
-    /// the reason is recorded because it cost a red run: the sentence contains
-    /// the word *"s-top-s"*, so a bare substring test reported a line naming
-    /// one edge as naming two. A negative assertion over prose has to match the
-    /// **phrase the code emits**, or it is asserting something about English
-    /// rather than about the program.
     #[test]
     fn the_overhang_line_names_exactly_the_edges_that_overhang() {
         let right_only = overhang(0.0, 1636.0, 0.0, 0.0);
@@ -516,18 +498,6 @@ mod tests {
     }
 
     /// **R8b rule 15: this catalogue never writes a bare "dimension".**
-    ///
-    /// A CAD sheet has two kinds and a paper change affects them differently:
-    /// a **pdf dimension** is the printed measurement the exporter drew — page
-    /// content pdfcer reads and must not silently alter — and a **ce
-    /// dimension** is the one pdfcer authored. Both are unaffected here, for
-    /// different reasons, and a sentence that said "dimensions" would be
-    /// telling the operator something about a category that does not exist.
-    ///
-    /// Swept over **every** string this module can produce rather than over the
-    /// one that happens to use the word today, because the rule binds the
-    /// catalogue and not a line of it — and a future sentence added by someone
-    /// who has not read R8b is exactly what this is for.
     #[test]
     fn no_string_in_this_catalogue_writes_a_bare_dimension() {
         let strings: Vec<String> = vec![
@@ -605,11 +575,6 @@ mod tests {
     }
 
     /// **No entry in the size list reads like an identifier.**
-    ///
-    /// The wildcard arm of [`size_name`] falls back to `PaperSize::id`, which is
-    /// machine-facing (`ansi-d`). Every size the engine ships today must have a
-    /// real name here; the fallback is for one it adds tomorrow, and this is
-    /// what makes that distinction hold rather than drift.
     #[test]
     fn no_shipped_size_falls_through_to_its_machine_id() {
         for size in PaperSize::ALL {

@@ -16,12 +16,6 @@ const COPY_MODE: &str = "edit";
 /// Where the paste is attempted: the mode the defect was reported in.
 const PASTE_MODE: &str = "review";
 /// The fixture, pinned. Any `--pdf` is ignored and the check says so.
-///
-/// Pinned because `Ctrl+A` must find something: this check's subject is what
-/// happens to a **content** clip, and on a page with no page content
-/// `edit.select_all` copies nothing, the paste gate takes the markup branch,
-/// Review permits it, and the check would report a pass having exercised the
-/// opposite case. A real A1 CAD sheet cannot be empty.
 const FIXTURE: &str = "fixtures/a1-titleblock.pdf";
 
 /// `clipboard-copy kind=selection page=… objects=… annots=… thin=… bytes=…`.

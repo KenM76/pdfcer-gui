@@ -13,33 +13,10 @@ use crate::report::CheckReport;
 use crate::sys::vk;
 
 /// The mode the Bookmarks panel is **authored** in.
-///
-/// `review`, and the choice is a claim about the PRODUCT rather than a
-/// convenient route to a panel.
-///
-/// ⚠ **The mode a check drives in is an assertion, whether or not anybody meant
-/// it as one.** Read is the mode the application starts in, so it is always the
-/// cheapest way to reach a panel that is shown in all three — and driving
-/// authoring there quietly asserts that the mode whose whole promise is that it
-/// changes nothing offers Add, Rename, Remove, Copy, Cut and a drag hint.
-///
-/// `MODES_AND_PANELS.md`'s panel table draws the line by name, giving Read
-/// *"Comments (read)"* against Review's *"Comments (authoring)"*. The
-/// authoring half here is gated on `Capabilities::authors_anything`, so
-/// **Review is the lowest mode that has it** — which is also the right mode to
-/// test it in, because it proves the gate admits more than Edit. A bookmark is
-/// document *structure*, not page content, so Review must keep it.
-///
-/// ⇒ This check fails if authoring is missing from Review, and
-/// `read_mode_offers_no_bookmark_authoring` is the other half of the pair.
 const MODE: &str = "review";
 /// The command that shows the panel.
 const PANEL_ITEM: &str = "ribbon.item.view.panel_bookmarks";
 /// The panel's own dock tab, declared by the dock whenever it is showing.
-///
-/// The evidence that the panel is OPEN, independent of anything its body
-/// draws — which is what lets an absence test tell "nothing is offered"
-/// from "nothing opened".
 const PANEL_TAB: &str = "dock.tab.view.panel_bookmarks";
 /// The title box the panel publishes.
 const TITLE_BOX: &str = "bookmarks.new_title";

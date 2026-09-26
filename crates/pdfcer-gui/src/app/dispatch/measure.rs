@@ -162,14 +162,6 @@ pub(super) fn dispatch(app: &mut PdfcerApp, ctx: &Context, id: &str, actions: &m
 }
 
 /// The group a measure command acts on, with the fallback traced.
-///
-/// See the module header: `None` means the measure tool has never been armed
-/// this session, and substituting the default group is right for an operator
-/// who has drawn nothing and wrong for anybody whose state was lost. The two
-/// are indistinguishable afterwards, so the substitution says so.
-///
-/// `id` is in the trace line so a reader can tell which command fell back.
-/// Without it the trace says a substitution happened and not what asked for it.
 fn active_group(ctx: &Context, id: &str) -> pdfcer_core::dimension::GroupId {
     crate::canvas::measure::active_group(ctx).unwrap_or_else(|| {
         crate::diag::trace(|| {

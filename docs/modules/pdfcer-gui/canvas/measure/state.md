@@ -50,3 +50,28 @@ core's constant rather than a literal `0` written here.
    [`super`], not here.
 3. **Nothing computational changed.** No transition, no field, no default
    was altered.
+
+## Item notes
+
+### `fn changing_kind_discards_a_pick_in_progress`
+
+The failure it prevents is the one the original's docs warn about in
+their own words: a carried-over pick does not raise an error, it
+produces *"something strange"* on the operator's **next** click, which
+is the worst place to discover it.
+
+### `fn every_pick_kind_is_counted_as_a_gesture`
+
+# Why this is shaped as one sub-test per FIELD
+
+Because the thing that goes wrong is a field being added and a
+disjunction not being extended, and no enum exhaustiveness check can see
+that — `MeasureKind` was updated correctly in five places while this one
+disjunction silently kept its old shape. The only way to catch it is to
+drive each machine into a started state and assert the container
+notices.
+
+A machine added without a line here fails nothing, which is the honest
+limit of this test. What it does buy is that the *existing* five cannot
+regress, and that a reader adding a sixth finds a list with an obvious
+hole in it rather than a boolean expression to audit.

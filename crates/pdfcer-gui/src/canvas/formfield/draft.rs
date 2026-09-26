@@ -261,24 +261,11 @@ impl Remembered {
 }
 
 /// The export values already used by the remembered draft, if any.
-///
-/// A deliberately thin view: the shell does not track a radio group's full
-/// membership, so the best it can do is advance past the one it last wrote.
-/// That is enough for the sequential placing this exists to serve, and the
-/// dialog shows the value so an operator placing out of order can correct it.
 fn collected_exports(last: &Option<Draft>) -> Vec<String> {
     last.iter().map(|d| d.export_value.clone()).collect()
 }
 
 /// `prefix` with the lowest positive integer suffix that is not in `taken`.
-///
-/// It starts at 1 and scans upward rather than counting `taken`, because
-/// counting gives a collision the moment anything has been deleted: a document
-/// with `Text1` and `Text3` has two fields, and `Text2` is free while `Text2`
-/// derived from the count would collide with nothing and `Text3` would.
-///
-/// The scan is bounded by `taken.len() + 1` iterations by construction — with
-/// *n* names taken, one of the first *n + 1* candidates must be free.
 fn next_free(prefix: &str, taken: &[String]) -> String {
     let stem = prefix.trim_end_matches(|c: char| c.is_ascii_digit());
     let stem = if stem.is_empty() { prefix } else { stem };
@@ -345,14 +332,6 @@ mod tests {
     }
 
     /// **Both `/MK` colours carry across kinds, and neither is invented.**
-    ///
-    /// Two claims in one test because they are the two halves of O202's
-    /// before-placement ask. Carrying is the ask itself — a row of check boxes
-    /// in one colour is the workflow. Not inventing is the part that would
-    /// never be noticed: a default of `Some(MkColor::Rgb(1.0, 1.0, 1.0))`
-    /// looks identical on a white page and writes a `/MK` key into every field
-    /// pdfcer authors, changing bytes in files the operator did not ask to
-    /// change.
     #[test]
     fn both_mk_colours_carry_across_kinds_and_default_to_stating_nothing() {
         for kind in FormFieldKind::ALL {

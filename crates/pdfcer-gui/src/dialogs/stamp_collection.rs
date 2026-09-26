@@ -24,11 +24,6 @@ pub const REGION_ADJUSTMENTS: &str = "stamp-collection.adjustments"; // ui-text-
 pub const REGION_SAVE: &str = "stamp-collection.save"; // ui-text-exempt: trace region name, never displayed
 
 /// Height reserved below the scroll area for the separator and button row.
-///
-/// A named constant used **both** by the opening-height calculation and by
-/// the scroll area's `max_height`, which is `dialogs::formfield`'s recorded
-/// finding: those were a literal `40.0` in one place and nothing at all in the
-/// other, which is how the two halves of one reservation drift apart.
 const FOOTER_PTS: f32 = 46.0;
 
 /// Height one row occupies — a checkbox, a page label and a text field.
@@ -39,11 +34,6 @@ const ROW_PTS: f32 = 26.0;
 const HEADER_PTS: f32 = 150.0;
 
 /// How many rows the window opens tall enough to show.
-///
-/// A **constant inventory**, never a measurement from inside the scroll area
-/// — R128's feedback loop. A document of eighty sheets must not open a window
-/// eighty rows tall; it opens at eight and scrolls, which is a decision made
-/// here rather than a number egui arrives at by growing.
 const ROWS_SHOWN: usize = 8;
 
 /// The scrollbar width, matching `dialogs::print::layout::SCROLLBAR_WIDTH_PTS`
@@ -228,19 +218,6 @@ impl StampCollectionDialog {
     }
 
     /// One row per page: tick, page number, name.
-    ///
-    /// # Why every keystroke re-derives the WHOLE list
-    ///
-    /// Uniqueness is a property of the **set**, not of a row. Renaming row 1
-    /// can free the name row 4 was renumbered away from, and a per-row update
-    /// would leave row 4 wearing a *"we renamed it"* sentence explaining a
-    /// collision that no longer exists — a disclosure whose subject has gone.
-    /// `crate::stamps::tests::rederiving_after_a_rename_drops_the_stale_disclosure`
-    /// is the test that holds this.
-    ///
-    /// The cost is a quadratic pass over a list whose length is a page count,
-    /// run on a keystroke. On the operator's largest sheet set that is a few
-    /// hundred string comparisons in a frame that already rasterized a page.
     fn rows_group(&mut self, ui: &mut Ui) {
         let mut changed = false;
         for index in 0..self.plan.stamps.len() {
@@ -279,10 +256,6 @@ impl StampCollectionDialog {
 
     /// Everything pdfcer had to change about a hidden identifier — and nothing
     /// when it changed nothing.
-    ///
-    /// Drawn only when the list is non-empty. A permanently-present box
-    /// reading *"no adjustments"* trains an operator to stop reading the place
-    /// adjustments appear, which costs exactly the one time it matters.
     fn adjustments_group(&self, ui: &mut Ui) {
         let sentences: Vec<String> = self
             .plan
@@ -307,12 +280,6 @@ impl StampCollectionDialog {
     }
 
     /// Save and Cancel.
-    ///
-    /// Greyed with the reason on hover, which is the one situation **R9**
-    /// reserves greying for: *temporarily* unavailable, and one keystroke or
-    /// one tick makes it live. The blocker's sentence is also drawn beside the
-    /// button rather than only on hover, because a hover tooltip is a thing you
-    /// find after you have already wondered why nothing happened.
     fn commit_row(&mut self, ui: &mut Ui) {
         let blocker = self.plan.blocker();
         let hint = blocker.map(|blocker| match blocker {

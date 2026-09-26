@@ -817,12 +817,6 @@ mod tests {
     use std::path::PathBuf;
 
     /// The three open-failure sentences must be genuinely different.
-    ///
-    /// Not a tautology test: the whole value of the three-way distinction
-    /// is that an operator can tell from the words alone which of "my file
-    /// is broken", "pdfcer is not finished" and "I need to type a password"
-    /// is true. Three functions that produced near-identical prose would
-    /// satisfy the type system and defeat the design.
     #[test]
     fn the_three_open_failures_read_differently() {
         let p = PathBuf::from("drawing.pdf");
@@ -840,25 +834,6 @@ mod tests {
     }
 
     /// **The engine's own sentence must still be free of panic text.**
-    ///
-    /// This is a tripwire on `pdfcer-render`, not on this crate, and that is
-    /// the point. Until `Pass 296.5` (`4f6f5a5`), `RasterizerLimit`'s
-    /// `Display` carried `tiny-skia`'s panic text and the shell's named arm in
-    /// `crate::render::worker` was the only thing keeping *"range start index
-    /// 442613758592 out of range for slice of length 1088737"* off a site
-    /// plan. The engine took it out, and the comment on that arm now states
-    /// plainly that **the wildcard arm below it would no longer leak
-    /// anything**.
-    ///
-    /// That is a claim about somebody else's source, on a pin that moves
-    /// several times a day. A comment asserting it is worth nothing; this
-    /// constructs the variant and reads what the engine actually renders. If
-    /// the panic text ever returns to the format string, the sentence on that
-    /// arm becomes false and this goes red the same hour.
-    ///
-    /// It deliberately does NOT assert the whole string. The wording is the
-    /// engine's to choose; what was promised is that the field does not appear
-    /// in it, and that the scale — the actionable half — still does.
     #[test]
     fn the_engine_keeps_its_panic_text_out_of_the_message() {
         let panic_message =
@@ -881,16 +856,6 @@ mod tests {
 
     /// **This shell's sentence is an instruction, not a paraphrase of the
     /// engine's fact.**
-    ///
-    /// [`canvas_zoom_past_rasterizer`] outlived the leak it was written to
-    /// stop, and the doc on it explains why: the engine reports *what the
-    /// renderer could not do*, and an operator staring at a blank drawing
-    /// needs *what to do next* plus the assurance that nothing was damaged.
-    ///
-    /// A future edit that "simplifies" this back to the engine's wording would
-    /// compile, pass every gate, and quietly delete the reason the function is
-    /// still here. So the three clauses are asserted, and the engine's phrasing
-    /// is asserted absent.
     #[test]
     fn the_zoom_refusal_tells_him_what_to_do_and_that_nothing_broke() {
         let ours = canvas_zoom_past_rasterizer();
@@ -909,10 +874,6 @@ mod tests {
     }
 
     /// A path with no file name must still produce a usable sentence.
-    ///
-    /// `Path::file_name` returns `None` for a bare root or a path ending in
-    /// `..`, and an unwrap there would turn a nonsense command line into a
-    /// panic instead of a message.
     #[test]
     fn a_path_without_a_file_name_still_names_something() {
         let message = open_failed(Path::new("D:\\"), "not a PDF");

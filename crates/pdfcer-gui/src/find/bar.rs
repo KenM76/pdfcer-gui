@@ -37,27 +37,12 @@ pub const BAR_WIDTH_PTS: f32 = 460.0;
 pub const ROW_HEIGHT_PTS: f32 = 24.0;
 
 /// The gap between the overlay and the canvas viewport's top-right corner.
-///
-/// Enough that the box reads as floating *over* the page rather than as
-/// something welded to the edge of the window, and enough that its shadow has
-/// somewhere to fall.
 const MARGIN_PTS: f32 = 12.0;
 
 /// How wide the search field is.
-///
-/// Wide enough for a part number or a short phrase — the two things drawing
-/// reviewers actually search for. Reserved rather than proportional, for the
-/// reason the module docs give: everything to its right is positioned from it.
 const FIELD_WIDTH_PTS: f32 = 190.0;
 
 /// How wide the position readout is.
-///
-/// `3 of 47`, `No matches` and `Document changed` are three very different
-/// widths, and without a reserve every search would shove its neighbours
-/// sideways — and, because the box is right-anchored, would move the search
-/// field the operator is typing into. Sized for the longest of the three at
-/// the default text size; anything longer elides, with the whole string on
-/// hover.
 const READOUT_WIDTH_PTS: f32 = 110.0;
 
 // ---------------------------------------------------------------------------
@@ -67,15 +52,6 @@ const READOUT_WIDTH_PTS: f32 = 110.0;
 // ---------------------------------------------------------------------------
 
 /// The whole overlay, including its frame.
-///
-/// Published so `ui-verify` can reach the bar at all. A check that wants to
-/// assert *"Ctrl+F produced a find bar, and its text is legible"* has exactly
-/// two honest sources for **where to look** — the application measures the
-/// rect on the frame it reports, or the harness hard-codes a fraction of the
-/// window and goes stale the first time a panel moves. This is the first
-/// source, and for a *floating* surface it is the only one: an overlay's
-/// position depends on the canvas viewport, which depends on the dock, so no
-/// constant a harness could hold would survive opening a panel.
 const REGION_BAR: &str = "find-bar"; // ui-text-exempt: trace region name, never displayed
 
 /// The search field itself.
@@ -88,15 +64,6 @@ const REGION_POSITION: &str = "find-position"; // ui-text-exempt: trace region n
 const REGION_OPTIONS: &str = "find-options"; // ui-text-exempt: trace region name, never displayed
 
 /// The OCR offer's second row, when it is drawn.
-///
-/// Published so `ui-verify` can assert on the offer's **presence and absence**
-/// rather than on a screenshot. That matters more here than for the other
-/// regions: the offer is one line of muted text and a small button on a
-/// floating box over a drawing sheet, which is exactly the kind of thing a
-/// pixel oracle cannot distinguish from the frame before it. A declared rect is
-/// a claim the application makes about
-/// itself, and the absence of one is the harness's evidence that the offer was
-/// not drawn.
 const REGION_OCR_OFFER: &str = "find-ocr-offer"; // ui-text-exempt: trace region name, never displayed
 
 /// Trace slot for the bar's steady state, de-duplicated on the rendered line.
@@ -110,15 +77,6 @@ const FIND_SLOT: &str = "find-bar"; // ui-text-exempt: trace slot name, never di
 const AREA_ID: &str = "pdfcer-find-bar"; // ui-text-exempt: widget id, never displayed
 
 /// The search field's id.
-///
-/// **Stable and explicit, because defect D1 depends on it.**
-/// `crate::app::keyboard::collect` guards its unmodified bindings with
-/// `ctx.text_edit_focused()`, which resolves the focused id and asks whether a
-/// `TextEditState` exists *for that id*. The field therefore has to be a real
-/// [`egui::TextEdit`] with an id that does not move between frames, or
-/// `PageDown` would step the page while the operator was halfway through
-/// typing a search term. It also has to be stable for
-/// [`super::FindState::take_focus_request`] to be able to focus it.
 const FIELD_ID: &str = "pdfcer-find-field"; // ui-text-exempt: widget id, never displayed
 
 // ---------------------------------------------------------------------------
@@ -273,19 +231,6 @@ pub fn show(ui: &mut egui::Ui, state: &mut FindState, status: &Status, actions: 
 
 /// The rect the overlay is positioned inside — the **canvas viewport**, not
 /// the window.
-///
-/// Read from `crate::canvas::zoom::last_frame`, which is the canvas's own
-/// record of where it drew. That matters as soon as a dock is open: anchoring
-/// to the window's top-right would put the box over the right-hand panel
-/// rather than over the page, and would move it every time a splitter was
-/// dragged even though the page had not moved.
-///
-/// The fallback is the whole screen rect, and it is reachable rather than
-/// defensive: a document with no pages, or one whose current page will not
-/// rasterize, makes `canvas::show` return before it records a frame — and
-/// both of those documents still have text worth searching. The box then sits
-/// at the window's top-right, over the sentence explaining why there is no
-/// page, which is the best available answer.
 fn host_rect(ctx: &egui::Context) -> Rect {
     // `content_rect`, not `viewport_rect`: the former is what egui considers
     // safe to draw content into (it subtracts an OS status bar or a display
@@ -296,16 +241,6 @@ fn host_rect(ctx: &egui::Context) -> Rect {
 
 /// **The point the overlay's right-top corner is pinned to** — [`MARGIN_PTS`]
 /// inside `host`'s own top-right corner.
-///
-/// A free function, and taking no width, because that is the whole point of
-/// the right-top pivot: the placement is a corner, not a corner minus a
-/// measurement. See the pivot's comment in [`show`] for the frame-one defect
-/// that made it one.
-///
-/// Clamped into `host` on both axes so that a host smaller than the margin
-/// cannot produce a point outside the canvas. `constrain_to` would pull the
-/// box back anyway; this keeps the constraint a safety net rather than the
-/// thing deciding the layout.
 #[must_use]
 fn anchor_right_top(host: Rect) -> Pos2 {
     Pos2::new(
@@ -448,15 +383,6 @@ fn field(ui: &mut egui::Ui, state: &mut FindState, epoch: u64, actions: &mut Vec
 
 /// **What Enter means**, as a pure function of the readout and the shift
 /// key.
-///
-/// The table is in this module's header; the argument for the `Empty` row —
-/// the only one that returns `None` — is there too, and it is about cost: a
-/// re-search of a query that just matched nothing re-extracts the whole
-/// document's text to produce the same answer, and nothing has changed since
-/// it did.
-///
-/// `Stale` searches rather than steps, which is the mechanism by which the
-/// bar's own "press Enter to search again" tooltip is true.
 #[must_use]
 fn enter_intent(readout: Readout, shift: bool) -> Option<FindRequest> {
     match readout {
@@ -475,55 +401,12 @@ fn enter_intent(readout: Readout, shift: bool) -> Option<FindRequest> {
 // ---------------------------------------------------------------------------
 
 /// **Whether to offer OCR**, as a pure function of the readout and the page.
-///
-/// `page_has_text` is a closure rather than a `bool` so that the caller's
-/// answer is **not computed unless it is needed** — the short-circuit is the
-/// affordability argument, and passing an already-evaluated `bool` would make
-/// the call site pay for a page extraction on every frame the bar is open while
-/// this function still looked correct. That is the shape of the defect: right
-/// work, wrong moment, invisible to every test.
-///
-/// # The rule, and the trap inside it
-///
-/// | readout | page has text | offer |
-/// |---|---|---|
-/// | `Empty` | no | **yes** — there is nothing here for any search to have found |
-/// | `Empty` | yes | no — an ordinary empty result; the words are there, that one is not |
-/// | `At` / `Idle` / `Stale` | either | no |
-///
-/// The second row is the operator's stated rule and the whole reason this is a
-/// function with a test rather than an `if` in the layout: *"the document is
-/// images"* is not *"this search had no matches"*, and a build that collapsed
-/// them would offer to recognise a text PDF every time somebody mistyped a part
-/// number. [`tests::an_ordinary_empty_result_on_a_text_page_offers_nothing`] is
-/// the falsifying case.
-///
-/// The third row is not merely "nothing to offer". A `Stale` readout means the
-/// document has been edited since the search ran, so the *page* answer is about
-/// a revision the hit list does not describe; and `Idle` means nothing has been
-/// asked at all, where an offer would be the bar volunteering an opinion about a
-/// document the operator has not yet questioned.
 #[must_use]
 fn offer_ocr(readout: Readout, page_has_text: impl FnOnce() -> bool) -> bool {
     matches!(readout, Readout::Empty) && !page_has_text()
 }
 
 /// The second row: what is true of the page, and the way out of it.
-///
-/// Drawn **below** the control row rather than inside it, and that is a
-/// consequence of this module's fixed-width rule rather than a layout
-/// preference. The box is anchored by its top-right corner, so anything added
-/// to the row would move the search field the operator is typing into; a row
-/// added underneath grows the box downwards, over the page, and moves nothing.
-/// An `egui::Area` consumes no layout, so the extra height costs the canvas
-/// nothing either — which is the same property that made the bar an overlay in
-/// the first place (see the module header's 85 %-to-81 % measurement).
-///
-/// It appears and disappears with the condition rather than being greyed. P3
-/// permits greying only for a *temporarily* unavailable capability that is
-/// always explained on hover, and "this page happens to have text on it" is not
-/// a state an operator can act their way out of — a permanently dead control
-/// explaining a fact about the document is the placeholder the rule forbids.
 fn ocr_offer(ui: &mut egui::Ui, actions: &mut Vec<Action>) {
     ui.add_space(4.0);
     ui.separator();
@@ -571,11 +454,6 @@ fn ocr_offer(ui: &mut egui::Ui, actions: &mut Vec<Action>) {
 }
 
 /// The command the offer raises.
-///
-/// Named here rather than typed inline so that
-/// [`tests::the_offer_raises_the_registered_recognise_command`] can assert it
-/// against the registry — an id that is merely spelled at a call site is an id
-/// that goes stale silently.
 const OCR_COMMAND: &str = "file.ocr"; // ui-text-exempt: a command id, never displayed
 
 // ---------------------------------------------------------------------------
@@ -583,13 +461,6 @@ const OCR_COMMAND: &str = "file.ocr"; // ui-text-exempt: a command id, never dis
 // ---------------------------------------------------------------------------
 
 /// `⏴ ⏵  3 of 47`.
-///
-/// The two buttons are **enabled only when there is something to step**, and
-/// each explains its greyed state on hover — P3 permits greying only for
-/// *temporarily* unavailable and only when it is always explained. Both
-/// conditions hold here: an empty or stale result set is a state that ends the
-/// moment the operator presses Enter, and
-/// [`crate::text::find::step_unavailable_tooltip`] says so.
 fn position(ui: &mut egui::Ui, state: &FindState, epoch: u64, actions: &mut Vec<Action>) {
     let readout = state.readout(epoch);
     let steppable = matches!(readout, Readout::At { .. });
@@ -633,10 +504,6 @@ fn position(ui: &mut egui::Ui, state: &FindState, epoch: u64, actions: &mut Vec<
 
 /// The readout's text and its hover text, or two empty strings for
 /// [`Readout::Idle`].
-///
-/// Split out as a pure function so the four sentences can be asserted without
-/// a frame, and so the "Idle draws nothing" case is a value rather than a
-/// branch somebody has to notice in the layout code.
 #[must_use]
 fn readout_text(readout: Readout) -> (String, &'static str) {
     match readout {
@@ -654,20 +521,6 @@ fn readout_text(readout: Readout) -> (String, &'static str) {
 // ---------------------------------------------------------------------------
 
 /// The `Options` menu button.
-///
-/// **Changing an option re-runs the search**, when and only when a search
-/// has already been run for what is in the box. Both halves matter:
-///
-/// - re-running is what makes the control *do* something — a "Whole word"
-///   checkbox that left the old hit list on screen would be an inert control,
-///   which is the shape defect D1 took;
-/// - only after a search, because otherwise ticking a box on a bar the
-///   operator has not yet used would run a whole-document text extraction for
-///   a query they have not finished typing.
-///
-/// The test is [`super::FindState::answered`] *before* the change is applied —
-/// "the bar is currently showing an answer to what is in it", which is exactly
-/// the state in which leaving the old answer up would be wrong.
 fn options(ui: &mut egui::Ui, state: &mut FindState, actions: &mut Vec<Action>) {
     let mut options = state.options();
     let before = options;
@@ -727,26 +580,6 @@ fn options(ui: &mut egui::Ui, state: &mut FindState, actions: &mut Vec<Action>) 
 }
 
 /// The contents of the `Options` menu.
-///
-/// A free function taking `&mut FindOptions` so the whole menu is testable
-/// without a popup: what matters about it is which controls appear under which
-/// conditions, and that is a property of the options value.
-///
-/// **The word-rule chooser exists only while it means something.**
-/// P3: an unavailable capability renders nothing, and greying is for
-/// *temporarily* unavailable with an explanation. A rule chooser beside an
-/// unticked *Whole word* is neither — it is a control that would change a value
-/// nothing reads, which is worse than a greyed one because it looks like it
-/// works. So it appears with the option and disappears with it, and
-/// [`crate::text::find::whole_word_tooltip`] warns the operator that it will.
-///
-/// **`zoom_on_jump` is a second `&mut`, not a fourth field of
-/// [`FindOptions`]**, and the split survives all the way down to this
-/// signature on purpose. Everything reachable through the first argument
-/// changes *what matches* and so re-runs the search; the second changes what
-/// the view does with an answer that is already correct. A menu that took one
-/// struct would have made the two indistinguishable at the only place a reader
-/// looks to find out which controls are expensive.
 fn options_menu(ui: &mut egui::Ui, options: &mut FindOptions, zoom_on_jump: &mut bool) {
     ui.checkbox(&mut options.case_sensitive, t::match_case())
         .on_hover_text(t::match_case_tooltip());
@@ -813,29 +646,6 @@ fn word_rule_tooltip(rule: WordBoundary) -> &'static str {
 mod tests;
 
 /// **Say that part of this document could never have matched.**
-///
-/// # Off-canvas, and that is the whole design
-///
-/// Rule 4 as narrowed by pdfcer's decision 059: an inference the operator cannot
-/// see still owes them a report, **and the report does not go on the page.** No
-/// badge over the offending run, no tint, no dashed outline, nothing drawn into
-/// the page view at all. Applied content renders exactly as saved content
-/// renders; the disclosure lives in a status line, a results panel, or — here —
-/// the bar's own second row, which already exists for the OCR offer.
-///
-/// That is not fastidiousness. A provisional styling layer is a **second
-/// rendering path for the same content**, and two paths drift. The operator's
-/// own words on the old shell: *"the nagging and red flagging made for a lot of
-/// extra bugs in the visibility when editing."*
-///
-/// # Why it sits beside the OCR offer rather than replacing it
-///
-/// They answer different questions and can be true at once. The OCR offer fires
-/// when **this page** has no extractable text at all — a scan. This fires when
-/// the **document** contains a font whose text is unreachable, which is
-/// perfectly compatible with the current page being ordinary searchable text.
-/// A file with a Type 3 titleblock on page 1 and normal text everywhere else
-/// produces this note and no OCR offer, which is exactly right.
 fn unsearchable_note(ui: &mut egui::Ui, fonts: u64) {
     ui.allocate_ui_with_layout(
         Vec2::new(BAR_WIDTH_PTS, ROW_HEIGHT_PTS),
@@ -862,54 +672,6 @@ fn unsearchable_note(ui: &mut egui::Ui, fonts: u64) {
 
 /// The unsearchable note answers a DIFFERENT question from the OCR offer,
 /// and both can be true at once.
-///
-/// Written when the note landed, because the two are drawn in the same row and
-/// the obvious mistake is to make one an `else` of the other. They are not
-/// alternatives:
-///
-/// | | OCR offer | unsearchable note |
-/// |---|---|---|
-/// | scope | **this page** | the **whole document** |
-/// | fires when | the page has no extractable text at all — a scan | some font's text is unreachable, anywhere |
-///
-/// A drawing with a Type 3 titleblock on page 1 and ordinary text everywhere
-/// else produces the note and **no** OCR offer, and that is correct: the page
-/// in front of the operator is searchable, and the document still contains
-/// something no search will ever reach.
-/// **The blank at the end of the query, said out loud** —
-/// `OPERATOR_REQUESTS.md` **O180**.
-///
-/// A trailing space, tab or newline on the query stops a search from finding
-/// text on the page that does not carry one, and text pasted out of a
-/// spreadsheet routinely carries one.
-///
-/// # Why a row exists at all, when the setting already fixes it
-///
-/// Because trimming **silently** is the same defect in the other
-/// direction. Before this, an invisible character decided the answer and
-/// nothing said so; after a silent trim, an invisible character would be
-/// discarded and nothing would say so. The operator who genuinely meant
-/// the space — checking whether a field is padded — would get hits they
-/// could not explain, which is the harder half of the same problem.
-///
-/// So the fact is disclosed in **both** states, with two sentences, and
-/// the predicate behind it is about the RAW query rather than about
-/// whether trimming changed anything. See [`crate::find::query`].
-///
-/// # Off-canvas, and nothing is marked
-///
-/// Rule 4. The page renders exactly as it will render when saved; the
-/// highlight over a hit is unchanged; no badge, tint or flag appears
-/// anywhere near the document. The report lives in the bar's own second
-/// row, which already exists for the OCR offer and the unsearchable note,
-/// and it is not blocking and not positioned relative to the page.
-///
-/// # Muted, not strong
-///
-/// `DEFECTS.md` **D11**: `RichText::strong()` is unusable in this theme.
-/// `palette.text_muted` for its neighbours' stated reason — this is a
-/// statement about the search, not a control, and it must not compete
-/// with the readout one row up.
 fn blanks_note(ui: &mut egui::Ui, trimmed: bool) {
     ui.allocate_ui_with_layout(
         Vec2::new(BAR_WIDTH_PTS, ROW_HEIGHT_PTS),

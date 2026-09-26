@@ -43,3 +43,28 @@ The wheel is still taken from the scroll area, and turns nothing: the
 fitted page stays put rather than sliding over the pasteboard (O239). The
 scroll bars and the middle-button pan still move a zoomed-in page, as they
 do on a longer document in this mode.
+
+## Item notes
+
+### `const POINTS_PER_PAGE`
+
+# Why a distance and not an event count
+
+The two devices that produce a wheel do not agree on what an event is. A
+mouse delivers one detent as a single large delta; a trackpad delivers one
+swipe as dozens of small ones. Counting events turns a trackpad gesture
+into forty page turns. Thresholding an instantaneous delta makes a slow,
+deliberate scroll do nothing at all. **Travel is the quantity both devices
+agree on**, and a threshold on it behaves for both.
+
+`egui`'s own default for one wheel line is 50 points at the time of
+writing. This is deliberately a little under that, so a single detent
+reliably turns exactly one page even if the platform reports slightly less
+— and comfortably over the few points a trackpad delivers per frame, so a
+swipe pages at the speed of the hand rather than of the frame rate.
+
+### `fn travel_accumulates_and_one_threshold_buys_exactly_one_page`
+
+Asserted through the accumulator rather than by driving `egui`,
+because the arithmetic is the part that can be wrong. The gesture
+itself is `zooming`-harness territory.

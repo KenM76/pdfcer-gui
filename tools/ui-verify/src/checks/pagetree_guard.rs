@@ -10,18 +10,6 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// Delete a page, then save a copy — the operator's own two presses.
-///
-/// `mode.edit` first, for the reason every driven check in this suite gives:
-/// driving from a named mode makes the run reproducible rather than dependent
-/// on whatever mode the last session left behind. It is also load-bearing here
-/// rather than merely tidy — `pages.delete` changes page content, and Read's
-/// posture is that the document is not the operator's to alter.
-///
-/// `pages.delete` with nothing picked acts on the **current page**, which is
-/// page 1 — a defined answer rather than a disabled state
-/// (`app::dispatch::pages`' own note). Page 1 hangs from node `A1` under `A`
-/// under the root, so removing it leaves two ancestors stale and not one, which
-/// is what makes `bad=2` below a stronger assertion than `bad>=1`.
 const INVOKE: &str = "mode.edit,pages.delete,file.save_copy";
 /// The variable that answers the save picker.
 const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH";
@@ -38,11 +26,6 @@ const DISCLOSURE: &str = "status-group:edit-disclosure";
 /// The fixture, pinned. See the module header.
 const FIXTURE: &str = "fixtures/nested-page-tree.pdf";
 /// The shallowest page tree on which this check's question is meaningful.
-///
-/// Root, an intermediate node, another intermediate node, leaves = 4 levels in
-/// the fixture. Three is the floor at which an ancestor **above** the immediate
-/// parent exists at all, and below it a build with no upward walk produces a
-/// correct file.
 const MIN_LEVELS: u32 = 3;
 
 /// See the module documentation.
@@ -70,12 +53,6 @@ impl Check for ASaveThatWouldProduceBlankPagesIsRefused {
 }
 
 /// Read one `key=value` field out of a trace line.
-///
-/// The trace is `key=value` pairs separated by spaces, and every value this
-/// check reads is a bare integer or `true`/`false` — no quoting, no spaces. A
-/// field that is absent returns `None` rather than a default, because a build
-/// whose trace line lost a field must be distinguishable from one whose field
-/// is zero.
 fn field<'a>(raw: &'a str, key: &str) -> Option<&'a str> {
     raw.split_whitespace()
         .find_map(|pair| pair.strip_prefix(key)?.strip_prefix('='))

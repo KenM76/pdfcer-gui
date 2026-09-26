@@ -14,25 +14,6 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// The form whose pages are inserted to manufacture the orphans.
-///
-/// # `demo-form.pdf`, and the first choice was wrong for a reason worth
-/// keeping
-///
-/// It was `multi-widget-form.pdf`, picked because the engine's measurement
-/// ("11 of 13 merged, 2 bare kids") suggested a fixture with both shapes. The
-/// driven run answered `orphaned_widgets = orphaned_widgets_unrecoverable = 3`
-/// — **every** orphan was a bare kid, so the row that resolves a name never
-/// appeared and the phase asserting it could not pass.
-///
-/// The fixture's own name says why, once you know what the two shapes are. A
-/// *multi-widget* field is one field with several `/Kids`, and a kid IS a bare
-/// kid the moment `insert_pages` drops its `/Parent`. A **merged**
-/// field-widget (§12.7.3.1) is the opposite arrangement: one dictionary serving
-/// as both, which is what a form with one widget per field is made of.
-///
-/// So the fixture that exercises the recoverable path is the plain one. Worth
-/// recording rather than just changing, because "pick the fixture whose name
-/// mentions the feature" is the intuition that produced the wrong answer here.
 const SOURCE: &str = "forms/demo-form.pdf";
 /// The environment seam that answers the Insert-pages file picker.
 const INSERT_PATH_ENV: &str = "PDFCER_DIAG_INSERT_PATH";
@@ -60,10 +41,6 @@ const ADOPTED: &str = "adopt-widget";
 /// inside.
 const PANEL_BODY: &str = "dock.body.view.panel_forms";
 /// How far this check will scroll looking for a row before giving up.
-///
-/// A bound rather than a loop, because "scroll until you find it" over a list
-/// that does not contain it is a hang, and a hang in a suite is a failure with
-/// no message.
 const MAX_SCROLL: usize = 12;
 
 /// See the module documentation.
@@ -342,24 +319,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 }
 
 /// Resolve a fixture under the engine repository's synthetic corpus.
-///
-/// The path is derived, not configured. `D:\Dev\pdfcer` is READ-ONLY to this
-/// project and its corpus is the only place these shapes exist, so the check
-/// reads from it and writes nowhere near it. Returning `None` rather than
-/// panicking is what turns a missing corpus into a SKIP with a reason instead
-/// of a crash in the middle of a suite.
 fn engine_fixture(rel: &str) -> Option<std::path::PathBuf> {
     let path = std::path::Path::new("D:/Dev/pdfcer/fixtures/synthetic").join(rel);
     path.is_file().then_some(path)
 }
 
 /// Every page's unclaimed count, summed.
-///
-/// Summed across the pages of the **latest** frame rather than taken from one
-/// page. The insert puts the form's sheets somewhere in the middle of the
-/// document, and which page they land on is the insert's business, not this
-/// check's — a check that hard-coded a page index would break on a change to
-/// the insert position that is not a defect.
 fn unclaimed_total(trace: &crate::trace::Trace) -> Option<usize> {
     let lines: Vec<_> = trace.events(TAB_CENSUS).collect();
     if lines.is_empty() {
@@ -417,10 +382,6 @@ fn open_from_tab(
 }
 
 /// Expand the Tab-order collapsing header, which ships closed.
-///
-/// It defaults closed deliberately — the section is a diagnostic, not the
-/// panel's main job — so a check that assumed it open would report the whole
-/// feature missing on a correct build.
 fn open_tab_order(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
     let trace = session.trace()?;
     if let Some(header) = declared(&trace, ui_rect, "forms.tab_order.header") {

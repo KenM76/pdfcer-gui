@@ -85,3 +85,28 @@ One `/Annots` walk per `(page, edit epoch)`, cached on `OpenDoc` — see
 `DestinationReader` is cached on a *different* key. [`cursor`] runs on every
 frame the pointer is over a page, so without that cache this feature would
 walk a 36-sheet drawing's page tree on every mouse move.
+
+## Item notes
+
+### `fn only_a_resolved_page_is_navigable`
+
+The single most important assertion in this file, and the one the
+engine's note is explicitly about: a viewer that treats `UnmappedPage`
+or `Named` as navigable jumps to a defaulted page 0 and tells the
+operator, confidently, that their link goes to the front of the
+document. That failure has no symptom — the page turns, something is
+shown — and it would never be reported as a bug.
+
+### `fn each_destination_kind_has_its_own_trace_token`
+
+Pinned because the trace is the only oracle a driven check has for
+*which* of the five happened, and two variants sharing a token would
+make the check unable to tell a followed link from a disclosed one.
+
+### `fn a_remote_page_number_is_shown_one_based`
+
+`RemoteTarget::Page` is 0-based, every page number this program shows an
+operator is 1-based, and the engine's own reply flagged this as the
+conversion it nearly got wrong in its CLI. A sentence naming "page 0"
+would be wrong in a way the operator cannot check without opening the
+other file.

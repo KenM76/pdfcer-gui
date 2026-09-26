@@ -71,3 +71,56 @@ The one place this file raises its voice is [`integrity_digest_mismatch`],
 which describes bytes that were altered after signing — a fact about the
 operator's document that nothing they do now can undo, which is the same
 class `text::compact::signature_line` earns its shout in.
+
+## Item notes
+
+### `fn every_unchecked_trust_sentence_says_not_checked`
+
+The property this whole feature stands on, asserted over the sentence
+rather than trusted to the layout. All four branches go through
+[`not_checked`], so the words cannot be dropped from one of them — and
+this test would catch it if the funnel were bypassed, because it checks
+each explanation through that funnel.
+
+⚠ **When this fails, the fix is the sentence, not this test.** A softer
+wording — "trust unavailable", "no trust information" — is precisely the
+drift it exists to refuse: those read as *nothing is wrong*, and the
+whole point is that pdfcer has not looked.
+
+### `fn the_four_reasons_trust_was_not_checked_are_four_sentences`
+
+Not a tautology: the cheap implementation of this feature has one
+"trust was not checked" string and four call sites, and it would pass
+every other test in this file. The four situations call for four
+different actions — turn the setting on, install Acrobat, fix your typo,
+your store is corrupt — and collapsing any two of them tells somebody to
+do the wrong thing.
+
+### `fn a_trusted_verdict_never_claims_more_than_the_engine_checked`
+
+The engine attaches that disclosure to every `Trusted` note it produces
+and the whole design rests on the shell not dropping it. This is the
+assertion that stops a future edit shortening the sentence to *"trusted
+— chains to X"*, which is what every other PDF reader says and is the
+one thing pdfcer must not say without the qualification.
+
+### `fn untrusted_separates_itself_from_integrity`
+
+The single likeliest misreading on this surface: an operator sees
+`Signer: does NOT chain…` beside an intact signature and concludes the
+document was altered. The sentence has to separate the two claims
+itself, because it is read alone.
+
+### `fn the_store_is_never_described_without_its_age`
+
+`ENGINE_BACKLOG.md`: *"an anchor set that silently went stale is worse
+than one that was never imported."* There is deliberately no accessor
+that yields the count without the date, and this asserts the one that
+exists carries both — including the honest sentence for a store whose
+date could not be read.
+
+### `fn the_three_facts_are_labelled_apart`
+
+Cheap, and it is what stops a tidy-up merging two of the columns. The
+engine's design note is that the three never collapse into one; a shared
+label is the first step of collapsing them.

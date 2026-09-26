@@ -32,3 +32,17 @@ operand exists. [`text_markup`] is the worked example.
 Not every module here is a check: [`driving`] and [`comments_census`] hold
 moves their callers share, and each header says why — including why
 [`markup_rectangle`] deliberately keeps its own copies.
+
+## Item notes
+
+### `mod harness`
+
+Its own file under **R2**, and the seam is argued in its header: this module
+is the *index* of which checks exist, which grows with every landing, and
+that one is the contract, which does not.
+
+### `mod roster`
+
+Its own file under **R2**, and the seam is argued in its header: this
+module is the *index* of which checks exist, and that one is the *list*,
+which grows again every time one is re-ordered.

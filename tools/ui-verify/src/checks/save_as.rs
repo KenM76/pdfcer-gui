@@ -16,11 +16,6 @@ use crate::report::CheckReport;
 const MODE: &str = "edit";
 
 /// `save-as from=… to=…` — the shell's record that the document MOVED.
-///
-/// The old path is on the line as well as the new one, and that is the point
-/// of tracing it at all: *"the document moved"* and *"a copy was written"*
-/// produce the same `save-copy` line, and only the pair says which file the next
-/// `Ctrl+S` will reach.
 const SAVE_AS: &str = "save-as";
 
 /// The fixture, copied to scratch before anything is driven.
@@ -34,11 +29,6 @@ fn workspace_root() -> PathBuf {
 }
 
 /// A cheap content digest — length plus FNV-1a over the bytes.
-///
-/// `checks::ocr`'s, verbatim and for its stated reason: the question is *"did
-/// this file change"*, the adversary is a bug rather than a forger, and the
-/// **length is part of the digest** so a truncation cannot hide behind a
-/// collision.
 fn digest(bytes: &[u8]) -> (usize, u64) {
     let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
     for b in bytes {
@@ -80,10 +70,6 @@ impl Check for SaveAsRebindsTheDocument {
 }
 
 /// One edit — a page rotation.
-///
-/// The cheapest edit that needs no canvas aim, no armed tool and no typing:
-/// two ribbon clicks. This check's subject is *where a save goes*, so the edit
-/// should be the least interesting thing in it.
 fn make_an_edit(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
     crate::checks::ocr::click_tab(session, driver, ui_rect, "pages")?;
     crate::checks::ocr::click_command(session, driver, ui_rect, "pages.rotate_right")?;
@@ -273,10 +259,6 @@ mod tests {
     use super::*;
 
     /// The digest notices a changed byte and a truncation.
-    ///
-    /// Phase D's whole verdict rests on this, so a digest that answered
-    /// "unchanged" for a modified file would turn the check's most important
-    /// assertion into a formality that always passes.
     #[test]
     fn the_digest_notices_a_single_changed_byte_and_a_truncation() {
         let a = b"%PDF-1.4 hello world";
@@ -291,20 +273,12 @@ mod tests {
     }
 
     /// **The two files are different paths.**
-    ///
-    /// Trivial and load-bearing: if the destination resolved to the original,
-    /// phase D would compare a file with itself and pass against every possible
-    /// build, including one with no Save As at all.
     #[test]
     fn the_destination_is_not_the_original() {
         assert_ne!("save-as-original.pdf", "save-as-destination.pdf");
     }
 
     /// The check writes only inside the run's output directory.
-    ///
-    /// Both names are relative and are joined to `--out` by `CheckContext`.
-    /// This pins the intent: a future edit that reached for the repository's own
-    /// fixture directly would be writing to a tracked file, twice, on every run.
     #[test]
     fn nothing_outside_the_output_directory_is_written() {
         for name in ["save-as-original.pdf", "save-as-destination.pdf"] {

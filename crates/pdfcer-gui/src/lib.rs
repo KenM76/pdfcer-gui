@@ -128,55 +128,9 @@ use std::path::PathBuf;
 const INITIAL_WINDOW_SIZE: [f32; 2] = [1100.0, 800.0];
 
 /// The smallest window the shell will let the operator make.
-///
-/// Below this the canvas stops being usable rather than merely small;
-/// enforcing it in the viewport builder is cheaper than defending every
-/// layout against a 200×100 window.
 const MIN_WINDOW_SIZE: [f32; 2] = [640.0, 480.0];
 
 /// Start the application, optionally opening a document.
-///
-/// Everything from here down is the event loop. The caller has already
-/// answered anything that must be decided *before* a window exists — a
-/// terminal invocation must not open a window it then has to be told to
-/// close, which is why argument handling belongs to the binary and not to
-/// this function.
-///
-/// # Errors
-///
-/// Propagates whatever `eframe::run_native` reports: a windowing system
-/// that could not be reached, a graphics backend that failed to initialise.
-/// The window's icon — title bar, Alt-Tab, and the taskbar button.
-///
-/// # Why this exists when the executable already carries an icon resource
-///
-/// They are two different mechanisms answering two different questions, and
-/// doing only one of them leaves a visible gap.
-///
-/// The **resource** in `assets/pdfcer-gui.rc` is read by the shell *without
-/// running the program*: Explorer, the Start menu, and the file-association
-/// dialog the operator's request was about. It is the right and only answer
-/// there, and it cannot be the answer here — winit creates its window class
-/// without an icon, so a running window with no `window_icon` shows the
-/// system's default in its title bar however good the executable's resource is.
-///
-/// This is the run-time half. It is the same art, at 64 px, as raw RGBA —
-/// which is what `egui::IconData` takes, and why the bitmap is checked in
-/// separately from the `.ico` rather than decoded out of it at start-up: the
-/// alternative is carrying a PNG decoder in the binary to recover one
-/// 64-pixel image. `tools/make-icon.py` writes both from one render, so they
-/// cannot come to disagree.
-///
-/// # Why the failure mode is an empty icon rather than a panic
-///
-/// `include_bytes!` cannot fail — a missing file is a compile error, so the
-/// bytes are always there and always the right length. The length check below
-/// is therefore not defensive against absence; it is defensive against
-/// `make-icon.py`'s `WINDOW_ICON_SIZE` changing without this constant
-/// following. An `IconData` whose buffer does not match its dimensions is
-/// rejected by winit with a log line nobody reads, so a wrong size would
-/// present as "the icon silently stopped working" — the same class of quiet
-/// failure the encoding bug in the `.rc` was.
 fn window_icon() -> egui::IconData {
     /// Must match `WINDOW_ICON_SIZE` in `tools/make-icon.py`.
     const SIZE: u32 = 64;

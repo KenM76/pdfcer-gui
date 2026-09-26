@@ -113,3 +113,52 @@ reach passes `OVERHANG_TOLERANCE_PTS` beyond the crop box, so a halo that is
 not the bigger rectangle is not a state the application can be driven into.
 It is a guard against that invariant changing, not an instrument arm, and it
 is recorded here as one so a later reader does not quote it as evidence.
+
+## Item notes
+
+### `const FIXTURE`
+
+⚠ Pinned, and `--pdf` is ignored. A document with no off-page content
+never enters the halo tier, so this check's entire subject would be absent
+and its controls would turn every run into a SKIP.
+
+### `const CLIMB`
+
+The fixture's halo wall sits about four rungs above its fit zoom and its
+sheet's wall about one rung above that, so a dozen would prove the fix.
+Twice that is deliberate: the rungs past the wall are the ones that were
+silently doing nothing, and a check that turned round just after the
+boundary would pass on a build that recovered for one rung and stalled
+again.
+
+### `const SEED`
+
+⚠ **A one-shot statement about start-up, not about the run.** It is emitted
+while the document is being opened, which is BEFORE a command from
+[`INVOKE_ENV`] has fired — so on a fresh profile it says `mode=read on=false`
+on a run that then enters Edit and displays off-page content perfectly well.
+Read as the current state it makes a working run look inert, which is
+exactly what it did here once. The authoritative reading is the `offpage=`
+field on the canvas' own per-frame [`HALO`] line, because that is the one
+the canvas acted on. This constant survives only to explain a genuinely
+off run.
+
+### `const RUNG_DEADLINE`
+
+Generous on purpose. The seam paces its chords twenty frames apart and the
+last rungs of this ladder are drawn at magnifications where a frame is not
+free; the whole run measured about forty seconds on an idle machine.
+Exceeding this is reported as a finding rather than as a hang.
+
+### `fn preconditions`
+
+Both are reported as harness findings. This project has twice produced
+confident, detailed and entirely wrong defect reports out of a reading
+taken on a run where the subject was never present.
+
+### `fn wait_for_rung`
+
+Not [`Session::settle`] as the primary wait: that polls the frame counter,
+and this application stops drawing the moment the seam stops asking it to.
+The thing being waited for is a trace line, so the trace line is what is
+waited for.

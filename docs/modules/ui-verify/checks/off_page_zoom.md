@@ -107,3 +107,106 @@ region, the anchor already off screen at 100 %, the canvas never settling,
 or the zoom saturating before it reached the calibrated target. **Not** "the
 object was not painted" and **not** "the point left the viewport after the
 climb" — those are failures, and they are the two this check exists for.
+
+## Item notes
+
+### `const INVOKE`
+
+`mode.edit` is named FIRST, and it is not decoration. Since
+2026-09-11 the display of off-sheet content is a per-mode preference and
+**Read ships with it OFF** — the operator's request: *"by default, read
+doesn't show off page items, review and edit do show off page items."*
+This check's whole subject is off the sheet, so without an explicit mode it
+would run in whatever mode the shell opens in, find nothing, and report a
+defect that is a correctly-implemented setting.
+
+Edit rather than Review because that is the mode this check's gestures
+belong in anyway, and because a mode named explicitly cannot drift when a
+later session changes which mode the shell opens in.
+
+### `const EDGE_AT`
+
+The fixture draws `-160 100 120 40 re f`, so the square spans x −160…−40 and
+y 100…140, and this is `(−100, 100)`. An *edge* rather than a centre, so
+that ink and paper are a few pixels apart at any magnification — see the
+module header.
+
+### `const OFF_PTS`
+
+This is the `k` in the ceiling arithmetic, and it is `|EDGE_AT.0|`;
+[`the_off_page_distance_matches_the_anchor`] pins the two together so the
+numbers this check prints cannot drift from the point it actually drives.
+
+### `const PAST_THE_OLD_CEILING`
+
+The old pasteboard stopped **reaching** `OFF_PTS` at `viewport / OFF_PTS`
+and stopped **centring** it at half that. Climbing to 1.5× the looser of the
+two clears both with margin, and the margin is what keeps a passing run from
+depending on which rung of the zoom ladder the application happens to land
+on.
+
+### `const MAX_NOTCHES`
+
+A cap, not a count: the loop climbs until the calibrated target is
+reached. Hitting the cap is a SKIP, because a run that never got past the
+old ceiling has not tested anything — it is neither a pass nor evidence of a
+defect. One notch is about 1.223×, so this reaches roughly 4 × 10⁵ %.
+
+### `const INK_FRACTION`
+
+Not 1.0 — the patch is rounded through the window frame's scale and its
+outermost row can land a pixel outside the square on a fractional-DPI
+display.
+
+### `const UNAVAILABLE_EVENT`
+
+`canvas-unavailable reason=nothing-visible` is the one line that separates
+*"the shell declined to zoom any further"* from *"the shell zoomed, and the
+document surface went blank."*
+
+### `fn stall_verdict`
+
+# Why this function exists at all
+
+The first draft of this check treated *any* stall as a precondition failure
+and skipped, with the helpful-sounding suffix *"Raise `max_zoom_percent`, or
+run in a narrower window."* Both halves of that sentence were wrong:
+
+* `max_zoom_percent` defaults to `1e12` and its floor is `10.0`, so the
+  operator's zoom cap was never what stopped the climb. **That suffix was an
+  excuse the check had not measured**, and an unevidenced excuse is worse
+  than silence — it reads as an answered question, so nobody investigates.
+* The stall on 2026-09-11 was **the defect this check exists to find**. The
+  strip culled pages on the sheet's rectangle rather than on the rectangle
+  its content actually reaches, so once the magnification carried the sheet
+  off the viewport the canvas laid out nothing, dropped its `canvas-viewport`
+  and `page` rects, and stopped publishing a zoom to climb with. Reported as
+  SKIP, that read as *"the harness could not run"*, which is the exact
+  failure mode this project has written down three times: **a SKIP is not
+  red, so a check can stop running unnoticed.**
+
+# What it measures
+
+A fresh trace, read at the moment of the stall, and only the
+`canvas-unavailable` lines written **after** `mark` — the mark being taken
+immediately before the first notch, so a line written while the document was
+still opening cannot be mistaken for one the climb provoked.
+
+* A `reason=nothing-visible` after the mark ⇒ **FAIL**, naming the cull.
+* Anything else ⇒ **SKIP**, stating what was and was not measured and
+  offering no cause it did not observe.
+
+A trace that cannot be re-read is itself a SKIP: the stall is real but the
+evidence is not available, and guessing between the two verdicts is how a
+harness invents defects that do not exist.
+
+### `fn the_patches_straddle_the_edge_at_every_zoom_this_check_reaches`
+
+In page points the patches reach `(OFFSET + HALF) / zoom` from the edge,
+so the ink patch stays inside the square while that is under the
+square's height, and the paper patch stays inside the widened raster
+while it is under the distance down to the raster's bottom. Both get
+*easier* as the zoom rises, so the binding case is the LOWEST zoom the
+check ever asserts at — which is not a constant, it is
+`PAST_THE_OLD_CEILING × viewport / OFF_PTS`. Evaluated here at a
+viewport narrower than any dock layout this shell produces.

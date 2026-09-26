@@ -35,3 +35,25 @@ for, per axis**.
 The parked-fraction shape is `find::reveal`'s, for its reason: a scroll that
 changes no magnification cannot ride `zoom::AnchorStep`'s handshake, because
 that handshake is gated on the page's drawn size changing.
+
+## Item notes
+
+### `const VISIBLE_CLEARANCE`
+
+A point exactly on the boundary is technically visible and practically is
+not — it is under the scroll bar, or half of it is. Deliberately the same
+number as [`DEST_EDGE_MARGIN`]: "clear of the edge" and "inset from the
+edge" are one idea, and a second constant would let them drift.
+
+### `fn a_point_destination_can_only_answer_with_a_position`
+
+The mechanism this replaced grew the point into a 150 pt square and
+handed it to the framing solver, which answered with a zoom. That
+cannot be expressed here, which is the point: the type is the enforcer.
+
+### `fn a_null_horizontal_defers_to_whatever_placed_the_view_this_frame`
+
+`/FitH` names no left edge and raises `Action::Fit(Width)` beside the
+scroll; that fit outranks this in `canvas::offset` and has already
+placed the horizontal. Holding at `origin_x` here would undo it one
+frame later, which is D47's own failure shape wearing a different hat.

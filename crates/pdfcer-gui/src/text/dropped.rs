@@ -4,6 +4,8 @@
 //! Two of the three say **what to do next**, because the operator's remedy is
 //! not guessable from the refusal. The third names what pdfcer takes, which is
 //! the only useful thing to say about a file it does not.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/text/dropped.md`.
 
 /// More than one file was dropped and only the first was acted on.
 ///
@@ -59,10 +61,6 @@ mod tests {
     use super::*;
 
     /// Every sentence names either a remedy or the accepted set.
-    ///
-    /// Asserted by length and terminal stop rather than by matching words: the
-    /// property is *"this is an explanation, not a label"*, and a four-word
-    /// refusal is the shape a future tidy-up would introduce.
     #[test]
     fn every_sentence_explains_rather_than_labels() {
         let all = [

@@ -59,3 +59,32 @@ running program (`render-inline ms=`, `render-async-done ms=`) and already
 written up in `BENCHMARK.md`. Measuring it again here would produce a second
 number for one fact, and two numbers for one fact drift. This file measures
 **only the commit**, because the commit is the half nobody has a number for.
+
+## Item notes
+
+### `const DRAWING`
+
+Not in `fixtures/` and not in the engine's corpus — it is 5.6 MB of the
+operator's real work, and it lives outside both repositories. Named by
+absolute path here rather than copied in, because a benchmark corpus that
+grows by copying is a repository that grows without bound.
+
+The location is a `const` here rather than a sentence in a document for a
+reason worth keeping: a path in prose goes stale silently, while a path in a
+test that skips with its own printed reason tells the next reader exactly
+where it looked and what it did not find.
+
+### `fn median_ms`
+
+The **median**, not the mean and not the best. The mean is dragged by a
+single scheduler hiccup on a machine that is also running an editor and a
+browser; the best-of is a number the operator will never experience. The
+median is what a press feels like.
+
+### `fn edit_latency_the_commit_half`
+
+Prints a table. Asserts nothing about the numbers, and that is deliberate:
+a threshold asserted here would be a number nobody chose, on hardware nobody
+specified, and the first slow machine would turn a measurement into a red
+suite. What it asserts is that the measurement **happened** — a run that
+silently measured nothing is the failure this whole harness exists to remove.

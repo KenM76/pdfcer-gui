@@ -49,10 +49,6 @@ pub const STEP_DEGREES: f32 = 15.0;
 
 /// The smallest rotation, in degrees, that counts as a gesture rather than a
 /// twitch.
-///
-/// `drag-moves` D7: a drag that moves nothing is not an edit. A tenth of a
-/// degree over a 200 pt box is a quarter of a pixel at the corner — invisible,
-/// and not worth an undo entry for somebody who thought better of it.
 const MIN_TRAVEL_DEGREES: f32 = 0.1;
 
 /// **The angle a rotate drag has turned through, in radians.**
@@ -380,45 +376,6 @@ pub struct Frame<'a> {
 }
 
 /// **Raise the right rotation verb for a selected annotation.**
-///
-/// The routing, in one `match` the compiler checks — which is the whole
-/// reason `canvas::selection::annot::AnnotKind` is an enum rather than an
-/// `is_ce_dimension: bool` on the target. Its header states the rule this
-/// function is the newest instance of: *"a bool is a fact a caller may forget
-/// to read, while a variant is one the compiler makes them handle."*
-///
-/// # The two verbs are NOT interchangeable, and the engine refuses to let
-/// them be
-///
-/// `rotate_annotation` returns `AnnotationMoveWrongVerb` for a ce dimension and
-/// points at `rotate_dimension`, with the reason attached: *"a ce dimension's
-/// orientation is part of its measurement, so turning it must re-measure rather
-/// than spin a rectangle."*
-///
-/// A dimension is a `/Line` with `/IT /LineDimension` and a record in the
-/// document's `/PieceInfo` sidecar. Handing one to the annotation verb would
-/// turn its `/Rect` and its baked `/AP` and leave the **sidecar geometry** —
-/// the thing the displayed number is derived from — where it was, so the
-/// dimension would draw at one angle and measure along another.
-///
-/// ⇒ `pdfcer-core` refuses that by name and this shell routes rather than
-/// forces. The refusal stays as the backstop; this is what stops it being
-/// reached.
-///
-/// # A widget cannot arrive here at all, and that is the R9 answer
-///
-/// `rotate_annotation` also refuses a **widget** by name — a widget's rotation
-/// is `/MK /R` (§12.5.6.19 Table 189), a quantised 0/90/180/270 *declaration*
-/// the field's appearance generator reads rather than a free-angle transform,
-/// and it is not built.
-///
-/// There is no arm for it because there is no path to one:
-/// `canvas::selection::annot` excludes `/Widget` from annotation selection
-/// outright (the form surface owns those presses), so a widget is a
-/// `doc.selected_field` rather than a `selection.annot()`, and
-/// `pressing::grabbable` hands that selection `GripSet::scale_only()` — **no
-/// rotate handle is painted and none is hit-tested.** R9: render nothing rather
-/// than draw a handle that refuses.
 fn commit_annotation(
     annot: &crate::canvas::selection::AnnotSelection,
     dimension: Option<pdfcer_core::dimension::DimensionId>,
@@ -549,13 +506,6 @@ mod tests {
     }
 
     /// **A quarter turn clockwise on screen reads as +90°.**
-    ///
-    /// The base case, and the one whose sign is easy to get backwards: screen y
-    /// is DOWN, so a pointer moving from due-east to due-south of the centre has
-    /// gone clockwise, and `atan2` in a y-down frame calls that positive. The
-    /// caller negates once when it crosses into page space; getting the sign
-    /// wrong here would rotate the object the other way and look like a
-    /// perfectly deliberate feature.
     #[test]
     fn a_clockwise_quarter_turn_on_screen_is_positive() {
         let c = Pos2::new(100.0, 100.0);
@@ -564,11 +514,6 @@ mod tests {
     }
 
     /// **The pointer's DISTANCE from the centre changes nothing.**
-    ///
-    /// The property that separates this gesture from a resize, asserted rather
-    /// than assumed: an operator swinging a long arc for precision is doing what
-    /// the gesture invites, and a build that let the radius in would shrink or
-    /// grow the object while they did it.
     #[test]
     fn the_radius_does_not_matter() {
         let c = Pos2::new(0.0, 0.0);
@@ -578,10 +523,6 @@ mod tests {
     }
 
     /// **A drag past 180° turns the SHORT way rather than spinning back.**
-    ///
-    /// Without the normalisation a pointer moving smoothly through the ray
-    /// behind the centre makes the object jump a full turn in one frame. It
-    /// looks like a physics bug and it is an arithmetic one.
     #[test]
     fn crossing_the_far_ray_does_not_spin_a_whole_turn() {
         assert!((normalise(deg(190.0)) - deg(-170.0)).abs() < 1e-4);
@@ -604,11 +545,6 @@ mod tests {
     }
 
     /// **The TOTAL turn snaps, not each increment.**
-    ///
-    /// Accumulating snapped increments lets a slow drag through 90° arrive at
-    /// 87°, because each frame's small delta rounds to zero. Asserted as the
-    /// property rather than by simulating frames: `snap` is called on the whole
-    /// angle and there is nowhere for an increment to be rounded.
     #[test]
     fn a_slow_drag_still_reaches_the_step() {
         // Half a degree at a time is what a careful hand produces; each one
@@ -637,11 +573,6 @@ mod tests {
     }
 
     /// **The ghost's rotation agrees with the angle that produced it.**
-    ///
-    /// `rotate_about` is the one duplication in this module — the ghost is drawn
-    /// from it and the commit from `Matrix::rotate`. This pins the half that can
-    /// be checked without a document: a point rotated by the angle measured
-    /// between two rays lands on the second ray.
     #[test]
     fn the_ghost_map_agrees_with_the_measured_angle() {
         let c = Pos2::new(0.0, 0.0);

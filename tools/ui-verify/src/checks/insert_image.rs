@@ -37,10 +37,6 @@ const APPLIED: &str = "add-image";
 const IMAGE_PATH_ENV: &str = "PDFCER_DIAG_IMAGE_PATH"; // ui-text-exempt: an environment variable name
 
 /// The fixture's pixel size.
-///
-/// **Wide and short, deliberately.** `Contain` on a square picture in a
-/// square box is the identity, so a square fixture would let a letterbox defect
-/// pass the last assertion — which is the assertion this check exists for.
 const FIXTURE_W: u32 = 64;
 /// See [`FIXTURE_W`].
 const FIXTURE_H: u32 = 16;
@@ -508,10 +504,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
 /// The fixture's pixels: two vertical bands, so a placement that lands
 /// transposed or mirrored is visible in an artifact a human opens.
-///
-/// The colours are irrelevant to every assertion — nothing here reads a pixel
-/// back — and they are two rather than one so the saved artifact is legible as
-/// a picture rather than as a swatch.
 fn fixture_pixels() -> Vec<u8> {
     let mut out = Vec::with_capacity((FIXTURE_W * FIXTURE_H * 3) as usize);
     for _ in 0..FIXTURE_H {
@@ -527,12 +519,6 @@ fn fixture_pixels() -> Vec<u8> {
 }
 
 /// Read a resolution out of a disclosure sentence.
-///
-/// The sentence is *"At this size the picture is 300 dpi."* — so this looks for
-/// the token before `dpi` and parses it. Reading the operator's own words
-/// rather than a field carried beside them is the point: it proves the number
-/// **they see**, and a build that traced one figure and displayed another would
-/// pass a field comparison.
 fn dpi_in(text: &str) -> Option<f64> {
     let idx = text.find("dpi")?;
     text[..idx]

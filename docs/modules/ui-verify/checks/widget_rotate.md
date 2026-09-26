@@ -39,3 +39,30 @@ subject, and it is why this check asserts a value rather than a change.
 It reads `rotate-widget-applied … now=`, the **engine's** report, not the
 shell's request line. The request says what the panel computed; only the
 applied line says what `rotate_widget` was actually given and accepted.
+
+## Item notes
+
+### `const INVOKE`
+
+The properties panel is **not** opened here, and the first version's
+attempt to is why.
+
+`view.panel_properties` is a TOGGLE, and opening it re-docks the canvas
+narrower — after which the coordinate this check computed for its placement
+click pointed somewhere else. The symptom was not a missed click: it was
+*"the window containing (1224, 538) could not be brought to the front"*,
+three runs running, because the point had moved over a different window
+entirely.
+
+⇒ `D:/dev/rag/egui/` already carries this as **harness coordinates going
+stale when a dock width changes**. The panel is open in Edit mode by
+default, so the toggle was never needed — it was doing nothing but moving
+the canvas out from under the check.
+
+### `const ROTATE_RIGHT_REGION`
+
+Its own, not a fraction of the row's. The first version took the row's
+rect and aimed 78 % across it — coordinate arithmetic the harness already
+has `declared_center` for — and landed outside the window entirely, which
+surfaced as *"the window could not be brought to the front"* three runs
+running. A named control is aimed at by name.

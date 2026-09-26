@@ -163,23 +163,12 @@ mod tests {
 
     /// **The two subjects are distinct values**, which is the whole content
     /// of this type.
-    ///
-    /// A tripwire rather than a tautology: the day somebody replaces [`Subject`]
-    /// with a `bool` to save a line, this is what stops the replacement being
-    /// invisible. `canvas::gesture::DragKind`'s own note explains what a shared
-    /// variant with a discriminator inside it costs — a gesture aimed at the
-    /// wrong verb, which never looks broken from a chair.
     #[test]
     fn a_ce_dimension_and_a_markup_are_not_the_same_subject() {
         assert_ne!(Subject::CeDimension, Subject::Markup);
     }
 
     /// **A frame that routes nowhere previews nothing.**
-    ///
-    /// [`Previews::default`] is what both branches return when the selection
-    /// does not name a shape they own, and a default that carried a `Some`
-    /// would put a stale polyline on the canvas for every drag that reached no
-    /// verb.
     #[test]
     fn the_empty_route_draws_nothing() {
         let out = Previews::default();

@@ -36,6 +36,8 @@
 //! Written out because a test that silently needed a fourth frame would
 //! look like a broken assertion rather than like a frame-ordering
 //! mistake.
+//!
+//! Design and rationale: `docs/modules/egui-shell/menu/tests.md`.
 
 use egui::{Event, Modifiers, PointerButton, Pos2, Rect, vec2};
 
@@ -316,14 +318,6 @@ pub(super) fn open_menu(ctx: &egui::Context, scene: &mut Scene<'_>) -> Frame {
 // =====================================================================
 
 /// **Right-clicking something with nothing to offer does nothing.**
-///
-/// Not "opens and closes", not "flashes", not "shows three greyed rows" —
-/// nothing. The menu here is the real one; the only difference from the
-/// test below is that no condition is set, so every command's predicate is
-/// false.
-///
-/// This is the assertion that cannot be made in [`super::plan`], because
-/// it is about `egui`'s popup memory rather than about a list of slots.
 #[test]
 fn right_clicking_something_with_nothing_to_offer_opens_no_menu() {
     let ctx = context();
@@ -348,10 +342,6 @@ fn right_clicking_something_with_nothing_to_offer_opens_no_menu() {
 }
 
 /// The mirror image: one enabled command is enough, and the menu appears.
-///
-/// Together with the test above this pins that the difference is the
-/// *offer* and nothing else — same document, same registry, same
-/// right-click, one condition flipped.
 #[test]
 fn right_clicking_something_with_one_enabled_command_opens_a_menu() {
     let ctx = context();
@@ -373,15 +363,6 @@ fn right_clicking_something_with_one_enabled_command_opens_a_menu() {
 }
 
 /// **An open menu closes when its offer evaporates.**
-///
-/// The half of decision 1 that is easy to leave out. `egui` remembers a
-/// popup as open in memory, not by whether anyone drew it — so a renderer
-/// that merely *stopped drawing* would leave the menu ready to reappear at
-/// the old pointer position the moment the offer came back, with no
-/// right-click behind it.
-///
-/// The scenario is ordinary: the menu is open, and the selection is
-/// deleted by a keystroke.
 #[test]
 fn an_open_menu_closes_when_its_offer_evaporates() {
     let ctx = context();
@@ -426,11 +407,6 @@ fn right_clicking_a_context_with_no_menu_does_nothing() {
 // =====================================================================
 
 /// **Disabled is drawn; unregistered is not.**
-///
-/// The rendered half of [`super::plan`]'s rule 1. `edit.paste` is
-/// registered and its predicate is false, so it is a row; `edit.rasterize`
-/// is not registered at all, so there is no row — and no gap where one
-/// would have been.
 #[test]
 fn a_disabled_command_is_drawn_and_an_unregistered_one_is_not() {
     let ctx = context();
@@ -501,23 +477,6 @@ fn the_icon_painter_is_asked_for_each_row_that_has_an_icon() {
 
 /// **A painted icon slot publishes its rectangle, and a blank one does
 /// not.**
-///
-/// The only signal a *driven* check has on this surface, and the reason it
-/// exists is in [`super::report`]'s header: a menu row is justified to the
-/// body width, so it measures the same whether its slot holds a glyph,
-/// holds a blank, or does not exist. The QAT's trick — an icon-only
-/// control is square and a text button is a word wide — has no menu
-/// equivalent, so without this name a harness cannot tell an application
-/// that wired an icon painter from one that did not.
-///
-/// The fixture is the mixed case on purpose: `edit.cut` has a key and the
-/// other three do not, so the menu reserves a column and three rows draw a
-/// blank into it. Publishing four names here would make the signal mean
-/// "a slot was reserved" — true of a blank — and it would be worthless.
-///
-/// The containment assertion is the second half: the published rectangle
-/// has to be *inside the row it belongs to*, or a check that clicked or
-/// sampled it would be aiming at somewhere else on the menu.
 #[test]
 fn only_a_painted_icon_slot_publishes_a_rectangle() {
     let ctx = context();
@@ -568,10 +527,6 @@ fn only_a_painted_icon_slot_publishes_a_rectangle() {
 // =====================================================================
 
 /// **Choosing a row reports a token and runs nothing.**
-///
-/// The seam, end to end: the shell hands back
-/// [`crate::commands::HandlerToken`] and the application dispatches. There
-/// is no handler anywhere in this crate for a test to have to stub.
 #[test]
 fn choosing_a_row_reports_its_token() {
     let ctx = context();
@@ -644,10 +599,6 @@ fn a_custom_row_reports_through_the_same_channel() {
 }
 
 /// **A menu whose only offer is a custom row still opens.**
-///
-/// The shell cannot evaluate an application's own control. Refusing to
-/// open would silently delete a control the application asked for, which
-/// is a worse failure than opening a menu that turns out to be useless.
 #[test]
 fn a_menu_whose_only_offer_is_a_custom_row_opens() {
     let ctx = context();
@@ -669,14 +620,6 @@ fn a_menu_whose_only_offer_is_a_custom_row_opens() {
 // =====================================================================
 
 /// **A screen reader hears the label *and* the chord.**
-///
-/// [`super::a11y`] argues from `egui` 0.35's source that the chord has
-/// nowhere else to go. This is the end-to-end proof: click Copy and read
-/// the `OutputEvent` `egui` actually emitted.
-///
-/// If this ever fails while `super::a11y`'s unit tests pass, the wiring
-/// broke rather than the rule — which is exactly the distinction worth
-/// being able to make.
 #[test]
 fn a_chosen_row_announces_its_label_and_its_chord() {
     let ctx = context();
@@ -724,12 +667,6 @@ fn a_row_with_no_binding_announces_its_label_alone() {
 // =====================================================================
 
 /// **An operator's customization reaches the screen.**
-///
-/// The claim `SHELL_FRAMEWORK.md` §1 makes for the whole design — *"the
-/// shell is data … not code that has to be recompiled to change"* —
-/// exercised through the surface rather than through the document: a RON
-/// layer an operator could have typed, applied with
-/// [`Menus::overlay`], and then right-clicked.
 #[test]
 fn a_customization_layer_changes_what_the_right_click_offers() {
     let ctx = context();
@@ -778,11 +715,6 @@ fn a_customization_layer_changes_what_the_right_click_offers() {
 
 /// [`Menu::show`] draws into a `Ui` the caller owns, and reports the same
 /// way.
-///
-/// Its documented weakness is asserted here too: it cannot decline to
-/// open, because by the time it runs the popup exists. What it *can* do is
-/// draw nothing, which is what an application that skips
-/// [`Menu::would_open`] gets.
 #[test]
 fn show_draws_into_a_caller_owned_ui_and_declines_to_draw_an_empty_menu() {
     let ctx = context();

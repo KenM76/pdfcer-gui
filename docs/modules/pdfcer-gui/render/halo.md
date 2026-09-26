@@ -94,3 +94,11 @@ pixel. Stated here rather than left to be discovered.
 Every number in this module is a **pdf dimension** — a coordinate in the
 CAD-exported page's own user space. None of it is a **ce dimension**;
 nothing here authors anything.
+
+## Item notes
+
+### `fn finite`
+
+Its own function because `Bounds::EMPTY` is built from infinities on
+purpose — see [`region`]'s case 1 — so "is this box real?" is a question
+this module asks twice and must answer the same way both times.

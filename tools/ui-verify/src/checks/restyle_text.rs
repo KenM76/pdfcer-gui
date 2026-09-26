@@ -15,47 +15,6 @@ use crate::report::CheckReport;
 /// Properties.
 const MODE: &str = "edit";
 /// The commands run at startup, in order, before this check touches anything.
-///
-/// # The Properties panel has to be ASKED FOR, and not asking for it cost
-/// a red run
-///
-/// `file.properties` is the command that mounts and activates the Properties
-/// panel from **any** arrangement (`app::panels::show_panel` — it activates the
-/// panel if it is already mounted and otherwise looks its home up in the `edit`
-/// default, and it is idempotent rather than a toggle). Two sibling checks —
-/// `field_delete_gate` and `annot_delete_gate` — already launch this way, and
-/// the reason they give is the one that applies here:
-///
-/// > so the check does not have to know what dock layout the machine it runs
-/// > on happens to have persisted.
-///
-/// Without it the check fails with *"266 character(s) are selected and the
-/// Properties panel says nothing about them"* and names three candidates, of
-/// which the first — the panel is not mounted — is the real one. A trace from
-/// that state settles it without ambiguity:
-///
-/// | evidence | in `restyle-text.trace.txt` |
-/// |---|---|
-/// | six panel **bodies** were on screen | `dock.body.view.panel_tool`, `.panel_objects`, `.panel_pages`, `.panel_layers`, `.panel_forms`, `dock.body.measure.manage_groups` |
-/// | ten panel **tabs** were declared | none of them `dock.tab.file.properties` |
-/// | the Properties panel | **no tab, no body, and no `panel-shown` line** |
-///
-/// The section is then neither guarded out nor failing to pin — there is no
-/// panel for `panels::properties::text::section` to draw into at all, and the
-/// other two candidates cannot be reached, let alone judged, until this
-/// command has run.
-///
-/// `mode.edit` is first and is load-bearing: `dispatch`'s mode arm sets the
-/// ribbon mode and *"the dock follows on the same frame"*, so a panel mounted
-/// before the mode moved would be mounted into the workspace the check is about
-/// to leave. Ordering them here rather than clicking afterwards is what makes
-/// that impossible.
-///
-/// The Edit-mode segment is still **clicked** below, and that is not
-/// redundant: `docks` compares `ribbon.mode()` against `modes.active()` and
-/// does nothing when they agree, so the click cannot disturb the panel, and it
-/// keeps the check driving the operator's own gesture rather than trusting an
-/// environment variable to have taken.
 const INVOKE: &str = "mode.edit,file.properties";
 /// The Text section's own region — its presence is the whole of link 3.
 const SECTION_REGION: &str = "properties.text";
@@ -63,11 +22,6 @@ const SECTION_REGION: &str = "properties.text";
 const BOLD_REGION: &str = "properties.text.bold";
 /// The `text-style-applied page=… change=… applied=… of=…` line — this
 /// module's own summary of the whole gesture.
-///
-/// Named `-applied` rather than plain `text-style` because `vector_edit`'s
-/// label for the same edit is a sibling event, and trace matching is on the
-/// exact event name. Two lines sharing a name is how a check reads the wrong
-/// one and then reports `applied=0` about a gesture that worked.
 const STYLE_EVENT: &str = "text-style-applied";
 /// The `text-style-declined applied=…` line.
 const DECLINED_EVENT: &str = "text-style-declined";
@@ -77,28 +31,10 @@ const APPLIED: &str = "format-text";
 /// The sweep's own oracle, shared with `clipboard_text`.
 const SELECTION_EVENT: &str = "canvas-text-selection";
 /// How far to sweep along the baseline, in PDF points.
-///
-/// Sixty. The fixture's title-block labels are six-point text a few tens of
-/// points wide, so this crosses a whole label and a little blank paper. It does
-/// **not** need to stop inside the run: a sweep that overshoots selects the run
-/// and stops, which is the operator's own gesture.
 const SWEEP_PT: f64 = 60.0;
 /// How many scroll notches to spend looking for Bold below the panel's fold.
 const SCROLL_ATTEMPTS: usize = 6;
 /// `T`, as a Windows virtual key — the text-sweep tool.
-///
-/// Pressing it is not optional, and the first run of this check is why.
-///
-/// `textsel::gate::takes_the_press` reads
-/// `tool.is_text() || (Select && !caps.edit_content)`. In **Edit** the second
-/// disjunct is false, so a drag with the Select tool is an object marquee — the
-/// first run of this check produced `sel=1` on the trace and reported the panel
-/// as broken, when what had actually happened is that it never swept any text.
-///
-/// That is a discoverability finding about the product, not only about the
-/// harness, and it is written up rather than absorbed: an operator who wants to
-/// restyle text in Edit mode has to know to arm a tool first, and nothing on
-/// screen tells them so.
 const VK_T: u16 = 0x54;
 
 /// See the module documentation.
@@ -127,16 +63,6 @@ impl Check for RestylingSelectedTextReachesTheDocument {
 
 /// Poll until the restyle reports one way or the other, and answer how long it
 /// took.
-///
-/// A bounded poll rather than a fixed sleep. **A wait the harness owns is a
-/// failure mode the harness owns**: a sleep long enough for the worst case
-/// makes every run slow, and one short enough to be pleasant fails on the
-/// operator's own drawings — which is where this check is aimed.
-///
-/// Returns the elapsed milliseconds. Reaching the ceiling is **not** an error
-/// here: the caller then reads a trace with neither line in it and reports the
-/// "nothing happened" verdict, which is the right answer if a restyle really
-/// can take twenty seconds.
 fn wait_for_verdict(session: &Session) -> Result<u128> {
     const CEILING_MS: u128 = 20_000;
     let started = std::time::Instant::now();

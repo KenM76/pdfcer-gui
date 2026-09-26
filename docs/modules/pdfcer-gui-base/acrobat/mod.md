@@ -148,3 +148,19 @@ The one non-obvious part is [`windows::CREATE_NO_WINDOW`]: a GUI process
 that spawns a console program on Windows gets a **console window flashed on
 screen** unless it says otherwise. Without that flag, discovery would blink
 a black box over the operator's document every time the shell started.
+
+## Item notes
+
+### `fn app_path`
+
+Implementations return the value **as the registry holds it**: quoting,
+surrounding whitespace and all. Cleaning it up is [`discover`]'s job,
+so that the cleaning is tested.
+
+### `fn launch`
+
+# Errors
+
+Whatever the platform reports: the executable has been removed since
+discovery, the operator lacks permission, the process table is full.
+The caller words it; this trait does not.

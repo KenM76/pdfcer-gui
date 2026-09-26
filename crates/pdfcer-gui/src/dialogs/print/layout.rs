@@ -540,26 +540,6 @@ impl PrintDialog {
     }
 
     /// The draggable divider between the preview and the options.
-    ///
-    /// # Why a real splitter and not a `ui.separator()`
-    ///
-    /// Operator request, 2026-09-03: *"the preview should be adjustable
-    /// size."* The preview column was a hard-coded 340 pt, so widening the
-    /// dialog widened the empty space and left the sheet postage-stamp sized —
-    /// which is the wrong way round, because the preview is the reason the
-    /// dialog exists.
-    ///
-    /// # The affordance is a CURSOR, and nothing is drawn on the preview
-    ///
-    /// Rule 4's pre-commit clause: a resize cursor over the divider and a
-    /// hover-lift on the divider itself are the *pointer*, which is welcome. No
-    /// grip dots on the sheet, no outline round the preview, nothing that
-    /// changes what a screenshot of the previewed page looks like.
-    ///
-    /// `drag_delta()` rather than the pointer's absolute position, because
-    /// the two differ by wherever inside the divider the press landed —
-    /// absolute tracking makes the divider jump to centre itself under the
-    /// cursor on the first pixel of movement.
     fn splitter(&mut self, ui: &mut Ui, height: f32, effective_width: f32) {
         let (rect, response) = ui.allocate_exact_size(
             egui::vec2(SPLITTER_WIDTH_PTS, height),
@@ -865,18 +845,6 @@ mod tests {
 
     /// **The allowance must exceed the bar it allows for**, which is the single
     /// property that decouples the two scroll axes.
-    ///
-    /// The body reserves [`SCROLLBAR_ALLOWANCE_PTS`] out of both its width and
-    /// its height before laying anything out. If that reservation were merely
-    /// *equal* to the bar's drawn width the content would land exactly on the
-    /// viewport, and egui reserves slightly more than the drawn width for a
-    /// solid bar — measured at 14 pt for a 10 pt bar — so equality is not even
-    /// the boundary, it is already over it.
-    ///
-    /// This is the one thing in that arithmetic a constant CAN pin, and it is
-    /// pinned here so that a later change tuning the bar's width cannot quietly
-    /// make the allowance too small. It does not, and cannot, prove no bar
-    /// appears; see the retired test above for why.
     #[test]
     fn the_scrollbar_allowance_exceeds_the_scrollbar() {
         // Bound to locals rather than compared as constant paths: comparing the
@@ -895,12 +863,6 @@ mod tests {
 
     /// **The default preview width sits inside its own bounds**, so a fresh
     /// dialog and a double-clicked splitter both land somewhere legal.
-    ///
-    /// [`PREVIEW_DEFAULT_WIDTH_PTS`] is what the dialog opens at and what a
-    /// double-click on the splitter restores to. A default below the floor
-    /// would be silently clamped, so the restore gesture would not restore what
-    /// the operator saw on opening — the two would differ by however far out of
-    /// range the constant had drifted, and nothing would say so.
     #[test]
     fn the_default_preview_width_is_within_its_own_floor() {
         let default = PREVIEW_DEFAULT_WIDTH_PTS;
@@ -914,33 +876,6 @@ mod tests {
 
     /// **The content floor is exactly its parts**, so the narrow case scrolls
     /// rather than shredding a column.
-    ///
-    /// [`MIN_CONTENT_WIDTH_PTS`] is what the body refuses to lay out below,
-    /// and it must equal the two column floors plus the splitter — not
-    /// approximate them. A floor smaller than its parts would let a column be
-    /// squeezed under its own minimum with no scrollbar offered, which is the
-    /// *"content clipped and unreachable, no bar anywhere"* half of the
-    /// operator's report — the half a single screenshot at one size would have
-    /// missed entirely.
-    /// **With the preview popped out the column is GONE, not hidden** — O112
-    /// ask 2, and this is the assertion the whole of R9 rests on here.
-    ///
-    /// Three separate claims, and all three have to hold or the operator gets
-    /// something this project's no-placeholders rule forbids:
-    ///
-    /// 1. `preview == 0.0` — no width is reserved for it;
-    /// 2. `splitter == 0.0` — no divider is drawn beside a column that is not
-    ///    there, which would be a control that moves nothing;
-    /// 3. `options == content` — **the room is taken**, which is the half a
-    ///    "hide the column" implementation gets wrong. A build that zeroed the
-    ///    preview and left the options at their old width would leave a 340 pt
-    ///    hole in the dialog, which is a placeholder made of nothing at all and
-    ///    is exactly as bad as a greyed rectangle.
-    ///
-    /// Claim 3 is the one worth the test. Claims 1 and 2 are what anybody
-    /// would write; claim 3 is what makes the difference between *collapsing*
-    /// the column and merely *emptying* it, and it is invisible in a screenshot
-    /// of a wide dialog where the extra room is not obviously anybody's.
     #[test]
     fn popping_the_preview_out_collapses_its_column_and_gives_the_room_away() {
         let split = Columns::split(1000.0, 8.0, PREVIEW_DEFAULT_WIDTH_PTS, true);
@@ -974,12 +909,6 @@ mod tests {
 
     /// **And with it in place, both columns are there** — the other position of
     /// the same switch.
-    ///
-    /// Asserted beside the one above rather than left implicit, because an
-    /// absence test alone passes on a build that has lost the preview
-    /// altogether. `ui-verify`'s driven check makes the same pairing through
-    /// the OS: the column's region is declared before the click and retired
-    /// after it.
     #[test]
     fn with_the_preview_in_place_both_columns_are_laid_out() {
         let split = Columns::split(1000.0, 8.0, PREVIEW_DEFAULT_WIDTH_PTS, false);
@@ -1011,12 +940,6 @@ mod tests {
 
     /// **A narrow window with the preview popped out must not scroll**, which
     /// is the reason the popped case has a floor of its own.
-    ///
-    /// Carrying [`MIN_CONTENT_WIDTH_PTS`] — both column floors plus the
-    /// splitter — into the one-column case would refuse to lay the body out
-    /// below 628 pt of content, so a dialog dragged to 560 pt would be told its
-    /// content is 628 pt wide and would raise a horizontal scrollbar. That is
-    /// the operator's original complaint, re-entering through the new feature.
     #[test]
     fn a_narrow_dialog_with_the_preview_popped_out_still_fits_its_options() {
         // 560 pt outer: comfortably above the window's own 520 pt floor and

@@ -282,17 +282,6 @@ mod tests {
     use super::*;
 
     /// **Front is the END of the array.**
-    ///
-    /// §12.5.6 paints annotations in `/Annots` order, so the last entry is drawn
-    /// last and therefore on top. "Front" and "last" are the same place, and a
-    /// reader who thinks of the array as a list will reach for the opposite
-    /// answer — which would compile, pass a review, and paint every *Bring to
-    /// front* underneath everything.
-    ///
-    /// Falsified: swapping the `Front` and `Back` arms in [`plan`] leaves this
-    /// green and turns [`the_ends_of_the_array_are_the_ends_of_the_stack`] red,
-    /// which is the division of labour intended — this one pins the *vocabulary*
-    /// and that one pins the *arithmetic*.
     #[test]
     fn front_is_the_end_of_the_array() {
         assert!(ArrangeTo::Front.toward_front());
@@ -302,10 +291,6 @@ mod tests {
     }
 
     /// **The four destinations are four different requests.**
-    ///
-    /// A guard against the copy-paste that gives two variants one arm — which in
-    /// this enum would be silent, because both would still produce a legal
-    /// permutation.
     #[test]
     fn the_four_destinations_are_distinct() {
         let all = [
@@ -322,13 +307,6 @@ mod tests {
     }
 
     /// The permutation arithmetic, without a document.
-    ///
-    /// A free function mirroring [`plan`]'s middle, because `plan` needs an
-    /// `OpenDoc` and the thing worth pinning is the index maths. This is
-    /// **two statements of one rule**, which this crate usually refuses — it is
-    /// accepted here for `dispatch::routes`' stated reason, that the two sit in
-    /// one small file where a reader meets both at once, and because the
-    /// alternative is a rule with no test at all.
     fn moved(len: usize, from: usize, to: ArrangeTo) -> usize {
         let last = len.saturating_sub(1);
         match to {
@@ -350,12 +328,6 @@ mod tests {
     }
 
     /// **Neither end runs off the array.**
-    ///
-    /// A *Bring forward* on the topmost mark and a *Send backward* on the
-    /// bottom-most both resolve to where they already are, which is what
-    /// [`plan`] then answers with a sentence rather than an edit. Without the
-    /// clamps, one is an out-of-range insert and the other is an underflow —
-    /// and `usize` underflow here would ask for index `usize::MAX`.
     #[test]
     fn a_step_past_either_end_stays_where_it_is() {
         assert_eq!(moved(5, 4, ArrangeTo::Forward), 4);
@@ -388,17 +360,6 @@ mod tests {
 
     /// **Bring to front puts the mark LAST in the file**, read back from
     /// the document rather than from the plan.
-    ///
-    /// The oracle is `page_annotations` **after** the edit, which is not the
-    /// code under test: `plan` builds a list, `EditSession::reorder_annotations`
-    /// writes the array, and this reads what the array became. A `plan` that
-    /// returned the ends the wrong way round would satisfy every assertion in
-    /// the arithmetic tests above — they are a mirror of it — and fail here.
-    ///
-    /// Falsified: swapping the `Front` and `Back` arms of [`plan`]'s `match`
-    /// turns both halves of this red, and leaves
-    /// [`the_ends_of_the_array_are_the_ends_of_the_stack`] green. That is the
-    /// point of writing both.
     #[test]
     fn bring_to_front_puts_the_mark_last_in_the_file() {
         let mut doc = crate::app::state::open_local_fixture(FIXTURE);
@@ -462,17 +423,6 @@ mod tests {
     }
 
     /// **A mark already at the front changes nothing and SAYS so.**
-    ///
-    /// The sentence is the point. The engine reports `moved == 0` and
-    /// [`reorder_annotations`] calls that *"a success with nothing to say"* —
-    /// correctly, for a drag that ended where it started. A **command** is not a
-    /// drag: the operator pressed a labelled button on purpose, and a press that
-    /// neither moves anything nor says anything is indistinguishable from a
-    /// broken control.
-    ///
-    /// Falsified: deleting the `if target == from` branch in [`plan`] turns
-    /// the second assertion red — the edit goes through the funnel, the engine
-    /// reports `moved == 0`, and the operator is told nothing.
     #[test]
     fn a_mark_already_at_the_front_is_told_so() {
         let mut doc = crate::app::state::open_local_fixture(FIXTURE);
@@ -497,11 +447,6 @@ mod tests {
     }
 
     /// **A mark that is not on the page it claims is refused, not guessed at.**
-    ///
-    /// Reachable after an undo or an external reload, when a selection names an
-    /// object the page no longer lists. Building a permutation that silently
-    /// omitted it would ask the engine to pin every entry it could not name,
-    /// which is a page whose annotations quietly stop being reorderable.
     #[test]
     fn an_id_this_page_does_not_list_plans_nothing() {
         let doc = crate::app::state::open_local_fixture(FIXTURE);

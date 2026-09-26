@@ -83,3 +83,40 @@ constants below rather than discovered at run time, and the geometry hop is
 `crate::coords::CanvasMapping` as every other driven check uses. A literal
 screen coordinate is never written: `crate::coords`'s header records what
 that cost the last time somebody tried.
+
+## Item notes
+
+### `const ON_A_SQUARE`
+
+The **middle** one deliberately: it is furthest from every page edge, so a
+small error in the coordinate hop lands on paper rather than off-window,
+and the check fails with "selected nothing" rather than with "the click
+went outside the client area", which are different diagnoses.
+
+### `fn engine_fixture`
+
+The path is derived, not configured. `D:\Dev\pdfcer` is READ-ONLY to this
+project and its corpus is the only place this shape exists, so the check
+reads from it and writes nowhere near it. `None` rather than a panic turns
+a missing corpus into a SKIP with a reason instead of a crash mid-suite.
+
+### `fn drive`
+
+The three-way return is the SKIP/FAIL/PASS rule made structural: `Err` is a
+precondition that was absent (SKIP), `Ok(Some(_))` is an assertion that did
+not hold (FAIL), `Ok(None)` is a pass. An author who reaches for `?` gets a
+SKIP, which is the safe default — the unsafe default would be a pass.
+
+### `fn aim`
+
+Its own function so the two call sites cannot hop differently — the class of
+error `crate::coords` exists to prevent, and the one a literal screen
+coordinate always is.
+
+### `fn last_first`
+
+The **last** line rather than a count of new ones. `canvas-selection` is
+emitted through `diag::trace_changed`, so a click producing the same
+selection as the previous one emits nothing — a consumer that counted lines
+would read a legitimate no-change as a dropped event. Reading the last line
+asks the question this check actually has: *what is selected now?*

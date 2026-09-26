@@ -87,3 +87,63 @@ record of those, written at the end of every `show` and read here. It is
 *last drawn frame's* geometry, which is the correct "before" state in both
 call orders — before `show`, the layout has not changed since; after `show`
 but before the actions are applied, it **is** this frame's geometry.
+
+## Item notes
+
+### `fn trace_outcome`
+
+Not de-duplicated: two identical zoom commands are two events, and a gate
+that silenced the second would make a harness unable to tell a command that
+ran twice from one that ran once.
+
+### `fn framing_puts_the_regions_centre_in_the_middle_of_the_viewport`
+
+Asserted as the outcome — where the anchored point ends up on screen —
+rather than as an offset, so it checks the framing rather than the code
+agreeing with itself.
+
+### `fn a_region_at_the_page_corner_can_be_centred_because_the_pasteboard_is_there`
+
+It used to assert the opposite: that framing a region hard against the
+page's top-left saturated at offset zero, *"there is no page to the
+left of or above the origin to scroll to"*, and the operator simply saw
+it off-centre. That was true when the scroll content was the page and
+nothing else.
+
+**O23 made it false on purpose.** The operator asked for exactly this:
+
+> *"I should also be able to move the view of the corner of the page to
+> the center of the screen, or even all the way vertically to the
+> opposite corner if I want to."*
+
+The pasteboard is a viewport of slack on every side, so there IS
+somewhere above and to the left to scroll to, and the solve's negative
+page-local offset is a legitimate position rather than an over-range
+one to be truncated.
+
+It stayed asserting saturation for a while after the pasteboard
+landed, because `geometry::zoom_anchor_offset` was still clamping to
+the page's own range — which is `OPERATOR_REQUESTS.md` O24e, the zoom
+that threw away whatever the operator had panned to. A test that pins
+last year's constraint is how a stale clamp survives a feature
+designed to remove it.
+
+### `fn the_discrete_zooms_are_recognised_and_the_wheel_is_not`
+
+The predicate [`arm_for_actions`] funnels on. A zoom action missing
+from it is a command that silently keeps the old top-left anchoring —
+which is the defect Phase 3.1 exists to close, reappearing one variant
+at a time.
+
+### `fn an_empty_selection_offers_no_bounds_to_frame`
+
+The wiring above turns this `None` into [`ZoomOutcome::NoBounds`] and
+raises no action; what is pinned here is that the `None` is real, i.e.
+that the decline is reachable rather than a branch nothing can enter.
+
+### `fn a_plan_past_the_ceiling_carries_the_clamped_scale_as_well_as_the_asked_one`
+
+The second is what reaches `Action::ZoomTo`, so the status bar's
+readout states the truth on the same frame — see
+[`ZoomOutcome::ceiling_changed_the_answer`] on why that *is* the
+ceiling's report rather than a substitute for one.

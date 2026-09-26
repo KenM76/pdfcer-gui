@@ -45,6 +45,8 @@
 //! costs one line and it is the cheapest possible answer to "I have
 //! dragged this into a mess" short of a full reset — which, per
 //! `RIBBON_IA.md`, must never be the only way back.
+//!
+//! Design and rationale: `docs/modules/egui-shell/dock/splitter.md`.
 
 use egui::{Color32, CursorIcon, Id, Rect, Sense, Ui, Vec2};
 
@@ -232,12 +234,6 @@ mod tests {
     }
 
     /// **The idle splitter is visible against the panel it divides.**
-    ///
-    /// A boundary drawn in the panel's own colour is invisible, and an
-    /// invisible boundary is never discovered to be draggable — the
-    /// silent half of failure mode #1. Checked for every shipped preset,
-    /// because a colour pair that holds in one theme and collapses in
-    /// another passes any check that looks at a single palette.
     #[test]
     fn the_idle_splitter_is_distinguishable_from_the_panel() {
         for preset in Preset::ALL {
@@ -255,11 +251,6 @@ mod tests {
     }
 
     /// A zero-area splitter is not interacted with at all.
-    ///
-    /// It happens for exactly one frame when a compartment closes while
-    /// its splitter is on screen, and registering a widget at an
-    /// impossible position would leave `egui` holding focus somewhere
-    /// unreachable.
     #[test]
     fn a_zero_area_splitter_does_nothing() {
         let ctx = egui::Context::default();

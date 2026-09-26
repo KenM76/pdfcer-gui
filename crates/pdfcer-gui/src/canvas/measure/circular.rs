@@ -11,27 +11,6 @@ use crate::app::actions::Action;
 use crate::app::actions::dimensions::DimensionAction;
 
 /// **The circular pick set that is ready to become a dimension**, or `None`.
-///
-/// The single derivation behind both halves of the Finish control:
-/// [`finishable`] asks whether to enable it and [`finish`] asks what to do when
-/// it is pressed. Two spellings of "is there something to finish?" would
-/// eventually disagree, and the way they would disagree is the worst available
-/// — an enabled control that does nothing when pressed, which is precisely the
-/// placeholder the no-placeholders invariant forbids.
-///
-/// Three conditions, and each rules out a state that really occurs:
-///
-/// 1. **The radius/diameter tool is armed.** The pick set outlives disarming
-///    (`disarm_measure` puts the tool down; it does not discard work — see its
-///    docs, and Escape's two rungs), so without this the ribbon would offer
-///    Finish for a set the operator can no longer see being outlined.
-/// 2. **A state exists.** Nothing has been picked on this page since the tool
-///    was armed, so there is nothing to finish.
-/// 3. **The fit is not degenerate** — [`super::pick::CircularPick::author`]
-///    returns `None` for fewer than three usable points or a numerically
-///    singular set, and its own docs say that is when Accept must not be
-///    offered. One or two picked objects whose anchors lie on a line is the
-///    ordinary way to reach it, not a pathological one.
 fn pending(ctx: &egui::Context) -> Option<MeasureState> {
     if crate::canvas::tool::selected(ctx).measure_kind() != Some(MeasureKind::Circular) {
         return None;
@@ -244,11 +223,6 @@ pub fn remove_point(ctx: &egui::Context, index: usize) -> bool {
 }
 
 /// A short, stable tag for a pick's origin — trace only.
-///
-/// Deliberately not the operator-facing wording: a trace field is a machine
-/// contract a driven check matches on, and coupling it to a translatable string
-/// would make a wording change break the harness. `crate::text` owns what the
-/// operator reads.
 fn origin_tag(origin: PickOrigin) -> &'static str {
     match origin {
         PickOrigin::Free => "free",
@@ -329,18 +303,6 @@ mod tests {
 
     /// **A click adds one point; a click near an existing one takes that
     /// point out.**
-    ///
-    /// The whole of the pick, and both halves matter. A build that only added
-    /// would pass a test of the first click alone, and the operator's complaint
-    /// would be `OPERATOR_REQUESTS.md` O107 — *"I can't unselect things once I
-    /// have selected them"* — which is how this behaviour came to be asked for
-    /// in the first place.
-    ///
-    /// The second assertion is the one that could not exist under the old
-    /// object pick: it adds a point 0.5 pt from the first, and requires the set
-    /// to SHRINK. Under an object pick there was no such distance — the unit
-    /// was the whole object — which is exactly why *"selecting more points
-    /// around a hole"* did not narrow the fit.
     #[test]
     fn a_click_adds_a_point_and_a_click_near_it_takes_that_point_out() {
         let mut st = MeasureState::for_kind(0, MeasureKind::Circular);
@@ -365,11 +327,6 @@ mod tests {
 
     /// **A click with nothing under it is still a point** —
     /// `OPERATOR_REQUESTS.md` O106, the ask that makes a bitmap measurable.
-    ///
-    /// The origin is carried rather than discarded, because a set of five free
-    /// positions and a set of five snapped nodes produce the same numbers and
-    /// are not the same evidence. The Tool panel says which; the canvas does
-    /// not, which is rule 4's disclosure boundary.
     #[test]
     fn a_pick_with_no_snap_candidate_is_recorded_as_a_free_position() {
         let mut st = MeasureState::for_kind(0, MeasureKind::Circular);
@@ -382,10 +339,6 @@ mod tests {
     }
 
     /// **Three free positions fit a circle**, which is the whole of O106.
-    ///
-    /// Asserted on the fit rather than on the count, because *"the points went
-    /// in"* is not the claim — the claim is that a drawing with no vector
-    /// geometry at all can still be measured.
     #[test]
     fn three_free_positions_on_a_raster_still_produce_a_circle() {
         let mut st = MeasureState::for_kind(0, MeasureKind::Circular);
@@ -400,11 +353,6 @@ mod tests {
     }
 
     /// **The panel's removal and the canvas's removal are the same act.**
-    ///
-    /// `OPERATOR_REQUESTS.md` O107 asks for both routes, and the failure to
-    /// guard against is two pick sets: a panel that removed from its own copy
-    /// would leave the canvas drawing markers for points the fit no longer
-    /// contains, which is worse than having no panel.
     #[test]
     fn removing_a_point_from_the_panel_changes_the_set_the_canvas_draws() {
         let ctx = egui::Context::default();
@@ -459,14 +407,6 @@ mod tests {
     }
 
     /// **The two endings author the same dimension from the same picks.**
-    ///
-    /// The property the one-commit-path design exists for, asserted the only
-    /// way that means anything: run *both* endings over identical states and
-    /// compare the actions they raise. Two arms that each built a
-    /// `DimensionKind` would agree on the day they were written, drift on the
-    /// first change to either, and the operator would have no way to see it — a
-    /// circle fitted from the same points looks the same whichever code drew
-    /// it.
     #[test]
     fn the_double_click_and_the_command_author_the_same_dimension() {
         // Ending 1: the double-click, taken by the canvas.
@@ -511,12 +451,6 @@ mod tests {
 
     /// **Both endings empty the pick set**, so a second Finish does not place
     /// the same circle twice.
-    ///
-    /// The failure without it is quiet and expensive: the operator presses
-    /// Finish, sees the dimension land, presses it again out of habit or
-    /// because they did not see the first, and gets two dimensions stacked
-    /// exactly on top of each other — indistinguishable on screen and two undo
-    /// steps to remove.
     #[test]
     fn finishing_empties_the_pick_set_so_it_cannot_be_committed_twice() {
         let mut st = MeasureState::for_kind(0, MeasureKind::Circular);
@@ -536,12 +470,6 @@ mod tests {
     }
 
     /// **A degenerate set commits nothing, from either ending.**
-    ///
-    /// `CircularPick::author` returns `None` for fewer than three usable points
-    /// or a numerically singular set, and its docs say that is precisely when
-    /// Finish must not be offered. Three points the operator clicked along a
-    /// straight edge is the ordinary way to reach it — not a contrived one —
-    /// and the honest response is to place nothing rather than to guess.
     #[test]
     fn a_degenerate_fit_is_refused_by_both_endings() {
         let mut st = MeasureState::for_kind(0, MeasureKind::Circular);
@@ -570,13 +498,6 @@ mod tests {
 
     /// **`measure.finishable` is true exactly when pressing Finish would do
     /// something** — all five of the states that decide it.
-    ///
-    /// This is the condition behind a ribbon control, so each `false` row is a
-    /// control that would otherwise be live and inert. The fourth row is the
-    /// one that is easy to miss: putting the tool down does **not** discard the
-    /// pick set (Escape's two rungs, `disarm_measure`'s own docs), so without
-    /// the armed-tool check the ribbon would keep offering Finish for a set
-    /// nothing is marking any more.
     #[test]
     fn finish_is_offered_only_when_there_is_a_fit_and_the_tool_is_armed() {
         let ctx = egui::Context::default();
@@ -612,12 +533,6 @@ mod tests {
     }
 
     /// **Asking whether Finish is available does not manufacture state.**
-    ///
-    /// [`finishable`] runs on every frame, for every document, armed or not. If
-    /// it went through `super::load` — which builds a `MeasureState` when there
-    /// is none — the ribbon merely *drawing itself* would leave a measure state
-    /// in memory for a tool nobody armed, and the next `store` would persist
-    /// it.
     #[test]
     fn asking_whether_finish_is_available_creates_no_measure_state() {
         let ctx = egui::Context::default();

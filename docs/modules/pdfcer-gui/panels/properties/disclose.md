@@ -60,3 +60,11 @@ refusal read after that description arrives too late to explain it.
 Not *"No notes."*, not an empty heading. R9, and also honesty: a heading
 present on every frame trains an operator to stop reading the region under
 it, which would waste the one surface a disclosure has.
+
+## Item notes
+
+### `fn the_region_moved_with_the_block`
+
+Worth a test because a driven check sweeping for a region name that
+nothing publishes finds nothing and SKIPs — and a SKIP is not red, so a
+region renamed out from under a check costs no build and all coverage.

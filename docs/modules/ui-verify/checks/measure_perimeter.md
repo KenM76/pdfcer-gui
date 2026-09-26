@@ -45,3 +45,21 @@ with its own tests. Asserting it here would need the fixture to carry a
 calibrated group, which is a second gesture (Set scale) inside a check about
 a first one. The tool-panel running total is formatted through the same
 function and is the surface where a scale defect would show.
+
+## Item notes
+
+### `const LENGTH_ITEM`
+
+Checked at the end of this run rather than in a second check, because the
+property worth asserting about it is a NEGATIVE one relative to Perimeter —
+*clicking the first vertex adds a vertex instead of closing* — and a
+negative is only meaningful beside the positive it differs from. Two checks
+would let the pair drift: Perimeter's could stop closing and Length's would
+still pass.
+
+### `const CORNERS`
+
+A rectangle rather than an irregular shape, because the total is then
+arithmetic a reader can check by hand from the page size printed in the
+report — and a check whose expected value cannot be verified by eye is a
+check that can be wrong in the same direction as the code.

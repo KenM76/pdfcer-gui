@@ -37,6 +37,8 @@
 //! inner one: the zones are a mitred picture frame around a centre rectangle,
 //! and [`Compass::outline`] returns exactly the quadrilateral each one is hit
 //! as. An overlay that fills those five quads has drawn the hit test.
+//!
+//! Design and rationale: `docs/modules/egui-shell/dock/compass.md`.
 
 use egui::{Pos2, Rect};
 
@@ -312,12 +314,6 @@ mod tests {
     /// Lay `layout`'s left side out over `rect`: columns left to right in even
     /// widths, stacks top to bottom in even heights, a strip across the top of
     /// each stack and its tabs in even widths along that strip.
-    ///
-    /// Deliberately not [`super::super::plan`]: this is a plausible geometry,
-    /// not the real one, and the compass must not care which. What it must
-    /// share with the real one is the relationship the resolution depends on —
-    /// the strip along the top of the compartment — and that is asserted
-    /// directly by `over_the_tab_strip_is_a_boundary_between_tabs`.
     #[allow(clippy::cast_precision_loss)]
     fn geometry_for(layout: &DockLayout, rect: Rect) -> DockGeometry {
         let mut g = DockGeometry::default();

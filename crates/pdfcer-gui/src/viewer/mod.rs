@@ -447,35 +447,6 @@ pub fn normalise_ocr_overlay(raw: f32) -> f32 {
 
 impl Default for ViewState {
     /// First-open defaults: page 1, fit-page, single page.
-    ///
-    /// Fit-page rather than 100% is a deliberate choice. Opening at a
-    /// raw 100% produces a wildly different first impression depending
-    /// on the page size — a business card fills a thumb's worth of the
-    /// window, an A0 poster overflows it — and both read as a bug even
-    /// though nothing is wrong. Fit-page always shows the operator the
-    /// thing they just opened.
-    ///
-    /// **Single page rather than continuous**, for the reason
-    /// [`display`]'s header states at length: continuous is an option, not a
-    /// replacement, and paging one sheet at a time is the right model for
-    /// drafting review. Read mode's continuous default is applied by the open
-    /// path (which knows the mode and the document), not by this `Default` —
-    /// so a `ViewState` built with no context is the conservative one.
-    ///
-    /// **All three View ▸ Display toggles start off**, and that is not
-    /// timidity. A ruler, a grid and a set of guides are all chrome drawn over
-    /// or beside the drawing, and pdfcer's first duty on opening a sheet is to
-    /// show the sheet. Defaulting the rulers on would also take
-    /// `THICKNESS_PTS` off two edges of every canvas for every operator who
-    /// never wanted them, which is the one default that has a measurable cost
-    /// (see the field's own docs and rule R128).
-    ///
-    /// `guides` is the one that is *overridden* at open — by
-    /// [`crate::app::state::OpenDoc::new`], when the document turns out to
-    /// have remembered guides. That override lives there rather than here for
-    /// the same reason Read mode's continuous default does: a `ViewState`
-    /// built with no context is the conservative one, and the path that knows
-    /// the document is the path that may know better.
     fn default() -> Self {
         Self {
             page_index: 0,
@@ -938,15 +909,6 @@ mod tests {
     }
 
     /// O24j — **the readout must survive the whole ceiling the zoom offers.**
-    ///
-    /// A `u32` return here saturates, and a saturated `as u32` reads as
-    /// **4294967295%** on the status bar: `u32::MAX` presented as a
-    /// measurement, at a zoom the ladder genuinely reaches.
-    ///
-    /// Asserted against the FORMATTED string, because that is the artefact an
-    /// operator reads. A test of the numeric value passes on a build that
-    /// narrows the type further downstream, which is where such a defect
-    /// actually lives.
     #[test]
     fn the_readout_survives_the_whole_configured_range() {
         let mut v = ViewState::default();
@@ -1025,20 +987,6 @@ mod tests {
 
     /// **[`zoom_for_raster_scale`] is the exact inverse of
     /// [`raster_scale`], at every quality** — O218.
-    ///
-    /// The defect this pins is not that either function was wrong. Each was
-    /// right about what it claimed; they simply did not agree, because the
-    /// forward direction multiplied by the quality and all four backward
-    /// readings divided by the display density alone. On the operator's own
-    /// build — `render_quality = sharper` — every derived ceiling was therefore
-    /// half again too high, the engine refused the pixmap, and the clamp that
-    /// exists to rescue him landed by the same factor too high and refused
-    /// again.
-    ///
-    /// The repair is structural rather than arithmetic: both directions now
-    /// run through [`raster_density`], so this test cannot be made to fail by
-    /// changing one of them. That is the point of it — it is here to fail if
-    /// somebody re-opens the two into separate expressions.
     #[test]
     fn a_zoom_survives_a_round_trip_through_a_raster_scale() {
         for quality in [
@@ -1060,12 +1008,6 @@ mod tests {
     }
 
     /// **A nonsense density is the identity in BOTH directions.**
-    ///
-    /// `sane_pixels_per_point` lives inside [`raster_density`], so the guard is
-    /// stated once and both directions inherit it. Were it applied in the
-    /// forward direction only, a `NaN` density would rasterize at `zoom` and
-    /// convert back through a division by `NaN` — a ceiling of `NaN`, which
-    /// compares false against everything and switches a clamp off silently.
     #[test]
     fn a_nonsense_density_is_the_identity_in_both_directions() {
         for bad in [0.0_f32, -1.0, f32::NAN, f32::INFINITY] {
@@ -1076,13 +1018,6 @@ mod tests {
 
     /// **The page ceiling moves with the render quality** — O218's other
     /// half, and the assertion that fails on the old arithmetic.
-    ///
-    /// Sharper rasterizes at 1.5×, so the zoom at which a page fills
-    /// [`pdfcer_render::MAX_PIXMAP_EDGE`] is two-thirds of what it is at Normal.
-    /// The old [`max_zoom_for_page`] returned the same number for all three
-    /// qualities, so on Sharper it offered a zoom whose raster the engine
-    /// refuses — which is the sentence the operator reported reading across his
-    /// drawing.
     #[test]
     fn the_page_ceiling_moves_with_the_render_quality() {
         let page = (1584.0_f32, 1224.0);

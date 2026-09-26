@@ -363,22 +363,12 @@ mod tests {
     use super::*;
 
     /// The shipped quality is the identity multiplier.
-    ///
-    /// The "a build that omits nothing behaves as it did before" rule, at the
-    /// one place it can be checked cheaply. `viewer::raster_scale` was
-    /// `zoom × pixels_per_point` exactly before this setting existed, so
-    /// `Normal` must multiply by one or every raster in the application
-    /// silently changed size the day the control landed.
     #[test]
     fn the_shipped_quality_changes_no_raster() {
         assert!((RenderQuality::default().multiplier() - 1.0).abs() < f32::EPSILON);
     }
 
     /// The three qualities are ordered less-to-more and are distinct.
-    ///
-    /// The control reads left to right as a scale, so a list whose middle
-    /// entry was not between its neighbours would be a scale that does not
-    /// scale.
     #[test]
     fn the_qualities_ascend() {
         let m: Vec<f32> = RenderQuality::ALL.iter().map(|q| q.multiplier()).collect();
@@ -387,11 +377,6 @@ mod tests {
     }
 
     /// The shipped settle is reachable on its own slider.
-    ///
-    /// A default outside its control's bounds would be silently rewritten the
-    /// first time anybody opened this window, on every machine, without a
-    /// click. Third instance of this check in the window; third setting with a
-    /// range that must be the store's.
     #[test]
     fn the_shipped_settle_is_reachable_on_the_slider() {
         let ms = Prefs::default().zoom_settle_ms;

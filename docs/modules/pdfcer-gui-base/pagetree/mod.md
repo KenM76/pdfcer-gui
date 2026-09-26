@@ -233,3 +233,22 @@ direction it would drift in is a save that quietly wrote a damaged file
 because a shell-side flag disagreed with the writer. The same argument
 `app::save::write_copy` makes for asking the **session** whether a
 redaction is staged rather than keeping a flag.
+
+## Item notes
+
+### `fn walk`
+
+Returns the **structural** answer — what `/Kids` actually holds — never the
+declared one. That direction is the whole of §1: a walk that short-circuited
+on `/Count` would be reading the field it is here to check.
+
+The disagreement is recorded **after** the children are counted, so
+[`Audit::disagreements`] comes out deepest-first with the root last, which
+is the order a reader of the trace wants: the first entry is the innermost
+node that is wrong.
+
+### `fn count_of`
+
+`as_int` rather than `as_number`: §7.7.3.2 says integer, and a `/Count 3.0`
+is a file this guard declines to judge rather than one it refuses — the same
+posture §6 takes for an absent count, for the same reason.

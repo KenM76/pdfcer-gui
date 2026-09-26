@@ -116,3 +116,72 @@ is exactly what makes confusing them possible.
 unstated: deleting a group that still has members asks a destination
 question, and reaching it needs a fixture whose dimensions already live in a
 named group.
+
+## Item notes
+
+### `const PANEL`
+
+The `panel:` prefix is load-bearing in the trace — a reader scanning for
+what drew has to be able to tell a floating window from a docked body — so
+the region names the kind of surface rather than being kept short for the
+harness's convenience.
+
+### `const PANEL_BODY`
+
+The DOCK's name, not the panel's: `egui-shell` publishes
+`dock.body.<panel command id>` for every mounted panel, and it is the one
+rect that says where the panel actually is this frame. `PANEL` below is the
+application's own region for the same surface, and the two are not
+interchangeable — the application publishes its when the body draws, the
+dock publishes its when the layout resolves, and the gap between those two
+moments is exactly the hazard `fold` guards against.
+
+### `const CLOSED_EVENT`
+
+Read only to improve a failure message, and it is the one line that can
+tell a press that SHUT the panel apart from a panel that never drew.
+The two look identical from outside — no body region either way — and they
+have opposite fixes: one is the harness's precondition, the other is the
+panel's own body.
+
+### `const APPLIED`
+
+`apply::vector_edit` traces the label it was given on the success path, so
+this string is `DimensionAction::AddGroup`'s label verbatim. A *refusal*
+traces `add-dimension-group-refused`, which is a different event and is
+reported separately below — the difference between "the arm never ran" and
+"the engine declined" is the whole diagnosis.
+
+### `const RENAME_KEY`
+
+**Appended rather than retyped**, and that is what makes the rename
+observable without reading the text back. The field opens seeded with the
+group's current name, and the Rename button is drawn **only while the draft
+differs from it** — so a single extra letter producing a commit is itself
+evidence the field was seeded from the document rather than opening empty.
+
+A rename box that opened empty would let an operator wipe a name by pressing
+a button they took for a no-op, and nothing else in this check would notice.
+
+### `fn fold`
+
+# Why this exists, and why it returns `Option` rather than failing
+
+Five of the panel's six sections start shut, so the regions this check aims
+at — the name field, the Add button, Rename, Delete, the appearance block —
+**do not exist** until their heading is pressed. That is the surface the
+operator asked for (*"each section should be able to fold up like the
+settings one"*) and it makes this check the only thing in the project that
+proves the folds open at all.
+
+It returns the heading's own rect rather than a bare `bool` so a caller can
+press it a second time to shut the section again. Shutting matters more than
+it looks: the panel lives in a dock column, `declared` retires a region that
+stops being published, and a section left open pushes everything below it
+down the scroll region — where the next `declared_center` would aim at a
+point the operator cannot see. Closing what has been inspected is how this
+check stays inside the visible column without a single hard-coded height.
+
+`None` means the heading is not on screen at all, which is a real failure
+and is reported by the caller in its own words — a fold whose heading cannot
+be found is a section that is unreachable, not a section that is shut.

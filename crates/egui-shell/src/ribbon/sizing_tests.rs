@@ -20,6 +20,8 @@
 //! other: that one is already close to the 1,500-line limit, and a rule that
 //! is obeyed by writing the new tests somewhere else is a rule that is
 //! working.
+//!
+//! Design and rationale: `docs/modules/egui-shell/ribbon/sizing_tests.md`.
 
 use egui::Rect;
 
@@ -30,11 +32,6 @@ use super::width_tests::context;
 
 /// Two commands, both fully equipped, so `Small` is **earned** and the tests
 /// below measure the size rule rather than the fallback.
-///
-/// Each carries an icon **and** a tooltip. A fixture missing either would
-/// make every `Small` in this file silently render as `Medium`, and the tests
-/// asserting a narrower control would fail for a reason that has nothing to do
-/// with what they are about — see [`super::sizing::resolved`].
 fn registry() -> CommandRegistry {
     let mut r = CommandRegistry::new();
     r.register_all([
@@ -50,10 +47,6 @@ fn registry() -> CommandRegistry {
 }
 
 /// A one-tab, one-group manifest holding exactly `items`.
-///
-/// Deliberately minimal: every test below compares two renders that differ in
-/// one property, and anything else on the tab would be width the comparison
-/// has to reason about.
 fn shell(items: impl IntoIterator<Item = Item>) -> Shell {
     Shell::new()
         .with_mode(Mode::new("only", "Only", ["t"]))
@@ -70,27 +63,6 @@ fn group_rect(rendered: &[(String, Rect)]) -> Option<Rect> {
 
 /// **The area the group's ITEMS occupy** — the union of every `ribbon.item.*`
 /// rect the frame published, in square points.
-///
-/// **THE ORACLE FOR "SPACE IS RECLAIMED", AND THE GROUP'S WIDTH IS NOT.**
-///
-/// A group's **width** is only a valid oracle for reclaimed space while the
-/// group lays its items out on ONE ROW. `band::measure_group_rows` asks every
-/// group for the band's full row ceiling, so two equal-width controls stack
-/// into a column — and a column is exactly as WIDE with one item as with two.
-/// A width comparison then prints the same number on both sides, which reads
-/// as "the property has gone" and actually means "the measurement can no
-/// longer see it".
-///
-/// A hole — an item measured but not drawn — is still a hole under either
-/// layout, and under either layout it shows up as **area**: two items occupy
-/// twice one item's area whether they sit side by side or one above the other.
-/// So the assertion is layout-independent, which a width comparison silently
-/// is not.
-///
-/// ⇒ **When a layout change turns a passing assertion red, ask whether the
-/// assertion was measuring the rule or the arrangement.** This project has
-/// recorded the same shape against `ui-verify` repeatedly (*ask what the check
-/// SAMPLED*); it applies to a unit test's choice of dimension identically.
 fn item_area(rendered: &[(String, Rect)]) -> f32 {
     rendered
         .iter()
@@ -110,21 +82,6 @@ fn item_rect(rendered: &[(String, Rect)], id: &str) -> Option<Rect> {
 
 /// Render a manifest at a comfortable width, **with an icon painter
 /// installed**, and report every rect.
-///
-/// The painter is the whole reason this file has its own render function
-/// instead of calling [`render_shell_with`] like its neighbours. `Small` is
-/// **earned** — it needs an icon, a tooltip *and* an installed painter — and
-/// the shared harness installs no painter, so every `Small` in every test here
-/// would silently render as `Medium` and the assertions would fail against a
-/// perfectly correct implementation.
-///
-/// That is not a flaw in the shared harness: a ribbon with no icon painter is
-/// a working ribbon, and its tests are right not to invent one. It is a
-/// property of what this file measures.
-///
-/// The painter draws **nothing**. It exists to be `Some`. What is being
-/// measured is the space a control reserves, and a painter that filled its
-/// rect would be measuring `egui`'s compositor.
 fn render_with_icons(
     items: impl IntoIterator<Item = Item>,
     registry: &CommandRegistry,
@@ -166,12 +123,6 @@ fn render(items: impl IntoIterator<Item = Item>, conditions: &ConditionSet) -> V
 }
 
 /// **An icon-only control is narrower than the same control labelled.**
-///
-/// The whole point of `Small`, and the measurement that moved the 884-point
-/// number in `RIBBON_SCALING.md` §3. Asserted as a *comparison* between two
-/// renders of the same command rather than against a number, because the
-/// absolute width depends on the synthetic face's metrics and a literal here
-/// would be pinning the fixture rather than the rule.
 #[test]
 fn an_icon_only_control_is_narrower_than_a_labelled_one() {
     let none = ConditionSet::new();
@@ -201,10 +152,6 @@ fn an_icon_only_control_is_narrower_than_a_labelled_one() {
 
 /// **A Large control is taller than a Medium one**, because it spans the
 /// band's rows rather than sitting in one of them.
-///
-/// Height needs no font, so this one would pass without the synthetic face —
-/// it is here because it is the same subject, and because a reader comparing
-/// the three sizes wants the three assertions together.
 #[test]
 fn a_large_control_spans_the_rows_a_medium_one_sits_in() {
     let none = ConditionSet::new();
@@ -222,12 +169,6 @@ fn a_large_control_spans_the_rows_a_medium_one_sits_in() {
 }
 
 /// **A hidden item is not drawn, and its space is reclaimed.**
-///
-/// Both halves, because only the first is obvious and only the second is the
-/// operator's ask. A `visible_when` applied at draw time would satisfy the
-/// first and leave a hole: the group would still be measured at its full
-/// width, the groups to its right would not move left, and *"shift the space
-/// used depending on what exists"* would be false.
 #[test]
 fn a_hidden_item_is_not_drawn_and_its_space_is_reclaimed() {
     let mut on = ConditionSet::new();
@@ -273,10 +214,6 @@ fn a_hidden_item_is_not_drawn_and_its_space_is_reclaimed() {
 
 /// **A group whose every item is hidden is not drawn at all** — R9, and the
 /// end of the same rule.
-///
-/// Not "drawn empty", and not "drawn with just its caption". A caption over
-/// nothing is a promise of a control that is not there, and the separator
-/// beside it is a rule between two things with nothing between them.
 #[test]
 fn a_group_with_nothing_left_is_not_drawn() {
     let off = ConditionSet::new();
@@ -296,10 +233,6 @@ fn a_group_with_nothing_left_is_not_drawn() {
 
 /// A `Small` that has not earned icon-only rendering draws at `Medium` width
 /// — the fallback, measured rather than asserted about the resolver.
-///
-/// This is the guard that lets a manifest ask for `Small` freely. Without
-/// it, marking a tooltip-less command `Small` would ship an unlabelled
-/// rectangle, and the author would have no way to know except by looking.
 #[test]
 fn a_small_that_has_not_earned_it_renders_at_medium_width() {
     let mut r = CommandRegistry::new();
@@ -321,22 +254,6 @@ fn a_small_that_has_not_earned_it_renders_at_medium_width() {
 }
 
 /// **A Large control in the OVERFLOW MENU is still tall enough to click.**
-///
-/// The sharpest failure this file holds shut.
-///
-/// A group drawn in the menu uses `GroupBox::NATURAL`, whose row height is
-/// `0.0` **on purpose** — so a one-row group in the popup has no hole beneath
-/// it. A `render_large` that allocated exactly the height it was handed would
-/// give a Large control in the menu a rect of **zero height**: it paints (the
-/// icon and label are placed from the rect's centre, which still exists), it
-/// reports its rect as required, and it **cannot be clicked**.
-///
-/// No band-path unit test can see that, because the band hands a real row
-/// height and only the menu path passes a zero; the observable is the
-/// published rect's height, which is what a driven check reads back.
-///
-/// This drives the same path: a band too narrow for the group, a click on the
-/// affordance, and an assertion about the rect the menu reported.
 #[test]
 fn a_large_control_in_a_popup_is_tall_enough_to_click() {
     let ctx = context();
@@ -424,25 +341,6 @@ fn a_large_control_in_a_popup_is_tall_enough_to_click() {
 }
 
 /// **A custom item obeys `visible_when` exactly as a command does.**
-///
-/// # Why this is asserted through the RENDERER rather than through a rect
-///
-/// A [`Item::Custom`] publishes no `ribbon.item.<id>` region: the shell does
-/// not draw it and has no id to name it by. So *"was it drawn?"* cannot be
-/// read out of the reported rects the way the command tests above read it, and
-/// the honest observation is whether the application's renderer was **called**.
-/// A count is that observation, and it is stronger than a rect would be: it
-/// distinguishes *"the shell skipped the item"* from *"the shell called the
-/// renderer and the renderer chose to draw nothing"*, which is exactly the
-/// difference the field exists to remove.
-///
-/// # And the group narrows, which is the half that is easy to leave out
-///
-/// `super::sizing::visible` runs **before measurement**, so a hidden custom
-/// item must give back `plan::CUSTOM_ITEM_WIDTH` rather than leaving a hole
-/// the band has already budgeted for. Without the field an application could
-/// only draw nothing into a slot the band had already reserved, which is a gap
-/// on the band with no control in it.
 #[test]
 fn a_hidden_custom_item_is_never_offered_to_the_renderer_and_gives_its_width_back() {
     let mut on = ConditionSet::new();
@@ -581,29 +479,11 @@ fn wrapping_registry() -> CommandRegistry {
 }
 
 /// Render `items` against [`wrapping_registry`] and report the rects.
-///
-/// Goes through the same `render_with_icons` the rest of this file uses, so a
-/// change to the harness cannot make these three tests measure something the
-/// others do not.
 fn render_wrapping(items: impl IntoIterator<Item = Item>) -> Vec<(String, Rect)> {
     render_with_icons(items, &wrapping_registry(), &ConditionSet::new())
 }
 
 /// **A Large control wraps its label instead of running on.**
-///
-/// The defect this pins is not subtle once it is drawn: `Save a compacted
-/// copy of this document` laid out on one line is a control roughly 200 pt
-/// wide and 56 pt tall — a letterbox with a small picture floating in the
-/// middle of it, which is not what a Large control looks like in Word, in
-/// Acrobat, or in the mockup. It also pushes every group to its right off the
-/// band, so the first visible symptom is *"why is Print in the overflow
-/// menu"*.
-///
-/// The vacuity guard is the second assertion and it is doing real work.
-/// Without it the test passes trivially against any implementation whose
-/// labels happen to be short — including one that never wraps — because the
-/// bound would never be approached. So the unwrapped width is measured too,
-/// and the fixture is required to be a case that actually needs wrapping.
 #[test]
 fn a_large_control_wraps_a_long_label_instead_of_running_on() {
     let drawn = render_wrapping([Item::command("a.long").sized(ItemSize::Large)]);
@@ -641,15 +521,6 @@ fn a_large_control_wraps_a_long_label_instead_of_running_on() {
 }
 
 /// **…and a short-labelled one does not collapse below the floor.**
-///
-/// `.rb.big { min-width: 52px }`. Without it a run of Large controls is a
-/// ragged fence — `New` measures `max(24 pt glyph, 21 pt label) + 16 = 40`,
-/// `Open…` measures rather more — and a row of buttons of visibly unequal
-/// width is the thing a ribbon is not.
-///
-/// The pair with the test above is the point: one asserts a ceiling, the
-/// other a floor, and an implementation that satisfied only one of them would
-/// be broken in a way the other could not see.
 #[test]
 fn a_large_control_never_narrows_below_the_mockups_floor() {
     let drawn = render_wrapping([Item::command("a.short").sized(ItemSize::Large)]);
@@ -665,16 +536,6 @@ fn a_large_control_never_narrows_below_the_mockups_floor() {
 }
 
 /// **A Large control is SHORTER than the band's row area, not equal to it.**
-///
-/// The mockup draws `.rb.big` at 56 px inside a 68 px row area, top-aligned
-/// by `.grp .items { align-items: flex-start }`. A Large control that simply
-/// *was* the row area differs visibly the moment a group holds nothing else:
-/// full-height plates side by side read as one block of chrome rather than as
-/// separate buttons.
-///
-/// Asserted as a **relationship between the two metrics and the drawn
-/// rect**, not against 56. A literal would pass under `Quiet` and say nothing
-/// about `Airy`, whose own pair is 64 in 84.
 #[test]
 fn a_large_control_is_shorter_than_the_row_area_it_sits_in() {
     let ctx = context();

@@ -112,3 +112,45 @@ so by the time this check reads anything it must be `true`.
 ⇒ `known=false` in the **last** line is therefore a real failure with a
 precise cause (the settle-time build is not running), not a timing wobble,
 and it is reported as one.
+
+## Item notes
+
+### `const INVOKE`
+
+`mode.edit` is named FIRST, and it is not decoration. Since
+2026-09-11 the display of off-sheet content is a per-mode preference and
+**Read ships with it OFF** — the operator's request: *"by default, read
+doesn't show off page items, review and edit do show off page items."*
+This check's whole subject is off the sheet, so without an explicit mode it
+would run in whatever mode the shell opens in, find nothing, and report a
+defect that is a correctly-implemented setting.
+
+Edit rather than Review because that is the mode this check's gestures
+belong in anyway, and because a mode named explicitly cannot drift when a
+later session changes which mode the shell opens in.
+
+### `const PATCH_PT`
+
+The square is 120 × 40 pt, so ±8 pt about its centre stays 52 pt clear of
+its left and right edges and 12 pt clear of its top and bottom. The paper
+patch is the same size so that the two counts are directly comparable — a
+ratio between differently sized samples is a number nobody can read.
+
+### `const INK`
+
+The fixture fills with `0 0 0 rg`, so true ink is `#000000`; the slack is
+for the capture's colour management and for antialiasing at the patch's
+edge, which cannot reach the middle 16 × 16 pt of a 120 × 40 pt rectangle.
+
+### `const INK_FRACTION`
+
+Deliberately not 1.0: the patch is converted through the window frame's
+scale and rounded, so its outermost row can land a pixel outside the square
+on a fractional-DPI display. Deliberately not 0.1 either — a tenth of a
+patch is what a scroll bar or a tooltip edge could contribute.
+
+### `fn ink_fraction`
+
+Returns `None` when the patch has no area in the capture at all — which is
+a finding, never "no ink": `WindowFrame::logical_to_capture_pixels` clamps
+to the capture, so a zero-area result means the address is off screen.

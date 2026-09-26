@@ -39,3 +39,27 @@ it with a context and nothing else, and the persisted answer on
 expects it to still be off tomorrow. `crate::app::frame` mirrors the second
 into the first once a frame, and the only writer of the persisted answer is
 the dispatch arm an operator's press runs.
+
+## Item notes
+
+### `fn reaches`
+
+Its own function so the rule can be tested without a decomposed page: the
+failure it guards against is a build where both arms touch, which behaves
+identically for every crossing band and takes far too much for every
+enclosing one — and which no test of `within`'s plumbing would notice.
+
+### `fn only_a_crossing_band_takes_a_chunk_it_merely_clips`
+
+The one rectangle pair that tells the two directions apart: fully
+outside is refused by both and fully inside is taken by both, so a build
+in which the enclosing arm also merely touched would pass every other
+case. Left-to-right encloses, right-to-left touches — the page-rung
+band's rule, unchanged at this rung.
+
+### `fn every_decline_reason_is_distinct`
+
+The vocabulary earns its keep only if a harness can tell one from
+another; two reasons that happened to be spelled the same would collapse
+*click something first* into *the program is broken* with nothing to say
+which had happened.

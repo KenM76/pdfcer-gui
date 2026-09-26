@@ -17,10 +17,6 @@ use crate::canvas::mapping::PageMapping;
 use crate::canvas::selection::SelectionState;
 
 /// `egui::Memory` key for the node or segment the last right-click landed on.
-///
-/// One `Id`, per `egui::Context`, for the module header's reason: the pick is
-/// taken at the click and read on every frame the popup is drawn, so it has to
-/// outlive the click and must not outlive the session.
 const PICK_MEMORY_KEY: &str = "pdfcer-markup-node-pick"; // ui-text-exempt: internal memory id, never displayed
 
 /// `markup-node-menu id=… pick=… insert=… remove=…` — what a right-click on a
@@ -41,18 +37,6 @@ pub const TRACE_MENU: &str = "markup-node-menu"; // ui-text-exempt: diagnostic t
 pub const TRACE_COMMAND: &str = "markup-node-command"; // ui-text-exempt: diagnostic trace name
 
 /// How much slack a right-click gets around a **segment**, in points.
-///
-/// Wider than [`super::NODE_GRAB_SLACK_PT`]'s companion tolerance, and
-/// deliberately: a node is a drawn 7 pt square the operator can aim at, and a
-/// segment is a hairline they cannot. The standing convention at
-/// `handles::grip_at` — *a grip's live area may exceed its drawn one and never
-/// the reverse* — is about drawn affordances; a segment has no drawn affordance
-/// at all, so the number is chosen from what a hand can hold steady rather than
-/// from a picture.
-///
-/// It is not so wide that it swallows the nodes: [`pick_at`] asks for a node
-/// **first**, so a click near a corner is a corner even though it is also near
-/// two segments. See that function's precedence note.
 const SEGMENT_SLACK_PT: f32 = 6.0;
 
 /// **What the right-click landed on.**
@@ -243,15 +227,6 @@ pub fn pick_at(
 
 /// Distance from `p` to the segment `a`–`b`, and **where along it** the closest
 /// point is, as a parameter in `0.0..=1.0`.
-///
-/// Clamped to the ends, which is the C5 convention `canvas::selection::annot`
-/// states: without the clamp a short segment would claim a stripe across the
-/// sheet, and the insertion parameter could land off the end of the edge the
-/// operator pointed at.
-///
-/// A degenerate segment (two coincident nodes, which `/Vertices` permits and
-/// the engine does not de-duplicate) answers `t = 0.0` and the distance to that
-/// point, so it behaves as the single point it is drawn as.
 fn distance_to_segment(p: egui::Pos2, a: egui::Pos2, b: egui::Pos2) -> (f32, f32) {
     let ab = b - a;
     let length_squared = ab.length_sq();
@@ -443,10 +418,6 @@ mod tests {
 
     /// A right-click on the middle of a segment picks that segment, and the
     /// insertion point is **on the line** rather than under the pointer.
-    ///
-    /// Falsified: returning `t = 0.0` instead of the projection makes the
-    /// midpoint assertion fail on both coordinates, and returning the pointer
-    /// itself makes the y assertion fail by the 4 pt offset below.
     #[test]
     fn a_click_beside_a_segment_projects_onto_it() {
         let (distance, t) = distance_to_segment(
@@ -495,10 +466,6 @@ mod tests {
     /// an absent one is neither. The two halves are separate questions and a
     /// build that answered them from one field would either grey what should
     /// vanish or hide what should explain itself.
-    ///
-    /// Falsified: defining `shown` as `matches!(self, Self::Live)` makes the
-    /// greyed assertion fail, which is the exact regression — an unavailable
-    /// row disappearing instead of explaining itself.
     #[test]
     fn a_greyed_row_is_drawn_and_an_absent_one_is_not() {
         assert!(RowState::Live.shown() && RowState::Live.enabled());
@@ -519,10 +486,6 @@ mod tests {
 
     /// The pick's default is *nowhere near the shape*, so a frame before any
     /// right-click cannot be read as "node 0".
-    ///
-    /// Falsified: making `Node(0)` the default makes this fail, and would
-    /// have offered *Remove this point* on the first vertex of every shape
-    /// before the operator had pointed at anything.
     #[test]
     fn the_default_pick_names_no_node() {
         assert_eq!(NodePick::default(), NodePick::Elsewhere);

@@ -26,19 +26,9 @@ const ANCHORS_EVENT: &str = "canvas-anchors";
 const PUBLISHED_ANCHORS: usize = 6;
 
 /// Which chunk of `fixtures/paragraph.pdf` the chunk rung aims at.
-///
-/// The first line, which is also [`Rung::Label`]'s target — so the two doors
-/// are measured against the same line of the same document and a difference
-/// between them is a difference in the route and nothing else.
 const CHUNK_AIM: usize = 0;
 
 /// Which of the three rungs a run of this check exercises.
-///
-/// One enum rather than three copies of `drive`, because the three differ in
-/// exactly four things — how deep to descend, which `-applied` label to read,
-/// which count field carries the parts, and what to say when the fixture cannot
-/// exercise it — and everything else is one sequence. Three copies would be
-/// three places for the census pair to drift.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Rung {
     /// One visual line out of a text object.
@@ -84,11 +74,6 @@ impl Rung {
     }
 
     /// The census field prefix: `text-lines`, `lines` or `points`.
-    ///
-    /// The text rung's prefix is `text-lines` and not `lines`, because
-    /// `Rung::Line` — a subpath — already owns `lines`, and two rungs writing
-    /// one field name into one trace is how a check comes to read the wrong
-    /// census and report a pass.
     const fn unit(self) -> &'static str {
         match self {
             Self::Label | Self::Chunk => "text-lines",
@@ -98,13 +83,6 @@ impl Rung {
     }
 
     /// The file-name stem this rung's artefacts are written under.
-    ///
-    ///
-    ///
-    /// ⇒ **An artefact path must be a function of the check, never of the
-    /// module.** `tools/gates/check-artifact-paths.sh` enforces that no two
-    /// roster entries can collide on one, because a rule described in prose is
-    /// a rule that will be approximated.
     const fn stem(self) -> &'static str {
         match self {
             Self::Label => "deeper_rung_delete.label",
@@ -125,19 +103,6 @@ impl Rung {
     }
 
     /// How many descents past the first click reach the rung.
-    ///
-    /// One double-click enters the Part rung; a second descends to the Node
-    /// rung. `canvas::selection::descend` is the rule.
-    ///
-    /// **Zero for the label, and that is a fact about the program rather
-    /// than a shortcut.** See [`Self::arms_the_points_tool`].
-    ///
-    /// Zero for the chunk too, for the same underlying reason and by a
-    /// different route: its descent is a second **plain** click, not a
-    /// double-click, so it is counted by
-    /// [`Self::narrows_by_clicking_a_chunk_box`] rather than here. A
-    /// double-click anywhere in this rung's sequence would open the caret and
-    /// the ladder would never move.
     const fn descents(self) -> usize {
         match self {
             Self::Label | Self::Chunk => 0,
@@ -191,50 +156,6 @@ impl Rung {
     /// **Whether this rung is reached by clicking a chunk box with the
     /// plain left button**, which is the only route the operator has been
     /// shown, and the answer is *only the chunk*.
-    ///
-    /// # Why a second row for a verb that already has one
-    ///
-    /// [`Self::Label`] and [`Self::Chunk`] end at the same verb, on the same
-    /// fixture, on the same line of it. Everything between the pointer and
-    /// that verb is different:
-    ///
-    /// | | label | chunk |
-    /// |---|---|---|
-    /// | preparation | arm the Points tool (chord `A`) | switch the chunk boxes on |
-    /// | gesture | one click | click the block, then click a box |
-    /// | what the operator was told | nothing — the tool is not advertised for text | O215 built the boxes so he could aim at them |
-    ///
-    /// So a build can pass `label` and leave O216 ask 2 unmet, and that is not
-    /// hypothetical: it is the state this row was added into. **A capability
-    /// the operator cannot reach is not a capability**, and the only
-    /// instrument that can tell the two apart is a driven gesture.
-    ///
-    /// # The sequence, and why each step is where it is
-    ///
-    /// 1. **Boxes on, before the first click.** The chunk rung is offered
-    ///    exactly where a box is drawn — `canvas::clicking` sets
-    ///    `ClickHit::chunk` from `chunks::boxed`, which reads the preference.
-    ///    The preference is persisted beside the exe, so a previous run that
-    ///    left it off is a fact about the machine and not about the build, and
-    ///    a run that began with it off would measure the switch and file the
-    ///    result as a delete defect.
-    /// 2. **First click: the block.** Not asserted here —
-    ///    `clicking_a_chunk_selects_that_chunk` owns that rule, including the
-    ///    R6 half that a build descending on first contact has made dragging a
-    ///    whole block unreachable.
-    /// 3. **Second click, same point, plain left button: one chunk.** The part
-    ///    index comes from `ClickHit::part`, the same probe the Points tool
-    ///    reads, so the two doors select the identical unit and this row's
-    ///    census is comparable with the label row's.
-    ///
-    /// # ⚠ Where this row's reach ends
-    ///
-    /// The census says *one text line went and the block survived*. It cannot
-    /// say *the line under the pointer* went: both halves of the pair are
-    /// counts, and the `part=` on the applied line is the selection's own
-    /// number passed through, so comparing them would assert nothing. Which
-    /// line was removed has one oracle, a rendered page, and it is not this
-    /// check's subject.
     const fn narrows_by_clicking_a_chunk_box(self) -> bool {
         matches!(self, Self::Chunk)
     }
@@ -249,14 +170,6 @@ impl Rung {
 
     /// The smallest part count at which the check can tell a right build from a
     /// wrong one, and why.
-    ///
-    /// **Two, not one, and for the Point rung three.** On a one-part object
-    /// every one of these verbs correctly deletes the whole object — a painting
-    /// operator with no path, or a `BT`…`ET` that shows nothing, is not a
-    /// smaller object but a meaningless one — so a right build and a wrong build
-    /// produce the *identical* census and the check has no discrimination at
-    /// all. `delete_node` additionally refuses a subpath that would be left with
-    /// fewer than two anchors, so its floor is three.
     const fn needs_parts(self) -> usize {
         match self {
             Self::Label | Self::Line | Self::Chunk => 2,
@@ -264,21 +177,6 @@ impl Rung {
         }
     }
     /// The document this rung must run against, and where on it to click.
-    ///
-    ///
-    ///
-    ///
-    /// ⇒ **Knowledge a check cannot run without belongs in the check.** A
-    /// fixture table in a doc comment is a note to a human about to type a
-    /// command line. It is not a precondition, and against a runner that does
-    /// not read doc comments it is not even a note.
-    ///
-    /// # The three, and what was measured about each
-    ///
-    ///
-    /// ⚠ A rung whose fixture is missing must FAIL, not SKIP. All three are
-    /// committed to this repository; an absent one is a broken checkout, not
-    /// an unavailable precondition, and a SKIP would say the opposite.
     fn fixture(self) -> (std::path::PathBuf, DocPoint) {
         let (name, page, x, y) = match self {
             Self::Label => ("paragraph.pdf", 0, 120.0, 704.0),
@@ -395,10 +293,6 @@ fn report_for(
 }
 
 /// Run the sequence.
-///
-/// The three-way return is the SKIP/FAIL/PASS rule made structural: `Err` is a
-/// precondition that was absent (SKIP), `Ok(Some(_))` is an assertion that did
-/// not hold (FAIL), `Ok(None)` is a pass.
 #[allow(clippy::too_many_lines)]
 fn drive(ctx: &CheckContext, report: &mut CheckReport, rung: Rung) -> Result<Option<String>> {
     let vocab = &ctx.profile.vocab;

@@ -89,3 +89,163 @@ pushes the region this module produces through the **engine's own**
 is the canvas rectangle we started from. That is a measurement against the
 other side of the boundary, and it fails on `/Rotate 90`, `180` and `270`
 before this fix.
+
+## Item notes
+
+### `fn canvas_to_user`
+
+The exact inverse of the coefficient table in
+`pdfcer_render::region_base_geometry_of`, which at `scale = 1` maps user
+space onto the same canvas space this shell lays pages out in:
+
+| `/Rotate` | user → canvas | canvas → user (this function) |
+|---|---|---|
+| 0 (and any other value) | `cx = x − llx`, `cy = ury − y` | `x = llx + cx`, `y = ury − cy` |
+| 90 | `cx = y − lly`, `cy = x − llx` | `x = llx + cy`, `y = lly + cx` |
+| 180 | `cx = urx − x`, `cy = y − lly` | `x = urx − cx`, `y = lly + cy` |
+| 270 | `cx = ury − y`, `cy = urx − x` | `x = urx − cy`, `y = ury − cx` |
+
+Note that 90 and 270 **swap the axes**: the canvas's x comes from the
+PDF's y. That is the whole of O174 — a conversion that only subtracted
+in y could never produce it, however carefully the subtraction was
+written.
+
+### `fn the_pages_own_box_fills_canvas_space_exactly`
+
+# Why this is the test that matters
+
+Canvas space is defined twice over, and the two definitions have to be
+the same rectangle:
+
+* by [`PageFrame::user_to_canvas`], which says where a *point* of the
+  page lands; and
+* by [`PageFrame::extent_pts`], which says how *big* the page is, and
+  therefore how big the rect the shell lays out for it is.
+
+
+So the assertion is not "the extent is 2383.937". It is that the two
+definitions agree, on every rotation, on an offset crop box, and on a
+box with a fraction — which is a property, not a number, and would have
+caught the defect on the day it was written.
+
+### `fn a_fractional_sheet_reports_its_fraction_not_the_pixmaps_ceiling`
+
+The literal regression pin for the defect above. Separate from the
+property test because a future change that broke the property in the
+*other* direction — making the conversion agree with a ceiled extent —
+would satisfy the property and still be wrong: the engine's region
+origin is in page-device space, which is canvas space times the scale
+with no rounding at all, so the exact crop extent is the one both sides
+of the boundary already use.
+
+### `fn an_inverted_crop_box_measures_zero_rather_than_negative`
+
+Built by struct literal, **not** by `Rect::from_corners`, which
+normalises: a crop box arrives here as `pdfcer_core` parsed it, and a
+file whose `/CropBox` has its corners the wrong way round is exactly
+the case worth pinning. Writing the test through the normalising
+constructor would have asserted that `from_corners` works.
+
+### `fn the_engine_rasterizes_the_rectangle_the_canvas_asked_for`
+
+# Why this test and not another round trip
+
+`a_region_maps_to_screen_and_back_to_itself` below asserts that
+[`page_region`] and [`region_on_screen`] are inverses of each other, and
+it passed for the whole life of the region tier while his page was being
+rasterized in the wrong place. Both halves shared one wrong assumption,
+so they agreed perfectly. **An oracle assembled from two pieces of the
+system under test measures their agreement, not their correctness.**
+
+The independent oracle is `pdfcer_render::region_base_geometry_of`: the
+engine's own user-space → device-space mapping, the very function
+`render_page_region` uses to decide which pixels to make. Push a canvas
+rectangle out through [`page_region`] and back in through that, and the
+device rectangle that comes out must be the canvas rectangle we started
+from. Anything else means the operator is being shown a different part
+of his drawing from the one he is pointing at.
+
+Asserted at `scale = 1`, where device space **is** canvas space. The
+engine's `x0`/`y0` are the region's left and top edges in page-device
+space, and `width`/`height` its size there, so the comparison needs no
+arithmetic of its own — which is the point, since arithmetic in a test
+is one more place to make the same mistake twice.
+
+### `fn the_region_and_its_screen_rect_are_inverses_on_every_rotation`
+
+Kept alongside the calibration above rather than replaced by it: they
+answer different questions, and the pair of them is what says both that
+the right pixels are made and that they are put in the right place.
+
+### `fn a_turned_pages_region_lands_inside_its_crop_box`
+
+The cheapest statement of O174 and the one that needs no engine call: a
+window in the middle of the canvas must map to a rectangle inside the
+**crop box**, which on his sheet is 792 wide and 1224 tall. The pre-fix
+arithmetic produced `llx` up to 1224 on a page only 792 wide — a
+rectangle off the side of the sheet, which is why he saw blank paper.
+
+### `fn looking_at_the_top_of_the_page_asks_for_the_pdf_top`
+
+Looking at the TOP of the page must ask for the page's HIGH y in PDF
+space. A missed flip shows the opposite end of the sheet, which at deep
+zoom is a uniform field and reads as a blank raster rather than as a
+coordinate error.
+
+### `fn the_sharp_raster_covers_the_window_on_every_side`
+
+> *"the canvas does a fading around the edges on stuff shown at the
+> edges of the view. I don't want this. it should render true."*
+
+## What this asserts, and why it is the composed chain rather than one
+function
+
+[`super::strategy::region_for`] has its own test of this property in
+page points, and it is the tighter one. This is the same claim made
+**where the operator makes it — in screen pixels, about the rectangle
+the texture is actually painted at** — and it therefore has to go
+through every conversion `canvas::present` goes through:
+
+| step | what it produces |
+|---|---|
+| the viewport, in the page's own points | what `present` derives from `visible_rect ∩ place` |
+| [`page_region`] (which calls `region_for`) | the PDF-space rect that will be rasterized |
+| [`region_on_screen`] | `paint_rect` — where that raster lands |
+
+The y flip lives in the middle of that chain and is the reason this
+test is worth writing separately. `region_for` snaps in canvas space,
+y-**down**; `page_region` then flips to PDF space, y-**up**; and
+`region_on_screen` flips back. A margin that is generous on the snapped
+low side and starved on the high side comes out of that pair of flips
+attached to a *different screen edge* than the page-space test names, and
+only a test that composes all three can say which edge of the operator's
+window is the starved one.
+
+Since O174 the chain also crosses a rotation, so this runs on **every**
+frame rather than on an upright Letter page alone: a starved edge that
+depended on the axis swap would otherwise be invisible here.
+
+## What a failure looks like on his screen
+
+`paint_rect` is where `canvas::present` draws the sharp texture;
+`canvas::backdrop` has already painted the low-resolution whole-page
+texture underneath, across the page's *whole* rect. So every screen pixel
+inside the window but outside `paint_rect` is showing **the blurry
+stand-in instead of the page**. A margin of zero on a side means that
+band opens along that edge of the window on the first pixel of a pan and
+stays open for the ~1.6 s a region raster takes on a CAD sheet.
+
+### `fn the_deep_placement_is_exact_at_zooms_where_f32_is_not`
+
+At four billion percent the page's own screen rect has a magnitude of
+~10^12 px, where `f32`'s spacing is 131,072 px — coarser than the whole
+window. The anchor-based path never forms that number, so the rect it
+returns is correct to a fraction of a pixel.
+
+Asserted by placing the anchor ON the region's own canvas-space corner:
+the answer must then be the viewport origin exactly, at any zoom. The
+anchor is seeded through [`PageFrame::canvas_box_of`] rather than by
+hand, because after O174 "the region's corner in canvas space" is a
+rotation away from its `llx`/`ury` and a hand-written seed would only be
+right for the upright case — which is the whole class of mistake this
+module was just corrected for.

@@ -30,3 +30,17 @@ performance question in his own words — *"it is up to the user to determine
 how much of a performance hit they want to take"* — so the popup states
 where the crossover is and offers no opinion about it. See
 [`crate::text::maxzoom`] for the copy and why it is that plain.
+
+## Item notes
+
+### `const PRESETS`
+
+The top entry is [`MAX_MAX_ZOOM_PERCENT`] rather than a literal `1e12`, so
+the label says what is actually stored — see
+[`crate::text::maxzoom::preset`]'s test on why that distinction is kept.
+
+### `fn every_preset_is_a_value_the_preference_accepts`
+
+A preset the parser would clamp is a row that silently does something
+other than what it says — the operator picks a billion and the file
+records something else, with nothing reporting the substitution.

@@ -169,10 +169,6 @@ mod tests {
 
     /// One page-sized form holding three separate 40 × 40 squares: **one**
     /// page object, **three** leaves.
-    ///
-    /// The operator's CAD case in miniature, and the reason this module
-    /// exists: a ring over the page's own paint order would have exactly one
-    /// stop on this sheet and it would be the wrapper.
     const PAGE_SIZED_FORM: &str = "forms-xobject/page-sized-form.pdf";
 
     /// A provider over page 1, with the page's own device transform — the
@@ -188,10 +184,6 @@ mod tests {
     }
 
     /// The fixture really has the shape every case below assumes.
-    ///
-    /// Its own test so that a fixture that stopped having a form fails here,
-    /// with a sentence about the fixture, instead of turning the rest of this
-    /// module into a confusing report about tab order.
     #[test]
     fn the_fixture_is_one_page_sized_wrapper_over_three_squares() {
         let p = provider_over(PAGE_SIZED_FORM);
@@ -211,11 +203,6 @@ mod tests {
     /// **THE CASE THE MODULE EXISTS FOR.** With nothing selected on a
     /// sheet whose whole body is one page-sized wrapper, the ring is the
     /// wrapper's contents — not the wrapper.
-    ///
-    /// A ring of one stop that is the entire drawing is indistinguishable
-    /// from Tab doing nothing, which is the report this whole row started
-    /// from. The fallback is what keeps the gesture meaning something on the
-    /// only kind of file the operator actually opens.
     #[test]
     fn a_page_sized_wrapper_is_skipped_and_the_ring_is_its_contents() {
         let p = provider_over(PAGE_SIZED_FORM);
@@ -244,10 +231,6 @@ mod tests {
     /// **The filter narrows the ring, and a filter that excludes
     /// everything empties it rather than falling back to something the next
     /// click could not select.**
-    ///
-    /// The three squares are paths. Asking for text only must not produce a
-    /// ring of paths by some other route — the second and third branches of
-    /// `stops` both apply `allowed`, and this is what proves it.
     #[test]
     fn a_filter_that_excludes_the_contents_leaves_no_ring() {
         let p = provider_over(PAGE_SIZED_FORM);
@@ -265,12 +248,6 @@ mod tests {
 
     /// A query for a page this provider does not answer for returns nothing
     /// selectable rather than the wrong page's objects.
-    ///
-    /// `object_class` guards on the page index and answers `None` off it,
-    /// which `allowed` deliberately reads as *let it through* — so the guard
-    /// that matters here is the one in `advance`'s caller, and this pins the
-    /// one thing `stops` itself can promise: it never invents a target index
-    /// that is not in this provider's own lists.
     #[test]
     fn every_stop_indexes_into_this_providers_own_lists() {
         let p = provider_over(PAGE_SIZED_FORM);

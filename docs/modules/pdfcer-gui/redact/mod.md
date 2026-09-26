@@ -293,3 +293,61 @@ rather than a prohibition:
 4. **The overwrite is warned about at the moment it is chosen**, in words,
    at a control the operator had to select. A warning, not a refusal: that
    distinction is the whole of O125.
+
+## Item notes
+
+### `mod sealed`
+
+`#[cfg(test)]` because the reader parses Rust with `syn`, a
+**dev**-dependency — the same posture `crate::shell::commands::reach` takes
+for the same reason, and for the same reason nothing here is compiled into
+`pdfcer-gui.exe`. See this crate's `Cargo.toml` for why a real parser and not
+a grep, and `sealed`'s own header for what it refuses to claim.
+
+### `fn fmt`
+
+`check-ui-strings.sh`'s exclusion 3 permits a `Display` impl to carry
+text that is not in the catalog **because it is diagnostic**, and states
+in the same breath that this "is not permission to route UI text through
+an error type". Nothing here reaches an operator; the sentences the
+dialog shows are [`crate::text::redact`]'s.
+
+### `fn fmt`
+
+`#[derive(Debug)]` on a struct with a `Vec<u8>` prints every byte. This
+value is, by construction, the most sensitive buffer the program ever
+holds — and a `format!("{prepared:?}")` in a trace line, a panic message
+or a test failure would put a whole redacted PDF into a log file that
+nobody thinks of as containing document content.
+
+It reports the length instead, which is the only thing a reader of a
+diagnostic actually wants from that field.
+
+### `fn map_refusal`
+
+Free rather than repeated in each of the three call sites, because three
+copies of a `match` over an error enum is how one of them comes to be
+missing an arm — and the arm it would be missing is `NothingToApply`, which
+is the one refusal the operator can actually reach. One table serves all
+three, so `crate::text::redact::refusal_message` needs no second one.
+
+### `static APPLIED`
+
+# Why a slot rather than a payload on the action
+
+`RedactAction` derives `Clone` and `PartialEq`, and
+[`PreparedRedaction`] is deliberately neither — cloning a redacted
+document is precisely the thing this module makes hard. Deriving them
+for it to fit an enum would have been the tail wagging the dog, and
+`Document` is no more clonable.
+
+⇒ So the action carries **consent and counts**, which are small and
+copyable, and the document travels here. That split is not a workaround:
+it is the same one `crate::app::actions::disclosure` makes for the same
+reason, and that module's own note says why a thread-local is sound
+rather than smuggled — this is not document state, it is a value in
+flight between one frame and the action drained after it.
+
+Single-slot and take-on-read. Two applies cannot be in flight: the
+dialog closes on the press, and a second press would need it reopened.
+A queue would model a concurrency this surface does not have.

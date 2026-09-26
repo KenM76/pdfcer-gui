@@ -29,15 +29,6 @@ pub(crate) fn claims(id: &str) -> bool {
 }
 
 /// Which end of the stack each command means.
-///
-/// **`markup.` and not `arrange.`**, and the reason is a registry invariant
-/// rather than taste. `shell::commands::tests::every_handler_token_is_in_its_
-/// tabs_block` asserts that a command's handler token sits inside the hundred
-/// belonging to its id's prefix — `markup.` is 500-599 — and it panics by name
-/// for a prefix it does not know. A new `arrange.` prefix would therefore have
-/// meant editing that table, in a file three other tracks are editing today, to
-/// express a fact that is already true: **these are Markup-tab commands.**
-/// *Arrange* is the name of the group they sit in, not of a tab.
 fn destination(id: &str) -> Option<ArrangeTo> {
     // ui-text-exempt: registered command ids, never displayed.
     match id {
@@ -140,10 +131,6 @@ mod tests {
     use super::*;
 
     /// **Every claimed id has a destination, and no other id is claimed.**
-    ///
-    /// The property [`claims`]' doc rests on: the predicate and the mapping are
-    /// one statement, so an id that answers `true` here and `None` there is
-    /// unrepresentable rather than merely unlikely.
     #[test]
     fn the_predicate_and_the_mapping_are_one_statement() {
         for id in [
@@ -167,10 +154,6 @@ mod tests {
     }
 
     /// **The four ids mean four different ends.**
-    ///
-    /// A copy-paste that gave two ids one destination would be silent: both
-    /// presses would produce a legal permutation, and only an operator watching
-    /// the wrong mark come forward would notice.
     #[test]
     fn no_two_commands_mean_the_same_end() {
         let mut ends: Vec<String> = [
@@ -193,10 +176,6 @@ mod tests {
     }
 
     /// **The front pair really is the front pair.**
-    ///
-    /// The one place the label and the array end are related, and the place a
-    /// reader thinking of `/Annots` as a list will get it backwards. `Front`
-    /// is the **last** entry, because §12.5.6 paints in array order.
     #[test]
     fn bring_to_front_means_the_end_of_the_array() {
         assert_eq!(destination("markup.bring_to_front"), Some(ArrangeTo::Front));

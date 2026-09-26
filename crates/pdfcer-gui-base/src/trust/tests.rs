@@ -17,12 +17,6 @@ fn nowhere() -> PathBuf {
 }
 
 /// **Every candidate is an address book, or there are none.**
-///
-/// The floor that stops this file's other assertions being about nothing: a
-/// `candidate_paths` that silently returned an empty vector on Windows would
-/// make [`the_four_no_anchor_states_are_distinct`] pass by never finding a
-/// store, which is a green result measuring the absence of an environment
-/// variable.
 #[test]
 fn every_candidate_path_names_an_address_book() {
     let paths = candidate_paths();
@@ -49,12 +43,6 @@ fn every_candidate_path_names_an_address_book() {
 }
 
 /// **A configured path that is not there is NOT a fallback to discovery.**
-///
-/// The behaviour this pins is the one a well-meaning edit would "improve": if
-/// the typed path is missing, try the usual places. That would make a typo
-/// behave like a correct entry pointing somewhere else, and the operator would
-/// have no way to tell which store was actually read — on the one surface where
-/// which certificates were used is the entire question.
 #[test]
 fn a_configured_path_that_is_missing_does_not_fall_back() {
     let missing = nowhere();
@@ -66,10 +54,6 @@ fn a_configured_path_that_is_missing_does_not_fall_back() {
 
 /// **A blank field means "look in the usual places", never "there is no
 /// store".**
-///
-/// Clearing a text box is how a person un-sets it, and reading an empty value
-/// as a positive choice would suppress the feature permanently with no way back
-/// except hand-editing a file.
 #[test]
 fn a_blank_path_asks_the_machine() {
     // Whatever this machine has, a blank field must never produce a
@@ -84,12 +68,6 @@ fn a_blank_path_asks_the_machine() {
 }
 
 /// **Whitespace around a typed path is trimmed here as well as on the way in.**
-///
-/// `prefs` trims when it parses the file, and this trims again, and the
-/// duplication is deliberate: the file is not the only route a value takes —
-/// the Settings field writes it directly — and a trailing space is a path that
-/// does not exist, which presents as *"the setting does nothing"* rather than
-/// as *"that file is not there"*.
 #[test]
 fn a_typed_path_is_trimmed() {
     let missing = nowhere();
@@ -106,11 +84,6 @@ fn a_typed_path_is_trimmed() {
 
 /// **The setting being off is reported as the setting being off — never as
 /// "no store found".**
-///
-/// The single most important assertion in this file. `Off` is the shipped
-/// default, so it is the state almost every operator is in, and it is the one
-/// they can fix in five seconds. Reporting it as *"pdfcer found no trust list"*
-/// would send them looking for an Acrobat install they already have.
 #[test]
 fn opting_out_is_not_reported_as_a_missing_store() {
     let absence = describe_absence(AcrobatTrustStore::Off, "");
@@ -126,10 +99,6 @@ fn opting_out_is_not_reported_as_a_missing_store() {
 
 /// **A configured-but-missing path is not reported as "this machine has
 /// none".**
-///
-/// The two produce the same *outcome* — no anchors — and completely different
-/// remedies. `NoStore { configured_missing: Some(..) }` is what lets the panel
-/// say *"there is no file where you pointed"* instead of *"install Acrobat"*.
 #[test]
 fn a_missing_configured_path_is_distinguishable_from_no_store_at_all() {
     let missing = nowhere();
@@ -151,13 +120,6 @@ fn a_missing_configured_path_is_distinguishable_from_no_store_at_all() {
 }
 
 /// **The four no-anchor states are four distinct values.**
-///
-/// Not a tautology over an enum: the cheap implementation of this feature has
-/// one "trust not checked" state and this is the test that refuses it. Two of
-/// the four are constructed here from real inputs; the other two need a
-/// filesystem this test does not have, so their *distinctness* is asserted over
-/// hand-built values, which is enough — the property under test is that the
-/// type can tell them apart at all.
 #[test]
 fn the_four_no_anchor_states_are_distinct() {
     let states = [
@@ -188,11 +150,6 @@ fn the_four_no_anchor_states_are_distinct() {
 
 /// **`examine` over a document with no signature fields produces no verdicts
 /// and still reports the anchor state.**
-///
-/// The second half is the point. A report that carried an empty verdict list
-/// AND no anchor state would leave the panel unable to distinguish *"this
-/// document is not signed"* from *"pdfcer did not look"*, which is the same
-/// collapse the four states exist to prevent, one level up.
 #[test]
 fn an_unsigned_document_still_reports_where_the_anchors_would_have_come_from() {
     // Anchored on `CARGO_MANIFEST_DIR`, not on the working directory. A bare
@@ -215,11 +172,6 @@ fn an_unsigned_document_still_reports_where_the_anchors_would_have_come_from() {
 }
 
 /// **A modification time comes back as a plain calendar date.**
-///
-/// Pinned against a known instant rather than against "today", for
-/// `app::clock`'s own stated reason: a test that formats the current date
-/// passes for a year and then fails at a month boundary for reasons nobody
-/// remembers.
 #[test]
 fn a_store_date_is_a_calendar_date() {
     use std::time::{Duration, UNIX_EPOCH};

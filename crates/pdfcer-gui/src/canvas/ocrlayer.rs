@@ -45,12 +45,6 @@ pub const MAX_FONT_PX: f32 = 160.0;
 pub const FONT_SIZE_QUANTUM_PX: f32 = 0.5;
 
 /// Where the overlay's colour lives while the program runs. Memory key.
-///
-/// Two homes, exactly as `canvas::chunks` has: the live answer here, because
-/// the painter reaches it with a [`egui::Context`] and nothing else, and the
-/// persisted answer on [`crate::app::prefs::Prefs`], because O229 asks for the
-/// setting to be remembered. `crate::app::frame` mirrors the second into the
-/// first once a frame, in that direction only.
 const COLOUR_KEY: &str = "pdfcer.ocr-layer.colour"; // ui-text-exempt: a memory key, never displayed
 
 /// The colour the overlay is drawn in until the operator chooses another.
@@ -165,12 +159,6 @@ pub fn quantise_font_size(raw: f32) -> f32 {
 }
 
 /// The colour a fully-drawn veil leaves behind.
-///
-/// The same value and the same argument as `canvas::shapes`' — PDF has no page
-/// background, and `render_page` composited this raster onto an opaque white
-/// backdrop per §11.4.7. Fading the raster towards anything else would fade it
-/// towards a colour the renderer never used, and the page would change hue on
-/// its way to blank.
 fn paper() -> Color32 {
     super::shapes::paper()
 }
@@ -253,12 +241,6 @@ pub(super) fn draw_text(
 }
 
 /// One run, fitted to its own box.
-///
-/// The size is taken from the box's **height** and then corrected by a
-/// measurement of the laid-out width, which is at most two layouts and usually
-/// one. Taking it from the glyph metrics instead would mean reproducing the
-/// text matrix here; taking it from the width alone would make a two-word run
-/// and a twenty-word run in equal boxes render at wildly different sizes.
 fn draw_run(painter: &Painter, screen: Rect, text: &str, ink: Color32) {
     if text.is_empty() || screen.width() <= 0.0 || screen.height() <= 0.0 {
         return;
@@ -304,10 +286,6 @@ mod tests {
     use super::*;
 
     /// **Both stops, and the fact that they are the two ends.**
-    ///
-    /// A build that inverted the slider satisfies neither: it would paint the
-    /// veil at the left stop, which is the position that means *show me the
-    /// scan*.
     #[test]
     fn the_slider_stops_are_no_paint_and_full_paint() {
         assert_eq!(veil_alpha(0.0), 0, "the left stop must not veil the scan");
@@ -350,10 +328,6 @@ mod tests {
     }
 
     /// Every size this yields is a multiple of the quantum.
-    ///
-    /// The property the atlas argument rests on, asserted over a walk rather
-    /// than at two chosen points: a rounding that worked at 12.3 and failed
-    /// near the clamps would pass the test above.
     #[test]
     fn every_size_is_a_multiple_of_the_quantum() {
         let mut raw = 0.0_f32;

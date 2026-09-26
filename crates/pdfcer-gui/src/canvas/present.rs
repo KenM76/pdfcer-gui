@@ -139,10 +139,6 @@ pub fn show(
 }
 
 /// [`show`]'s body, drawn into the canvas region the rulers left.
-///
-/// Returns the context-menu tokens *and* what the frame learned about where
-/// its pages ended up — see [`CanvasGeometry`] on why that has to travel
-/// outwards rather than be read again.
 #[must_use]
 fn show_in(
     ui: &mut egui::Ui,

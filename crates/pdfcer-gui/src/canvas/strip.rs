@@ -19,6 +19,8 @@
 //! function of numbers the frame already has — which is exactly why they are
 //! here rather than inline in [`super::show`], where a `Response` in the way
 //! would make them untestable.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/canvas/strip.md`.
 
 use egui::{PointerButton, Pos2, Rect, Vec2, vec2};
 
@@ -342,12 +344,6 @@ mod tests {
     use crate::viewer::strip::Strip;
 
     /// **The renderer is pointed at the middle of the viewport first.**
-    ///
-    /// `render::settle` starts one render per frame and takes the first entry
-    /// of this list that has no raster, so the order **is** the fill order. Top
-    /// down would mean that whenever the operator has scrolled to a page
-    /// boundary — which is when a continuous mode is being used — the page they
-    /// are reading is the last one to arrive.
     #[test]
     fn the_render_order_starts_at_the_middle_of_the_viewport() {
         // Pages 3,4,5 on screen, the viewport's centre level with page 4.
@@ -377,11 +373,6 @@ mod tests {
     }
 
     /// **A page command scrolls the strip; a scroll does not.**
-    ///
-    /// The gate this function exists for, from both sides. Without the first
-    /// half, "Next page" in a continuous document does nothing at all; without
-    /// the second, every frame of every scroll would fight the operator by
-    /// snapping back to the page the last frame derived.
     #[test]
     fn a_page_command_scrolls_the_strip_and_a_scroll_does_not() {
         let mut doc = open_fixture(FOUR_PAGES);
@@ -436,19 +427,6 @@ mod tests {
 
     /// **The offset stays inside the scrollable range — which is now the
     /// CONTENT's range, not the strip's.**
-    ///
-    /// This asserted `Vec2::ZERO` until 2026-08-21, on the reasoning that a
-    /// viewport taller than the whole strip has nowhere to scroll. O23 made
-    /// that false on purpose: there is a pasteboard of one viewport on every
-    /// side, so even a document that fits entirely on screen can be moved
-    /// around — which is the operator's *"move the view of the corner of the
-    /// page to the center of the screen"* for a small document.
-    ///
-    /// So the assertion is the INVARIANT rather than the number. Pinning the
-    /// new number would say nothing about whether it is reachable, and this
-    /// function's whole job is that its answer is inside the range egui will
-    /// accept — an offset beyond it is silently clamped, and the page then
-    /// does not appear where the navigation promised.
     #[test]
     fn the_forced_offset_stays_inside_the_scroll_range() {
         let mut doc = open_fixture(FOUR_PAGES);

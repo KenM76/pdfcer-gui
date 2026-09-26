@@ -26,16 +26,6 @@ const IMPORT_REGION: &str = "import-text.import";
 const PATH_ENV: &str = "PDFCER_DIAG_TEXT_IMPORT_PATH";
 
 /// The text this check imports.
-///
-/// Chosen so the **receipt has something to say beyond the page count**: the
-/// em dashes are characters WinAnsi can encode (so the import must not refuse),
-/// and the blank lines make paragraphs the placer has to decide about. A file of
-/// bare ASCII words would exercise the chain and prove nothing about the
-/// disclosures.
-///
-/// Written by the check rather than committed as a fixture, because it is
-/// three lines and because a fixture would have to be found and read to know
-/// what the assertions below mean.
 const REGISTER: &str = "Drawing register\n\nSheet 01 \u{2014} site plan, rev C\nSheet 02 \u{2014} foundations, rev A\nSheet 03 \u{2014} steelwork, rev B\n\nIssued for construction.\n";
 
 /// See the module documentation.

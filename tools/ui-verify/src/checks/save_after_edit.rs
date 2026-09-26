@@ -14,12 +14,6 @@ use crate::sys::vk;
 /// The edit, through the seam: rotate page one. No pointer, no dialog.
 const INVOKE: &str = "pages.rotate_right";
 /// The line the rotation writes.
-///
-/// `rotate-pages`, not `pages-rotated`. The name was guessed on the first
-/// draft and the check SKIPPED against a build where the rotation had plainly
-/// worked — a harness constant naming an application event decays in one
-/// direction only, and the fix is always to read the trace rather than to
-/// widen the assertion.
 const ROTATED: &str = "rotate-pages"; // ui-text-exempt: a trace event name, never displayed
 /// The line a successful save-in-place writes.
 const SAVED: &str = "save-in-place"; // ui-text-exempt: a trace event name, never displayed
@@ -29,12 +23,6 @@ const CHORD: &str = "Ctrl+S"; // ui-text-exempt: a key chord, shown only in this
 /// which is everything O65 promises a save must leave alone.
 const CANVAS: &str = "canvas"; // ui-text-exempt: a trace event name, never displayed
 /// The line an unsaved-edits prompt writes when it opens.
-///
-/// O65's chain ran through this prompt: the tab kept its dot after a save,
-/// so the NEXT close raised it, and its only save button was a picker that
-/// proceeded with the close on success. Press save, get asked for a filename,
-/// watch the document close. If this appears at all in a run that only pressed
-/// Ctrl+S, something is treating a save as a close.
 const UNSAVED_PROMPT: &str = "unsaved-ask"; // ui-text-exempt: a trace event name
 
 pub struct CtrlSAfterAnEditSavesAndTheProgramIsStillRunning;

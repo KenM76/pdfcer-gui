@@ -203,3 +203,101 @@ that `other=0`, **and** that the `unshare-form` funnel line — which
 `vector_edit` writes once per committed edit — is absent. Together those
 say: the press arrived, the document was measured, the verb chose not to
 act, and nothing was written. No one of them says it alone.
+
+## Item notes
+
+### `const SHARED_FIXTURE`
+
+See the module header. This is the file that makes "shared" a fact rather
+than a claim — object 6 is drawn from page 0 *and* from page 1, so
+unsharing page 0 leaves exactly one other page on the original and the
+disclosure has a real number to state.
+
+### `const PAGE`
+
+Stated rather than read, for `form_selection`'s reason: each file is a
+handful of objects of hand-written syntax, and a page size that changed
+would change what every constant below means. They agree at 200 × 200,
+which is why one constant serves both.
+
+### `const ON_THE_SHARED_SQUARE`
+
+Its content stream is `q 1 0 0 1 20 20 cm /Fm0 Do Q` over a form whose
+`/BBox` is `[0 0 40 40]`, so the square spans (20, 20) → (60, 60) and its
+centre is (40, 40). Forty points from two page edges at a zoom that fits a
+200 pt page to a full-size canvas is a comfortable margin — and the point
+is well inside the page box, which is what `CanvasMapping::doc_to_window`
+refuses to clamp for.
+
+### `const ON_A_SQUARE`
+
+The **middle** one, exactly as `form_selection` aims: it is furthest from
+every page edge, so a small error in the coordinate hop lands on paper
+rather than off-window — and a failure then reads "selected nothing" rather
+than "the click went outside the client area", which are different
+diagnoses.
+
+It matters twice here rather than once, because the same point is
+right-clicked. A popup opened near an edge is repositioned by `egui`, which
+is exactly the case the published rect exists to survive — but a check
+should not be *testing* that incidentally while trying to test something
+else.
+
+### `const FUNNEL`
+
+The unshared check asserts this line is ABSENT, which is its proof that the
+document was not touched: no `edit_epoch` bump, no undo entry, no dirty
+flag. `Trace::events` matches the whole first token, so this never collides
+with the three suffixed names above — the property
+`tools/gates/check-trace-names.py` exists to hold.
+
+### `struct Scenario`
+
+Its existence is the point made in the module header: these two checks
+differ in **which file they open**, and almost nowhere else. Bundling the
+three facts that vary keeps [`open_and_press`] identical for both, so a
+change to the gesture sequence cannot be made for one case and forgotten
+for the other.
+
+### `fn engine_fixture`
+
+The path is derived, not configured, and `None` rather than a panic —
+`form_selection`'s helper verbatim in shape, for the reason its own docs
+give: `D:\Dev\pdfcer` is READ-ONLY to this project, and a missing corpus is a
+SKIP with a reason rather than a crash mid-suite.
+
+### `struct Pressed`
+
+The `Session` travels because the process must stay alive for the caller to
+read the trace it wrote — dropping it kills the application, and a trace
+read afterwards would be whatever happened to be flushed.
+
+### `fn open_and_press`
+
+Returns `Ok(Ok(Pressed))` when the row was pressed, `Ok(Err(failure))` when
+an assertion up to and including step 4 did not hold, and `Err(skip)` when a
+precondition was absent. The three-way split is the suite's SKIP/FAIL/PASS
+rule made structural: an author who reaches for `?` gets a SKIP, which is
+the safe default — the unsafe default would be a pass.
+
+### `fn other_pages`
+
+`None` means the line is absent or malformed, and both callers treat that as
+the same finding: **the walk did not run**, which is the state the feature
+shipped in and the state these checks exist to prevent returning to.
+
+### `fn aim`
+
+Its own function so the click and the right-click cannot hop differently —
+the class of error `crate::coords` exists to prevent. Both gestures in this
+check aim at the *same* screen point, and that is load-bearing: the menu
+must open over the thing that was selected, not over a second guess at where
+it is.
+
+### `fn last_first`
+
+The **last** line rather than a count of new ones, for
+`form_selection::last_first`'s reason: `canvas-selection` is emitted through
+`diag::trace_changed`, so a click producing the same selection as the
+previous one emits nothing, and a consumer that counted lines would read a
+legitimate no-change as a dropped event.

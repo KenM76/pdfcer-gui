@@ -5,6 +5,8 @@
 //! when no file was made. Both are crate-private -- nothing outside this module
 //! tree sees them -- and both exist so a caller branches on structured data
 //! rather than on the text of a message.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/app/save/outcome.md`.
 
 use pdfcer_core::writer::{SaveReport, WriteError};
 /// **Which writer produced the bytes that reached the file, and what it
@@ -139,12 +141,6 @@ impl From<std::io::Error> for SaveError {
 
 impl std::fmt::Display for SaveError {
     /// Diagnostic prose for the trace, and for nothing else.
-    ///
-    /// `check-ui-strings.sh`'s exclusion 3 permits a `Display` impl to carry
-    /// text that is not in the catalog **because it is diagnostic**, and states
-    /// in the same breath that this "is not permission to route UI text through
-    /// an error type". Nothing here reaches an operator: the bar's sentence is
-    /// `crate::text::status::save_copy_failed`.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Serialize(e) => write!(f, "the engine could not build the update: {e}"),

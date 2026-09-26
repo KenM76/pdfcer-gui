@@ -154,19 +154,6 @@ pub fn row(ui: &mut egui::Ui, pages: &mut PagesUi, actions: &mut Vec<Action>) {
 
 /// **Write both controls through to the preferences file** —
 /// `OPERATOR_REQUESTS.md` **O187**, 2026-09-12.
-///
-/// Reads BOTH values back out of the cache rather than taking the one that
-/// just changed as an argument, and that is the point rather than
-/// convenience: the cache is the live truth, both controls have already
-/// written to it by the time either calls this, and an argument list would
-/// be a second copy of the same two facts for a future edit to get out of
-/// step with.
-///
-/// One action, therefore one `Prefs::save`, therefore one whole-file write
-/// per operator gesture.
-/// [`PrefAction::PagePreviews`](crate::app::actions::prefs::PrefAction::PagePreviews)' own doc
-/// carries the
-/// argument for why the two are not separate variants.
 fn persist(pages: &PagesUi, actions: &mut Vec<Action>) {
     actions.push(Action::Pref(
         crate::app::actions::prefs::PrefAction::PagePreviews {
@@ -177,25 +164,6 @@ fn persist(pages: &PagesUi, actions: &mut Vec<Action>) {
 }
 
 /// **Read back what the box displayed** — the inverse of the formatter above.
-///
-/// A `DragValue` re-parses its own rendered text the moment the operator
-/// clicks into it to type. A parser that did not accept what the formatter
-/// produced would leave the operator staring at an empty box every time they
-/// clicked the control, which is a defect no unit test that only checks
-/// numbers would see.
-///
-/// Three things are accepted, in this order:
-///
-/// 1. The word the box shows at zero — case-insensitively, because an
-///    operator who retypes it will not match the capitalisation.
-/// 2. A bare number, which is what somebody who selects-all and types `0`
-///    produces, and the case O187 is actually about.
-/// 3. A number still wearing the prefix or the suffix the formatter added,
-///    which is what a partial edit of the displayed text produces.
-///
-/// ⚠ Returns `None` rather than `Some(0.0)` on anything else. `None` means
-/// *keep the value you had*, and that is the only safe answer: mapping
-/// gibberish to zero would silently arm **no limit at all** from a typo.
 fn parse_budget(text: &str) -> Option<f64> {
     let text = text.trim();
     if text.eq_ignore_ascii_case(t::previews_budget_never()) {
@@ -217,11 +185,6 @@ mod tests {
     use super::*;
 
     /// The parser accepts everything the formatter can produce.
-    ///
-    /// Written as a **round trip through the formatter's own output**, not
-    /// against hand-typed strings: the two are one convention, and a test that
-    /// quoted the rendered text verbatim would keep passing after somebody
-    /// changed the suffix.
     #[test]
     fn the_parser_accepts_what_the_box_shows() {
         for seconds in [0.1_f64, 2.0, 12.5, 60.0] {
@@ -257,11 +220,6 @@ mod tests {
     }
 
     /// Gibberish keeps the value the operator had.
-    ///
-    /// The clause that matters: it must NOT come back as `Some(0.0)`. Zero is
-    /// *no limit at all*, so a parser that mapped a typo to zero would arm an
-    /// unbounded render from a slipped keystroke — the worst outcome this
-    /// control has, reached by the likeliest accident.
     #[test]
     fn gibberish_changes_nothing() {
         for bad in ["", "abc", "≤", "s", "- -", "never"] {

@@ -148,29 +148,16 @@ pub fn row(ui: &mut Ui, spec: &Row<'_>) -> Option<Pick> {
 }
 
 /// Whether pressing *no colour* would change the file.
-///
-/// False only when the key already holds the empty array. Named rather than
-/// inlined so [`the_two_entries_never_offer_the_same_state`] can walk Table
-/// 189's states against both predicates at once.
 const fn no_colour_would_change_something(colour: Option<MkColor>) -> bool {
     !matches!(colour, Some(MkColor::None))
 }
 
 /// Whether pressing *remove* would change the file.
-///
-/// False only when the key is already absent — including when it is absent and
-/// the operator is looking at a *no colour* entry that is live, which is the
-/// pair everyone reads backwards.
 const fn removal_would_change_something(colour: Option<MkColor>) -> bool {
     colour.is_some()
 }
 
 /// What the swatch should show for one `/MK` colour key.
-///
-/// Separate from [`row`] because this is the whole of Table 189's four-state
-/// reading and the only part a test can reach without a live `Ui`. `cmyk` is
-/// threaded in rather than computed here so the caller owns the `String` the
-/// returned value borrows.
 fn mk_value<'a>(
     colour: Option<MkColor>,
     cmyk: Option<&'a str>,
@@ -205,12 +192,6 @@ fn mk_value<'a>(
 }
 
 /// A `/MK` component as a screen byte.
-///
-/// Clamped, because the engine reports the file's own numbers **unclamped** —
-/// *"an out-of-range component is a malformed file, not a value to silently
-/// correct"* — and a byte is what a swatch needs. The clamp happens on the way
-/// to the SCREEN and never on the way to the file: nothing here writes a
-/// clamped value back.
 fn component(v: f32) -> u8 {
     (v.clamp(0.0, 1.0) * 255.0).round() as u8
 }
@@ -226,13 +207,6 @@ mod tests {
     use crate::panels::properties::swatch::MkValue;
 
     /// **The four states of a `/MK` colour key stay four.**
-    ///
-    /// The two that matter and would not be noticed if they collapsed:
-    /// DeviceGray is drawn and DeviceCMYK is not, and *the file is silent*
-    /// carries a different face from *the file states no colour*. The second is
-    /// the whole reason the engine models the key as `Option<MkColor>` with an
-    /// `MkColor::None` inside, and a surface showing one glyph for both would
-    /// throw that distinction away where the operator reads it.
     #[test]
     fn a_mk_key_reaches_the_swatch_in_four_distinguishable_states() {
         assert_eq!(
@@ -282,12 +256,6 @@ mod tests {
     }
 
     /// **The clamp is on the way to the screen and nowhere else.**
-    ///
-    /// The engine reports a `/MK` component as the file states it, unclamped,
-    /// because an out-of-range component is a malformed file rather than a
-    /// value to silently correct. A swatch needs a byte, so it clamps — and the
-    /// thing to prove is that nothing clamped comes back the other way, which
-    /// is what `fraction`'s domain being `u8` gives for free and what this pins.
     #[test]
     fn an_out_of_range_component_is_clamped_for_the_screen_only() {
         assert_eq!(component(2.5), 255);
@@ -298,12 +266,6 @@ mod tests {
     }
 
     /// Table 189's four states against both entries at once.
-    ///
-    /// The pair this guards is the one that reads backwards: an **absent** key
-    /// offers *no colour* and not *remove*, and an **empty** key offers
-    /// *remove* and not *no colour*. Swap the two predicates and every state
-    /// still lights exactly one entry, so nothing short of the full table
-    /// catches it.
     #[test]
     fn the_two_entries_never_offer_the_same_state() {
         let table = [

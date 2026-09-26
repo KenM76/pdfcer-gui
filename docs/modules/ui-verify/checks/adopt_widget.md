@@ -52,3 +52,54 @@ on a build where the preview was never asked and every row said *"Register"*
 | C | read the per-row preview trace | at least one row knows the name it would register under |
 | D | press the first row's Register | `adopt-widget-requested`, then `adopt-widget … epoch=` |
 | E | re-read the census | one fewer unclaimed widget than before |
+
+## Item notes
+
+### `const SOURCE`
+
+# `demo-form.pdf`, and the first choice was wrong for a reason worth
+keeping
+
+It was `multi-widget-form.pdf`, picked because the engine's measurement
+("11 of 13 merged, 2 bare kids") suggested a fixture with both shapes. The
+driven run answered `orphaned_widgets = orphaned_widgets_unrecoverable = 3`
+— **every** orphan was a bare kid, so the row that resolves a name never
+appeared and the phase asserting it could not pass.
+
+The fixture's own name says why, once you know what the two shapes are. A
+*multi-widget* field is one field with several `/Kids`, and a kid IS a bare
+kid the moment `insert_pages` drops its `/Parent`. A **merged**
+field-widget (§12.7.3.1) is the opposite arrangement: one dictionary serving
+as both, which is what a form with one widget per field is made of.
+
+So the fixture that exercises the recoverable path is the plain one. Worth
+recording rather than just changing, because "pick the fixture whose name
+mentions the feature" is the intuition that produced the wrong answer here.
+
+### `const MAX_SCROLL`
+
+A bound rather than a loop, because "scroll until you find it" over a list
+that does not contain it is a hang, and a hang in a suite is a failure with
+no message.
+
+### `fn engine_fixture`
+
+The path is derived, not configured. `D:\Dev\pdfcer` is READ-ONLY to this
+project and its corpus is the only place these shapes exist, so the check
+reads from it and writes nowhere near it. Returning `None` rather than
+panicking is what turns a missing corpus into a SKIP with a reason instead
+of a crash in the middle of a suite.
+
+### `fn unclaimed_total`
+
+Summed across the pages of the **latest** frame rather than taken from one
+page. The insert puts the form's sheets somewhere in the middle of the
+document, and which page they land on is the insert's business, not this
+check's — a check that hard-coded a page index would break on a change to
+the insert position that is not a defect.
+
+### `fn open_tab_order`
+
+It defaults closed deliberately — the section is a diagnostic, not the
+panel's main job — so a check that assumed it open would report the whole
+feature missing on a correct build.

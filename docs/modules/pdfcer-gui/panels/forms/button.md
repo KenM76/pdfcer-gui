@@ -47,3 +47,35 @@ decision"*, and greying would advertise a capability pdfcer has chosen not to
 have.
 
 ## Where the row is
+
+## Item notes
+
+### `fn kind_of`
+
+A `match` rather than a `From`, because the mapping is **lossy on
+purpose**: the chooser has one entry per kind and an action carries
+parameters. This answers *"which row is ticked"*, and [`from_core`] answers
+*"what does the row start with"*. Two functions because they are two
+questions, and folding them would make the lossy direction look reversible.
+
+### `fn from_core`
+
+Only the parameters this shell can round-trip are carried. A
+`ResetScope::Only`/`Except` becomes the chooser's *whole form* reset,
+because the chooser offers no field picker for a reset — and the module that
+owns that decision says why: the preview it can show is the whole-form
+preview, and a per-field control without a per-field preview is a control
+whose effect the operator cannot see before pressing.
+
+⇒ So opening the chooser on such a button and pressing Apply **widens** the
+reset. That is a real narrowing of the document and it must not be silent —
+which is why `Apply` sends `ButtonActionChange::replaced` to the status line
+through `text::buttonaction::changed`.
+
+### `fn every_modelled_action_names_a_real_chooser_entry`
+
+The failure this guards is silent and severe: a `Known` action whose
+`kind_of` fell through to `Nothing` would make the row say *"does
+nothing"* about a button that resets the form — pdfcer asserting a
+falsehood about the operator's own document, which is precisely what
+the reader was requested to prevent.

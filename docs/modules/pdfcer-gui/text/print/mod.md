@@ -56,3 +56,53 @@ confirmation — there is no second gate — so the uncertainty has to be
 stated *in the disclosure itself* rather than implied by a confirm step
 existing. That is rule 4 applied to a button. A separate warning label
 beside the button would be the version an operator can look past.
+
+## Item notes
+
+### `fn the_three_no_printer_sentences_read_differently`
+
+Not a tautology test — the same argument as
+`crate::text::tests::the_three_open_failures_read_differently`. The
+value of the distinction is that an operator can tell from the words
+alone which of "this build cannot print", "you have no printers" and
+"this printer would not answer" is true, because the three have
+different remedies. Three functions producing near-identical prose
+would satisfy the type system and defeat the design.
+
+### `fn the_commit_label_states_the_clip_count`
+
+This is the whole disclosure mechanism: if the number ever stopped
+appearing in the string, the button would silently become an ordinary
+Print button on a job that loses content.
+
+### `fn the_counted_sentences_are_grammatical_at_one`
+
+Cheap to get wrong ("1 sheets will be clipped"), and prose that reads
+as machine output is prose an operator trusts less — which matters
+most on exactly the sentences that are trying to warn them.
+
+### `fn the_three_commit_labels_are_distinguishable_claims`
+
+| label | what it claims | when |
+|---|---|---|
+| [`commit_with_clipping`] | N page boxes exceed the printable area | nothing examined |
+| [`commit_losing_content`] | N sheets really do lose ink | every clipped sheet examined |
+| [`commit_may_lose_content`] | **at most** N sheets lose ink | some examined, some not |
+
+The hedge is the load-bearing distinction: it must be present on the
+bounded claim and absent from the two measured ones. A wording change
+that put "may" on all three, or took it off the ceiling, would collapse
+three states into one sentence and hide exactly the difference the
+count was made better to expose.
+
+### `fn only_the_bounded_summary_hedges`
+
+[`clip_summary`] serves both the geometric and the measured state — in
+the first it is the unchanged shipped wording, in the second it is
+verified — so the only sentence that may hedge is the ceiling's.
+
+### `fn the_dpi_disclosure_names_what_it_costs`
+
+An operator deciding whether to raise the cap needs the cost of doing
+so, not merely the fact that a cap exists. Dropping any one of the
+three turns a decision aid back into a notification.

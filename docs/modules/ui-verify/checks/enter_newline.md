@@ -70,3 +70,27 @@ Ctrl+Enter, and read the count. The seed runs once per draft (`Draft::seeded`
 is consumed on the first frame), so the second line is empty — which is
 fine and is deliberate: `n` counts hard newlines, and one Enter is one
 newline whatever is on either side of it.
+
+## Item notes
+
+### `const INVOKE`
+
+`edit.add_text` rather than `edit.text`, because the subject is a caret on
+**bare page** (`Anchor::Origin`) — the draft that could not take a line break
+until O127. A box draft always could, so a check that dragged one would pass
+on the build the operator reported.
+
+### `const ENTER_EVENT`
+
+The one instrument that separates *"the key never got here"* from *"the
+key got here and the rule chose wrong"*. Those are two different repairs and
+they leave identical evidence everywhere else: the draft's length does not
+move either way.
+
+### `const CLICK_AT`
+
+On `a1-titleblock.pdf`, which is 2384 × 1684 pt. The point is chosen in
+the middle of the sheet where the fixture draws nothing, so the click cannot
+land on a run and turn the `Add` draft into an `Edit` one — which
+`textedit::click` does deliberately, and which would make this check
+silently test the wrong anchor.

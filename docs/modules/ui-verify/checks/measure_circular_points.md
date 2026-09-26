@@ -60,3 +60,56 @@ geometry; asserting the free path here would mean aiming somewhere the snap
 declines, which is a different fixture (a raster) and a different check.
 `canvas::measure::circpick`'s unit tests cover the composition; the driven
 half of O106 is unbuilt and is named here rather than left implied.
+
+## Item notes
+
+### `const PROPERTIES_BODY`
+
+**The pick list moved on 2026-09-04** — `OPERATOR_REQUESTS.md` O123
+dissolved the Tool panel and sent its live controls to Properties, on the
+operator's own argument: *"I never understood why there is a tool dock when
+everything can be in object and properties."*
+
+The dock's own name is used rather than a panel-published body region
+because Properties has never published one — and the dock's is the better
+oracle anyway, since it goes through `crate::diag::ui_rect_visible` and
+therefore says *the compartment is reachable* rather than *a function ran*.
+
+### `const HOLE`
+
+Hard-coded here **and** in the generator, which is a duplication with a
+reason: the generator is the source and this is the *expectation*, and a
+check that read its expectation out of the thing it is checking would pass
+on any fixture at all. If the two ever disagree, the failure message below
+names both numbers.
+
+### `const RADIUS_TOLERANCE_PT`
+
+Two points, not two per cent, and the difference matters. The failure this
+separates from a pass is an order of magnitude — the broken build fits a
+radius in the **hundreds** — so any threshold between "a few points" and
+"half the page" tells the two apart. Two points is the loosest value that
+still fails a build fitting the rim of anything other than this hole, and it
+absorbs the two or three points of aim a real pointer costs at fit-page
+zoom.
+
+### `fn raise_properties_panel`
+
+Three states, and the middle one is the reason this is a function:
+
+1. **Already the active tab** — the dock publishes its body; nothing to do.
+2. **Mounted, behind a sibling** — the dock publishes the tab header while
+   its body does not. Clicking the header raises it. A ribbon toggle must
+   NOT be used here: it would *unmount* a panel that is already there, and
+   the check would then report an absent list about a panel it closed
+   itself.
+3. **Not mounted at all** — the check SKIPs. Deliberately a skip rather
+   than a ribbon hunt: `file.properties` is mounted by every mode's default
+   arrangement, so its absence means the operator's persisted layout removed
+   it, and a check that re-mounted somebody's closed panel would be
+   measuring a dock it had just rearranged.
+
+# Errors
+
+SKIPs the check when the panel cannot be reached, because a check that could
+not open the surface it reads has learned nothing about it.

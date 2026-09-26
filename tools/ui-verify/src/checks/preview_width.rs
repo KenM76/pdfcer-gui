@@ -37,38 +37,16 @@ const ITEM: &str = "ribbon.item.view.line_weights";
 const VIEW_TAB: &str = "ribbon.tab.view";
 
 /// How far to pull the object, in screen pixels.
-///
-/// Far enough that the press is a drag and not a click, and short enough
-/// that the object stays on the page at the deep rung — at 900 % a 40 px pull
-/// is under 5 pt of document, which no fixture can fall off.
 const DRAG_PX: f32 = 40.0;
 
 /// The zoom phase B climbs to, as a multiplier.
-///
-/// Nine times, not the 20,000 % `scale_sweep` reaches, and the reason is
-/// that this check wants a **large, reliable** zoom rather than an extreme one.
-/// The defect multiplies the preview width by the zoom, so 9× turns a 2 px
-/// outline into an 18 px one — an eight-sigma difference against a tolerance of
-/// a hundredth of a pixel — while staying well inside the region tier where the
-/// aim is stable and a drag still lands.
 const DEEP_ZOOM: f32 = 9.0;
 
 /// How much higher than the opening zoom phase B must actually get for the
 /// comparison to mean anything.
-///
-/// The guard against the degenerate pass. If the wheel does not reach the
-/// canvas — which has happened, and is `zoom_gallery`'s report to make — both
-/// phases measure the same zoom, the widths are trivially equal, and this check
-/// would report a green it did not earn. Three times is far below
-/// [`DEEP_ZOOM`]'s nine and far above any rounding.
 const MIN_ZOOM_RATIO: f32 = 3.0;
 
 /// How close two preview widths must be to count as the same number.
-///
-/// The trace prints two decimals, so anything under half a hundredth is below
-/// the resolution of the report and 0.02 is two ticks of it. The defect being
-/// guarded against is multiplicative by a factor of nine; there is no version
-/// of it that hides inside a fiftieth of a pixel.
 const WIDTH_TOLERANCE: f32 = 0.02;
 
 /// See the module documentation.
@@ -123,12 +101,6 @@ fn zoom_now(session: &Session) -> Result<f32> {
 }
 
 /// How many objects the canvas last reported as selected.
-///
-/// Read from `canvas … sel=N` rather than by counting `selection-set` lines.
-/// `scale_sweep`'s header carries why: the trace suppresses a line identical to
-/// its predecessor, so a second click that picks the same object writes
-/// nothing, and a check counting those events reads "the click did nothing"
-/// about a click that worked.
 fn selection_count(session: &Session) -> Result<usize> {
     Ok(session
         .trace()?
@@ -141,12 +113,6 @@ fn selection_count(session: &Session) -> Result<usize> {
 /// Read every `canvas-shape-drawn` line written **after** `mark`, and answer
 /// with the widest preview stroke among the frames that actually carried
 /// shapes.
-///
-/// `shapes=0` lines are skipped rather than counted as zero. A delete
-/// preview publishes an erase and no shapes — `ShapePreview::is_empty` asks
-/// about `shapes` precisely because of that — and folding a `widest_px=0.00`
-/// from such a frame into the maximum would be harmless, but folding it into
-/// the *count* would let a phase that drew nothing report that it drew.
 fn painted_since(trace: &Trace, mark: usize) -> Option<Painted> {
     let mut out: Option<Painted> = None;
     for line in trace.events(DRAWN) {
@@ -179,13 +145,6 @@ fn painted_since(trace: &Trace, mark: usize) -> Option<Painted> {
 }
 
 /// Press, pull, and report what the painter drew on the way.
-///
-/// The press point is the aim — the same coordinate the click immediately
-/// before selected the object from, so it is on the object by the same evidence
-/// that produced the selection. `scale_sweep`'s `drag_selection` header carries
-/// the run that established this: pressing at the *outline's centre* instead
-/// made every rung report "the drag raised nothing", including the baseline,
-/// and a uniform failure at every rung of a sweep is evidence about the probe.
 fn drag_and_read(
     session: &Session,
     driver: &Driver,
@@ -199,12 +158,6 @@ fn drag_and_read(
 }
 
 /// Ctrl+Z, and wait for it to land.
-///
-/// The document has to be the one this check started with between phases.
-/// A drag that is not undone leaves the object [`DRAG_PX`] away from the aim,
-/// and the next phase's click then selects whatever is now under that
-/// coordinate — which reads as "clicking on the content selected nothing" and
-/// is the check having moved its own target out from under itself.
 fn undo(session: &Session, driver: &Driver) -> Result<()> {
     driver.press_chord(&[vk::CONTROL], vk::Z)?;
     session.settle(24);

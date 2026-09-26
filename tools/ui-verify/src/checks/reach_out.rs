@@ -16,10 +16,6 @@ const FIXTURE: &str = "fixtures/submit-button.pdf";
 const SCAN: &str = "reach-out";
 
 /// The line carrying the operator-facing sentence.
-///
-/// `record_note` puts prose on the status bar and traces nothing, so the
-/// shell emits this beside it. Without it a check could prove the scan ran and
-/// could not prove the operator was TOLD — which is the whole subject.
 const NOTE: &str = "reach-out-disclosed";
 
 /// See the module documentation.

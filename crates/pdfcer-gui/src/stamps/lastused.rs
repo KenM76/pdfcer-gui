@@ -108,12 +108,6 @@ impl LastStamp {
 }
 
 /// The stable trace spelling of a standard stamp face.
-///
-/// **Deliberately an exhaustive match with no wildcard arm.** `StampName`
-/// is not `#[non_exhaustive]`, so the day the engine adds a fifteenth face this
-/// function stops compiling and names itself, which is the whole point. A
-/// `_ => "other"` arm would keep building and quietly collapse two stamps into
-/// one token, and the check that told them apart would go on passing.
 const fn standard_token(name: StampName) -> &'static str {
     match name {
         StampName::Approved => "Approved",

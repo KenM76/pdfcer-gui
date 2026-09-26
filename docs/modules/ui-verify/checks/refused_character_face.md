@@ -182,3 +182,82 @@ rendered text — there is no accessibility reader and no OCR — so it asserts
 that the block drew, and that the character it drew about is the one that was
 refused. The wording is held by unit tests in `crate::text::panels::face` and
 by `check-ui-strings.sh`.
+
+## Item notes
+
+### `const INVOKE`
+
+`view.reset_layout` first, and it is not decoration: the application
+persists its dock layout across runs and the harness does not clear it, so a
+launch inherits whatever the previous launch left — including a previous
+*driven* one. `typo_refusal`'s own header records the run this project spent
+reading last run's furniture. Its arrival is asserted below rather than
+assumed.
+
+`file.properties` before `edit.text`, and `mode.edit` before both: the
+dock follows the ribbon mode on the same frame, so a panel mounted before the
+mode moved would be mounted into the workspace this check is about to leave.
+`std14_face` learned that the expensive way.
+
+### `const SEED`
+
+See the module header for why it is `q` rather than `€`. Seeded rather than
+typed because `sys::vk` is a deliberately closed list of non-character
+virtual keys and this machine cannot inject an arbitrary character — and the
+keystroke is not the subject here, the refusal after the commit is.
+
+It replaces the draft's whole text rather than appending to it
+(`keys::typing` does `draft.text.clear()` before inserting the seed), so the
+commit is `find="ABC" replace="q"` — which is exactly the command line
+measured in the fixture's provenance note, on both sides of the face swap.
+
+### `const APPLIED_EVENT`
+
+Deliberately not `text-edit-*`: `vector_edit`'s label is the bare verb name
+and a module's own summary line takes a suffix, which is what
+`tools/gates/check-trace-names.py` exists to keep true. Matching is on the
+exact first token, so the two never collide.
+
+### `const PROPERTIES_PANEL`
+
+A docked pane that is not in front publishes **nothing**, which is
+indistinguishable from a panel with nothing to say. This project filed one
+such report; `dock.tab.<id>` is published for exactly this.
+
+### `fn overlaps`
+
+[`LRect`] carries `contains_rect` and not this, deliberately — *"can the
+operator click this?"* is a containment question. The question here is the
+opposite one and it is rule 4's: **is any part of this sentence drawn over
+the page?** Overlap by a pixel would be enough to make the answer *yes*, so
+the weaker predicate is the right one.
+
+### `fn states_walked`
+
+Collapsed because the line is published on **every frame the block draws**,
+so the raw sequence is hundreds of repetitions of three values and says
+nothing a reader can use. What is being asserted is the block's path through
+its own state machine, and a path is a sequence of transitions.
+
+### `fn offer_must_retire`
+
+Split out because it is reached from one arm of [`drive`] rather than from
+its end, and because what it does is one idea: *the block speaks for the
+character the font could not type and is silent for the one it could*.
+
+The absence is made non-vacuous first. A build that had simply stopped
+repainting would publish no regions at all and would pass an
+absence-of-region test for free, so the count of frames painted after the
+commit is asserted before the absence is.
+
+### `fn wait_for`
+
+Bounded, and the ceiling is generous rather than tight: a wait that gives
+up early reports a working feature as inert, which is the most expensive kind
+of wrong this harness can be. On timeout it returns rather than erroring —
+the caller's own assertion is what says which event was missing and what that
+means, and it says it far better than a generic timeout could.
+
+`after` rather than a whole-capture `last(..)` for this crate's standing
+reason: a whole-capture search is a fossil finder, and every event this check
+waits for has a predecessor it must be later than.

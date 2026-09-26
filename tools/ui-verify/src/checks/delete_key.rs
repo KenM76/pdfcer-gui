@@ -36,12 +36,6 @@ impl Check for DeleteKeyAfterCanvasClick {
 }
 
 /// Run the sequence.
-///
-/// The three-way return is the SKIP/FAIL/PASS rule made structural:
-/// `Err` is a precondition that was absent (SKIP), `Ok(Some(_))` is an
-/// assertion that did not hold (FAIL), `Ok(None)` is a pass. A check author
-/// who reaches for `?` gets a SKIP, which is the safe default — the unsafe
-/// default would be a pass.
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
     let vocab = &ctx.profile.vocab;
 

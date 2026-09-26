@@ -24,6 +24,8 @@
 //! decided and applied would make "which branch won?" answerable only by
 //! reading the whole chain, and the frame where two branches both applied
 //! would look identical to the frame where the right one did.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/canvas/offset.md`.
 
 use egui::{Vec2, vec2};
 
@@ -128,10 +130,6 @@ impl Decision {
     };
 
     /// An arm claimed the frame with `offset`.
-    ///
-    /// Every `return` in [`decide`] goes through this, which is what keeps the
-    /// name and the number impossible to separate: there is no way to add an
-    /// arm that produces an offset without also naming it.
     #[must_use]
     fn won(source: &'static str, offset: Vec2) -> Self {
         Self {

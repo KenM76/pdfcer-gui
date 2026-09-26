@@ -103,3 +103,40 @@ not at a fixed fraction of the viewport. The viewport does not move when
 the document scrolls and the page does, so a fixed aim point drifts off the
 sheet as the very thing under test happens — which is the same mistake in a
 smaller form.
+
+## Item notes
+
+### `const UNAVAILABLE_EVENT`
+
+Read as a **stop condition**, not as a defect. It is what an honest
+canvas says when the operator has scrolled into the pasteboard past the end
+of a short document, and reading it as the failure under test is what made
+this check file A3 against the application.
+
+### `const NOTCHES_PER_STEP`
+
+Small enough that a short document is not carried from "the page fills the
+viewport" to "the page is gone" in one movement, which is what a single
+forty-notch turn did.
+
+### `const STEPS`
+
+`STEPS * NOTCHES_PER_STEP` is the old single turn plus a margin, so a long
+document still reaches a deep offset; a short one stops early on its own,
+at the last step that kept a page on screen.
+
+### `const OFFSET_GAIN`
+
+A *gain*, not an absolute floor, and the difference is measured: on
+`a1-titleblock.pdf` the canvas rests at `off=[484.0 592.3]` because the
+sheet is centred in a pasteboard, so the old absolute floor of 300 pt was
+satisfied **before the wheel was touched**. A check whose precondition is
+already true at rest is not testing the wheel.
+
+### `fn offset_now`
+
+Read from the `canvas` line's `off=` rather than accumulated by the
+harness. The application is the only thing that knows where its own scroll
+area ended up after a wheel event the OS delivered asynchronously, and a
+harness-side sum would be a second opinion that disagrees at exactly the
+clamp this check exists to sit near.

@@ -53,11 +53,6 @@ use crate::trace::Trace;
 const INVOKE: &str = "";
 
 /// The mode this check authors in.
-///
-/// **Review**, because Review is the mode that offers the authoring row (see
-/// [`INVOKE`] point 3) and the mode `bookmark_add` uses for the same reason.
-/// Its default dock mounts Bookmarks, so the panel needs raising to the front
-/// of its stack and not toggling into existence.
 const MODE: &str = "review";
 
 /// The authoring row's text box and button, owned by `bookmark_add`.
@@ -77,28 +72,12 @@ const PASTE_REGION: &str = "bookmark-paste";
 const PANEL_BODY: &str = "dock.body.view.panel_bookmarks";
 
 /// A row, so one can be clicked to select it.
-///
-/// A trace **event**, not a `ui_rect` region — which is what the first
-/// version of this check got wrong and what its own failure message could not
-/// tell it. The panel writes one `bookmark-row` line per row per frame carrying
-/// `row=[[x y] - [x y]]`, and publishes `ui_rect` only for its two authoring
-/// controls. Asking `declared_names(.., "bookmark")` therefore returned the
-/// authoring row and nothing else, and the check concluded the Copy control was
-/// missing when in fact the selecting click had never been aimed anywhere.
-///
-/// ⇒ Ask what a check SAMPLED before asking what is broken. Fifth instance on
-/// this project, and the first where the wrong sample was a *region* where the
-/// truth was an *event*.
 const ROW: &str = "bookmark-row";
 
 /// The engine-side line: `items=` and `dropped=`.
 const APPLIED: &str = "bookmark-paste-applied";
 
 /// The title typed for the bookmark this check authors: `HI`.
-///
-/// Two letters, because every character is a synthesised keystroke through
-/// the OS and a longer title buys nothing. Letters rather than digits so the
-/// row is unmistakable in a trace beside page numbers.
 const TITLE_KEYS: &[u16] = &[vk::H, vk::F];
 
 /// See the module documentation.
@@ -126,28 +105,6 @@ impl Check for ABookmarkSubtreeCanBeCopiedAndPasted {
 }
 
 /// **Wait until `name` is a live region, polling rather than settling once.**
-///
-/// This replaced three fixed `settle` calls and is the difference between a
-/// check that passes most times and one that passes.
-///
-/// `declared` is not a snapshot. The application's `ui-rect` channel is a
-/// **change log** — it emits when a rect moves and a `ui-rect-gone` when a
-/// control stops being drawn — so `declared` answers *"was this region alive at
-/// the moment the trace was read?"* Reading it once, after a fixed wait, asks
-/// that question at an arbitrary point in a layout that is still moving.
-///
-/// And this panel's layout moves a great deal: the invoke chain changes MODE
-/// (which reconfigures the whole dock, tearing the panel down and rebuilding
-/// it) and then opens the panel, and selecting a bookmark inserts an edit block
-/// that pushes the list two hundred points down. A fixed settle that is nearly
-/// long enough produces a check that fails **intermittently and differently
-/// each time** — which is exactly what happened: alternating between *"the
-/// authoring row is not on screen"* and *"the Copy control is not on screen"*,
-/// on a build where both were fine.
-///
-/// ⇒ Polling asks the question repeatedly and stops at the first *yes*, which
-/// is what a person watching the screen does. It is not a widened tolerance:
-/// the caller still fails if the answer is never yes.
 fn wait_for_region(
     session: &Session,
     ui_rect: &str,

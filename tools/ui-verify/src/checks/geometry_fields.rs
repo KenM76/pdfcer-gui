@@ -21,39 +21,16 @@ const WIDTH_REGION: &str = "properties.geometry.width";
 const APPLY_REGION: &str = "properties.geometry.apply";
 
 /// How many scroll notches to spend looking for Apply below the fold.
-///
-/// Six. The button sits directly under the four fields, so one or two notches
-/// is the realistic case; six is enough for a panel slot squeezed by other
-/// panels above it and small enough that a check which will never find it fails
-/// quickly rather than scrolling for a minute.
 const SCROLL_ATTEMPTS: usize = 6;
 /// `resize-scale sx=… sy=… ax=… ay=…` — raised by `resizing::action` itself,
 /// so it is the line BOTH routes emit.
-///
-/// Deliberately not `resize-commit`, which is the *gesture's* line and
-/// carries the grip that was dragged — the typed route never writes it, so an
-/// oracle naming it reports a working Apply as inert. See the module header.
 const COMMIT_EVENT: &str = "resize-scale";
 /// `resize-declined reason=…`.
 const DECLINED_EVENT: &str = "resize-declined";
 /// The label `vector_edit` traces when the edit reached the engine.
-///
-/// The typed route shares `resizing::action` with the grips, so whatever
-/// verb that function reaches is the verb this check must name — which is the
-/// whole reason the two routes share it. ⚠ Naming a MECHANISM rather than an
-/// outcome is what makes this constant a liability: the check goes red on the
-/// day the mechanism improves, with nothing wrong in the application. See
-/// `resize.rs`'s note on the same constant.
 const APPLIED: &str = "transform-objects-applied";
 
 /// How far to scrub the Width field, in screen pixels.
-///
-/// At the panel's `SPEED` of 0.5 points per pixel this is **+40 points** — far
-/// beyond the tenth-of-a-point tolerance `plan` uses to decide the operator
-/// typed something, and far enough that `sx` is unambiguously greater than 1 on
-/// any object bigger than a few points. A ten-pixel scrub would be five points,
-/// which on a large shape rounds to `sx = 1.004` and could also be produced by a
-/// build that ignored the draft and re-seeded from slightly stale bounds.
 const SCRUB_PX: f32 = 80.0;
 
 /// See the module documentation.

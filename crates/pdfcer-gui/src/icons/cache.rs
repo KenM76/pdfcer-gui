@@ -14,34 +14,6 @@ use super::svg::{IconArt, blank_image};
 use super::{Icon, IconWeight};
 
 /// Hard cap on live cache entries before the whole cache is dropped.
-///
-/// The cache grows only along three axes — one entry per icon, per weight,
-/// per distinct physical size the display scale has taken this session —
-/// so in normal use it settles well under this and never reaches it. The cap
-/// exists solely so that a session that repeatedly changes display scale
-/// (dragging a window between a 100% and a 150% monitor) cannot accumulate
-/// stale textures without bound.
-///
-/// # The arithmetic this number has to satisfy
-///
-/// One entry per icon per weight per distinct physical size, plus, with
-/// coloured icons on, one per accented icon per distinct control tint (a
-/// ribbon has about four: rest, hover, pressed, selected ink). `Icon::ALL`
-/// holds **143** icons and [`IconWeight`] has two variants, so one display
-/// scale is 286 plain entries; the 91 accented icons at four tints add up to
-/// 364 more, 650 in all. **Re-derive this number whenever the icon set
-/// grows**; it is that sum times the number of display scales a session
-/// should hold without churning.
-///
-/// Exceeding it is not a crash and not a wrong pixel, which is why it is worth
-/// writing down: the cache clears wholesale and re-rasterizes the entire
-/// visible ribbon, repeatedly, on any machine whose window is dragged between
-/// two monitors of different scale. A hitch, blamed on the renderer, caused by
-/// a constant nobody re-derived when the set changed size.
-///
-/// Clearing wholesale rather than evicting least-recently-used is
-/// deliberate: it is one line, it happens approximately never, and the
-/// recovery cost is one frame of re-rasterization.
 const CACHE_CAPACITY: usize = 1024;
 
 /// What uniquely identifies a raster.
@@ -237,11 +209,6 @@ mod tests {
 
     /// The load-bearing property: the ribbon asks for the same icon every
     /// frame, and only the FIRST ask may rasterize.
-    ///
-    /// Tint is not part of the key by design (mask + tint), so re-asking
-    /// while the theme, the hover state or the enabled state has changed is
-    /// still a cache hit — which is why this loop does not vary anything.
-    /// There is nothing to vary: none of it reaches this layer.
     #[test]
     fn cache_serves_repeat_requests_without_re_rasterizing() {
         let ctx = egui::Context::default();
@@ -302,10 +269,6 @@ mod tests {
 
     /// The capacity guard drops everything rather than growing without
     /// bound, and the cache keeps working afterwards.
-    ///
-    /// Reached by asking for more distinct *sizes* than the cap, which is
-    /// the only axis an operator can actually drive without bound (drag a
-    /// window between monitors of different scale, repeatedly).
     #[test]
     fn the_capacity_guard_clears_rather_than_growing_without_bound() {
         let ctx = egui::Context::default();

@@ -23,13 +23,6 @@ const SECTION: &str = "properties.info";
 /// `InfoField::all()` is appended. Index 0 is `/Title`, index 1 is `/Author`.
 const FIELD: &str = "properties.info.";
 /// The ribbon item that opens the panel, and the dock tab it mounts as.
-///
-/// It is a **toggle**, unlike the `file.properties` control this check used
-/// to press: its question is *"is this panel open?"*, so it falls through
-/// `app::dispatch`'s guard arm to `toggle_panel`. That is why the click below
-/// is guarded by *"only if the section is not already on screen"* — pressing it
-/// with the panel up would close the thing under test. The guard predates the
-/// move and was written for the same hazard.
 const COMMAND: &str = "file.document_properties";
 /// The trace the panel emits when it decides to commit a draft.
 const COMMITTED: &str = "info-field-commit";

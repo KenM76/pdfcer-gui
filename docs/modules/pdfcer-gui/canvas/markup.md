@@ -233,3 +233,34 @@ gather inputs, call the pure functions in order, and trace what happened.
 route `pdfcer`'s `markup-add` takes with the same value — the equivalence
 the measure salvage's tests exist to protect, and the reason a canvas-authored
 annotation is byte-identical to a CLI-authored one.
+
+## Item notes
+
+### `fn coordinates`
+
+One iterator so the finiteness check in [`action`] is written once rather
+than three times — which matters more than it looks, because the failure
+of a *missed* variant is a NaN reaching an annotation's `/Rect` and the
+symptom is a document some readers refuse to open.
+
+### `const CLOUD_INTENSITY`
+
+`pdfcer-core` accepts any finite value in `0.0..=2.0` and refuses the rest by
+name (`EditError::BorderEffectIntensityOutOfRange`), so this is a *choice*
+inside a legal range rather than the only value that works.
+
+**1.0 because that is Acrobat's default cloud.** The standing tie-breaker
+for anything an operator will compare against the program they are replacing
+is to make it behave the way that program does; a reviewer drawing the same
+cloud in both must not be able to tell them apart by the size of the
+scallop. It is a `const` rather than a literal in [`spec`] so the day a
+Style control for it lands, the search for "what does this replace" finds
+one name and one paragraph.
+
+### `fn all_the_same`
+
+The vertex and ink form of *"the drag ended where it began"*. A run of forty
+identical points is what a press-and-hold with no movement produces once the
+duplicate filter is off, and it authors an annotation with a zero-area
+`/Rect` that `pdfcer-core`'s `bounds_of` then pads to the pen's half-width —
+a 1-point blob nobody chose.

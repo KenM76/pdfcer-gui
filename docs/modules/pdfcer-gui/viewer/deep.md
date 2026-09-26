@@ -57,3 +57,15 @@ deep path takes over — [`crate::render::strategy`] owns that question and
 answers it from the pixmap ceiling. This is four numbers and the arithmetic
 that keeps them consistent, which is what lets every claim above be a unit
 test rather than something to be observed in a window.
+
+## Item notes
+
+### `fn a_page_point_survives_the_round_trip_at_every_depth`
+
+The property the canvas depends on, and the one the `f32` scroll offset
+loses: at 10,000,000 % the offset's representable step is sixteen screen
+pixels, so a position could not survive this round trip at all.
+
+The tolerance is in **page points**, scaled by the zoom — a tenth of a
+screen pixel at whatever magnification is under test. A fixed page-space
+tolerance would get easier as the zoom rises, which is backwards.

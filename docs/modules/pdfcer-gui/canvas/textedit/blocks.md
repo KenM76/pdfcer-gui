@@ -49,3 +49,25 @@ It is not cheap (see [`neighbour`]'s note) and it is not on a per-frame path.
   mid-paragraph. Named rather than left to be discovered.
 - **It does not draw the paragraph.** Showing which block the caret is in is
   worth doing and is a separate surface; this is the navigation.
+
+## Item notes
+
+### `fn land`
+
+The order is load-bearing: **commit first**. A caret that walks out of a
+run with unsaved keystrokes in it silently discards them, which is this
+project's defining defect class — and `commit_into` writes nothing when the
+text is unchanged, so an operator merely *reading* with the navigation keys
+puts nothing on the undo stack.
+
+### `fn characters_and_bytes_round_trip_through_an_accent`
+
+Everything else here is `pdfcer-core`'s recognition, which has its own
+tests and needs a real page. What is *this* module's own is the
+character ⟷ byte hop, and it is exactly the kind of arithmetic that
+compiles either way round and puts the caret inside a multi-byte
+character on the first document with an accent in it.
+
+Asserted on a string that has one: `"café"` is five bytes and four
+characters, so a caret index of 4 is a byte offset of 5 and any
+implementation that confused them would be off by one at the end.

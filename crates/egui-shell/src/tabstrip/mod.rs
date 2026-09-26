@@ -67,6 +67,8 @@
 //! unsaved work before closing a tab cannot have the close already done by the
 //! time it is told. That is the same discipline [`crate::dock`] follows for
 //! the same reason.
+//!
+//! Design and rationale: `docs/modules/egui-shell/tabstrip/mod.md`.
 
 use egui::{Align, Layout, Rect, RichText, UiBuilder, Vec2};
 
@@ -88,19 +90,9 @@ use crate::theme::Theme;
 pub const STRIP_HEIGHT: f32 = 26.0;
 
 /// The width reserved inside each tab for the close control.
-///
-/// Fixed rather than measured, because it is a fixed glyph in a fixed size and
-/// measuring it would make the tab-width arithmetic depend on the font — which
-/// is exactly the dependency that makes an overflow reservation drift.
 const CLOSE_WIDTH: f32 = 16.0;
 
 /// The close glyph.
-///
-/// **U+00D7 MULTIPLICATION SIGN**, not U+2715 MULTIPLICATION X and not U+2716.
-/// It is in Latin-1, so it is present in every font this application could
-/// possibly fall back to, and `epaint`'s `has_glyph` is not a coverage oracle
-/// (`D:\dev\rag\egui\epaint_has_glyph_is_resolved_face_vs_replacement_face_not_a_coverage_oracle.md`)
-/// — so "will this render?" is a question best answered by not asking it.
 const CLOSE_GLYPH: &str = "\u{00d7}"; // ui-text-exempt: a glyph, not a sentence
 
 /// One tab.
@@ -347,11 +339,6 @@ pub fn strip(ui: &mut egui::Ui, theme: &Theme, tabs: &[TabItem], active: usize) 
 }
 
 /// **A tab drag in flight**, between frames.
-///
-/// In `egui::Memory` rather than in a field on [`TabStrip`], because
-/// [`TabStrip`] is built fresh every frame — the strip is deliberately
-/// stateless (see [`TabItem`]) and a drag has to outlive a frame. This is the
-/// only thing about the strip that does.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 struct TabDrag {
     /// The tab the press landed on.
@@ -365,18 +352,6 @@ fn drag_id(ui: &egui::Ui) -> egui::Id {
 }
 
 /// **Resolve a reorder drag, draw its caret, and settle its release.**
-///
-/// Runs after every tab is laid out, because the boundary the caret marks does
-/// not exist until they are — the same reason a page grid resolves its drop
-/// target inside its layout pass.
-///
-/// # The gap is resolved by CENTRES, not by edges
-///
-/// A tab whose centre is left of the pointer is a tab the dragged one has
-/// passed. That makes the boundary flip when the pointer crosses the middle of
-/// a neighbour, which is what every tab strip does and what stops the caret
-/// jittering between two gaps while the pointer sits over the seam between two
-/// tabs.
 fn settle_reorder(ui: &mut egui::Ui, theme: &Theme, strip_rect: Rect, out: &mut TabStrip) {
     let id = drag_id(ui);
     let Some(drag) = ui.ctx().data(|d| d.get_temp::<TabDrag>(id)) else {
@@ -443,10 +418,6 @@ fn settle_reorder(ui: &mut egui::Ui, theme: &Theme, strip_rect: Rect, out: &mut 
 }
 
 /// How thick the reorder caret is drawn.
-///
-/// The same weight the dock's and the page grid's carets use: thin enough to
-/// read as a boundary rather than as a tab, thick enough not to look like a
-/// rendering artefact on a dense strip.
 const CARET_PTS: f32 = 2.0;
 
 /// Draw one document tab: the label, and the ✕ beside it.
@@ -629,12 +600,6 @@ fn draw_tab(
 }
 
 /// The "⏷ N more" affordance and the menu behind it.
-///
-/// A plain menu of the open tabs, shown only once some of them do not fit —
-/// see the loop below on why it lists every tab rather than only the hidden
-/// ones. Unlike the dock's, it offers only
-/// activation: closing a document you cannot see is not a gesture any
-/// application offers, and offering it here would be inventing one.
 fn draw_overflow(
     ui: &mut egui::Ui,
     tabs: &[TabItem],
@@ -731,15 +696,6 @@ mod tests {
     }
 
     /// **The route to the hidden tabs survives the tabs.**
-    ///
-    /// `MODES_AND_PANELS.md` failure mode #8, asserted from this side of the
-    /// reuse: the arithmetic is `dock::plan`'s and is tested there, and this
-    /// is the check that this module actually *uses* it rather than laying
-    /// tabs out itself and reporting a plausible `hidden`.
-    ///
-    /// The assertion is that the drawn tabs stop short of the strip's right
-    /// edge by at least the affordance's width — measured from the published
-    /// rectangles, not recomputed.
     #[test]
     fn a_crowded_strip_reserves_room_for_the_overflow_affordance() {
         let width = 300.0;

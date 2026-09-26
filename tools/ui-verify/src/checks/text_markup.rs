@@ -17,20 +17,6 @@ use crate::report::CheckReport;
 
 /// **The only mode in which this feature exists**, and the check is aimed at
 /// it deliberately rather than for convenience.
-///
-/// Marking text needs two things that do not overlap the way anyone expects:
-/// the ability to *select* text, which `canvas::textsel::takes_the_press`
-/// grants where the mode cannot select content (Read and Review), and
-/// `author_markup`, which the mode's tab list grants where it contains
-/// `markup` (Review and Edit). The intersection is **Review alone** — Read has
-/// no Markup tab, and in Edit the primary button is the content marquee so no
-/// text selection can be made and the three controls are permanently greyed.
-///
-/// See `canvas::markup::text` §2. That inversion is a known gap with a known
-/// fix (`CanvasTool::Text`), and it is the reason this check does not carry an
-/// Edit control phase the way [`crate::checks::text_selection`] does: in Edit
-/// the controls are correctly dead, and a phase asserting so would be asserting
-/// the gap rather than the feature.
 const MODE: &str = "review";
 
 /// The tab that carries the Text markup group.
@@ -40,14 +26,6 @@ const TAB: &str = "ribbon.tab.markup";
 const TAB_ID: &str = "markup";
 
 /// **The control under test.**
-///
-/// Underline rather than Strikeout or Squiggly because it is the one an
-/// operator reaches for first and because the three are the same code path with
-/// one `match` arm between them — `shell::commands::text_mark_command` maps all
-/// three and the mapping's own test walks `TextMarkKind::ALL`. Driving all three
-/// here would cost three more clicks and three more edits to prove what that
-/// test already proves, while the *join* this check exists for is per-command
-/// only in its id.
 const SUBJECT: &str = "ribbon.item.markup.underline";
 
 /// The command id of [`SUBJECT`], as dispatch and the shell spell it.
@@ -59,11 +37,6 @@ const SUBJECT_KIND: &str = "Underline";
 
 /// The sibling named only in notes and SKIP reasons — the control that shares
 /// the band and is **not** clicked.
-///
-/// Not a pixel differential here (see the module header on why the invoke is
-/// the better oracle for enablement), but its presence is still worth
-/// asserting: a build that registered one of the three and not the others would
-/// otherwise pass this check completely.
 const SIBLING: &str = "ribbon.item.markup.strikeout";
 
 /// The third of the family, likewise checked for presence only.
@@ -74,18 +47,10 @@ const THIRD: &str = "ribbon.item.markup.squiggly";
 const COMMIT_EVENT: &str = "text-markup-commit";
 
 /// `text-markup-declined kind=… reason=…` — the same module's refusal line.
-///
-/// Read to *improve failure messages*: `reason=Stale` and `reason=NoSelection`
-/// send a reader to two different places, and both are different again from a
-/// command that never reached dispatch at all.
 const DECLINE_EVENT: &str = "text-markup-declined";
 
 /// `add-text-markup page=… n=… epoch=… disclosures=…` — `app::actions`'
 /// `vector_edit` reporting that the **engine** authored the annotation.
-///
-/// The line that makes this check about a document rather than about an intent.
-/// [`COMMIT_EVENT`] says the shell decided to author one; this says
-/// `EditSession::add_markup` returned `Ok` and the revision moved.
 const APPLY_EVENT: &str = "add-text-markup";
 
 /// How many line boxes. Compared **across** the two events — see the module
@@ -119,11 +84,6 @@ impl Check for TextMarkupMarksASelection {
 }
 
 /// How many times the shell has reported [`SUBJECT_ID`] invoked.
-///
-/// A **count**, not a presence, and for the reason
-/// `driving::click_mode_segment` counts its mode events: this check clicks the
-/// same control three times, and "has it ever been invoked?" would be answered
-/// `true` by a click made ten seconds earlier.
 fn invokes(session: &Session) -> Result<usize> {
     Ok(shell_trace(session)?
         .events(INVOKE_EVENT)
@@ -602,12 +562,6 @@ mod tests {
 
     /// The names this check greps for are the ones `egui-shell` builds, and the
     /// ids are the ones the application registers.
-    ///
-    /// Pinned here for the reason [`crate::checks::markup_rectangle`]'s twin
-    /// test states: the two crates are joined by a **string** and nothing else,
-    /// so a rename would leave both sides compiling while every assertion here
-    /// quietly stopped matching — and a check that matches nothing passes
-    /// vacuously.
     #[test]
     fn the_selectors_match_the_shells_own_spelling() {
         assert_eq!(SUBJECT, format!("ribbon.item.{SUBJECT_ID}"));
@@ -667,11 +621,6 @@ mod tests {
 
     /// A sweep that **ends** cleared has selected nothing, whatever it passed
     /// through on the way — the property phase B's ladder rests on.
-    ///
-    /// The two traces differ only in which line is last, and that is the whole
-    /// point: reading the last *non-empty* line instead of the last line is
-    /// what made this check report a correctly-greyed control as a dead
-    /// feature.
     #[test]
     fn a_sweep_that_ends_cleared_has_selected_nothing() {
         let held = Trace::parse(

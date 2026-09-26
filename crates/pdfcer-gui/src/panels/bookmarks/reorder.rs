@@ -29,33 +29,12 @@ pub const REGION_CARET: &str = "bookmarks.drop-caret"; // ui-text-exempt: trace 
 pub const REGION_DISCLOSE_PREFIX: &str = "bookmarks.disclose."; // ui-text-exempt: trace region name, never displayed
 
 /// How thick the insertion caret is drawn, in points.
-///
-/// [`crate::panels::pages`]' `CARET_PTS` verbatim, and deliberately the same
-/// number: the two are the same mark meaning the same thing on two surfaces of
-/// one application, and a reorder caret that was thinner in one panel than the
-/// other would read as a rendering artefact rather than as a deliberate mark.
 const CARET_PTS: f32 = 2.0;
 
 /// How much of the caret's colour survives when the drop would change nothing.
-///
-/// [`crate::panels::pages`]' `CARET_DIMMED`, for its stated reason: **dimmed,
-/// not hidden.** Drawing no caret over a landing that would not move anything
-/// cannot be told apart from the panel having stopped tracking the pointer —
-/// and the no-op landing is where *every* drag begins, because a row starts out
-/// hovering over itself.
 const CARET_DIMMED: f32 = 0.35;
 
 /// How much survives when the drop would be **refused**.
-///
-/// Fainter than [`CARET_DIMMED`], and a third state rather than a reuse of
-/// the second, because the two facts have different remedies. *"This changes
-/// nothing"* is answered by letting go somewhere else at leisure; *"pdfcer will
-/// not do this"* is answered by aiming outside the branch, and an operator who
-/// reads the two marks as one will keep trying the same drop.
-///
-/// It is a ratio of the same theme colour rather than a second colour, which is
-/// the rule `paint_caret` inherits from the pages grid: one colour with a
-/// stated relationship beats two colours that have to be kept in step.
 const CARET_REFUSED: f32 = 0.15;
 
 /// One row of the outline **as it was actually drawn**, in draw order.
@@ -122,12 +101,6 @@ pub enum Band {
 }
 
 /// Fraction of a row's height each edge band occupies.
-///
-/// A quarter each, leaving the middle **half** to `Into`. The asymmetry is
-/// deliberate and is the conventional weighting: re-parenting is the gesture an
-/// operator aims at a row, and reordering is the one they aim at a *boundary*,
-/// which they do by moving toward the edge they can see. Equal thirds make the
-/// nesting band harder to hit than the two it sits between, which is backwards.
 const EDGE_BAND: f32 = 0.25;
 
 /// Which band `y` falls in, within `rect`.
@@ -387,12 +360,6 @@ pub fn landing_for(items: &[OutlineItem], dragged: ObjId, to: OutlinePlacement) 
 }
 
 /// Is `candidate` somewhere below `ancestor` in the tree?
-///
-/// The test `EditError::OutlineMoveIntoOwnSubtree` guards, asked of the tree
-/// the panel drew rather than of `/Parent` chains in the file. It walks the
-/// **whole** subtree, collapsed branches included, because a collapsed branch
-/// is still a branch — a drop into a hidden descendant would produce exactly
-/// the `/Parent` cycle the engine refuses.
 #[must_use]
 fn is_inside(items: &[OutlineItem], ancestor: ObjId, candidate: ObjId) -> bool {
     super::tree::find(items, ancestor)
@@ -536,12 +503,6 @@ pub fn paint_caret(ui: &Ui, target: Option<&DropTarget>) {
 const CARET_SLOT: &str = "bookmark-drop-target"; // ui-text-exempt: trace slot name, never displayed
 
 /// The placement as one word, for the trace.
-///
-/// A word rather than `{:?}`, because `OutlinePlacement`'s `Debug` prints the
-/// anchor inside the variant and a driven check reading `placement=` would then
-/// be matching on a rendering of a struct. The two facts are traced as two
-/// keys, so a check can assert the *kind* of landing without pinning the
-/// engine's derive output.
 fn placement_word(to: OutlinePlacement) -> &'static str {
     match to {
         // ui-text-exempt: diagnostic trace tokens, never displayed
@@ -554,10 +515,6 @@ fn placement_word(to: OutlinePlacement) -> &'static str {
 }
 
 /// The anchor's object number, for the trace, or `0` for the outline root.
-///
-/// Zero is not a legal object number — §7.3.10 numbers objects from 1 — so it
-/// cannot be confused with a real anchor, and it is the same stand-in
-/// `OutlinePlacement`'s `None` means: the top level.
 fn anchor_number(to: OutlinePlacement) -> u32 {
     match to {
         OutlinePlacement::Before { sibling } | OutlinePlacement::After { sibling } => sibling.num,
@@ -698,12 +655,6 @@ mod tests {
     }
 
     /// **The three bands are three, and the edges are quarters.**
-    ///
-    /// The one piece of arithmetic the whole gesture rests on. Both plausible
-    /// errors are pinned: bands that are equal thirds — which makes the nesting
-    /// band, the one an operator aims *at a row*, harder to hit than the two
-    /// beside it — and an off-by-one at the boundary that would make a drop on
-    /// the exact midpoint mean something different from a drop a pixel away.
     #[test]
     fn the_row_splits_into_before_into_and_after() {
         let rect = Rect::from_min_max(Pos2::new(0.0, 100.0), Pos2::new(200.0, 120.0));
@@ -731,12 +682,6 @@ mod tests {
 
     /// **The caret for the lower bands sits at the end of the SUBTREE**,
     /// which is what makes it truthful rather than comfortable.
-    ///
-    /// The fixture is deliberately shaped so the two wrong answers differ from
-    /// the right one and from each other: a chapter with two sections, the
-    /// second of which has a section of its own, followed by a second chapter.
-    /// *"The bottom of the row"* (10) and *"the bottom of the last child"* (30)
-    /// are both wrong; the answer is the bottom of the last **descendant** (40).
     #[test]
     fn the_subtree_bottom_is_the_last_descendant_not_the_last_child() {
         let rows = vec![
@@ -759,11 +704,6 @@ mod tests {
 
     /// **A collapsed row's caret is at its own edge**, because nothing of it
     /// is drawn.
-    ///
-    /// The §12.3.3 case: the branch exists in the document and not on the
-    /// screen, and the caret is a mark on the screen. A build that walked the
-    /// TREE here instead of the drawn rows would put the mark under rows that
-    /// are not there.
     #[test]
     fn a_collapsed_rows_caret_is_at_its_own_bottom() {
         // Two top-level rows; the first is collapsed, so nothing of its branch
@@ -803,12 +743,6 @@ mod tests {
 
     /// **A bookmark's place is its parent, its siblings and its index**, and
     /// all three come from one walk.
-    ///
-    /// The nested case is the one that matters, and it is why the whole panel
-    /// addresses bookmarks by id: a walk that loses track of depth files an
-    /// item a level or two from where it was asked to go, and the outline it
-    /// produces still looks entirely plausible, so nothing downstream reports
-    /// it.
     #[test]
     fn a_nodes_place_is_found_at_any_depth() {
         let tree = vec![
@@ -834,16 +768,6 @@ mod tests {
 
     /// **The two spellings of a bookmark's own slot are recognised as
     /// no-ops.**
-    ///
-    /// This is the assertion the caret's dimming rests on, and it is the one a
-    /// naive implementation gets wrong: comparing anchor ids alone catches
-    /// *"drop on yourself"* and misses both of the real cases —
-    /// **after the previous sibling** and **before the next sibling** are the
-    /// slot the bookmark is already in, named from either side.
-    ///
-    /// The fixture can tell the answers apart: three siblings, so the middle
-    /// one has a real neighbour on each side and a genuine move available past
-    /// each of them.
     #[test]
     fn the_slot_a_bookmark_already_occupies_is_recognised_from_both_sides() {
         // Modelled with `locate_in` directly rather than `landing_for`, which
@@ -884,10 +808,6 @@ mod tests {
 
     /// **The three landings are three distinct answers**, so a match on them
     /// cannot silently collapse.
-    ///
-    /// Each one paints a different caret and produces a different act on
-    /// release — a move, a silence, and a sentence — and two that compared
-    /// equal would make the release arm choose the wrong one of the three.
     #[test]
     fn the_three_landings_are_distinguishable() {
         assert_ne!(Landing::Lands, Landing::NoChange);
@@ -896,10 +816,6 @@ mod tests {
     }
 
     /// **The three dimming ratios are three**, and they are ordered.
-    ///
-    /// A build that dimmed a refusal and a no-op equally would give the
-    /// operator one mark for two facts with two different remedies — and they
-    /// would keep repeating the drop that pdfcer will never accept.
     #[test]
     fn a_refused_landing_is_fainter_than_one_that_merely_does_nothing() {
         const {
@@ -913,12 +829,6 @@ mod tests {
 
     /// **The caret's DEPTH is the whole of what distinguishes nesting from
     /// reordering**, and the two lower bands sit at the same height.
-    ///
-    /// Driven through [`resolve_at`] with a real row list, because this is the
-    /// property an operator reads off the screen: crossing from the middle band
-    /// to the bottom band must move the mark **sideways**, by exactly one
-    /// indent, and not vertically. A build that used `FirstChild` for the
-    /// middle band would fail this by flinging the caret up the panel.
     #[test]
     fn the_two_lower_bands_differ_by_an_indent_and_not_by_a_height() {
         let rows = vec![row(1, 0, 0.0, 20.0), row(2, 1, 20.0, 20.0)];

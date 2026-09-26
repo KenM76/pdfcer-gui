@@ -15,11 +15,6 @@ use crate::report::CheckReport;
 use crate::trace::Trace;
 
 /// The mode whose tab list contains Markup, and the segment to click.
-///
-/// Read is the default and its tabs are `["file", "view"]`; Markup is in
-/// Review's list and in Edit's. Review rather than Edit because it is the
-/// weaker claim — a markup tool that works in Review works in Edit — and
-/// because Review's capability set is the narrower one to depend on.
 const MODE_SEGMENT: &str = "ribbon.mode.review";
 
 /// The tab that carries the Shapes group.
@@ -39,35 +34,12 @@ const SUBJECT_ID: &str = "markup.rectangle";
 const SIBLING: &str = "ribbon.item.markup.ellipse";
 
 /// Where the pointer is parked before each capture.
-///
-/// The Shapes group's caption, which is an `egui::Label` and therefore has no
-/// hover styling of its own, sitting directly beneath the controls being
-/// measured. Parking matters: after a click the pointer is *on* the control,
-/// `egui` paints it in its hovered visuals, and a before/after comparison
-/// would then be measuring a hover as well as a selection. Parking on a
-/// declared, inert region rather than at some corner of the screen keeps the
-/// rule that this crate aims only at rectangles the application published.
 const PARK: &str = "ribbon.group.markup.shapes.caption";
 
 /// The namespace [`crate::checks::markup_rectangle`] depends on existing.
 const ITEM_PREFIX: &str = "ribbon.item.";
 
 /// The shell's own diagnostic switch, and the prefix its lines carry.
-///
-/// Two channels, deliberately, and this check reads both. `egui-shell` traces
-/// under `EGUI_SHELL_DIAG` with the prefix an application sets via
-/// `verify::set_prefix` — which `pdfcer-gui` does not call, so the lines arrive
-/// under the crate's default. The application traces separately under
-/// `PDFCER_DIAG` with `pdfcer-diag`.
-///
-/// The split is not an accident of this build: `verify`'s own header explains
-/// that one variable name lets a harness arm tracing on *any* `egui-shell`
-/// application without first discovering its name. The consequence here is
-/// that "the click reached the control" (the shell's fact) and "the tool was
-/// armed" (the application's fact) come from two different streams in one
-/// file, which is exactly what makes the failure attributable: a missing
-/// `markup-tool` **with** a present `ribbon-command-invoked` names the
-/// application's dispatch and nothing else.
 const SHELL_DIAG_ENV: (&str, &str) = ("EGUI_SHELL_DIAG", "1");
 
 /// The line prefix `egui-shell` uses when the application has not set one.
@@ -92,11 +64,6 @@ const ARM_EVENT: &str = "markup-tool";
 const ARM_VALUE: &str = "Markup(Rectangle)";
 
 /// `command-unimplemented id=…` — `app/dispatch.rs`'s fall-through arm.
-///
-/// Read only to *improve a failure message*. Its presence alongside a missing
-/// `markup-tool` is the signature of a dispatch that received the command and
-/// had no arm for it, which is a different fix from a dispatch that never
-/// received it at all.
 const UNIMPLEMENTED_EVENT: &str = "command-unimplemented";
 
 /// How far apart two dominant fills must be to count as "one of these is
@@ -188,11 +155,6 @@ impl Check for MarkupRectangleArmsFromTheRibbon {
 }
 
 /// The last rect the application declared under `name`, if any.
-///
-/// **Last wins.** A region is re-declared whenever it moves, and an early
-/// frame can carry a rect from before the layout settled — the find bar's
-/// one-frame misplacement was exactly that, and taking the first occurrence
-/// would aim this check's clicks at it.
 fn declared(trace: &Trace, ui_rect: &str, name: &str) -> Option<LRect> {
     trace
         .events(ui_rect)
@@ -203,10 +165,6 @@ fn declared(trace: &Trace, ui_rect: &str, name: &str) -> Option<LRect> {
 
 /// Every distinct region name the application declared beginning with
 /// `prefix`, in first-seen order.
-///
-/// Used only for SKIP reasons. A reason that says "I did not find X" and does
-/// not say what it *did* find sends its reader to guess; this crate has a
-/// standing rule about that ([`crate::checks`] rule 5).
 fn declared_names(trace: &Trace, ui_rect: &str, prefix: &str) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
     for line in trace.events(ui_rect) {
@@ -222,10 +180,6 @@ fn declared_names(trace: &Trace, ui_rect: &str, prefix: &str) -> Vec<String> {
 
 /// The dominant colour of a declared region in a capture — the control's
 /// fill.
-///
-/// `None` when the region resolved to no pixels, which means the application
-/// declared it outside its own client area. That is a finding rather than a
-/// measurement and the caller reports it as one.
 fn fill_of(image: &Image, frame: &WindowFrame, rect: LRect) -> Option<Rgb> {
     let px = frame.logical_to_capture_pixels(rect);
     if px.area() == 0 {
@@ -242,12 +196,6 @@ fn delta(a: Rgb, b: Rgb) -> u16 {
 }
 
 /// Run the sequence.
-///
-/// The three-way return is [`crate::report`]'s rule made structural: `Err` is
-/// a precondition that was absent (SKIP), `Ok(Some(_))` is an assertion that
-/// did not hold (FAIL), `Ok(None)` is a pass. Reaching for `?` therefore
-/// yields a SKIP, which is the safe default; the unsafe default would be a
-/// pass.
 #[allow(clippy::too_many_lines)]
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
     // --- preconditions -----------------------------------------------------
@@ -677,12 +625,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
 /// Read the same captured stderr a second time, under the **shell's** line
 /// prefix.
-///
-/// One file, two vocabularies. `Session::trace` parses with the profile's
-/// prefix (`pdfcer-diag`); everything `egui-shell` writes carries its own, and
-/// lands in [`Trace::other`] on that parse. Re-parsing is cheap next to a
-/// click and keeps both streams honest — a line is attributed to whichever
-/// crate actually wrote it, which is the whole point of the prefix.
 fn shell_trace(session: &Session) -> Result<Trace> {
     Trace::read(session.trace_path(), SHELL_TRACE_PREFIX)
 }
@@ -713,14 +655,6 @@ mod tests {
     use crate::geom::Pt;
 
     /// The names this check greps for are the ones `egui-shell` builds.
-    ///
-    /// Pinned here as well as in `egui-shell`'s own
-    /// `the_reported_names_are_a_stability_contract`, because the two crates
-    /// are joined by a **string** and nothing else: this crate drives a
-    /// process, so it cannot import the constant, and a rename would leave
-    /// both sides compiling while every assertion here quietly stopped
-    /// matching. A check that matches nothing passes vacuously, and that is
-    /// the failure this pair of tests exists to make impossible.
     #[test]
     fn the_selectors_match_the_shells_own_spelling() {
         assert_eq!(SUBJECT, format!("ribbon.item.{SUBJECT_ID}"));
@@ -763,12 +697,6 @@ mod tests {
 
     /// **The two channels are parsed out of one file without contaminating
     /// each other.**
-    ///
-    /// The shell's lines land in `other` under the application's prefix and
-    /// vice versa. If a future prefix change made one a prefix of the other,
-    /// this test is what says so — and the symptom otherwise would be a check
-    /// that reads a `ribbon-command-invoked` that is not there, or misses one
-    /// that is.
     #[test]
     fn the_application_and_shell_streams_do_not_contaminate_each_other() {
         let text = "pdfcer-diag start argv1=None\n\
@@ -800,18 +728,6 @@ mod tests {
 
     /// **The threshold separates pressed from unpressed under BOTH palettes
     /// this build might paint with — and a contrast ratio separates neither.**
-    ///
-    /// Two pairs, because the running binary does not use the palette the
-    /// shell's theme defines: `#E5E5E5`/`#90D1FF` is what was measured from a
-    /// real capture (`egui`'s stock light values, because nothing calls
-    /// `Theme::apply`), and `#E8E8EA`/`#C1CFE6` is what `egui-shell`'s `quiet`
-    /// preset would produce if it were installed. See
-    /// [`MIN_PRESSED_DELTA`]'s documentation for the derivation of each.
-    ///
-    /// The second assertion in each pair is the one that matters: `AA_LARGE`
-    /// is 3.0 and these fills are 1.3:1 and 1.5:1 apart, so a check written
-    /// against the harness's usual legibility oracle would report "no
-    /// difference" about a control that is visibly blue.
     #[test]
     fn the_threshold_separates_pressed_from_unpressed_under_both_palettes() {
         // (unpressed, pressed, expected gap, what it is)

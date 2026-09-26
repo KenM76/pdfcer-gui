@@ -61,3 +61,17 @@ Pure functions over already-derived values. Nothing here reads a
 show; that is [`crate::app::status::anomalies`]' job. This file only turns
 decided facts into English, which is what makes **R4** (`check-ui-strings`)
 satisfiable: the two drawing sites contain no literal an operator can read.
+
+## Item notes
+
+### `fn the_duplicate_key_row_shows_both_values`
+
+The literal case from engine decision 145: a catalog naming `/PageMode`
+twice, `/UseOC` against `/UseOutlines`. If this row cannot say both
+values the feature has not been built, only counted.
+
+### `fn every_value_kind_renders_to_one_short_line`
+
+The container arms name a shape instead of expanding it; the assertion
+that matters is that none of them is empty and none of them contains a
+newline, because either would break the one-line bar (**R128**).

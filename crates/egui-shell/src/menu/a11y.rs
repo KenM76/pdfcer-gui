@@ -90,6 +90,8 @@
 //! The comma is not decoration: it is what makes a screen reader pause
 //! between the two, so `"Copy Ctrl C"` does not run together into
 //! something that sounds like one command's name.
+//!
+//! Design and rationale: `docs/modules/egui-shell/menu/a11y.md`.
 
 use egui::{Response, WidgetInfo, WidgetType};
 
@@ -157,11 +159,6 @@ mod tests {
     }
 
     /// **A row announces its chord, because the chord is on screen.**
-    ///
-    /// The whole point of ceiling 2. Without this a screen-reader user is
-    /// the one person the shortcut column cannot teach — while the menu
-    /// looks completely correct in a screenshot, which is why this needs a
-    /// test rather than a review.
     #[test]
     fn a_row_announces_its_chord() {
         let c = command("Copy", None);
@@ -170,10 +167,6 @@ mod tests {
     }
 
     /// A blank or whitespace chord is not announced as a trailing comma.
-    ///
-    /// `"Copy, "` is what a naive `format!` produces from a keymap entry
-    /// bound to the empty string, and it announces as a pause after a word
-    /// — a small, permanent, unattributable oddity.
     #[test]
     fn a_blank_chord_is_not_announced() {
         let c = command("Copy", None);
@@ -187,13 +180,6 @@ mod tests {
     }
 
     /// **The fallback chain is the ribbon's, not a second copy.**
-    ///
-    /// A command registered with a blank label announces its tooltip, then
-    /// its id — and it does so because this module calls
-    /// [`accessible_name`] rather than reimplementing the rule. If the two
-    /// ever diverge, one command announces two different names on two
-    /// surfaces, which is the sort of defect that gets reported as "the
-    /// screen reader says something different in the menu".
     #[test]
     fn the_fallback_chain_is_borrowed_from_the_ribbon() {
         assert_eq!(
@@ -230,11 +216,6 @@ mod tests {
     }
 
     /// **Ceiling 1, asserted so it cannot be quietly forgotten.**
-    ///
-    /// If a future `egui` adds `WidgetType::MenuItem`, this is what fails
-    /// and points at the module header that has to be rewritten. Until
-    /// then it records that `Button` is a deliberate choice with a stated
-    /// cost, not an oversight.
     #[test]
     fn rows_are_published_as_buttons_because_egui_035_has_no_menu_item_role() {
         // The vocabulary `egui` 0.35 offers for something activatable. If
@@ -247,12 +228,6 @@ mod tests {
     }
 
     /// **Ceiling 2, asserted the same way.**
-    ///
-    /// `WidgetInfo` carries no route to `accesskit`'s
-    /// `set_keyboard_shortcut`, and its one prose-shaped field —
-    /// `hint_text` — is mapped to `set_placeholder`, which a button role
-    /// does not announce. This test pins the consequence: the chord has to
-    /// travel in `label`, because `label` is the only field that arrives.
     #[test]
     fn the_chord_travels_in_the_label_because_no_other_field_arrives() {
         let info = WidgetInfo::labeled(WidgetType::Button, true, "Copy, Ctrl+C");

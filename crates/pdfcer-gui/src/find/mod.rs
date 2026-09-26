@@ -73,48 +73,6 @@ pub struct FindOptions {
 impl Default for FindOptions {
     /// **Case-insensitive, substring, literal,
     /// [`WordBoundary::Alphanumeric`].**
-    ///
-    /// Three of the four are [`TextSearchOptions`]'s own defaults. The fourth
-    /// is not, and the divergence is a decision:
-    ///
-    /// **Case.** `TextSearchOptions::default()` is case-*sensitive*, because
-    /// its job is to reproduce `find_text(needle, false)` byte for byte for
-    /// existing callers. A find **bar** is not an existing caller. Reader's
-    /// *Case-Sensitive* toggle is off by default, so is every browser's, and
-    /// an operator who types `total` and is not shown `TOTAL` on the next
-    /// line reads that as a search that did not work. So this shell starts
-    /// case-insensitive and the control turns it off.
-    ///
-    /// **Wildcards.** Off, which is core's default and the whole subject of
-    /// this module's trap section.
-    ///
-    /// **Word boundary — `Alphanumeric`, and here is the justification the
-    /// brief asks for.** ISO 32000-1 §14.8.2.5 NOTE 1 says outright that
-    /// *"the notion of a word is not precisely defined"*, and NOTE 4 offers
-    /// three reader strategies without preferring one, so there is no
-    /// standard answer to import — only a choice, which is precisely the
-    /// shape the operator's standing directive covers: *where standards are
-    /// ambiguous those should become settings, with the initial installed
-    /// default as the best guess of what is usually followed.*
-    ///
-    /// `Alphanumeric` is that best guess on two independent grounds, and
-    /// `pdfcer-core` classifies it as **evidence tier (c)** — what other major
-    /// implementations do, as documented, rather than a bare guess:
-    ///
-    /// - Acrobat Reader's own *Whole Words Only* is recorded as an
-    ///   exact-boundary match where `stick` does not match `tick` or
-    ///   `sticky`, which is what this variant produces.
-    /// - It is `\w`/`\b`, the boundary model every mainstream search box and
-    ///   regex engine ships, so it is what the operator's habits already
-    ///   predict.
-    ///
-    /// The alternatives are better for narrower work and are offered rather
-    /// than hidden: `NonSpace` is right when the text is part numbers or
-    /// file paths (`A-12/B` is one token), `NonSpaceOrDash` when hyphenated
-    /// compounds matter. Neither is a good *default*, because under
-    /// `NonSpace` the string `(total)` does not contain the whole word
-    /// `total` — which is a surprising answer to give somebody who ticked a
-    /// box called "Whole word" and typed an ordinary English word.
     fn default() -> Self {
         Self {
             case_sensitive: false,
@@ -376,12 +334,6 @@ pub struct FindState {
 }
 
 /// Hand-written rather than derived, for exactly one field.
-///
-/// `#[derive(Default)]` would give [`FindState::zoom_on_jump`] `false`, which
-/// is the **opposite** of what ships — and it would do it silently, in a way
-/// no test that did not name the field could see. That is the same hazard
-/// [`FindOptions::default`] is hand-written for, one struct up, and it is why
-/// the derive was removed here rather than the field being stored inverted.
 impl Default for FindState {
     fn default() -> Self {
         Self {
@@ -705,41 +657,6 @@ pub fn apply(state: &mut FindState, doc: &mut OpenDoc, request: FindRequest) {
 }
 
 /// **Run the search.**
-///
-/// # The borrow protocol, and how it differs from an edit's
-///
-/// [`pdfcer_core::edit::EditSession::find_text_with`] takes `&mut self` —
-/// it is a *read* that needs a mutable borrow — and `OpenDoc::session` is an
-/// `Arc` precisely so a render worker can hold a clone while it rasterizes.
-/// `Arc::get_mut` fails while any other strong reference exists, so the
-/// worker is stopped first, exactly as `app::actions::vector_edit` does:
-/// `RenderWorker::cancel_and_wait`'s own docs call itself *"the choke point
-/// that makes `Arc<EditSession>` sound"*.
-///
-/// Two steps of `vector_edit`'s four are **deliberately absent**, and their
-/// absence is the whole difference between a search and an edit:
-///
-/// - **`edit_epoch` is not bumped.** Nothing about the document changed. A
-///   bump would throw away the page decomposition and the font inventory, and
-///   would immediately make the results this function just produced *stale by
-///   its own rule* — a search that invalidated itself.
-/// - **The page texture is not dropped.** The picture on screen is still a
-///   picture of the page. Dropping it would re-rasterize a CAD sheet on every
-///   Enter.
-///
-/// A cancelled render is re-spawned by `settle_and_rasterize` at the end of
-/// the same frame if the texture is stale, and left alone if it is not — so
-/// the cost of the cancel is a rasterization that was going to happen anyway,
-/// restarted.
-///
-/// # An empty query is not a search
-///
-/// `find_text_with` already returns an empty vector for an empty needle, so
-/// this could simply run. It does not, because the two states must not look
-/// the same on the bar: "you have not typed anything" is [`Readout::Idle`]
-/// and "there is nothing here" is [`Readout::Empty`], and running a search
-/// for `""` would put the second sentence in front of an operator who had
-/// merely cleared the box.
 fn search(state: &mut FindState, doc: &mut OpenDoc) {
     //
     // `state.query` keeps exactly what was typed, so the box still shows it
@@ -850,13 +767,6 @@ fn search(state: &mut FindState, doc: &mut OpenDoc) {
 }
 
 /// Move to the adjacent hit and bring it into view.
-///
-/// Declines — visibly, on the trace, and with the bar's own controls already
-/// unavailable — when the results are not current. The bar never raises this
-/// in that state (it raises [`FindRequest::Search`] instead), so reaching
-/// here means a keymap or a future surface got to the verb another way, and
-/// the honest answer is to do nothing rather than to step through geometry
-/// this module has already declared untrustworthy.
 fn step_to(state: &mut FindState, doc: &mut OpenDoc, step: Step) {
     if !matches!(state.readout(doc.edit_epoch), Readout::At { .. }) {
         crate::diag::trace(|| {
@@ -873,21 +783,6 @@ fn step_to(state: &mut FindState, doc: &mut OpenDoc, step: Step) {
 }
 
 /// **The wrap rule**, as a pure function of three numbers.
-///
-/// Wrapping rather than stopping, which is the opposite of what
-/// `crate::viewer::ViewState::next_page` does — and the difference is not an
-/// inconsistency. Page navigation saturates because *"wrap-around page
-/// navigation silently teleports an operator from page 400 to page 1"*: the
-/// operator is reading, and the pages have an order they care about. Stepping
-/// hits is a **search**, the hit list is a ring the operator is working
-/// around, and stopping at the last one would leave them pressing a live
-/// button that does nothing with no way to tell that from a broken one. Every
-/// find bar in the product class wraps.
-///
-/// `len == 0` is not reachable through [`step_to`], which checks
-/// [`Readout::At`] first, and is handled anyway: an action can be raised from
-/// anywhere and an index into an empty list is a panic waiting for a
-/// customized keymap to find it.
 #[must_use]
 fn next_index(current: usize, len: usize, step: Step) -> usize {
     if len == 0 {

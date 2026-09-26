@@ -108,3 +108,54 @@ Nothing in this module paints. It answers three questions — *which node or
 segment is under the pointer*, *what would the engine allow*, *what action
 does the row raise* — and every one of them is about the cursor rather than
 about the document.
+
+## Item notes
+
+### `const PICK_MEMORY_KEY`
+
+One `Id`, per `egui::Context`, for the module header's reason: the pick is
+taken at the click and read on every frame the popup is drawn, so it has to
+outlive the click and must not outlive the session.
+
+### `const SEGMENT_SLACK_PT`
+
+Wider than [`super::NODE_GRAB_SLACK_PT`]'s companion tolerance, and
+deliberately: a node is a drawn 7 pt square the operator can aim at, and a
+segment is a hairline they cannot. The standing convention at
+`handles::grip_at` — *a grip's live area may exceed its drawn one and never
+the reverse* — is about drawn affordances; a segment has no drawn affordance
+at all, so the number is chosen from what a hand can hold steady rather than
+from a picture.
+
+It is not so wide that it swallows the nodes: [`pick_at`] asks for a node
+**first**, so a click near a corner is a corner even though it is also near
+two segments. See that function's precedence note.
+
+### `fn distance_to_segment`
+
+Clamped to the ends, which is the C5 convention `canvas::selection::annot`
+states: without the clamp a short segment would claim a stripe across the
+sheet, and the insertion parameter could land off the end of the edge the
+operator pointed at.
+
+A degenerate segment (two coincident nodes, which `/Vertices` permits and
+the engine does not de-duplicate) answers `t = 0.0` and the distance to that
+point, so it behaves as the single point it is drawn as.
+
+### `fn a_click_beside_a_segment_projects_onto_it`
+
+Falsified: returning `t = 0.0` instead of the projection makes the
+midpoint assertion fail on both coordinates, and returning the pointer
+itself makes the y assertion fail by the 4 pt offset below.
+
+### `fn a_greyed_row_is_drawn_and_an_absent_one_is_not`
+
+Falsified: defining `shown` as `matches!(self, Self::Live)` makes the
+greyed assertion fail, which is the exact regression — an unavailable
+row disappearing instead of explaining itself.
+
+### `fn the_default_pick_names_no_node`
+
+Falsified: making `Node(0)` the default makes this fail, and would
+have offered *Remove this point* on the first vertex of every shape
+before the operator had pointed at anything.

@@ -103,11 +103,6 @@ mod tests {
     }
 
     /// The three the engine refuses by policy, named exactly as it names them.
-    ///
-    /// Asserted as strings rather than by building a document, because the
-    /// claim under test is that this shell's spelling matches the engine's
-    /// `CutWouldNotSurvive { subtype }` — a wording agreement across a crate
-    /// boundary, which no fixture can check and a typo would silently break.
     #[test]
     fn the_three_policy_refusals_are_spelled_as_the_engine_spells_them() {
         for subtype in ["Redact", "Widget", "Popup"] {

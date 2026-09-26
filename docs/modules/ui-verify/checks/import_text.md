@@ -42,3 +42,17 @@ it the check could press the ribbon item and get no further.
 ⚠ **The seam is not a shortcut around the feature.** Everything after the
 picker — the window, the four choices, the button, the action, the file
 read, the engine call and the receipt — is the real thing.
+
+## Item notes
+
+### `const REGISTER`
+
+Chosen so the **receipt has something to say beyond the page count**: the
+em dashes are characters WinAnsi can encode (so the import must not refuse),
+and the blank lines make paragraphs the placer has to decide about. A file of
+bare ASCII words would exercise the chain and prove nothing about the
+disclosures.
+
+Written by the check rather than committed as a fixture, because it is
+three lines and because a fixture would have to be found and read to know
+what the assertions below mean.

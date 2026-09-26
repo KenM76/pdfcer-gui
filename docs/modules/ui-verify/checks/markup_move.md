@@ -58,3 +58,40 @@ implementation; the engine's tests establish that both halves are written.
 | 5 | the action reaches `move_annotation` | `app::actions::annots` | yes |
 
 Link 4 is the one this check is for, and it is the one that was broken.
+
+## Item notes
+
+### `const INVOKE`
+
+`mode.review` because markup is authored there, and driving from a named
+mode makes the run reproducible rather than dependent on whatever mode the
+last session left behind.
+
+### `const MOVED_EVENT`
+
+`-applied`, per the convention this project adopted after making the
+same-name mistake twice: `vector_edit` writes its own `move-annotation …`
+line for the identical edit, and `.last()` on the bare name reads that one.
+
+### `const PAGE_REGION`
+
+`page`, not `canvas`. `canvas` is the name of a **trace event** in the
+profile's vocabulary — the line carrying the view's rect and zoom — and it
+is not a `ui-rect` region at all. Asking `declared()` for it answers `None`
+on a perfectly healthy build, which is a check reporting the program broken
+because the harness looked in the wrong dictionary. The regions this
+application publishes for the sheet are `canvas-viewport`, `central-panel`
+and `page`; the last is the one that means *a document is on screen*.
+
+### `const SHAPE`
+
+Well inside the sheet and away from the title block on a real drawing, so
+the click that selects it in step 3 cannot land on page content instead —
+and away from the edges, so the move in step 4 has somewhere to go.
+
+### `const MOVE_TO`
+
+A displacement in **both** axes, deliberately. A move that only travels in
+x would pass on a build that dropped `dy` — and `dy` is the one with a sign
+convention to get wrong, because PDF user space increases **upward** while
+every screen coordinate here increases downward.

@@ -72,3 +72,25 @@ every rule-4 disclosure slot still key on it and still behave identically.
 This is a **finer answer laid beside the existing one**, not a replacement,
 so a reader who does not know this module exists cannot be wrong about
 anything.
+
+## Item notes
+
+### `fn a_document_wide_bump_cannot_be_undercut`
+
+This is the assertion that makes it safe to narrow a verb without
+auditing every other verb: getting the ordering wrong cannot produce a
+page that looks fresh.
+
+### `fn a_narrowed_page_is_still_moved_by_a_document_wide_bump`
+
+This is what pins the shared issuer [`PageEpochs::next`] documents: with
+two independent counters, narrowing page 1 and then raising everything
+leaves page 1 answering the number it already had, so a document-wide
+invalidation skips exactly the page most recently edited.
+
+### `fn a_page_that_leaves_and_returns_does_not_bring_its_old_number_back`
+
+The situation is real: delete a page, undo the delete. The page comes
+back, and whatever number its slot held before is meaningless — the
+caller raises `bump_all` for a renumbering, and this asserts the resize
+itself does not hand back a stale value.

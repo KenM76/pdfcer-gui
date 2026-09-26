@@ -12,11 +12,6 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// The mode whose canvas may select and edit page content.
-///
-/// The shell's default is Read, where a canvas click on content is refused BY
-/// DESIGN — and Read's right-click resolves `canvas.read_object`, a two-row
-/// menu (O71) that does not carry this command at all. A check that skipped
-/// this step would report the mode gate as a missing row.
 const MODE: &str = "edit";
 
 /// The fixture, relative to the workspace root. See the module header.
@@ -31,31 +26,12 @@ const PAGE: usize = 0;
 const AIM: (f64, f64) = (120.0, 672.0);
 
 /// The size of [`FIXTURE`]'s only page, from its `/MediaBox`.
-///
-/// Pinned with the fixture rather than read back, for the same reason: a
-/// mapping derived from a page size this check did not choose would silently
-/// aim somewhere else.
 const PAGE_SIZE: PageGeometry = PageGeometry {
     width_pt: 612.0,
     height_pt: 792.0,
 };
 
 /// How many visual LINES [`FIXTURE`]'s single text object holds.
-///
-/// A hard fact about a 976-byte file committed to this repository, quoted in
-/// the module header from its own content stream. It is asserted rather than
-/// read back, because `of` is the denominator the operator is shown — *1 line
-/// of 6* — and a build that counted wrongly would state a wrong number to him
-/// while every mechanism in the chain still worked.
-///
-/// ⚠ **This number cannot tell lines from show operators**, and saying so is
-/// the point of the warning. `paragraph.pdf` writes a `Tm` in front of all six
-/// of its `Tj`s on six distinct baselines, so its run count and its line count
-/// are both 6 — a build that had never been re-keyed satisfies this assertion
-/// unchanged. The oracle that CAN tell them apart is
-/// `provider::line::tests::runs_sharing_a_baseline_are_one_line` (3 runs, 2
-/// lines); its driven twin is `move_line_of_text`, whose fixture holds five
-/// runs in four lines.
 const EXPECTED_RUNS: usize = 6;
 
 /// `canvas-selection via=… sel=… level=… first=…`.
@@ -80,10 +56,6 @@ const PICK_EVENT: &str = "text-run-menu";
 const COMMAND_EVENT: &str = "text-run-command";
 
 /// The trace the `!edit_content` arm of the dispatcher writes instead.
-///
-/// Named only in a failure message, as one of the readings of a press that
-/// produced no [`COMMAND_EVENT`] line. A check that did not mention it would
-/// send a reader hunting a dispatch gap when the mode had simply changed.
 const MODE_DECLINE_EVENT: &str = "format-select-text-line-declined";
 
 /// `selection-set page=… object=… part=… level=… via=…` —
@@ -110,11 +82,6 @@ const RUNG_EVENT: &str = "status-rung";
 const RUNG_TEXT: &str = "text";
 
 /// The menu row itself, published through `MenuHost::attach_with`'s rect sink.
-///
-/// Publishing is the only possible answer for a popup: a context menu is
-/// drawn **at the pointer** and `egui` may flip it to any of several
-/// alignments to keep it on screen. There is no fraction of the window it can
-/// be hard-coded to and no layout a harness could re-derive.
 const ROW_REGION: &str = "menu.item.canvas.object.format.select_text_line";
 
 /// Every row of the canvas object menu, for the failure message.
@@ -152,18 +119,6 @@ impl Check for TheRightClickOffersTheLineYouClicked {
 }
 
 /// The line index and total off a `pick=line:N/M` field.
-///
-/// `None` for `pick=elsewhere` and for anything malformed. The caller
-/// distinguishes those from the raw line rather than from this return: a parse
-/// failure and an honest *"the pointer was not on a line"* are different
-/// findings and must not share a message.
-///
-/// Parsed rather than `Debug`-matched. A `{:?}` rendering of the pick would
-/// make this harness depend on a Rust enum's formatting, which is the defect
-/// recorded as *never `Debug`-format a field a machine reads* — a check there
-/// reported the opposite of the truth while quoting the truth in its own
-/// message. `RunPick::word` writes `line:N/M` as a deliberate, stable token for
-/// exactly this reason.
 fn run_of(line: &crate::trace::TraceLine) -> Option<(usize, usize)> {
     let pick = line.get("pick")?;
     let rest = pick.strip_prefix("line:")?;
@@ -172,10 +127,6 @@ fn run_of(line: &crate::trace::TraceLine) -> Option<(usize, usize)> {
 }
 
 /// Run the sequence.
-///
-/// The three-way return is the SKIP/FAIL/PASS rule made structural: `Err` is a
-/// precondition that was absent (SKIP), `Ok(Some(_))` is an assertion that did
-/// not hold (FAIL), `Ok(None)` is a pass.
 #[allow(clippy::too_many_lines)]
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
     let vocab = &ctx.profile.vocab;

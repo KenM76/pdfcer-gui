@@ -20,6 +20,8 @@
 //!    as "the control is there and pressing it does nothing". [`click_scrolled`]
 //!    measures against `sign-body`, and the footer's own controls ([`click`] on
 //!    `sign-confirm`) are never inside it.
+//!
+//! Design and rationale: `docs/modules/ui-verify/checks/signing/reaching.md`.
 
 use std::path::{Path, PathBuf};
 
@@ -123,14 +125,6 @@ pub(super) fn click_tab(
 }
 
 /// **Click a ribbon tab without requiring that it CHANGED.**
-///
-/// [`click_tab`] asserts a new `ribbon-tab-activated` line, which is the right
-/// test when a check is switching away from a tab it knows is active. It is the
-/// wrong test for *"make sure this tab is on top"*: a tab that is already active
-/// emits nothing when clicked, and the strict form then reports a perfectly good
-/// click as a failure.
-///
-/// A missing tab is still an error. This tolerates *no change*, never *no tab*.
 fn click_tab_tolerant(
     session: &Session,
     driver: &Driver,

@@ -79,3 +79,37 @@ forbids invented values and cannot forbid a wrong role, and picking two
 roles that happen to look right is how this project shipped defect D2 three
 times. The swatch's own fill is not a theme colour at all — it is the
 operator's document content — and says so on the line.
+
+## Item notes
+
+### `const ASPECT`
+
+Wider than tall, which is what a colour *swatch* looks like everywhere
+this operator works — Word's font-colour button, Illustrator's fill chip,
+SolidWorks' line-colour control. A square reads as a button with a coloured
+glyph; a bar reads as a sample of the colour itself.
+
+### `fn disc`
+
+Hand-drawn rather than a `Button` with a rounded corner radius, because a
+rounded rectangle at this size reads as a button with a tint and the point
+of the shape is that the operator sees a **disc** — the thing a radio
+button's background will actually be. It keeps the button's own interaction
+(a click opens the popup) by allocating an interactive rect of the same size
+and painting into it.
+
+### `struct Editing`
+
+In `egui`'s temp data rather than on a draft struct, and that is a
+deliberate difference from [`super::text::TextStyleDraft`]. A draft holds a
+*reading of the document*, which has to be invalidated when the document
+moves; this holds *where the operator's finger is*, which is meaningless the
+moment the popup closes and must never outlive it. Storing it beside the
+document reading would invite a stale finger position to be read as a value.
+
+### `fn mixed_carries_no_colour`
+
+The one assertion this type exists for. If [`Value`] ever gained a way
+to represent "mixed, and here is a colour anyway", the next caller would
+pass the first member's — which is precisely the flattening O89 refused
+to ship, and it would look completely normal while it happened.

@@ -9,12 +9,6 @@ use pdfcer_core::redact::{CarrierAction, RedactionReport};
 use crate::text::redact as t;
 
 /// The collapsed notes section's widget id.
-///
-/// A stable salt rather than the label, because the label carries the note
-/// **count** and egui derives a `CollapsingHeader`'s open/closed state from its
-/// id: without this, a report with three notes and a report with four would be
-/// two different widgets, and the section would spring back open every time the
-/// count changed.
 const REGION_ENGINE_NOTES: &str = "redact-apply-engine-notes"; // ui-text-exempt: widget id salt, never displayed
 
 // ---------------------------------------------------------------------------
@@ -370,13 +364,6 @@ mod tests {
 
     /// **`CheckedClean` reaches the census and the other four verdicts do
     /// not.**
-    ///
-    /// The defect this whole module closes was not a wrong filter — it was **no
-    /// filter**, so a test that only asserted `CheckedClean` is picked up would
-    /// pass on a build that picked up everything. Both halves are asserted, and
-    /// the second half is the one with teeth: `DisclosedNotScrubbed` appearing
-    /// here would put a residual into a sentence that says pdfcer found no
-    /// trace of it, which is rule 1 broken in the worst available direction.
     #[test]
     fn only_the_checked_clean_carriers_are_called_clean() {
         let report = report_with(&[
@@ -401,11 +388,6 @@ mod tests {
 
     /// **The census is empty when nothing was checked clean**, so the block
     /// is drawn on the strength of a measurement and never as decoration.
-    ///
-    /// Without this, a `checked_clean_names` that returned every carrier would
-    /// still satisfy the test above's first assertion if the counts happened to
-    /// line up, and a reassuring sentence would appear on a report that had
-    /// earned nothing.
     #[test]
     fn a_report_with_nothing_clean_says_nothing() {
         let report = report_with(&[
@@ -416,14 +398,6 @@ mod tests {
     }
 
     /// **The two "not scrubbed" verdicts never reach each other's section.**
-    ///
-    /// This is the assertion with teeth in the whole module. The engine keeps
-    /// `FoundNotScrubbed` — *told not to* — apart from `DisclosedNotScrubbed`
-    /// — *tried and could not* — and warns that collapsing them makes a
-    /// deliberate scope look like a failure and a real failure look like a
-    /// preference. Both directions are wrong and both are one `==` away, so
-    /// both are asserted: a declined match must not enter the blocking
-    /// residual section, and a real failure must not be excused as a setting.
     #[test]
     fn a_declined_match_and_a_real_failure_are_never_the_same_list() {
         let report = report_with(&[
@@ -484,10 +458,6 @@ mod tests {
     }
 
     /// A report that removed exactly `texts`, having counted `glyphs` codes.
-    ///
-    /// Built by assignment rather than a struct literal because
-    /// [`RedactionReport`] is `#[non_exhaustive]`, the same reason
-    /// [`report_with`] above is shaped this way.
     fn text_report(texts: &[&str], glyphs: u64) -> RedactionReport {
         let mut report = RedactionReport::default();
         report.redacted_text = texts.iter().map(|s| (*s).to_owned()).collect();
@@ -496,11 +466,6 @@ mod tests {
     }
 
     /// **A line is drawn in all three states.**
-    ///
-    /// The property the whole block rests on. A state that produced no line
-    /// would paint blank space under the heading, and blank space reads as
-    /// *"nothing to report"* — true in one of these three cases and false in
-    /// the other two.
     #[test]
     fn a_line_is_drawn_whatever_the_report_says() {
         for report in [
@@ -521,10 +486,6 @@ mod tests {
     }
 
     /// **Codes counted with no text reported is a disclosure, not a gap.**
-    ///
-    /// `glyphs_removed` is the only thing separating this from the case above,
-    /// and getting that branch backwards would tell the operator a region full
-    /// of text contained none — the worst sentence this dialog could print.
     #[test]
     fn codes_removed_without_any_text_reported_are_disclosed() {
         let drawn = removed_text_lines(&text_report(&[], 37));
@@ -566,12 +527,6 @@ mod tests {
     }
 
     /// **A long entry is cut on a `char` boundary.**
-    ///
-    /// Written with a two-byte character on purpose: the strings arriving here
-    /// are whatever the document's fonts decoded to, and a byte cut inside a
-    /// multi-byte sequence panics the dialog rather than truncating it. The
-    /// character count is the assertion; the panic is the failure this test
-    /// exists to catch.
     #[test]
     fn a_long_entry_is_cut_on_a_char_boundary_not_a_byte_one() {
         // One ASCII character in front of the two-byte run, so that the cap's
@@ -595,10 +550,6 @@ mod tests {
     }
 
     /// **The three trace tokens are distinct.**
-    ///
-    /// `state` is what a driven check reads to tell *"the block found text"*
-    /// from *"the block found none"*, and two branches sharing a token would
-    /// make that check pass on either — an assertion both outcomes satisfy.
     #[test]
     fn each_branch_reports_a_different_state_to_the_trace() {
         let states = [
@@ -615,12 +566,6 @@ mod tests {
     }
 
     /// **`chars` counts characters and survives both caps.**
-    ///
-    /// It is the only field of the trace a driven check can compare against
-    /// something it knows — the length of the string its own fixture puts on
-    /// the page — so counting bytes would make every non-ASCII document
-    /// disagree with the check by the length of its encoding, and counting the
-    /// drawn lines would make a capped report understate what is going.
     #[test]
     fn the_traced_character_count_measures_what_goes_not_what_is_shown() {
         let plain = removed_text_lines(&text_report(&["abc", "de"], 5));

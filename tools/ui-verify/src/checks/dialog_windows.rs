@@ -14,11 +14,6 @@ const INVOKE_ENV: &str = "PDFCER_DIAG_INVOKE";
 
 /// Every dialog reachable by a command id, as `(command, what the operator
 /// calls it)`.
-///
-/// The second element is for the failure message and is deliberately the
-/// operator's word rather than the module name: a report that says *"Export to
-/// DXF opened inside the application window"* is actionable to whoever reads
-/// it, and `export_dxf.rs` is not.
 const DIALOGS: &[(&str, &str)] = &[
     //
     //

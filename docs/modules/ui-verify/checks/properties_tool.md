@@ -71,3 +71,13 @@ already drives the stroke switch through to a resized annotation, and
 leave the set, and both read these regions. This check answers the one
 question neither of them asks about all three at once:
 *are they there at all, after the move?*
+
+## Item notes
+
+### `fn raise_properties`
+
+A dock tab header, never a ribbon toggle: a toggle would *unmount* a panel
+that is already mounted, and this check would then report absent controls
+about a panel it closed itself. Every mode's default arrangement mounts
+Properties, so an absence here means the operator's persisted layout removed
+it — a dock question, not this check's subject.

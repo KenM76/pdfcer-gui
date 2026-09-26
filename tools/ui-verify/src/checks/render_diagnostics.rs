@@ -23,11 +23,6 @@ const TAB_ID: &str = "tools";
 const TAB: &str = "ribbon.tab.tools";
 
 /// The region the dialog publishes while it is drawing its own body.
-///
-/// `dialogs::diagnostics::REGION_BODY`. Spelled here as a literal because that
-/// is the contract between the two crates; the application's own constant
-/// carries a comment saying that renaming it un-aims whatever check was
-/// measuring it, and this is that check.
 const DIALOG: &str = "dialog:render-diagnostics";
 
 pub struct RenderDiagnosticsOpensItsReport;
@@ -265,11 +260,6 @@ mod tests {
     use super::*;
 
     /// The region names are derived from the ids they describe.
-    ///
-    /// The seam where a rename in `egui_shell::ribbon::report` would otherwise
-    /// turn every assertion above into a silent SKIP — *"the application
-    /// declared no region"* — which reads as a missing control rather than as a
-    /// renamed one.
     #[test]
     fn the_region_names_match_the_ids_they_describe() {
         assert_eq!(SUBJECT, format!("{ITEM_PREFIX}{SUBJECT_ID}"));
@@ -277,11 +267,6 @@ mod tests {
     }
 
     /// The dialog's region name is not in the ribbon's namespaces.
-    ///
-    /// It is declared by the application rather than by `egui-shell`, so a
-    /// `declared_names` sweep over `ribbon.` must not catch it and a sweep for
-    /// it must not catch a ribbon item. Cheap to assert, and the alternative is
-    /// a filter that quietly returns the wrong rect.
     #[test]
     fn the_dialogs_region_is_in_its_own_namespace() {
         assert!(!DIALOG.starts_with("ribbon."));

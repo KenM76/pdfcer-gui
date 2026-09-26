@@ -10,27 +10,9 @@ use pdfcer_core::text_edit::RunRepertoire;
 use crate::app::state::OpenDoc;
 
 /// The `egui` temp-memory key the measurement is parked under.
-///
-/// One slot, not a map. A draft has one anchor, so at most one run is being
-/// typed into at any moment, and a map would be a cache of measurements for
-/// runs nobody is editing — held across page changes, invalidated by nothing.
 const MEMORY_KEY: &str = "pdfcer.textedit.repertoire";
 
 /// One measurement, with everything needed to know it is still the right one.
-///
-/// # Why `epoch` is in the key
-///
-/// Because an edit changes the answer. `edit_text` rewrites the run's show
-/// operator and may narrow which codes the embedded subset carries; a
-/// repertoire measured before it describes a page that no longer exists.
-/// `OpenDoc::edit_epoch` is this shell's one monotonic *the document changed*
-/// counter and is what every other derived-from-the-page cache here is keyed
-/// on.
-///
-/// `Clone` and `Send + Sync` are not stylistic: `egui::Context::data`'s
-/// `get_temp`/`insert_temp` require `T: Clone + Send + Sync + 'static`, which
-/// is why the payload is an [`Arc`] and not an `Rc`. The handle is cloned once
-/// per read; the repertoire behind it never is.
 #[derive(Clone)]
 struct Held {
     /// Which page the run is on.
@@ -184,22 +166,6 @@ fn write(ctx: &egui::Context, held: Held) {
 }
 
 /// Ask the engine, once.
-///
-/// # An EMPTY `find`, with the pin — the shape `pin::font_preflight` already
-/// # uses, and for the same reason
-///
-/// `Pass 147.0` taught the engine to resolve a pinned operator's own characters
-/// through `effective_find`, so `""` plus a pin means *the whole pinned
-/// operator*. Passing the run's extracted text instead would be a second
-/// description of what the pin already names, and on a run whose extraction
-/// synthesised a space the two disagree — which is how a preflight came to
-/// report every face on the page as acceptable for one day in August.
-///
-/// ⚠ An empty find with **no** pin is refused by the engine by name, which is
-/// why this answers `None` rather than falling back to an unpinned query when
-/// [`super::pin::resolve`] answers `None`. An unpinned empty find would be
-/// answered about the first operator on the page — a different run's alphabet,
-/// presented as this one's.
 fn measure(doc: &OpenDoc, page: usize, run: usize) -> Option<Arc<RunRepertoire>> {
     let pin = super::pin::resolve(doc, page, run)?;
     let started = std::time::Instant::now();
@@ -258,19 +224,6 @@ mod tests {
 
     /// The one fixture in this repository whose font floor can actually refuse a
     /// keystroke.
-    ///
-    /// `fixtures/subset-font-floor.PROVENANCE.md` argues at length why no other
-    /// document here can stand in for it, and the short form is that every other
-    /// one either carries a non-embedded standard-14 face (whose
-    /// `WinAnsiEncoding` accepts anything Latin-1), or a fully embedded
-    /// non-subset face (the floor never fires), or a symbolic face that refuses
-    /// for an unrelated reason. A check driven against any of those would be
-    /// **unable to fail**, which is the failure mode this project has spent more
-    /// sessions on than any other.
-    ///
-    /// ⚠ The provenance note ends *"do not improve it"* and means it: the subset
-    /// tag, the `/FontFile2` and the three-letter single-operator run are each
-    /// load-bearing here.
     const FIXTURE: &str = "subset-font-floor.pdf";
 
     /// The three letters the fixture's single run prints, which are therefore
@@ -278,12 +231,6 @@ mod tests {
     const IN_THE_SUBSET: [char; 3] = ['A', 'B', 'C'];
 
     /// A character the subset font does not carry.
-    ///
-    /// A plain lowercase `q`, deliberately, and not `€` or an accented letter:
-    /// the operator-facing point of the whole gate is that the wall is **not**
-    /// about symbols. A subset face built from a page that prints six capitals
-    /// cannot type an ordinary lowercase letter either, and a check that only
-    /// ever probed with a euro sign would let a reader believe otherwise.
     const OUTSIDE_THE_SUBSET: char = 'q';
 
     /// A run index the fixture's one-run page does not have, used to reach
@@ -311,23 +258,12 @@ mod tests {
     }
 
     /// A fresh mutable session over the fixture.
-    ///
-    /// Deliberately **not** `open_local_fixture(..).session`: that one is an
-    /// [`Arc`], because the shell shares one session across panels, and
-    /// `edit_text` needs `&mut`. The two tests that drive the engine want a
-    /// session they can spend.
     fn raw_session() -> EditSession {
         EditSession::new(Document::load(&fixture_path()).expect("the fixture loads"))
     }
 
     /// The pin for the fixture's run 0, measured from `session`'s **current**
     /// view.
-    ///
-    /// Re-measured on every call rather than computed once and reused, for the
-    /// reason `facewall` writes out at length: a span pinned before a stream was
-    /// rewritten explains any downstream refusal, and leaving that explanation
-    /// available is how a check comes to measure the harness instead of the
-    /// program.
     fn pin_of_run_zero(session: &EditSession) -> (ByteSpan, pdfcer_core::text_edit::EditTarget) {
         let view = session.view();
         let pages = pdfcer_core::page_tree::pages_in(&view).expect("a page tree");
@@ -359,11 +295,6 @@ mod tests {
     }
 
     /// **The fixture's run is editable, and its alphabet is the subset.**
-    ///
-    /// The control for everything below: if this run were not editable, or if
-    /// its repertoire happened to contain every character, none of the other
-    /// checks here could fail and the module would be untested while reporting
-    /// green.
     #[test]
     fn the_fixture_run_is_editable_and_its_alphabet_is_the_subset() {
         let doc = open_local_fixture(FIXTURE);
@@ -392,16 +323,6 @@ mod tests {
 
     /// **The engine keeps its half of the bargain: every character the
     /// repertoire names is one `edit_text` accepts.**
-    ///
-    /// This is the direction the engine wrote down. It is driven anyway, because
-    /// a guarantee in a doc comment is a claim about someone else's function and
-    /// this project's standing rule is that such a claim gets measured — the
-    /// engine moves daily and this shell is pinned to a commit, not to a
-    /// promise.
-    ///
-    /// A fresh session per character, because `edit_text` mutates the run and
-    /// the second character would then be typed into whatever the first one
-    /// left.
     #[test]
     fn the_engine_accepts_every_character_the_repertoire_names() {
         let doc = open_local_fixture(FIXTURE);
@@ -425,19 +346,6 @@ mod tests {
     /// **The converse, which the engine did NOT write down and this module
     /// depends on: a character absent from the repertoire is one `edit_text`
     /// refuses.**
-    ///
-    /// # Why this is the most important check in the file
-    ///
-    /// The gate this module feeds *stops the keystroke*. If the converse does
-    /// not hold — if some character outside `accepted` would in fact have been
-    /// accepted — then the shell refuses input the document could have taken,
-    /// and does it silently from the operator's point of view, because the
-    /// character simply never appears. That is a worse defect than the one the
-    /// gate was built to fix: losing a word at commit is at least visible.
-    ///
-    /// The engine's guarantee is one-directional by construction (its own source
-    /// tests candidates and collects the ones that survive), so the converse can
-    /// only be held by measurement, and only on a font whose floor bites.
     #[test]
     fn the_engine_refuses_a_character_the_repertoire_omits() {
         let mut session = raw_session();
@@ -454,14 +362,6 @@ mod tests {
     }
 
     /// **A run that cannot be measured records the ATTEMPT.**
-    ///
-    /// The check that pins the module header's load-bearing line. Move the
-    /// `write` behind the `?` in [`of_run`] — the shape a reader will reach for,
-    /// because writing a `None` looks like caching nothing — and this test goes
-    /// red while every other test in the file stays green. Without it, a run the
-    /// engine cannot answer for is re-walked on every frame the caret sits in
-    /// it, which on the benchmark sheet is a 129,758-object walk per frame and
-    /// presents to the operator as the application hanging while he types.
     #[test]
     fn an_unmeasurable_run_records_the_attempt() {
         let doc = open_local_fixture(FIXTURE);
@@ -505,11 +405,6 @@ mod tests {
     }
 
     /// **An edit invalidates the measurement.**
-    ///
-    /// `edit_text` rewrites the run's show operator and can narrow which codes
-    /// the embedded subset carries, so a repertoire measured before it describes
-    /// a page that no longer exists. Drop `epoch` from [`of_run`]'s key
-    /// comparison and this goes red on its own.
     #[test]
     fn an_edit_invalidates_the_measurement() {
         let mut doc = open_local_fixture(FIXTURE);
@@ -533,10 +428,6 @@ mod tests {
     }
 
     /// **The sieve keeps what the run takes and names what it does not.**
-    ///
-    /// The unit the keystroke handler consumes, over the fixture whose floor
-    /// actually bites — so `kept` and `refused` are both non-trivial in one
-    /// call and a build that returned the input unchanged fails here.
     #[test]
     fn the_sieve_splits_a_mixed_keystroke() {
         let doc = open_local_fixture(FIXTURE);
@@ -555,11 +446,6 @@ mod tests {
     }
 
     /// **Only the first refused character is reported.**
-    ///
-    /// One bar, one sentence. A build that reported the last one would look
-    /// identical on a single keystroke and differ on an IME commit, which is
-    /// exactly the class of difference nobody notices until an operator with a
-    /// compose key does.
     #[test]
     fn the_sieve_names_the_first_refusal_only() {
         let doc = open_local_fixture(FIXTURE);
@@ -576,10 +462,6 @@ mod tests {
     }
 
     /// **An unmeasured run keeps every character the operator typed.**
-    ///
-    /// The permissive arm, and the one that must never regress: a run the engine
-    /// could not answer for has to type exactly as it did before this module
-    /// existed.
     #[test]
     fn the_sieve_keeps_everything_when_nothing_was_measured() {
         let doc = open_local_fixture(FIXTURE);
@@ -595,10 +477,6 @@ mod tests {
     }
 
     /// **Abandoning a draft clears the slot.**
-    ///
-    /// Belt and braces over [`of_run`]'s key check, for the reason
-    /// [`forget`] documents: a slot that outlives its subject is a fossil, and
-    /// this project has already spent a session on one.
     #[test]
     fn forgetting_clears_the_slot() {
         let doc = open_local_fixture(FIXTURE);

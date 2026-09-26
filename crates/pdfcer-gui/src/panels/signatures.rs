@@ -136,10 +136,6 @@ pub fn body(
 }
 
 /// Fact 1 — whether the signed bytes are what was signed.
-///
-/// `None` means the file could not be read at all, which is neither a pass nor
-/// a failure and is reported as the coverage half already reports it: as
-/// pdfcer's inability to look, not as a statement about the document.
 fn integrity_line(ui: &mut egui::Ui, verdict: Option<&SignatureVerdict>) {
     let Some(verdict) = verdict else {
         return;
@@ -170,10 +166,6 @@ fn integrity_line(ui: &mut egui::Ui, verdict: Option<&SignatureVerdict>) {
 
 /// Fact 2 — what the signature covers, unchanged from the panel's first
 /// version.
-///
-/// The two malformedness reports come FIRST, because they change what the
-/// coverage numbers mean: a reader that rejects the array computes something
-/// else, or nothing.
 fn coverage_line(ui: &mut egui::Ui, c: &ByteRangeCoverage) {
     if !c.ranges_well_formed {
         ui.label(t::signature_range_malformed());
@@ -190,14 +182,6 @@ fn coverage_line(ui: &mut egui::Ui, c: &ByteRangeCoverage) {
 }
 
 /// Fact 3 — who signed, and whether they chain to a trusted anchor.
-///
-/// The four `NotChecked` sentences are chosen from the [`Anchors`] state
-/// rather than from the verdict, and that is the whole design. The engine
-/// reports `NotChecked` identically whether the operator opted out, has no
-/// store, typed a wrong path, or has a corrupt store — it cannot know which,
-/// because it was simply handed no anchors. This shell DOES know, because it is
-/// the half that looked, and reporting all four as one sentence would be this
-/// panel discarding the only thing it can contribute.
 fn trust_line(
     ui: &mut egui::Ui,
     verdict: Option<&SignatureVerdict>,
@@ -220,11 +204,6 @@ fn trust_line(
 }
 
 /// Which of the four explanations of `NotChecked` applies.
-///
-/// `None` — no report at all — is the never-saved document, and it takes the
-/// opted-out sentence deliberately: there is no file to verify, the anchors were
-/// never consulted, and inventing a fifth sentence for a case the coverage half
-/// already reports would be two surfaces explaining one absence.
 fn why_not_checked(anchors: Option<&Anchors>) -> String {
     match anchors {
         Some(Anchors::NoStore {
@@ -246,11 +225,6 @@ fn why_not_checked(anchors: Option<&Anchors>) -> String {
 }
 
 /// Where the anchors came from, once, above the list.
-///
-/// Drawn only when there ARE anchors. The three no-anchor states are explained
-/// per signature instead, on the trust line, because that is where an operator
-/// is asking the question — and a store disclosure above a list of signatures
-/// whose trust was never checked would be a header about nothing.
 fn anchor_provenance(ui: &mut egui::Ui, anchors: &Anchors) {
     let Anchors::Used {
         path,
@@ -272,12 +246,6 @@ fn anchor_provenance(ui: &mut egui::Ui, anchors: &Anchors) {
 }
 
 /// One fact: its label, then its sentence.
-///
-/// A `horizontal_wrapped` rather than a `format!("{label} {said}")`, so the
-/// three labels line up as a column and the sentences wrap under themselves.
-/// The alignment is not decoration: three facts printed as three unlabelled
-/// paragraphs is three facts a reader has to sort out, which is the first step
-/// back towards reading them as one verdict.
 fn labelled(ui: &mut egui::Ui, label: &str, said: &str) {
     ui.horizontal_wrapped(|ui| {
         ui.spacing_mut().item_spacing.x = 4.0;
@@ -287,20 +255,11 @@ fn labelled(ui: &mut egui::Ui, label: &str, said: &str) {
 }
 
 /// The signature field's name as one trace token, or `none`.
-///
-///
-/// `none` rather than an empty string, matching every other token helper
-/// here: an empty value after `=` is indistinguishable from a truncated line,
-/// and a check cannot tell the two apart.
 fn field_token(name: Option<&str>) -> &str {
     name.unwrap_or("none")
 }
 
 /// The integrity verdict as one trace token.
-///
-/// Not operator copy and not in the catalog: a driven check matches on it,
-/// and a check that matched translated prose would break the day the prose
-/// improved. Same argument as `crate::trust`'s anchor token.
 const fn integrity_token(integrity: &Integrity) -> &'static str {
     match integrity {
         Integrity::Verified { .. } => "verified",
@@ -329,11 +288,6 @@ mod tests {
 
     /// **"No signatures" and "pdfcer could not measure the file" are
     /// different sentences.**
-    ///
-    /// The first is a statement about the document. The second is a
-    /// statement about pdfcer's ability to look, and rendering it as the
-    /// first would be a claim about the operator's file made from an
-    /// inability to read it.
     #[test]
     fn an_unreadable_file_is_not_reported_as_an_unsigned_one() {
         let none = t::signatures_none();
@@ -351,17 +305,6 @@ mod tests {
 
     /// **The leading sentence names three facts and says they are never
     /// merged.**
-    ///
-    /// This replaces `the_caveat_denies_validity_checking_explicitly`, which
-    /// asserted the OLD caveat's *"does not check … valid"* wording. That
-    /// wording became false the moment `verify_all_with_trust` was wired, and a
-    /// test pinning it would have kept a false sentence on screen while passing
-    /// — which is this project's most expensive recorded failure shape wearing
-    /// a green tick.
-    ///
-    /// What is asserted instead is the property that does NOT expire: the panel
-    /// tells a reader, before they start, that there are three answers and that
-    /// pdfcer will not fold them into one.
     #[test]
     fn the_intro_promises_three_separate_facts() {
         let intro = tt::panel_intro();
@@ -376,12 +319,6 @@ mod tests {
 
     /// **Every state this panel can be in produces a trust sentence that
     /// says "not checked", unless the engine actually reached a verdict.**
-    ///
-    /// The assertion that stands between an operator and a silent grey row.
-    /// Driven over the four anchor states plus the never-saved case, through
-    /// the same function the panel calls — so a branch added to
-    /// [`why_not_checked`] without a sentence fails here rather than rendering
-    /// an empty label.
     #[test]
     fn every_unchecked_state_produces_a_sentence_that_says_not_checked() {
         let p = std::path::PathBuf::from(r"D:\nowhere\addressbook.acrodata");
@@ -411,12 +348,6 @@ mod tests {
     }
 
     /// **The four no-anchor states produce four different explanations.**
-    ///
-    /// [`why_not_checked`] is a `match`, and a `match` with two arms returning
-    /// the same string compiles perfectly. This is what refuses that: the four
-    /// call for four different actions — turn the setting on, install Acrobat,
-    /// fix your typo, your store is corrupt — and telling somebody the wrong
-    /// one sends them to the wrong place.
     #[test]
     fn the_reason_trust_was_not_checked_is_specific_to_the_state() {
         let p = std::path::PathBuf::from(r"D:\nowhere\addressbook.acrodata");
@@ -449,11 +380,6 @@ mod tests {
     }
 
     /// **The trace tokens are distinct, and there is one per variant.**
-    ///
-    /// A driven check reads `integrity=` and `trust=` off the row line. Two
-    /// variants sharing a token would make a check that asserts *"the trust
-    /// verdict changed when the setting was turned on"* pass against a build
-    /// where it did not.
     #[test]
     fn the_trace_tokens_tell_the_verdicts_apart() {
         let integrity = [

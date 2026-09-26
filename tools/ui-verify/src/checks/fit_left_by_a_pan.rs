@@ -19,16 +19,6 @@ const CANVAS_REGION: &str = "canvas-viewport";
 /// The Fit page control.
 const FIT_ITEM: &str = "ribbon.item.view.zoom_fit_page";
 /// How far the pan drags, as a fraction of the canvas on each axis.
-///
-/// A fraction, not a distance. `the_line_weight_switch_reaches_the_resize`
-/// got the same class of constant wrong three times in one evening — page
-/// fractions, then points, then fractions of the operand — and the lesson
-/// generalises: **the space a travel is expressed in has to be the space the
-/// thing being measured lives in.** Here the subject is *"did the page move
-/// within the canvas"*, so the canvas is the space.
-///
-/// 0.25 of the canvas is far past [`CENTRED_TOLERANCE`] at any window size
-/// this harness will produce.
 const PAN_BY: f32 = 0.25;
 /// How much smaller the window is made, in physical pixels.
 const RESIZE_BY_PX: i32 = 160;
@@ -37,10 +27,6 @@ const BORDER_PX: i32 = 16;
 /// The title bar and border, vertically.
 const TITLEBAR_PX: i32 = 39;
 /// How far a margin may differ and still count as "centred", in points.
-///
-/// The same role as the sibling's `EDGE_TOLERANCE`: it absorbs the `f32` fit
-/// division and pixel-grid rounding, and nothing else. The pan moves the page
-/// by [`PAN_BY`], which is thirty times this.
 const CENTRED_TOLERANCE: f32 = 4.0;
 
 /// See the module documentation.

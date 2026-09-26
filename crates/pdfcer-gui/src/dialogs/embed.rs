@@ -25,34 +25,10 @@ pub const REGION_EMBED: &str = "embed.commit";
 pub const REGION_USE_OWN_FONTS: &str = "embed.use-own-fonts";
 
 /// Height reserved under the scrolling report, in egui points.
-///
-/// The buttons, plus the checkbox and its two sentences when they are drawn.
-/// A **constant** rather than a measurement, for the reason the print preview's
-/// strip height is a constant and records in full: a scroll area sized from
-/// what is laid out under it is a measurement feeding a size, the caption
-/// re-wraps on a narrow window, and the operator watches the body settle over
-/// several frames for no reason they can see. Reserving for the taller case
-/// costs a little unused height on a window with no checkbox; measuring costs a
-/// feedback loop.
 const FOOTER_RESERVE_PTS: f32 = 132.0;
 
 /// **One planned embed: an operand, its consequence, and the rows worth
 /// drawing.**
-///
-/// # Why there are two of these and not one recomputed on demand
-///
-/// Because building one costs a folder scan — every font file in every
-/// configured folder, read and parsed, measured at **3,359 face names** on an
-/// ordinary Windows font directory. A checkbox that re-scanned on each click
-/// would put a visible pause on a toggle.
-///
-/// And it is not only speed. Two plans built from **one** scan cannot
-/// disagree about what is on the disk. A plan rebuilt later could resolve a
-/// different donor — a file dropped into a folder while the window was open —
-/// so the operator would tick a box that said one thing and commit another.
-/// The whole of `EmbedDialog`'s existing "the request is the operand, the plan
-/// is its consequence, they travel together" argument applies twice over when
-/// there are two of them.
 struct Planned {
     /// What the engine says would happen, computed once. See the header.
     plan: pdfcer_core::font_embed_missing::EmbedPlan,
@@ -313,18 +289,6 @@ impl EmbedDialog {
     }
 
     /// **The plan the window is showing and the button would commit.**
-    ///
-    /// One accessor, so the list the operator reads and the request the commit
-    /// sends cannot be chosen by two different pieces of code — which is how
-    /// a window comes to show one thing and do another, and is the property
-    /// `embed_preview` was designed to give this dialog for free.
-    ///
-    /// The `unwrap_or` is not defensive noise: [`Self::use_own_fonts`] can
-    /// only be `true` if the checkbox was drawn, and the checkbox is only drawn
-    /// when [`Self::with_own_fonts`] is `Some`. The fallback exists so that a
-    /// future caller that sets the flag some other way degrades to the **safe**
-    /// side — the operator's own fonts — rather than panicking or, worse,
-    /// silently committing something else.
     fn active(&self) -> &Planned {
         chosen(
             &self.own_only,
@@ -547,14 +511,6 @@ impl EmbedDialog {
 }
 
 /// The engine's provenance, back in this shell's own terms.
-///
-/// The two enums exist because the crate boundary is load-bearing —
-/// `pdfcer-core` must not depend on `pdfcer-render`, so neither can name the
-/// other's type and *"a shell converts between them in one line."* This is the
-/// return leg of that conversion, and it is exhaustive rather than
-/// wildcard-defaulted: `FontMatch` is `#[non_exhaustive]`, and a fourth rung
-/// arriving must fail to compile here rather than quietly render as the row for
-/// the most reassuring of the three.
 fn rung(matched: pdfcer_core::font_embed_missing::FontMatch) -> crate::app::fonts::Match {
     use pdfcer_core::font_embed_missing::FontMatch;
     match matched {
@@ -579,31 +535,6 @@ pub fn open_for(status: &Status, folders: &[std::path::PathBuf]) -> Option<Embed
 }
 
 /// **Which of the two plans the switch selects.**
-///
-/// # Why this is a free generic function and not three lines inside
-/// # [`EmbedDialog::active`]
-///
-/// Because the decision it makes is the whole of O47 and there is no other way
-/// to assert it. A `Planned` holds an `EmbedPlan`, which only `pdfcer-core` can
-/// build and only from an open document — so a unit test of `active` would need
-/// a `Session`, a PDF, and a font folder, which is a driven check wearing a
-/// test's clothes. Lifted out and made generic, the *selection* is testable
-/// over anything, and what is tested is the function the running program calls
-/// rather than a paraphrase of it.
-///
-/// ⇒ The shape this guards against is one this project keeps meeting:
-/// **a test that the switch is off by default passes on a build that ignores
-/// the switch entirely.** Both positions are asserted below, against the same
-/// function the dialog uses.
-///
-/// `with_own` being `None` wins over `use_own` being `true`, deliberately and
-/// in that order. The checkbox is only drawn when there is something to choose,
-/// so that combination should be unreachable — and if a future caller makes it
-/// reachable, the safe answer is the operator's own fonts. A `panic!` or an
-/// `unwrap` here would turn a wiring mistake into a crash on the Embed window;
-/// silently committing the substitutes would turn it into a licence the
-/// operator never agreed to. Degrading to `own_only` is the only arm that is
-/// wrong in a direction nobody has to live with.
 fn chosen<'a, T>(own_only: &'a T, with_own: Option<&'a T>, use_own: bool) -> &'a T {
     match (with_own, use_own) {
         (Some(theirs), true) => theirs,
@@ -616,15 +547,6 @@ mod tests {
     use super::*;
 
     /// **Both positions of the switch, against the function the dialog calls.**
-    ///
-    /// The two assertions are worthless apart and are written as one test
-    /// so that they cannot be separated:
-    ///
-    ///
-    /// Strings stand in for the two plans. What is under test is the
-    /// **selection**, and a selection is the same function whatever it selects
-    /// between — see [`chosen`] for why the real type cannot be constructed in
-    /// a unit test at all.
     #[test]
     fn the_switch_is_off_by_default_and_it_is_the_switch_that_decides() {
         let mine = "the operator's own fonts";
@@ -647,10 +569,6 @@ mod tests {
 
     /// **With nothing to offer, the switch cannot select anything** — the arm
     /// the checkbox's own drawing condition is supposed to make unreachable.
-    ///
-    /// Asserted rather than left to the comment, because "unreachable by
-    /// construction" is a claim about a construction that somebody will change.
-    /// The safe direction is the operator's own fonts; see [`chosen`].
     #[test]
     fn with_nothing_to_offer_the_switch_falls_back_to_the_operators_own_fonts() {
         let mine = "the operator's own fonts";

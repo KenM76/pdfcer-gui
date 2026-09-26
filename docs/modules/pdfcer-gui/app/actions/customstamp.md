@@ -98,3 +98,39 @@ did my file get bigger"* the answer is one grep away.
 exactly as it will render once saved and reopened — stretched if it was
 stretched, with last year's date if that is what its author typed. No
 badge, no tint, no dashed outline. The report is words, elsewhere.
+
+## Item notes
+
+### `fn disclosures`
+
+Split out so it can be tested without a document, and so the *"say it
+unless `dynamic` already covered it"* rule for widgets sits in one place
+rather than inside a closure inside a funnel.
+
+# Order
+
+Shape first, then the promise, then what did not arrive. That is the order
+of how much each one can cost him: a stretched signature is wrong on the
+page, a stale date is wrong in fact, and a missing form field is a design
+detail of somebody else's stamp.
+
+### `fn said`
+
+`PlacedArtwork` is `#[non_exhaustive]`, so it cannot be built with a
+struct literal from outside its crate. It is `Copy` and every field is
+public, so the fixture is made by placing artwork once — which is
+exactly what a unit test must not do. The rules are therefore tested
+through a shape this module owns instead, and the mapping from
+`PlacedArtwork` to it is the two-line `disclosures` signature above,
+which a reader can check by eye.
+
+This is a real limitation and it is written down rather than worked
+around: when the disclosure rules grow another condition, this comment
+is the signal to ask the engine for a constructor rather than to bolt
+another boolean onto the test helper.
+
+### `fn the_stretch_direction_follows_the_ratio`
+
+Both signs, deliberately. A helper that only ever divides one way
+passes on a symmetric bug: *a suite which only tries one SIGN is not
+testing the value*.

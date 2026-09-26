@@ -10,12 +10,6 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// The command, invoked through the harness seam.
-///
-/// `mode.edit` first, for `form_field`'s reason: the command lives on File ▸
-/// Export, which every mode is shown, but the check fills a field first and
-/// filling on the canvas is mode-dependent. Driving from a known mode makes the
-/// run reproducible rather than dependent on whatever mode the last session
-/// left behind.
 const INVOKE: &str = "mode.edit,file.export_form_data";
 /// The environment variable that answers the save dialog.
 const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH";
@@ -28,24 +22,8 @@ const FAILED: &str = "export-form-data-failed";
 /// The import half of the round trip.
 const IMPORT_INVOKE: &str = "mode.edit,file.import_form_data";
 /// The environment variable that answers the import picker.
-///
-/// Its own variable rather than `PDFCER_DIAG_OPEN_PATH`, so a check can name
-/// the data file without also answering the document picker. The application
-/// draws the same distinction, for the same reason.
 const FORM_DATA_ENV: &str = "PDFCER_DIAG_FORM_DATA_PATH";
 /// The import's own summary line.
-///
-/// `-applied`, and the suffix is the whole reason this constant has a doc
-/// comment. `vector_edit` writes a **second** line for the same edit under the
-/// bare name — `import-form-data page=0 n=1 epoch=1 disclosures=…` — and trace
-/// matching is on the exact event name, so `.last()` on the bare name reads the
-/// funnel's line, finds no `applied=` key, and reports `applied=0` about an
-/// import that set every field it was given.
-///
-/// **That is exactly what the first run of this check did**, and it is the same
-/// defect `text-style` had one day earlier. Reading the note about it did not
-/// prevent the repeat — the naming convention is what does. `restyle_text`'s
-/// `STYLE_EVENT` carries the same warning.
 const IMPORTED: &str = "import-form-data-applied";
 
 /// See the module documentation.

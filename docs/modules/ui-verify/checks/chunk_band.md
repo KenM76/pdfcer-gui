@@ -132,3 +132,45 @@ chained revert discards another track's uncommitted work.
    a wrong one.
 6. **Require the `[FAIL]` line**, not the exit code — a SKIP exits the way a
    PASS does.
+
+## Item notes
+
+### `const BAND_OBJECTS_EVENT`
+
+Read as a failure witness, never as a success one. The two bands are
+mutually exclusive in one release, so this line appearing where
+[`BAND_PARTS_EVENT`] was required is the defect this check exists for,
+quotable rather than describable.
+
+### `const ANCHOR_CHUNK`
+
+Line 0, which [`WIDE_BAND`] also reaches — so the drag in step G begins on
+a line the band selected, which is the ordinary case and the one this check
+means to measure. Pressing on an *unselected* line is a different gesture
+with its own row, in [`crate::checks::chunk_multi_move`].
+
+### `const EXPECTED_DEPTH`
+
+**One**, and that is the assertion: the plural move issues one
+`move_text_run` per run of every selected line and `fold_undo` coalesces
+them into a single entry. A build that skipped the fold moves three lines
+and then needs one press of undo per line, which the operator experiences as
+undo not working.
+
+### `type Step`
+
+The outer `Result` is this harness's: its `Err` is a SKIP, *the check could
+not run*. The inner one separates *the assertion did not hold* from *here is
+the number it read*.
+
+### `fn sweep`
+
+`Ok(Err(_))` is the FAIL sentence for a band that never reached the chunk
+rung at all — the defect — quoting the object-rung line when the build wrote
+one.
+
+### `fn descend`
+
+Two clicks, because the chunk rung is entered on the second. The leading
+Escapes make this callable without inheriting a rung from whatever ran
+before it.

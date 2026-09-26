@@ -70,11 +70,6 @@ pub(crate) fn selected_text_object(doc: &OpenDoc) -> Option<(usize, usize)> {
 }
 
 /// Is the object at this index page text?
-///
-/// Asked through [`crate::panels::objects::summary::object_kind`], which is
-/// the same classification the Objects panel row and the read-only object
-/// section use — so what this module calls text and what the panel beside it
-/// calls text cannot disagree.
 fn is_text(doc: &OpenDoc, page: usize, object: usize) -> bool {
     use crate::canvas::target::CanvasTargetProvider as _;
     doc.page_objects().is_some_and(|provider| {

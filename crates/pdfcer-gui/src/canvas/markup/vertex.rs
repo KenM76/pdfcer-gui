@@ -97,10 +97,6 @@ fn clear(ctx: &egui::Context) {
 
 /// Read the run, building one that already agrees with `kind` and `page_index`
 /// if there is none — and discarding one that does not.
-///
-/// The two synchronisations of §2, in the order that matters: the **kind** first,
-/// because a kind change is what invalidates the vertices, then the **page**.
-/// Lifted from `measure::load`, whose own comment carries the ordering argument.
 fn load(ctx: &egui::Context, page_index: usize, kind: MarkupKind) -> VertexRun {
     let Some(run) = read(ctx) else {
         return VertexRun::new(page_index, kind);
@@ -459,15 +455,6 @@ pub(in crate::canvas) fn preview(
 }
 
 /// PDF user space → screen, both hops.
-///
-/// The same pair `measure::page_to_screen` makes, and it is spelled here rather
-/// than shared because that one is `measure`-private and the two modules are
-/// otherwise independent. **Both** hops matter: `viewer::pdf_space_to_canvas`
-/// lands in *canvas* space — page top-left origin, no zoom — and the painter
-/// speaks screen, so a preview that stopped after the first hop would draw every
-/// segment offset by wherever the page sat in the window and at 100 % whatever
-/// the magnification. That is the defect `measure::page_to_screen`'s own docs
-/// record, shipped once already.
 fn to_screen(x: f64, y: f64, page: &Page, map: &PageMapping) -> Option<Pos2> {
     #[allow(clippy::cast_possible_truncation)]
     let canvas = viewer::pdf_space_to_canvas(Pos2::new(x as f32, y as f32), page)?;
@@ -569,10 +556,6 @@ mod tests {
     // -----------------------------------------------------------------
 
     /// **Each click adds one vertex and authors nothing.**
-    ///
-    /// The half a build that committed on every click would fail, and the half
-    /// that makes the double-click mean anything: if a click already authored,
-    /// there would be nothing for an ending to end.
     #[test]
     fn each_click_adds_a_vertex_and_authors_nothing() {
         let ctx = egui::Context::default();
@@ -594,11 +577,6 @@ mod tests {
     }
 
     /// **`click, click, double-click` places three vertices and commits.**
-    ///
-    /// The reading §1's "order of the two questions" argues for, asserted as a
-    /// count: a build that swallowed both clicks of the pair would place two and
-    /// the operator would lose their last corner; a build that placed a vertex
-    /// on the double as well would place four, with the last two coincident.
     #[test]
     fn a_double_click_finishes_and_the_first_click_of_the_pair_still_counts() {
         let ctx = egui::Context::default();
@@ -634,13 +612,6 @@ mod tests {
     }
 
     /// **The two endings author the same annotation from the same clicks.**
-    ///
-    /// The property the one-commit-path design exists for, asserted the only way
-    /// that means anything: run *both* endings over identical runs and compare
-    /// the actions they raise. Two arms that each built a `Geometry::Vertices`
-    /// would agree on the day they were written, drift on the first change to
-    /// either, and the operator would have no way to see it — a polygon drawn
-    /// from the same clicks looks the same whichever code wrote it.
     #[test]
     fn the_double_click_and_the_command_author_the_same_annotation() {
         // Ending 1: the double-click, taken by the canvas.
@@ -689,13 +660,6 @@ mod tests {
     }
 
     /// **A polygon needs one more click than a polyline before Finish lights.**
-    ///
-    /// §1.2's third consequence, at the surface the operator reads: after two
-    /// clicks the ribbon's Finish is live for a polyline and greyed for a
-    /// polygon, because a two-vertex closed shape is a line drawn there and back.
-    /// Asserted through `finishable`, which is the condition the control is
-    /// registered against, rather than through `action` — the rule is only worth
-    /// anything if it reaches the button.
     #[test]
     fn finish_lights_after_two_clicks_for_a_polyline_and_three_for_a_polygon() {
         for (kind, needed) in [(MarkupKind::PolyLine, 2_usize), (MarkupKind::Polygon, 3)] {
@@ -717,15 +681,6 @@ mod tests {
 
     /// **Finish is offered only while the tool is still armed**, and asking the
     /// question does not manufacture a run.
-    ///
-    /// The fourth row is the one that is easy to miss: putting the pen down does
-    /// **not** discard the run (§2), so without the armed-tool check the ribbon
-    /// would keep offering Finish for a run nothing is drawing any more. The last
-    /// assertion is `measure`'s
-    /// `asking_whether_finish_is_available_creates_no_measure_state` for this
-    /// tool: `finishable` runs on every frame, for every document, and a version
-    /// that went through `load` would leave a run in memory for a tool nobody
-    /// armed.
     #[test]
     fn finish_needs_the_tool_armed_and_asking_creates_nothing() {
         let ctx = egui::Context::default();
@@ -759,11 +714,6 @@ mod tests {
 
     /// **A change of kind or of page discards the run** — §2's two
     /// synchronisations, at the entry point that applies them.
-    ///
-    /// The failure without them is the one `MeasureState::set_kind`'s docs name:
-    /// not an error, but *"something strange"* on the operator's next click — a
-    /// polygon closing over vertices they drew as a polyline, or a shape landing
-    /// on a sheet they had paged away from.
     #[test]
     fn changing_kind_or_page_discards_the_run() {
         let ctx = egui::Context::default();
@@ -785,10 +735,6 @@ mod tests {
     }
 
     /// **Escape abandons the run and reports that it took the key.**
-    ///
-    /// Both halves. The `false` with nothing in progress is the load-bearing one:
-    /// without it Escape would be consumed by a tool that has nothing to abandon,
-    /// and the ladder below would need two presses to move one rung.
     #[test]
     fn escape_abandons_a_run_and_says_whether_it_took_the_key() {
         let ctx = egui::Context::default();

@@ -97,3 +97,168 @@ review.
   rather than a missed row of the table.
 - **It does not decide the start mode.** [`start`] does: it adopts the mode
   remembered from the last session, falling back to the manifest's first.
+
+## Item notes
+
+### `fn registered_panels`
+
+Derived from [`Panel::ALL`] filtered through the live catalog, so it is
+the same set the §5b capability rule uses — a build with a capability
+compiled out reports fewer, which is exactly right: a panel that does not
+exist here must not be recorded as one this layout has seen, or removing
+and restoring a capability would leave it permanently invisible.
+
+### `fn adopt`
+
+Returns the ids actually added, for the trace.
+
+# Why the default's placement rather than a fixed corner
+
+A panel appended to the end of the first stack would land beside
+whatever happens to be there, which for Pages means tabbed behind
+Bookmarks on the day it appears — the operator sees a tab bar grow by one
+and has no reason to think a feature arrived. Placing it where the mode
+intended puts it where the documentation, the mockups and the next
+release's default all agree it goes.
+
+A panel already present is skipped rather than duplicated. That is not
+defensive: `Unseen::Unknown` deliberately reports every registered panel,
+including ones the restored layout already mounts.
+
+### `fn assemble`
+
+The operator, 2026-08-26, reporting the consequence rather than the cause:
+*"I can't figure out how to click on objects to edit them."* Part of that is
+an engine limitation and is filed as one — but the part nothing explained is
+that the program opened in **Read** on every launch, where a click on page
+content selects nothing at all, and no surface said so. Someone who spent an
+afternoon in Edit came back the next morning to a program that had silently
+forgotten.
+
+# The three ways this can decline, all of which land on the first mode
+
+1. **No stored id** — a fresh profile, or a file written before this field
+   existed.
+2. **An id the manifest no longer declares** — a mode renamed or removed in
+   a customized manifest between two runs. `is_known` is what catches it,
+   and the fallback is what stops a rename leaving the shell with no mode.
+3. **No modes at all** — a manifest that failed to validate. `first()` is
+   `None` too, and nothing is adopted.
+
+Note what is *not* checked: whether the stored mode is one this build
+considers safe or sensible. It is the operator's own last choice, made in
+this program, and second-guessing it would be the program deciding it knows
+better than the person using it.
+
+### `fn registry`
+
+Duplicated in [`defaults`]' own test module rather than shared,
+because a `#[cfg(test)]` helper reachable across module boundaries has
+to be made visible in the non-test build too. Six lines of fixture is
+the cheaper of the two costs.
+
+### `fn the_mode_list_is_whatever_the_manifest_declares`
+
+`SHELL_FRAMEWORK.md` §4 makes Read/Review/Edit a configuration
+rather than a built-in, and `egui-shell`'s workspace store refuses
+to ship three magic names for the same reason. This module is the
+third place that rule could have been broken — and the place where
+breaking it would look most reasonable, because it is the one that
+legitimately knows what "read" means as an arrangement.
+
+Asserted by driving a manifest with *different* modes: a fourth mode
+must be adoptable, and a mode the manifest does not declare must
+not be.
+
+### `fn a_mode_remembers_the_operators_own_arrangement_of_it`
+
+The behaviour the whole module exists for, and the one
+`MODES_AND_PANELS.md` Part 1 rule 3 states: *"Each mode remembers
+its own panel layout. Leaving Edit and coming back restores the
+arrangement, not a default."*
+
+### `fn a_modes_arrangement_survives_a_restart`
+
+The round trip that makes the previous test worth anything: the same
+sequence, through a real file, across two `Startup`s. A rearrangeable
+layout that forgets itself each restart is worse than a fixed one.
+
+### `fn a_stored_mode_the_manifest_no_longer_declares_is_declined`
+
+The case is real rather than theoretical: the mode list comes from a
+manifest an operator may customize, and renaming a mode between two runs
+leaves the previous run's id stored and unresolvable. Without the
+`is_known` filter the shell would adopt nothing, which is a state with no
+ribbon tabs and no way back.
+
+### `fn switching_modes_touches_neither_the_document_nor_the_selection`
+
+`MODES_AND_PANELS.md` Part 1 rule 1: *"Switching modes never
+destroys work. Read ⇄ Edit is a view stance, not a save boundary."*
+
+The argument list of [`Modes::on_mode_changed`] already makes this
+impossible — it can reach a `DockState` and a `LayoutStore`, and
+neither can reach an `EditSession` — so this test exists to make a
+*later* edit that widens that argument list fail here rather than
+pass a review.
+
+### `fn a_layout_that_predates_a_panel_gains_it`
+
+A layout written before a panel existed — no `known_panels` at all,
+which is every file any existing install has — must gain the panel,
+and must gain it *where the mode default puts it*.
+
+Simulated the way it actually happens rather than by constructing the
+end state: a workspace is saved holding ONLY Bookmarks (which is what
+Read's remembered layout contained before Pages was registered), the
+store is then read back through the real `on_mode_changed`, and the
+result is asserted.
+
+### `fn adoption_does_not_re_open_a_side_the_operator_collapsed`
+
+The other half of the rule, and the reason `adopt` keys on
+`columns.is_empty()` rather than on `!visible`. `SideLayout::visible`'s
+own documentation calls hiding *"a view state, not a destruction"* — so
+a populated side that is hidden carries a decision, and a new panel
+must join the arrangement it keeps rather than overrule it.
+
+Asserting the collapse survives is what makes the pair a rule instead
+of a patch: a fix that simply set `visible = true` whenever anything
+was adopted would pass the test above and re-open a dock the operator
+closed, on every release that adds a panel, forever.
+
+### `fn the_upgrade_adoption_happens_only_once`
+
+The property that makes the `Unknown` branch acceptable. Without it,
+every launch would re-open every panel the operator had closed, which
+is a far worse bug than the one being fixed — it would undo a decision
+they made, repeatedly, forever.
+
+### `fn a_fresh_install_gets_the_default_and_nothing_else`
+
+There is no remembered workspace, so the default arrangement is used
+whole and the adoption path is never entered — asserted because a
+reconciliation that also fired on first run would be indistinguishable
+from one that worked, right up until it added a panel twice.
+
+### `fn an_adopted_panel_is_raised_and_not_merely_mounted`
+
+The regression test for the defect that made the (since retired) Tool
+panel — built to answer *"no side bar area showing what tool is
+active"* — invisible to the operator who reported the gap, for its
+entire life, on the profile he had been running for two weeks.
+
+The panel in the assertion is now Layers, because the Tool panel was
+dissolved by `OPERATOR_REQUESTS.md` O123. The property under test is
+`adopt`'s and has nothing to do with which panel arrives — but naming a
+panel that no longer exists would have made the test read as being
+about a surface, which it never was.
+
+`stack.tabs.push` mounted it and left whatever was active still active,
+so it landed behind another tab: present in `layout.ron`, present in the
+tab strip, and never seen. For a panel whose whole purpose is
+discoverability that is identical to not shipping it.
+
+Found by a driven check asking *what does a first frame show* — not by
+any of the tests of `adopt`, every one of which asked whether the panel
+was PRESENT. Presence was never in doubt.

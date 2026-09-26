@@ -86,3 +86,54 @@ alone cannot do.
 **Nothing in this file has been executed against a running binary.** It is
 registered so that the next `ui-verify` run executes it, and until one does
 every claim above is a claim about the code rather than about the program.
+
+## Item notes
+
+### `const MODE`
+
+**Read**, deliberately, and it is itself an assertion. The File tab is in
+every mode's tab list, and `app::dispatch`'s arm for these two commands says
+in words why they are reachable from a reading stance: *protecting a drawing
+before sending it out is not an act of authoring, and an operator reading a
+document in Read mode is exactly the operator about to email it to
+somebody.* Driving from Read is how that claim gets checked rather than
+merely written.
+
+### `fn press`
+
+Through [`declared_or_in_overflow`] rather than a bare rect lookup, and
+this is the whole reason phase 1 of the module header's finding list is a
+finding at all. At the harness's 1,100 pt window the File band runs out of
+width, and a Security group added at the END of an already-full band is
+exactly the group that lands in a collapsed popup or past the overflow
+button. Neither publishes a rect until it is opened, so a plain `declared`
+would report *"the application declared no `ribbon.item.file.encrypt`
+region"* — which would be true, and would be reported as a missing feature
+when what is missing is a scroll.
+
+The invoke count is read **before and after** rather than as a presence:
+this check presses three different controls across two processes, and *"has
+it ever been invoked?"* would be answered `true` by a press made a minute
+earlier.
+
+### `fn drawn`
+
+A degenerate rect counts as **absent**, not present. A region declared at
+zero area is not something an operator can see, so counting it as a presence
+would let a build satisfy phase A's instrument assertions with three
+invisible rectangles.
+
+### `fn close_window`
+
+That guard is deliberate and documented — a second press must not discard
+a half-filled form — so this check has to close the window between phases
+rather than pressing twice and wondering why nothing changed. Escape is the
+host's own close, the same one the title-bar × reaches.
+
+### `fn repo_fixture`
+
+The `&CheckContext` parameter is gone, and its absence is the point. It
+existed because this function once resolved the path from `ctx.source_root`
+— the staleness root, which defaults to `crates` — and then kept the
+parameter alive with a `let _ = ctx;` after that was corrected. A parameter
+retained only to be discarded is an invitation to use it again.

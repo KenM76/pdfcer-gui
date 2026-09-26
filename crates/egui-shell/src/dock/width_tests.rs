@@ -61,6 +61,8 @@
 //! first place. `MODES_AND_PANELS.md` is explicit that *"Layout and
 //! clipping defects have exactly one oracle: a rendered screenshot"*, and
 //! nothing here claims otherwise.
+//!
+//! Design and rationale: `docs/modules/egui-shell/dock/width_tests.md`.
 
 use egui::{Pos2, Rect, Vec2};
 
@@ -69,19 +71,9 @@ use super::report::RectReport;
 use super::{Dock, DockState, plan, testfont};
 
 /// Tolerance, in points, for "inside" and "does not overlap".
-///
-/// `egui` rounds widget rectangles to whole physical pixels, so an edge
-/// can land a fraction of a point beyond an exact arithmetic boundary
-/// without anything being wrong. One point is well below anything a
-/// person could see and well above the rounding.
 const SLACK: f32 = 1.0;
 
 /// A registry of `n` panels with realistic, differently-shaped labels.
-///
-/// Deliberately **not** `"Panel 0" … "Panel 8"`: labels of equal length
-/// make every tab the same width, which is the one property real
-/// proportional text does not have and the one the arithmetic must not
-/// assume.
 fn registry(n: usize) -> PanelRegistry {
     const LABELS: [&str; 9] = [
         "Pages",
@@ -190,16 +182,6 @@ fn measured_tab_widths(ctx: &egui::Context, n: usize) -> Vec<f32> {
 }
 
 /// Measure exactly as [`super::tabs`] does.
-///
-/// **The text style matters, and getting it wrong is silent.** The tab
-/// bar resolves [`egui::TextStyle::Button`] against the live style; a
-/// test that measured at a hard-coded `proportional(14.0)` would compute
-/// a *different* flip point from the one the renderer uses, and the
-/// binary-searched assertion below would then be aimed a few points away
-/// from the boundary it exists to probe — passing, while testing an
-/// ordinary width. A search at a hard-coded 14 pt against a renderer
-/// drawing at the style's button size reports "nothing overflowed" at a
-/// width where something must, and reports it in green.
 fn text_width(ctx: &egui::Context, text: &str) -> f32 {
     let font_id = egui::TextStyle::Button.resolve(&ctx.style_of(egui::Theme::Light));
     ctx.fonts_mut(|f| {
@@ -214,10 +196,6 @@ fn text_width(ctx: &egui::Context, text: &str) -> f32 {
 // ---------------------------------------------------------------------
 
 /// **The harness is not vacuous.**
-///
-/// Everything below is worthless if this is not true, and "worthless"
-/// here means "passing" — which is why it is asserted rather than
-/// assumed.
 #[test]
 fn the_dock_measures_real_proportional_text() {
     let ctx = egui::Context::default();
@@ -237,10 +215,6 @@ fn the_dock_measures_real_proportional_text() {
 
 /// **The reservation is sized for the widest label the control can ever
 /// show, and with real metrics that is not the longest one.**
-///
-/// `"⏷ 8 more"` is wider than `"⏷ 9 more"` in any face whose digits are
-/// not tabular. With no font installed the two measure the same and this
-/// test is vacuous, which is exactly why it lives in this file.
 #[test]
 fn the_reservation_covers_the_widest_label_with_real_metrics() {
     let ctx = egui::Context::default();
@@ -264,12 +238,6 @@ fn the_reservation_covers_the_widest_label_with_real_metrics() {
 
 /// **Binary-searched to the exact width at which a tab first has to
 /// hide — and the affordance is inside the bar there.**
-///
-/// A sweep is too coarse: the RAG entry this test is written from records
-/// an 11 pt sweep step walking straight over an 8 pt estimation error.
-/// The flip point is where the arithmetic and the drawing are most likely
-/// to disagree, because it is the only width at which a one-point error
-/// changes the answer.
 #[test]
 fn the_affordance_is_inside_the_bar_at_the_exact_width_where_tabs_start_hiding() {
     let ctx = egui::Context::default();
@@ -330,14 +298,6 @@ fn the_affordance_is_inside_the_bar_at_the_exact_width_where_tabs_start_hiding()
 
 /// **The affordance is on screen at every dock width, including ones
 /// narrower than the affordance itself.**
-///
-/// This is the `max_rect`-inflation trap stated as an assertion. A
-/// control positioned by subtraction (`right − width`) lands at a
-/// negative x the moment the bar is narrower than its reservation; it is
-/// still laid out, still allocated, still reported with a plausible
-/// `Rect` — and painted where nobody can see or click it. Nothing errors
-/// and nothing warns. Only a comparison against the **window** catches
-/// it.
 #[test]
 fn the_affordance_is_always_within_the_window() {
     for dock_width in [plan::MIN_SIDE_WIDTH, 170.0, 200.0, 260.0, 340.0, 520.0] {
@@ -430,12 +390,6 @@ fn the_active_tab_is_drawn_whenever_any_tab_is() {
 // ---------------------------------------------------------------------
 
 /// **A very wide hidden tab does not hold the dock open.**
-///
-/// Failure mode #3 is *"an inactive tab you cannot see holds the whole
-/// dock open"*. Here one panel is given a preposterous label and left
-/// **inactive**, and the dock is still drawn at exactly the width the
-/// layout asked for. With no font installed this test cannot fail,
-/// because the preposterous label measures the same as every other one.
 #[test]
 fn an_inactive_tab_with_a_huge_label_does_not_widen_the_dock() {
     let ctx = egui::Context::default();

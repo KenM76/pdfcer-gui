@@ -196,3 +196,89 @@ Continuing the original note:
 * **the fixture already carries so many annotations that the panel excludes
   some** — the count would then not move by exactly one and the check would
   be measuring the panel's editorial rules rather than the save.
+
+## Item notes
+
+### `const MODE`
+
+The weaker claim, and [`crate::checks::markup_rectangle`]'s reason for the
+same choice: a markup tool that works in Review works in Edit. `file.save_copy`
+itself is on the File tab, which **every** mode is shown, so nothing about
+the save is mode-specific — which is worth knowing, because it means this
+check's mode choice is entirely about reaching the *edit*, not the save.
+
+### `const RECTANGLE`
+
+Rectangle rather than one of the vertex kinds because it is the shortest
+gesture that authors anything — one drag, one release, no ending to press —
+and this check's subject is the save, not the tool.
+
+### `const PICKED_EVENT`
+
+Read only to improve a SKIP: its absence with `PDFCER_DIAG_SAVE_PATH` set
+means the picker was reached and did **not** consult the seam, which would
+have opened a real modal and hung this harness rather than failing it.
+
+### `fn digest`
+
+The same function, for the same reason, as [`crate::checks::ocr`]'s: the
+question is *"did this file change"*, the adversary is a bug rather than a
+forger, and carrying a SHA-2 implementation into this crate to answer it
+would be a dependency for nothing. The **length is part of the digest** so a
+truncation cannot be hidden by a hash collision.
+
+### `fn invokes`
+
+A **count**, never a presence: this check clicks three different controls in
+one run, and "has it ever been invoked?" would be answered `true` by a click
+made ten seconds earlier.
+
+### `fn comments_count`
+
+Used **twice** — once on the fixture and once on the saved copy in a second
+process — which is the whole reason it is a call rather than four lines: the
+two censuses have to be produced by the identical sequence, or the
+comparison at the end is between two different measurements.
+
+
+Until 2026-09-05 this file carried its own `comments_count`, its own
+`listed()`, and its own excluded-annotation refusal — and
+[`crate::checks::undo_redo`] carried a second copy of all three. Both read
+the census with `Trace::last`, which searches the whole capture, so when the
+panel went to the back of its dock and **stopped tracing**, both read the
+line it had published in the previous mode and reported a working panel as
+broken, in the same words, on the same sweep. The sweep report called them
+*"two independent witnesses"*.
+
+The shared module's header carries the whole finding. What belongs here is
+the consequence for this file: **there is no local census reader any more,
+deliberately.** A repair that lands in one of two copies is the defect this
+check just spent a sweep demonstrating.
+
+### `fn the_selectors_match_the_shells_own_spelling`
+
+Pinned for the reason every sibling check pins its own: the two crates
+are joined by a **string** and nothing else, so a rename would leave both
+sides compiling while every assertion here quietly stopped matching — and
+a check that matches nothing passes vacuously.
+
+### `fn the_digest_notices_a_single_changed_byte_and_a_truncation`
+
+Phase D's whole verdict rests on this function, so a digest that answered
+"unchanged" for a modified file would turn the check's assertion about
+the operator's own drawing into a formality that always passes.
+
+### `fn an_appended_revision_is_told_apart_from_a_rewrite`
+
+The predicate is one `starts_with`, which is exactly the kind of line
+that gets "simplified" into something that always passes. Both
+directions are pinned, and the *rewrite* fixture is deliberately one that
+shares a long prefix with the source — a full rewrite of a PDF really
+does begin `%PDF-1.x`, so a check that only compared the first few bytes
+would pass against the build this phase exists to catch.
+
+### `fn the_drag_is_a_real_rectangle_inside_the_page`
+
+A degenerate one would be refused by `markup::action`'s no-extent rule
+and phase B would report "the drag authored nothing" about a fixture
+defect. A drag near the edge would be clamped by the canvas.

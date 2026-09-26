@@ -35,6 +35,8 @@
 //! a rect with no area to hit, so it paints and reports a rectangle and is
 //! **not clickable**. The rule is documented at that function; a collapsed
 //! group's popup is what depends on it.
+//!
+//! Design and rationale: `docs/modules/egui-shell/ribbon/collapsed.md`.
 
 use egui::{TextStyle, Vec2};
 
@@ -44,17 +46,9 @@ use super::plan::GroupRows;
 use crate::manifest::Group;
 
 /// The chevron that says *"there is more inside"*.
-///
-/// The same glyph the overflow affordance uses, deliberately: an operator who
-/// has learned what `⏷` means at the end of the band should not have to learn
-/// a second symbol for the same promise three inches to the left.
 const CHEVRON: &str = "⏷";
 
 /// Padding either side of a collapsed group's caption.
-///
-/// Matches `sizing`'s `LARGE_SIDE_PADDING`, because a collapsed group sits in
-/// the band beside Large controls and a different inset would read as a
-/// misalignment rather than as a different kind of thing.
 const SIDE_PADDING: f32 = 10.0;
 
 /// **What a collapsed group costs the band.**
@@ -174,10 +168,6 @@ mod tests {
 
     /// **A collapsed group is narrower than its caption is long, plus padding
     /// — and never zero.**
-    ///
-    /// The width feeds the ladder, and a zero would make the ladder believe
-    /// collapsing is free, which is how every group ends up collapsed at a
-    /// width where two would have fitted.
     #[test]
     fn a_collapsed_group_is_at_least_its_padding_wide() {
         let ctx = egui::Context::default();

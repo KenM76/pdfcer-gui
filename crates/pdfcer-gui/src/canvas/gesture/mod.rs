@@ -297,10 +297,6 @@ impl GestureState {
 }
 
 /// Trace slot for the once-per-change gesture-machine summary.
-///
-/// Its own slot: `trace_changed` keys on the slot, so sharing `canvas-press`'s
-/// would make each line suppress the other's, and a suppressed line looks
-/// exactly like the frame never happening.
 const GESTURE_SLOT: &str = "canvas-gesture"; // ui-text-exempt: trace slot name, never displayed
 
 #[cfg(test)]
@@ -320,10 +316,6 @@ mod tests {
     }
 
     /// **A press produces nothing at all** — invariant 2, at its source.
-    ///
-    /// Whatever the press landed on, and whatever else the frame carries, the
-    /// press frame is `Idle`. Nothing downstream of this can clear a
-    /// selection, because nothing downstream of this is called.
     #[test]
     fn a_press_alone_produces_no_outcome() {
         for kind in [DragKind::Marquee(MarqueeIntent::Select), DragKind::Move] {
@@ -341,10 +333,6 @@ mod tests {
     }
 
     /// **A press on blank paper that becomes a drag never yields a click.**
-    ///
-    /// The whole sequence, frame by frame, as the roadmap describes it: press
-    /// on empty canvas, move, release. If any frame produced a `Click`, the
-    /// selection would be cleared by hit test — which is the defect.
     #[test]
     fn a_press_that_becomes_a_drag_never_yields_a_click() {
         let mut g = GestureState::default();
@@ -516,14 +504,6 @@ mod tests {
 
     /// **A zoom marquee is the same band with the other intent** — same
     /// rect, same normalisation, same phases, same shift handling.
-    ///
-    /// Asserted by driving both intents through the identical frame sequence
-    /// and comparing the outcomes field by field: everything but `intent` must
-    /// match. That is the mechanical form of *"do not add a second rubber band
-    /// with different pixels"* — if the two ever diverged geometrically, the
-    /// canvas would be drawing two bands from one `draw_marquee`, and the
-    /// operator would see a zoom box that did not agree with the box that had
-    /// been selecting a moment earlier.
     #[test]
     fn a_zoom_marquee_is_the_same_band_with_the_other_intent() {
         fn run(intent: MarqueeIntent) -> Vec<GestureOutcome> {
@@ -605,10 +585,6 @@ mod tests {
     /// which is what the release itself does, and what a competing surface
     /// could do — must not turn a zoom marquee into a selection marquee
     /// halfway across the page.
-    ///
-    /// Modelled the way the machine actually experiences it: the caller
-    /// reports `Select` on every frame after the press, exactly as it would
-    /// once the arming flag had been cleared.
     #[test]
     fn a_marquee_keeps_the_intent_it_started_with() {
         let mut g = GestureState::default();
@@ -642,10 +618,6 @@ mod tests {
 
     /// **A hand-tool frame produces no gesture at all** — the shape
     /// `canvas::interact` relies on so that a pan cannot also marquee.
-    ///
-    /// The canvas hands this machine a blank `PointerFrame` while the hand
-    /// tool is active. This pins what "blank" is worth: whatever the pointer
-    /// is doing on screen, nothing starts, nothing draws, nothing commits.
     #[test]
     fn a_blank_frame_starts_nothing_however_hard_the_pointer_is_working() {
         let mut g = GestureState::default();
@@ -702,10 +674,6 @@ mod tests {
 
     /// **A markup band reports its endpoints RAW, in drag order** — the
     /// property an arrow's head depends on.
-    ///
-    /// Asserted against a drag that goes **up and to the left**, because that
-    /// is the case a normalising implementation gets wrong: `from` would come
-    /// back as the smaller corner, which for this drag is the *head*.
     #[test]
     fn a_markup_band_reports_its_endpoints_in_drag_order() {
         let mut g = GestureState::default();
@@ -791,11 +759,6 @@ mod tests {
     }
 
     /// **Escape abandons a markup drag without authoring anything.**
-    ///
-    /// The existing cancellation test covers the three older kinds; this adds
-    /// the one where an un-cancelled release would write to the document. A
-    /// `Complete` here would be an annotation in the file that the operator
-    /// explicitly abandoned.
     #[test]
     fn escape_abandons_a_markup_drag_without_committing() {
         let mut g = GestureState::default();
@@ -847,11 +810,6 @@ mod tests {
 
     /// **A press whose meaning is forbidden starts no drag, and a click in
     /// that mode reports nothing.**
-    ///
-    /// The state-machine half of the gate. The click assertion is the
-    /// load-bearing one: a click is not a drag, so a build that gated only the
-    /// press would still select on every click — which is the single most
-    /// common gesture on the canvas.
     #[test]
     fn a_forbidden_press_starts_nothing_and_a_forbidden_click_reports_nothing() {
         let mut g = GestureState::default();
@@ -924,16 +882,6 @@ mod tests {
 
     /// **A drag is anchored at the press, not at the frame the drag was
     /// recognised on.**
-    ///
-    /// The regression test for the 94-point offset measured on a real drag —
-    /// see [`PointerFrame::press_origin`]. It is stated as a **magnitude**
-    /// against the press point rather than as "the band is on the page": a band
-    /// anchored at the recognised frame is on the page too, just in the wrong
-    /// place.
-    ///
-    /// The fallback is asserted in the same test: a frame with no press origin
-    /// behaves exactly as it did before the field existed, so supplying it is
-    /// an accuracy improvement and never a behaviour change.
     #[test]
     fn a_drag_is_anchored_at_the_press_not_at_the_frame_it_was_recognised_on() {
         for kind in [
@@ -1101,11 +1049,6 @@ mod tests {
     }
 
     /// **An interrupted drag is abandoned, never committed.**
-    ///
-    /// Focus loss, a dialog, the pointer leaving the window: egui stops
-    /// reporting the drag without ever reporting a stop. Committing on the
-    /// next frame that happens to look like a release would apply an edit the
-    /// operator never finished.
     #[test]
     fn an_interrupted_drag_is_abandoned_rather_than_committed() {
         let mut g = GestureState::default();
@@ -1130,11 +1073,6 @@ mod tests {
     }
 
     /// **Escape abandons a drag in flight, and it commits nothing.**
-    ///
-    /// The gesture ladder's escape hatch: a move drag that is halfway across
-    /// the page and clearly wrong must be abandonable without an undo. The
-    /// frame that carries the cancel produces `Cancelled` — never a
-    /// `Complete`, which is the outcome that would have rewritten the page.
     #[test]
     fn escape_abandons_a_drag_in_flight_without_committing() {
         for kind in [

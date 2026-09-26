@@ -18,12 +18,6 @@ use pdfcer_render::FontEnvironment;
 pub const MAX_FONT_FILE_BYTES: u64 = 16 * 1024 * 1024;
 
 /// The extensions this will attempt.
-///
-/// `.ttc` and `.otc` are **deliberately absent**. A collection holds several
-/// faces in one file and the engine refuses one outright
-/// (`EmbedBlocker::ProgramIsCollection`), so offering one as a donor would be
-/// resolving a face to a file that is then refused by name — a press that
-/// always fails, which is what this project spends its time removing.
 const FONT_EXTENSIONS: [&str; 4] = ["ttf", "otf", "pfb", "cff"];
 
 /// One font program that can stand in for a face a document is missing.
@@ -387,21 +381,11 @@ mod tests {
     use super::*;
 
     /// A four-byte non-font, for the tests that only exercise the index.
-    ///
-    /// `FontEnvironment::insert_named` does not parse, so a donor can be
-    /// registered without a real face. What that does **not** buy is coverage
-    /// of the parse — see [`real_files`], which exists precisely because every
-    /// test in this module would pass on a build whose parser was dead.
     fn stub() -> pdfcer_render::FontData {
         pdfcer_render::FontData::new(vec![0u8; 4])
     }
 
     /// **A subset tag is stripped and nothing else is.**
-    ///
-    /// The negative cases are the point. A five-letter prefix, a lowercase
-    /// one, and a name that simply contains a `+` are all names in their own
-    /// right, and treating any of them as a tag would search for a face that
-    /// does not exist — silently, since the result is just "no donor".
     #[test]
     fn only_a_real_subset_tag_is_stripped() {
         assert_eq!(strip_subset_tag("ABCDEF+ArialMT"), "ArialMT");
@@ -412,12 +396,6 @@ mod tests {
     }
 
     /// **Only real font extensions are attempted.**
-    ///
-    /// `.ttc` and `.otc` must stay out, and that is a capability decision
-    /// rather than an oversight: the engine refuses a collection by name
-    /// (`EmbedBlocker::ProgramIsCollection`), so offering one as a donor would
-    /// resolve a face to a file guaranteed to be rejected — a press that always
-    /// fails.
     #[test]
     fn a_collection_is_not_offered_as_a_donor() {
         assert!(has_font_extension(Path::new("C:/f/Arial.ttf")));
@@ -429,12 +407,6 @@ mod tests {
     }
 
     /// **The first folder holding a name keeps it.**
-    ///
-    /// The opposite of the renderer environment's last-wins, and the assertion
-    /// is load-bearing rather than decorative **now that this delegates to that
-    /// environment**: `insert_named` *is* last-wins, and nothing but
-    /// [`Library::offer`]'s guard stops the operator's stated search order from
-    /// being silently reversed by the crate underneath.
     #[test]
     fn the_first_folder_to_offer_a_name_keeps_it() {
         let mut library = Library::scan(&[]);
@@ -470,12 +442,6 @@ mod tests {
     }
 
     /// **A stem match is re-graded, where the engine calls it exact.**
-    ///
-    /// The engine registers a filename stem beside a file's advertised names
-    /// and reports either as `Exact`, which is right for a renderer and not
-    /// enough for a disclosure. Losing this would tell an operator that pdfcer
-    /// found the face their document named, when what it found was a file with
-    /// a suggestive name.
     #[test]
     fn a_stem_match_is_distinguishable_from_an_exact_one() {
         let mut library = Library::scan(&[]);
@@ -492,16 +458,6 @@ mod tests {
     }
 
     /// **A bundled face is offered ONLY when it was asked for.**
-    ///
-    /// `FontEnvironment::bundled()` is what this scans into, so pdfcer's own
-    /// standard-14 substitutes sit in the table the whole time and one `true`
-    /// in the wrong place puts them into somebody's document. The operator said
-    /// yes on 2026-08-28 (`OPERATOR_REQUESTS.md` **O47**) — and *"yes"* is a
-    /// decision that has to be carried, not a reason to stop checking.
-    ///
-    /// Both halves in one test on purpose: an assertion that only proved the
-    /// `true` case would pass on a build that ignored the flag entirely, which
-    /// is the exact defect the licensing argument is about.
     #[test]
     fn a_bundled_face_answers_only_when_it_is_allowed_to() {
         let refusing = Library::scan_with(&[], false);
@@ -532,13 +488,6 @@ mod tests {
     }
 
     /// **A real folder still beats a bundled face.**
-    ///
-    /// The property that makes it safe to leave the bundled rung on. It is the
-    /// LAST rung — reached only after an exact name match and a family
-    /// equivalence have both failed — so a machine with fonts configured never
-    /// sees it. A build that consulted it first would embed pdfcer's stand-in
-    /// into every drawing on a machine holding the real thing, and every row
-    /// would say so, and it would still be wrong.
     #[test]
     fn a_configured_face_outranks_pdfcers_own() {
         let mut library = Library::scan_with(&[], true);
@@ -553,11 +502,6 @@ mod tests {
     }
 
     /// **A folder that will not open is a note, not a panic and not a stop.**
-    ///
-    /// The remaining folders are still searched. An operator with a removable
-    /// drive in their list has one folder that comes and goes, and a scan that
-    /// abandoned the rest of the list when it met one would make the feature
-    /// unreliable in a way they could not diagnose.
     #[test]
     fn an_unreadable_folder_is_noted_and_the_rest_are_searched() {
         let library = Library::scan(&[
@@ -579,22 +523,6 @@ mod real_files {
     use super::*;
 
     /// **The scan reads a real font folder and finds real faces.**
-    ///
-    /// Every test above is about the INDEX — the tag rule, first-wins, which
-    /// extensions are attempted — and every one of them would pass on a build
-    /// whose parser never ran, because they register a stub and then ask for
-    /// it. `FontProgram::parse` is the one link this module does not own and
-    /// cannot fake, and *"the folders yielded nothing"* is indistinguishable
-    /// from *"the folders were empty"* without a folder that is not.
-    ///
-    /// It uses the operating system's own font directory, which is the one
-    /// folder that certainly exists on the machine this ships for — and is
-    /// deliberately **not** what the product searches: `Prefs::font_folders`
-    /// starts empty and this module never adds to it, for the licensing reason
-    /// in the header. A test may look where a product may not.
-    ///
-    /// SKIPPED rather than failed where that directory is absent, because its
-    /// absence is a fact about the machine and not about this code.
     #[test]
     fn a_real_font_folder_yields_real_faces() {
         let dir = PathBuf::from(r"C:\Windows\Fonts");

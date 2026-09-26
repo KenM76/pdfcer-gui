@@ -50,3 +50,35 @@ byte for byte — same extraction options (the settings funnel), same
 Every departure is opt-in and every one is named in the receipt afterwards.
 Two answers to *"what is the text of this document"* inside one program is
 worse than either answer alone, because both of them look like text.
+
+## Item notes
+
+### `fn a_revision_in_the_stem_survives_the_suggested_name`
+
+The DXF path shipped this bug for weeks behind a comment asserting the
+opposite. It is asserted here rather than described, because the whole
+lesson of that incident is that a claim in a comment is not a test.
+
+The second half of the assertion is the one that makes it a **data-loss**
+test rather than a cosmetic one: two revisions of the same drawing must
+not suggest the same output name, because the save dialog's only
+protection is the operating system's generic overwrite warning.
+
+### `fn the_typed_range_is_the_print_dialogs_parser`
+
+Asserted here as well as in `dialogs::print::tabs` because the claim
+being made is not *"the parser works"* — that is tested there — it is
+*"this feature reaches THAT parser"*. A second implementation would pass
+the first assertion and fail the intent, and the way it would be
+noticed is by these expectations diverging from the print window's.
+
+The expectations are the print dialog's own: `5,1-2` keeps the order
+typed, `1,1` is two entries and not one, and a range past the end
+refuses the whole spec rather than clamping — *"clamping would turn a
+typo into a job."*
+
+### `fn the_form_feed_separates_and_does_not_bracket`
+
+This is `plain_text()`'s own `if i > 0`, and asserting it here is what
+keeps this export producing the clipboard's own string rather than one
+that merely resembles it.

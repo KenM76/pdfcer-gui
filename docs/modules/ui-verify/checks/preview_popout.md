@@ -96,3 +96,13 @@ against nothing:
    of the same process and the harness aims at a `WindowHandle`. If the
    return half skips for that reason, the fix is to aim the key at the
    popped window's own handle, not to weaken the assertion.
+
+## Item notes
+
+### `fn retirements`
+
+A COUNT, compared before and after, rather than "is there a `ui-rect-gone`
+line for it anywhere". The column legitimately retires on its own during a
+launch — the dialog's first frames, a device re-read — so the mere presence
+of one such line proves nothing about the click. The count going **up
+across the click** is what does.

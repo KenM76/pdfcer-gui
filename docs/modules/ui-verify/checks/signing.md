@@ -115,3 +115,62 @@ captures the child's stderr into an evidence directory it keeps, and
 `crate::sign`'s §5 forbids a private key's passphrase reaching any file that
 outlives the session. So phase A clicks into the field and types it, the way
 an operator does — which is also the only way to prove the field works.
+
+## Item notes
+
+### `const MODE`
+
+**Read**, and it is itself an assertion. `catalog::file`'s registration says
+in words why signing is reachable from a reading stance: *signing a drawing
+before sending it out changes nothing on any page, so it is not authoring,
+and an operator reading a document in Read mode is exactly the operator
+about to email it to somebody.* Driving from Read is how that claim gets
+checked rather than merely written.
+
+### `const ENCRYPTED`
+
+`/V` 4, `/R` 4, `/AESV2`, empty user password — the §7.6.3.1 case a reader
+must try silently. Read from the engine's corpus rather than from this
+repository's `fixtures/encrypted-aes-128.pdf`, and the swap is a **harness
+finding** rather than a preference, recorded here because it will bite the
+next check that needs a protected fixture:
+
+This check first drove `fixtures/encrypted-aes-128.pdf`, whose user password
+is `userpw`. The password dialog appeared, the password was typed, the
+document opened — `password-accepted` is in the trace — and the very next
+click failed with *"GetClientRect failed for the target window"*.
+`Session::launch` resolves its target with `find_window_for_pid` and accepts
+the first window over `MIN_CLIENT_PX`; with a modal password dialog up at
+start-up, **the dialog is the window it finds**. Once the dialog closed,
+every subsequent click was aimed at a handle that no longer existed.
+
+⇒ A real limitation of the launcher for any password-protected fixture, and
+**not this check's to fix.** What phase B is about is whether an ENCRYPTED
+document is refused, and `crate::sign::Refusal::Encrypted` keys on
+`/Encrypt` being present — equally true of a file that needed no password to
+open. A fixture that reaches the state under test **without a modal in the
+way** is strictly better evidence: one fewer thing between the launch and
+the measurement, and one fewer way for the check to fail about itself.
+
+### `const FIELD_DOC`
+
+`/FT /Sig /T (SignHere) /Rect [72 600 300 660] /P <page>`, a merged widget,
+**no `/V`**, no `/Lock`, no `/SV` — and a text field `Name` beside it, so a
+build that offered every field rather than only the signature fields would
+be caught by the count rather than by inspection.
+
+Read from the engine's own corpus (`tools/gen-sig-field-fixtures.py`, which
+is committed there and is deterministic — no clock, no randomness) for
+[`CERT`]'s reason, applied to a document instead of a key: it is the corpus
+the engine's own `Pass 10.13` tests run against, so the shape this check
+drives and the shape the engine was built for cannot drift apart. **Nothing
+is written anywhere near it.**
+
+### `const FIELD_NAME`
+
+The one fact that distinguishes *"pdfcer signed the box the sender placed"*
+from *"pdfcer made a new box beside it"*. Both produce a signed file, both
+self-verify, both trace a plausible `sign-written`; the second names its
+field `Signature1`, Acrobat's convention for a field pdfcer invented. Read
+back in a **fresh process** by the Signatures panel, so the claim is not
+checked by the code that made it.

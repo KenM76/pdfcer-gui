@@ -105,3 +105,28 @@ a DXF at the wrong scale opens cleanly and is wrong. A picture has no scale
 to get wrong — it is a picture of a page at a stated size — so nothing here
 reads the dimensioning model, and nothing here consults **pdf dimensions**
 either.
+
+## Item notes
+
+### `fn habits`
+
+The membership rule and the argument for every inclusion and every
+omission live on [`crate::app::prefs::ExportImagePrefs`], which is the
+type this returns; this function is only the projection. It is one
+struct literal with **no `..Default::default()`**, so a field added to
+`ExportImagePrefs` is a compile error here rather than a preference
+written to disk as its own default and never actually remembered.
+
+### `fn pages`
+
+Called twice per frame — once to decide whether Export is usable, once
+to word the multi-file line — and once more on the press. Cheap: it is a
+parse of a short string, and computing it live is what keeps the button
+and the sentence beside the box from ever disagreeing.
+
+### `fn plan`
+
+Deliberately does **not** refuse an impossible combination. The window
+prevents it (the checkbox is dead while JPEG is selected) and the writer
+refuses it by name; a third refusal here would silently drop the press
+with no sentence anywhere, which is the one outcome worse than either.

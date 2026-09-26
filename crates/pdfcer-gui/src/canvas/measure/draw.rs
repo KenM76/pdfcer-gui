@@ -26,6 +26,8 @@
 //! sits outside it. The parent re-exports them so `measure::preview` and
 //! `measure::page_to_screen` stay the spelling every caller and every citation
 //! uses.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/canvas/measure/draw.md`.
 
 use egui::{Pos2, Ui};
 use pdfcer_core::vector::Point;
@@ -373,11 +375,6 @@ pub(in crate::canvas) fn preview(ui: &Ui, preview: Preview<'_>) {
 pub(in crate::canvas) const SNAP_MARKER_PT: f32 = 6.0;
 
 /// How much wider than the snap glyph the **committed-pick ring** is drawn.
-///
-/// Big enough to read as a ring around the glyph rather than as a fatter glyph,
-/// small enough that four picks round a small hole do not merge into a blob.
-/// See the ring's own comment in [`preview`] for why the distinction exists at
-/// all.
 const PICKED_RING_SCALE: f32 = 1.7;
 
 /// **PDF user space → screen**, both hops, in one place.
@@ -418,18 +415,6 @@ mod tests {
     use super::*;
 
     /// **The preview is drawn in SCREEN space, through the frame's map.**
-    ///
-    /// The regression test for the defect `page_to_screen`'s own docs describe:
-    /// `viewer::pdf_space_to_canvas` lands in **canvas** space — page top-left
-    /// origin, no zoom — and the painter speaks screen, so a preview that
-    /// stopped after the first hop drew every mark offset by wherever the page
-    /// sat in the window and at 100 % whatever the magnification.
-    ///
-    /// Asserted as a **magnitude**, not a relation: at zoom 2 with the page's
-    /// corner at (37, 11), the page-space point that is 50 canvas units in from
-    /// the page corner must land 100 screen points in from (37, 11). A test
-    /// that merely checked "the two differ" would be satisfied by any wrong
-    /// answer in the right direction.
     #[test]
     fn the_preview_projects_page_space_all_the_way_to_the_screen() {
         let origin = egui::Pos2::new(37.0, 11.0);

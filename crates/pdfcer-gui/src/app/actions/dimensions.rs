@@ -718,23 +718,6 @@ impl DimensionAction {
 }
 
 /// **Set or clear a ce dimension's caption.**
-///
-/// # What is reported, and why the restore says something different
-///
-/// `DimensionLabelChange` carries `measured` and `printed` separately. When an
-/// override goes on they differ, and the receipt names **both** — the operator
-/// has just hidden a number and the one place that number must still be
-/// available is the sentence about hiding it.
-///
-/// When the override comes **off**, `printed` becomes `measured` again and the
-/// receipt says so plainly. That is not a formality: the whole reassurance this
-/// feature rests on is that clearing the caption restores the *original*
-/// measurement rather than re-measuring, and a receipt naming the number is
-/// what lets an operator confirm it did.
-///
-/// `changed: false` produces no disclosure at all. The engine returns `Ok`
-/// for a no-op — setting a caption to what it already says — and a sentence
-/// there would evict a real disclosure to report that nothing happened.
 fn set_label(
     doc: &mut OpenDoc,
     dimension: pdfcer_core::dimension::DimensionId,
@@ -1040,16 +1023,6 @@ mod tests {
     use pdfcer_core::dimension::DEFAULT_GROUP_ID;
 
     /// The blast-radius predicate agrees with the module header's table.
-    ///
-    /// Written as a listing of values rather than as `matches!` a second time,
-    /// so the assertion is about the verbs themselves and not about a repeated
-    /// copy of the predicate's own pattern.
-    ///
-    /// Note the limit: because `regenerates_the_whole_group` is a `matches!`
-    /// with an implicit fallback, a variant added to [`DimensionAction`] and
-    /// not added here silently answers `false`. Nothing in this test compels
-    /// the author to pick a side; only turning the predicate into an exhaustive
-    /// `match` would.
     #[test]
     fn every_group_verb_is_document_wide_and_every_other_is_not() {
         let g = DEFAULT_GROUP_ID;

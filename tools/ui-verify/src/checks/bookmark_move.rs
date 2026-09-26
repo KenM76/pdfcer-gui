@@ -47,20 +47,8 @@ const OPEN_SET: &str = "set-bookmark-open";
 const DISCLOSE_REGION: &str = "bookmarks.disclose.";
 
 /// `DETAIL` — the first bookmark, and the one that ends up the parent.
-///
-/// Spelled from the letters `crate::sys::vk` actually publishes. That module
-/// adds virtual-key constants **one at a time, with a reason**, deliberately —
-/// its own note says so — so a check invents a word from the alphabet that is
-/// there rather than widening a shared file for a fixture name. `DETAIL` is
-/// also the word `bookmark_edit` renames to, so a reader comparing the two
-/// traces sees a name they recognise.
 const PARENT_KEYS: [u16; 6] = [vk::D, vk::E, vk::T, vk::A, vk::I, vk::L];
 /// `TAIL` — the second, and the one that is dragged.
-///
-/// A **different length** from the first, deliberately, so a trace that
-/// reported only a character count could still tell them apart. Nothing below
-/// needs that today; it costs nothing, and it is the property `bookmark_edit`
-/// had to go back and add after the fact.
 const CHILD_KEYS: [u16; 4] = [vk::T, vk::A, vk::I, vk::L];
 
 /// See the module documentation.
@@ -97,21 +85,6 @@ fn census(session: &Session) -> Result<Option<usize>> {
 }
 
 /// The rows of the **most recent frame** that are inside the panel body.
-///
-/// # Why both filters, and why each was paid for
-///
-/// **The frame filter.** The trace holds every frame the application drew, and
-/// this check needs to count rows — *"one row is drawn"* is its central
-/// assertion. Counting `bookmark-row` lines across the whole trace counts
-/// hundreds. The panel traces its census line at the **top** of its body,
-/// before any row, so the lines after the last census are exactly the last
-/// frame's rows.
-///
-///
-/// ⇒ The general form, and this suite has now met it three times: **a trace
-/// line written for every item is not a list of the items you can click.** The
-/// `ui-rect` census answers *what is on screen*; a per-item diagnostic answers
-/// *what was computed*.
 fn visible_rows(trace: &Trace, body: Option<crate::geom::LRect>) -> Vec<&TraceLine> {
     let last_census = trace
         .lines
@@ -131,10 +104,6 @@ fn visible_rows(trace: &Trace, body: Option<crate::geom::LRect>) -> Vec<&TraceLi
 }
 
 /// Type one bookmark into the authoring row and press Add.
-///
-/// Factored because it happens twice and the second time must be identical to
-/// the first — a set-up that differed between the two bookmarks would leave the
-/// check unable to say which difference mattered.
 fn author(
     session: &Session,
     driver: &Driver,

@@ -48,3 +48,21 @@ It is the only document change in this shell that needs **no pointer at
 all** — one command id, no dialog, no selection, no picker. Every other edit
 needs a click, and a click that missed would make this check report a save
 failure that was really an aim failure.
+
+## Item notes
+
+### `const ROTATED`
+
+`rotate-pages`, not `pages-rotated`. The name was guessed on the first
+draft and the check SKIPPED against a build where the rotation had plainly
+worked — a harness constant naming an application event decays in one
+direction only, and the fix is always to read the trace rather than to
+widen the assertion.
+
+### `const UNSAVED_PROMPT`
+
+O65's chain ran through this prompt: the tab kept its dot after a save,
+so the NEXT close raised it, and its only save button was a picker that
+proceeded with the close on success. Press save, get asked for a filename,
+watch the document close. If this appears at all in a run that only pressed
+Ctrl+S, something is treating a save as a close.

@@ -15,29 +15,12 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// The side, in PDF points, of the rectangle dragged for the stamp.
-///
-/// Matches `text_annot`'s box for the same reason it chose it: unambiguously a
-/// drag rather than a click the gesture machine might round to one, and small
-/// enough to stay on the sheet from any `--doc-point` that is itself on it.
 const BOX_PT: f64 = 220.0;
 
 /// The size the check asks for, as the operator would read it.
-///
-/// **24, and the choice of number is load-bearing.** It must not be the
-/// default (`derived`) or the check passes on a build that ignores the chooser;
-/// it must not be `12` either, because that is `StampStyle::default()`'s flat
-/// size — a build that threw the operator's choice away and adopted the
-/// engine's default would trace `size=12` and look like a pass. 24 is
-/// reachable only by having read what was pressed.
 const WANTED_PT: u32 = 24;
 
 /// The region the entry for [`WANTED_PT`] declares while the popup is open.
-///
-/// Keyed on the same token the trace carries, by construction in
-/// `dialogs::textannot::sizes` — press `…stamp-size.24`, then look for
-/// `size=24`. One vocabulary at both ends, so a rename cannot leave the check
-/// pressing a control that exists and matching a field that no longer describes
-/// it.
 const WANTED_REGION: &str = "text-annot.stamp-size.24";
 
 /// See the module documentation.
@@ -372,34 +355,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 }
 
 /// The size the check asks for, as the trace and the region name both spell it.
-///
-/// One function so the two cannot drift from each other or from [`WANTED_PT`];
-/// [`WANTED_REGION`] is asserted against it by
-/// [`the_region_and_the_token_agree`].
 fn wanted_token() -> String {
     WANTED_PT.to_string()
 }
 
 /// What the Size chooser currently reports about **itself**.
-///
-/// # Why this reads a purpose-built line and not the `ui-rect` line
-///
-/// The first draft of this check read the selection out of `ui-rect`, which
-/// carries a **name** and a **rect** and no text whatsoever. It would have
-/// returned `None` on every build that has ever existed, and the check would
-/// have gone on to print a note saying the chooser *"still reads None after the
-/// press"* — narrating an absence it had never measured, in a tone that reads
-/// as a finding.
-///
-/// ⚠ That is this project's standing lesson about **unevidenced excuses**: a
-/// check that explains a gap it did not measure turns an open question into a
-/// closed one, and nobody looks again. The application grew
-/// `stamp-size-chooser selected=` for this, so the absence is closed rather
-/// than described.
-///
-/// Returns `None` only when the line is genuinely not there, and every caller
-/// treats that as a **failure to observe** — reported as such — never as
-/// *"reads nothing"*.
 fn chooser_reads(session: &Session) -> Option<String> {
     let trace = session.trace().ok()?;
     trace
@@ -414,14 +374,6 @@ mod tests {
 
     /// **The region this check presses and the token it matches are the same
     /// word**, and nothing else in the repository enforces it.
-    ///
-    /// `dialogs::textannot::sizes` builds the region name by interpolating
-    /// `StampSize::trace_token()`, so the application's two ends agree by
-    /// construction. This constant is the harness's hand-written copy of that
-    /// name, and a hand-written copy of a generated string is exactly where the
-    /// two drift — with the failure landing as *"the popup does not offer
-    /// `…stamp-size.24`"*, a defect report about the application written by a
-    /// stale constant here.
     #[test]
     fn the_region_and_the_token_agree() {
         assert_eq!(
@@ -432,12 +384,6 @@ mod tests {
     }
 
     /// **The size pressed is not a value any indifferent build produces.**
-    ///
-    /// The whole check turns on this. `derived` is what a build that ignores
-    /// the chooser emits — `font_size: None` compiles and means *"work it out
-    /// from the box"* — and `12` is what a build that adopted
-    /// `StampStyle::default()` emits. A check pressing either would be green on
-    /// the broken build it was written to catch.
     #[test]
     fn the_asserted_size_is_no_builds_default() {
         assert_ne!(

@@ -70,3 +70,14 @@ That the bytes in a saved file are right. `save_copy` and a second process
 reading it back is what proves that, and `checks::save_copy` already owns
 that shape. This proves the panel and the session agree, which is the link
 that did not exist yesterday.
+
+## Item notes
+
+### `const COMMAND`
+
+It is a **toggle**, unlike the `file.properties` control this check used
+to press: its question is *"is this panel open?"*, so it falls through
+`app::dispatch`'s guard arm to `toggle_panel`. That is why the click below
+is guarded by *"only if the section is not already on screen"* — pressing it
+with the panel up would close the thing under test. The guard predates the
+move and was written for the same hazard.

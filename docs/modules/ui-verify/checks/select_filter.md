@@ -48,3 +48,41 @@ thing under test, rather than *the fixture changed*.
 Content selection needs `edit_content`, which only Edit has. Driving this in
 Read would assert nothing about the filter — nothing would select in either
 state, and the check would pass while measuring the mode gate.
+
+## Item notes
+
+### `const SELECTION_EVENT`
+
+**The first version of this check asked whether the selection's
+`ui-rect` region had been published, and it produced a confident, wrong
+FAIL on a build that was working.** The `ui-rect` channel is a **change
+log**: it emits when a rect moves, so the last rect of a region that has
+since stopped being drawn is still sitting in the trace. Asking "did this
+region ever appear" answers a question about the whole run, not about now.
+
+`D:/dev/rag/egui/a_ui_rect_change_log_produces_confident_wrong_failures_in_BOTH_directions.md`
+is the standing finding, and this check walked straight into it — while its
+own failure message accused the application of shipping a decorative
+control. **Read the trace before believing the check.**
+
+`canvas-selection … sel=N` is the honest oracle: a count, emitted per
+gesture, that a wrong build would get wrong. It is the rule `resize.rs`
+states — *a trace line must carry the number a wrong build would get
+wrong* — applied to the thing being read rather than to the thing being
+written.
+
+### `fn selected`
+
+Reads the last `canvas-selection` line's `sel=` count. See
+[`SELECTION_EVENT`] for why a count is the honest oracle here and why the
+obvious alternative produced a confident wrong failure.
+
+### `fn set_filter`
+
+The popup is opened fresh each time rather than left open between steps.
+It closes on a click outside itself, and the canvas clicks in steps 2 and 3
+are outside it — so a version that assumed it stayed open would be reading a
+popup that had already gone, and would click the canvas at the button's
+coordinates instead. That failure would present as *"the filter did
+nothing"*, which is the check's own failure message: it would accuse the
+application of exactly the defect the harness had just committed.

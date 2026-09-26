@@ -59,3 +59,15 @@ sentence the eight resize grips already produce for the identical engine
 error. One refusal, one wording, one place. A typed Width that the engine
 declines says exactly what a dragged one says, which is the property that
 makes the typed route a second *input* rather than a second *feature*.
+
+## Item notes
+
+### `fn it_does_not_claim_an_edit_already_happened`
+
+This is a hover on a control the operator has not pressed. A sentence
+saying an edit "was refused" would describe an event that has not
+happened — the exact confusion `super::properties`'
+`geometry_nothing_typed` avoids next door by naming the next act.
+
+**Falsified** by rewording [`locked`] to *"that change was refused"*:
+red, as it must be.

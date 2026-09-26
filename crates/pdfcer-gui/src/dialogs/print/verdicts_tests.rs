@@ -1,3 +1,4 @@
+//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/print/verdicts_tests.md`.
 #![cfg(test)]
 //! # `dialogs::print::verdicts_tests` — the corrected clip count, proved headlessly
 //!
@@ -21,12 +22,6 @@ use super::*;
 use crate::dialogs::print::spooler::{DeviceGeometry, JobResolution};
 
 /// A placement that either overhangs the printable rectangle or does not.
-///
-/// The offsets and scale are shared, which matters: two plans built from this
-/// helper with the same `clipped` value are `PartialEq`, and the verdict cache
-/// is keyed partly on exactly that. A test that wanted two *different*
-/// placements has to change one of these numbers on purpose — see
-/// [`a_verdict_does_not_survive_a_change_of_placement`].
 fn placed(clipped: bool) -> Placement {
     Placement {
         scale: 1.0,
@@ -38,11 +33,6 @@ fn placed(clipped: bool) -> Placement {
 
 /// A job whose sheets are the given `(document page, clipped)` pairs, in send
 /// order.
-///
-/// The page indices are deliberately not `0, 1, 2`. `PagePlan::index` names
-/// a **document** page and the plan list is the job's *sequence*; a cache that
-/// confused the two would pass every test built on a whole-document forward
-/// job and fail on the first custom range an operator typed.
 fn job_of(sheets: &[(usize, bool)]) -> Job {
     Job {
         device: DeviceGeometry {
@@ -107,18 +97,6 @@ fn examine(
 
 /// **Printing without ever opening the preview reports the geometric
 /// count, in the geometric words.** The ruling this feature degrades to.
-///
-/// Every clipped sheet is unexamined, nothing is subtracted, and the claim is
-/// [`ClipClaim::Geometric`] — which produces exactly the sentence the button
-/// carried before O113. That is deliberate rather than incidental: with no
-/// evidence at all there is nothing to correct the count *with*, and hedging a
-/// statement that is exactly true would soften pdfcer's whole divergence from
-/// Acrobat (which clips silently) in the one state where there is nothing to
-/// soften it with.
-///
-/// The variant is asserted, not just the number. `Geometric(2)` and
-/// `AtMost(2)` put different sentences on the button and would be
-/// indistinguishable if only the count were checked.
 #[test]
 fn a_job_nobody_has_previewed_reports_the_plain_geometric_count() {
     let job = job_of(&[(4, false), (0, true), (2, true)]);
@@ -139,11 +117,6 @@ fn a_job_nobody_has_previewed_reports_the_plain_geometric_count() {
 
 /// **The operator's own case: one sheet, blank overhang, no warning at
 /// all.** Operator request O113.
-///
-/// A 1:1 CAD drawing whose overhang is empty paper. The placement reports a
-/// clip — that is a true geometric fact and `Job::clipped()` still says 1 —
-/// but the one sheet has been looked at and nothing is printed out there, so
-/// the count is zero and the button reads plain **Print**.
 #[test]
 fn a_single_sheet_examined_and_found_blank_removes_the_warning_entirely() {
     let job = job_of(&[(0, true)]);
@@ -168,11 +141,6 @@ fn a_single_sheet_examined_and_found_blank_removes_the_warning_entirely() {
 
 /// **Blank, inked and unexamined together — the mixed case the whole
 /// design is for.**
-///
-/// Five sheets clipped: one examined and blank, one examined and inked, three
-/// never looked at. The count is `5 − 1 = 4`, which is `known_inked (1) +
-/// unexamined (3)`, and it is a **ceiling**: the true figure is somewhere in
-/// `1..=4`. So the claim is [`ClipClaim::AtMost`] and the sentence hedges.
 #[test]
 fn blank_inked_and_unexamined_sheets_produce_a_ceiling() {
     let job = job_of(&[(0, true), (1, true), (2, true), (3, true), (4, true)]);
@@ -197,10 +165,6 @@ fn blank_inked_and_unexamined_sheets_produce_a_ceiling() {
 }
 
 /// **Examine every clipped sheet and the count becomes exact.**
-///
-/// Three clipped, two found blank, one found inked. Nothing is left
-/// unresolved, so the number is not a bound — it is the number of sheets that
-/// really will lose something, and the sentence drops the hedge.
 #[test]
 fn examining_every_clipped_sheet_makes_the_count_a_measurement() {
     let job = job_of(&[(0, true), (1, true), (2, true), (3, false)]);
@@ -225,11 +189,6 @@ fn examining_every_clipped_sheet_makes_the_count_a_measurement() {
 }
 
 /// **"We could not look" is not "we looked and it was fine".**
-///
-/// [`Overhang::Unknown`] is what `preview::lost_regions` returns when the page
-/// would not render and the whole band was hatched as the honest fallback. It
-/// must leave the sheet in the count — a failed render is not allowed to
-/// switch a warning off, which is the same rule the hatch itself follows.
 #[test]
 fn a_sheet_that_would_not_render_stays_counted() {
     let job = job_of(&[(0, true), (1, true)]);
@@ -249,11 +208,6 @@ fn a_sheet_that_would_not_render_stays_counted() {
 
 /// **A second copy of the same sheet inherits the verdict, and that is
 /// derivation rather than invention.**
-///
-/// An uncollated two-copy job sends the same document page twice. The two
-/// plans carry identical placements by construction, so the ink test would
-/// return the identical answer for both: the fact is about *this page under
-/// this placement*, not about a position in the send order.
 #[test]
 fn both_copies_of_one_examined_sheet_are_subtracted() {
     let job = job_of(&[(3, true), (3, true)]);
@@ -275,11 +229,6 @@ fn both_copies_of_one_examined_sheet_are_subtracted() {
 // ===========================================================================
 
 /// **A rendering setting changes ⇒ every verdict is void.**
-///
-/// The verdict is a claim about pixels, and this is the field that decides
-/// them. `PreviewKey` carries the whole `Settings` for the reason its own docs
-/// give; the verdict cache carries it for the stronger reason that a stale
-/// verdict *removes* a warning.
 #[test]
 fn a_verdict_does_not_survive_a_change_of_rendering_settings() {
     let job = job_of(&[(0, true)]);
@@ -316,10 +265,6 @@ fn a_verdict_does_not_survive_a_change_of_rendering_settings() {
 }
 
 /// **The annotation scope changes ⇒ every verdict is void.**
-///
-/// Turning markup on can put a comment out in the border — which is the
-/// difference between a blank overhang and a lost annotation, and is exactly
-/// the case where a stale "blank" would be most expensive.
 #[test]
 fn a_verdict_does_not_survive_a_change_of_annotation_scope() {
     let job = job_of(&[(0, true)]);
@@ -342,10 +287,6 @@ fn a_verdict_does_not_survive_a_change_of_annotation_scope() {
 }
 
 /// **The printable rectangle changes ⇒ every verdict is void.**
-///
-/// A different printer, a different paper, or an orientation that re-plans the
-/// geometry moves the boundary the band is measured from. Same pixels,
-/// different question.
 #[test]
 fn a_verdict_does_not_survive_a_change_of_printable_area() {
     let job = job_of(&[(0, true)]);
@@ -369,15 +310,6 @@ fn a_verdict_does_not_survive_a_change_of_printable_area() {
 
 /// **The placement changes ⇒ that sheet's verdict is void**, and this is
 /// the one the texture's own key would have missed.
-///
-/// `PreviewKey` deliberately omits the placement: it scales the drawn
-/// rectangle and changes not one pixel of the raster, so the texture cache is
-/// right to keep its bitmap across a switch from Fit to 100 %. The *verdict*
-/// is not: the band moves, and a page whose overhang was empty paper at one
-/// scale can have a title block in it at another.
-///
-/// This is why the entry key is strictly stronger than `PreviewKey` rather
-/// than equal to it.
 #[test]
 fn a_verdict_does_not_survive_a_change_of_placement() {
     let context = context();
@@ -403,13 +335,6 @@ fn a_verdict_does_not_survive_a_change_of_placement() {
 }
 
 /// **The page's own size changes ⇒ that sheet's verdict is void.**
-///
-/// The band is computed as a fraction of the page, so the same placement over
-/// a page of a different size is a different band. This is the safe direction
-/// of an inherited hole: `PreviewKey` carries no edit generation, so a page
-/// resized by an unsaved edit does not invalidate the *texture* — but it does
-/// invalidate the verdict, which drops the sheet back to unexamined and puts
-/// the number **up**.
 #[test]
 fn a_verdict_does_not_survive_the_page_being_resized() {
     let context = context();
@@ -435,10 +360,6 @@ fn a_verdict_does_not_survive_the_page_being_resized() {
 
 /// **A verdict is remembered for the page it names, not for a position in
 /// the plan list.**
-///
-/// The job here sends document page 7 first. If the cache filed the verdict
-/// under the loop position instead, this claim would come back uncorrected —
-/// and would look exactly like a preview that had never been opened.
 #[test]
 fn a_verdict_is_filed_under_the_document_page_and_not_the_send_position() {
     let context = context();
@@ -475,13 +396,6 @@ fn a_plan_naming_a_missing_page_records_nothing_rather_than_panicking() {
 // ===========================================================================
 
 /// **Every arm of the claim decision, stated as a table.**
-///
-/// The bucket counts go in and the claim comes out, with no `Job` in the way.
-/// This is the one place the *rule* is asserted rather than an instance of it,
-/// and the ordering of the arms is what it pins: `Measured` is tested before
-/// `Geometric` so that a job whose every clipped sheet was examined and found
-/// inked reports the stronger measured sentence, even though the two counts
-/// coincide there.
 #[test]
 fn the_claim_decision_table_holds_in_every_arm() {
     let cases = [
@@ -543,11 +457,6 @@ fn the_count_is_never_below_what_is_known_lost_nor_above_the_geometric_count() {
 
 /// The four claim states put four different things on the button, and the
 /// trace word separates them from outside the process.
-///
-/// The trace is the only headless evidence of which state a frame was in:
-/// `Geometric(2)` and `AtMost(2)` are the same number and a different truth,
-/// and a driven check reading only the count could not tell a working
-/// correction from a cache that silently never matched.
 #[test]
 fn each_claim_state_is_distinguishable_in_the_trace() {
     let words = [

@@ -57,3 +57,44 @@ and it undoes it by not having done any: nothing is closed until the last
 question is answered… except that it is, because a Discard closes its
 document as it goes. That is the honest limit of this design and it is stated
 rather than hidden — see [`Quitting::stand_down`].
+
+## Item notes
+
+### `impl crate`
+
+Everything above this point is the *rule*, expressed over a slot count and a
+dirty predicate so it can be tested without an application; everything below
+is the application applying it.
+
+### `fn scan`
+
+The functions under test take a closure precisely so this can exist —
+building real `Status::Open` values needs a parsed document, and what is
+being tested is the **ordering and counting**, not the dirty predicate,
+which is `save::has_unsaved_edits` and is tested where it lives.
+
+### `fn the_cycle_takes_the_leftmost_dirty_document_first`
+
+Lowest slot first — left to right in the tab strip, which is the order
+the operator reads them in. Any other order would make the cycle feel
+arbitrary, and "arbitrary" is what a modal must never feel while it is
+asking about destroying work.
+
+### `fn a_clean_set_has_no_first_dirty`
+
+The case that must not regress into a spurious modal: an operator who
+has saved everything and presses ✕ should get an immediate exit, not a
+dialog with nothing in it. `first_dirty` answering `None` is what makes
+the whole cycle skip.
+
+### `fn save_all_is_for_more_than_one`
+
+With one dirty document the two buttons are the same act, and a second
+button that means the same thing is one the operator has to stop and
+think about — on a modal that is standing between them and their work.
+
+### `fn the_cycle_starts_down_and_cancel_puts_it_back`
+
+Pinned because `running` defaulting to `true` would make the
+application try to quit on its first frame, which is the one failure
+mode of this design that would be spectacular rather than subtle.

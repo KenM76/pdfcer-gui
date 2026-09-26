@@ -74,22 +74,11 @@ impl LaunchSpec {
 }
 
 /// **Where every launched window is put**, in desktop pixels.
-///
-///
-/// This is a **mitigation, not the guard.** `Driver::confirm_uncovered`
-/// refuses a click on a point another window owns, wherever the window is;
-/// this only makes that refusal rare. A machine whose furniture docks
-/// somewhere else will still be caught, and will be told so.
 const SAFE_ORIGIN_X: i32 = 780;
 /// See [`SAFE_ORIGIN_X`].
 const SAFE_ORIGIN_Y: i32 = 40;
 
 /// The smallest client area the harness will accept as "the window is up".
-///
-/// Not a guess at the application's size — a floor below which the window
-/// cannot be a laid-out application window. See the polling loop in
-/// [`Session::launch`] for what happens without it.
-///
 const MIN_CLIENT_PX: u32 = 200;
 
 /// A running application, its captured trace, and its window.
@@ -127,10 +116,6 @@ pub struct Session {
 /// Whether a pre-window exit was the accessibility subclass failing to
 /// install — the intermittent session-level `SetPropW` failure
 /// [`Session::launch`] documents — as opposed to anything the application did.
-///
-/// Decided from the stderr the launch wrote, not from the exit code alone:
-/// every panic exits 101, and a panic in the application's own startup must
-/// stay reported.
 fn died_installing_accessibility(err: &Error, stderr_path: &Path) -> bool {
     if !err.to_string().contains("before showing a window") {
         return false;
@@ -363,14 +348,6 @@ impl Session {
     }
 
     /// **Put the window at a known place, clear of the top of the screen.**
-    ///
-    /// Two reasons, and the second is the one that cost an afternoon.
-    ///
-    /// **Determinism.** Letting Windows choose gets a *cascade*: every launch
-    /// steps down and right from the last, so a long session marches its
-    /// windows toward the edge of the desktop. A failure that depends on where
-    /// the window happened to open is a failure nobody can reproduce.
-    ///
     fn place(&self) {
         if let Some(w) = self.window {
             sys::move_window(w, SAFE_ORIGIN_X, SAFE_ORIGIN_Y);
@@ -654,11 +631,6 @@ If this check provokes a panic on purpose, say so with                  `session
     }
 
     /// The newest `frame n=` count on the diagnostic channel, if there is one.
-    ///
-    /// Reads the tail of the trace rather than the whole file: the counter is
-    /// emitted every tenth frame, so the answer is always within the last few
-    /// hundred bytes, and a sweep against a long-running session would otherwise
-    /// re-read megabytes on every settle.
     fn frame_count(&self) -> Option<u64> {
         use std::io::{Read, Seek, SeekFrom};
         let mut f = std::fs::File::open(&self.stderr_path).ok()?;

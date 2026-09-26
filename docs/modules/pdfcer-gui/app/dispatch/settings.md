@@ -29,3 +29,18 @@ command is named after is behind a heading the operator has to find.
 
 **Opening the right window is not the same as answering the question the
 command's own name asks.**
+
+## Item notes
+
+### `fn focus`
+
+One function, so [`handles`] and [`dispatch`] cannot answer differently
+about the same id — `routes::target` states that rule and it applies here for
+the same reason.
+
+### `fn the_font_route_lands_on_a_group_the_dialog_draws`
+
+The second half is the load-bearing one: the group key is a string
+matched against `widgets::group_focused`'s `key` in the dialog, so a typo
+produces a window that opens at the top with no error anywhere — the
+exact failure the landing exists to prevent, restored silently.

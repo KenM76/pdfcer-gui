@@ -47,3 +47,63 @@ A keyboard reference is meaningful with nothing open — it is one of the two
 things a new operator reaches for before opening a file, the other being
 About. It therefore sits beside [`super::about`] in the group
 [`super::DialogsState`] does not close when a document closes.
+
+## Item notes
+
+### `struct Row`
+
+**Chords are plural**, and that is not a nicety: `edit.redo` is bound to
+both `Ctrl+Y` and `Ctrl+Shift+Z`, deliberately, and a reference showing one
+of them would be a reference that is *incomplete in exactly the way D5 was*
+— quietly, on the binding an operator's other application taught them.
+
+### `fn rows_from`
+
+## Grouped by command, not by chord
+
+A keymap is `chord → id`, and rendering it directly would give `Ctrl+Y` and
+`Ctrl+Shift+Z` two rows saying the same thing — which reads as two features
+rather than as one with two keys. Inverting it is what makes the *plural*
+case legible, and the plural case is the one D5 got wrong.
+
+## Why the order is the command id's
+
+`BTreeMap` over the id, so `edit.*` sorts together, `file.*` together, and
+the list is stable across runs and machines. Sorting by chord would
+interleave every tab's bindings and put `[` next to `]` next to `Alt+Down`,
+which is alphabetical and useless — an operator looking for *"the shortcut
+for rotating"* is thinking about the verb, not the key.
+
+It is deliberately **not** the ribbon's tab order, which would be truer to
+the operator's mental model and would require this window to know the
+manifest's tab list. A window that reads the keymap and the registry and
+nothing else is a window that cannot disagree with either.
+
+### `fn every_bound_chord_appears`
+
+D5 is a hand-maintained reference disagreeing with the keymap that
+dispatches. The listing here is a fold over the bindings, so the
+property is structural — and this test is what says so out loud,
+because a reader looking at a window full of shortcuts has no way to
+tell a derived list from a copied one.
+
+### `fn a_command_with_two_chords_is_one_row_naming_both`
+
+`edit.redo` really is bound twice, deliberately, and a reference showing
+one of them would be incomplete in exactly D5's way — quietly, on the
+binding an operator's other application taught them.
+
+### `fn a_chord_for_a_missing_command_is_dropped_and_counted`
+
+R8: a command that is not registered is a capability this build does not
+have, so listing its key would promise a keystroke that does nothing.
+The count is what stops the omission being silent — a stripped build
+genuinely has fewer shortcuts, and that is worth a sentence rather than
+a shrug.
+
+### `fn the_label_is_the_registrys_own`
+
+The second half of the same argument: a hand-written label would drift
+from the ribbon's the day one of them was reworded, and an operator
+reading two different names for one command has to work out that they
+are one command.

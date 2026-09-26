@@ -165,12 +165,6 @@ mod tests {
     }
 
     /// The header's table, row 3 — the one that is easy to get wrong.
-    ///
-    /// An operator who switched every class off and quit must get that back,
-    /// not a helpfully-restored default. If this ever fails, the shell has
-    /// started overruling a deliberate choice once per restart, and the
-    /// operator's report will be "my filter keeps resetting" with no way for
-    /// them to see why.
     #[test]
     fn an_empty_file_means_nothing_selectable_not_never_configured() {
         let dir = scratch("empty");

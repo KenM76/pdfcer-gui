@@ -17,11 +17,6 @@ use crate::sys;
 const TAB: &str = "view";
 
 /// The control pressed, and it is deliberately **not** the compiled-in default.
-///
-/// `PageDisplay::Single` is what a fresh install shows, so a check that chose
-/// Single would pass against a build that persisted nothing at all — the
-/// preference and the default would agree and the check could not tell them
-/// apart. Facing is nobody's default.
 const COMMAND: &str = "view.page_facing";
 
 /// What that control's id resolves to in the trace.
@@ -31,10 +26,6 @@ const WANTED: &str = "facing";
 const DISPLAY_EVENT: &str = "page-display";
 
 /// `exit-flush layout-written=…` — the exit hook's own record that it ran.
-///
-/// Traced even when nothing was pending, deliberately: *"the hook ran and had
-/// nothing to do"* and *"the hook never ran"* are the two states the defect hid
-/// between, and a line that only appeared on a write could not tell them apart.
 const FLUSH_EVENT: &str = "exit-flush";
 
 /// The first document. Opened, changed, closed.
@@ -45,23 +36,9 @@ const FIRST: &str = "fixtures/four-pages.pdf";
 const SECOND: &str = "fixtures/paragraph.pdf";
 
 /// Files under `userdata/` that carry the state this check is about.
-///
-/// Deleted before the first launch so every run starts from the shipped
-/// defaults. `D:/dev/rag/egui/` carries the rule this follows: *a driven check
-/// that mutates persisted state must normalise at the start.*
-/// ⚠ **`preferences.txt` is RESET, not deleted** — see `normalise`. It is
-/// named here because the tier it represents must be normalised; the mechanism
-/// differs because deleting it would take the sandbox's O173 suppression with
-/// it and open the default-app offer in front of this check's second launch.
 const STATE_FILES: [&str; 3] = ["page-display.txt", "preferences.txt", "layout.ron"];
 
 /// How long to wait for the window to go after `Alt+F4`, in settle frames.
-///
-/// 25 ms a frame, so 160 frames is four seconds. Generous: the exit path writes
-/// files, and a machine that is also rasterizing has been seen to take a second
-/// over it. A close that has not happened by then is reported as a skip, because
-/// a check that could not close the program has not measured what happens when
-/// it closes.
 const CLOSE_FRAMES: u32 = 160;
 
 /// See the module documentation.
@@ -364,12 +341,6 @@ mod tests {
     use super::*;
 
     /// **The control pressed must not be the compiled-in default.**
-    ///
-    /// `PageDisplay::Single` is what a fresh install shows. A check that chose
-    /// Single would pass against a build that persisted nothing whatsoever —
-    /// the preference and the default would agree, and the second process would
-    /// open correctly for entirely the wrong reason. This is the assertion that
-    /// keeps the check from being decorative.
     #[test]
     fn the_chosen_display_is_not_the_shipped_default() {
         assert_ne!(WANTED, "single", "single is the compiled-in default");
@@ -381,21 +352,12 @@ mod tests {
     }
 
     /// The two documents are different files.
-    ///
-    /// Pinned because the whole subject is *a document the program has never
-    /// seen*: opening the same file twice would be answered by the per-document
-    /// record, correctly, and would hide the missing tier completely.
     #[test]
     fn the_second_document_is_a_different_file() {
         assert_ne!(FIRST, SECOND);
     }
 
     /// The state files normalised are the three that carry this answer.
-    ///
-    /// `page-display.txt` is the per-document record, `preferences.txt` holds
-    /// the standing preference, and `layout.ron` carries the ribbon mode — which
-    /// picks the default for a document with no entry, and is therefore the
-    /// third way a stale file could make this check pass without the feature.
     #[test]
     fn the_normalised_state_covers_all_three_tiers() {
         assert!(STATE_FILES.contains(&"page-display.txt"));

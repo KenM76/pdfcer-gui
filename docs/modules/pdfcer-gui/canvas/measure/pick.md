@@ -61,3 +61,42 @@ as one:
 
 Everything is `pdfcer-gui`-internal; `cargo tree -p pdfcer-core` is
 unaffected (this module is not in core), and it adds no dependency.
+
+## Item notes
+
+### `const ARC_PREVIEW_STEPS`
+
+Twenty-four over the full turn is smooth at any zoom pdfcer offers, and an
+angular ce dimension's wedge is a fraction of that — so the drawn arc is
+visually smooth while staying a handful of segments.
+
+### `fn linear_pick_needs_a_third_placing_click_then_resets`
+
+SolidWorks dimensions in three steps, and the third is what says how
+far off the drawing the dimension sits. Committing on the second click
+would land every ce dimension on top of the geometry it measures, at a
+zero standoff, to be dragged clear afterwards.
+
+### `fn a_reference_line_pick_still_commits_on_the_second_click`
+
+`ScalePick` reuses this state machine for a line that is never drawn as
+a dimension, so asking where to place it would be ceremony with no
+meaning. The opt-out is what keeps one state machine serving both.
+
+### `fn the_override_survives_a_clear_like_the_other_tool_preferences`
+
+The instinct is the opposite — it is an assertion about two specific
+lines. What settles it is the friction the override exists to remove:
+`linepick.rs` documents that without it the remedy would be changing a
+global setting per dimension, *"which is how a setting becomes a thing
+people fight"*. Resetting per pair recreates that at smaller scale for
+anyone dimensioning a whole drawing out of a sloppy exporter, and it is
+safe to persist because the verdict says "forced" before any Accept.
+
+### `fn a_circular_preview_is_the_fitted_circle`
+
+The assertion is on the **radius of every drawn point**, not on the
+segment count: a count would be satisfied by twenty-four segments of
+any shape at all, which is the trap of checking a relation rather than
+a magnitude. A circle drawn at the wrong radius, or centred on the
+origin instead of on the fit, fails here.

@@ -75,3 +75,39 @@ point, against the same model.
 
 Both are drawn in the snap indicator's own colour, because they are one
 affordance with two parts and two colours would read as two states.
+
+## Item notes
+
+### `const HIGHLIGHT_WIDTH_PT`
+
+Deliberately heavier than the geometry it sits on. A CAD drawing's lines
+are hairlines, and a highlight the same weight as its subject is a line that
+changed colour — which on a monochrome drawing viewed at a distance is not a
+change at all. It is a screen-space width, so it does not thicken with zoom.
+
+### `const HIGHLIGHT_ALPHA`
+
+Under 1.0 for a reason rule 4 cares about: the operator must still be able
+to **see the line underneath**. A solid overlay would replace the geometry
+with a coloured bar, and *"is this the line I meant"* is a question about the
+geometry, not about the bar.
+
+### `fn a_segment_is_highlighted_as_a_line`
+
+The distinction is the whole feature for a diagonal. A box around a
+45° line highlights a square region containing every other line that
+crosses it, which on a CAD drawing is most of them — it would answer
+*"somewhere around here"* to a question that means *"which one"*.
+
+### `fn an_entity_with_no_straight_run_is_outlined`
+
+A curve, a text run or an image. Saying nothing at all would be worse:
+the operator would move the pointer over something, see no response, and
+conclude the tool had stopped working.
+
+### `fn a_half_mappable_segment_draws_nothing`
+
+The failure this prevents is not a missing highlight, it is a
+**misleading** one: a line drawn from a real endpoint to a fallback
+position points at geometry that is not there, and the operator would
+aim at it.

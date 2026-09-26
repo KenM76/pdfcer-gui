@@ -22,21 +22,9 @@ use self::model::{Listing, PageTabs};
 use self::tabs::{TabsEntry, TabsMode};
 
 /// The tallest the list may grow before it scrolls, in points.
-///
-/// See this module's header, "The one layout thing this section does". The
-/// number is a judgement rather than a measurement: tall enough that a page of
-/// eight or nine widgets is read without scrolling, short enough that the fill
-/// list below stays on screen in a dock pane opened at its default height.
 const MAX_LIST_HEIGHT: f32 = 260.0;
 
 /// How many rows the trace will print before it stops.
-///
-/// `pdfcer_core::forms::MAX_FORM_FIELDS` is 500,000, so an uncapped per-row
-/// census on a pathological form would bury every other line in the capture —
-/// the same failure `crate::canvas::forms` caps its `form-box` census for. The
-/// summary lines are never capped, so the *counts* stay provable even when the
-/// enumeration stops.
-/// The region the collapsing header publishes, so a driven check can open it.
 const REGION_HEADER: &str = "forms.tab_order.header"; // ui-text-exempt: trace region name, never displayed
 
 /// The trace slot for whether the section is expanded.
@@ -254,10 +242,6 @@ pub(super) fn section(
 
 /// One page: its heading, what the file says about its tab order, its rows, and
 /// what could not be listed.
-///
-/// A page with no widget on it is still drawn. Its `/Tabs` state is a fact about
-/// the document, and a gap in the page numbering would read as a bug in the
-/// view rather than as an empty page.
 fn page_block(
     ui: &mut egui::Ui,
     doc: &OpenDoc,
@@ -473,26 +457,6 @@ fn page_block(
 }
 
 /// The sentence for one page's `/Tabs` state, and whether it is a warning.
-///
-///
-/// # Which states warn, and why exactly those
-///
-/// A warning here means *"what you are looking at is not the answer to the
-/// question you are asking"*. That is true under `/R`, `/C` and `/S`, where the
-/// order is **derived** — from geometry, or from the tag tree — rather than
-/// stored, so the `/Annots` sequence on screen is a different sequence. It is
-/// also true, more weakly, under a `/Tabs` name this build cannot interpret.
-///
-/// It is **not** true for an absent `/Tabs` (the `/Annots` order is what viewers
-/// use), nor under `/A` or `/W` (the standard defines those *as* the `/Annots`
-/// order), nor for an ancestor's `/Tabs` — which is disclosed as a fact about
-/// the file but is not applied, because `/Tabs` is not an inheritable page
-/// attribute. See [`model`]'s §4.
-///
-/// The `bool` rather than an enum is deliberate at this size: there are two
-/// visual treatments in this crate for a line of disclosure (warn colour, or
-/// small-and-weak), and a two-valued answer is the honest shape for a two-valued
-/// question. It becomes an enum the day a third treatment exists.
 fn tabs_note(tabs: &TabsEntry) -> (String, bool) {
     match tabs {
         TabsEntry::Absent => (t::tab_order_no_tabs_entry().to_owned(), false),
@@ -513,12 +477,6 @@ fn tabs_note(tabs: &TabsEntry) -> (String, bool) {
 }
 
 /// The `/Tabs` name as the file spells it.
-///
-/// Used only where the *name* is quoted back — the ancestor sentence and the
-/// trace. For an unrecognised value this is the raw bytes as decoded, never a
-/// substitute: a name pdfcer has never seen is a document fact, and printing
-/// something else in its place would make the view claim the file said
-/// something it did not.
 fn mode_name(mode: &TabsMode) -> String {
     match mode {
         TabsMode::Row => "R".to_owned(),
@@ -543,22 +501,6 @@ fn tabs_field(tabs: &TabsEntry) -> String {
 }
 
 /// The trace: a summary, a line per page, then a capped line per row.
-///
-/// # Why this is more than a debug print
-///
-/// R1: correctness is established by driving the binary, not by a passing
-/// test — and a picture of the result is not evidence when two very different
-/// results look alike, so what the running application chose has to be printed.
-/// This view has that property in a sharper form than most: a
-/// screenshot of a list of names in an order cannot tell you that the order is
-/// the one the file lists, that a widget the file lists was skipped, or that a
-/// `/Tabs` came from two levels up the page tree. Every one of those is text.
-///
-/// Every number here drives something on screen, which is the test for what
-/// belongs: `tabs` decides the per-page sentence and its colour, `rows`,
-/// `unclaimed`, `anonymous` and `other_annots` each decide a line, and
-/// `no_widget_fields` decides the document-wide note. If a number here is wrong,
-/// something on screen is wrong with it.
 fn trace(listing: &Listing) {
     crate::diag::trace(|| {
         format!(
@@ -618,13 +560,6 @@ mod tests {
     use super::*;
 
     /// **Only the states where the sequence is NOT the tab order warn.**
-    ///
-    /// The single most consequential mapping in this view, and it is wrong in
-    /// two opposite and equally bad ways. Warning on `/A` or `/W` would tell an
-    /// operator the list is unreliable on the one kind of page where the file
-    /// explicitly asks for exactly this order. *Not* warning on `/R`, `/C` or
-    /// `/S` would let them read a sequence that is not the tab order and
-    /// believe it is — which is the failure this whole view is designed around.
     #[test]
     fn the_derived_orders_warn_and_the_stored_ones_do_not() {
         for mode in [TabsMode::Row, TabsMode::Column, TabsMode::Structure] {
@@ -664,15 +599,6 @@ mod tests {
     }
 
     /// **An absent `/Tabs` is reported as absent, with NO mode name.**
-    ///
-    /// The constraint this view is built around, asserted as a property of the
-    /// string an operator actually reads rather than of the enum behind it.
-    /// `D:\Dev\pdfcer`'s roadmap records what Acrobat's "Unspecified" tab-order
-    /// state mechanically denotes as **unsourced after two attempts**, so any
-    /// of these words on this page would be an assertion nobody can support.
-    ///
-    /// It also must not warn: with no `/Tabs`, the `/Annots` order is what
-    /// viewers use, so the list *is* the answer and a warning would be false.
     #[test]
     fn an_absent_tabs_entry_is_named_absent_and_nothing_else() {
         let (sentence, warn) = tabs_note(&TabsEntry::Absent);
@@ -692,14 +618,6 @@ mod tests {
     }
 
     /// **An ancestor's `/Tabs` is disclosed, named, and not applied.**
-    ///
-    /// Three assertions because the sentence has three jobs, and dropping any
-    /// one of them produces a different wrong answer. It must say the page has
-    /// none of its own (or it asserts an inheritance ISO 32000-2 Table 31
-    /// denies); it must name the ancestor's value (or it hides a fact that
-    /// changes what another viewer does); and it must not warn (because this
-    /// build does not apply it, so the sequence on screen is still the
-    /// `/Annots` order that an absent `/Tabs` implies).
     #[test]
     fn an_ancestor_tabs_is_disclosed_without_being_applied() {
         let (sentence, warn) = tabs_note(&TabsEntry::OnAncestor(TabsMode::Structure));
@@ -721,11 +639,6 @@ mod tests {
     }
 
     /// **No two `/Tabs` sentences read alike.**
-    ///
-    /// Six states, six sentences. Two that read alike would send an operator
-    /// looking for the wrong cause — and the pair most likely to be collapsed
-    /// by someone tidying up is `/R` and `/C`, which differ by one word and
-    /// describe genuinely different sequences.
     #[test]
     fn every_tabs_state_has_its_own_sentence() {
         let all = [
@@ -746,11 +659,6 @@ mod tests {
     }
 
     /// **Every warning survives its glyph being stripped.**
-    ///
-    /// `RIBBON_IA.md` R84 — never a colour-class cue alone. `⚠` is exactly
-    /// that, and it is doubly load-bearing here because these sentences are
-    /// also drawn in the warn colour: a reader who sees neither the glyph nor
-    /// the colour must still get the whole meaning from the words.
     #[test]
     fn a_warning_glyph_is_never_load_bearing() {
         let warnings = [
@@ -791,13 +699,6 @@ mod tests {
     }
 
     /// **The page index travels 0-based and prints 1-based.**
-    ///
-    /// The off-by-one that would otherwise be invisible.
-    /// [`Action::GoToPage`] takes a 0-based index — the convention
-    /// `crate::panels::bookmarks` and `crate::panels::comments` both pin from
-    /// their own side — and every string a human reads takes the number one
-    /// higher. Getting it backwards produces a view that navigates one page
-    /// past every heading, which looks like a document defect.
     #[test]
     fn the_page_index_travels_zero_based_and_prints_one_based() {
         for index in [0usize, 1, 35] {
@@ -820,19 +721,6 @@ mod tests {
 
     /// **The explainer must TEACH THE GESTURE, and must not claim the
     /// view is read-only.**
-    ///
-    /// **A drag with no visible handle is undiscoverable.** There is no button,
-    /// no grip dots, no "Move up" — the only thing that can tell an operator
-    /// this list is draggable is the sentence above it. So the sentence is load
-    /// bearing, and two things about it are pinned:
-    ///
-    /// 1. It says how (`drag`) AND what will be shown (`line`). The operator
-    ///    asked for *"clear markers of where the field is going to move to"*; a
-    ///    caret nobody expects is not a clear marker.
-    /// 2. It does not claim the view leaves the order alone. Copy calling a
-    ///    view read-only while the view reorders is the class of stale string
-    ///    that survives longest, because nothing about it looks wrong — so the
-    ///    wordings are asserted against by name.
     #[test]
     fn the_explainer_teaches_the_drag_and_no_longer_claims_to_be_read_only() {
         let explainer = t::tab_order_explainer().to_lowercase();
@@ -847,19 +735,6 @@ mod tests {
     }
 
     /// **Still no labelled reorder control, and that is deliberate.**
-    ///
-    /// The gesture is the feature — the operator asked for drag and drop by
-    /// name — and a "Move up / Move down" pair beside every row would double
-    /// the height of a list that already runs to 200 rows on a real form. The
-    /// absence is worth pinning because the obvious response to "the drag is
-    /// hard to discover" is to add buttons, and the right response is to fix
-    /// the sentence that teaches it.
-    ///
-    /// This is NOT a permanent prohibition and should not be read as one.
-    /// A keyboard route to reordering is an accessibility gap this view has,
-    /// and if it is filled the right way — a keymap command, not a pair of
-    /// buttons per row — this test is what should be revisited, with its
-    /// reasoning, rather than deleted quietly.
     #[test]
     fn no_row_carries_a_labelled_reorder_button() {
         for s in [

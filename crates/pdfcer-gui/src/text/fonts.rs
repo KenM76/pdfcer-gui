@@ -18,6 +18,8 @@
 //! Not the folder, and not a count. A folder holding two hundred files and one
 //! problem needs the one named; *"3 files were skipped"* is a number that
 //! sends somebody to look through two hundred.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/text/fonts.md`.
 
 use std::path::Path;
 
@@ -101,10 +103,6 @@ mod tests {
     use super::*;
 
     /// **Every sentence names the file it is about.**
-    ///
-    /// The failure this guards is the tempting summary — *"3 files skipped"* —
-    /// which is a number that sends an operator through a folder of two
-    /// hundred looking for three.
     #[test]
     fn every_skip_names_its_file() {
         let path = Path::new("C:/fonts/Odd.ttf");

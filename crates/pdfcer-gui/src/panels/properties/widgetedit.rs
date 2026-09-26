@@ -61,11 +61,6 @@ pub const VISIBILITY_REGION: &str = "properties.widget_edit.visibility";
 pub const APPLY_REGION: &str = "properties.widget_edit.apply";
 
 /// How fast a drag on one of the four spinners moves it, in points per pixel.
-///
-/// A quarter of a point, matching `super::geometry`'s `SPEED`, and the
-/// reason is the same: these are **drafting** numbers on a drawing sheet, where
-/// a whole point of drift is visible. An operator who wants a big move types
-/// the number.
 const SPEED: f64 = 0.25;
 
 /// Draw the selected widget's own properties, or nothing.
@@ -138,49 +133,6 @@ pub fn section(
 }
 
 /// **Turn the box**, in ninety-degree steps.
-///
-///
-/// # THE DIRECTION IS THE WHOLE DANGER, AND IT IS NEGATED HERE
-///
-/// `/MK /R` is **counterclockwise**. The page's `/Rotate` is **clockwise**. The
-/// engine flagged this as *"the single most likely thing for a shell to get
-/// backwards"*, and the standard makes it easy: the two entries are word for
-/// word parallel —
-///
-/// | | |
-/// |---|---|
-/// | `/MK /R` (Table 189) | *"…rotated **counterclockwise** relative to the page…"* |
-/// | page `/Rotate` (Table 30) | *"…rotated **clockwise** when displayed or printed…"* |
-///
-/// **The direction word is the only difference between those two sentences.**
-/// Worse, the *movie* dictionary's `/Rotate` uses the identical phrase
-/// *"relative to the page"* with the **opposite** sense, so that phrase carries
-/// no convention at all — only the direction word does.
-///
-/// ⇒ So the two controls here are labelled **left** and **right**, which is
-/// what an operator means, and the negation happens **here, at the UI layer**,
-/// exactly as the engine instructed: *"if your rotate control has a clockwise
-/// affordance, negate at the UI layer and pass counterclockwise degrees to us.
-/// Do not negate inside anything that touches `/MK`."*
-///
-/// A **right** turn is what the operator sees the box do. That is `-90`
-/// counterclockwise, and this is the only place in the program where those two
-/// facts meet.
-///
-/// # Why ±90 buttons and not a typed angle
-///
-/// The engine refuses anything that is not a multiple of 90 — Table 189 says
-/// *"shall be a multiple of 90"* — so a free number is a control most of whose
-/// values are refusals. Two buttons offer only what can succeed, which is R9's
-/// posture rather than a simplification.
-///
-/// # Why the current angle is shown even at zero
-///
-/// Because `Widget::rotation` is `Option<i64>` and `None` means **the file
-/// states none**, which is not the same fact as `Some(0)` — the distinction
-/// `Widget::border`'s own docs call *"a fact to display, not a value to
-/// substitute"*. An operator debugging why a box looks wrong in another viewer
-/// wants to know which of the two their file says.
 fn rotation_row(
     ui: &mut Ui,
     widget: &pdfcer_core::forms::Widget,
@@ -246,20 +198,6 @@ fn rotation_row(
 }
 
 /// The four typed numbers and the button that commits them.
-///
-/// # Why an Apply button and not commit-on-release
-///
-/// [`super::fieldedit`]'s max-length spinner commits on release, and this one
-/// deliberately does not — the difference is that **these four are one edit**.
-/// A box is moved by changing X *and* Y; committing each on release would
-/// author two `edit_widget` calls, two undo entries, and an intermediate state
-/// in which the box has moved sideways and not down. `super::geometry` reached
-/// the same conclusion for the same reason and this follows it, including the
-/// button's placement.
-///
-/// The button is **greyed when nothing was typed**, which is R9's temporarily
-/// unavailable case: there is a capability and no operand, and the hover says
-/// so.
 fn geometry_rows(
     ui: &mut Ui,
     draft: &mut WidgetPropsDraft,
@@ -324,24 +262,6 @@ fn geometry_rows(
 }
 
 /// The border's style and width — `/BS`, `Pass 146.0`.
-///
-/// # It reads from the DOCUMENT and shows a dash when the file is silent
-///
-/// There is no draft, deliberately, and the style combo reads
-/// `widget.border` fresh every frame — the same argument
-/// [`super::fieldedit::flag_row`] makes for its checkboxes: a press the engine
-/// refuses leaves the control where it was, because the document did not
-/// change. A draft-backed control would show the operator's intent while the
-/// document silently disagreed.
-///
-/// **`None` renders [`t::border_unstated`] and offers no width at all.** The
-/// alternative — a combo pre-set to Solid and a spinner at 1 — is exactly the
-/// invention this whole exchange with the engine was about, and the first press
-/// would write it into the operator's file. Choosing a style from the combo is
-/// how a widget with no stated border gets one, which is an act rather than a
-/// default.
-///
-/// A width of **0** is a value, not an absence, and shows as `0 pt`.
 fn border_rows(
     ui: &mut Ui,
     widget: &Widget,
@@ -433,16 +353,6 @@ fn border_rows(
 }
 
 /// Where the widget is visible — `/F`, `Pass 146.0`.
-///
-/// **`None` is a sentence, not an empty combo.** The engine's mapping is
-/// exact-or-refused, so `None` means the file carries flags pdfcer cannot set —
-/// `Print | NoZoom`, say — and it can never mean *absent*, because Table 164
-/// makes an absent `/F` equal `0` which is one of the four.
-///
-/// So the pane says which flags, in hex, and says pdfcer is leaving them alone.
-/// The alternative — showing the nearest of the four — is the border defect
-/// wearing a different hat, and the operator's first press would collapse a
-/// combination the file meant.
 fn visibility_row(
     ui: &mut Ui,
     widget: &Widget,
@@ -491,16 +401,6 @@ fn visibility_row(
 }
 
 /// `/MK` `/CA` — the widget's caption.
-///
-/// **Not cosmetic on a push button**, which is why the engine models this
-/// one key out of `/MK` and none of the other ten. A push button has no `/V` at
-/// all (§12.7.4.2.2), so the caption is the only thing distinguishing *Submit*
-/// from *Reset* to anyone reading the field list.
-///
-/// Empty commits `Some("")`, which **removes** it. That is the engine's
-/// spelling and it is unambiguous, unlike the tooltip's three-state choice —
-/// there is no "leave it alone" to express here, because not touching the
-/// control is how you leave it alone.
 fn caption_row(
     ui: &mut Ui,
     draft: &mut WidgetPropsDraft,
@@ -532,48 +432,6 @@ fn caption_row(
 
 /// The two `/MK` colours — `/BG` (background) and `/BC` (border and mark).
 /// `OPERATOR_REQUESTS.md` **O202**, the after-placement half.
-///
-/// # This row was REFUSED until the engine painted the colours
-///
-/// `/MK` `/BG` and `/BC` were read and written perfectly for months and
-/// **painted by nothing**: R43 makes pdfcer draw the baked `/AP` and never
-/// reconstruct an appearance from `/MK`, so writing the key and stopping is
-/// *"a record of an intention nothing acts on"* in the engine's own words. A
-/// swatch over that would have been the defect rule 4 names in one line —
-/// this shell tints its on-canvas field editor from `/BG`, so the operator
-/// would have picked a colour, watched the box take it, saved, reopened, and
-/// found it grey. A screenshot of the editing canvas differing from a
-/// screenshot of the same file saved and reopened is the whole test.
-///
-/// `Pass 308.0` bakes both colours into all four appearance builders and
-/// `edit_widget`'s `needs_regen` now covers a colour-only edit, so the canvas
-/// and the saved page agree. The refusal rested on exactly that and is
-/// withdrawn.
-///
-/// # The two keys are not symmetric, and the panel must not pretend they are
-///
-/// | | absent | empty array | what the panel offers |
-/// |---|---|---|---|
-/// | `/BG` | the kind's own default — nothing, or a push button's plate | **paints nothing at all** | a *No background* entry |
-/// | `/BC` | black | **black** | no such entry |
-///
-/// `WidgetChrome::stroke` resolves the empty array and the absent key to the
-/// same black, deliberately: a border's *thickness* lives in `/BS` `/W`, and
-/// treating an empty `/BC` as "omit the stroke" would give two unrelated keys
-/// one meaning. So an entry writing an empty `/BC` would change a byte,
-/// rebuild an appearance stream, cost an undo entry, and alter no pixel — R9's
-/// case for rendering nothing rather than a control that does nothing.
-///
-/// ⚠ O202's decision 1 assumed the opposite (*"an empty `/BC` positively means
-/// draw no border"*). It was written against the engine as it stood before
-/// `Pass 308.0`. This follows the measurement.
-///
-/// # Rule 4
-///
-/// Nothing here marks the canvas. The colour is applied and from that instant
-/// the page shows what the saved file will show; a *recorded, not painted*
-/// outcome is disclosed in the status line by `actions::forms::edit_widget`
-/// and never drawn.
 fn chrome_rows(
     ui: &mut Ui,
     field: &Field,
@@ -646,10 +504,6 @@ fn chrome_rows(
 }
 
 /// The two `WidgetEdit` verbs that write one `/MK` colour key.
-///
-/// A pair rather than two parameters because they are one fact — *which key
-/// this row owns* — and a call site that got one of them from the background
-/// row and the other from the border row would compile.
 struct Setters {
     /// Write a colour, the empty array included.
     build: fn(WidgetEdit, pdfcer_core::forms::MkColor) -> WidgetEdit,
@@ -658,12 +512,6 @@ struct Setters {
 }
 
 /// Draw one `/MK` colour row and queue the edit it produces.
-///
-/// [`Setters`] carries the `WidgetEdit` verbs for this key. Passing them
-/// rather than a discriminant keeps the two rows from ever writing each
-/// other's key — a
-/// `match` on "which row am I" is a thing a maintainer can get backwards and a
-/// function pointer is not.
 fn chrome_row(
     ui: &mut Ui,
     row: &mkcolour::Row<'_>,
@@ -744,11 +592,6 @@ impl WidgetPropsDraft {
     }
 
     /// Re-read when the stamp has moved; otherwise keep what is on screen.
-    ///
-    /// Takes the values rather than a `&Widget`, for the reason
-    /// [`super::fieldedit::FieldPropsDraft::sync`] does: `forms::Widget` has no
-    /// `Default`, so a unit test cannot build one without a document, and this
-    /// function reads exactly five things off it.
     fn sync(
         &mut self,
         rect: (f64, f64, f64, f64),
@@ -769,13 +612,6 @@ impl WidgetPropsDraft {
     }
 
     /// Whether any of the four numbers has been typed away from the document's.
-    ///
-    /// An epsilon rather than `!=`, because the spinners round to two
-    /// decimals for display and a `/Rect` read out of a file routinely carries
-    /// more. Without it the Apply button would be live the moment the pane
-    /// opened, on every widget whose box is not exactly hundredths — which is
-    /// most of them, and which reads as the program thinking the operator has
-    /// unsaved changes they never made.
     fn differs(&self) -> bool {
         let (x, y, w, h) = self.stored;
         !near(self.x, x) || !near(self.y, y) || !near(self.w, w) || !near(self.h, h)
@@ -783,10 +619,6 @@ impl WidgetPropsDraft {
 
     /// Whether committing would change the **extent**, which is what decides
     /// between a free translation and an appearance rebuild.
-    ///
-    /// The engine makes the same comparison and its answer is authoritative;
-    /// this one exists only so the Apply button's hover can say which act the
-    /// operator is about to perform, **before** they perform it.
     fn resizes(&self) -> bool {
         let (_, _, w, h) = self.stored;
         !near(self.w, w) || !near(self.h, h)
@@ -807,12 +639,6 @@ mod tests {
 
     /// **A draft is re-seeded when the WIDGET changes, not only when the
     /// field does.**
-    ///
-    /// The failure this stamp's middle term exists for, and it is invisible on
-    /// every one-widget field: a radio group is one field with several boxes,
-    /// so a draft keyed on the name alone would carry the first button's
-    /// geometry onto the second, and pressing Apply would move a box the
-    /// operator was not looking at.
     #[test]
     fn a_draft_follows_the_widget_and_not_just_the_field() {
         let mut draft = WidgetPropsDraft::default();
@@ -829,11 +655,6 @@ mod tests {
 
     /// **Apply is dead until something is typed**, and a `/Rect` carrying more
     /// than two decimals does not count as typed.
-    ///
-    /// The second half is the one worth testing. Without the epsilon the
-    /// button would be live the moment the pane opened on any widget whose box
-    /// is not exactly hundredths — which reads as unsaved changes the operator
-    /// never made, on most real documents.
     #[test]
     fn apply_is_dead_until_a_number_actually_moves() {
         let mut draft = WidgetPropsDraft::default();

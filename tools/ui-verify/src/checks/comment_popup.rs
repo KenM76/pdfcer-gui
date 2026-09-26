@@ -31,13 +31,6 @@ const CLOSED_NOTE: (f64, f64) = (110.0, 310.0);
 
 /// The repository's own copy of the fixture, located from **this crate**
 /// rather than from the working directory or from `--source-root`.
-///
-/// `tools/ui-verify/` → up two → the workspace root. The same resolution
-/// `crate::checks::ocr::default_fixture` uses, and for the reason recorded
-/// there at length: `--source-root` defaults to `crates`, so a fixture
-/// resolved through it lands at `crates/fixtures/…` and the check SKIPs; and a
-/// bare relative path depends on where the harness was invoked from, which on
-/// one occasion had a planted build overwrite the repository's real fixture.
 fn fixture() -> std::path::PathBuf {
     std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("..")

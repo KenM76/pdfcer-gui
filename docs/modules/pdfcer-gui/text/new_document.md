@@ -38,3 +38,98 @@ The custom fields are therefore millimetres, stated in the label rather
 than in a suffix an operator can miss, and the resulting sheet is echoed in
 **both** units by [`sheet_summary`] so a Letter-minded reader is not left
 converting.
+
+## Item notes
+
+### `fn imperial`
+
+Operator request, 2026-08-20: *"please add imperial sizes too — we use
+imperial units — then select B size."*
+
+The sizes were already there. `PaperSize::ALL` has carried Letter, Legal,
+Tabloid, Executive and ANSI A–E since before this dialog was written, and
+the combo lists every one of them. What was missing was the **unit**: every
+entry read in millimetres, so ANSI B — an 11 × 17 inch sheet, defined in
+inches, called "B" by everybody who uses one — appeared as
+*"ANSI B — 279 × 432 mm"*.
+
+Nobody looks for B size under 279 × 432. A list that contains the thing an
+operator wants and describes it in units they do not work in is a list that
+does not contain it, and the report *"please add imperial sizes"* is exactly
+what that looks like from the outside. **It was a labelling defect wearing a
+missing-feature costume.**
+
+So each size is shown in the unit it is **defined** in — ISO A-series in
+millimetres, US and ANSI in inches — rather than in one unit chosen for the
+whole list. That is not a compromise between two preferences; it is the only
+labelling that is *true*: ANSI B is exactly 11 × 17 in and approximately
+279 × 432 mm, and a list that rounds the exact one into the approximate one
+has thrown away the number the sheet actually has.
+
+Keyed on the **name** rather than on the enum, so a size the engine adds
+appears without a shell change — the same reason `size_name`'s wildcard
+exists. A new ISO or JIS size falls through to millimetres, which is the
+right default for anything not in the US series.
+
+### `fn inches`
+
+Not a decimal. `8.5 in` is what a programmer writes and `8 1/2"` is what
+is on every title block in the operator's own corpus; the sizes that matter
+here are 8½ × 11 and 11 × 17, and a list reading *"8.5 × 11 in"* is a list
+that has been translated rather than written.
+
+### `fn a_us_sheet_reads_in_inches_and_an_iso_sheet_in_millimetres`
+
+The operator's report of 2026-08-20 was *"please add imperial sizes
+too"*, and every size he wanted was already in the list — labelled in
+millimetres. `ANSI B — 279 × 432 mm` is the sheet he calls B, described
+in units his office does not use, which is indistinguishable from its
+not being there.
+
+So this asserts the labelling directly, on the two sizes that matter
+most to him and on one from each family, because the failure it guards
+is a *silent* one: a size added to the US series and not added to
+`imperial` would simply appear in millimetres and nobody would file a
+bug against a list that has the entry.
+
+### `fn a_half_inch_is_written_as_a_half`
+
+`8 1/2`, not `8 8/16` and not `8.5`. The sizes an operator reads most
+are the two half-inch ones, and a list that says `8.50 × 11.00 in` has
+been translated rather than written.
+
+### `fn a_named_size_reads_back_as_its_own_millimetres`
+
+Not a tautology: [`size_entry`] and [`sheet_summary`] each convert
+points to millimetres, and `pdfcer_core::paper` builds its points *from*
+millimetres by the inverse constant. A rounding or a transposed
+constant here would show A1 as "593 × 840" beside a file that really is
+A1 — a discrepancy an operator would read as pdfcer getting the standard
+wrong.
+
+### `fn the_custom_refusal_states_the_limits`
+
+An operator told only that their number is wrong has to guess. The
+number is what turns a refusal into an instruction, and it is the
+single thing most likely to be dropped by a later rewording.
+
+### `fn no_size_in_the_list_reads_like_an_identifier`
+
+[`size_name`]'s wildcard exists so a size added to `PaperSize` after
+this build still appears in the list, under `id().to_uppercase()`. This
+pins that the wildcard is the **exception**.
+
+# Why it cannot be written as "the name differs from the fallback"
+
+Because for seven of the sixteen it does not, and correctly: the
+uppercased id of `A0` is `"A0"`, which is also its right name. That
+version of this test was written first and failed on its first run,
+reporting `A0` as a defect. Which was useful — it is the same shape as
+a test asserting a refusal that outlives its premise, caught early.
+
+What distinguishes a fallback that is *wrong* is that an identifier is
+hyphenated where a name is spaced: `ansi-d` becomes `"ANSI-D"` and
+should read `"ANSI D"`. So the property asserted is that **no name
+contains a hyphen** — which holds for every size today, fails for any
+multi-word size the engine adds, and says something true rather than
+something merely checkable.

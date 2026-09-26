@@ -36,3 +36,12 @@ clipboard, which is not a courtesy but a **requirement**; see its own header.
 A pasted field renders exactly as a saved-and-reopened one would - no badge,
 no tint, nothing drawn on the page. The disclosure lives off-canvas, on the
 status row. *Render normally; report separately.* **Both.**
+
+## Item notes
+
+### `fn an_engine_refusal_is_passed_through_verbatim`
+
+No prefix, no suffix, no rewording. A shell that decorated the engine's
+refusal would be maintaining a second copy of a taxonomy that moves - and
+this variant exists because two of this file's own hand-written refusals
+went stale within an hour of being written.

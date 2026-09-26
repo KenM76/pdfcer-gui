@@ -56,12 +56,6 @@ impl Check for ThePrintPreviewPopsIntoItsOwnWindow {
 }
 
 /// How many times a region has been retired so far.
-///
-/// A COUNT, compared before and after, rather than "is there a `ui-rect-gone`
-/// line for it anywhere". The column legitimately retires on its own during a
-/// launch — the dialog's first frames, a device re-read — so the mere presence
-/// of one such line proves nothing about the click. The count going **up
-/// across the click** is what does.
 fn retirements(trace: &crate::trace::Trace, region: &str) -> usize {
     trace
         .events(GONE)

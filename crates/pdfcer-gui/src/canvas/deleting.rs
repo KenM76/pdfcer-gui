@@ -200,12 +200,6 @@ pub fn subject(
 
 /// The Object rung: whole objects, in whichever of the two index spaces the
 /// selection is made of.
-///
-/// Unchanged behaviour, lifted verbatim out of `canvas::keys`. The page's own
-/// paint order wins when both are present, because `delete_objects` is the verb
-/// with the erase preview and the leaf list is the fallback for a selection
-/// made **entirely** of form-interior targets — which is the state an ordinary
-/// click has been able to produce since the deep hit test landed.
 fn object_rung(selection: &SelectionState, page: usize) -> Result<DeleteSubject, Refusal> {
     let objects = selection.object_indices_on(page);
     if !objects.is_empty() {
@@ -220,11 +214,6 @@ fn object_rung(selection: &SelectionState, page: usize) -> Result<DeleteSubject,
 }
 
 /// The Part rung: one subpath, or one label.
-///
-/// The kind decides the verb, and the **address space decides whether a verb
-/// exists at all** — asked in that order, exactly as `moving::eligible` asks
-/// it, because a form-interior part has no delete verb of any kind and saying
-/// so first is what stops the kind match promising one.
 fn part_rung(
     selection: &SelectionState,
     page: usize,
@@ -306,11 +295,6 @@ fn node_rung(
 
 /// The entered entry of a deeper rung, refusing one that belongs to another
 /// page rather than addressing page A's index space with page B's number.
-///
-/// [`crate::canvas::moving`]'s `entered_entry` in every respect; kept separate
-/// rather than made public there because the two modules' refusal enums are
-/// different types and a shared helper would have to be generic over the error
-/// to save four lines.
 fn entered(selection: &SelectionState, page: usize) -> Result<Selection, Refusal> {
     selection
         .entered_object()

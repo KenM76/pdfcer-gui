@@ -310,12 +310,6 @@ mod tests {
     }
 
     /// **The lock follows the pointer; it is not sampled at the press.**
-    ///
-    /// Asserted as a property of the function rather than of a gesture: the
-    /// same call with a different delta gives a different axis, which is what
-    /// makes an operator who commits to vertical half-way through a drag get
-    /// vertical. A press-sampled implementation would pass every other test in
-    /// this file.
     #[test]
     fn the_locked_axis_is_re_decided_from_the_live_delta() {
         assert_eq!(dominant(Vec2::new(30.0, 4.0)), Axis::Horizontal);
@@ -330,11 +324,6 @@ mod tests {
     }
 
     /// **The grab point survives an absolute-position lock.**
-    ///
-    /// `toward` filters the displacement, so the returned point keeps whatever
-    /// offset the press had on the locked axis. A build that filtered `at`
-    /// instead would put the handle on the axis line through `from` — visibly a
-    /// jump on the first frame Shift goes down.
     #[test]
     fn an_absolute_lock_keeps_the_offset_it_started_with() {
         let from = Pos2::new(100.0, 100.0);
@@ -359,11 +348,6 @@ mod tests {
 
     /// **A mid-edge grip becomes a proportional resize, with no special
     /// case.**
-    ///
-    /// `East` leaves `sy` at exactly 1.0, which is distance zero from unity and
-    /// therefore can never win. This is the whole reason [`aspect`] takes no
-    /// `Grip` — and a test for it, because the next reader's instinct will be
-    /// to add one.
     #[test]
     fn a_mid_edge_grip_scales_both_axes_under_shift() {
         assert_eq!(aspect(1.5, 1.0), (1.5, 1.5));

@@ -79,12 +79,6 @@ mod tests {
     use super::*;
 
     /// **The shipped defaults are the ones O51 argued for.**
-    ///
-    /// Not a tautology over `Default::default()`: it asserts the three engine
-    /// fields, through `to_options`, which is where an inverted mapping would
-    /// show up. `keep_rect_differences` is the one that reads backwards —
-    /// `false` means `/RD` **does** scale — and a shell that "fixed" that
-    /// reading would leave an inset fixed while the rectangle doubled.
     #[test]
     fn the_defaults_are_the_arguments_that_were_accepted() {
         let opts = Modifiers::default().to_options();
@@ -103,11 +97,6 @@ mod tests {
     }
 
     /// **Every switch reaches the engine**, one for one.
-    ///
-    /// The failure this guards is a mapping that drops a field: three
-    /// checkboxes on the Tool row, two of which do something, and no error
-    /// anywhere. It is asserted by turning them on **one at a time**, because
-    /// all-three-on would pass on a build that ORed them together.
     #[test]
     fn each_switch_reaches_its_own_engine_field() {
         let stroke = Modifiers {

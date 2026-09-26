@@ -17,10 +17,6 @@ use crate::sys::vk;
 /// The mode whose tab list carries Edit.
 const MODE: &str = "edit";
 /// The tab the two text commands live on, as (region, id).
-///
-/// A pair rather than two constants, because `click_tab` takes one: a region
-/// name and the id the shell reports for it are two spellings of one thing and
-/// a check that let them drift would click one tab and assert about another.
 const EDIT_TAB: (&str, &str) = ("ribbon.tab.edit", "edit");
 /// The tab id the shell reports for [`EDIT_TAB`].
 const EDIT_TAB_ID: &str = EDIT_TAB.1;
@@ -37,68 +33,16 @@ const CARET_EVENT: &str = "text-edit-caret";
 /// `text-edit-declined reason=…` — a click did not.
 /// `edit-text-target page=… run=… form=… invocations=… pages=…` — which content
 /// stream the commit aimed at, and how many places paint it.
-///
-/// Raised by the `edit_text` apply arm from the engine's own `EditReport`. It is
-/// the observable half of `Pass 119.0`: the prose disclosure goes to the status
-/// row for the operator, and this goes to the channel for a check.
-/// The status bar's decline slot, as `app::status::decline` publishes it.
-///
-/// This is a SECOND COPY of a string, and nothing enforces the pair.
-///
-///
-/// What makes the duplication tolerable is the DIRECTION it fails in.
-/// Rename the region in the application and this check stops matching, so it
-/// reports *"the operator was told nothing"* — a **false failure**, loud, on
-/// the very check whose subject is silence. The dangerous direction would be a
-/// false pass, and that is not reachable here: no other region carries this
-/// name, so nothing can satisfy the assertion by accident.
 const DECLINE_REGION: &str = "status-group:decline";
 
 const TARGET_EVENT: &str = "edit-text-target";
 
 /// `text-edit-became-add reason=no-run-under-the-click` — an Edit click that
 /// found no run, converted into an Add draft.
-///
-///
-/// It is raised by `canvas::textedit::place`, on the `Refusal::NoRun` arm and
-/// nowhere else. Only that refusal falls through to an origin; an encrypted
-/// document, a page that will not decompose, or a run the engine cannot address
-/// are all still reported, because those say *this cannot be done here* rather
-/// than *there is nothing here*. So its presence carries a precise claim:
-/// **the aim was not on text, and everything else was fine.**
-///
-/// Quoted rather than merely detected. The conversion is a design the
-/// operator asked for by name, and a reader meeting this skip for the first
-/// time needs to see that the program ANNOUNCED what it did — otherwise the skip
-/// reads as the harness excusing a silence, which is a failure mode this
-/// project has already had to correct twice.
 const BECAME_ADD_EVENT: &str = "text-edit-became-add";
 
 /// How many following absolutely-placed `Tm`s one edit may reposition before
 /// this check calls it a defect.
-///
-/// **This bound is a fact about the BUILD, not about the fixture.** Reflow
-/// shifts *the rest of the line* by the advance delta; a line is a handful of
-/// show operators in prose and often exactly one on a drawing. A number in the
-/// hundreds means the scan did not find the end of the line and ran on into the
-/// rest of the stream — which is true wherever it happens and on whatever
-/// document.
-///
-///
-/// | | `followers_repositioned` | changed pixels | bounding box |
-/// |---|---|---|---|
-/// | before the fix | **1,676** | 34,059 | x 62–858, y 34–795 — the whole page |
-/// | after | small | **42** | x 542–561, y 378–384 — one label |
-///
-/// The cause: reflow walked forward shifting every absolute `Tm` until a
-/// `Td`/`TD`/`T*` boundary, and **a CAD stream positions everything with `Tm`
-/// and never emits `Td`** — so there was no boundary. One four-character edit
-/// slid the rest of the drawing sideways.
-///
-/// 64 is deliberately generous: it is far above any real line and two orders of
-/// magnitude below the failure. A bound tuned close to the observed-good value
-/// would fail on the first document with a long justified line, and a check that
-/// cries wolf gets disabled.
 const MAX_FOLLOWERS: u64 = 64;
 
 /// `edit-text-left-edge` — the edited line's position in PDF user-space points,
@@ -107,19 +51,6 @@ const MAX_FOLLOWERS: u64 = 64;
 const LEFT_EDGE_EVENT: &str = "edit-text-left-edge";
 
 /// How far the corrected line's left edge may move, in points.
-///
-/// **Zero is the correct answer and the tolerance is for arithmetic, not for
-/// behaviour.** Replacing a run's glyphs does not touch the text-positioning
-/// operand that put it there, so the left edge before and after are the same
-/// number arrived at twice. Half a point is a fraction of the smallest
-/// character on a title block and orders of magnitude below the defect this
-/// catches, which he described as the whole line moving.
-///
-/// It is the same bound `canvas::textedit::glyphwall` holds a synthesised
-/// document to, and the equality is deliberate: one asserts it where the engine
-/// is called directly and this one where the operator's keystrokes arrive. A
-/// check that allowed more slack than its unit-level twin would be saying the
-/// shell may move text the engine may not.
 const MAX_SHIFT_PT: f64 = 0.5;
 const DECLINED_EVENT: &str = "text-edit-declined";
 
@@ -827,10 +758,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 }
 
 /// The failure message for a click that placed no caret.
-///
-/// Split out so the happy path reads as a sequence rather than as a `match`
-/// whose arms are 20 lines apart. Its content is the diagnosis, and the three
-/// reasons mean genuinely different things — see the call site's own comment.
 fn decline_message(session: &Session, declined: Option<&str>) -> String {
     let trace = session.trace_path().display().to_string();
     match declined {

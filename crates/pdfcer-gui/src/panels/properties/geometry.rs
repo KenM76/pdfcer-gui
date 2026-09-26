@@ -317,16 +317,6 @@ impl GeometryDraft {
 pub const MIN_ANGLE_DEG: f64 = 0.05;
 
 /// Two values that are the same number to within a tenth of a point.
-///
-/// A tolerance rather than `==`, because these values make a round trip
-/// through an `f64` spinner and back, and `40.0` typed into a field that was
-/// seeded with `39.999999999999996` is the operator changing nothing. Without
-/// it, merely selecting an object and pressing Apply would raise a move of
-/// 4 × 10⁻¹⁵ points — a real undo entry, a real content-stream rewrite, and a
-/// real cache invalidation, for an edit with no effect at any zoom.
-///
-/// A tenth of a point is about 35 µm on paper: finer than any plotter this
-/// operator's drawings are printed on, and coarser than every float artefact.
 fn near(a: f64, b: f64) -> bool {
     (a - b).abs() < 0.1
 }
@@ -351,24 +341,11 @@ fn near(a: f64, b: f64) -> bool {
 // One arithmetic makes that agreement structural.
 
 /// **The translation the draft asks for**, in PDF user-space points.
-///
-/// The bottom-left corner is the reference on both subjects: `x` is the left
-/// edge and `y` is the **bottom** edge, Y increasing upward, exactly as
-/// [`crate::text::panels::properties::geometry_units_note`] tells the operator
-/// under the heading. There is one convention in this file and it is that one.
 fn delta(draft: &GeometryDraft, bounds: Bounds) -> (f64, f64) {
     (draft.x - bounds.x0, draft.y - bounds.y0)
 }
 
 /// **The scale factors the draft asks for.**
-///
-/// A zero-extent axis cannot be scaled and is not an error: a horizontal line
-/// has no height, and asking for `h_new / 0` is how a NaN reaches `move_nodes`
-/// — or, on the annotation side, how a NaN reaches `resize_annotation`, which
-/// refuses a non-finite factor by name (`EditError::ResizeFactorInvalid`) but
-/// would have been asked a question nobody meant. The factor is 1 — leave that
-/// axis alone — which is also what the operator means, because a field showing
-/// `0.0` for a flat line is describing a fact rather than offering an edit.
 fn factors(draft: &GeometryDraft, bounds: Bounds) -> (f64, f64) {
     let sx = if bounds.w() > f64::EPSILON {
         draft.w / bounds.w()
@@ -703,19 +680,6 @@ pub fn section(
 }
 
 /// One labelled numeric field.
-///
-/// `DragValue` rather than a `TextEdit`, because it accepts both — an operator
-/// can scrub it *or* click and type an exact number — and the scrubbing costs
-/// nothing here precisely because the fields edit a draft. On a live-committing
-/// surface a scrubbable field would be the eighty-undo-entries problem the
-/// module header describes; on a drafted one it is a free second input method.
-///
-/// `disabled` is `Some(reason)` when the control must be drawn and dead —
-/// today, a locked annotation. R9 requires the reason on the hover, and it is
-/// attached to **each field** rather than to a wrapper because
-/// `add_enabled_ui` produces no response to hang a hover on: an operator
-/// pointing at the greyed Width would get nothing, which is the dead control
-/// with no explanation this project keeps finding.
 fn field(
     ui: &mut Ui,
     label: &str,
@@ -741,13 +705,6 @@ fn field(
 }
 
 /// PDF points per screen pixel of horizontal scrub.
-///
-/// Half a point, so a hundred-pixel drag spans fifty points — about the range a
-/// draughtsman adjusts a symbol by — and so the value visibly moves on a slow
-/// drag rather than jumping. A driven check depends on this being **exact**:
-/// scrubbing `n` pixels changes the field by `n × SPEED`, which is what lets the
-/// harness assert the number it expects instead of merely that something
-/// changed.
 const SPEED: f64 = 0.5;
 
 #[cfg(test)]
@@ -776,12 +733,6 @@ mod tests {
     }
 
     /// **Selecting an object and pressing Apply raises nothing.**
-    ///
-    /// The float round trip through the spinner is why this needs a test rather
-    /// than being obvious: a seed of `39.999999999999996` and a typed `40.0`
-    /// are different `f64`s and the same edit. Without the tolerance this would
-    /// raise a move of 4 × 10⁻¹⁵ points — a real undo entry and a real
-    /// content-stream rewrite for a change no zoom can show.
     #[test]
     fn an_untouched_draft_plans_nothing() {
         let b = Bounds {
@@ -845,11 +796,6 @@ mod tests {
     }
 
     /// **A flat object does not produce a NaN.**
-    ///
-    /// A horizontal line has zero height, and the obvious implementation
-    /// computes `h_new / 0`. `move_nodes` would accept the resulting NaN
-    /// coordinates and write them into the content stream, producing a page
-    /// that no viewer — including this one — can render.
     #[test]
     fn a_zero_height_object_scales_only_the_axis_it_has() {
         let b = Bounds {
@@ -923,24 +869,6 @@ mod tests {
 
     /// **A CONTENT OBJECT AND AN ANNOTATION WITH THE SAME NUMBER ARE
     /// DIFFERENT SUBJECTS.**
-    ///
-    /// This is the assertion the [`Subject`] enum exists for, and the defect it
-    /// prevents is a *coincidence of integers*: page-content objects are
-    /// numbered by paint order (0, 1, 2 …) and annotations by object id, whose
-    /// `num` is a small integer on almost every real document. With the stamp's
-    /// middle member a bare `usize`, selecting content object 7 and then
-    /// annotation `7 0 R` on the same page in the same epoch left `sync`
-    /// believing the draft already described the new selection — so the panel
-    /// showed the path's numbers over the annotation and Apply moved it by the
-    /// difference between two unrelated rectangles.
-    ///
-    /// ⇒ Not reproducible on most documents, so a fixture-based test would pass
-    /// and the operator would report it once and never again.
-    ///
-    /// **Falsified** by changing the stamp back to `(usize, usize, u64)` and
-    /// keying on `id.num`: this went red on the `x` assertion — the draft kept
-    /// the content object's `999` — and every other test in this file stayed
-    /// green. Restored.
     #[test]
     fn an_annotation_and_a_content_object_with_the_same_number_do_not_share_a_draft() {
         let object_box = rect(0.0, 0.0, 40.0, 40.0);
@@ -971,12 +899,6 @@ mod tests {
     }
 
     /// **A typed Left becomes a DELTA**, because `move_annotation` takes one.
-    ///
-    /// The field holds an absolute coordinate and the verb takes a
-    /// displacement, so the conversion is the whole content of this arm. A plan
-    /// that handed `draft.x` straight to the verb would move the annotation to
-    /// `x + draft.x` — off the sheet on any real drawing, and *further* off it
-    /// the further right the mark already was, which reads as a random jump.
     #[test]
     fn a_typed_position_becomes_a_delta_and_no_resize() {
         let b = rect(100.0, 200.0, 160.0, 240.0);
@@ -990,11 +912,6 @@ mod tests {
 
     /// **A typed Width becomes an ANCHOR plus a FACTOR**, because
     /// `resize_annotation` takes those and not a target rectangle.
-    ///
-    /// The anchor is the corner the operator pinned with Left and Bottom, so
-    /// the box grows to the right and upward — which is what "X, Y, W, H"
-    /// means in every properties panel: X and Y name a corner, and changing W
-    /// moves the *other* edge.
     #[test]
     fn a_typed_size_becomes_an_anchor_and_factors() {
         let b = rect(100.0, 200.0, 160.0, 240.0); // 60 × 40
@@ -1018,16 +935,6 @@ mod tests {
 
     /// **Move first, and the anchor is the corner the operator TYPED, not
     /// the one the annotation has now.**
-    ///
-    /// `resize_annotation`'s anchor is an absolute point, so this is sharper
-    /// than the content arm's equivalent: a factor tolerates a stale origin and
-    /// a point does not. Anchoring on `bounds.x0` here would pin a corner the
-    /// annotation is about to stop having, and the mark would land somewhere
-    /// neither number described.
-    ///
-    /// **Falsified** by anchoring on `(bounds.x0, bounds.y0)`: red, and the
-    /// two single-change tests above stayed green — which is why this case
-    /// needs its own test rather than being implied by them.
     #[test]
     fn moving_and_resizing_anchors_on_the_typed_corner() {
         let b = rect(100.0, 200.0, 160.0, 240.0);
@@ -1057,12 +964,6 @@ mod tests {
     }
 
     /// **A zero-height annotation does not produce a NaN factor.**
-    ///
-    /// A `/Line` drawn perfectly horizontally has a degenerate `/Rect`, and the
-    /// obvious implementation computes `h_new / 0`. `resize_annotation` refuses
-    /// a non-finite factor by name — `EditError::ResizeFactorInvalid` — so this
-    /// would surface as a worded refusal rather than as corruption, but it
-    /// would be a refusal for a question nobody asked.
     #[test]
     fn a_flat_annotation_scales_only_the_axis_it_has() {
         let b = rect(0.0, 50.0, 100.0, 50.0);
@@ -1076,17 +977,6 @@ mod tests {
 
     /// **THE TWO SUBJECTS COMPUTE THE SAME NUMBERS**, because they share
     /// [`delta`] and [`factors`].
-    ///
-    /// The failure this pins is not a crash: it is a mark placed by typing
-    /// landing a fraction of a point away from the same mark placed by
-    /// dragging, because one arm rounded through `f32` on the way to its verb
-    /// and the other did not. Nothing on screen would show it and nothing else
-    /// in this suite would catch it.
-    ///
-    /// The content plan's factors are `f32` — `move_nodes` takes those — so
-    /// the comparison is at `f32` precision, which is the honest bound: what is
-    /// asserted is that the two arms agree to the precision the narrower one
-    /// can express, not that a widened `f32` equals an `f64`.
     #[test]
     fn the_two_arms_agree_about_what_the_operator_typed() {
         let b = rect(10.0, 20.0, 50.0, 80.0);

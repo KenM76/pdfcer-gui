@@ -68,3 +68,12 @@ is a tip, and there are none here.
 The label already names the class; the operator hovering it is asking what
 the control does, and for a subtractive filter the interesting direction is
 always off.
+
+## Item notes
+
+### `fn the_links_row_says_it_does_nothing_yet`
+
+`PickClass::Link` is off by default because nothing can pick a link, and
+its tooltip is the only place the operator is told that. If link picking
+lands and this tooltip is not rewritten, the shell starts lying in the
+helpful direction — which is the direction nobody reports.

@@ -63,3 +63,49 @@ makes a claim about accuracy.** pdfcer has never measured this engine
 against a real scan (`FEATURES.md` records that its only test documents are
 vector PDFs that already contain text), so "accurate", "reliable" and
 "high quality" are words this surface is not entitled to.
+
+## Item notes
+
+### `fn nothing_here_claims_the_recognition_is_accurate`
+
+The module header's rule, asserted rather than trusted. pdfcer has never
+run this engine against a real scan, so any adjective implying measured
+quality would be a claim with nothing behind it — and marketing
+adjectives are exactly what a copy pass adds without thinking.
+
+### `fn the_scored_sentence_says_the_score_is_not_a_check`
+
+The one string on this surface that must not be softened. It is here as
+a test rather than only as a doc comment because "no confidence
+reported" reads as neutral, and a future copy pass tidying it into
+something neutral would delete the disclosure while leaving a sentence
+in its place.
+
+### `fn the_outcome_says_where_the_text_went_and_how_to_undo_it`
+
+This replaced a test called
+`the_write_control_offers_a_new_file_and_never_an_overwrite`, which
+asserted that the only way out of this dialog was a Save-as. That was
+true, it was enforced, and it was the thing the operator objected to:
+*"Why do I have to save a copy instead of just go back into my pdf and
+save over it?"*
+
+It was never a policy. `ocr::layer::add_ocr_layer` took an immutable
+document and returned a whole file, so a Save-as was the only shape
+available. The engine's Pass 135.0 made recognition an edit, and the
+three facts below are what the operator now needs to be told instead.
+
+### `fn a_skipped_page_and_an_unreadable_one_say_different_things`
+
+`nothing_recognised` means the recogniser looked and found nothing;
+`already_has_text` means it declined to look. Different facts, different
+remedies — one is "there is nothing readable here", the other is "there
+is already text here and doubling it would break Find". Collapsing them
+would leave the operator unable to tell a blank scan from a document
+that was recognised last week.
+
+### `fn the_find_offer_reports_the_page_rather_than_the_search`
+
+The trap the operator named, pinned. A sentence mentioning matches
+would be the collapse of *"the document is images"* into *"this search
+found nothing"* — the two the specification insists must not be one.

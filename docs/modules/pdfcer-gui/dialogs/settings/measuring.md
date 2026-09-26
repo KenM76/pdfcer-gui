@@ -30,3 +30,39 @@ What this governs is a **ce dimension** — one pdfcer authors — and not a
 not silently alter. The copy avoids the bare word entirely and says *"new
 dimensions you draw"*, which is unambiguous without making the operator
 learn a distinction that is ours rather than theirs.
+
+## Item notes
+
+### `fn a_hand_edited_value_inside_the_stores_range_is_not_rewritten`
+
+The regression test for the silent-edit hazard both sliders in this
+window carry — stated once here and once in [`super::super::text`].
+
+# Why it drives the parser instead of comparing constants
+
+The obvious test is `assert!(MIN <= 0.0 && MAX >= 45.0)`, and it is
+worthless twice over: both operands are `const`, so the compiler folds
+it away and clippy rightly refuses it, and it asserts a relationship
+between two constants rather than the property that matters. The
+property is about **behaviour**: a number the settings file accepts must
+still be that number after this window has had it.
+
+So it goes through `Settings::parse`, which is the store's own
+validation, and asserts on its **notes**. A value the parser clamps
+pushes a `Clamped` note; a value it accepts pushes none. If the slider's
+bounds ever narrow below the parser's, this window would rewrite a
+legal hand-edited value on open — and Save would write the changed
+number back, an edit the operator never made and cannot see, because
+they never touched the control.
+
+### `fn the_store_clamps_beyond_its_range_and_discloses_it`
+
+The other side of the test above, and the reason the first one proves
+something. If the parser accepted everything, "the slider matches the
+parser" would be satisfied by a slider with no bounds at all.
+
+### `fn the_shipped_default_is_reachable_on_the_slider`
+
+A default outside its own control's bounds would be silently rewritten
+the first time anybody opened this window, on every machine, without a
+click.

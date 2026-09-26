@@ -219,13 +219,6 @@ impl PasswordDialog {
     }
 
     /// Hand the typed password to the application, or refuse an empty one.
-    ///
-    /// The empty case is refused **here** rather than sent on, and the reason
-    /// is [`Secret::is_empty`]'s: `Document::load(path)` already tried the empty
-    /// password before this prompt existed — every conforming reader does that
-    /// silently — so submitting it again asks the engine a question it has
-    /// answered and returns an identical rejection, which the operator reads as
-    /// *"my password was wrong"* about a password they never supplied.
     fn submit(&mut self, actions: &mut Vec<Action>) {
         let secret = Secret::new(std::mem::take(&mut self.password));
         if secret.is_empty() {
@@ -261,11 +254,6 @@ mod tests {
     use super::*;
 
     /// **An empty box raises no action.**
-    ///
-    /// The whole of [`PasswordDialog::submit`]'s argument, asserted: pdfcer has
-    /// already tried the empty password, so sending it again would produce a
-    /// rejection the operator reads as *"my password was wrong"* about a
-    /// password they never typed.
     #[test]
     fn pressing_open_with_nothing_typed_raises_no_action() {
         let mut d = PasswordDialog::new("x.pdf".into());
@@ -293,11 +281,6 @@ mod tests {
 
     /// **The action carrying the password cannot print it**, asserted on
     /// the real `Action` rather than on `Secret` alone.
-    ///
-    /// `crate::secret` proves the type is safe; this proves the type is the one
-    /// actually used on this path. A variant that took a bare `String` would
-    /// pass every test in that module and write the password into the evidence
-    /// file on the first `{:?}`.
     #[test]
     fn the_action_that_carries_a_password_never_formats_it() {
         let mut d = PasswordDialog::new("drawing.pdf".into());
@@ -313,10 +296,6 @@ mod tests {
     }
 
     /// **The field is cleared on a rejection**, and the attempt count rises.
-    ///
-    /// A wrong password left in the box is one an operator re-submits by
-    /// reflex; and without the count, a second rejection is indistinguishable
-    /// from a press that did not register.
     #[test]
     fn a_rejection_clears_the_field_and_counts_the_attempt() {
         let mut d = PasswordDialog::new("x.pdf".into());

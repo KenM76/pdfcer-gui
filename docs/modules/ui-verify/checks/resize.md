@@ -41,3 +41,21 @@ bites: **a trace line must carry the number a wrong build would get wrong.**
 And the edit itself is asserted separately, through `move-nodes`, because a
 commit that computed the right geometry and never reached the engine is the
 defect this whole feature is a fix for.
+
+## Item notes
+
+### `const APPLIED`
+
+The stale constant did not make this check pass wrongly; it made it FAIL
+against a build where the resize had just got better — reporting *"the
+action was raised and its apply arm never ran"* while the trace plainly
+carried `transform-objects … transformed=1`. Worth knowing, because a check
+that pins a MECHANISM rather than an OUTCOME goes red on the day the
+mechanism improves, and the reflex when that happens is to doubt the code.
+
+### `const DRAG_PX`
+
+Big enough that the factors are unambiguously greater than one — a two-pixel
+drag would produce `sx = 1.002`, which a build that ignored the delta
+entirely could also produce by rounding. Small enough to stay inside the
+window on a modest client area.

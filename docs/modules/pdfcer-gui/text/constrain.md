@@ -29,3 +29,11 @@ Shift constrains, which no amount of correct behaviour teaches on its own.
 Present tense and no period, matching the other transient in-flight line on
 this row (`text::doctabs`' drag captions): these are captions on something
 happening now, not statements about something that happened.
+
+## Item notes
+
+### `fn each_lock_has_its_own_sentence`
+
+The sharing case is the one worth guarding: a copy-paste that left both
+axes saying "left and right" would be invisible in review and would tell
+the operator the exact opposite of the truth half the time.

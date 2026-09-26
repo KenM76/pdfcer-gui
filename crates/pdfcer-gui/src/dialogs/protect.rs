@@ -32,11 +32,6 @@ use crate::text::security as ts;
 const REGION_DIALOG: &str = "protect-dialog"; // ui-text-exempt: trace region name, never displayed
 
 /// The read-back of what the document says today — §1's first section.
-///
-/// Declared **unconditionally whenever the form is drawn**, because its absence
-/// from a trace is the evidence for the build brief's own requirement: a form
-/// with no standing section is a dialog that offered to change something it
-/// never reported.
 const REGION_STANDING: &str = "protect-standing"; // ui-text-exempt: trace region name, never displayed
 
 /// The signed refusal, declared **only while it is on screen** — so its presence
@@ -63,19 +58,9 @@ const REGION_CONFIRM: &str = "protect-confirm"; // ui-text-exempt: trace region 
 const FOOTER_RESERVE: f32 = 96.0;
 
 /// The least height the scrolling body may be given.
-///
-/// Without a floor, a small window produces a scroll area that draws **nothing
-/// at all** — `available_height()` minus a reservation goes negative, and a
-/// negative `max_height` is a silently empty area rather than an error. The
-/// About, OCR and redaction dialogs all record the same trap.
 const BODY_FLOOR: f32 = 160.0;
 
 /// Where one protect transaction has got to.
-///
-/// A state machine rather than several `Option`s, for
-/// `crate::dialogs::redact::Phase`'s reason: the states are mutually exclusive
-/// and an `Option` quadruple has combinations that would all compile and none of
-/// which means anything.
 #[derive(Debug)]
 enum Phase {
     /// The form is being filled in. Nothing has been computed and nothing has
@@ -112,11 +97,6 @@ enum Phase {
 }
 
 /// **Where the protected document goes.**
-///
-/// `crate::dialogs::redact::Destination`, and the reasoning there is this
-/// type's reasoning — see §3 of this module's header for the part-for-part
-/// correspondence and for the one half of the operator's request the engine
-/// cannot express.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Destination {
     /// A new file, chosen in the save picker. The default.
@@ -197,16 +177,6 @@ pub struct ProtectDialog {
 
 impl std::fmt::Debug for ProtectDialog {
     /// **Hand-written, and the whole point of it is what it omits.**
-    ///
-    /// Five fields of this struct hold a password the operator typed. A derived
-    /// `Debug` would print all five, and `crate::secret`'s header records
-    /// exactly what that costs: *"a `{:?}` on an action carrying a password
-    /// writes it into the trace file `tools/ui-verify` keeps as evidence."*
-    ///
-    /// The passwords are `String` rather than [`Secret`] here only because
-    /// `egui::TextEdit` binds to a `String`, so the type cannot do the
-    /// protecting and this impl must. It prints the LENGTHS, which is what a
-    /// diagnosis of *"my password is not being accepted"* actually needs.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ProtectDialog") // ui-text-exempt: a Debug type name, never displayed.
             .field("task", &self.task)
@@ -226,10 +196,6 @@ impl std::fmt::Debug for ProtectDialog {
 
 impl ProtectDialog {
     /// **Read the document, then build the window around what it said.**
-    ///
-    /// Cheap — a `Standing::read` and a signature census, no rewrite. Contrast
-    /// `crate::dialogs::redact::RedactDialog::open`, which runs a full removal;
-    /// there is nothing here that could be computed before the passwords exist.
     fn open(doc: &OpenDoc, task: Task) -> Self {
         let standing = Standing::read(&doc.session, &doc.path);
         let phase = standing
@@ -313,30 +279,6 @@ impl ProtectDialog {
     }
 
     /// **Whether the confirm control may be enabled.**
-    ///
-    /// Pure, and the whole of the gate's rule, so every property of it is
-    /// asserted headlessly — `crate::viewer`'s standing split applied to the
-    /// control that can overwrite the operator's file.
-    ///
-    /// The conditions, and each one is a different failure:
-    ///
-    /// 1. **A form is being filled in at all.** A refusal or a finished write
-    ///    has no confirm.
-    /// 2. **The current owner password is present**, on every job that acts on
-    ///    an already-protected document — O119's third disclosure, enforced
-    ///    rather than merely printed.
-    /// 3. **The new owner password is present**, on every job that sets one. A
-    ///    blank owner password makes a document whose protection anybody can
-    ///    remove; `EncryptionSettings` allows it and this surface does not —
-    ///    see [`crate::text::protect::owner_password_required`].
-    /// 4. **Both copies of both new passwords match.** A password typed wrong
-    ///    twice is a document nobody can open.
-    /// 5. **The two new passwords differ.** The owner password ignores `/P`
-    ///    entirely, so if it also opens the document every reader authenticates
-    ///    as owner and the permission list is decoration. The engine does not
-    ///    enforce this *"because the standard does not"*, so the surface does.
-    /// 6. **The replace acknowledgement**, when and only when the operator has
-    ///    chosen to replace.
     fn ready_to_confirm(&self) -> bool {
         if !matches!(self.phase, Phase::Filling | Phase::Failed(_)) {
             return false;
@@ -350,13 +292,6 @@ impl ProtectDialog {
     }
 
     /// The **outstanding** conditions, as flags.
-    ///
-    /// Outstanding rather than satisfied, and computed from the same
-    /// expressions that decide whether each control is drawn — so the
-    /// disabled-hover sentence can never send the operator to look for a field
-    /// that was never on screen. `OPERATOR_REQUESTS.md` O77's sweep found seven
-    /// greyed controls with no explanation; this is the shape that discharges
-    /// it, taken from `crate::text::redact::confirm_disabled`.
     fn gates(&self) -> Gates {
         Gates {
             current_owner_missing: self.job.needs_current_owner() && self.current_owner.is_empty(),
@@ -375,11 +310,6 @@ impl ProtectDialog {
     }
 
     /// Whether replacing the open document is an option at all.
-    ///
-    /// `is_file` rather than a flag, asked of the **file system**, exactly as
-    /// `crate::app::save::has_a_file` asks it and for the reason recorded
-    /// there: a second source of truth drifts, and the failure when it does is
-    /// writing over the wrong file.
     fn can_replace_original(&self) -> bool {
         self.source.is_file()
     }
@@ -405,12 +335,6 @@ impl ProtectDialog {
     }
 
     /// **Take the job, and re-seed the permission ticks from the document.**
-    ///
-    /// Pure-ish and a method rather than a line inside the radio group, so
-    /// the rule can be asserted headlessly. Selecting *remove the protection*
-    /// and then going back to *change the passwords* must not leave the ticks
-    /// wherever a previous job's editing left them — the seed is always
-    /// [`Standing::initial_ticks`], i.e. always the file.
     fn choose_job(&mut self, choice: Job) {
         if choice != self.job {
             self.job = choice;
@@ -419,12 +343,6 @@ impl ProtectDialog {
     }
 
     /// The permission bits currently ticked, as the engine wants them.
-    ///
-    /// [`always_granted`] bits are forced in regardless of the tick, so this
-    /// list is what the written file will actually say rather than what the
-    /// controls happen to show. The two agree by construction because
-    /// [`Standing::initial_ticks`] forces the same bits on, but forcing it here
-    /// too means a future edit to the drawing code cannot make them disagree.
     fn granted(&self) -> Vec<PermissionBit> {
         self.ticks
             .iter()
@@ -499,10 +417,6 @@ impl ProtectDialog {
     }
 
     /// **§1 — what the document says today.** A read-back, no controls.
-    ///
-    /// Drawn first and always, because of the build brief's own sentence: a
-    /// dialog that offers to change something it has not reported has told the
-    /// operator a falsehood before he touches anything.
     fn standing_section(&self, ui: &mut egui::Ui, theme: &Theme) {
         let heading = ui.label(t::standing_heading());
         crate::diag::ui_rect(REGION_STANDING, heading.rect);
@@ -766,34 +680,11 @@ impl ProtectDialog {
     }
 
     /// Whether either typed password carries a non-ASCII byte.
-    ///
-    /// Asked of what is in the boxes rather than of an `EncryptionSettings`
-    /// that does not exist yet, so the warning appears **while typing** rather
-    /// than after the press. The engine's own predicate is
-    /// `EncryptionSettings::has_non_ascii_password`, and
-    /// [`crate::protect::prepare`] calls that one for the trace line — two
-    /// readings of one fact, taken at two moments, which is why this one is
-    /// spelled out rather than borrowed.
     fn has_non_ascii_password(&self) -> bool {
         !self.user.is_ascii() || !self.owner.is_ascii()
     }
 
     /// **Run the job and send the bytes where the operator chose.**
-    ///
-    /// The two-path shape and the asymmetry between the paths are
-    /// `crate::dialogs::redact::commit`'s, and §3 of this module's header is
-    /// the whole of why they are copied rather than re-argued:
-    ///
-    /// | destination | how the path is obtained | what stands between the click and the write |
-    /// |---|---|---|
-    /// | [`Destination::NewFile`] | the save picker, suggesting `-protected` / `-unprotected` | the picker itself, plus the OS's own overwrite prompt |
-    /// | [`Destination::ReplaceOriginal`] | [`Self::source`], **no picker** | a checkbox naming the file, and a confirm button whose label names it too |
-    ///
-    /// The engine call happens **before** the picker on the new-file path,
-    /// deliberately. Every failure this surface can meet — a wrong owner
-    /// password, a signed document the census missed, an unreachable CSPRNG —
-    /// is discovered before the operator is asked to name a file, so a refusal
-    /// never arrives after a picker has been filled in and dismissed.
     fn commit(&mut self, doc: &OpenDoc) {
         // The passwords become [`Secret`]s here, at the one place they leave
         // the text fields, and `Passwords` is dropped at the end of this
@@ -853,11 +744,6 @@ impl ProtectDialog {
 }
 
 /// **The sentence for a preparation that did not produce bytes.**
-///
-/// Free rather than a method, so the mapping from every failure the model can
-/// report to the wording the operator reads is one pure function a test can
-/// drive — and so a new [`PrepareFailure`] variant is a compile error here
-/// rather than a silent fall-through to a catch-all.
 #[must_use]
 fn failure_line(failure: &PrepareFailure) -> String {
     match failure {
@@ -874,10 +760,6 @@ fn failure_line(failure: &PrepareFailure) -> String {
 }
 
 /// The outstanding conditions gating the confirm control.
-///
-/// A named struct rather than five positional `bool`s, because five `bool`s at
-/// a call site is where a future edit swaps two of them and every test still
-/// passes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Gates {
     /// The document's current owner password is needed and has not been typed.
@@ -893,10 +775,6 @@ struct Gates {
 }
 
 /// The radio label for a job.
-///
-/// Free rather than a method on [`Job`], because [`Job`] lives in
-/// `crate::protect` and that module holds no operator-facing strings — the
-/// project's standing seam between the model and `text/`.
 #[must_use]
 fn job_label(job: Job) -> &'static str {
     match job {
@@ -922,11 +800,6 @@ const fn task_token(task: Task) -> &'static str {
 }
 
 /// **The file name a sentence should use for `path`.**
-///
-/// The name rather than the whole path, for `crate::dialogs::redact`'s reason:
-/// every sentence that needs one is read in a window about 700 pt wide and a
-/// Windows path is routinely longer than that. The full destination is on the
-/// trace line [`crate::protect::Prepared::write_to`] emits.
 #[must_use]
 fn file_name_of(path: &Path) -> String {
     path.file_name().map_or_else(

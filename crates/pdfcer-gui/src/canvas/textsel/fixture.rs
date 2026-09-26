@@ -15,10 +15,6 @@
 use std::path::PathBuf;
 
 /// The strings, their text matrices, and what each is for.
-///
-/// `[a b c d e f]` is §9.4.2's `Tm`. The rotation lives in `a b c d`; `e f` is
-/// where the string starts. Every rotated entry is **capitals**, for the reason
-/// in the module header.
 const LINES: &[(&str, [f32; 6])] = &[
     // 0° — the regression guard. Nothing about it may change.
     ("HORIZONTAL", [1.0, 0.0, 0.0, 1.0, 72.0, 700.0]),
@@ -107,12 +103,6 @@ mod tests {
     use super::*;
 
     /// **Rewrite `fixtures/rotated-text.pdf`.**
-    ///
-    /// `#[ignore]`d: it writes into the repository, and a test that edits the
-    /// tree it is run from should be an act rather than a side effect. Run it
-    /// deliberately —
-    /// `cargo test -p pdfcer-gui regenerate_the_rotated_text_fixture -- --ignored`
-    /// — and commit what it produces.
     #[test]
     #[ignore = "writes into fixtures/; run deliberately"]
     fn regenerate_the_rotated_text_fixture() {
@@ -122,11 +112,6 @@ mod tests {
     }
 
     /// The committed fixture is what the generator above produces.
-    ///
-    /// Without this, the generator and the file could drift and every test that
-    /// reads the fixture would still pass — while the header above, which
-    /// explains the fixture in terms of the generator's `LINES` table, would
-    /// have quietly become fiction.
     #[test]
     fn the_committed_fixture_matches_its_generator() {
         let on_disk = std::fs::read(path()).expect(

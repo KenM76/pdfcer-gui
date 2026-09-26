@@ -11,13 +11,6 @@ use crate::canvas::target::{CanvasTargetProvider, TargetId};
 use crate::panels::objects::provider::{ObjectModelProvider, PartKind};
 
 /// `egui::Memory` key for the text run the last right-click landed on.
-///
-/// One `Id`, per `egui::Context`, for the module header's reason: the pick is
-/// taken at the click and read on every frame the popup is drawn, so it has to
-/// outlive the click and must not outlive the session. `Memory` rather than
-/// `PdfcerApp` state because this is frame-local interaction state with no
-/// meaning across a document — closing one starts the next frame with no pick
-/// and no popup in flight.
 const PICK_MEMORY_KEY: &str = "pdfcer-text-run-pick"; // ui-text-exempt: internal memory id, never displayed
 
 /// `text-run-menu pick=… offered=…` — what a right-click on a text object
@@ -281,10 +274,6 @@ mod tests {
     use super::*;
 
     /// **R9's one boolean.** A pick on a line is offered; nothing else is.
-    ///
-    /// Falsified: defining `offered` as `true` makes the second assertion
-    /// fail, which is the regression that would draw the row over paths,
-    /// images and blank paper.
     #[test]
     fn only_a_line_pick_is_offered() {
         assert!(
@@ -301,25 +290,12 @@ mod tests {
 
     /// The pick's default is *nowhere near a line*, so a frame before any
     /// right-click cannot be read as "line 0 of object 0".
-    ///
-    /// Falsified: making a `TextLine` variant the default makes this fail, and
-    /// would have offered the row on every right-click anywhere on the canvas
-    /// before the operator had pointed at anything.
     #[test]
     fn the_default_pick_names_no_line() {
         assert_eq!(RunPick::default(), RunPick::Elsewhere);
     }
 
     /// **A pick taken on another page does not resolve.**
-    ///
-    /// The provider is `None` here, which is a second reason to decline — so
-    /// the page guard is asserted where it is the FIRST reason, above the
-    /// `targets?`. That ordering is load-bearing, which is why the second
-    /// assertion exists: it shows the two refusals are independent rather than
-    /// one of them covering for the other.
-    ///
-    /// Falsified: moving the page comparison below `let targets = targets?`
-    /// leaves the first assertion passing for the wrong reason.
     #[test]
     fn a_pick_from_another_page_is_refused() {
         let pick = RunPick::TextLine {
@@ -333,11 +309,6 @@ mod tests {
     }
 
     /// `Elsewhere` resolves to nothing even with a matching page.
-    ///
-    /// Falsified: an `_ =>` arm in [`resolved`] falling through to
-    /// `Some((TargetId::Object(0), 0))` makes this fail — the shape of the
-    /// *"unwrap_or_default into line 0"* defect the enum's two variants exist
-    /// to prevent.
     #[test]
     fn an_elsewhere_pick_resolves_to_nothing() {
         assert_eq!(resolved(RunPick::Elsewhere, None, 0), None);

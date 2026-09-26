@@ -179,16 +179,6 @@ impl SignatureDialog {
     }
 
     /// Whether the copy should assert the outcome or attribute it.
-    ///
-    /// One predicate rather than three `match`es on `basis`, so the headline,
-    /// the explanation and the button cannot come to disagree about which
-    /// footing they are on — which is the specific way a two-wording surface
-    /// goes wrong, and it goes wrong silently because each string is correct
-    /// in isolation.
-    ///
-    /// `ImpactBasis` is `#[non_exhaustive]`, and the wildcard answers `false`:
-    /// the cautious wording is correct for a footing this build cannot read,
-    /// because it asserts less.
     const fn spec_sourced(&self) -> bool {
         matches!(self.basis, ImpactBasis::SpecSourced)
     }
@@ -273,18 +263,6 @@ impl SignatureDialog {
     }
 
     /// The body.
-    ///
-    /// The order is fixed and each position is argued:
-    ///
-    /// 1. **the headline** — what is happening, in the sentence read first;
-    /// 2. **the footing** — why pdfcer says so, and whose claim it is;
-    /// 3. **the target** — which file this is about to touch;
-    /// 4. **the buttons**, non-destructive-to-destructive left to right, which
-    ///    is `dialogs::unsaved`'s ordering rule and every application the
-    ///    operator uses;
-    /// 5. **the footnote** — that pdfcer verified nothing — below the buttons,
-    ///    because it answers a question an operator only has *after* noticing
-    ///    the window is making a claim.
     fn body(&mut self, ui: &mut Ui) {
         ui.label(if self.spec_sourced() {
             t::headline_certified(self.count)
@@ -373,17 +351,6 @@ mod tests {
     use super::*;
 
     /// **An unsigned document adds no friction at all.**
-    ///
-    /// The engine's instruction for `SignatureImpact::None`, asserted as the
-    /// property it is. Every other row of §2's table is a disclosure this
-    /// module owes; this row is the one it owes *nothing*, and it is the row
-    /// covering most documents this operator opens — so a regression here
-    /// would put a window in front of the commonest save in the application.
-    ///
-    /// The basis is varied across every variant to make the point that the
-    /// answer does not depend on it: `documentation_basis` answers
-    /// `NotApplicable` for `None`, but a build that passed the wrong basis
-    /// must still not produce a window.
     #[test]
     fn an_unsigned_document_is_never_interrupted() {
         for basis in [
@@ -401,14 +368,6 @@ mod tests {
 
     /// **A preserved byte range is disclosed, and it is disclosed
     /// afterwards.**
-    ///
-    /// Both halves are load-bearing and they fail in opposite directions.
-    /// `Silent` would be the engine's permitted option and this shell's
-    /// choice against — see [`crate::text::signature::preserved_note`] for the
-    /// argument. `WarnBeforeSaving` would be worse: a window asking the
-    /// operator to consent to something that changes nothing they could
-    /// decline, which is exactly the friction that teaches a person to dismiss
-    /// the window that matters.
     #[test]
     fn a_preserved_byte_range_is_a_note_and_not_a_window() {
         assert_eq!(
@@ -422,17 +381,6 @@ mod tests {
 
     /// **An invalidating save asks first, and the question knows which
     /// footing it is on.**
-    ///
-    /// The conventional interaction — every document application that can
-    /// invalidate a signature warns before saving, and the operator's standing
-    /// rule is to use the conventional interaction rather than invent one.
-    ///
-    /// The second assertion is the one the engine commissioned: the basis must
-    /// travel *through* the decision into the surface, because
-    /// `documentation_basis` exists precisely so the two footings can be
-    /// worded differently, and a decision that discarded it would leave the
-    /// window unable to tell them apart no matter how carefully the catalog
-    /// was written.
     #[test]
     fn an_invalidating_save_asks_first_and_carries_its_footing() {
         assert_eq!(
@@ -459,15 +407,6 @@ mod tests {
 
     /// **The window's wording follows the footing, all three strings
     /// together.**
-    ///
-    /// [`SignatureDialog::spec_sourced`] is one predicate for exactly this
-    /// reason: three independent `match`es on the basis would each be correct
-    /// and could still disagree — a certified headline over a cautious
-    /// explanation over an *anyway* button is a window that reads as though
-    /// pdfcer is unsure what it just asserted.
-    ///
-    /// Asserted through the public strings rather than through the private
-    /// flag, because the flag is not what an operator reads.
     #[test]
     fn the_window_words_the_two_footings_apart() {
         let certified = SignatureDialog::new(
@@ -487,17 +426,6 @@ mod tests {
     }
 
     /// **An unreadable footing gets the cautious wording.**
-    ///
-    /// `ImpactBasis` is `#[non_exhaustive]`, so a future variant compiles into
-    /// [`SignatureDialog::spec_sourced`]'s wildcard. It must land on the
-    /// wording that asserts **less**: pdfcer stating Table 254 as fact about a
-    /// footing it cannot identify would be the one failure this whole module
-    /// exists to prevent, arriving through a language feature rather than
-    /// through a sentence.
-    ///
-    /// Asserted with `NotApplicable`, which is a real variant that cannot
-    /// reach here through `ask_for` — the only value available today that
-    /// stands in for "something this code did not plan for".
     #[test]
     fn a_footing_this_build_cannot_read_asserts_less() {
         let unknown = SignatureDialog::new(
@@ -514,12 +442,6 @@ mod tests {
 
     /// **The two save routes say different things about the operator's
     /// file, and only one of them names it.**
-    ///
-    /// The distinction an operator is actually deciding on: *is the file I
-    /// already have the one being written over?* A build that used one
-    /// sentence for both would tell somebody saving a copy that their original
-    /// was at risk, or — far worse — tell somebody saving in place that it was
-    /// not.
     #[test]
     fn the_two_save_routes_describe_different_risks() {
         let in_place = PendingSave::InPlace.target_sentence("Sheet 1.pdf");
@@ -534,12 +456,6 @@ mod tests {
     }
 
     /// **The answer fires once and carries its save.**
-    ///
-    /// `dialogs::unsaved`'s one-shot property, and the failure it prevents is
-    /// the same one: an answer read every frame would re-enter the save on
-    /// each of the next sixty, which for save-in-place means sixty rewrites of
-    /// the operator's file and for save-a-copy means a file picker that will
-    /// not go away.
     #[test]
     fn the_confirmation_fires_once() {
         let mut d = SignatureDialog::new(
@@ -557,19 +473,6 @@ mod tests {
     /// **A parked answer is visible to the owner for exactly as long as it
     /// is undrained — which is what keeps the window alive long enough to hand
     /// it over.**
-    ///
-    ///
-    /// [`crate::dialogs::retire`] is the fix and it reads [`Self::answered`],
-    /// so the two edges asserted here are the ones it depends on:
-    ///
-    /// * **`true` before the drain** — or the window is dropped and the save is
-    ///   lost, which is the defect above;
-    /// * **`false` after it** — or the window is kept forever, redrawing an
-    ///   answered question every frame.
-    ///
-    /// It is asserted against `take_confirmation` rather than alone, because
-    /// the property that matters is that the *pair* agrees about what "parked"
-    /// means.
     #[test]
     fn an_answer_is_visible_until_it_is_taken_and_not_after() {
         let mut d = SignatureDialog::new(
@@ -593,10 +496,6 @@ mod tests {
 
     /// **A cancelled window is holding nothing**, which is what lets it be
     /// retired on the frame it closes.
-    ///
-    /// The other half of [`crate::dialogs::retire`]'s input: `answered()` must
-    /// distinguish *closed because answered* from *closed because dismissed*,
-    /// or the ✕ would keep a window alive that has nothing to say.
     #[test]
     fn a_cancelled_window_is_holding_nothing() {
         let mut d = SignatureDialog::new(
@@ -610,10 +509,6 @@ mod tests {
     }
 
     /// **Cancelling answers nothing.**
-    ///
-    /// The ✕ and the Cancel button must be separable from an answer, or the
-    /// control an operator presses reflexively to dismiss a surprise becomes
-    /// the one that performs the write.
     #[test]
     fn cancelling_does_not_save() {
         let mut d = SignatureDialog::new(
@@ -628,29 +523,6 @@ mod tests {
 
     /// **The fixture really is signed, really is an approval signature,
     /// and really does move between the two surfaces when a page goes.**
-    ///
-    /// The one test here that goes through the **engine** rather than over the
-    /// two enums, and it is worth its cost for three reasons that no amount of
-    /// pure-function testing reaches:
-    ///
-    /// 1. **It proves the fixture.** `tools/gen-signed-fixture.py` asserts in
-    ///    prose that it produces one approval signature over two pages. A
-    ///    generator's prose is not evidence; `signature_census()` is. If a
-    ///    future edit to that script produced a `/SigFlags` declaration with no
-    ///    signature dictionary — which the engine deliberately does not count —
-    ///    every other test in this module would still pass and `ui-verify`'s
-    ///    `signature_save` would SKIP with a reason blaming the shell.
-    /// 2. **It proves the arm the copy was written for.**
-    ///    `documentation_basis` answering `ConservativeReport` is what makes
-    ///    the cautious wording the one an operator sees, and it is computed
-    ///    from `census.certifications`, which is read from `/Reference` and
-    ///    never from `/Perms`. A fixture that accidentally acquired a `/DocMDP`
-    ///    would silently switch the whole surface to the assertive wording.
-    /// 3. **It proves the transition.** The same document, one page-delete
-    ///    apart, must move from a note to a window. That is
-    ///    `EditSession::changes_structure` doing its job, and it is the fact
-    ///    the engine says can only be known at save time — so it is the one
-    ///    claim in this module that cannot be checked any earlier.
     #[test]
     fn the_signed_fixture_moves_from_a_note_to_a_window_when_a_page_goes() {
         use crate::app::state::{SIGNED_TWO_PAGES, open_local_fixture};
@@ -712,10 +584,6 @@ mod tests {
     }
 
     /// **A document with no session cannot be asked about.**
-    ///
-    /// The `Status::Empty` guard, asserted for `ask_for`'s stated contract:
-    /// `None` means *proceed unchanged*, and the save arms that reach here
-    /// trace their own no-document decline one line later.
     #[test]
     fn nothing_is_asked_about_an_empty_shell() {
         assert!(ask_for(&Status::Empty, PendingSave::InPlace).is_none());

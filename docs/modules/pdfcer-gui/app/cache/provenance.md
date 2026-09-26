@@ -86,3 +86,73 @@ a silent edit against a page as it was two revisions ago.
 to let the handle outlive the `&OpenDoc` that produced it or coexist with a
 `&mut OpenDoc`. The staleness property is enforced exactly as it is for
 every other cache here; only the re-entrancy panic is given up.
+
+## Item notes
+
+### `fn a_second_reader_shares_the_extraction_rather_than_rebuilding_it`
+
+The property this module exists for, asserted the only way a unit test
+can assert it: [`Rc::ptr_eq`](std::rc::Rc::ptr_eq) on the two handles.
+A cache that rebuilt would hand back two distinct allocations holding
+equal text, and `assert_eq!` on the text would pass on both — which is
+exactly the shape of check that let six duplicate extractions sit in
+this crate unnoticed.
+
+The two handles are **held at once**, deliberately. The old caches in
+[`super::super`] hand out `Ref`s and their equivalent test holds two to
+prove a shared borrow is enough; this one hands out an `Rc` precisely so
+that overlapping handles are possible, and a test that took them one
+after the other would not exercise that.
+
+### `fn a_page_step_rebuilds_the_extraction`
+
+The control for the test above, and not a formality: a cache that
+ignored its key would pass that one and serve page 0's runs for page 1
+— which on the edit path means a pinned span naming a byte range in the
+wrong content stream, i.e. an edit applied to a page the operator is not
+looking at.
+**The handle is HELD, never dropped, and that is the whole
+correctness of this test.**
+
+
+⇒ **A pointer-identity check across a deallocation is not an identity
+check.** It is asked "is this a different allocation?" and the
+allocator is free to answer "no" about a genuinely different object.
+Both directions are unsound: it can report a rebuild as a cache hit
+(the failure actually seen), and it could equally have reported a cache
+hit as a rebuild, which would have sent somebody hunting a cache bug
+that does not exist.
+
+Holding `page0` for the life of the test fixes that at the root rather
+than by tolerance: while a strong `Rc` is alive the address cannot be
+reused by anything, so a differing pointer is proof of a different
+allocation and an equal pointer is proof of the same one. It costs
+nothing — `CachedText` is a handle, and this module hands out an `Rc`
+precisely so that overlapping handles are legal.
+
+⚠ Its sibling above, `a_second_reader_shares_the_extraction_…`, was
+never exposed to this: it compares two handles that are **both alive**,
+which is the sound shape. Do not "fix" that one by symmetry.
+
+### `fn an_edit_invalidates_the_extraction`
+
+The second half of the key. Serving pre-edit text after an edit would
+hand the next verb a byte span measured against a content stream that
+no longer exists — the silent-wrong-edit failure the module header
+calls worse than a panic.
+
+The epoch is moved directly rather than by performing an edit,
+because this is a test of the **cache key**, not of any verb. A test
+that ran a real edit would fail for a dozen reasons that are not this
+one, and would stop compiling every time a verb's signature moved.
+
+### `fn an_unreadable_page_records_the_attempt`
+
+The failure arm. The second clause is what stops a document whose
+current page cannot be extracted from paying a third of a second per
+frame — the measurement in `app::cache`'s header — to learn the same
+thing sixty times a second.
+
+
+What this does catch is the change that actually breaks the property:
+returning early on the failure arm without recording the key.

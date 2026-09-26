@@ -31,3 +31,26 @@ Refusal alone leaves an armed pen drawing a crosshair over a page it
 cannot draw on, and eight resize handles on a selection nothing will move.
 Retirement alone leaves every gesture available for as long as the
 operator stays put. Both, and the canvas tells the truth in both tenses.
+
+## Item notes
+
+### `fn entering_read_clears_a_selection_made_in_edit`
+
+The defect this closes is not "Delete works in Read" — it is the
+*outline and eight resize handles* left on the page, which are visible
+controls the operator can aim at and which would do nothing. See
+[`PdfcerApp::on_mode_capabilities_changed`] for why a selection is not
+"work" under `MODES_AND_PANELS.md` rule 1.
+
+### `fn a_panel_control_closes_a_panel_that_is_on_screen`
+
+The control is a toggle rather than a show. A show-only control for a
+panel already on screen renders *pressed* and does nothing when pressed
+— a visible control that is silently inert.
+
+### `fn a_panel_behind_a_sibling_tab_is_raised_rather_than_closed`
+
+The middle state, and the one that would be easy to get wrong. Getting
+it wrong is worse than not building the toggle at all: the operator
+pressing the control for a panel they cannot see means *"show me
+that"*, and closing it would unmount the very thing they asked for.

@@ -8,12 +8,6 @@ use crate::app::state::OpenDoc;
 use crate::canvas::zoom::{self, ZoomOutcome};
 
 /// Named region: the worded decline, when one is live.
-///
-/// Named for the same reason its two disclosure siblings are: the whole
-/// requirement of a decline is that it is **on screen and legible**, and
-/// `ui-verify` can only assert that about a rect the application published.
-/// Matched literally by `tools/ui-verify`, so renaming it silently un-aims
-/// whatever check was measuring it.
 const REGION_DECLINE: &str = "status-group:decline"; // ui-text-exempt: trace region name, never displayed
 
 // ---------------------------------------------------------------------------
@@ -1252,11 +1246,6 @@ pub(crate) use clipboard::record_mode_refusal;
 /// **The retirement predicate** — [`Declined::still_true`] and the
 /// [`History`] pair it reads — split out under R2 on 2026-09-12, the fourth
 /// time this file has met the 1,500-line ceiling.
-///
-/// See `decline/fresh.rs`'s header for the seam. In one line: it is the
-/// **pure** half of this module's second job, and it leaves behind the half
-/// that needs a context and a document ([`live`], [`show`]), so each file now
-/// has one testability story instead of two.
 mod fresh;
 /// Re-exported because [`live`] constructs one and `decline/tests.rs` builds
 /// several dozen. `floor`'s rule, which every split here has followed: the
@@ -1266,13 +1255,6 @@ pub(crate) use fresh::History;
 
 /// **What a refused CANVAS GESTURE may say, and the one writer that
 /// says it** — O188, 2026-09-15.
-///
-/// Its own file rather than a function in `record`, for `clipboard`'s and
-/// `textedit`'s stated reason: it carries an argument of its own — why an
-/// action raised by a read-only surface must carry a two-armed vocabulary and
-/// not a [`Declined`] — and that argument would be buried among twenty
-/// siblings. The size gate decided it as well: this file stood at 1,367
-/// lines and the variant above is fifty-seven of them.
 mod canvas;
 /// Re-exported so `app::actions` says `decline::CanvasDecline` and
 /// `decline::record_canvas(..)`. `floor`'s rule: the split is about where the

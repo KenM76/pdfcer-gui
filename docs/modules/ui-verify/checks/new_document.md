@@ -123,3 +123,47 @@ also be a bet on the least reliable channel. Whether `Ctrl+N` is *bound* is
 pinned by `app::keyboard`'s
 `every_chord_the_manifest_binds_can_be_spelled` family; whether it is
 *delivered* is `find_bar`'s subject, not this one's.
+
+## Item notes
+
+### `const FIRST_NAME`
+
+Spelled out rather than derived, because the derivation lives in
+`crate::text::files::untitled` inside the application and a harness that
+recomputed it would agree with a wrong implementation.
+
+### `fn press_new`
+
+`ordinal` is which press this is, and it is what the expected document name
+is derived from — so the second press asserting `Untitled 2.pdf` is the same
+code path as the first asserting `Untitled 1.pdf`, rather than a
+copy-and-pasted variant that could be weakened independently.
+
+Returns `Ok(None)` for a clean press, `Ok(Some(_))` for a failure sentence,
+and `Err` only for the states that are the *harness's* business — no click
+delivered, no trace readable.
+
+### `fn the_expected_names_survive_the_trace_quoting_them`
+
+`PathBuf` is traced through `{:?}`, so the trace reads
+`name="Untitled 1.pdf"` — quoted. **`TraceLine::get` strips a value's
+surrounding quotes**, so these constants are written BARE, and this test
+is what keeps the two in step: it parses a real quoted trace line and
+asserts the bare constant matches it.
+
+The quoting exists because a value can contain structural characters —
+a chord spelled `[` in an unquoted `chord=[` opens a bracket the field
+splitter never sees closed, and swallows every field after it on the
+line. The application quotes such values and `get` unwraps them, so no
+caller has to know which values those are.
+
+⚠ Getting this backwards makes the check report New as broken on a build
+where it works — the exact false negative it exists to avoid.
+
+### `fn the_canvas_line_carries_whether_anything_was_rastered`
+
+The distinction step 5 rests on, pinned against literal trace text so
+that a change to the canvas line's shape fails here rather than turning
+step 5 into an assertion that always reads `drawn=0`… which, being a
+FAIL, would at least be loud. The opposite — a parse that always yields
+a non-zero `drawn` — is the quiet one, so both are asserted.

@@ -91,3 +91,18 @@ Every one of these leaves the container, and each is somebody's habit:
 epoch** rather than by five call sites remembering to clear it. That is the
 `dialogs::placing` lesson applied one module over: a state that five routes
 must remember to clear is a state one of them will forget.
+
+## Item notes
+
+### `const ENABLED_KEY`
+
+Application-scoped rather than per document, like the armed tool and the
+pick filter: it is a statement about how this operator works, not about a
+file, and re-answering it per document would be a question asked again for
+no new reason.
+
+### `fn inside_a_container_a_leaf_resolves_to_itself`
+
+Without this the feature would be a cage: the operator could select a
+container and never anything in it, which is strictly worse than the
+behaviour it replaces.

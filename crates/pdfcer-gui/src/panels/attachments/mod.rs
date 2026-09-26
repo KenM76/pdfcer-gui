@@ -63,10 +63,6 @@ pub struct AttachmentsUi {
 
 impl std::fmt::Debug for AttachmentsUi {
     /// The draft's **length**, not its text.
-    ///
-    /// A description is the operator's own words about their own file, and this
-    /// reaches a trace file a harness keeps. `panels::bookmarks::BookmarksUi`
-    /// and `panels::docprops` make the same choice for the same reason.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("AttachmentsUi")
             .field("description_len", &self.description.len())
@@ -161,22 +157,6 @@ pub fn body(ui: &mut Ui, doc: &OpenDoc, state: &mut PanelsState, actions: &mut V
 }
 
 /// **Which of this panel's row controls have already published a rectangle.**
-///
-/// # Why a struct rather than four `&mut bool`s
-///
-/// It began as two, grew to four when the clipboard arrived, and tripped
-/// clippy's seven-argument limit — which was the right complaint about the
-/// wrong symptom. The four flags are **one fact**: *"the first visible row has
-/// been drawn"*, asked separately per control because a control that is absent
-/// on the first row (Remove, on a page-level attachment) must not consume the
-/// flag for the row that does have one.
-///
-/// A region name is a key in a **flat** namespace. Publishing
-/// `attachments.save` from every row would emit one rectangle per row under one
-/// key, and a driven check would click whichever was written last — not the row
-/// it meant, and not stable between runs. These rows also live in a
-/// `ScrollArea`, where a control scrolled out of view still reports a rect, so
-/// the publish goes through [`crate::diag::ui_rect_visible`] as well.
 #[derive(Debug, Default)]
 struct Published {
     /// `attachments.save`.
@@ -190,18 +170,6 @@ struct Published {
 }
 
 /// Draw one row per attachment.
-///
-/// # Why the two `published` flags exist
-///
-/// A region name is a key in a flat namespace. Publishing `attachments.save`
-/// from every row would emit one rectangle per row under one key, and a driven
-/// check would click whichever was written last — which is not the row it meant
-/// and is not stable between runs. The Comments panel solved this the same way
-/// and its comment carries the other half of the reason: these rows live in a
-/// `ScrollArea`, and *"a control scrolled out of view still reports a rect. A
-/// harness clicking a coordinate that is behind the scroll edge clicks whatever
-/// IS there, which fails as something else entirely."* Hence
-/// [`crate::diag::ui_rect_visible`] rather than `ui_rect`.
 fn rows(ui: &mut Ui, doc: &OpenDoc, listed: &[Attachment], actions: &mut Vec<Action>) {
     let mut published = Published::default();
     for attachment in listed {
@@ -296,19 +264,6 @@ fn row(
 }
 
 /// The row's verbs, and the sentences that stand where a verb cannot.
-///
-/// # Every branch here is R9 applied to a different fact
-///
-/// | state | what is drawn | why |
-/// |---|---|---|
-/// | no `/EF` at all | a sentence, no button | an **external** file reference (§7.11.3) is legal and has nothing to save |
-/// | an `/EF` that does not resolve | a different sentence, no button | `AttachmentNotes::unresolvable_streams` is documented as *"always a defect"*, and calling it the same thing as the legal case would either accuse a good document or excuse a damaged one |
-/// | a page annotation | Save, and a sentence instead of Remove | `detach_file` refuses one by name; it is removed as an annotation |
-/// | a document-level entry with bytes | Save and Remove | the full case |
-///
-/// A control is **absent** in each case rather than greyed, because P3 reserves
-/// greying for something *temporarily* unavailable that can say when it will
-/// not be — and none of these will ever become available by waiting.
 fn controls(
     ui: &mut Ui,
     doc: &OpenDoc,
@@ -397,13 +352,6 @@ fn controls(
 }
 
 /// What the row calls this attachment.
-///
-/// An empty name is legal — `NameSource::None` is reachable when a filespec
-/// carries no `/F`, `/UF`, `/DOS`, `/Mac` or `/Unix` and there is no tree key
-/// to fall back on — and the row must still exist, because the bytes can still
-/// be saved out. A blank line where a name belongs reads as a rendering fault.
-///
-/// Pure, so [`tests`] can hold it to that without a `Ui`.
 fn display_name(attachment: &Attachment) -> String {
     if attachment.name.trim().is_empty() {
         t::unnamed().to_owned()
@@ -414,10 +362,6 @@ fn display_name(attachment: &Attachment) -> String {
 
 /// Which of the two mechanisms carries this attachment, as a sentence, or
 /// `None` for a kind this build does not know.
-///
-/// Pure, so [`tests`] can hold the page numbering to being 1-based without a
-/// `Ui` — `page_index` is 0-based *"into `pages`"* and the off-by-one is the
-/// kind that looks like a document defect rather than a bug.
 fn where_it_lives(kind: &AttachmentKind) -> Option<String> {
     match kind {
         AttachmentKind::DocumentLevel { .. } => Some(t::where_document().to_owned()),
@@ -434,12 +378,6 @@ fn where_it_lives(kind: &AttachmentKind) -> Option<String> {
 
 /// How this attachment can be addressed after the frame, or `None` when it
 /// cannot be.
-///
-/// `AttachmentKind::PageAnnotation::annot_id` is an `Option` — `None` when the
-/// `/Annots` entry was a direct dictionary rather than a reference — and a row
-/// pdfcer cannot name gets no button. That is R9 rather than caution: a control
-/// whose operand cannot be constructed is an affordance for something that
-/// cannot work.
 fn addressable(kind: &AttachmentKind) -> Option<AttachmentRef> {
     match kind {
         AttachmentKind::DocumentLevel { tree_key } => Some(AttachmentRef::DocumentLevel {
@@ -453,24 +391,6 @@ fn addressable(kind: &AttachmentKind) -> Option<AttachmentRef> {
 }
 
 /// One string, safe to lay out in a single-line-ish label.
-///
-/// # Two substitutions, and both are rendering rather than reporting
-///
-/// - **`CR` becomes `LF`.** §12.5.6.2 makes carriage return the paragraph
-///   separator in annotation `/Contents`, which is where a page-level
-///   attachment's description comes from — and egui lays a bare `CR` out as
-///   nothing at all, so a two-paragraph description would render as one long
-///   run with a gap in it.
-/// - **Other C0 controls become a space.** A name or description from a
-///   document is unconstrained text (see `Attachment::name`), and a `NUL` or a
-///   `BEL` in a label is a glyph nobody can read.
-///
-/// Neither is a disclosure case, and the distinction is worth stating because
-/// this crate's rule 4 posture is otherwise to disclose everything: pdfcer is
-/// not reporting a different *value* here, it is drawing the same value
-/// legibly. The value that reaches the **filesystem** goes through
-/// `sanitize_attachment_name` instead, and that one *is* disclosed — see the
-/// module header's third required disclosure.
 fn readable(raw: &str) -> String {
     raw.chars()
         .map(|c| match c {
@@ -496,13 +416,6 @@ mod tests {
 
     /// **The two kinds are described differently, and the page one names its
     /// page 1-based.**
-    ///
-    /// Both halves fail invisibly. Describing them alike would tell an operator
-    /// that a file pinned to page 2 belongs to the document and survives that
-    /// page's deletion — which is exactly backwards, and is the one fact
-    /// `AttachmentKind`'s own docs say *"bites hardest at save time and at
-    /// page-delete time"*. And `page_index` is 0-based, so a row that printed
-    /// it raw would name the wrong sheet on every document.
     #[test]
     fn the_two_kinds_are_described_differently_and_the_page_is_one_based() {
         let listed = both_kinds();
@@ -530,12 +443,6 @@ mod tests {
 
     /// **A document-level row is addressable and a direct-dictionary
     /// annotation is not.**
-    ///
-    /// The first half is what makes Remove possible at all. The second is the
-    /// property that keeps a button from being drawn for an operand this code
-    /// cannot construct — asserted by construction, because no fixture in the
-    /// engine's tree carries a direct-dictionary `/Annots` entry and inventing
-    /// one here would be testing a hand-built value rather than a document.
     #[test]
     fn only_a_nameable_attachment_gets_a_verb() {
         let listed = both_kinds();
@@ -557,11 +464,6 @@ mod tests {
     }
 
     /// **An unnamed attachment still gets a row label.**
-    ///
-    /// `NameSource::None` is reachable, the bytes are still saveable, and a
-    /// blank line where a name belongs is indistinguishable from a rendering
-    /// failure. Checked against the whitespace cases too — a name of three
-    /// spaces is an invisible row, which is the same defect as no row.
     #[test]
     fn an_unnamed_attachment_is_labelled_rather_than_blank() {
         assert!(!t::unnamed().trim().is_empty());
@@ -574,14 +476,6 @@ mod tests {
     }
 
     /// **A control character never reaches a label as itself.**
-    ///
-    /// A name in a PDF is unconstrained text, `NUL` and `BEL` are authorable,
-    /// and §12.5.6.2 makes `CR` the paragraph separator in the `/Contents` a
-    /// page-level description comes from — which egui lays out as nothing.
-    ///
-    /// What is asserted is that the *substitution* happened, not that the
-    /// string was censored: the visible characters are untouched, because this
-    /// panel reports what the document says.
     #[test]
     fn a_control_character_is_made_legible_without_changing_the_words() {
         let said = readable("first\rsecond\u{0}third");
@@ -602,14 +496,6 @@ mod tests {
     }
 
     /// **The panel shows a hostile name exactly as the document wrote it.**
-    ///
-    /// The bargain this panel makes, and both halves have to hold or neither is
-    /// worth anything: the *listing* reports the raw name, because
-    /// `sanitize_attachment_name`'s own docs say a reader that quietly repairs
-    /// its evidence is not a reader and *"the operator investigating a
-    /// suspicious file would be looking at pdfcer's cleaned-up version"*; the
-    /// *save path* uses the sanitised one, which
-    /// `crate::app::actions::attachments` asserts from the other side.
     #[test]
     fn a_hostile_name_is_shown_and_not_quietly_repaired() {
         let path = engine_fixture("attachments/hostile-names.pdf");
@@ -631,10 +517,6 @@ mod tests {
     }
 
     /// **The two published regions are named apart.**
-    ///
-    /// One name from two controls would leave a driven check clicking whichever
-    /// was published last, and the failure presents as *"the button does
-    /// nothing"* on whichever run lost the race.
     #[test]
     fn the_row_regions_are_named_apart() {
         assert_ne!(REGION_SAVE, REGION_REMOVE);

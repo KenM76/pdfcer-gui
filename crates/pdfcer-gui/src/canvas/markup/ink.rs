@@ -44,11 +44,6 @@ const INK_MEMORY_KEY: &str = "pdfcer-markup-ink-trail";
 pub const SIMPLIFY_TOLERANCE_PTS: f32 = (super::PEN_WIDTH_PTS as f32) / 4.0;
 
 /// The pointer trail of one freehand drag, in **canvas space**.
-///
-/// Canvas space rather than page space, for §3.4's reason: the simplification
-/// decides *which points survive* and it decides in the space the pointer lives
-/// in, so the preview and the file receive the same surviving points rather than
-/// two derivations that agree by construction until they do not.
 #[derive(Debug, Clone, PartialEq)]
 struct Trail {
     /// Every distinct position the pointer has been at, in order, including the
@@ -254,21 +249,6 @@ pub(in crate::canvas) fn draw_preview(
 }
 
 /// **Ramer–Douglas–Peucker**, iteratively.
-///
-/// Returns the subsequence of `points` that survives at `tolerance`, always
-/// including the first and last. The guarantee — and the reason
-/// [`SIMPLIFY_TOLERANCE_PTS`] can be derived from the pen rather than tuned — is
-/// that **no removed point lay further than `tolerance` from the segment that
-/// replaced it**, which bounds how far the drawn centreline can move.
-///
-/// Iterative rather than recursive on purpose. The recursive form is shorter and
-/// its depth is the *number of retained points*, which for a long slow stroke is
-/// in the hundreds; a canvas that overflowed its stack because somebody drew a
-/// spiral would be a spectacular way to lose an unsaved document. The explicit
-/// stack costs four lines.
-///
-/// `tolerance <= 0` returns the input unchanged rather than looping, and a run of
-/// fewer than three points has nothing to remove.
 #[must_use]
 fn simplify(points: &[Pos2], tolerance: f32) -> Vec<Pos2> {
     // `is_nan()` beside `<= 0.0` rather than `!(tolerance > 0.0)`, which says the
@@ -308,15 +288,6 @@ fn simplify(points: &[Pos2], tolerance: f32) -> Vec<Pos2> {
 }
 
 /// Perpendicular distance from `p` to the segment `a`–`b`.
-///
-/// Segment, not infinite line: RDP's guarantee is about the polyline that
-/// replaces the removed run, and a point beyond an endpoint is further from the
-/// *segment* than from the line it lies on. Using the line would under-report
-/// exactly at a hairpin, which is where a hand-drawn stroke doubles back and is
-/// the one place the operator can see the difference.
-///
-/// A degenerate segment (`a == b`) falls back to the distance to `a`, which is
-/// the correct answer and avoids a division by zero.
 fn distance_to_segment(p: Pos2, a: Pos2, b: Pos2) -> f32 {
     let ab = b - a;
     let len2 = ab.length_sq();
@@ -333,25 +304,6 @@ mod tests {
 
     /// A trail shaped like a hand-drawn stroke: a sweeping arc with two
     /// lateral disturbances on it, sampled at 60 Hz for four seconds.
-    ///
-    /// The two disturbances are the fixture, and they are chosen to sit on
-    /// **opposite sides of the tolerance** so that it is asked a question it
-    /// could get wrong in either direction:
-    ///
-    /// | component | amplitude | what it stands for | what must happen to it |
-    /// |---|---|---|---|
-    /// | a slow undulation, 7½ cycles across the stroke | **1.2 pt** | the hand wandering off the line it meant to draw | **kept** — it is above the pen's 1 pt half-width, so it is visible in the mark and is detail the simplification is obliged to preserve |
-    /// | a fast per-sample jitter | **±0.3 pt** | pointer quantisation and tremor between one frame and the next | **removed** — it is below the 0.5 pt tolerance, so no pixel of the drawn stroke moves when it goes |
-    ///
-    /// A smooth arc alone would flatter the tolerance: it would simplify to
-    /// almost nothing and prove only that RDP works on lines. The jitter is what
-    /// makes the retention figure in §3.3 mean something, because it is the
-    /// component a real trail is mostly made of.
-    ///
-    /// The jitter is a deterministic hash of the sample index rather than a
-    /// random number, so the measured figures in §3.3 are reproducible: a
-    /// measurement quoted in prose that changes between runs is a measurement
-    /// nobody can check.
     fn hand_drawn_trail(n: usize) -> Vec<Pos2> {
         (0..n)
             .map(|i| {
@@ -384,22 +336,6 @@ mod tests {
 
     /// **The measured retention at the shipped tolerance, and the bound RDP
     /// promises.**
-    ///
-    /// §3.3's synthetic measurement, asserted rather than quoted, plus the two
-    /// properties that make the tolerance a *rule* instead of a number:
-    ///
-    /// 1. **The deviation never exceeds the tolerance**, at any tolerance in the
-    ///    sweep. That is RDP's guarantee, and it is what licenses deriving the
-    ///    tolerance from the pen's half-width — if it did not hold, "the
-    ///    centreline stays inside the stroke" would be an unsupported claim.
-    /// 2. **Retention falls monotonically** as the tolerance rises. A build whose
-    ///    simplification was subtly wrong — comparing against the infinite line
-    ///    rather than the segment, say — can still pass a single-point retention
-    ///    assertion and fails this one.
-    ///
-    /// The exact retention figure is printed in the assertion message so that a
-    /// reader who changes the pen can see what it did rather than only that it
-    /// broke a bound.
     #[test]
     fn the_measured_retention_at_the_shipped_tolerance() {
         let trail = hand_drawn_trail(240);
@@ -494,11 +430,6 @@ mod tests {
 
     /// **A hairpin keeps its point**, which is what distinguishes the segment
     /// distance from the line distance.
-    ///
-    /// A stroke that doubles back on itself has its apex *on* the line through
-    /// its two ends, so a build measuring against the infinite line would compute
-    /// a deviation of zero and delete the apex — turning a fold into a straight
-    /// line the operator never drew, and doing it silently.
     #[test]
     fn a_hairpin_keeps_its_apex_where_an_infinite_line_would_lose_it() {
         let hairpin = vec![
@@ -520,11 +451,6 @@ mod tests {
     }
 
     /// **A stationary pointer contributes one point, not one per frame.**
-    ///
-    /// §3.1, at the capture end. Without the duplicate filter a held button emits
-    /// ~60 identical points a second into `/InkList`, and the resulting run of
-    /// identical coordinates is also what [`super::action`]'s zero-extent guard
-    /// would then be the only defence against.
     #[test]
     fn a_stationary_pointer_contributes_one_point() {
         let ctx = egui::Context::default();
@@ -556,12 +482,6 @@ mod tests {
     }
 
     /// **The trail is derived, so every way a drag can end discards it.**
-    ///
-    /// §2's argument, asserted through the one line that implements it. The
-    /// interruption row is the one an event-hooked implementation gets wrong: the
-    /// window loses focus, `egui` stops reporting the drag without ever reporting
-    /// a stop, and the next stroke would begin with a segment jumping from
-    /// wherever the operator last let go.
     #[test]
     fn every_way_a_drag_can_end_discards_the_trail() {
         let ctx = egui::Context::default();
@@ -647,12 +567,6 @@ mod tests {
 
     /// **The preview draws the points that will be committed**, not the raw
     /// trail.
-    ///
-    /// Rule 4's honesty requirement, asserted where it can be: the value handed
-    /// back for painting is the *same* `simplify` output the release converts and
-    /// authors. A build that previewed the raw trail would show a mark that
-    /// visibly changed shape at the moment of release, which is precisely what a
-    /// pre-commit affordance exists to prevent.
     #[test]
     fn the_preview_is_the_simplified_trail_that_will_be_authored() {
         let ctx = egui::Context::default();
@@ -704,21 +618,6 @@ mod tests {
 
     /// **The guarantee holds at EVERY width the operator can set**, not just
     /// at the shipped one.
-    ///
-    /// The test above is true and insufficient: it asserts a relation between
-    /// two *constants*, so it passes unchanged whatever the operator's pen is
-    /// set to, including a build in which the tolerance stays welded to the
-    /// default 2 pt while the width ranges from 0.25 to 12 pt.
-    ///
-    /// At the thin end that is not a rounding difference: a 0.25 pt pen has a
-    /// 0.125 pt half-width, and a fixed 0.5 pt ε is **four times** it — so
-    /// Ramer–Douglas–Peucker is free to move the centreline clean outside the
-    /// stroke, and the operator gets a curve they did not draw. §3.2's whole
-    /// claim is *"no pixel of the mark can move outside the mark"*, and a
-    /// constants-only assertion leaves that claim true for exactly one pen.
-    ///
-    /// This asserts it across the range, which is the only form that can notice
-    /// the input being settable.
     #[test]
     fn the_guarantee_holds_at_every_width_the_operator_can_set() {
         use super::super::pen::{MAX_WIDTH_PTS, MIN_WIDTH_PTS, Pen};
@@ -745,16 +644,6 @@ mod tests {
     }
 
     /// The shipped constant and the shipped pen agree.
-    ///
-    /// The weld between the two halves of this module's tolerance story:
-    /// [`SIMPLIFY_TOLERANCE_PTS`] is the value §3.3's measurement table was
-    /// measured at, and [`super::super::pen::Pen::simplify_tolerance_pts`] is
-    /// what the running code reads. If they ever disagreed, the table would be
-    /// documenting a tolerance the shipped build does not use — a measurement
-    /// that is still *reproducible* and no longer *about* anything.
-    ///
-    /// The two are separate on purpose (the constant names a value, the method
-    /// derives one), so this is what stops them being separate in effect.
     #[test]
     fn the_shipped_constant_matches_the_shipped_pen() {
         assert!(

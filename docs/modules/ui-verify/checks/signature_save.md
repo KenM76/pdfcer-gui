@@ -99,3 +99,16 @@ nothing about the assertion is weakened by taking the safe route.
   a second launch. Stated as a gap rather than folded in, because a check
   that clicked two buttons in one run could not say which one the failure
   belonged to.
+
+## Item notes
+
+### `const INVOKE`
+
+`mode.edit` first because `pages.delete` sits behind the Edit tab's
+capability set, and because driving from a named mode makes the run
+reproducible rather than dependent on whatever mode the last session left
+behind.
+
+`pages.delete` with no page selection acts on the **current page**, which is
+`crate::panels::pages::ops::operands`' documented fallback — so no panel has
+to be opened and no tile has to be clicked to make the save structural.

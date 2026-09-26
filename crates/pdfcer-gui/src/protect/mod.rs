@@ -635,11 +635,6 @@ pub fn prepare(
 }
 
 /// **Open the file again, as the owner, into a session nothing else holds.**
-///
-/// The authentication and the throwaway in one act — see §2. The document is
-/// read from disk rather than from the open session because the two mutating
-/// verbs take `&mut EditSession` and what they mutate would disarm
-/// `save_incremental`'s refusal on the session the operator is still using.
 fn owner_session(path: &Path, owner: &Secret) -> Result<EditSession, PrepareFailure> {
     let document = Document::load_with_password(path, Some(owner.expose()))
         .map_err(|e| PrepareFailure::Reopen(e.to_string()))?;

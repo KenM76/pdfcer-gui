@@ -11,6 +11,8 @@
 //! page strip, the page it is painting, the projection, the selection and the
 //! canvas-space displacement, and it answers by painting; it reads no
 //! application state and mutates nothing.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/canvas/overlay/raster.md`.
 
 use egui::{Color32, Painter, Rect};
 
@@ -18,11 +20,6 @@ use crate::canvas::mapping::PageMapping;
 use crate::canvas::selection::SelectionState;
 
 /// How far you can see THROUGH the travelling copy, out of 255.
-///
-/// High enough that the lettering reads as lettering rather than as a smudge,
-/// low enough that whatever it is passing over stays visible — which is the
-/// whole reason the copy is translucent: the operator is choosing where to put
-/// the chunk by looking at what is already there.
 const RASTER_GHOST_ALPHA: u8 = 190;
 
 /// Paint the **raster ghost**: a translucent copy of the selection's own

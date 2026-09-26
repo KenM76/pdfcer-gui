@@ -52,3 +52,29 @@ reports which happened.
 **An extraction moves the doc comment with the function**, and a
 free-floating `//` banner is the shape most likely to be left behind,
 because nothing in the language binds it to anything.
+
+## Item notes
+
+### `fn reshape`
+
+# What it discloses, and why both sentences are needed
+
+| condition | sentence | why a canvas cannot say it |
+|---|---|---|
+| `measure_not_recomputed` | [`crate::text::markup::measure_stale`] | the number is baked into an appearance the shape still draws |
+| `dropped` is non-empty | [`crate::text::dropped::only_the_first`]-style listing, through `markup::dropped_properties` | the re-baked appearance *looks* right; what went is what pdfcer could not reproduce |
+
+The first is the one the engine went out of its way to give us, and
+`ReshapeForecast::measure_not_recomputed` carries the reason: pdfcer's
+markup bake draws no caption and reads no `/Measure`, so a reshape moves
+the geometry and leaves `/Measure` and `/Contents` verbatim. The number in
+the text may now be stale and nothing on the page says so, which is why
+**only a sentence can say it**.
+
+# The refusal is not caught here
+
+`canvas::annotnodes` asks `reshape_annotation_preview` on **every frame** of
+the drag, so a release that reaches this function is one the engine already
+said yes to. A refusal arriving here would mean the document changed between
+the last preview frame and the release — which cannot happen inside one
+frame's `Vec<Action>` — and `vector_edit`'s own worded floor covers it.

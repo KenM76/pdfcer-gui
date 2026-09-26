@@ -69,3 +69,68 @@ No binary, `--no-input`, no diagnostic channel, no page on screen, the Select
 tool unreachable from the ribbon, or **not enough grey margin on screen to
 reach x = −100** — which is a property of the window size on the day and is
 reported as a skip that names the geometry, never as a pass.
+
+## Item notes
+
+### `const INVOKE`
+
+Measured that day, while writing the sibling `off_page_press`: **this check
+was reporting SKIP on every run**, and had been for an unknown length of
+time. Fit-page on a 200 × 200 fixture in a maximised window puts the sheet
+at about 3.8 px per point, so the band's destination at x = −100 pt lands
+381 px left of the page edge — where the viewport has only about 243 px of
+grey. `doc_to_window_off_page` refuses to convert a point outside the
+canvas, correctly and with a message naming the geometry, and the run ends
+SKIPPED.
+
+**A SKIP is not red.** Nothing in the suite summary distinguished "this
+check held" from "this check has not run in weeks", and the feature it
+guards — O92, *"I sometimes drop objects there, and when I do I can't get
+them back"* — was unattended the whole time.
+
+At 100% the sheet is ~200 px wide inside a ~1250 px viewport, every point
+either check aims at is comfortably inside the grey, and the geometry stops
+depending on the window size on the day. Fitting was never what *created*
+the margin — `geometry::content_extent` does that, at any zoom — it was only
+what happened to leave some.
+
+`mode.edit` is named FIRST, and it is not decoration. Since
+2026-09-11 the display of off-sheet content is a per-mode preference and
+**Read ships with it OFF** — the operator's request: *"by default, read
+doesn't show off page items, review and edit do show off page items."*
+This check's whole subject is off the sheet, so without an explicit mode it
+would run in whatever mode the shell opens in, find nothing, and report a
+defect that is a correctly-implemented setting.
+
+Edit rather than Review because that is the mode this check's gestures
+belong in anyway, and because a mode named explicitly cannot drift when a
+later session changes which mode the shell opens in.
+
+### `const BAND_FROM`
+
+On the page and on nothing. `canvas::presspick` selects whatever is under
+a press, and a press on ink starts a *move* rather than a band; the nearest
+mark to this point is square A's corner at (100, 100), about 92 pt away,
+which clears the pick tolerance at any zoom this check could be driven at.
+
+### `const BAND_TO`
+
+Right-to-left, so a crossing window. See the module header for why x = −100
+rather than −200: the band must *touch* the off-page square without being
+able to *enclose* it, or the check stops distinguishing the two modes.
+
+### `fn the_band_touches_the_off_page_square_but_cannot_enclose_it`
+
+The property the whole check rests on. If the band could enclose it, the
+check would pass under `MarqueeMode::Enclosed` too — which is the
+behaviour that shipped before O88 and the behaviour this check exists to
+prove is no longer the only one. It would then be green against the very
+build it was written to distinguish.
+
+### `fn the_origin_is_on_the_page_and_the_destination_is_not`
+
+Pinned because the two corners go through two *different* conversions —
+`doc_to_window` refuses off-page points and `doc_to_window_off_page`
+permits them — and swapping them produces an error at run time rather
+than a wrong result, which is the good failure. This states the intent so
+the pairing is not read as arbitrary.

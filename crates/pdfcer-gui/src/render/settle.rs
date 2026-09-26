@@ -35,44 +35,14 @@ pub const ZOOM_SETTLE: Duration = Duration::from_millis(150);
 /// The [`crate::diag::trace_changed`] slot for *"the page being looked at was
 /// not ordered this frame, because nothing could be made of the order"* —
 /// O186's third route.
-///
-/// Its own slot for the same reason [`BEYOND_RASTER_SLOT`] has one: the
-/// de-duplication is per slot, so two lines sharing one suppress each other and
-/// each appears only when the two happen to alternate.
-///
-/// The line is emitted on the way OUT of the regime as well as into it, and
-/// that is not decoration. The subject is an absence — no order, no refusal, no
-/// learned ceiling — and a run that cannot tell *"never entered it"* from
-/// *"still in it"* cannot assert an absence at all. Same argument as
-/// `strip-beyond-raster pages=0`.
 const CURRENT_UNFILLABLE_SLOT: &str = "current-order-unfillable";
 
 /// The [`crate::diag::trace_changed`] slot for *"how many visible neighbour
 /// sheets could not be ordered at this zoom"* — O186.
-///
-/// Its own slot, not shared with any other line in this module, because
-/// `trace_changed` de-duplicates **per slot**: sharing one would make each line
-/// suppress the other and the count would appear only when it happened to
-/// alternate. See `canvas::trace`'s slot table for the same rule stated once for
-/// the canvas.
 const BEYOND_RASTER_SLOT: &str = "strip-beyond-raster";
 
 impl OpenDoc {
     /// How long this document's zoom must stop changing before it is committed.
-    ///
-    /// **The operator's, as of 2026-08-17.** [`ZOOM_SETTLE`] was the whole
-    /// answer and is now only the *default* — `manifest::DIRECTED` carried this
-    /// as *"partial G — `ZOOM_SETTLE` is a compiled-in constant today"*, and
-    /// that was accurate: the control was missing, not the value.
-    ///
-    /// Read from the document's preferences **snapshot** rather than from the
-    /// application, for the same reason its settings snapshot exists: this is a
-    /// per-frame read inside a `&mut doc` borrow, and reaching back to
-    /// `PdfcerApp` would be a second borrow of the whole struct.
-    ///
-    /// The snapshot cannot be meaningfully stale here — `adopt_settings` writes
-    /// it and drops every raster in the same statement, so a settle read after
-    /// a change is a settle for a cache that no longer exists.
     fn zoom_settle(&self) -> Duration {
         Duration::from_millis(self.prefs.zoom_settle_ms)
     }
@@ -81,24 +51,6 @@ impl OpenDoc {
 impl OpenDoc {
     /// **Move the current page's texture into the strip, and the incoming
     /// page's out of it.**
-    ///
-    /// Called when the scroll position has made a different page current. See
-    /// the module header, step 2: without this, every page of a continuous
-    /// strip would re-render at the moment it passed the middle of the
-    /// viewport — visibly flashing undrawn on the way through, which is the
-    /// opposite of what a continuous mode exists for.
-    ///
-    /// `wanted` is the key the *current* page needs this frame. The incoming
-    /// page is taken out of the cache only if its raster matches that key,
-    /// because a raster at a stale zoom is not a raster the current page can
-    /// use — leaving it in the cache costs nothing and the ordinary staleness
-    /// path re-renders it.
-    ///
-    /// The outgoing texture is filed at `self.edit_epoch`, and that is exact
-    /// rather than approximate: the current page's slot is cleared outright by
-    /// every edit (`crate::app::actions`' `vector_edit` and
-    /// `crate::panels::forms::edit` both assign `page_texture = None`), so a
-    /// texture that is still here has not survived an edit.
     fn rehome_current_page(&mut self, wanted: RenderKey) {
         let holding = self.page_texture.as_ref().map(|t| t.key.page());
         if holding == Some(self.view.page_index) {
@@ -573,51 +525,6 @@ impl PdfcerApp {
 
     /// **Prune the strip's cache to what is visible, then start at most one
     /// render for it.**
-    ///
-    /// Step 3 of the priority. Does nothing at all when `strip_visible` is
-    /// empty or holds only the current page, which is every frame of every
-    /// single-page session — so this whole feature costs a `Vec::is_empty`
-    /// check on the default path.
-    ///
-    /// # Why exactly one render per frame, and why "nearest" is the order
-    ///
-    /// `RenderWorker` is single-slot by design: a second `spawn` cancels the
-    /// first. So "start every missing page" would start the last one and
-    /// abandon the rest, and a strip would fill in from the *bottom* of the
-    /// viewport at one page per frame with every earlier page's work thrown
-    /// away. One request per frame, always the nearest missing page, fills the
-    /// strip outwards from where the operator is looking and never discards
-    /// completed work.
-    ///
-    /// # Why it waits for the current page
-    ///
-    /// The current page is the largest thing on screen and the one being read.
-    /// A strip page requested while it is still stale would cancel its render.
-    /// The gate is `!doc.render_worker.is_rendering()` plus a settled current
-    /// page: while a zoom is in flight, the strip stops asking entirely, so a
-    /// wheel gesture over a continuous document costs the same one debounced
-    /// render it costs over a single page.
-    ///
-    /// # And why it must ASK FOR A FRAME while it is waiting
-    ///
-    /// **Found by driving the binary, not by a test.** Every gate was green and
-    /// the strip did not fill: the trace showed `visible=2 drawn=1` and then
-    /// nothing at all, for as long as the window was left alone.
-    ///
-    /// The cause is that egui is **event-driven**. Opening a document resolves
-    /// the fit mode, which moves the zoom, which arms the 150 ms settle
-    /// deadline; the current page renders inside the in-frame budget and
-    /// requests one more frame to draw itself; on that frame the strip is still
-    /// inside the settle window, so it asks for nothing — and nothing else
-    /// wakes the process. The deadline passes with no frame to notice it, and
-    /// page 2 stays undrawn until the operator moves the mouse.
-    ///
-    /// So a wait has to schedule its own wake-up, exactly as the zoom debounce
-    /// already does for the current page (`ctx.request_repaint_after`). The
-    /// symptom of getting this wrong is not a crash and not a wrong pixel; it
-    /// is a feature that works perfectly whenever anyone is watching it and
-    /// stalls the moment they stop, which is the single hardest kind of defect
-    /// to see from a test suite.
     fn fill_strip(ctx: &egui::Context, doc: &mut OpenDoc, raster_scale: f32, now: Instant) {
         let current = doc.view.page_index;
         if doc.strip_visible.is_empty() {
@@ -774,39 +681,6 @@ impl PdfcerApp {
 }
 
 /// # Tests — can this order be filled?
-///
-/// Only [`OpenDoc::raster_order_fillable`] is covered here, and deliberately
-/// only it. Everything else in this file is a frame's worth of sequencing
-/// against a live `egui::Context`, a worker thread and a wall clock; the one
-/// part that is a pure question about a document is the predicate O186's third
-/// route turns on, and that is the part a unit test can actually pin.
-///
-/// ⚠ **What these tests do NOT establish is that the guard is in the right
-/// place.** They prove the predicate answers correctly; they cannot see the
-/// `if !current_held && fillable` that consults it, and a build with that
-/// `&& fillable` deleted passes every one of them — measured, not assumed. The
-/// driven coverage that is owed, and the check that will eventually supply it,
-/// is named on [`OpenDoc::raster_order_fillable`] itself. This paragraph exists
-/// so that a reader who finds four green tests here does not conclude the route
-/// is covered.
-///
-/// ## Why the fixture is this repository's and not the engine's
-///
-/// `open_local_fixture("four-pages.pdf")`, **not**
-/// `open_fixture(FOUR_PAGES)` — and the difference is not cosmetic. There are
-/// two documents on this machine called `four-pages.pdf`:
-///
-/// | path | pages |
-/// |---|---|
-/// | engine `synthetic/pageops/four-pages.pdf` | four sheets, **all US Letter** |
-/// | this repo's `fixtures/four-pages.pdf` | `2383.937 × 1683.78`, `612 × 792`, `612 × 792`, `306 × 396` |
-///
-///
-/// Opened rather than hand-built, for the reason `app::status::rasterstop`'s
-/// tests give: [`Self::strip_page_orderable`] reaches `page_extent_pts`, which
-/// reads the real `/MediaBox` and `/Rotate`, so a synthesised page would check
-/// the arithmetic against a number this test invented rather than against a
-/// document.
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -818,12 +692,6 @@ mod tests {
     /// Page 0 is `2383.937 × 1683.78` pt, so against the rasterizer's
     /// 16,384-pixel edge limit its whole-sheet raster stops fitting at a raster
     /// scale of `16384 / 2383.937 = 6.87`.
-    ///
-    /// Both constants sit a wide factor either side of that on purpose. A test
-    /// that straddled 6.87 closely would be measuring the engine's rounding,
-    /// which is the engine's business and not this predicate's — and it would
-    /// go red the day `MAX_PIXMAP_EDGE` changes, reporting a defect here that
-    /// is not here.
     const BIG_SHEET_FITS: f32 = 3.0;
     const BIG_SHEET_DOES_NOT_FIT: f32 = 100.0;
 
@@ -837,11 +705,6 @@ mod tests {
     }
 
     /// A region covering an arbitrary patch of the named page.
-    ///
-    /// The rectangle's own size is irrelevant and deliberately small: what the
-    /// predicate asks is whether a region *exists for this page*, because the
-    /// request a region produces is viewport-sized rather than page-sized. A
-    /// test that made the rectangle large would imply the size mattered.
     fn region_on(page: usize) -> (usize, pdfcer_core::page_tree::Rect) {
         (
             page,
@@ -855,18 +718,6 @@ mod tests {
     }
 
     /// **The half that must answer yes, and the half that must answer no.**
-    ///
-    /// Asserted in one test because either alone is satisfied by a constant: a
-    /// predicate hard-wired to `true` passes the first assertion and one
-    /// hard-wired to `false` passes the second, so a suite holding only one of
-    /// them would be green against a function that had stopped reading its
-    /// arguments.
-    ///
-    /// The third assertion is the one that proves the answer is about the
-    /// **page**. Page 3 is a sixth of page 0, so `SMALL_SHEET_SCALE` is fine for
-    /// it and far past page 0's limit; an implementation written against a
-    /// single document-wide extent — the most likely wrong version of this —
-    /// fails here and nowhere else.
     #[test]
     fn with_no_region_an_order_is_fillable_only_while_the_whole_sheet_fits() {
         let doc = doc();
@@ -961,16 +812,6 @@ mod tests {
     }
 
     /// **A region belonging to another page is not a region.**
-    ///
-    /// This is the assertion that pins [`Self::region_for`] rather than the
-    /// `raster_region` field inside the predicate. Both rectangles are valid, so
-    /// reading the field directly would answer `true` for every page in the
-    /// document the moment any one page had a region — and nothing would report
-    /// it, because the consequence is simply that the wrong sheet gets ordered
-    /// whole and refused, which is the defect this guard exists to stop.
-    ///
-    /// The second half is what makes the first half a statement about *whose*
-    /// region it is rather than about regions being ignored altogether.
     #[test]
     fn a_region_belonging_to_another_page_does_not_make_this_one_fillable() {
         let mut doc = doc();
@@ -987,12 +828,6 @@ mod tests {
     }
 
     /// A page index past the end is not fillable, and must not panic.
-    ///
-    /// Reachable in practice on the frame after a page is deleted, before the
-    /// view index has been brought back into range. The answer is `false` rather
-    /// than `true` because there is no sheet to order at all — a `true` here
-    /// would place a request the worker could only discard, spending a thread on
-    /// a page that does not exist.
     #[test]
     fn a_page_past_the_end_is_never_fillable() {
         let doc = doc();

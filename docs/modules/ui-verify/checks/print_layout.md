@@ -58,3 +58,26 @@ It is driven at **several window sizes**, not one. The defect was
 scrolling, and **absent** at 700x520 where the Paper section was clipped and
 unreachable. Two samples either side of that would have looked like no
 defect at all.
+
+## Item notes
+
+### `const VIEWPORTS`
+
+These size the APPLICATION window, and the dialog inherits its own
+declared 800x620 regardless — so what this actually varies is the machine's
+available space and the dialog's placement, not the dialog's size. Varying
+the dialog itself needs an OS-level resize of the child window, which is a
+capability this harness does not have and which is recorded as the limit of
+this check rather than papered over: see `LIMITS` in the failure text.
+
+What it DOES cover is the default-size case at several placements, which is
+the case every operator meets on first open.
+
+### `fn vec_field`
+
+The two egui vectors are printed by `Vec2`'s `Debug`, which is `[w h]` with
+a space — so they cannot be read by the harness's `key=value` splitter and
+are parsed here. Returns `None` rather than a default on anything
+unexpected: a zero would satisfy every inequality below and turn a broken
+parse into a pass, which is the exact shape this project calls a check that
+cannot fail.

@@ -126,10 +126,6 @@ mod tests {
     use super::*;
 
     /// The steps increase, and every one of them is distinct.
-    ///
-    /// A control whose second entry held less than its first would read as
-    /// broken, and the labels are generated from the numbers, so a duplicate
-    /// would render as two identical rows.
     #[test]
     fn the_steps_go_up() {
         let mut previous = 0;
@@ -145,10 +141,6 @@ mod tests {
 
     /// **The megabyte figure is derived from the texel figure**, so the label
     /// and the spend cannot disagree.
-    ///
-    /// Asserted as the *relation* rather than against four literals, which is
-    /// the whole point: two copies of one constant cannot disagree, so a test
-    /// written against literals would pass on a build whose label lied.
     #[test]
     fn the_label_and_the_spend_are_one_number() {
         for step in PageCache::ALL.iter().copied() {
@@ -160,22 +152,12 @@ mod tests {
     }
 
     /// **`Small` is pinned to its texel count.**
-    ///
-    /// The row that makes the default reversible by name. An operator who finds
-    /// the default heavy must be able to ask for a smaller budget without
-    /// knowing that it is 48 million of anything, so the number behind the name
-    /// is held here rather than left free to drift.
     #[test]
     fn small_is_the_value_this_shell_shipped_with() {
         assert_eq!(PageCache::Small.texels(), 48_000_000);
     }
 
     /// The default is `Large`, and it is not the largest.
-    ///
-    /// Both halves are the decision recorded on the variant: the operator asked
-    /// for the maximum, and taking 2 GB on his behalf risks an allocation
-    /// failure in a program holding unsaved edits. The larger step exists and is
-    /// one click away.
     #[test]
     fn the_default_is_large_and_maximum_is_offered_above_it() {
         assert_eq!(PageCache::default(), PageCache::Large);

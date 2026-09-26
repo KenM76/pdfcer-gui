@@ -10,10 +10,6 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// The command under test — **not** `file.settings`.
-///
-/// The two open one window and ask different questions, which is why they
-/// stopped sharing a route. `file.settings` is *"show me the settings"* and
-/// lands at the top, correctly; this one is *"where do font folders live"*.
 const INVOKE: &str = "tools.font_folders";
 /// The Fonts group's own region.
 const GROUP: &str = "settings.fonts";

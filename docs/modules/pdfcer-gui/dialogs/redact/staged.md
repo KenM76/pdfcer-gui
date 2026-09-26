@@ -52,3 +52,12 @@ No badge, no tint, no dashed outline, no progress. A staged removal is
 invisible on the canvas by design (`crate::redact` §1.0.3) and this window is
 the off-canvas place where it is disclosed instead. The status line and the
 tab's unsaved marker are the other two.
+
+## Item notes
+
+### `const REGION_CANCEL`
+
+Declared **only while it is on screen**, so its absence from a trace is
+evidence that nothing is armed on this document rather than evidence that
+the build has lost the control. The same asymmetry
+`super::REGION_DESTINATION_REPLACE` carries.

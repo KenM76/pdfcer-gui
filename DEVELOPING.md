@@ -861,6 +861,13 @@ A `§` cited in the source body refers to that file's sections. Keeping the
 essay out of the `.rs` means every read of the code does not pay for it; the
 contract a caller needs belongs in the opening paragraph and the item docs.
 
+The same file holds **item notes**: a test or a private item keeps the first
+paragraph of its `///` in source, and any further paragraphs go under that
+file's `## Item notes`, headed by the item's name. A `pub` item keeps its whole
+doc, because it is the contract another module reads. A doc block that carries
+a marker a gate reads (`conventions:`, `UNREACHABLE-FROM:`, a `*-exempt:`
+reason) or a code fence stays whole in source.
+
 **Item docs (`///`)** — first line is one sentence, ends with a period, third
 person: *"Returns the page rect in document points."* Blank line, then detail.
 `# Errors`, `# Panics`, `# Safety`, `# Examples` where they apply. Never

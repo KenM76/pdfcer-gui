@@ -68,3 +68,51 @@ So every arm here calls [`record`], which is the same
 `Modes::record_layout` the dock's own path calls. Without it the
 operator floats a panel, quits, and finds it docked again — with no
 error, no trace, and nothing to blame.
+
+## Item notes
+
+### `fn record_panel_layout`
+
+A method rather than a copy of two lines per arm, because the two
+lines are not the interesting part — *remembering to call them at
+all* is, and a named verb is what a reviewer can check for at each
+site that moves a panel.
+
+### `fn take_menu_panel`
+
+Taken rather than read: a parked operand that survived its dispatch
+would be available to the *next* command, which is how a Close
+meant for one panel comes to act on another. The whole value of
+parking-and-draining is that the window is one call wide.
+
+### `fn the_guard_and_the_dispatcher_claim_the_same_ids`
+
+Two lists, one obligation. `claims` is what
+`shell::commands::reach` reads out of `dispatch.rs` to decide these
+commands are routed; `dispatch_panel_layout`'s `match` is what
+actually routes them. A command in the first and not the second is a
+control that presses and does nothing while the register calls it
+reachable.
+
+### `fn every_panel_survives_a_float_and_dock_round_trip`
+
+A sweep rather than one case, because the failure this guards
+against is per-panel: a panel that is alone in its stack takes a
+different path through `dock_back` (the stack is pruned and has to
+be rebuilt) from one that is tabbed with a sibling, and a test that
+only exercised one shape would pass while the other silently
+merged compartments.
+
+### `fn a_floated_panel_reads_as_open_to_the_view_menu`
+
+Without this the View menu would offer to "open" a panel that is
+already in a window in front of the operator, and choosing it would
+mount a second copy.
+
+### `fn closing_the_last_panel_on_a_side_prunes_the_side`
+
+The right dock holds exactly one panel in this sample. Closing it
+must prune the stack, the column and — as far as the drawing code
+is concerned — the side, so nothing draws an empty grey strip. The
+panel is still reachable, because View ▸ Panels mounts by id and
+not by address.

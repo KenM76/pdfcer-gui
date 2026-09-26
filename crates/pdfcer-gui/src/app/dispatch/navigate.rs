@@ -28,6 +28,8 @@
 //! project keeps removing, which is why each decline both traces (for a reader
 //! of a machine they cannot see) and records a sentence (for the operator in
 //! front of one).
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/app/dispatch/navigate.md`.
 
 /// The ids this module answers for.
 ///
@@ -164,12 +166,6 @@ pub(crate) fn dispatch(app: &mut crate::app::PdfcerApp, ctx: &egui::Context, id:
 }
 
 /// Say no, twice: once to the trace and once to the operator.
-///
-/// Both, always, because they answer different people. The trace is read by
-/// somebody debugging a machine they are not sitting at; the status sentence is
-/// read by the operator who just pressed a key and saw nothing happen. Either
-/// one alone has been a defect in this project — a silent decline, and a
-/// sentence with no way to tell which decline it was.
 fn decline(id: &str) {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI.

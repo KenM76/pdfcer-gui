@@ -81,3 +81,65 @@ decomposition — the same discipline that makes
 [`ClickHit`](crate::canvas::selection::ClickHit). [`drag`] is the one
 function that touches the live provider, and it does nothing except gather
 those inputs, call the pure functions in order, and trace what happened.
+
+## Item notes
+
+### `fn entered_entry`
+
+Refuses an entry that belongs to a different page rather than addressing
+page A's index space with page B's number — the same class of error the
+[`TargetId`](crate::canvas::target::TargetId) newtype exists to prevent,
+and one comparison to rule out.
+
+### `fn context`
+
+Returns `None` when there is no object model for the page at all, which is
+distinct from "the model says no": nothing can be verified, so nothing may
+be promised, and [`drag`] turns it into [`Refusal::NoObjectModel`].
+
+The Object-rung scan asks [`ObjectModelProvider::part_kind`] once per
+selected entry, which is a `Vec::get` and a match. It runs on every frame
+of an in-flight drag, and that is affordable for the reason the whole
+preview is affordable: the decomposition is already built and cached (the
+selection could not have outlines to drag without it), so this walks a
+slice rather than a content stream.
+
+### `fn run_move`
+
+Answers the engine's refusal of the whole set, or `None` when it moves.
+That is what makes a multi-chunk drag refuse *whole*: obligation 3 in this module's header says no ghost may be drawn
+for a move that will not happen, and a set is a move that will not happen
+as soon as one member of it cannot go.
+
+# Asked of the set rather than of the entered chunk
+
+The entered chunk is `entries[0]`, and a selection of four chunks whose
+first one happens to be movable would otherwise draw a ghost over all four
+and then refuse at the commit — the operator watching an outline slide
+across the sheet and snap back, which is the exact failure O188 is about.
+
+# Asked at the Part rung only
+
+At the Node rung the entries carry a `subpath` too, naming the *enclosing*
+part of each selected anchor, so
+[`SelectionState::selected_parts_on`] would answer about containers rather
+than about the operator's selection. Nothing downstream reads `run_move` at
+that rung, and the condition is written here once rather than being
+re-derived where it is read.
+
+The cost is a few comparisons inside the engine per selected run, over a
+decomposition the provider has already built.
+
+### `fn node_point`
+
+[`ObjectModelProvider::object_node_points`] is the whole-object list
+precisely so a caller does not have to re-derive which subpath an
+object-scoped index falls in — that offset arithmetic lives in one place,
+in the provider, and duplicating it here is how the number pdfcer shows
+starts disagreeing with the number the operator can act on.
+
+### `fn decline`
+
+One trace shape for every refusal, so a harness reads `canvas-move-declined`
+and finds the cause on the same line rather than inferring it from an
+absence — the same contract `canvas-delete-declined` already honours.

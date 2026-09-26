@@ -81,23 +81,9 @@ impl std::fmt::Debug for PageTexture {
 }
 
 /// The egui texture name the page raster is uploaded under.
-///
-/// A single constant name is exactly right for a single cached page:
-/// egui reuses the allocation when the same name is loaded again, so
-/// re-rendering replaces the previous upload instead of leaking a new
-/// texture per zoom step. The moment a second live page texture exists
-/// (the page rail, continuous scroll) this must become a per-texture id —
-/// which is why it is a named constant rather than a literal.
 const PAGE_TEXTURE_ID: &str = "pdfcer-page"; // ui-text-exempt: internal texture id, never displayed
 
 /// Convert a `tiny-skia` pixmap into an egui image.
-///
-/// See the module docs on premultiplied alpha — this function is where
-/// that convention is honoured, and it is the only place in the crate
-/// that touches raw pixel bytes. The convention is enforced by there
-/// being **one** function, not by review: both `ColorImage` constructors
-/// accept the bytes without complaint, and the wrong one silently darkens
-/// every antialiased glyph edge.
 fn pixmap_to_color_image(pixmap: &tiny_skia::Pixmap) -> ColorImage {
     ColorImage::from_rgba_premultiplied(
         [pixmap.width() as usize, pixmap.height() as usize],
@@ -194,21 +180,6 @@ mod tests {
     use super::*;
 
     /// The premultiplied convention must survive the conversion.
-    ///
-    /// # Why this test can exist without an `egui::Context`
-    ///
-    /// Texture *upload* needs a context and therefore a running app, but
-    /// the byte conversion does not — and the byte conversion is where the
-    /// silent-corruption bug lives. So the one thing in this module that
-    /// can be wrong invisibly is the one thing that is unit-tested.
-    ///
-    /// The fixture is a half-transparent red pixel stored the way
-    /// `tiny-skia` stores it (`R·A, G·A, B·A, A` = `128, 0, 0, 128`). Read
-    /// as *unmultiplied*, epaint would take the red channel at face value
-    /// and re-multiply it, yielding a darker pixel; read as premultiplied
-    /// it round-trips. Asserting the resulting `Color32` is premultiplied —
-    /// `r == a` for a fully-saturated red at 50 % alpha — is what pins the
-    /// constructor choice.
     #[test]
     fn a_pixmap_is_read_as_premultiplied_not_unmultiplied() {
         let mut pixmap = tiny_skia::Pixmap::new(1, 1).expect("1x1 pixmap");
@@ -225,10 +196,6 @@ mod tests {
 
     /// A fully opaque pixel — the normal case for a page raster — must
     /// come through untouched under either reading.
-    ///
-    /// Included as the control for the test above: if it ever failed, the
-    /// fault would be in the size or stride handling rather than in the
-    /// alpha convention, and the two should not be diagnosed as one.
     #[test]
     fn an_opaque_pixel_survives_the_conversion_unchanged() {
         let mut pixmap = tiny_skia::Pixmap::new(1, 1).expect("1x1 pixmap");

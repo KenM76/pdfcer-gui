@@ -44,3 +44,26 @@ So the check also asserts that the page's text is **still extractable**
 afterwards. A build that quietly applied on marking would raise the census,
 look completely correct, and be the worst possible defect in a redaction
 tool. Nothing else in this suite would catch it.
+
+## Item notes
+
+### `const INVOKE`
+
+The panel is opened for its **census line**, not to be clicked: it is the
+only surface that counts marks, and this check needs the count before and
+after. `mode.edit` first, because a mode change reconfigures the dock and
+would close a panel opened before it — learned the hard way on the bookmark
+clipboard the day before.
+
+`edit.redact`, and there is deliberately **no `view.panel_redact`**. The
+panels module says why in as many words: a second id for the same surface
+would put it on a tab Read is shown, and Read must not be able to reach a
+marking surface at all. The mode taxonomy does that work with no capability
+flag and no gate of its own — which is also why this check asks for Edit.
+
+### `const REDACT_BUTTON`
+
+A `ui_rect` region published by the ribbon for every drawn command, named
+after the command id. Pressed rather than invoked because
+`PDFCER_DIAG_INVOKE` runs at start-up and this verb needs a selection that
+does not exist then.

@@ -34,3 +34,47 @@ them into any document a push button can be placed in. A draft that is
 incomplete blocks the dialog's **Add** button and says why, which is a
 different mechanism and the right one, because the remedy is typing rather
 than waiting.
+
+## Item notes
+
+### `const CHOSE`
+
+Written on **change**, not every frame. A driven check needs to know the
+chooser was reached and what it was set to, and a per-frame line would bury
+that in thousands of identical ones.
+
+### `const ROW_REGION`
+
+A driven check reads `form.button.action.row.ResetForm`, not `…row.1`.
+See the publisher for why: an index survives a reordering of
+`ButtonDoesKind::ALL` and goes on passing while aiming at the wrong row.
+
+### `fn page_rows`
+
+The number box is a plain text field rather than a `DragValue`, and that is
+deliberate: a `DragValue` cannot be empty, so it would have to open at some
+page, and opening at page 1 is pdfcer choosing a destination. An empty box is
+the honest starting state and [`ButtonDoes::blocker`] refuses it.
+
+### `fn show_hide_rows`
+
+Two radio buttons rather than one *Hidden* checkbox, and the engine's own
+CLI made the same choice for the same reason: *show* is the value that has
+to be written out to exist (Table 210's `/H` defaults to **true**, so an
+absent entry means HIDE), and a single `Hidden` checkbox left unticked is
+one misreading away from an operator believing they configured "show" when
+they configured nothing.
+
+### `fn submit_disclosure`
+
+Two blocks, and the second is conditional:
+
+- **Always**: what the declaration would cover — the six §12.7.5.2 facts
+  nobody can guess, in `text::buttonaction::submit_disclosure`.
+- **When the address is not `https:`**: that it is unencrypted. A
+  **statement**, never a refusal — no scheme is blocked anywhere, because
+  `https` appears zero times in ISO 32000-1 and refusing one would be pdfcer
+  inventing a conformance requirement.
+
+Both are off-canvas by construction: they are in a dialog, and the button
+they describe is drawn on the page exactly as the saved file will draw it.

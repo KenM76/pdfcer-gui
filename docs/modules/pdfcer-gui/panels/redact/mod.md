@@ -100,3 +100,62 @@ through the one action arm. A canvas gesture is that same arm with a
 different rectangle — `canvas::markup::band` is the drag machine and
 `canvas::mapping` is the screen-to-page conversion — plus the five pieces of
 tool substrate in item 2.
+
+## Item notes
+
+### `const REGION_PANEL`
+
+Matched **literally** by `tools/ui-verify/src/checks/redaction.rs`, so
+renaming one of these silently un-aims the check that drives it. The same
+contract `crate::dialogs::ocr`'s region names carry.
+
+### `const REGION_APPLY`
+
+Declared **only while it is enabled**, which is itself an assertion a
+harness wants: its absence from the trace is evidence that nothing is
+marked, rather than that a click missed.
+
+### `const APPLY_COMMAND`
+
+Raised as [`Action::Command`] rather than opening the dialog here, on
+`crate::app::mod`'s stated rule for the Find bar's OCR offer: a surface
+outside the ribbon that means an existing *command* routes through the one
+dispatch choke point, so the command's guards live in one place. A panel
+that called `DialogsState::open_redact` itself would be a second
+implementation of `edit.redact_apply`, and the two would drift the first
+time the command grew a precondition.
+
+### `fn marking_controls`
+
+Split out because [`body`] would otherwise be one long function whose two
+halves — *make marks* and *review marks* — change for entirely different
+reasons, which is the same seam `app/actions.rs` is split along.
+
+### `fn mark_rows`
+
+Two controls and no third. The row itself navigates — a plain button rather
+than a `selectable_label`, because a row is a **navigation command** and not
+a selection, and a highlighted row would imply a selected-mark concept this
+panel deliberately does not have.
+
+### `fn a_whole_page_mark_covers_the_displayed_page`
+
+The crop box rather than the media box, argued at
+[`whole_page_spec`]. The failure this catches is silent in both
+directions: a media-box mark covers content the operator was never
+shown, and a hand-shrunk rectangle would leave a margin of live text
+under a mark labelled "whole page".
+
+### `fn a_mark_authored_into_the_session_is_visible_to_the_census`
+
+The end-to-end shape in the smallest form a headless test can hold, and
+the reason it is worth having: the census reads
+`session.graph()` while the mark is authored into the session overlay,
+and a build that read `session.document()` anywhere in that chain would
+report zero for every mark the operator had just made.
+
+### `fn the_search_query_does_not_survive_a_new_document`
+
+A search term left over from a previous file is one an operator could
+run against a document it was never meant for — and this feature answers
+a search by authoring marks over whatever it hits.

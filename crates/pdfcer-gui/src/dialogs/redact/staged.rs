@@ -9,11 +9,6 @@ use crate::text::redact as t;
 
 /// The control that un-stages a removal, published so `tools/ui-verify` can
 /// click it.
-///
-/// Declared **only while it is on screen**, so its absence from a trace is
-/// evidence that nothing is armed on this document rather than evidence that
-/// the build has lost the control. The same asymmetry
-/// `super::REGION_DESTINATION_REPLACE` carries.
 const REGION_CANCEL: &str = "redact-apply-cancel-staged"; // ui-text-exempt: trace region name, never displayed
 
 /// **Draw the staged phase. Returns `true` when the operator asked to call the

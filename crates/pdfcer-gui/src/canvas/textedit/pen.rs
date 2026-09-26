@@ -38,12 +38,6 @@ impl Default for TextPen {
     /// **The engine's own documented default**, restated here rather than
     /// invented: `AddTextRequest::new` is *"Helvetica, bundled, 12 pt,
     /// black"*.
-    ///
-    /// Matching it exactly is what makes this addition invisible to anybody
-    /// who does not touch the controls. A shell whose default differed from the
-    /// engine's would change what every existing operator's next Add-text
-    /// produced, silently, on the release that added a control they had not
-    /// asked for.
     fn default() -> Self {
         Self {
             face: Std14::Helvetica,
@@ -151,11 +145,6 @@ mod tests {
 
     /// **The default is the engine's default**, so adding these controls
     /// changed nothing for anybody who does not touch them.
-    ///
-    /// A shell whose default differed would silently change what every
-    /// operator's next Add-text produced, on a release that added a control
-    /// they had not asked for. Asserted against the values `AddTextRequest::new`
-    /// documents — Helvetica, 12 pt, black — because that is the claim.
     #[test]
     fn the_default_is_the_engines_default() {
         let p = TextPen::default();
@@ -165,10 +154,6 @@ mod tests {
     }
 
     /// **Black resolves to `Black`, not to `Rgb(0, 0, 0)`.**
-    ///
-    /// One operator and one byte instead of four, for the same ink. The
-    /// property is worth a test rather than a comment because a colour picker
-    /// hands back `[0, 0, 0]` and the obvious implementation forwards it.
     #[test]
     fn black_ink_is_written_as_black() {
         assert_eq!(TextPen::default().engine_colour(), NewTextColor::Black);
@@ -203,11 +188,6 @@ mod tests {
     }
 
     /// **All fourteen bundled faces are offered, each exactly once.**
-    ///
-    /// The count is the claim: `Std14` has fourteen members, and a list that
-    /// quietly held thirteen would be a face an operator could never reach
-    /// with no error anywhere. Asserted as a set as well as a length, so a
-    /// duplicate cannot make up the number.
     #[test]
     fn every_bundled_face_is_offered_once() {
         let mut seen = std::collections::BTreeSet::new();

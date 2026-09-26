@@ -15,11 +15,6 @@ use crate::report::CheckReport;
 use crate::sys::vk;
 
 /// Edit mode, then arm **add** text — both through the harness seam.
-///
-/// `edit.add_text` rather than `edit.text`, because the subject is a caret on
-/// **bare page** (`Anchor::Origin`) — the draft that could not take a line break
-/// until O127. A box draft always could, so a check that dragged one would pass
-/// on the build the operator reported.
 const INVOKE: &str = "mode.edit,edit.add_text";
 /// The characters the draft is seeded with, before Enter is pressed.
 const SEED: &str = "FIRST";
@@ -28,23 +23,12 @@ const CARET_EVENT: &str = "text-edit-caret";
 /// `text-edit-declined reason=…` — a click did not.
 const DECLINED_EVENT: &str = "text-edit-declined";
 /// `text-edit-enter means=…` — the keystroke arrived, and which branch it took.
-///
-/// The one instrument that separates *"the key never got here"* from *"the
-/// key got here and the rule chose wrong"*. Those are two different repairs and
-/// they leave identical evidence everywhere else: the draft's length does not
-/// move either way.
 const ENTER_EVENT: &str = "text-edit-enter";
 /// `add-text page=… n=… epoch=… disclosures=…` — the funnel's own line.
 const ADD_EVENT: &str = "add-text";
 /// The page's own region, so a failure can say whether a sheet was drawn.
 const PAGE_REGION: &str = "page";
 /// Where to click, in PDF user space — bare paper, well clear of the border.
-///
-/// On `a1-titleblock.pdf`, which is 2384 × 1684 pt. The point is chosen in
-/// the middle of the sheet where the fixture draws nothing, so the click cannot
-/// land on a run and turn the `Add` draft into an `Edit` one — which
-/// `textedit::click` does deliberately, and which would make this check
-/// silently test the wrong anchor.
 const CLICK_AT: (f64, f64) = (1100.0, 900.0);
 
 /// See the module documentation.

@@ -111,14 +111,6 @@ impl Widths {
 }
 
 /// How much room a separator between two groups needs, in points.
-///
-/// egui's `ui.separator()` is a fixed spacing plus a hairline and does not vary
-/// with content, so unlike the groups themselves it is a constant rather than a
-/// measurement. Six points is `Spacing::item_spacing.x` (4) plus the rule (2)
-/// at this crate's theme; it is deliberately a slight **over**-estimate, which
-/// biases the decision towards shedding one group too early rather than one too
-/// late. Too early costs a control that is reachable elsewhere; too late puts
-/// it at negative x, which is the defect.
 const SEPARATOR_PTS: f32 = 6.0;
 
 /// **Which of the cluster's groups fit in `available` points.**
@@ -153,11 +145,6 @@ pub fn affordable(available: f32, widths: &Widths) -> Vec<Group> {
 
 /// What `shown` would occupy: the groups' own widths plus a separator between
 /// each adjacent pair.
-///
-/// A group with no remembered width contributes **nothing**, which is what
-/// makes the bootstrap work: on the first frame nothing has been measured, the
-/// total is zero, and everything is shown — so everything gets measured. See
-/// [`Widths`].
 fn measured_width(shown: &[Group], widths: &Widths) -> f32 {
     let known: Vec<f32> = shown.iter().filter_map(|g| widths.get(*g)).collect();
     // Separators are counted between MEASURED groups, not between shown ones.
@@ -236,10 +223,6 @@ mod tests {
     use super::*;
 
     /// A cluster whose five groups measure the widths the defect was found at.
-    ///
-    /// Taken from the trace of the failing run rather than invented, so the
-    /// thresholds below are the real ones: page 145.7, zoom 108.7, fit 298.1,
-    /// find 38.8, filter 51.3 — measured at `ui_scale = 1.80` in a 611 pt bar.
     fn measured() -> Widths {
         let mut w = Widths::default();
         w.record(Group::Page, 145.7);
@@ -251,15 +234,6 @@ mod tests {
     }
 
     /// **The defect, as an assertion.**
-    ///
-    /// 611 points is the client width the failing run reported. The whole
-    /// cluster needs 145.7 + 108.7 + 298.1 + 38.8 + 51.3 = 642.6 plus four
-    /// separators = 666.6 — so it cannot fit, and before this module it did not
-    /// fit *and was drawn anyway*, at negative x.
-    ///
-    /// Dropping the fit group alone takes it to 362.5, which is what the
-    /// assertion below checks: the biggest, least essential group goes, and
-    /// nothing else has to.
     #[test]
     fn at_the_scale_that_found_the_defect_the_cluster_sheds_rather_than_overflows() {
         let widths = measured();
@@ -287,13 +261,6 @@ mod tests {
     }
 
     /// **Relative order is preserved under every subset.**
-    ///
-    /// The property that keeps the bar's controls in the positions the operator
-    /// learned. Shedding is by priority, not by position, so the result is not
-    /// a prefix — but whatever survives must still read in the same order.
-    /// Swept across every width from nothing to generous, because the
-    /// interesting failures are at the boundaries and picking two points either
-    /// side of a transition looks exactly like no transition at all.
     #[test]
     fn every_width_keeps_the_groups_in_order() {
         let widths = measured();
@@ -313,12 +280,6 @@ mod tests {
     }
 
     /// **The two groups with no other home are never shed, at any width.**
-    ///
-    /// The clause the whole design rests on, swept rather than sampled. The
-    /// selection filter has no ribbon command, no menu entry and no shortcut —
-    /// it exists only on this bar — and the zoom stepper's `+`/`−` have no
-    /// command either. Dropping either would move the very defect this module
-    /// fixes from 1.80 scale to a narrower one, which is not a fix.
     #[test]
     fn a_group_with_no_other_home_survives_every_width() {
         let widths = measured();
@@ -337,11 +298,6 @@ mod tests {
     }
 
     /// **Narrowing never puts a control back.**
-    ///
-    /// A monotonicity property, and the one a hand-written threshold ladder
-    /// would break first: as the bar narrows, the set shown must only ever
-    /// shrink. A bar that dropped Find at 600 pt and showed it again at 590
-    /// would flicker as the window is dragged.
     #[test]
     fn a_narrower_bar_never_shows_more() {
         let widths = measured();
@@ -370,11 +326,6 @@ mod tests {
     }
 
     /// An unmeasured bar shows everything, so a group can acquire a width.
-    ///
-    /// Without this the first frame would shed every group whose width is
-    /// unknown — which is all of them — and they would never be drawn, so they
-    /// would never be measured, and the bar would be permanently empty. A
-    /// bootstrap that cannot bootstrap.
     #[test]
     fn nothing_is_shed_before_it_has_ever_been_measured() {
         assert_eq!(
@@ -399,12 +350,6 @@ mod tests {
     }
 
     /// **Nothing this module may shed loses its last route.**
-    ///
-    /// The clause that makes shedding legitimate, checked against the real
-    /// command registry rather than against a comment. A group whose ribbon
-    /// home was renamed or deleted would fail here — loudly, in a unit test —
-    /// rather than quietly becoming unreachable at a UI scale nobody on this
-    /// project runs at.
     #[test]
     fn nothing_sheddable_loses_its_last_route() {
         // The real registry, built exactly as start-up builds it. Not a list

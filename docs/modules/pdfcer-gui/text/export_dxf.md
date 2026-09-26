@@ -37,3 +37,26 @@ operator:
 
 Collapsing `Uncalibrated` into "1.0" is exactly the silent paper-scale
 export the feature exists to beat.
+
+## Item notes
+
+### `fn an_uncalibrated_page_is_not_told_a_number`
+
+The assertion this catalog exists for. `pdfcer-core` names the failure it
+prevents — every generic converter exports at paper scale and says
+nothing, so a 1:2 detail arrives at half size *looking plausible* — and
+the only defence is a sentence that refuses to present a default as a
+finding.
+
+### `fn skipped_text_and_unreadable_text_are_different_sentences`
+
+`skipped` is *you asked*; `unreadable` is *pdfcer could not read it*. The
+second is a fact about the source PDF and the reason labels the operator
+can see on screen are absent from the file — and rolling them together
+would let it hide inside a sentence about their own choice.
+
+### `fn a_skipped_picture_names_the_formats_limit_not_pdfcers`
+
+*"The format has no way to carry a raster"* rather than *"images are not
+supported"*: the first is a fact about DXF that no future version of
+pdfcer will change, and the second reads as a gap somebody might fix.

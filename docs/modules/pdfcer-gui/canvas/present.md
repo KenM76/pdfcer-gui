@@ -30,3 +30,11 @@ The move is textual: the same items, in the same order, with the same
 documentation. `show` and [`Sampled`] are re-exported from `canvas`, so
 every call site still says `canvas::show(...)` and no caller learned that
 this file exists.
+
+## Item notes
+
+### `fn show_in`
+
+Returns the context-menu tokens *and* what the frame learned about where
+its pages ended up — see [`CanvasGeometry`] on why that has to travel
+outwards rather than be read again.

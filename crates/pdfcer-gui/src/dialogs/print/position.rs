@@ -17,34 +17,13 @@ use crate::text::print as t;
 use crate::units;
 
 /// Below this, a displacement is not one.
-///
-/// Drag arithmetic in `f32` screen points divided by a scale does not return to
-/// exactly zero, and a page holding a delta of 1e-14 pt would read as *moved*
-/// forever: Reset would stay live, the moved-page count would say "1 page", and
-/// the operator would have no way to make either go away. Canonicalising in
-/// [`Positions::set`] is what keeps "unmoved" reachable.
-///
-/// A hundredth of a point is four thousandths of a millimetre — two orders of
-/// magnitude below this dialog's own unit, so nothing an operator can see is
-/// rounded away.
 const SETTLED_PT: f64 = 0.01;
 
 /// The tolerance for *does it still fit*, taken from the engine rather than
 /// chosen here.
-///
-/// `pdfcer_print::place_page` compares against `const EPS: f64 = 0.5` when it
-/// sets [`Placement::clipped`]. [`clips`] recomputes that flag after a
-/// displacement, so it must use the engine's number: a tighter one here would
-/// report a clip on a page the engine considers fitting, and the two verdicts
-/// would differ by a hair on exactly the sheets that sit on the boundary.
 const EPS_PT: f64 = 0.5;
 
 /// One arrow press, in millimetres.
-///
-/// A millimetre rather than a point because the readouts beside the preview are
-/// in whole millimetres. A point is about a third of one, so three presses of
-/// an arrow key would leave every number on screen unchanged — which reads as a
-/// control that is not listening, not as a fine adjustment.
 const NUDGE_MM: f64 = 1.0;
 
 /// One arrow press with Shift held, in millimetres.
@@ -121,15 +100,6 @@ impl Cropped {
     }
 
     /// The off-canvas sentence, in whole millimetres.
-    ///
-    /// # Reported at the dialog's resolution, deliberately
-    ///
-    /// An overhang that rounds to zero millimetres on all four edges is
-    /// reported as fitting. That is not a rounding error being hidden: whole
-    /// millimetres are the unit every length in this dialog is stated in, and
-    /// both alternatives are worse — a sentence reading *"extends past the
-    /// printable area — right 0 mm"* names a quantity the operator cannot act
-    /// on, and a decimal here would be the only decimal on the surface.
     fn line(self) -> String {
         let (left, right, top, bottom) = self.whole_mm();
         if left <= 0 && right <= 0 && top <= 0 && bottom <= 0 {
@@ -172,10 +142,6 @@ impl Positions {
     }
 
     /// Set this page's displacement, canonicalising a settled one to absent.
-    ///
-    /// The single writer. Every other mutator routes through it so that the
-    /// "a delta under [`SETTLED_PT`] is not a delta" rule cannot be bypassed by
-    /// a new command forgetting it.
     fn set(&mut self, page: usize, offset: Offset) {
         if offset.dx_pt.abs() < SETTLED_PT && offset.dy_pt.abs() < SETTLED_PT {
             self.moved.remove(&page);
@@ -397,16 +363,6 @@ pub(super) fn arrow_nudge(ui: &Ui) -> Option<(f64, f64)> {
 }
 
 /// Publish one Position button's rectangle for `ui-verify`.
-///
-/// `ui_rect_visible` and not `ui_rect`: the group sits in a scrolling options
-/// column, so on a short dialog its lower controls are genuinely off screen,
-/// and a driver handed a rectangle for an unreachable button would click
-/// whatever is drawn over it and then report the wrong thing about the result.
-///
-/// Published even while a button is greyed. Whether **Reset** is enabled is
-/// part of what a driven check asserts — an unmoved page must refuse it — and
-/// a region that vanished when the control greyed would make "refused" and
-/// "absent" the same reading.
 fn publish(ui: &Ui, name: &str, rect: egui::Rect) {
     crate::diag::ui_rect_visible(name, rect, ui.clip_rect());
 }
@@ -849,17 +805,6 @@ mod tests {
     }
 
     /// **A tripwire on the engine, not on this module.**
-    ///
-    /// Every sentence in [`Positions::centre`] about why Reset and Centre
-    /// differ rests on one measured fact: `place_page` clamps an oversized
-    /// page's offset at zero, so pdfcer's own placement is the top-left corner.
-    /// If the engine ever centres an oversized page instead, Reset and Centre
-    /// become synonyms, three of this group's buttons become indistinguishable,
-    /// and the doc comments above become wrong — and nothing else in this
-    /// program would notice.
-    ///
-    /// So it is asserted against the engine directly, through the real
-    /// `place_page`, rather than restated here as a belief about it.
     #[test]
     fn the_engine_still_starts_an_oversized_page_flush_at_the_corner() {
         let placement =

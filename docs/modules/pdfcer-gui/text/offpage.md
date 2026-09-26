@@ -58,3 +58,29 @@ asserted is a copy module that drifts. The one engine type that IS passed
 through is [`OffPage`], because it is an enum: its variants can be named from
 here, and describing "entirely off" as "crossing the edge" is exactly the
 mistake a `bool` would invite.
+
+## Item notes
+
+### `fn the_progress_line_counts_from_one_and_never_overshoots`
+
+Falsified per clause, on the boundary that matters: before any page has
+been checked the line must say page **1**, not page 0 and not page 2.
+A one-off here is the kind of defect nobody reports and everybody sees.
+
+### `fn the_undo_note_carries_the_step_count`
+
+"Undo takes these back one page at a time" without a count leaves the
+operator pressing `Ctrl+Z` an unknown number of times; the count is what
+turns the sentence into an instruction.
+
+### `fn a_row_for_off_page_text_quotes_the_text_before_anything_else`
+
+This is the module header's whole argument, asserted rather than
+described: an operator who reads "3 objects" shrugs, and one who reads
+the words on the off-page note does not.
+
+### `fn the_two_placements_are_told_apart_by_their_own_words`
+
+Falsified per clause: this asserts that *fully* does not carry the word
+the *partial* sentence turns on, and the reverse. An `||` across the pair
+would assert neither.

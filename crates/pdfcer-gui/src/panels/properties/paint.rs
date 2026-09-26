@@ -19,22 +19,12 @@ const REGION_STROKE: &str = "properties.paint.stroke"; // ui-text-exempt: a trac
 /// The sentence drawn where a swatch cannot be.
 const REGION_UNDECODED: &str = "properties.paint.undecoded"; // ui-text-exempt: a trace region name
 /// The line naming how many objects the controls act on.
-///
-/// Its own region since the multi-object state shipped, because *"the section
-/// drew"* and *"the section told the operator how many things it is about to
-/// change"* are two different claims and a driven check has to be able to
-/// assert the second.
 const REGION_SUBJECT: &str = "properties.paint.subject"; // ui-text-exempt: a trace region name
 /// The line naming the members that carry an ink this control will not
 /// overwrite, drawn **above** a swatch that will still apply to the rest.
 const REGION_PARTIAL_INK: &str = "properties.paint.partial-ink"; // ui-text-exempt: a trace region name
 
 /// **What one frame's interaction asked for**, per channel.
-///
-/// A named pair rather than a tuple of two options, because the two positions
-/// are not interchangeable and a tuple invites reading them the wrong way round
-/// exactly once — after which the fill control recolours the line. Clippy asked
-/// for the type; the naming is why it was worth asking.
 struct Recolour {
     /// The new fill, or `None` to leave it alone.
     fill: Option<[u8; 3]>,
@@ -173,12 +163,6 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
 }
 
 /// The selected indices that are paths, in selection order.
-///
-/// Re-derived rather than collected in the walk above, because the walk's
-/// output is *paints* and pairing them with indices would make one `Vec` whose
-/// two halves have to be kept in step by hand. The provider read is cheap (a
-/// slice index per entry) and the alternative is the class of bug where a
-/// filter and its operand drift.
 fn path_indices(doc: &OpenDoc, page: usize, objects: &[usize]) -> Vec<usize> {
     let Some(provider) = doc.page_objects() else {
         return Vec::new();
@@ -199,17 +183,6 @@ fn path_indices(doc: &OpenDoc, page: usize, objects: &[usize]) -> Vec<usize> {
 }
 
 /// **Fold one channel of a whole selection into a control state.**
-///
-/// The ink check comes **before** agreement, not after, and that ordering
-/// is the guard. *"They all agree and one of them is a spot ink"* must never
-/// draw a swatch: agreement between two members of a named-ink selection is not
-/// permission to overwrite them.
-///
-/// A member whose paint cannot be shown is excluded from the agreement
-/// question entirely rather than counted as a disagreement. It is not a colour
-/// this control can compare, and folding it in would report *"mixed"* for a
-/// selection of one red line and one PANTONE line — implying a value would
-/// unify them, which is exactly what will not happen.
 fn channel<'a>(paints: impl Iterator<Item = &'a PathPaint>) -> Channel {
     let mut inks: Vec<Option<String>> = Vec::new();
     let mut agreed: Option<[u8; 3]> = None;
@@ -241,11 +214,6 @@ fn channel<'a>(paints: impl Iterator<Item = &'a PathPaint>) -> Channel {
 
 /// One channel's row: its label, its disclosure, and its control — or its
 /// refusal, where no control may be drawn.
-///
-/// Returns the newly chosen colour, or `None` when nothing was committed this
-/// frame. *Committed*, not *changed*: [`super::swatch::show`] answers only on
-/// the frame the picker closes, so one drag through a colour wheel is one
-/// action and one undo entry.
 fn row(
     ui: &mut Ui,
     channel: &Channel,
@@ -290,22 +258,12 @@ fn row(
 }
 
 /// The engine's 0..1 components as the swatch's 8-bit sRGB.
-///
-/// Rounded rather than truncated. Truncation makes 1.0 into 255 correctly and
-/// 0.5 into 127 — half a step dark on every mid-tone, which over a round trip
-/// through the swatch would walk a colour steadily darker every time it was
-/// opened and closed without being changed.
 fn to_bytes(rgb: pdfcer_core::vector::Rgb) -> [u8; 3] {
     let f = |v: f32| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
     [f(rgb.r), f(rgb.g), f(rgb.b)]
 }
 
 /// The ink's name as the file states it, when there is one.
-///
-/// Raw bytes, decoded loosely. A colour-space resource name is a PDF name
-/// object and carries no declared encoding; showing it as it is beats showing
-/// nothing, and beats a repaired version that no longer matches what the
-/// operator would find in the file.
 fn ink_name(paint: &PathPaint) -> Option<String> {
     match paint {
         PathPaint::Other { space, .. } => space
@@ -338,11 +296,6 @@ mod tests {
 
     /// **An undecodable paint must never yield a colour to open a swatch
     /// on.**
-    ///
-    /// The one assertion this module exists for. If `rgb()` ever answered
-    /// `Some` for `Other`, this section would draw a swatch over a spot ink and
-    /// the first click would convert it — invisibly, permanently, and looking
-    /// entirely normal.
     #[test]
     fn a_spot_ink_offers_no_colour_to_edit() {
         let ink = spot("PANTONE 300");
@@ -380,10 +333,6 @@ mod tests {
 
     /// **A selection that disagrees reads as MIXED and still offers a
     /// control.**
-    ///
-    /// The whole of O89 piece 2. The fixture genuinely disagrees — red and
-    /// green — because a fixture whose members all share one colour would pass
-    /// against an implementation that simply showed the first one's.
     #[test]
     fn two_different_colours_read_as_mixed() {
         let ch = channel([rgb(1.0, 0.0, 0.0), rgb(0.0, 1.0, 0.0)].iter());
@@ -407,11 +356,6 @@ mod tests {
 
     /// **One spot ink among process colours keeps the control AND names
     /// the ink.**
-    ///
-    /// The decision the module header argues, asserted rather than left to the
-    /// prose: the swatch survives (so the nine reachable strokes can be
-    /// recoloured), and the ink is listed (so the operator knows before
-    /// pressing that one of them will be left alone).
     #[test]
     fn one_spot_ink_among_process_colours_keeps_the_swatch_and_names_the_ink() {
         let ch = channel([rgb(1.0, 0.0, 0.0), rgb(1.0, 0.0, 0.0), spot("PANTONE 300")].iter());
@@ -425,11 +369,6 @@ mod tests {
     }
 
     /// **Every member a named ink: no control at all.**
-    ///
-    /// The single-object guard, unchanged by the selection size. This is the
-    /// case where a swatch's only possible effect is destruction, and it is the
-    /// reason the partial case above is safe to allow: the two are different
-    /// states and this test is what keeps them different.
     #[test]
     fn a_selection_of_named_inks_offers_no_swatch() {
         let ch = channel([spot("PANTONE 300"), spot("PANTONE 485")].iter());
@@ -441,10 +380,6 @@ mod tests {
     }
 
     /// A spot ink must not be counted as a *disagreement*.
-    ///
-    /// If it were, one red line plus one PANTONE line would read as "mixed" —
-    /// which tells the operator that picking a colour will unify them, and it
-    /// will not. The honest reading is "red, and one ink I will leave alone".
     #[test]
     fn a_spot_ink_does_not_make_the_process_colours_look_mixed() {
         let ch = channel([rgb(1.0, 0.0, 0.0), spot("PANTONE 300")].iter());

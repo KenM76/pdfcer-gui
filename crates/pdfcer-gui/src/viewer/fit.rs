@@ -24,6 +24,8 @@
 //! `canvas::geometry`, which owns the arithmetic that *uses* it: the canvas
 //! asks "which axes did the fit decide?" and does not need to know what a
 //! fitting mode is to act on the answer.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/viewer/fit.md`.
 
 /// How `ViewState::zoom` is being decided.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -149,11 +151,6 @@ mod tests {
 
     /// O29's mirror of the test above, and it asserts the OVERFLOW as well as
     /// the ratio.
-    ///
-    /// The overflow is the point. A "fit height" that quietly refused to let
-    /// the page run off the side would be fit-page under a second name, and
-    /// the operator asked for it precisely because fit-page leaves a landscape
-    /// sheet as a band across the middle of a tall window.
     #[test]
     fn fit_height_uses_the_height_ratio_only_and_lets_the_width_overflow() {
         // A wide page in a narrow, tall viewport: height ratio 3.0, width 0.5.
@@ -170,12 +167,6 @@ mod tests {
 
     /// The three fitting modes pin the axes they fit, and actual size pins
     /// none — the table `canvas::show` places the view from. O28.
-    ///
-    /// Asserted as a table rather than four separate tests because the
-    /// property that matters is the RELATIONSHIP between them: each
-    /// single-axis fit must pin exactly the axis it names and leave the other
-    /// alone, and a copy-paste slip that made `Height` pin the horizontal
-    /// would pass any test written about `Height` on its own.
     #[test]
     fn each_fit_pins_exactly_the_axes_it_decides() {
         assert_eq!(
@@ -189,11 +180,6 @@ mod tests {
     }
 
     /// A pinned axis really is one whose extent the fit decided.
-    ///
-    /// The link between [`FitMode::pinned_axes`] and [`fit_scale`], which are
-    /// two independent `match`es over the same enum and would otherwise be
-    /// free to disagree: a mode that pins an axis must produce a scale that
-    /// makes the page exactly fill the viewport on it, or fit inside it.
     #[test]
     fn a_pinned_axis_is_one_the_scale_makes_fill_the_viewport() {
         let page = (400.0_f32, 100.0_f32);

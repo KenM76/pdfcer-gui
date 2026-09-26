@@ -10,25 +10,12 @@
 use pdfcer_core::vector::ObjectClip;
 
 /// How many pixels the longer edge of the picture aims for.
-///
-/// 1,600 is chosen against where these end up: pasted into an email, a
-/// report or a chat message, then usually scaled down. It is generous enough
-/// that a screen-sized paste is not visibly resampled and small enough that the
-/// clipboard payload for an ordinary selection stays in single-digit megabytes.
 const TARGET_EDGE_PX: f32 = 1600.0;
 
 /// The hard ceiling on either edge, whatever the target implies.
-///
-/// A separate number from the target, deliberately: the target is a *quality*
-/// choice and this is a *safety* one. A selection 4,000 pt wide would ask for a
-/// 25× scale to hit the target on its short edge, and this is what stops it.
 const MAX_EDGE_PX: f32 = 4096.0;
 
 /// The smallest scale worth rendering at.
-///
-/// Below 1.0 the picture would be smaller than the selection is in points,
-/// which is never what somebody copying an object wants — they can always
-/// scale it down where they paste it, and cannot scale it up.
 const MIN_SCALE: f32 = 1.0;
 
 /// **Render a copied selection and put it on the operating system's
@@ -73,10 +60,6 @@ pub fn publish(clip: &ObjectClip, text: &str) -> Option<(u32, u32)> {
 }
 
 /// The render scale for a clip of this size, in points.
-///
-/// `None` for a degenerate clip — the engine substitutes a 1 pt page for a
-/// zero-extent selection and discloses it, and a 1 pt page rendered at any
-/// scale is not a picture worth putting on a clipboard.
 fn scale_for(w_pt: f64, h_pt: f64) -> Option<f32> {
     #[allow(
         clippy::cast_possible_truncation,
@@ -101,18 +84,6 @@ fn scale_for(w_pt: f64, h_pt: f64) -> Option<f32> {
 }
 
 /// Composite premultiplied RGBA over white, returning straight RGBA.
-///
-/// # Why premultiplied is the input
-///
-/// Because that is `tiny_skia`'s contract and therefore `pdfcer-render`'s: the
-/// pixmap data is premultiplied RGBA8 and is handed over unchanged, which is
-/// the same buffer and the same contract `render::worker` consumes. Treating it
-/// as straight alpha would double-darken every edge, which reads as a picture
-/// with a dirty outline rather than as a bug.
-///
-/// With premultiplication, compositing over white is one subtraction per
-/// channel: `out = src + white × (1 − a)`, and `src` already carries its own
-/// alpha factor.
 fn on_white(premultiplied: &[u8]) -> Vec<u8> {
     let mut out = Vec::with_capacity(premultiplied.len());
     for px in premultiplied.chunks_exact(4) {
@@ -137,11 +108,6 @@ mod tests {
     use super::*;
 
     /// **A small selection is scaled UP, and a huge one is capped.**
-    ///
-    /// The two ends, asserted as magnitudes rather than as relations. A
-    /// relational assertion — "the scale is bigger for a smaller clip" — is
-    /// satisfied by any absurdity in the right direction, so it stays green
-    /// while the numbers are wrong.
     #[test]
     fn the_scale_fills_the_target_and_stops_at_the_ceiling() {
         // 100 pt wide → 16× fills 1,600 px.
@@ -160,10 +126,6 @@ mod tests {
     }
 
     /// A degenerate clip is refused rather than rendered.
-    ///
-    /// The engine substitutes a 1 pt page for a zero-extent selection and says
-    /// so; a 1 pt page is not a picture, and putting one on the clipboard would
-    /// replace whatever the operator had there with a dot.
     #[test]
     fn a_degenerate_clip_produces_no_picture() {
         assert!(scale_for(1.0, 1.0).is_none());
@@ -173,12 +135,6 @@ mod tests {
 
     /// **Premultiplied over white, and the half-transparent case is the
     /// one that matters.**
-    ///
-    /// A 50 %-alpha red pixel is `(128, 0, 0, 128)` premultiplied. Over white
-    /// it must come out `(255, 127, 127)` — a pale red. Treating the input as
-    /// straight alpha would give `(191, 127, 127)`, a *darker* pale red, and
-    /// the difference is exactly the "dirty edges" symptom that makes a pasted
-    /// picture look subtly wrong without looking broken.
     #[test]
     fn half_transparent_red_becomes_pale_red_not_dark_red() {
         let out = on_white(&[128, 0, 0, 128]);

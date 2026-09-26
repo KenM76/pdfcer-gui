@@ -200,11 +200,6 @@ mod tests {
     }
 
     /// **A click places something with real area**, for every kind.
-    ///
-    /// The guard that stops a click producing an invisible field. A zero or
-    /// negative default would author a control that exists in the document,
-    /// cannot be seen, and cannot be clicked to select — the exact shape of the
-    /// zero-height Large control this project shipped once before.
     #[test]
     fn a_click_places_something_with_area() {
         for k in FormFieldKind::ALL {
@@ -215,21 +210,6 @@ mod tests {
 
     /// **NO KIND IS AUTHORABLE-BUT-INERT ANY MORE**, and the test that
     /// used to say otherwise did its job.
-    ///
-    /// It read *"exactly one kind is authorable-but-inert, and it is the push
-    /// button"*, with the instruction: *"if pdfcer ever runs PDF actions, this
-    /// test fails and the failure is the prompt to un-grey the button."* On
-    /// 2026-09-01 it failed for exactly that reason and this is what it became.
-    ///
-    /// Inverted rather than deleted, because the WELD is the point. Three
-    /// surfaces have to agree about whether a kind is useful once placed — the
-    /// ribbon's `enabled_when`, `app::dispatch::forms`' worded refusal, and this
-    /// predicate — and a build where they disagree is one where a greyed control
-    /// still works by chord, which is a defect this project has already shipped
-    /// once and found by driving rather than by testing.
-    ///
-    /// ⇒ So the assertion now says *"the set is empty"*. A sixth kind that pdfcer
-    /// can author and not use fails here, and the failure names what to do.
     #[test]
     fn no_kind_is_authorable_but_inert() {
         let inert: Vec<_> = FormFieldKind::ALL

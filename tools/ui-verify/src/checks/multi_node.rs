@@ -308,13 +308,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 }
 
 /// The region name for the `n`th drawn anchor mark.
-///
-/// Mirrors `canvas::overlay::anchor_region`. Two copies of a name is exactly
-/// what `text::commands`' rule warns about, and it is unavoidable across a
-/// process boundary: the harness reads the application's trace and cannot link
-/// against it. The mitigation is that a rename breaks this check loudly on its
-/// next run, which is what `ui-rect`'s `declared` returning `None` produces —
-/// a SKIP naming the missing region, not a silent pass.
 fn anchor_region(n: usize) -> &'static str {
     const NAMES: [&str; 6] = [
         "canvas.anchor.0",
@@ -333,10 +326,6 @@ const PUBLISHED_ANCHORS: usize = 6;
 
 /// How far apart two anchor rects must be, in logical points, to be different
 /// anchors.
-///
-/// An anchor mark is six points wide, so two rects whose left edges are within
-/// two points of each other are the same mark republished — which happens on
-/// every frame the layout moves, because `ui-rect` is a change log.
 const ANCHOR_APART_PX: f32 = 2.0;
 
 /// The region the first SELECTED anchor publishes. Mirrors

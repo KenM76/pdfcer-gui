@@ -15,26 +15,9 @@ use crate::sys::vk;
 /// The mode whose canvas may author page content.
 const MODE: &str = "edit";
 /// The **Edit tab**, which is where the Add-text control lives.
-///
-/// A mode is not a tab. `click_mode_segment` puts the shell in Edit *mode*,
-/// which is what decides `edit_content` — and leaves whichever tab was already
-/// showing. The control has to be reached on its own tab, and the first run of
-/// this check found that out by reporting the control as undeclared.
 const EDIT_TAB: (&str, &str) = ("ribbon.tab.edit", "edit");
 
 /// The ribbon control that arms the ADD-text tool.
-///
-/// **Add text, not Edit text**, and the distinction is what keeps two
-/// features off one gesture. `edit.add_text` arms
-/// `CanvasTool::TextEdit(TextEditKind::Add)`, whose drag draws a box; the
-/// separate `view.tool_text` arms `CanvasTool::Text`, whose drag **sweeps** and
-/// must go on sweeping, because `text_tool_selects_and_marks_in_edit` depends
-/// on it to make a text selection the markup verbs can act on.
-///
-/// The box was briefly offered from the sweep tool's rung instead, and two unit
-/// tests said no — correctly. Two features claiming one drag is a choice
-/// somebody has to make, and taking a shipped gesture away to make room is the
-/// wrong way to make it.
 const TOOL: (&str, &str) = ("ribbon.item.edit.add_text", "edit.add_text");
 /// `text-box-open page=… box=… w=… h=…`.
 const OPEN_EVENT: &str = "text-box-open";

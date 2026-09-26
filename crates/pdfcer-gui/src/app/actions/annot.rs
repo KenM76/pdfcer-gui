@@ -105,17 +105,6 @@ pub enum AnnotAction {
         uniform: bool,
         /// **The operator's Tool-row switches, CARRIED rather than read at
         /// apply time** — `OPERATOR_REQUESTS.md` O51.
-        ///
-        /// The same rule `CommitMarkup` follows and for its stated reason: a
-        /// resize is raised by a gesture that completed frames before the queue
-        /// drains, so a value read at apply time is a value that may have moved
-        /// under it. `CommitTextAnnot` reads its pen live instead, and its own
-        /// comment says why that is safe there — it is raised by a dialog the
-        /// operator is sitting in, on the frame they press Accept.
-        ///
-        /// Nobody can tick a checkbox during a drag, so the two would agree
-        /// today. Carrying it is what keeps that an observation rather than a
-        /// dependency.
         modifiers: crate::canvas::scaling::Modifiers,
     },
     /// **Turn a markup annotation about a pivot**, as one undoable command.

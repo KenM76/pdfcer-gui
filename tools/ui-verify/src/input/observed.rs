@@ -22,6 +22,8 @@
 //! reason: a `?` on the observer's result is enough to leave the physical
 //! button down, and a harness that does that has handed the operator a machine
 //! that rubber-bands his desktop.
+//!
+//! Design and rationale: `docs/modules/ui-verify/input/observed.md`.
 
 use super::{CLICK_HOLD, DWELL_NUDGE_TICKS, Driver, MOVE_SETTLE, OBSERVE_DWELL};
 use crate::coords::ScreenPoint;
@@ -29,10 +31,6 @@ use crate::error::Result;
 use crate::sys;
 
 /// **The primary button, down for as long as this value lives.**
-///
-/// Nothing is stored in it; its whole job is its `Drop`. Holding the release
-/// there rather than writing it at the end of the happy path is what makes the
-/// verb safe to `?` through and safe to panic through.
 struct ButtonHeld;
 
 impl ButtonHeld {

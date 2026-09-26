@@ -130,12 +130,6 @@ pub fn group(ui: &mut Ui, state: &mut State) {
 }
 
 /// Register, then hand over to Windows. Returns the sentence to show.
-///
-/// **Two steps, and the second runs only if the first succeeded.** Opening
-/// Windows' Default-apps page having failed to register would deep-link the
-/// operator to a list pdfcer is not in — a page that proves the feature is
-/// broken, with no explanation on it, in an application pdfcer does not own. A
-/// refusal shown here is a refusal the operator can act on.
 #[must_use]
 fn act_now() -> String {
     if let Err(said) = assoc::register() {
@@ -177,11 +171,6 @@ mod tests {
 
     /// **A registration pointing at a DIFFERENT copy is reported as that**, not
     /// as registered.
-    ///
-    /// The state that looks like success from the inside — the key exists and
-    /// names pdfcer — and opens a build the operator thought they had replaced.
-    /// A line that folded it into *"pdfcer is in the list"* would be true and
-    /// useless.
     #[test]
     fn a_stale_registration_is_distinguished_from_a_live_one() {
         let stale = state_line(&status(None, Registration::Elsewhere));

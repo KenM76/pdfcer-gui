@@ -133,3 +133,168 @@ without it.
 Closing the document discards them. A protected copy of a file nobody is
 looking at any more, derived from a permission census that can no longer be
 checked, is not a saving.
+
+## Item notes
+
+### `const REGION_STANDING`
+
+Declared **unconditionally whenever the form is drawn**, because its absence
+from a trace is the evidence for the build brief's own requirement: a form
+with no standing section is a dialog that offered to change something it
+never reported.
+
+### `const BODY_FLOOR`
+
+Without a floor, a small window produces a scroll area that draws **nothing
+at all** — `available_height()` minus a reservation goes negative, and a
+negative `max_height` is a silently empty area rather than an error. The
+About, OCR and redaction dialogs all record the same trap.
+
+### `enum Phase`
+
+A state machine rather than several `Option`s, for
+`crate::dialogs::redact::Phase`'s reason: the states are mutually exclusive
+and an `Option` quadruple has combinations that would all compile and none of
+which means anything.
+
+### `enum Destination`
+
+`crate::dialogs::redact::Destination`, and the reasoning there is this
+type's reasoning — see §3 of this module's header for the part-for-part
+correspondence and for the one half of the operator's request the engine
+cannot express.
+
+### `fn fmt`
+
+Five fields of this struct hold a password the operator typed. A derived
+`Debug` would print all five, and `crate::secret`'s header records
+exactly what that costs: *"a `{:?}` on an action carrying a password
+writes it into the trace file `tools/ui-verify` keeps as evidence."*
+
+The passwords are `String` rather than [`Secret`] here only because
+`egui::TextEdit` binds to a `String`, so the type cannot do the
+protecting and this impl must. It prints the LENGTHS, which is what a
+diagnosis of *"my password is not being accepted"* actually needs.
+
+### `fn open`
+
+Cheap — a `Standing::read` and a signature census, no rewrite. Contrast
+`crate::dialogs::redact::RedactDialog::open`, which runs a full removal;
+there is nothing here that could be computed before the passwords exist.
+
+### `fn ready_to_confirm`
+
+Pure, and the whole of the gate's rule, so every property of it is
+asserted headlessly — `crate::viewer`'s standing split applied to the
+control that can overwrite the operator's file.
+
+The conditions, and each one is a different failure:
+
+1. **A form is being filled in at all.** A refusal or a finished write
+   has no confirm.
+2. **The current owner password is present**, on every job that acts on
+   an already-protected document — O119's third disclosure, enforced
+   rather than merely printed.
+3. **The new owner password is present**, on every job that sets one. A
+   blank owner password makes a document whose protection anybody can
+   remove; `EncryptionSettings` allows it and this surface does not —
+   see [`crate::text::protect::owner_password_required`].
+4. **Both copies of both new passwords match.** A password typed wrong
+   twice is a document nobody can open.
+5. **The two new passwords differ.** The owner password ignores `/P`
+   entirely, so if it also opens the document every reader authenticates
+   as owner and the permission list is decoration. The engine does not
+   enforce this *"because the standard does not"*, so the surface does.
+6. **The replace acknowledgement**, when and only when the operator has
+   chosen to replace.
+
+### `fn gates`
+
+Outstanding rather than satisfied, and computed from the same
+expressions that decide whether each control is drawn — so the
+disabled-hover sentence can never send the operator to look for a field
+that was never on screen. `OPERATOR_REQUESTS.md` O77's sweep found seven
+greyed controls with no explanation; this is the shape that discharges
+it, taken from `crate::text::redact::confirm_disabled`.
+
+### `fn can_replace_original`
+
+`is_file` rather than a flag, asked of the **file system**, exactly as
+`crate::app::save::has_a_file` asks it and for the reason recorded
+there: a second source of truth drifts, and the failure when it does is
+writing over the wrong file.
+
+### `fn choose_job`
+
+Pure-ish and a method rather than a line inside the radio group, so
+the rule can be asserted headlessly. Selecting *remove the protection*
+and then going back to *change the passwords* must not leave the ticks
+wherever a previous job's editing left them — the seed is always
+[`Standing::initial_ticks`], i.e. always the file.
+
+### `fn granted`
+
+[`always_granted`] bits are forced in regardless of the tick, so this
+list is what the written file will actually say rather than what the
+controls happen to show. The two agree by construction because
+[`Standing::initial_ticks`] forces the same bits on, but forcing it here
+too means a future edit to the drawing code cannot make them disagree.
+
+### `fn standing_section`
+
+Drawn first and always, because of the build brief's own sentence: a
+dialog that offers to change something it has not reported has told the
+operator a falsehood before he touches anything.
+
+### `fn has_non_ascii_password`
+
+Asked of what is in the boxes rather than of an `EncryptionSettings`
+that does not exist yet, so the warning appears **while typing** rather
+than after the press. The engine's own predicate is
+`EncryptionSettings::has_non_ascii_password`, and
+[`crate::protect::prepare`] calls that one for the trace line — two
+readings of one fact, taken at two moments, which is why this one is
+spelled out rather than borrowed.
+
+### `fn commit`
+
+The two-path shape and the asymmetry between the paths are
+`crate::dialogs::redact::commit`'s, and §3 of this module's header is
+the whole of why they are copied rather than re-argued:
+
+| destination | how the path is obtained | what stands between the click and the write |
+|---|---|---|
+| [`Destination::NewFile`] | the save picker, suggesting `-protected` / `-unprotected` | the picker itself, plus the OS's own overwrite prompt |
+| [`Destination::ReplaceOriginal`] | [`Self::source`], **no picker** | a checkbox naming the file, and a confirm button whose label names it too |
+
+The engine call happens **before** the picker on the new-file path,
+deliberately. Every failure this surface can meet — a wrong owner
+password, a signed document the census missed, an unreachable CSPRNG —
+is discovered before the operator is asked to name a file, so a refusal
+never arrives after a picker has been filled in and dismissed.
+
+### `fn failure_line`
+
+Free rather than a method, so the mapping from every failure the model can
+report to the wording the operator reads is one pure function a test can
+drive — and so a new [`PrepareFailure`] variant is a compile error here
+rather than a silent fall-through to a catch-all.
+
+### `struct Gates`
+
+A named struct rather than five positional `bool`s, because five `bool`s at
+a call site is where a future edit swaps two of them and every test still
+passes.
+
+### `fn job_label`
+
+Free rather than a method on [`Job`], because [`Job`] lives in
+`crate::protect` and that module holds no operator-facing strings — the
+project's standing seam between the model and `text/`.
+
+### `fn file_name_of`
+
+The name rather than the whole path, for `crate::dialogs::redact`'s reason:
+every sentence that needs one is read in a window about 700 pt wide and a
+Windows path is routinely longer than that. The full destination is on the
+trace line [`crate::protect::Prepared::write_to`] emits.

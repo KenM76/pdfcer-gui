@@ -38,33 +38,6 @@ pub trait SettingsExt {
 
 impl SettingsExt for Settings {
     /// Every extraction in the application starts here.
-    ///
-    /// # The three fields, and the one that is a correctness knob
-    ///
-    /// - `word_gap_ratio` decides where extracted text gets its spaces.
-    /// - `actual_text` decides how far a document's own replacement text is
-    ///   trusted over the glyphs drawn.
-    /// - `unmappable_code` decides what stands in for text pdfcer cannot read —
-    ///   and it is **not** a cosmetic choice. Downstream of extraction sit
-    ///   search, clipboard copy and **redaction-by-text**. Changing the
-    ///   sentinel changes character offsets, therefore changes which runs a
-    ///   redaction pattern matches. `pdfcer-core`'s R35 states it plainly: *a
-    ///   redaction built under one value is not equivalent under another.*
-    ///
-    /// That last point is why both this and `actual_text` have radius lines in
-    /// the settings window that name redaction, which the old shell's did not.
-    ///
-    /// # Why fields rather than builders
-    ///
-    /// `ExtractOptions` exposes no `with_word_gap_ratio` / `with_unmappable_code`
-    /// / `with_actual_text` — checked, not assumed. The fields are `pub` and
-    /// the struct is `#[non_exhaustive]`, so the only legal shape out of crate
-    /// is *start from `default()` and assign*. Assigning after `default()` is
-    /// what `clippy::field_reassign_with_default` complains about, which is why
-    /// the binding is `let mut options` on its own line rather than a struct
-    /// expression: the lint is about the pattern that *looks like* a struct
-    /// literal and is not, and `#[non_exhaustive]` makes the real literal
-    /// illegal here.
     fn extract_options(&self) -> ExtractOptions {
         let mut options = ExtractOptions::default();
         options.word_gap_ratio = self.word_gap_ratio;
@@ -74,67 +47,6 @@ impl SettingsExt for Settings {
     }
 
     /// **Every editing session in the application starts here.**
-    ///
-    /// # The finding this exists for, and it is the defect this module was
-    /// written to prevent — one channel later
-    ///
-    /// This module's header enumerates the three **option structs** that
-    /// silently discard the operator's configuration, and
-    /// [`tests::no_call_site_builds_its_own_options`] parses every file in the
-    /// crate to keep them funnelled. All of that was correct and all of it was
-    /// blind to a fourth channel: a setting applied by a **method on the
-    /// session** rather than by a field on an options struct.
-    ///
-    /// `Settings::quad_point_order` is one such. `EditSession::new(doc)` takes
-    /// the engine's default; nothing here called `set_quad_point_order`; so an
-    /// operator who chose *counterclockwise* in Settings > Saving got reading
-    /// order in every markup annotation this shell has ever authored. The
-    /// engine had already found the same defect on its own side and shipped
-    /// the setter to fix it, with the sentence this shell should have read:
-    ///
-    /// > **A setting is a promise.** Storing one that does nothing breaks it
-    /// > silently, which is worse than not offering the choice.
-    ///
-    /// ⇒ The lesson is about the SHAPE of the guard, not about this field.
-    /// A funnel keyed on *constructors* cannot see a setting delivered by a
-    /// setter, and the check that enforced it reported green throughout. The
-    /// check now forbids `EditSession::new` outside this file for exactly that
-    /// reason — see its own doc comment.
-    ///
-    /// # What it applies, and what it deliberately does not
-    ///
-    /// **Every `Settings` member `EditSession` has a setter for**, which today
-    /// is `quad_point_order`, `widget_tab_tail` and `tab_row_tolerance`. The
-    /// rest of `EditSession`'s setters take their operand from a gesture, not
-    /// from the configuration, and do not belong to a session's opening.
-    ///
-    /// ⚠ This paragraph read *"`quad_point_order`, and nothing else, because
-    /// that is the only member of `Settings` with a session-level setter"*, and
-    /// backed it with a setter count. Both halves went stale together: the
-    /// engine grew the two `/Tabs` settings, the count went from fifteen to
-    /// twenty-nine, and the two controls in Settings › Forms were stored and
-    /// never reached a session — so an operator who chose a `/Tabs` tail rule or
-    /// widened the row tolerance got the engine's default in the very tab ring
-    /// he set them for. `check-settings-funnel.py` derives the pairs from the
-    /// pinned engine's own source rather than from a sentence here.
-    ///
-    /// `set_tab_row_tolerance` clamps to a range and rejects a non-finite
-    /// value, so the setter is also the only honest way in: assigning the field
-    /// would skip a guard the engine wrote for a real failure, since a `NaN`
-    /// tolerance makes no two annotations ever share a row.
-    ///
-    /// # What the setting actually changes, so the disclosure can be honest
-    ///
-    /// Only the `/QuadPoints` **array**. The baked `/AP` appearance stream is
-    /// byte-identical under both orders, so no reader that honours the
-    /// appearance can tell — it changes what a consumer that re-derives
-    /// geometry from `/QuadPoints` sees, which is exactly the population
-    /// §12.5.6.10's ambiguity is about. Getting it wrong draws a bow-tie.
-    ///
-    /// Existing annotations are **not** rewritten: this governs what the
-    /// session authors from now on. A preference change is not an edit, and
-    /// sweeping a document because a setting moved is the unrequested
-    /// normalisation `ARCHITECTURE.md` §5 forbids.
     fn open_session(&self, doc: pdfcer_core::document::Document) -> pdfcer_core::edit::EditSession {
         let mut session = pdfcer_core::edit::EditSession::new(doc);
         session.set_quad_point_order(self.quad_point_order);
@@ -144,32 +56,6 @@ impl SettingsExt for Settings {
     }
 
     /// Every rasterisation in the application starts here.
-    ///
-    /// # What it applies, and one deliberate absence
-    ///
-    /// **Every member of `Settings` that `RenderOptions` has a builder for.**
-    /// Stated against the two types on purpose: this heading read *"Five
-    /// settings"* while the chain assigned six, and four more were offered in
-    /// Settings › Colour, written to the settings file, and discarded by
-    /// every rasterisation the shell had ever done. The count was wrong before
-    /// those four existed and nothing failed either time, which is why the
-    /// guarantee lives in `tools/gates/check-settings-funnel.py` and not in
-    /// this sentence.
-    ///
-    /// **Annotation scope is NOT set here**, and that is the absence worth
-    /// stating. Whether annotations are drawn is a property of *what is being
-    /// rendered for* — the canvas draws them, a print job may not, an export
-    /// may be asked either way — and it is passed at the call site. Folding it
-    /// in here would give the canvas and the print preview one answer, which is
-    /// the opposite of what they need.
-    ///
-    /// # `missing_as` reaches paper, not just the screen
-    ///
-    /// It decides what a form control with no stated appearance state looks
-    /// like, and the print path renders through this same function. An
-    /// operator checking a form before printing it is exactly who that setting
-    /// is for, which is why its radius line is the only one that separately
-    /// names printing.
     fn render_options(&self) -> RenderOptions {
         RenderOptions::default()
             .with_cmyk_intent(self.cmyk_intent)
@@ -242,32 +128,6 @@ mod tests {
     use super::*;
 
     /// **A fresh install opens on *Match other PDF viewers*.**
-    ///
-    /// `OPERATOR_REQUESTS.md` **O52**, and it is the assertion that says the
-    /// operator got what he asked for rather than that a function exists.
-    ///
-    /// It asserts on the value a fresh install actually receives — the
-    /// engine's default put through `colour_default` — which is the only claim
-    /// worth making while two crates disagree about what the default is. A test
-    /// that checked `Settings::default()` would be testing `pdfcer-core`, and a
-    /// **This test outlived the function it was written for, and that is
-    /// the point rather than an accident.**
-    ///
-    /// It was written on 2026-08-28 against `app::settings::colour_default`, a
-    /// three-line seed this shell carried because `pdfcer-core`'s default was
-    /// still `NeutralBlack` and O52 had reversed the operator's earlier ruling.
-    /// That function shipped with a `debug_assert_ne!` tripwire whose message
-    /// said *"delete it and its call site"*.
-    ///
-    /// **`Pass 153.0` landed the same day and the tripwire fired.** The seed is
-    /// gone, its call site is gone, and this assertion now reads the engine
-    /// directly — which is what it was always about. What the operator asked
-    /// for was *"a fresh install opens on Match other PDF viewers"*, and that
-    /// claim is worth a test whichever crate is responsible for making it true.
-    ///
-    /// ⇒ A test written against a temporary mechanism should assert the
-    /// **outcome**, not the mechanism. This one did, so removing the mechanism
-    /// cost one line.
     #[test]
     fn a_fresh_install_matches_other_viewers() {
         use pdfcer_core::settings::CmykIntent;
@@ -281,11 +141,6 @@ mod tests {
     use std::path::Path;
 
     /// A `Settings` whose every funnelled field differs from its default.
-    ///
-    /// `Settings` is `#[non_exhaustive]`, so a struct expression is illegal out
-    /// of crate and this is the only shape available: start from the default
-    /// and assign. That is also exactly what the funnel's own implementations
-    /// have to do, so the awkwardness is shared rather than incidental.
     fn every_field_moved() -> Settings {
         let mut s = Settings::default();
         s.word_gap_ratio = 0.42;
@@ -303,18 +158,6 @@ mod tests {
     }
 
     /// **The session funnel applies the operator's quad-point order.**
-    ///
-    ///
-    /// It asserts **both** values, and that is not symmetry for its own
-    /// sake. Asserting only `Counterclockwise` would pass on an implementation
-    /// that hard-coded it, which is the same defect wearing the other value;
-    /// asserting only the default would pass on the broken build this replaced.
-    /// The pair is what makes it a test of the *wire* rather than of a value.
-    ///
-    /// The document is the blank template rather than a fixture from disk,
-    /// because the subject is the session's configuration and not its content —
-    /// and a test that read a file would fail for reasons that have nothing to
-    /// do with what it asserts.
     #[test]
     fn the_session_funnel_applies_the_operators_quad_point_order() {
         use pdfcer_core::settings::QuadPointOrder;
@@ -338,17 +181,6 @@ mod tests {
     }
 
     /// **The regression test for the defect this module exists to prevent.**
-    ///
-    /// Nine of thirteen settings in the old shell were persisted, shown, edited
-    /// and never read. This asserts that every field the funnel is responsible
-    /// for actually reaches the option struct it belongs to — for all ten of
-    /// them at once, from one non-default `Settings`.
-    ///
-    /// It compares against the value **set**, not against a hard-coded
-    /// expectation, so it cannot go stale if an engine default moves. And it
-    /// asserts each field individually rather than comparing whole structs,
-    /// because a whole-struct comparison would need a second construction and
-    /// would then be asserting that two copies of the same code agree.
     #[test]
     fn every_setting_reaches_the_options_it_configures() {
         let s = every_field_moved();
@@ -405,13 +237,6 @@ mod tests {
     }
 
     /// The default settings produce the engine's own defaults, unchanged.
-    ///
-    /// The other half of the property, and not a tautology: a funnel that
-    /// accidentally *forced* a value — say by writing `MaskResample::Nearest`
-    /// as a literal instead of reading the field — would pass the test above
-    /// whenever the operator happened to want that value, and would pin the
-    /// application to one answer forever. This catches it by asserting the
-    /// funnel is transparent when it has nothing to say.
     #[test]
     fn default_settings_change_nothing_about_the_engines_own_defaults() {
         let s = Settings::default();
@@ -512,17 +337,6 @@ mod tests {
 
             /// Skip a `#[cfg(test)]` **function**, for the module rule's
             /// reason and not as a widening of it.
-            ///
-            /// A test-gated free function compiles to nothing in a release
-            /// build, exactly as a test-gated module does, and this crate has
-            /// two of them — `app::state::open_fixture` and its sibling — which
-            /// exist so a dozen test modules share one way of opening a
-            /// fixture. They were found by this check the moment
-            /// `EditSession::new` joined the forbidden list, which is the check
-            /// working: the *reason* they are allowed is the one already
-            /// written for modules, and it had simply never been reachable
-            /// before, because no forbidden constructor had ever appeared
-            /// outside a `mod tests`.
             fn visit_item_fn(&mut self, node: &'ast syn::ItemFn) {
                 let is_test_only = node.attrs.iter().any(|a| {
                     a.path().is_ident("cfg") && a.to_token_stream_string().contains("test")
@@ -964,26 +778,6 @@ mod tests {
     /// **Every export and every print renders the document's real widths,
     /// while the canvas is showing hairlines** — O137, asserted rather than
     /// promised.
-    ///
-    /// # The vacuous shape this deliberately avoids
-    ///
-    /// A test that "exports are unaffected" passes trivially if it never turns
-    /// the mode on. So this turns it on — through the real
-    /// [`crate::viewer::ViewState`], on a real opened document — and then asks
-    /// the **funnel** what an export would be given. The funnel is what
-    /// `app::actions::export`, `dialogs::print`, `clipboard::place` and
-    /// `panels::pages::thumbnails` all build from, so one assertion covers
-    /// every one of them without four copies that could each be got wrong.
-    ///
-    /// The companion assertion is the load-bearing one: the same document's
-    /// **canvas** request must carry `Hairline` at the same moment, and its
-    /// render key must agree with it. Without those this test would also pass
-    /// on a build where the feature does nothing at all.
-    ///
-    /// It also runs the two builders the print and export paths actually
-    /// chain onto the funnel's output — `with_annotation_scope` and
-    /// `with_backdrop` — because a builder that reset the field would defeat
-    /// everything above and is invisible from this side otherwise.
     #[test]
     fn every_export_path_renders_real_widths_with_line_weights_off() {
         use pdfcer_render::font::StrokeDisplay;

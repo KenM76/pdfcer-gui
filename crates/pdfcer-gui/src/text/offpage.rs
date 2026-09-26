@@ -282,10 +282,6 @@ mod tests {
 
     /// The progress line names the page being WORKED ON, not the count
     /// already done.
-    ///
-    /// Falsified per clause, on the boundary that matters: before any page has
-    /// been checked the line must say page **1**, not page 0 and not page 2.
-    /// A one-off here is the kind of defect nobody reports and everybody sees.
     #[test]
     fn the_progress_line_counts_from_one_and_never_overshoots() {
         assert!(
@@ -307,10 +303,6 @@ mod tests {
 
     /// The undo note states the number of steps, because the number is the
     /// whole disclosure.
-    ///
-    /// "Undo takes these back one page at a time" without a count leaves the
-    /// operator pressing `Ctrl+Z` an unknown number of times; the count is what
-    /// turns the sentence into an instruction.
     #[test]
     fn the_undo_note_carries_the_step_count() {
         let note = marked_undo_note(4);
@@ -319,10 +311,6 @@ mod tests {
     }
 
     /// The recovered string is what the row LEADS with.
-    ///
-    /// This is the module header's whole argument, asserted rather than
-    /// described: an operator who reads "3 objects" shrugs, and one who reads
-    /// the words on the off-page note does not.
     #[test]
     fn a_row_for_off_page_text_quotes_the_text_before_anything_else() {
         let row = object_row("text", OffPage::Fully, Some("SUPERSEDED"));
@@ -351,10 +339,6 @@ mod tests {
     }
 
     /// The two placements do not describe each other.
-    ///
-    /// Falsified per clause: this asserts that *fully* does not carry the word
-    /// the *partial* sentence turns on, and the reverse. An `||` across the pair
-    /// would assert neither.
     #[test]
     fn the_two_placements_are_told_apart_by_their_own_words() {
         let fully = placement_word(OffPage::Fully);

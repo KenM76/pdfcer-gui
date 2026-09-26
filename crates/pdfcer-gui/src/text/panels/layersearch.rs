@@ -142,10 +142,6 @@ mod tests {
     }
 
     /// **A query with quotation marks or punctuation survives verbatim.**
-    ///
-    /// The sentence uses typographic quotes precisely so that a query
-    /// containing a straight `"` does not close the quotation early and
-    /// read as a different string from the one typed.
     #[test]
     fn a_query_containing_quotes_is_still_shown_as_typed() {
         let line = none_matched("say \"hi\"", 4);
@@ -179,10 +175,6 @@ mod tests {
     }
 
     /// **The field's tooltip states what is matched.**
-    ///
-    /// Decision 1 (names only, never state) is invisible to an operator
-    /// until they type `hidden` and are surprised. This is the one place it
-    /// is said, so it is the one place a test can hold it.
     #[test]
     fn the_field_tooltip_says_it_matches_the_name() {
         assert!(

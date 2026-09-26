@@ -25,6 +25,8 @@
 //! **authored value**, `pdfcer-core`'s own `DimensionKind`. Nothing here
 //! computes a centre, a radius or a residual. What it owns is *composition*:
 //! which points are in the set and how they get in and out.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/canvas/measure/circpick.md`.
 
 use pdfcer_core::dimension::{DimensionKind, FitCircle, fit_circle_taubin};
 use pdfcer_core::vector::Point;
@@ -266,11 +268,6 @@ mod tests {
 
     /// **A zero or non-finite tolerance ADDS rather than silently eating
     /// the point.**
-    ///
-    /// The degenerate-mapping case, and the direction of the failure is the
-    /// whole point: a tool that stopped accepting points would look broken, and
-    /// a tool that accepted them and removed something else would be worse —
-    /// the operator would watch their set shrink as they clicked.
     #[test]
     fn a_degenerate_removal_radius_never_removes() {
         let mut cp = CircularPick::new();
@@ -297,12 +294,6 @@ mod tests {
 
     /// **The origin is carried, because a free position and a snapped node
     /// are not the same evidence.**
-    ///
-    /// The disclosure `OPERATOR_REQUESTS.md` O106 rests on: five free positions
-    /// and five snapped nodes produce the same numbers, and only one of the two
-    /// is the drawing's own geometry. The canvas does not distinguish them —
-    /// rule 4 forbids marking applied content — so this value is the only thing
-    /// the Tool panel has to tell the operator with.
     #[test]
     fn a_picks_origin_survives_into_the_set() {
         let mut cp = CircularPick::new();

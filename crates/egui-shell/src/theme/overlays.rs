@@ -115,6 +115,8 @@
 //! rather than as "trivially distinct from everything". A test that
 //! passes because both of its role names were misspelled is worse than no
 //! test.
+//!
+//! Design and rationale: `docs/modules/egui-shell/theme/overlays.md`.
 
 use egui::Color32;
 use std::collections::BTreeMap;
@@ -303,10 +305,6 @@ mod tests {
 
     /// **Distinct roles pass; merged roles fail, and the failure names
     /// both.**
-    ///
-    /// The message is the deliverable: "two roles collided" sends the
-    /// reader back to work out which two, on a preset with a dozen of
-    /// them.
     #[test]
     fn merged_roles_are_refused_and_both_are_named() {
         let ok = sample();
@@ -326,13 +324,6 @@ mod tests {
 
     /// **An undefined role fails the check rather than passing it
     /// vacuously.**
-    ///
-    /// This is the difference between a gate and a decoration. If unknown
-    /// roles were treated as trivially distinct, a check whose role names
-    /// were both misspelled — or whose roles were renamed in the palette
-    /// and not in the test — would go green forever while measuring
-    /// nothing. The salvage source's whole family of "green is not
-    /// evidence" lessons is this same failure in other clothes.
     #[test]
     fn an_undefined_role_fails_rather_than_passing_vacuously() {
         let err = sample()

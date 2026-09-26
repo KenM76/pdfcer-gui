@@ -87,11 +87,6 @@ mod tests {
     use crate::canvas::deleting::Refusal;
 
     /// Every sentence this catalogue offers is finished English prose.
-    ///
-    /// Not a formatting nicety: `check-string-gaps.sh` exists because a lost
-    /// line-continuation backslash bakes six spaces into the middle of a
-    /// wrapped literal, and the result *looks deliberate in the diff and wrong
-    /// in the window*. The gate greps the source; this asserts the value.
     #[test]
     fn every_sentence_is_finished_prose_with_no_baked_gap() {
         for reason in [
@@ -114,12 +109,6 @@ mod tests {
     }
 
     /// **No sentence may say "dimension"** — R8b Rule 15, mechanically.
-    ///
-    /// The project has been corrected on this once already. A *pdf dimension*
-    /// is page content pdfcer reads; a *ce dimension* is what pdfcer authors;
-    /// and a bare "dimension" on an operator-facing surface is ambiguous
-    /// between the two at exactly the moment the operator is deciding whether
-    /// their drawing is about to be altered. The word on screen is "label".
     #[test]
     fn no_sentence_writes_a_bare_dimension() {
         for reason in [

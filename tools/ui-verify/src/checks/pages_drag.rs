@@ -16,48 +16,22 @@ use crate::report::CheckReport;
 const MODE: &str = "review";
 /// The grid inside the panel — the region every tile is laid out in, and the
 /// one this check aims within.
-///
-/// The panel's own `panel-pages` region is deliberately not used: it includes
-/// the header, the previews checkbox and the slow-page note, so a caret
-/// "inside the panel" would be a weaker claim than a caret inside the grid.
 const GRID: &str = "panel-pages-grid";
 /// The prefix of the per-tile regions.
 const TILE: &str = "panel-pages-tile.";
 /// The insertion caret's region.
 const CARET: &str = "panel-pages-drop-caret";
 /// The trace events the gesture emits.
-///
-/// `page-drag-start`, **singular**, and the name is not the panel's. The drag
-/// lives in `crate::pagedrag`, shared with the page view and with the document
-/// tab strip, because a drag that crosses documents cannot be owned by the
-/// panel it started in. So it is *a page drag*, not *the pages panel's drag*.
-///
-/// **A harness constant naming an application event is a coupling, and it
-/// decays silently in exactly one direction: absence reads as failure.** A
-/// check holding the stale spelling reports *"the tile does not sense a drag"*
-/// over a build whose trace carries the line two names away — a confident,
-/// specific, entirely wrong defect report about working code.
 const DRAG_START: &str = "page-drag-start";
 /// See [`DRAG_START`].
 const DRAG_RELEASE: &str = "pages-drag-release";
 /// The label `vector_edit` traces when `reorder_pages` succeeded.
 const REORDERED: &str = "reorder-pages";
 /// The fewest pages this check can say anything with.
-///
-/// Three. With two, every landing is the block's own lip and the correct
-/// answer to a drag is *refuse*, so a run on a two-page fixture cannot
-/// distinguish a working gesture from a dead one.
 const MIN_PAGES: usize = 3;
 
 /// How far across the landing tile the pointer is released, as a fraction of
 /// its width.
-///
-/// Three-quarters, not the right edge. The panel resolves the **nearer**
-/// vertical edge, so anything past the midpoint means the same boundary — and
-/// a point exactly ON the edge is the one place a rounding difference between
-/// the application's `f32` rectangle and this harness's reading of it could
-/// flip the answer. Three-quarters is unambiguous and still inside the tile,
-/// which is what makes the drop target resolve at all.
 const LAND_ACROSS: f32 = 0.75;
 
 /// See the module documentation.

@@ -80,3 +80,149 @@ Nothing here marks the canvas, and nothing here can. Every disclosure a
 press causes — a synthetic weight, a real face substituted, a colour space
 narrowed — is raised by `app::actions::textstyle` into the status bar. The
 restyled text renders exactly as the saved file will render it.
+
+## Item notes
+
+### `const FACE_WIDTH`
+
+Chosen against `egui_shell::ribbon::plan::CUSTOM_ITEM_WIDTH`, which is
+**96** and is what the band budgets for a custom item it cannot measure.
+That module's header is explicit about the asymmetry: *"an estimate that is
+too small costs a clipped group; it cannot cost the overflow control"* — so
+drawing wider than the budget is not a crash, it is a group that gets cut
+off at the right edge under width pressure, which is a defect the operator
+sees and cannot explain.
+
+So the three controls here are sized to fit **inside** the budget rather
+than to look comfortable: this one plus its frame padding is the widest,
+and it is the one that had to give. A `/BaseFont` is routinely thirty
+characters (`ABCDEF+HelveticaNeueLTStd-Md`), so it would be truncated at any
+width that fits on a ribbon; `shorten` takes the subset tag off and the
+combo elides the rest, and the Properties panel is where the full name is
+legible.
+
+### `fn report_enablement`
+
+# Two numbers, because this module greys on the SECOND one
+
+`enabled` is the registered command's own predicate — the thing every other
+control on the band is greyed by, and the thing the condition tests assert.
+`live` is `resolved(doc, draft).is_some()`, a read-back that runs a text
+extraction with provenance capture (392 ms on the operator's benchmark
+sheet), and it is what actually reaches `add_enabled_ui` eleven lines above.
+
+So `enabled=1 live=0` is **a control greyed while every condition in the
+shell says it should not be**, and there is no other line in the trace from
+which that state can be inferred: the rect report says the control drew, the
+condition report says the condition holds, and the control is grey. It is
+the precise shape of `OPERATOR_REQUESTS.md` O198 claim 3 — *"that entire
+area is always greyed out in the menu"* — reported about a build whose
+every condition test passes, and until 2026-09-14 nothing outside this
+process could see it.
+
+Emitted under [`egui_shell::ribbon::report::ENABLEMENT_EVENT`], the same
+event name the shell's own command controls use, so **one grep finds all
+five of the Font group's controls** even though two of them are rendered by
+`egui-shell` and three by this module. The prefix differs (`pdfcer-diag`
+against `egui-shell-diag`) because the two crates have separate trace
+channels; the event token, which is what a check greps for, does not.
+The `live=` field is additive, so a consumer reading only `id=` and
+`enabled=` is unaffected by it.
+
+**Keyed per id, valued on the two numbers.** That is why the id goes in
+the KEY rather than the value: [`crate::diag::trace_on_change`] suppresses a
+repeat of the same value under the same key, and these three controls draw
+one after another in the same frame. One shared key would see three
+different values every frame and emit every one of them, sixty times a
+second, which is the failure that function exists to prevent.
+
+### `fn command_for`
+
+One place, so that the kind → id mapping cannot be spelled one way in the
+renderer and another in `manifest::CUSTOM_BACKED` — which is the register
+that keeps these three from looking like orphaned commands to the
+reachability check, and which is asserted against the manifest rather than
+against this function.
+
+### `fn resolved`
+
+It asks the **same** questions `panels::properties::text::section` asks,
+in the same order: an operand resolves, and its first run pins. A control
+that used a looser test would be live at exactly the moment pressing it
+declined, which is the disagreement `selection.bounds` was invented to
+prevent for zoom-to-selection.
+
+The `selection.text_runs` condition already covers the first of those, and
+this re-asks it anyway: a condition is a hint published for the ribbon's
+benefit, and it is evaluated a frame's worth of state earlier than the
+draw. Only the second — does the run pin? — is genuinely new information,
+and it is the one that cannot be published as a condition because answering
+it costs 392 ms.
+
+⚠ `&mut TextStyleDraft` is load-bearing twice over now: the draft holds
+the per-run read-back AND the stamped memory of the object rung, which is
+what keeps a per-frame call off the 392 ms path. See
+`crate::app::textoperand::Cache` for why that storage lives on the draft
+the two font surfaces share rather than in the resolver.
+
+### `fn face`
+
+**No label beside it.** The group's caption already says *Font*, the
+control shows the current face, and Word's own font-name box carries no
+label for the same two reasons. A label here would be the third occurrence
+of the word within one inch of ribbon.
+
+# The popup body is NOT written here, and that is the point
+
+
+Adding all of that twice is how *"a face offered in one surface and not the
+other"* happens, which this project has found more than once. So both
+surfaces call [`crate::panels::properties::face::popup_body`], and this
+function keeps only what is genuinely the ribbon's: the width, the
+placeholder for a greyed control with no value, and parking the result as a
+[`StyleChange`] rather than raising an [`crate::app::actions::Action`].
+
+### `fn size`
+
+Committed on `drag_stopped` or `lost_focus`, **never** on `.changed()`,
+for the reason the Properties panel's twin gives: each commit is a
+content-stream rewrite and one undo entry, so committing on change would
+author an edit per pixel of drag and leave a `Ctrl+Z` stack an operator
+could not get back through.
+
+### `fn colour`
+
+# Why a run painted in CMYK greys rather than showing its nearest RGB
+
+A swatch showing DeviceCMYK ink as its nearest sRGB would write that sRGB
+back on the next press, moving the run out of its original space for ever —
+on a document heading for a printer that cares. `pdfcer-core` deliberately
+stores the space it was given instead of force-converting to DeviceRGB the
+way Acrobat does, and a control that undid that on the operator's behalf
+would make the engine's care pointless.
+
+The panel says so in a sentence (`text_colour_not_plain`). A ribbon band has
+no room for a sentence, so the same fact is carried by a **greyed swatch
+with that sentence on hover**, which is R9's shape exactly: temporarily
+unavailable, explained on hover, and the explanation is the real reason
+rather than a generic one.
+
+### `fn every_font_kind_in_the_register_is_drawn_by_this_module`
+
+The assertion that closes the gap `COLOUR_SWATCH`'s own doc comment
+records: the manifest wrote a custom kind, **no renderer ever matched
+it**, and the Markup ▸ Style group drew a caption over an empty band
+for the whole of v0.1.0 with nothing anywhere reporting the mismatch.
+The shell reserves the item's space, the application declines to draw,
+and the only symptom is a gap.
+
+It is asserted through `manifest::CUSTOM_BACKED`, which is the register
+that already pairs a command id with the kind that draws it and is
+already tested against the manifest in both directions. Reading it here
+makes the chain complete: manifest → register → renderer → registry.
+
+### `fn this_module_draws_exactly_the_three_font_kinds`
+
+A fourth kind added here and not to the manifest is a renderer arm
+nothing can ever reach; a fourth added to the manifest and not here is
+the empty-band defect above. Only an equality catches both.

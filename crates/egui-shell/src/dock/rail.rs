@@ -87,6 +87,8 @@
 //! not visibility. The response here is that **which rows exist at which
 //! budget is decided by a function a test can call**, and separately that the
 //! application publishes its rows through `ui_rect_visible`.
+//!
+//! Design and rationale: `docs/modules/egui-shell/dock/rail.md`.
 
 use egui::{Layout, Rect, UiBuilder};
 
@@ -289,16 +291,6 @@ impl RailPlan {
 }
 
 /// The visible command ids of one group, after `visible_when` is applied.
-///
-/// Filtering happens **before** the ladder runs, exactly as
-/// [`crate::ribbon::trailing`] filters before it measures, and for the same
-/// reason: a hidden item that was counted would make the rail fold a group to
-/// make room for a control nobody can see.
-///
-/// This is where **mode gating** lands. An entry marked
-/// `visible_when("mode.edit_content")` is, in a mode that does not set that
-/// condition, not in this list, not measured and not folded — it is simply
-/// absent, which is R9: *an unavailable capability renders nothing.*
 fn visible_ids(items: &[Item], conditions: &ConditionSet) -> Vec<String> {
     items
         .iter()
@@ -912,10 +904,6 @@ mod tests {
     // ---------------------------------------------------------------------
 
     /// **Read drops Points**, and it is absent rather than folded.
-    ///
-    /// R9: an unavailable capability renders nothing. Folding it would put it
-    /// behind the chevron, where the operator could reach a control the
-    /// mode's own dispatch refuses.
     #[test]
     fn read_mode_drops_the_points_tool_entirely() {
         let rail = pdfcer_rail();
@@ -970,10 +958,6 @@ mod tests {
     // ---------------------------------------------------------------------
 
     /// **The width is the same constant at every rung and every budget.**
-    ///
-    /// The R128 argument in a test: nothing about the content, the rung, the
-    /// number of folded entries or the length of a caption can move it. A
-    /// build that sized the rail from its widest word would fail here.
     #[test]
     fn the_width_is_constant_at_every_rung_and_every_budget() {
         let mut rail = pdfcer_rail();

@@ -77,3 +77,28 @@ undo.
   preview would be the right thing eventually. It is left out today rather
   than done badly: a tint that appeared on any hover, including over a
   document that cannot take the file, would promise a drop that then refused.
+
+## Item notes
+
+### `const IMAGE_EXTENSIONS`
+
+Kept in step with `app::files::pick_image_source`'s filter **by this
+comment and a test**, not by sharing a constant, because the two lists mean
+different things: that one is what the OS dialog shows, this one is what a
+drop is willing to try. They happen to be equal and should stay equal, and a
+shared constant would hide the day they legitimately diverge (a format
+`image_import` reads but the picker does not advertise).
+
+### `fn the_extension_is_matched_without_regard_to_case`
+
+A camera writes `IMG_0001.JPG`; a scanner writes `.TIF`. Both are what an
+operator actually drags, and both would fall to `Unknown` under a
+case-sensitive compare — producing the message *"pdfcer does not accept
+.JPG files"*, which is both wrong and insulting.
+
+### `fn the_drop_list_matches_what_the_picker_offers`
+
+They are two lists in two files, and this is the test that stops them
+drifting — the day someone adds `webp` to the file dialog and an operator
+discovers that the format they can *choose* is one they cannot *drop*.
+The module's own comment says why they are not one constant.

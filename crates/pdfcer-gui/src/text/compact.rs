@@ -163,11 +163,6 @@ mod tests {
 
     /// **A file with nothing to reclaim is told so, and is not told a
     /// number.**
-    ///
-    /// The failure this guards is *"this will save 0 KB"*, which is accurate and
-    /// reads as the feature failing. It is also the case a rewrite can come out
-    /// LARGER — §7.5.4's table pays for gaps in object numbering — so a sentence
-    /// built from a subtraction would underflow or print a negative saving.
     #[test]
     fn a_tidy_file_is_told_it_is_tidy() {
         for (before, after) in [(1000_u64, 1000_u64), (1000, 1200)] {
@@ -181,10 +176,6 @@ mod tests {
     }
 
     /// **The signature sentence says the loss cannot be repaired.**
-    ///
-    /// Every other disclosure in this shell describes something an operator can
-    /// undo or redo. This one cannot, and the word that says so is the whole
-    /// difference between a warning and a note.
     #[test]
     fn the_signature_warning_says_it_is_irreversible() {
         let line = signature_line(2);

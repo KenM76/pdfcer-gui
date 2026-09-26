@@ -14,71 +14,21 @@ use crate::report::CheckReport;
 use crate::sys::vk;
 
 /// Review mode, with the Properties panel put on screen.
-///
-/// `file.properties` is the command that mounts and activates the panel from
-/// any arrangement — `app::PdfcerApp::show_panel` mounts it first if the
-/// operator's saved layout no longer holds it — so the check does not have to
-/// know what dock layout the machine it runs on happens to have persisted.
 const INVOKE: &str = "mode.review,file.properties";
 /// The certified fixture. See the module header and
 /// `tools/gen-certified-fixture.py`.
-///
-/// **Relative to `CARGO_MANIFEST_DIR`, which is `tools/ui-verify`** — so
-/// two levels up, not three. Written as `../../../fixtures/…` when this check
-/// was authored, which resolves to `D:/Dev/fixtures/…`: a directory that does
-/// not exist and never will. The `pdf.exists()` guard below turned that into a
-/// SKIP whose message told the reader to run the generator, and the generator
-/// writes to `fixtures/` in *this* repository — so the check could not pass on
-/// any build, and its reason for not passing pointed at a fix that could not
-/// work. `reflow`, `text_edit` and `signature_save` all use `../../fixtures/`;
-/// that is the convention, and this is the only file that departed from it.
 const CERTIFIED: &str = "../../fixtures/certified-comments.pdf";
 /// The same document with the certification removed.
 const ORDINARY: &str = "../../fixtures/threaded-comments.pdf";
 /// The line the canvas writes when a click selects an annotation.
 const SELECT_EVENT: &str = "annot-select";
 /// The per-frame census `panels::properties::annotdelete` writes.
-///
-/// The verb suffix is not decoration: `tools/gates/check-trace-names.py`
-/// forbids a module's own summary line from sharing its first token with a
-/// `vector_edit` funnel label, and `delete-annotation` is such a label. A
-/// harness asking `last("delete-annotation")` would get the funnel's line
-/// instead — `page`, `n`, `epoch`, `disclosures`, and none of the keys read
-/// below. That confusion has produced a confident false negative on this
-/// project three times.
 const GATES_EVENT: &str = "annot-delete-gates";
 /// The line `canvas::keys` writes when the Delete rung declines.
 const DECLINED_EVENT: &str = "canvas-delete-declined";
 /// The **funnel's** own line for a delete that reached the engine.
-///
-/// Asserted **absent** in phase D. Its presence would mean the gate let the
-/// action through and the engine refused it — which is the pre-fix behaviour
-/// exactly, and which no region assertion above would catch, because the panel
-/// would still have drawn its sentence on the frames before the press.
 const FUNNEL_EVENT: &str = "delete-annotation";
 /// The **funnel's refusal** line — the one the pre-fix build actually wrote.
-///
-/// `app::actions::apply::vector_edit` writes `<label>` on success and
-/// `<label>-refused` on an `Err`, and it is the second that a Delete which
-/// walked past the gate produces on a certified document: the ladder raised
-/// `AnnotAction::Delete`, `EditSession::delete_annotation` refused it, and this
-/// line went to the trace **and nothing went to the operator**.
-///
-/// Reading it is what turns phase D from an accusation into a diagnosis. A
-/// phase that does not read it reports *"the keystroke did not reach
-/// `canvas::keys` at all — check that the canvas had focus"* over a trace
-/// carrying this very line four rows above the region it goes on to read: the
-/// key arrived, was processed, and was silently refused. The failure hiding
-/// behind that wording has nothing to do with focus —
-/// `canvas::keys::Keys::annot_delete_refused` stuck at `false`. That is why
-/// `canvas::interact` passes the selection in explicitly
-/// (`annotdelete::refuses(doc, &selection)`) rather than letting the helper
-/// re-read `doc.selection`, which by that point in the frame has already been
-/// moved off the document.
-///
-/// **A check that reads only the line it hopes for can only say *"nothing
-/// happened"*.** Naming the line that means *"the wrong thing happened"* is
-/// what lets it say which.
 const FUNNEL_REFUSED_EVENT: &str = "delete-annotation-refused";
 /// The refusal sentence's region, published only when a gate refuses.
 const REFUSED_REGION: &str = "properties.annot_delete.refused";
@@ -88,16 +38,6 @@ const COLLATERAL_REGION: &str = "properties.annot_delete.collateral";
 const PAGE_REGION: &str = "page";
 
 /// The square's `/Rect` centre, in PDF user space on page 1.
-///
-/// Derived from `SQUARE_RECT` in `tools/gen-certified-fixture.py`
-/// (`[120 560 320 700]`), and stated as a point rather than as a page fraction
-/// — unlike most checks in this suite, which place their own operand and can
-/// therefore choose a fraction. Here the operand is **in the fixture**, so the
-/// aim has to be where the fixture put it. **An assertion that checks a
-/// relation rather than a magnitude is satisfied by any absurdity in the right
-/// direction**, and that applies here from the other side: phase B asserts that
-/// the click actually selected the square *by object id*, so a click that
-/// missed reports as a miss rather than as a broken gate.
 const SQUARE_CENTRE: DocPoint = DocPoint {
     page: 0,
     x: 220.0,
@@ -130,12 +70,6 @@ impl Check for ACertifiedDocumentWithholdsAnnotationDelete {
 
 /// One launch: open `fixture`, click the square, and return the gate census's
 /// `refused` flag together with whether each region was declared.
-///
-/// Factored because phases A–C and phase E are the **same** sequence against
-/// two files, and the whole value of the pair is that they were driven
-/// identically. Two hand-written copies would eventually differ in a settle or
-/// in an aim, and the difference would be reported as a difference between the
-/// documents.
 struct Run {
     session: Session,
     driver: Driver,
@@ -253,11 +187,6 @@ fn open_and_select(
 }
 
 /// The fixtures' page size, which both generators write as A4.
-///
-/// Stated rather than read from the file: the check is bound to fixtures it
-/// generates itself, so a page size read back from them could only ever confirm
-/// what the generator wrote — and a `--page-size` override would let a caller
-/// aim this check at a document it is not about.
 const fn page_geometry() -> PageGeometry {
     PageGeometry {
         width_pt: 595.0,

@@ -18,21 +18,6 @@ use crate::text::status as t;
 pub(super) const REGION: &str = "status-group:raster-stop"; // ui-text-exempt: trace region name, never displayed
 
 /// How close to the ceiling counts as *at* it.
-///
-/// A fraction rather than an absolute, because the ceiling varies by better than
-/// an order of magnitude across page geometries — measured at scale 284,964 on
-/// an E-size sheet against 8,053,069 on a business card — so any fixed epsilon
-/// would be meaningless at one end and a gate at the other.
-///
-/// Generous at one part in a thousand rather than tight at `f32::EPSILON`, and
-/// the asymmetry is deliberate. The clamp lands on the ceiling by way of
-/// [`crate::viewer::clamp_zoom`] and a division by `pixels_per_point`, so the
-/// stored value and the live value are the same number arrived at by two routes
-/// and need not be bit-identical. **The two errors do not cost the same**: too
-/// tight and the sentence silently fails to appear in exactly the state it exists
-/// for — a silence nobody reports, because the operator has no way to know a
-/// sentence was owed — while too loose shows it a thousandth of a percent early,
-/// which is true enough to be unnoticeable.
 const NEAR: f32 = 1e-3;
 
 /// Whether the view is sitting at this page's measured raster ceiling.
@@ -108,11 +93,6 @@ mod tests {
 
     /// The overwhelmingly common case: no page has ever refused a render, so the
     /// bar says nothing.
-    ///
-    /// The test that makes the module safe rather than the one that makes it
-    /// work. `RasterCeiling` is empty for every document except the handful
-    /// zoomed past a rasterizer wall, so a predicate that answered `true` by
-    /// accident would put a permanent, false sentence on every file's bar.
     #[test]
     fn a_document_that_has_refused_nothing_says_nothing() {
         let doc = open_doc();
@@ -120,10 +100,6 @@ mod tests {
     }
 
     /// **At the ceiling it speaks; below it is silent.**
-    ///
-    /// Both halves are asserted together because either alone is satisfied by a
-    /// constant: a predicate hard-wired to `true` passes the first and one
-    /// hard-wired to `false` passes the second.
     #[test]
     fn the_sentence_appears_at_the_ceiling_and_not_below_it() {
         let mut doc = open_doc();
@@ -145,10 +121,6 @@ mod tests {
 
     /// **It retires itself when he zooms out** — the whole reason this module
     /// needs no store and no retirement rule.
-    ///
-    /// Asserted rather than argued: "it cannot go stale" is a claim about a
-    /// mechanism that does not exist, and the only way to keep such a claim true
-    /// is to measure the condition it rests on.
     #[test]
     fn zooming_out_retires_the_sentence_with_nothing_remembering_to() {
         let mut doc = open_doc();
@@ -165,11 +137,6 @@ mod tests {
 
     /// **An edit to the page retires the sentence**, because the ceiling is keyed
     /// on the page epoch and an edit moves it.
-    ///
-    /// The invalidation rule [`crate::render::ceiling::RasterCeiling`] owns,
-    /// asserted from this side of the boundary: a reader asking with a stale
-    /// epoch — or with none — would keep the sentence on a page whose content has
-    /// been replaced, where the old measurement says nothing.
     #[test]
     fn an_edit_to_the_page_retires_the_sentence() {
         let mut doc = open_doc();
@@ -188,12 +155,6 @@ mod tests {
 
     /// **The stored value is a raster SCALE**, so the zoom that triggers the
     /// sentence halves when the display density doubles.
-    ///
-    /// The disclosure-side twin of
-    /// `viewer::ceiling::tests::the_learned_ceiling_is_a_raster_scale_and_not_a_zoom`.
-    /// Both are needed: if only one reader divided, the shell would clamp at one
-    /// zoom and explain itself at another, and on a high-DPI screen the sentence
-    /// would be a factor of two away from the number beside it.
     #[test]
     fn the_density_conversion_is_applied_here_too() {
         let mut doc = open_doc();
@@ -213,27 +174,6 @@ mod tests {
     }
 
     /// ⚠ **A nonsense display density must not switch the disclosure off.**
-    ///
-    /// A bad density makes the permitted zoom infinite, so the predicate answers
-    /// `false` forever: the sentence vanishes in exactly the state it exists for,
-    /// and the operator is back at a control that stops responding in silence.
-    /// That failure mode is **invisible** — nobody reports a sentence they were
-    /// never told was owed.
-    ///
-    /// Every row is asserted unconditionally, with no `||` anywhere: an `||`
-    /// between a measurement and an excuse (`at_the_ceiling(&doc, bad) ||
-    /// bad.is_nan()`) measures neither, and passes whatever the `NaN` case does.
-    ///
-    /// **Both directions, and the second half is not redundant.** A bad density
-    /// must not silence the sentence *and* must not conjure it; the loops falsify
-    /// different clauses of the guard:
-    ///
-    /// * the first fails under `.max(f32::MIN_POSITIVE)`, because the permitted
-    ///   zoom becomes infinite and nothing ever reaches it;
-    /// * the second fails under a guard that checks only `> 0.0` and forgets
-    ///   `is_finite`, because an infinite density makes the permitted zoom **zero**
-    ///   and the sentence then appears at every zoom on the page — worse than its
-    ///   absence, since a line that is always on stops being read.
     #[test]
     fn a_nonsense_display_density_does_not_silence_the_disclosure() {
         let mut doc = open_doc();

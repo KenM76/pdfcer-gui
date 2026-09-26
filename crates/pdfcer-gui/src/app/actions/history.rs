@@ -33,12 +33,6 @@ pub(super) enum Direction {
 
 impl Direction {
     /// What a step **would** move, without moving it.
-    ///
-    /// `EditSession::undo_kind`/`redo_kind`, which take `&self` — so this is
-    /// askable before the render worker is stopped and before `Arc::get_mut` is
-    /// attempted, which is what lets an empty stack be declined without paying
-    /// for a cancelled raster. `None` is the empty stack, and it is the same
-    /// answer `can_undo`/`can_redo` give, from the same field.
     fn peek(self, session: &EditSession) -> Option<pdfcer_core::edit::CommandKind> {
         match self {
             Self::Undo => session.undo_kind(),
@@ -65,13 +59,6 @@ impl Direction {
     }
 
     /// [`vector_edit`]'s label — the event naming what the engine did.
-    ///
-    /// Distinct from [`Self::event`] on purpose, and it is the same two-line
-    /// vocabulary `markup-commit` / `add-markup` already uses: the first line is
-    /// **the shell decided**, and carries the `CommandKind`; the second is
-    /// **the engine did it**, and carries the epoch. A harness that wants to
-    /// know whether the caches were invalidated reads the second, and a harness
-    /// that wants to know what the operator took back reads the first.
     fn applied(self) -> &'static str {
         match self {
             // ui-text-exempt: diagnostic trace, never displayed in the UI

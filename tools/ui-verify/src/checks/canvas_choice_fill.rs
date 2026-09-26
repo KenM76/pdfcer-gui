@@ -89,11 +89,6 @@ struct ChoiceBox {
 }
 
 /// Read the application's own census of where its choice boxes are.
-///
-/// The application's numbers and not the fixture's, for `tab_navigation`'s
-/// reason: a check that derived the rect from the PDF would be asserting that
-/// two independent derivations agree, and would report a disagreement between
-/// them as a broken drop-down.
 fn choice_boxes(trace: &Trace) -> Vec<ChoiceBox> {
     trace
         .events(BOX_LINE)

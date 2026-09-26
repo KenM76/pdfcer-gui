@@ -29,10 +29,6 @@ const EXIT: &str = "exit-flush";
 const CANCEL_REGION: &str = "unsaved.cancel";
 
 /// The **Save all** control, which must be ABSENT with one dirty document.
-///
-/// Its absence is an assertion, not an omission: the button is drawn if and
-/// only if more than one document is dirty, so a run with one must show no such
-/// region at all. See `dialogs::unsaved`'s `REGION_SAVE_ALL`.
 const SAVE_ALL_REGION: &str = "unsaved.save_all";
 
 /// A document with something editable on it.
@@ -294,11 +290,6 @@ mod tests {
     use super::*;
 
     /// **The two phases assert opposite things, and both are needed.**
-    ///
-    /// Phase A: a clean close must NOT be held. Phase B: a dirty close MUST be.
-    /// Either alone passes against a wrong build — A alone against one that
-    /// never asks, B alone against one that asks always — and the pair is what
-    /// pins the question as *conditional*.
     #[test]
     fn the_check_asserts_both_directions() {
         // Held is read in both phases and means opposite things in each. This
@@ -321,11 +312,6 @@ mod tests {
     }
 
     /// The check ends on Cancel, which writes nothing and destroys nothing.
-    ///
-    /// Pinned as a sentence because it is a policy rather than a mechanism: this
-    /// suite runs unattended on the operator's own machine, and a check that
-    /// ended on Save would leave a file behind while one that ended on Discard
-    /// would throw work away to prove that it could.
     #[test]
     fn the_ending_is_the_harmless_one() {
         assert!(

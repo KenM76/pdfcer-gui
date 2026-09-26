@@ -34,33 +34,12 @@ const WORD: &str = "UPWARD";
 
 /// The string's first glyph origin in PDF user space, from the fixture's own
 /// generator: `0 1 -1 0 100 300 Tm`.
-///
-/// Named rather than inlined because the two sweep points below are both
-/// derived from it, and a reader checking this check against the fixture should
-/// find the fixture's own numbers here and not two magic constants.
 const ORIGIN: (f64, f64) = (100.0, 300.0);
 
 /// How far to the left of the baseline to aim, in points.
-///
-/// **Left**, and it is the whole reason this sweep lands. For text turned 90°
-/// anticlockwise the glyph's ascender direction is page **−x**, so the ink of a
-/// letter at `x = 100` occupies roughly `x ∈ 91..103`. Aiming at the baseline
-/// itself would sit on the ink's edge; aiming to the RIGHT would be off the
-/// letter entirely, on the side where the extraction's own — axis-aligned, and
-/// wrong — glyph box lies.
-///
-/// Three points is a quarter of the 12 pt size, which is the same offset
-/// `canvas::textsel`'s unit tests use to find ink, derived the same way.
 const ASCENDER_OFFSET_PT: f64 = 3.0;
 
 /// Where along the string to start and stop, as points from the first origin.
-///
-/// The string is six capitals at 12 pt Helvetica and runs about 53 pt. Three
-/// points in is inside the first letter's front half, so the caret lands
-/// **before** `U`; fifty points in is past the last letter's midpoint, so it
-/// lands **after** `D`. Both are the ordinary caret rule and both are inside
-/// the band, which is what makes this a sweep across the word rather than a
-/// sweep that relies on a nearest-line fallback.
 const SWEEP_FROM_PT: f64 = 3.0;
 /// The far end of the sweep. See [`SWEEP_FROM_PT`].
 const SWEEP_TO_PT: f64 = 50.0;

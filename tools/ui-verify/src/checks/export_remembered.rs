@@ -62,10 +62,6 @@ use crate::trace::TraceLine;
 const INVOKE_ENV: &str = "PDFCER_DIAG_INVOKE";
 
 /// The three commands, in the order they are rung — one per frame.
-///
-/// Order is not significant here (unlike a mode-then-tool pair, where it is
-/// everything), because the three windows are independent `Option` fields on
-/// the dialog host and all three can be open at once.
 const INVOKE_LIST: &str = "file.export_image,file.export_text,file.export_dxf";
 
 /// The line the Export-image window emits once, when it is built.
@@ -78,11 +74,6 @@ const TEXT_EVENT: &str = "export-text-open";
 const DXF_EVENT: &str = "export-dxf-open";
 
 /// Each `-open` line beside the command that produces it.
-///
-/// Kept as a pair so a missing line can name the command that should have
-/// produced it. *"No `export-text-open`"* sends a reader to the dialog;
-/// *"no `export-text-open`, from `file.export_text`"* sends them to the
-/// dispatcher first, which is where a rung that never fired actually shows.
 const EVENTS: [(&str, &str); 3] = [
     (IMAGE_EVENT, "file.export_image"),
     (TEXT_EVENT, "file.export_text"),
@@ -90,13 +81,6 @@ const EVENTS: [(&str, &str); 3] = [
 ];
 
 /// The preferences file, beside the executable under test.
-///
-/// **Reset to the bare sandbox seed** before the control run and rewritten
-/// before the second — never deleted. Those are not the same act: deletion
-/// takes `ask_default_app = false` with it, and the symptom is the O173 offer
-/// opening a real OS window in front of this check's own process. See
-/// [`crate::sandbox::reset_prefs`], and `print_remembered`'s account of what
-/// that cost when it was learned.
 const PREFS_FILE: &str = "preferences.txt";
 
 /// The `suggestion=` token that means the page overrules the remembered units.
@@ -106,10 +90,6 @@ const CALIBRATED: &str = "calibrated";
 const UNITS_KEY: &str = "export_dxf_units";
 
 /// One remembered answer, and everything needed to assert it.
-///
-/// Five columns rather than `print_remembered`'s three, for the two reasons in
-/// the module header: three of the twelve are spelled differently in the file
-/// and in the trace, and one field name (`scope`) appears on two events.
 struct Seed {
     /// The key as `Prefs::write_to_string` spells it in `preferences.txt`.
     key: &'static str,
@@ -128,19 +108,6 @@ struct Seed {
 
 /// **The seed: twelve `key = value` pairs, and the token each must come back
 /// as.**
-///
-/// Every value is chosen to differ from this build's shipped default — and
-/// that is *checked at run time* against the control launch rather than
-/// trusted here, because a default that moves would otherwise turn this table
-/// into decoration without anything going red.
-///
-/// ⚠ `export_image_dpi` is written `150` and read back `150` because the
-/// dialog's `dpi` is an `f32` printed with `Display`, which drops a trailing
-/// `.0`. A seed of `150.5` would read back `150.5` and would also be fine; a
-/// seed of `150.0` would read back `150` and would report a defect that does
-/// not exist. That is the one row where the two vocabularies could drift
-/// without either side being wrong, so it is spelled the way the trace spells
-/// it.
 const SEED: [Seed; 13] = [
     Seed {
         key: "export_image_format",
@@ -264,10 +231,6 @@ fn userdata(exe: &Path) -> Option<PathBuf> {
 }
 
 /// Launch, ring all three export commands, and return the settled session.
-///
-/// Factored out because this check does it twice with different files on disk,
-/// and the two runs must reach the windows by **identical** means — a control
-/// that arrived by a different route would not be a control.
 fn launch_all_three(
     ctx: &CheckContext,
     exe: &Path,
@@ -308,10 +271,6 @@ fn launch_all_three(
 }
 
 /// The three `-open` lines, or a message naming which are absent.
-///
-/// The FIRST of each, not the last. Each window emits its line once, as it
-/// is built; a second would mean the window was opened twice, and the first is
-/// the one produced by the preferences file this check just wrote.
 fn open_lines(session: &Session) -> Result<Vec<(&'static str, TraceLine)>> {
     let trace = session.trace()?;
     let mut lines: Vec<(&'static str, TraceLine)> = Vec::new();
@@ -605,15 +564,6 @@ mod tests {
     use super::*;
 
     /// **Every seeded value must be spelled the way the file spells it.**
-    ///
-    /// The seed is written straight into `preferences.txt`. A value the parser
-    /// does not recognise would be dropped with a `PrefNote::BadValue`, the
-    /// field would come back as its default, and this check would report a
-    /// defect in the application that is really a typo in this file.
-    ///
-    /// This test cannot call `pdfcer-gui`'s parser — `ui-verify` does not
-    /// depend on it — so it pins the shape instead: non-empty, lower case, and
-    /// free of the whitespace that would split it into two trace fields.
     #[test]
     fn every_seeded_value_is_a_single_file_token() {
         for seed in &SEED {
@@ -637,11 +587,6 @@ mod tests {
     }
 
     /// **Every seeded key is an `export_` key.**
-    ///
-    /// The file this check writes replaces the whole preferences file. Seeding
-    /// a key outside its subject would be this check quietly changing
-    /// something else — and, under `--shared-profile`, changing it for every
-    /// check that runs after it.
     #[test]
     fn the_seed_touches_only_exporting() {
         for seed in &SEED {
@@ -654,15 +599,6 @@ mod tests {
     }
 
     /// **A row is identified by `(event, field)`, and `scope` proves why.**
-    ///
-    /// `scope=` appears on the image window's line and on the text window's,
-    /// with different shipped defaults. A uniqueness test over `field` alone
-    /// would fail on a correct table; one that then "fixed" it by dropping a
-    /// row would silently stop asserting one of the two windows' page scope.
-    ///
-    /// So this asserts the pairs are distinct **and** that the duplication is
-    /// still there — if a future edit renamed one of them, this test says so
-    /// rather than going quietly green on eleven rows.
     #[test]
     fn each_seeded_row_reads_a_different_event_and_field() {
         let mut seen: Vec<(&str, &str)> = Vec::new();
@@ -701,12 +637,6 @@ mod tests {
     }
 
     /// **The fifth column exists for exactly one reason, and this pins it.**
-    ///
-    /// The file spells a bool `true`/`false` (`opening::bool_key`); the three
-    /// traces spell it `1`/`0` (`u8::from`). Every other row is the same
-    /// string on both sides. A row whose two columns differ for any *other*
-    /// reason is a typo that would report a defect in the application, and it
-    /// would look exactly like a deliberate translation.
     #[test]
     fn only_the_boolean_rows_translate_between_the_file_and_the_trace() {
         for seed in &SEED {
@@ -725,11 +655,6 @@ mod tests {
     }
 
     /// **The commands rung and the lines read are the same three.**
-    ///
-    /// The list is an environment variable and the events are constants, so
-    /// nothing but this ties them together. Adding a fourth export window
-    /// means both, and a seed row naming an event nobody rings would report
-    /// *"the window did not open"* for ever.
     #[test]
     fn the_invoke_list_names_the_command_behind_every_event_the_seed_reads() {
         let rung: Vec<&str> = INVOKE_LIST.split(',').map(str::trim).collect();

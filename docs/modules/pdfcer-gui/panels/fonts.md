@@ -97,3 +97,57 @@ answers the question at a glance, without opening a single row.
 The operator opening this panel is usually asking *"which font is costing
 me the most"*, and that ordering answers it with no control to find. Ties
 keep discovery order, which `sort_by_key` preserves.
+
+## Item notes
+
+### `fn row_body`
+
+Split out so [`body`]'s loop stays readable, and because the reason
+ladder is the substantive part of the panel: it is where the sentence
+this panel exists to say actually gets said.
+
+### `fn fs_type_lines`
+
+Four states, and **none of them may look like `0`.** `fsType == 0`
+genuinely *means* Installable — the most permissive value the field can
+express — so a blank, a dash, or an empty line for "we could not read it"
+would assert the broadest embedding right there is on the strength of
+bytes nobody read. The OpenType specification defines no default for the
+absent case, so pdfcer defines none either: unknown says the word
+"Unknown" in its own sentence, and "this format has no such field" says
+that instead.
+
+A free function because it needs nothing but the bits and a `Ui`.
+
+### `fn an_identity_encoded_font_is_blocked_and_says_which_tier`
+
+The sentence this panel exists to say, asserted against a real file.
+Acrobat refuses the same font and shows no reason at all; a shorter
+list is not actionable and this is the difference.
+
+Asserted on the verdict and on `to_unicode`, not on the wording:
+`crate::text::panels::fonts` already tests that the two tiers of the
+sentence differ, and a copy edit should not break a panel test.
+
+### `fn the_missing_program_count_matches_the_row_verdicts`
+
+Two independent readings of the same inventory — the summary counts
+`Program::NotEmbedded`, the rows print `Removability::NotEmbedded` —
+and they are computed in different places. `Removability`'s own docs
+promise they mean the same thing ("There is no embedded program"), so
+a document where they disagree is a document where the summary is
+lying about the list beneath it.
+
+### `fn the_document_total_is_the_sum_of_the_rows`
+
+`embedded_bytes()` and the per-row `stored_bytes()` are two
+computations over one inventory, and the panel prints both. A total
+that does not add up is the fastest way to lose an operator's trust
+in every other number on the panel.
+
+### `fn every_font_gets_a_verdict_word_in_its_collapsed_header`
+
+The panel's discoverability argument in one assertion: every font
+gets a verdict word, so the question is answerable from the collapsed
+list. A record that fell through to no verdict at all would be a row
+an operator has to open to learn nothing.

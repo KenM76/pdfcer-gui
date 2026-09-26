@@ -139,3 +139,66 @@ the application starts, so nothing downstream needs a second empty state.
 [`crate::app::actions::document`], whose header carries the guard table and
 whose test enumerates the arms that must ask. This module moves documents
 around; it does not decide whether the operator meant it.
+
+## Item notes
+
+### `fn take_slots`
+
+Half of the only code that knows the encoding. Always paired with
+[`Self::put_slots`] inside the same function — leaving the application
+in the state this returns would show an empty shell with the documents
+still alive on the stack.
+
+Returns an **empty** vector when nothing is open, rather than
+`[Status::Empty]`: the caller wants a list of documents, and a list
+containing "no documents" is the bug this early return removes.
+
+### `fn put_slots`
+
+The other half. An empty vector is the legitimate way to say *"nothing
+is open now"* and restores [`Status::Empty`] — which is what makes
+closing the last tab need no special case anywhere else.
+
+`active` is clamped rather than asserted. Every caller computes it from
+a length that has just changed, and an off-by-one there should land the
+operator on the last tab rather than panic in the middle of a close.
+
+### `fn forget_previous_documents_view`
+
+§4's table, as three statements. Deliberately the same three
+[`PdfcerApp::close_document`] makes, and deliberately *not* `adopt` —
+see §4 on why re-seeding the view would be wrong here.
+
+### `fn tab`
+
+Using `Failed` rather than `Open` is not a shortcut around the real
+type — §2 makes a failed open a first-class tab, so this *is* one of
+the states the encoding has to carry, and the tests below are testing
+the tab arithmetic rather than anything about documents.
+
+### `fn the_strip_order_is_independent_of_which_tab_is_active`
+
+The property that makes `parked` + `active_slot` safe: whichever tab is
+active, the strip reads the same left to right. A naive encoding that
+pushed the outgoing document onto the end of `parked` would pass with
+`active_slot == 2` and reorder the operator's tabs on any other.
+
+### `fn reordering_tabs_never_changes_which_document_is_on_screen`
+
+The property that makes `move_slot` correct and the one a naive
+implementation gets wrong: dragging a tab is tidying, not navigation, so
+the active document has to follow its own tab through the permutation
+rather than staying at an index.
+
+Swept across **every** `(from, gap)` pair on a four-tab strip with each
+of the four active in turn — 4 x 5 x 4 = 80 cases — rather than spot
+checked, because the arithmetic has two adjustments that compose and the
+composition is where an off-by-one hides. Three hand-picked cases would
+very likely all miss it.
+
+### `fn dropping_a_tab_where_it_already_is_does_nothing`
+
+`gap == from` is *before itself* and `gap == from + 1` is *after
+itself*; a strip that treated the second as a real move would shuffle
+the document one place every time an operator picked a tab up and put it
+back.

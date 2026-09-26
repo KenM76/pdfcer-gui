@@ -43,3 +43,19 @@ was simply not on screen and the check SKIPPED on a build where the feature
 worked. A region absent because it is on another tab looks exactly like one
 absent because the feature is missing. The Tool panel is drawn whatever tab
 is showing, and it is the surface an operator reads while a tool is armed.
+
+## Item notes
+
+### `const ARMED_BLOCK`
+
+Chosen over `ribbon.item.view.tool_text`'s pressed state after the first
+run SKIPPED on it: the ribbon shows one tab at a time, and this check leaves
+the operator on whichever tab the mode selector last drew, so the View row
+is simply not on screen. A region that is absent because it is on another
+tab looks exactly like one that is absent because the feature is missing.
+
+
+⇒ So its presence is a stronger claim than the old armed block's was: the
+block drew for any armed tool *and* sat inside a panel an operator could
+close, while this is chrome that cannot be closed and appears for exactly
+the condition under test.

@@ -45,3 +45,33 @@ There is no format dialog — the operator types `.fdf`, `.xfdf` or `.csv` in
 the picker and the extension decides. So driving the picker with a chosen
 extension is driving the format selector, which is why this check can cover
 the branch at all without a second surface to click.
+
+## Item notes
+
+### `const INVOKE`
+
+`mode.edit` first, for `form_field`'s reason: the command lives on File ▸
+Export, which every mode is shown, but the check fills a field first and
+filling on the canvas is mode-dependent. Driving from a known mode makes the
+run reproducible rather than dependent on whatever mode the last session
+left behind.
+
+### `const FORM_DATA_ENV`
+
+Its own variable rather than `PDFCER_DIAG_OPEN_PATH`, so a check can name
+the data file without also answering the document picker. The application
+draws the same distinction, for the same reason.
+
+### `const IMPORTED`
+
+`-applied`, and the suffix is the whole reason this constant has a doc
+comment. `vector_edit` writes a **second** line for the same edit under the
+bare name — `import-form-data page=0 n=1 epoch=1 disclosures=…` — and trace
+matching is on the exact event name, so `.last()` on the bare name reads the
+funnel's line, finds no `applied=` key, and reports `applied=0` about an
+import that set every field it was given.
+
+**That is exactly what the first run of this check did**, and it is the same
+defect `text-style` had one day earlier. Reading the note about it did not
+prevent the repeat — the naming convention is what does. `restyle_text`'s
+`STYLE_EVENT` carries the same warning.

@@ -13,12 +13,6 @@ use crate::pixels;
 use crate::sys;
 
 /// How long to let a raised window finish painting before reading the desktop.
-///
-/// 700 ms, measured rather than guessed — and the number matters less than the
-/// note attached to it in the predecessor script, which briefly read 2500 ms
-/// with an invented explanation. Three consecutive captures at 700 ms produced
-/// identical non-blank content; the longer sleep bought nothing and cost 1.8 s
-/// per capture.
 const RAISE_SETTLE_MS: u64 = 700;
 
 /// Capture the session's window client area.

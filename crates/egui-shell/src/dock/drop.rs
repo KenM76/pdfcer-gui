@@ -18,6 +18,8 @@
 //! empty. The one boundary that still needs adjusting is a move *within* one
 //! stack, where the removal shortens the very list the boundary counts; that
 //! case has its own verb, [`DockLayout::reorder_tab`], and is delegated to it.
+//!
+//! Design and rationale: `docs/modules/egui-shell/dock/drop.md`.
 
 use super::geometry::{ColumnAddr, StackAddr};
 use super::model::{Column, DockLayout, DockSide, PanelAddress, PanelId, Stack};
@@ -170,11 +172,6 @@ impl DockLayout {
     }
 
     /// Put `panel` where `target` says, reporting whether the target existed.
-    ///
-    /// Total rather than panicking on a bad index, but not a second gate:
-    /// [`DockLayout::move_panel`] has already asked
-    /// [`DockLayout::accepts_drop`], and a `false` from here means those two
-    /// answers disagree.
     fn insert_at(&mut self, panel: PanelId, target: DropTarget) -> bool {
         match target {
             DropTarget::Tab { stack, gap } => {

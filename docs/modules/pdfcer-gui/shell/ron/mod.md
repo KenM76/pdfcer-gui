@@ -75,3 +75,68 @@ that writes to the source tree as a side effect of `cargo test` makes
 every run a potential working-copy change, and because the diff is the
 most reviewable artefact this module produces: it is the ribbon,
 stated as data, in a form that shows up in a pull request.
+
+## Item notes
+
+### `fn the_ron_file_and_the_rust_agree`
+
+The proof that the format is genuinely the manifest rather than a
+Rust-only fiction with a file beside it. Equality of parsed values,
+not of text — see the module header.
+
+When this fails it is almost always because the Rust changed and
+the file was not regenerated, so the message says how.
+
+### `fn the_ron_file_is_a_complete_manifest`
+
+Distinct from the equality test above, and not implied by it. A
+layer is not required to validate; the built-in layer is, because
+it is what every other layer patches and what a reset restores. If
+this file could only be understood as a diff against something
+else, it would not be the built-in layer.
+
+### `fn a_hand_written_snippet_parses`
+
+Deliberately **not** produced by the serializer. Every string here
+was typed: no `Some(…)` wrappers, a comment, a trailing comma, and
+the shape the documentation shows. This is the input class an
+operator-editable format exists to accept, and the one a round-trip
+test structurally cannot cover.
+
+It is written as a *customization layer* rather than a whole
+manifest, because that is what an operator actually writes: a small
+file that patches the built-in one per item. It therefore also
+checks that an incomplete layer parses without validating — which
+is the property the whole three-layer design rests on.
+
+### `fn the_generated_file_carries_no_option_wrappers`
+
+This is the observable consequence of `IMPLICIT_SOME` on the
+*writer*, and it is the property that makes the generated file a
+usable template: an operator who copies three lines out of it and
+pastes them into `userdata/shell.ron` gets a fragment in the same
+dialect their own file is read in. If the extension were ever lost
+from `egui-shell`'s `ron::Options`, this file would fill up with
+`question: Some("…")` — the round trip would still pass, and the
+format would have quietly stopped being hand-editable.
+
+Note what is *not* asserted: the file carries **no**
+`#![enable(implicit_some)]` header and **no** struct names —
+`egui-shell`'s `PrettyConfig` sets the extension but ron 0.8
+emits neither, so the file opens with a bare `(` rather than
+`Shell(`. Neither costs correctness: the reader defaults the
+extension on independently of any header (which is the whole
+finding recorded in `D:/dev/rag/rust/`), and RON accepts both the
+named and the anonymous struct spelling, so the documented
+`Shell(tabs: [ Tab(id: "tools") ])` form still parses — see
+[`a_hand_written_snippet_parses`], which uses it. Both would make
+the generated file more legible and both are `egui-shell`'s to
+change, not this crate's.
+
+### `fn the_ron_file_reads_as_a_ribbon`
+
+A weak assertion on purpose: it is not checking the layout, which
+the equality test covers exactly. It is checking that the *file*
+contains the words an operator would search for — that the
+serialized form is legible enough to edit, which is the property
+the whole format choice was made for.

@@ -14,10 +14,6 @@ use crate::report::CheckReport;
 const MODE: &str = "edit";
 
 /// The command that puts the dock back to this build's default arrangement.
-///
-/// Fired before anything is measured — see the block in `run` for why. Named as
-/// a constant rather than inlined so the assertion that the reset landed and the
-/// invocation that performs it cannot drift apart.
 const RESET: &str = "view.reset_layout";
 
 /// The environment variable that rings a command chain through the real
@@ -30,33 +26,15 @@ const OBJECTS_BODY: &str = "dock.body.view.panel_objects";
 /// The detail's body compartment.
 const PROPERTIES_BODY: &str = "dock.body.file.properties";
 /// The region the document's own `/Info` form publishes.
-///
-/// Named `properties.info` even though it belongs to
-/// `crate::panels::docprops` now: the region name was deliberately left alone
-/// when the section became a panel, and that module's `REGION` carries the
-/// reason. **This check is the one that would notice if it drifted**, so the
-/// constant is here and the string is written once.
 const DOC_METADATA: &str = "properties.info";
 /// The Document properties panel's tab in the dock's strip.
-///
-/// The positive control for assertion 2b. A mounted tab publishes this whether
-/// or not it is the active one, which is what lets *"the metadata moved"* be
-/// asserted rather than only *"the metadata is not here"*.
 const DOC_PROPERTIES_TAB: &str = "dock.tab.file.document_properties";
 /// The splitter between the right side's two stacks.
-///
-/// Column 0, boundary 0 — the only stack boundary Edit's right side has, and
-/// the name is structural rather than generated, which is what lets this check
-/// re-read it instead of remembering a coordinate.
 const STACK_SPLITTER: &str = "dock.right.0.split.row.0";
 /// The line the Objects panel writes about the rows it actually drew.
 const ROWS_EVENT: &str = "objects-rows";
 /// How wide a strip of the Objects pane's right edge is sampled, in logical
 /// points.
-///
-/// Eight, not one. A single-point column can fall between two glyph stems and
-/// report clean on a row that is plainly running off the edge; eight is about
-/// one character and cannot.
 const EDGE_STRIP_PTS: f32 = 8.0;
 
 /// See the module documentation.

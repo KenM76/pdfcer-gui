@@ -84,3 +84,72 @@ two clicks away — so it is exactly the case R9 permits to be explained.
   sweeps every entry, exactly as the Comments catalog does — this is a
   catalog, which is the kind of file where a bare noun slips in during a
   late reword.
+
+## Item notes
+
+### `fn truncate`
+
+**Characters, not bytes** — slicing a `String` by byte index panics in the
+middle of a multi-byte character, and a note is arbitrary operator text
+that may be in any script. Newlines are collapsed to spaces for the same
+reason the length is bounded: a tooltip is one gesture's worth of
+information, and a note's own paragraph breaks would make it a document.
+
+### `fn no_string_here_says_a_bare_dimension`
+
+The same sweep `crate::text::panels::comments` runs, over this catalog,
+and for its reason: **ce dimensions** are the ones pdfcer authors and
+**pdf dimensions** are CAD-exported page content, they have opposite
+properties, and the ambiguity has already sent one investigation down
+the wrong path. A catalog is exactly the kind of file where a bare noun
+slips in during a late reword, so this is swept rather than reviewed.
+
+### `fn a_long_note_is_cut_and_says_so`
+
+The ellipsis is the disclosure — rule 4's *"an inference the operator
+cannot see still owes a report"* in its smallest form. Without it a
+note truncated mid-sentence reads as a note that ends mid-sentence.
+
+### `fn a_multibyte_note_is_cut_safely`
+
+The failure this guards is not cosmetic: slicing a `String` by byte
+index inside a character panics, and the panic would be *in the frame
+that is drawing the tooltip* — the worst available outcome, on a
+document whose only fault is being written in a script this project's
+tests do not otherwise use.
+
+### `fn an_anonymous_note_gets_no_byline`
+
+`/T` is legitimately absent — it means *anonymous*, never *unknown* —
+so a placeholder byline would turn a correct fact about the file into a
+claim about a person. `crate::text::panels::comments::comment_row_byline`
+makes the identical ruling and this is it holding on the second
+surface.
+
+### `fn a_note_with_no_words_still_says_something`
+
+The hover must answer *something* — a comment icon that produces no
+tooltip is indistinguishable from one the hover missed, which is the
+exact ambiguity this feature exists to remove.
+
+### `fn only_a_ce_dimension_heading_says_ce_dimension`
+
+Asserting both directions, because a heading function that returned the
+ce-dimension wording for everything would pass a one-sided check and
+would relabel every `/Line` markup an operator drew.
+
+### `fn only_a_write_that_reached_nothing_says_so`
+
+# Both directions, and the silent direction is the one that matters
+
+`set_annotation_open` reaches up to two objects — the annotation's own
+`/Open` when its subtype has one (§12.5.6.4 Table 172 gives it to
+`/Text`; Table 169 gives it to nothing else), and the `/Popup`
+companion's when there is one. **Any** write is a real edit with a real
+undo entry, and confirming it would be noise: the tick is on screen and
+it is what the operator asked for.
+
+A build that spoke on every call would make the one sentence that
+carries information — *"there was nowhere to record this"* —
+indistinguishable from the two that carry none, which is the failure
+this project calls a confirmation nobody reads.

@@ -26,10 +26,6 @@ const ROW_PREFIX: &str = "menu.item.canvas.object.";
 
 /// How far outside another rectangle a rectangle may fall and still be inside
 /// it, in points.
-///
-/// The trace publishes one decimal place, and the boxes compared by callers are
-/// computed from the same outlines, so this absorbs rounding and nothing else.
-/// A real containment failure is tens of points, not tenths.
 const CONTAINMENT_SLACK_PT: f64 = 1.0;
 
 /// A rectangle read off a `bbox=` field, in PDF user space.

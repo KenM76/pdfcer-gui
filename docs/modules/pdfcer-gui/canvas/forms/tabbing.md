@@ -34,3 +34,33 @@ what every program that fills forms does and because the alternative — a
 ring that traps the operator on a page — makes Tab useless on the multi-page
 forms it is most needed for. The object ring wraps within its page instead,
 for the reason its own caller carries.
+
+## Item notes
+
+### `fn locate`
+
+Falls back to *the ring stop belonging to the same field* when the box
+itself is not a stop, which is the radio group: [`ring::assemble`] collapses
+a group to its first widget, and an arrow key can leave the focus on one of
+the others. Without the fallback the next Tab would find no position and
+stop dead in the middle of a form.
+
+### `fn move_focus`
+
+`leaving` is `None` for a move that had no previous focus. The commit is
+guarded exactly as [`super::settle`] guards its own: a draft describing a
+document or a revision that is no longer on screen is dropped rather than
+written, because writing it would write a value against a document the
+operator has not seen since they typed it.
+
+### `fn activate`
+
+The same rule [`super::click`] applies to a pointer press, called rather
+than restated so a keyboard activation and a click cannot come to mean
+different things.
+
+### `fn sibling`
+
+`None` for anything that is not a radio group, which is what keeps the arrow
+keys out of a check box's way: a lone check box has no siblings and the
+arrows should go on meaning whatever the canvas means by them.

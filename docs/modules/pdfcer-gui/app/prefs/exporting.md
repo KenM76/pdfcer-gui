@@ -146,3 +146,28 @@ this module's tests. That is the property the file format actually needs: a
 writer that emits a token its own parser rejects turns the operator's
 settings into a `BadValue` note on the next launch, which reads as pdfcer
 forgetting them — the very complaint this module answers.
+
+## Item notes
+
+### `fn default`
+
+The specification, not a coincidence: a fresh `userdata` folder must open
+this window the way every previous build of pdfcer opened it. **Deleting
+`preferences.txt` is a way to reset pdfcer, never a way to change what it
+does.** Asserted rather than assumed — see
+`tests::the_image_default_is_what_the_dialog_used_to_hard_code`.
+
+### `fn default`
+
+⚠ Written out field by field rather than `#[derive(Default)]`, and that
+is not style. [`PageScope`] has **no** `Default` impl at all, and the
+other three would take their own `#[default]` variants — which happen to
+agree today and are not *specified* to. This impl is the specification;
+the derive would have been a coincidence that compiles.
+
+### `fn default`
+
+Literals, deliberately: if the engine changes a default, this window's
+behaviour must change **visibly, in a diff**, not silently on a
+`cargo update`. The disagreement is then a failing test rather than a
+different DXF.

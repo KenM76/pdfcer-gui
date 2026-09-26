@@ -94,3 +94,19 @@ both facts, not one.
 5. **Require the `[FAIL]` line**, not the exit code — a SKIP exits the way a
    PASS does.
 6. **Restore from the byte copy**, rebuild, confirm the PASS returns.
+
+## Item notes
+
+### `const AIM_CHUNK`
+
+**An interior line.** Chunk 0 shares its top edge with the block and chunk 5
+its bottom, so a build that marked the block while standing on either would
+produce a box agreeing with the chunk on one side — and a containment test
+that passes for the wrong reason is worse than none.
+
+### `const MAX_CHUNK_SHARE`
+
+The fixture holds [`EXPECTED_CHUNKS`] lines, so a correct chunk is about a
+sixth of its block and the wrong answer is the whole of it. Half is the
+midpoint between the two, chosen so the threshold cannot be reached by
+leading, ascenders or a rounded trace figure.

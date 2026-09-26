@@ -40,3 +40,13 @@ save mode that delivers it"*, and the honest reading of that here is not to
 soften the number — it is to **state the number and then state that pdfcer's
 Save will not deliver it**. Filed as an operator question in
 `OPERATOR_REQUESTS.md`; hiding it would make the window a sales pitch.
+
+## Item notes
+
+### `fn the_size_sentence_never_promises_a_smaller_file`
+
+The one assertion in this module that guards a real trap rather than a
+wording preference. `bytes_reclaimable` is the number an operator opens
+this window for, `app::save` writes incrementally, and a sentence that
+reported the first without the second would promise a smaller file that
+pdfcer cannot produce.

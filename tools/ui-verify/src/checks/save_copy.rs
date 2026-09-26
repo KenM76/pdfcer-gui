@@ -22,12 +22,6 @@ use crate::trace::Trace;
 
 /// **Review**, whose tab list contains Markup and which mounts the Comments
 /// panel by default.
-///
-/// The weaker claim, and [`crate::checks::markup_rectangle`]'s reason for the
-/// same choice: a markup tool that works in Review works in Edit. `file.save_copy`
-/// itself is on the File tab, which **every** mode is shown, so nothing about
-/// the save is mode-specific — which is worth knowing, because it means this
-/// check's mode choice is entirely about reaching the *edit*, not the save.
 const MODE: &str = "review";
 
 /// The tab carrying Rectangle and the Comments toggle.
@@ -37,10 +31,6 @@ const MARKUP_TAB: (&str, &str) = ("ribbon.tab.markup", "markup");
 pub(crate) const FILE_TAB: (&str, &str) = ("ribbon.tab.file", "file");
 
 /// The tool that authors the annotation this check follows onto disk.
-///
-/// Rectangle rather than one of the vertex kinds because it is the shortest
-/// gesture that authors anything — one drag, one release, no ending to press —
-/// and this check's subject is the save, not the tool.
 const RECTANGLE: (&str, &str) = ("ribbon.item.markup.rectangle", "markup.rectangle");
 
 /// **The command under test.**
@@ -69,10 +59,6 @@ const FAILED_EVENT: &str = "save-copy-failed";
 const DECLINED_EVENT: &str = "save-copy-declined";
 
 /// `save-picked source=env answer=…` — the seam answered instead of the dialog.
-///
-/// Read only to improve a SKIP: its absence with `PDFCER_DIAG_SAVE_PATH` set
-/// means the picker was reached and did **not** consult the seam, which would
-/// have opened a real modal and hung this harness rather than failing it.
 const PICKED_EVENT: &str = "save-picked";
 
 /// Bytes the copy must exceed by, at minimum, for `appended` to mean anything.
@@ -111,12 +97,6 @@ impl Check for SaveCopyRoundTrip {
 }
 
 /// A cheap content digest — length plus FNV-1a over the bytes.
-///
-/// The same function, for the same reason, as [`crate::checks::ocr`]'s: the
-/// question is *"did this file change"*, the adversary is a bug rather than a
-/// forger, and carrying a SHA-2 implementation into this crate to answer it
-/// would be a dependency for nothing. The **length is part of the digest** so a
-/// truncation cannot be hidden by a hash collision.
 fn digest(bytes: &[u8]) -> (usize, u64) {
     let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
     for b in bytes {
@@ -127,10 +107,6 @@ fn digest(bytes: &[u8]) -> (usize, u64) {
 }
 
 /// How many times the shell has reported `id` invoked.
-///
-/// A **count**, never a presence: this check clicks three different controls in
-/// one run, and "has it ever been invoked?" would be answered `true` by a click
-/// made ten seconds earlier.
 fn invokes(session: &Session, id: &str) -> Result<usize> {
     Ok(shell_trace(session)?
         .events(INVOKE_EVENT)
@@ -239,26 +215,6 @@ pub(crate) fn click_command(
 
 /// Put a launched session into Review with the Comments panel showing, and
 /// report the census it publishes there.
-///
-/// Used **twice** — once on the fixture and once on the saved copy in a second
-/// process — which is the whole reason it is a call rather than four lines: the
-/// two censuses have to be produced by the identical sequence, or the
-/// comparison at the end is between two different measurements.
-///
-///
-/// Until 2026-09-05 this file carried its own `comments_count`, its own
-/// `listed()`, and its own excluded-annotation refusal — and
-/// [`crate::checks::undo_redo`] carried a second copy of all three. Both read
-/// the census with `Trace::last`, which searches the whole capture, so when the
-/// panel went to the back of its dock and **stopped tracing**, both read the
-/// line it had published in the previous mode and reported a working panel as
-/// broken, in the same words, on the same sweep. The sweep report called them
-/// *"two independent witnesses"*.
-///
-/// The shared module's header carries the whole finding. What belongs here is
-/// the consequence for this file: **there is no local census reader any more,
-/// deliberately.** A repair that lands in one of two copies is the defect this
-/// check just spent a sweep demonstrating.
 fn comments_count(
     session: &Session,
     driver: &Driver,
@@ -719,11 +675,6 @@ mod tests {
 
     /// The names this check greps for are the ones `egui-shell` builds, and the
     /// ids are the ones the application registers.
-    ///
-    /// Pinned for the reason every sibling check pins its own: the two crates
-    /// are joined by a **string** and nothing else, so a rename would leave both
-    /// sides compiling while every assertion here quietly stopped matching — and
-    /// a check that matches nothing passes vacuously.
     #[test]
     fn the_selectors_match_the_shells_own_spelling() {
         for (region, id) in [RECTANGLE, SAVE] {
@@ -747,10 +698,6 @@ mod tests {
     }
 
     /// **The digest notices a single changed byte and a truncation.**
-    ///
-    /// Phase D's whole verdict rests on this function, so a digest that answered
-    /// "unchanged" for a modified file would turn the check's assertion about
-    /// the operator's own drawing into a formality that always passes.
     #[test]
     fn the_digest_notices_a_single_changed_byte_and_a_truncation() {
         let a = b"%PDF-1.7 a drawing";
@@ -767,13 +714,6 @@ mod tests {
 
     /// **Phase E's comparison really distinguishes an appended update from a
     /// rewrite.**
-    ///
-    /// The predicate is one `starts_with`, which is exactly the kind of line
-    /// that gets "simplified" into something that always passes. Both
-    /// directions are pinned, and the *rewrite* fixture is deliberately one that
-    /// shares a long prefix with the source — a full rewrite of a PDF really
-    /// does begin `%PDF-1.x`, so a check that only compared the first few bytes
-    /// would pass against the build this phase exists to catch.
     #[test]
     fn an_appended_revision_is_told_apart_from_a_rewrite() {
         let source = b"%PDF-1.7\n1 0 obj\n<<>>\nendobj\ntrailer\n%%EOF\n";
@@ -805,10 +745,6 @@ mod tests {
     }
 
     /// The drag is a real rectangle, well inside the page.
-    ///
-    /// A degenerate one would be refused by `markup::action`'s no-extent rule
-    /// and phase B would report "the drag authored nothing" about a fixture
-    /// defect. A drag near the edge would be clamped by the canvas.
     #[test]
     fn the_drag_is_a_real_rectangle_inside_the_page() {
         assert!((DRAG.0.0 - DRAG.1.0).abs() > 0.1);

@@ -20,6 +20,8 @@
 //! catch-all arm — and a catch-all is exactly wrong for a control that offers
 //! every value: a fourth scope added upstream must break this build and be
 //! offered, not fall silently into a default the operator never chose.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/app/prefs/redaction.md`.
 
 /// **How far beyond the marked regions a redaction may act on text matching
 /// what was redacted.**
@@ -122,14 +124,6 @@ mod tests {
 
     /// **The ladder is the engine's ladder**, asserted against the engine's own
     /// predicates rather than against this file's understanding of them.
-    ///
-    /// Each value carries a label the operator reads and acts on, and every one
-    /// of those labels is a claim about what the engine will do. Hand-written,
-    /// they are a snapshot of the engine on the day they were typed. Measured
-    /// against `scrubs_hidden_carriers` and `blanks_content_streams`, a
-    /// redefinition on the engine's side fails here — in the one place that can
-    /// still stop the wrong sentence reaching him — rather than shipping as a
-    /// setting that quietly no longer does what it says.
     #[test]
     fn each_reach_does_what_its_label_promises() {
         assert!(
@@ -172,12 +166,6 @@ mod tests {
     }
 
     /// **`ALL` is the whole enum, in widening order.**
-    ///
-    /// The settings group iterates `ALL`, so a value missing from it is a value
-    /// the operator cannot choose and no other test would notice. The order is
-    /// asserted too: the radio list reads as a ladder from least to most
-    /// destructive, and a list that stopped being monotonic would be a control
-    /// whose shape lies about what it does.
     #[test]
     fn every_reach_is_offered_and_the_ladder_only_widens() {
         assert_eq!(RedactionReach::ALL.len(), 3);
@@ -197,10 +185,6 @@ mod tests {
     }
 
     /// **Every key round-trips, and no two values share one.**
-    ///
-    /// `from_key` is the parser for `preferences.txt`; a duplicate key would
-    /// make one value unreachable from a saved file while the settings window
-    /// went on offering it.
     #[test]
     fn every_key_round_trips_and_is_unique() {
         let mut seen = Vec::new();

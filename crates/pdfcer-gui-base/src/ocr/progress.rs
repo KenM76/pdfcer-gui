@@ -26,10 +26,6 @@ pub enum Wish {
 
 impl Wish {
     /// Decode a stored discriminant.
-    ///
-    /// An unrecognised value answers `Continue`, which is the safe direction:
-    /// the failure mode of a corrupt read is a job that keeps going and can be
-    /// asked again, not one that silently discards an operator's work.
     const fn from_u8(v: u8) -> Self {
         match v {
             1 => Self::StopAfterThisPage,
@@ -170,10 +166,6 @@ mod tests {
     }
 
     /// **Cancel outranks Stop, and Stop cannot downgrade a Cancel.**
-    ///
-    /// Two adjacent buttons and a run the operator has decided against: the
-    /// order the clicks land in must not decide whether a partial layer is
-    /// written. Abandonment wins in both orders.
     #[test]
     fn cancel_wins_whichever_order_the_two_arrive_in() {
         let c = Control::new();

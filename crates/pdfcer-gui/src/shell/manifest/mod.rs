@@ -829,26 +829,11 @@ pub const CUSTOM_BACKED: &[(&str, &str, &str)] = &[
 ];
 
 /// A captioned band of items.
-///
-/// A two-line convenience over `Group::new(..).with_items(..)`, because
-/// this manifest writes thirty-seven of them and the builder chain is the
-/// noisiest thing on the page when every group is one expression.
 fn group(id: &str, caption: &str, items: impl IntoIterator<Item = Item>) -> Group {
     Group::new(id, caption).with_items(items)
 }
 
 /// The same, laid out on **two rows** even when one would fit.
-///
-/// `OPERATOR_REQUESTS.md` O97 — *"our display buttons should be on two rows to
-/// save space."* For a cluster of icon-only peers that is a **choice** rather
-/// than a list: four square buttons in a row is a strip, and the same four as a
-/// 2 × 2 block is half the width and reads as one control. See
-/// [`egui_shell::manifest::Group::prefer_rows`] for what the hint does and does
-/// not promise.
-///
-/// A named constructor rather than a `.with_prefer_rows(2)` on the call, so that
-/// a tab module reads as a list of groups and the one group that is shaped
-/// differently says so in its first word.
 fn group_two_rows(id: &str, caption: &str, items: impl IntoIterator<Item = Item>) -> Group {
     group(id, caption, items).with_prefer_rows(2)
 }
@@ -950,37 +935,6 @@ mod tests {
 
     /// **Every `Large` item already leads its group**, so promoting one
     /// never reorders the band.
-    ///
-    /// This is the rule that replaced [`super::large`]'s old *"only for a
-    /// group whose single item it is"* restriction on 2026-09-04, when
-    /// `mockups/pdfcer-shell.html` became this band's specification and a
-    /// great many controls became Large.
-    ///
-    /// # Why the rule needs a test rather than a sentence
-    ///
-    /// `egui_shell::ribbon::sizing`'s layout rule is that **Large items lead
-    /// their group** — they are drawn first, in a horizontal run at the
-    /// group's left, and everything else wraps into the rows beside them. That
-    /// is not a preference; a Large control spans the rows and therefore
-    /// cannot live *inside* the row wrapping.
-    ///
-    /// The consequence is that writing `large("x")` in the middle of a group
-    /// **silently hoists `x` to the front of it**. Nothing fails, nothing
-    /// warns, and the only evidence is that the band's controls are in a
-    /// different order from the one `RIBBON_IA.md` argued for — an order the
-    /// operator reaches for by position, in groups like Cut / Copy / Paste,
-    /// where reordering is the whole cost.
-    ///
-    /// So: a `Large` item is legal exactly where hoisting is a no-op, i.e.
-    /// where the Large items are already a **prefix** of their group's item
-    /// list. Separators and custom items count as non-Large for this purpose,
-    /// which is the strict reading — a `Recent ⌄` gallery hoisted past is just
-    /// as reordered as a command.
-    ///
-    /// Written as a scan for the first non-Large item followed by a Large
-    /// one, rather than as a whitelist of blessed groups. A whitelist is a
-    /// second copy of the manifest and goes stale; this cannot, because it is
-    /// derived from the manifest it checks.
     #[test]
     fn large_items_already_lead_their_group() {
         for tab in built_in().tabs() {
@@ -1007,13 +961,6 @@ mod tests {
 
     /// **…and the manifest actually contains some Large items**, so the
     /// scan above is not vacuous.
-    ///
-    /// A manifest with no Large item at all satisfies
-    /// [`large_items_already_lead_their_group`] perfectly, and would go on
-    /// satisfying it after somebody deleted every `large(…)` call in the tree.
-    /// The count is a floor rather than an exact number — the exact number is
-    /// a manifest decision that will move, and pinning it here would make an
-    /// IA change fail a test about hoisting.
     #[test]
     fn the_manifest_draws_large_controls_at_all() {
         let large = built_in()
@@ -1034,35 +981,6 @@ mod tests {
     }
 
     /// The shape of the ribbon, pinned.
-    ///
-    /// Not a change-detector for its own sake: these numbers are quoted in
-    /// prose, in five module headers, as the description of the layout
-    /// `RIBBON_IA.md` §5 specifies. A count that drifts silently makes
-    /// every one of them wrong, and the failure message says which way it
-    /// moved.
-    ///
-    /// **Failing here means editing prose, not just the literal.** The
-    /// group count went 31 → 32 with this test passing on the new number
-    /// and five headers still saying "thirty-one", because pinning a value
-    /// does not pin the sentences that repeat it. The sites are:
-    ///
-    /// - this module's header, and [`group`]'s;
-    /// - [`crate::shell`]'s submodule table;
-    /// - [`crate::shell::ron`]'s header (groups **and** key bindings);
-    /// - [`crate::text::ribbon`]'s header.
-    ///
-    ///
-    /// ⇒ The instruction above — **failing here means editing prose** — is
-    /// necessary and is not sufficient, because it only fires when the count
-    /// moves. Four sites drifted while the count stood still. The only thing
-    /// that catches that is re-measuring the sentence rather than trusting it,
-    /// which is why they are enumerated by path below.
-    ///
-    ///
-    /// The keymap is counted here for the same reason: `ron`'s header
-    /// argues that the format can express *the real ribbon* and then lists
-    /// its parts, so a binding added without that list moving turns the
-    /// argument into a claim about a smaller shell than the one shipped.
     #[test]
     fn the_ribbon_has_the_documented_shape() {
         let shell = built_in();
@@ -1130,29 +1048,6 @@ mod tests {
     }
 
     /// **The chords every document application has, asserted as a LIST.**
-    ///
-    /// Added 2026-08-20, on the operator: *"still no ctrl+c, ctrl+v, ctrl+x or
-    /// ctrl+p shortcuts that were requested ages ago."* Three of the four were
-    /// bound. `Ctrl+P` was not, and had not been since the manifest was
-    /// written.
-    ///
-    /// # Why the whole list, and not a line for the one that was missing
-    ///
-    /// Because the defect was never about Print. It was that **nothing
-    /// anywhere asked the question**, and a test naming `Ctrl+P` would leave
-    /// the question unasked for the next one. The count assertion above cannot
-    /// help: it says how MANY bindings there are, and a keymap with the wrong
-    /// thirty-two passes it exactly as well as the right thirty-two.
-    ///
-    /// These are the chords a person arriving from any other PDF or office
-    /// application will press without looking. Every one of them is muscle
-    /// memory, which means its absence is not experienced as a missing feature
-    /// - it is experienced as the application ignoring the keyboard.
-    ///
-    /// A command here that this build does not register is a failure of THIS
-    /// test rather than a silently dropped binding, which is the second half of
-    /// the same argument: `no_registered_command_is_orphaned` catches a binding
-    /// pointing nowhere, and this catches a chord that is simply not there.
     #[test]
     fn the_keymap_offers_the_chords_a_document_application_must() {
         let shell = built_in();
@@ -1195,10 +1090,6 @@ mod tests {
     }
 
     /// **Every command id is prefixed with the tab that owns it.**
-    ///
-    /// The convention that makes P1 legible in the id itself. Two
-    /// documented exceptions, and they are named here rather than
-    /// hand-waved so that a third one has to be added deliberately.
     #[test]
     fn every_command_id_names_its_owning_tab() {
         for tab in built_in().all_tabs() {
@@ -1233,12 +1124,6 @@ mod tests {
 
     /// **The three View ▸ Render entries with no `G` mark, and the two new
     /// Window settings, are actually present.**
-    ///
-    /// [`DIRECTED`] is a claim about this manifest. If an entry were listed
-    /// there and then not emitted, the list would be documenting a
-    /// deviation that had been quietly reverted — which is worse than
-    /// either state on its own, because the note would still be there
-    /// explaining a decision nobody could see.
     #[test]
     fn every_directed_entry_is_emitted() {
         let emitted: BTreeSet<String> = emitted().into_iter().collect();
@@ -1267,11 +1152,6 @@ mod tests {
     /// The View ▸ Window group carries the two new settings, in the
     /// specified order, between the two existing window commands and the
     /// layout reset.
-    ///
-    /// Order is checked rather than mere presence because the group reads
-    /// as a progression — what the window shows, then what may float in
-    /// it, then how to put it all back — and the reset belongs last for
-    /// the same reason a reset button always does.
     #[test]
     fn the_window_group_holds_the_commands_it_still_has() {
         let shell = built_in();
@@ -1305,11 +1185,6 @@ mod tests {
     }
 
     /// The Markup ▸ Style band holds the colour swatch as a `Custom` item.
-    ///
-    /// Asserted because the alternative — modelling a colour picker as a
-    /// `Command` — is the easy mistake, and it is the one that would push
-    /// a `ColourSwatch` variant into `egui-shell` the first time the
-    /// renderer needed to tell the two apart.
     #[test]
     fn the_markup_style_band_is_a_custom_item_not_a_command() {
         let shell = built_in();
@@ -1346,12 +1221,6 @@ mod tests {
 
     /// No command is emitted twice anywhere, including across the QAT and
     /// the keymap.
-    ///
-    /// `Shell::validate` enforces one-command-one-*tab* and separately
-    /// forbids the QAT listing one id twice. This is the remaining case:
-    /// a command that appears once on a tab, once on the QAT and twice in
-    /// the keymap is legal and intended (redo), so what is checked is the
-    /// narrower thing — no id appears twice within the tab set.
     #[test]
     fn no_command_appears_twice_on_the_tabs() {
         let shell = built_in();

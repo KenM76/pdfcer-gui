@@ -75,3 +75,54 @@ does not prove the two are one field.
 "both ways" and whose body proves half of one of them is exactly the
 green-result-reporting-nothing this harness exists to avoid. The engine
 request in the channel asks for the verb that would make this assertable.
+
+## Item notes
+
+### `const PLACE_AT`
+
+Well inside the sheet on both axes, because two pastes each displace the
+copy ten points down and to the right and all three boxes must stay on
+paper — a box pasted off the sheet would produce no `form-target` line and
+the check would report a clipboard defect for a geometry problem.
+
+### `struct Order`
+
+Carried rather than assumed, because the whole subject of the second
+check is that the SAME keystroke means the OTHER thing. A check that hard-
+coded `Ctrl+V` -> new field could only ever test one of the two orders, and
+would pass against a build whose setting did nothing at all.
+
+### `fn boxes`
+
+The same reader `field_menu` uses, kept in step with it deliberately: two
+parsers of one trace line is how two checks come to disagree about what the
+program said.
+
+### `fn field_names`
+
+Distinct **names**, not lines. The census is re-emitted every frame it
+changes, so counting lines counts repaints. And it is names rather than
+boxes because a paste-as-new must raise the count and this is the number
+that says so unambiguously.
+
+### `fn distinct_boxes`
+
+**The first version of this function counted trace lines and it was
+wrong, and it was wrong in the direction that still passes.** The census is
+re-emitted on every frame it changes, so the cumulative line count went
+1 → 3 → 6 across the two pastes: 1, then 1+2, then 3+3. Both assertions held
+— the number did rise each time — and the check reported PASS while measuring
+*repaints* rather than *widgets*.
+
+That is this project's standing failure: **ask what the check SAMPLED before
+believing what it says.** A build that pasted nothing but repainted twice
+would have satisfied the old version exactly as well.
+
+A set of `(field, centre)` is immune, because a re-emitted census re-states
+the same pairs. Two widgets of one field differ by centre — the paste offset
+guarantees it — so a duplicate raises this count without raising
+[`field_names`], which is the distinction the whole feature is about.
+
+The centre is rounded to whole canvas pixels before it enters the set: the
+census prints one decimal, and a scroll of a fraction of a pixel between two
+frames would otherwise make one box look like two.

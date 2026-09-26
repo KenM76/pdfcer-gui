@@ -49,3 +49,73 @@ predecessor's line group**. Two consequences:
    [`ObjectModelProvider::text_line_move_refusal_of`] asks the engine's set
    guard, which lets an inherited run through when its predecessor moves
    too.
+
+## Item notes
+
+### `fn lines_of`
+
+Always covers every run exactly once and is never empty for a non-empty
+object, because [`text_object_split_points`](pdfcer_core::vector::edit::text_object_split_points)
+never returns 0 and never returns an index past the last run.
+
+### `fn text_object`
+
+**What keeps it from being an oracle written by the thing it
+measures:** every field below is fixed by sub-clause 9.4.2 rather than
+chosen. `text_matrix` is `Tm` as it stood at the show operator, so two
+`Tj`s with no positioning operator between them share one, and a `Tm`
+in between gives the second a new `f`. The same shape was measured on
+a real decomposition in `tests/ken_sw41177_line_move_probe.rs`, where
+nine consecutive runs of one visual line came back sharing baseline
+927.23. The driven proof over a real file is `ui-verify`'s.
+
+### `fn a_line_whose_first_fragment_inherits_names_the_line`
+
+Built by declaring run 0 `Inherited`. That is what a text object
+whose first show operator relies on the text-state carried in from
+before `BT` looks like, and the engine refuses to move it for the same
+reason it refuses any other: there is no operand to rewrite.
+
+### `fn the_local_fixture_gives_all_four_line_move_answers`
+
+Every other test in this module builds its runs by hand, which makes
+them a calibration of the grouping rule and not a measurement of it:
+the fixture and the code under test were written from the same reading
+of 9.4.2, so both can be wrong together. This one decomposes
+`fixtures/inherited-runs.pdf` — a file on disk, written by a generator
+that knows nothing about `runs_share_a_line` — and asserts the table in
+that generator's header.
+
+**The rotated pair is the load-bearing half.** An inherited run
+advances along the text direction, so a HORIZONTAL one always lands on
+its predecessor's baseline and is always inside its predecessor's line
+group. Rotation is the only way a line can BEGIN with an inherited run,
+and without it `NoPositionOfItsOwn` and `WouldMoveNextRun` are sentences
+no document could produce at line granularity — which would leave a
+build that had deleted them passing every check.
+
+Line 1 is the CONTROL. Without an answer of `None` somewhere on the
+page, a build that refused every line move would satisfy the other
+three assertions.
+
+### `fn the_aims_driven_at_this_fixture_land_one_per_line`
+
+# Why a unit test owns the harness's coordinates
+
+`AIMS` asserts an ANSWER per aim, never a line index, because
+`canvas-selection` carries no part index for it to read back. That
+makes the aims self-checking only while the four lines give four
+different answers — and silently wrong the moment two of them agree.
+Here the index IS visible, so the mapping from point to line can be
+stated outright.
+
+The exclusivity half is the load-bearing one. The rotated pair is
+stacked along one narrow column and meets at a single y, so a point
+that fell in both boxes would still satisfy a containment-only
+assertion while aiming at whichever of the two the hit test happened
+to return first.
+
+PDF user space, y-up, straight off the engine's decomposition. No
+canvas transform is involved: `AIMS` is in page coordinates and the
+harness maps it at drive time, so converting here would introduce the
+one step this is meant to hold still.

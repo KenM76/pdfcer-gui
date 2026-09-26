@@ -526,11 +526,6 @@ impl OpenDoc {
     }
 
     /// Decompose the current page if the cache does not already describe it.
-    ///
-    /// The key is recorded **before** the work, so a page whose content will
-    /// not decode is not re-decomposed on every frame: the failure is
-    /// deterministic, and retrying it sixty times a second would peg a core
-    /// producing the same error.
     fn ensure_page_objects(&self) {
         let key = (self.view.page_index, self.page_objects_revision());
         if self.page_objects.built_for.get() == Some(key) {
@@ -863,11 +858,6 @@ impl OpenDoc {
 
     /// Extract the current page's text if the cache does not already describe
     /// it.
-    ///
-    /// The key is recorded **before** the work, for the reason
-    /// [`Self::ensure_page_objects`] records its own: the failure is
-    /// deterministic, and retrying it every frame would peg a core producing
-    /// the same error.
     fn ensure_page_text(&self) {
         let key = (self.view.page_index, self.edit_epoch);
         if self.page_text.built_for.get() == Some(key) {
@@ -1016,18 +1006,6 @@ mod tests {
 
     /// **The decomposition cache carries NO document identity, and does
     /// not need one.**
-    ///
-    /// Asserted rather than argued. A cache hanging off the *application*
-    /// outlives the document it describes, so it would have to say **which**
-    /// document — and the only token available is an `Arc` address, which is
-    /// not an identity (see `OpenDoc::page_objects`).
-    ///
-    /// This replaces one document with another **in the same binding**, the
-    /// sequence that would exercise an address reuse. There is nothing to get
-    /// wrong: the second document's cache is a field of the second document.
-    /// The remaining key is `(page, epoch)`, and it is asserted here so that
-    /// putting an address, a pointer or a `Weak` back into it is a test
-    /// failure rather than a review finding.
     #[test]
     fn a_documents_decomposition_cannot_outlive_the_document() {
         let mut doc = open_fixture(FOUR_PAGES);
@@ -1072,17 +1050,6 @@ mod tests {
     }
 
     /// **A page step rebuilds the decomposition; so does an edit.**
-    ///
-    /// Both halves of the key, one at a time. Serving page 0's objects while
-    /// the operator is on page 1 would make every index in the Objects panel
-    /// address the wrong object.
-    ///
-    /// It asserts that the key **CHANGED**, not what it changed to. The second
-    /// half is not `edit_epoch` but the engine's content digest (see
-    /// [`super::OpenDoc::page_objects_revision`]), and a test pinning the
-    /// literal would have to be rewritten for a change it exists to be
-    /// indifferent to. What matters is that a rebuild happened, which is what
-    /// a changed key means and all it means.
     #[test]
     fn the_decomposition_is_rebuilt_when_the_page_or_the_revision_moves() {
         let mut doc = open_fixture(FOUR_PAGES);
@@ -1152,11 +1119,6 @@ mod tests {
 
     /// **A page that is not there yields no decomposition and no invented
     /// reason.**
-    ///
-    /// The attempt is recorded either way, so it is not retried sixty times a
-    /// second. But "there is no such page" must not be reported as a decode
-    /// failure: the trace channel distinguishes `reason=no-such-page` from
-    /// `reason=decompose-failed`, and a consumer is entitled to that.
     #[test]
     fn a_missing_page_yields_no_decomposition_and_no_invented_reason() {
         let mut doc = open_fixture(FOUR_PAGES);
@@ -1179,15 +1141,6 @@ mod tests {
 
     /// **The page's text is extracted once per `(page, epoch)`**, and asking
     /// twice does not extract twice.
-    ///
-    /// The property the whole feature's affordability rests on: a text drag
-    /// asks for this on every frame of the gesture, and an unconditional
-    /// whole-document extraction costs a measurable fraction of a second —
-    /// `crate::find`'s header states that cost and its `find … ms=` trace line
-    /// measures it. Holding the first `Ref` across the second call is the
-    /// assertion rather than an accident of how the test is written: it is also
-    /// the case that would panic if the validity key lived inside the `RefCell`
-    /// instead of beside it.
     #[test]
     fn a_pages_text_is_extracted_once_and_shared() {
         let doc = open_fixture(FOUR_PAGES);
@@ -1202,13 +1155,6 @@ mod tests {
     }
 
     /// **A page step re-extracts; so does an edit.**
-    ///
-    /// Both halves of the `(page, epoch)` key, one at a time — the same two
-    /// failures [`the_decomposition_is_rebuilt_when_the_page_or_the_revision_moves`]
-    /// guards, and sharper here: a stale `PageText` does not merely list the
-    /// wrong objects, it makes every `TextPosition` in a live selection name a
-    /// run that has moved, so the highlight would be drawn over the wrong
-    /// glyphs and the copy would carry them.
     #[test]
     fn the_page_text_is_rebuilt_when_the_page_or_the_revision_moves() {
         let mut doc = open_fixture(FOUR_PAGES);
@@ -1234,10 +1180,6 @@ mod tests {
     }
 
     /// **A page that is not there yields no text and no invented reason.**
-    ///
-    /// The attempt is still recorded, or it is retried every frame — the same
-    /// rule [`a_missing_page_yields_no_decomposition_and_no_invented_reason`]
-    /// states for the decomposition.
     #[test]
     fn a_missing_page_yields_no_text_and_no_invented_reason() {
         let mut doc = open_fixture(FOUR_PAGES);
@@ -1251,11 +1193,6 @@ mod tests {
     }
 
     /// **The font inventory survives a page step and is dropped by an edit.**
-    ///
-    /// It decodes every embedded font program, so rebuilding it per page is a
-    /// large cost for a value that cannot have changed — and an edit *can*
-    /// add or remove a font, so keeping it across one reports a font list the
-    /// document no longer has.
     #[test]
     fn the_font_inventory_is_kept_across_pages_and_dropped_by_an_edit() {
         let mut doc = open_fixture(FOUR_PAGES);

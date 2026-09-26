@@ -427,11 +427,6 @@ mod tests {
 
     /// **Every blocker an operator can meet names a remedy or says there is
     /// none.**
-    ///
-    /// The failure this guards is a reason that leaves somebody trying things:
-    /// *"composite font"* is true and tells a person nothing about what to do
-    /// next. Each sentence below either points somewhere (a folder, Settings) or
-    /// closes the question (*"there is nothing to embed"*).
     #[test]
     fn every_blocker_reads_as_a_sentence_a_person_can_act_on() {
         for blocker in [
@@ -462,19 +457,6 @@ mod tests {
 
     /// **A standard-14 font pdfcer carries is told so, and one it does not is
     /// not** — the two halves of the same row, asserted together.
-    ///
-    /// This is the assertion that catches the wording defect the switch
-    /// created. Before 2026-09-05 pdfcer's own faces answered
-    /// unconditionally, so a font pdfcer carries could never be reported as
-    /// *"pdfcer has nowhere to take it from"*; with the box unticked it can be,
-    /// and the old sentence would have told the operator pdfcer has no copy of
-    /// a font it is holding.
-    ///
-    /// The two are asserted **against each other** rather than against
-    /// literal strings. A test pinning the exact sentence would fail every time
-    /// somebody improved the wording, which trains people to update the
-    /// expected string without reading it. What must never happen is the two
-    /// cases producing the same sentence, and that is what is checked.
     #[test]
     fn a_font_pdfcer_carries_is_offered_its_own_copy_and_one_it_does_not_is_not() {
         let ours = blocked_row("Helvetica", &EmbedBlocker::NoSourceFont, true);
@@ -497,11 +479,6 @@ mod tests {
     }
 
     /// **The offer names the fonts**, and does not merely count them.
-    ///
-    /// The property is that every face in the list appears in the sentence.
-    /// A count is what a hurried implementation produces and it is exactly what
-    /// makes the disclosure useless: an operator cannot decide whether he minds
-    /// a substitution without knowing which font is being substituted.
     #[test]
     fn the_offer_names_every_font_it_would_stand_in_for() {
         let faces = vec![
@@ -520,12 +497,6 @@ mod tests {
 
     /// **The consequence states BOTH costs**, and the licence is the one that
     /// gets forgotten.
-    ///
-    /// The letterform change is obvious enough that anybody writing this
-    /// sentence would include it. The licence condition is the reason
-    /// `pdfcer`'s own CLI keeps the equivalent switch off by default, it is the
-    /// half that binds the operator rather than his reader, and it is the half
-    /// a later edit tightening the wording would drop first.
     #[test]
     fn the_consequence_states_the_look_and_the_licence() {
         let line = own_fonts_consequence();
@@ -541,10 +512,6 @@ mod tests {
     }
 
     /// **A document with no PDF/A claim gets no sentence about PDF/A.**
-    ///
-    /// The one that matters: this window opens on every drawing, and a line
-    /// saying *"this is not a PDF/A"* on all of them is noise that trains an
-    /// operator to stop reading the window.
     #[test]
     fn no_claim_means_no_line() {
         assert!(pdfa_line(&PdfaClaim::None).is_none());
@@ -572,11 +539,6 @@ mod tests {
 
     /// **The disclosure after an embed drops the clauses that would be
     /// zero.**
-    ///
-    /// The failure this guards is the fixed sentence: a line reading
-    /// *"0 still missing, 0 substituted"* on every ordinary embed is a line an
-    /// operator learns to skip, and the day one of those numbers is not zero it
-    /// is skipped too.
     #[test]
     fn the_disclosure_says_only_what_is_true() {
         let clean = embedded_disclosure(3, 0, false);
@@ -597,11 +559,6 @@ mod tests {
     }
 
     /// **The size is stated as a CEILING, in both branches.**
-    ///
-    /// `bytes_added_uncompressed` is always larger than what lands on disk -
-    /// the writer deflates every program stream - so a sentence phrased as a
-    /// prediction would be wrong on every single embed. The word `most` is the
-    /// whole assertion.
     #[test]
     fn the_size_is_a_bound_and_never_a_prediction() {
         for bytes in [512_u64, 40_000, 3_000_000] {
@@ -612,12 +569,6 @@ mod tests {
 
     /// **Each of the four rungs reads as a different sentence, and the
     /// bundled one is the loudest.**
-    ///
-    /// `OPERATOR_REQUESTS.md` **O47** was answered *"yes"* — pdfcer may use its
-    /// own faces — and the condition attached to that answer was *disclosed
-    /// loudly*. The failure this guards is the quiet collapse: four rungs
-    /// rendering as two, so a document that went out with pdfcer's stand-in in
-    /// it reads on screen exactly like one carrying the operator's own Arial.
     #[test]
     fn every_rung_says_something_different_and_bundled_says_the_most() {
         use crate::app::fonts::Match;

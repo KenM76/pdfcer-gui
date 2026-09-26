@@ -27,24 +27,6 @@ const SPOTLIGHT: &str = "canvas-form-spotlight";
 /// The fixture: two widgets on one page, both visible at once.
 /// The fixture — **this project's own**, not the engine's, and that is a
 /// finding rather than a preference.
-///
-/// Not one form fixture in `D:\Dev\pdfcer\fixtures\synthetic\forms\` carries a
-/// plain text field with an `/AP` `/N` appearance stream. Measured 2026-09-02
-/// across all eighteen: `demo-form` and `radio-choice-form` have text fields
-/// with **no** appearance, `rich-field-form`'s one paint-ready text field is
-/// **rich text** (which the canvas declines by design), and every other
-/// paint-ready widget is a 12 x 12 check box or radio.
-///
-/// That matters because the canvas census refuses a widget with no appearance
-/// (`NotOnCanvas::NoAppearance`) — the page draws nothing there, so there is
-/// nothing to outline. On every engine fixture the spotlight is therefore
-/// *unable* to light the one row the panel offers, and the check could only
-/// ever have failed. It is the check being unable to reach the feature, not
-/// the feature being broken: exactly the shape this whole afternoon has been
-/// about.
-///
-/// So this is 1,129 hand-written bytes: one page, one text field, one real
-/// appearance stream. `fixtures/off-page-object.pdf` is the precedent.
 const FIXTURE: &str = "text-field-with-appearance.pdf";
 
 /// See the module documentation.
@@ -248,10 +230,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
 /// Make the Select tool active, because the canvas's form overlay is gated on
 /// it — see the call site.
-///
-/// Silent when the item is not on screen: the caller's own assertions report
-/// the consequence, and a missing ribbon item is a different finding from a
-/// spotlight that does not light.
 fn select_tool(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
     // The View tab has to be brought forward first. The panel guard above
     // deliberately does NOT click it when the panel is already open — pressing

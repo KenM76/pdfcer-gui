@@ -142,11 +142,6 @@ pub fn within(doc: &OpenDoc, object: TargetId, band: Rect, crossing: bool) -> Ve
 }
 
 /// Whether a band takes one chunk, under the direction rule.
-///
-/// Its own function so the rule can be tested without a decomposed page: the
-/// failure it guards against is a build where both arms touch, which behaves
-/// identically for every crossing band and takes far too much for every
-/// enclosing one — and which no test of `within`'s plumbing would notice.
 fn reaches(band: Rect, chunk: Rect, crossing: bool) -> bool {
     if crossing {
         band.intersects(chunk)
@@ -261,12 +256,6 @@ mod tests {
     use super::*;
 
     /// **A band that clips a chunk takes it only when it is a crossing one.**
-    ///
-    /// The one rectangle pair that tells the two directions apart: fully
-    /// outside is refused by both and fully inside is taken by both, so a build
-    /// in which the enclosing arm also merely touched would pass every other
-    /// case. Left-to-right encloses, right-to-left touches — the page-rung
-    /// band's rule, unchanged at this rung.
     #[test]
     fn only_a_crossing_band_takes_a_chunk_it_merely_clips() {
         let chunk = Rect::from_min_max(egui::pos2(100.0, 100.0), egui::pos2(300.0, 112.0));
@@ -316,11 +305,6 @@ mod tests {
     }
 
     /// Every decline reason is a distinct string.
-    ///
-    /// The vocabulary earns its keep only if a harness can tell one from
-    /// another; two reasons that happened to be spelled the same would collapse
-    /// *click something first* into *the program is broken* with nothing to say
-    /// which had happened.
     #[test]
     fn every_decline_reason_is_distinct() {
         let mut sorted = DECLINED_REASONS.to_vec();

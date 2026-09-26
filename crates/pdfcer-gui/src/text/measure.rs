@@ -275,11 +275,6 @@ impl VertexEditRefusal {
 mod tests {
     use super::*;
     /// **The number an override overrode is in the sentence.**
-    ///
-    /// The one assertion this module exists for. A build that says "read as
-    /// parallel" without the angle has a checkbox hiding the fact that makes
-    /// the decision a decision — `pdfcer-core`'s own words, and the reason it
-    /// populates the field precisely when the override fires.
     #[test]
     fn a_forced_parallel_reading_states_the_angle_it_overrode() {
         let note = two_line_reading(true, Some(0.8), false)

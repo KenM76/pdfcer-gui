@@ -15,20 +15,6 @@ use crate::report::CheckReport;
 /// Content selection needs it.
 const MODE: &str = "edit";
 /// The selection line the LADDER writes — `canvas-selection … first=leaf:N`.
-///
-/// **The third time in one session that a check aimed at the wrong one of
-/// two selection lines**, and it is worth pinning here rather than fixing
-/// silently. This shell writes two, from two functions, for two different acts:
-///
-/// | line | written by | for |
-/// |---|---|---|
-/// | `selection-set … object=N via=…` | `SelectionState::select_only` | naming ONE target directly |
-/// | `canvas-selection … first=object:N` | `canvas::trace::selection_event` | a click that walked the ladder |
-///
-/// The descent goes through the ladder, so it writes the second. A check that
-/// reads the first sees nothing and reports the feature missing — which is what
-/// this one did on its first run, while the trace four lines further down said
-/// `first=leaf:0`.
 const SELECTION: &str = "canvas-selection"; // ui-text-exempt: a trace event name, never displayed
 /// The line `canvas::smart::enter` writes.
 const ENTER: &str = "smart-enter"; // ui-text-exempt: a trace event name, never displayed

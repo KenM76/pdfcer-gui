@@ -120,3 +120,17 @@ before believing either one's diagnosis.
 **Which face was substituted, or that it looks right.** pdfcer's standard-14
 substitutes are the engine's to choose and its tests cover the choice. This
 establishes that the shell reaches them, at the right moment, and says so.
+
+## Item notes
+
+### `const DELIBERATELY_UNSET`
+
+Named as a constant it never uses, so a reader grepping for the font-dir
+seam finds this file and its reason rather than concluding it was forgotten.
+The whole point of this run is that no folder is configured.
+
+### `const DECLINED`
+
+Since O47 this has exactly ONE meaning — *every font in this document
+is already embedded* — so it aims the check, it does not fail it. See the
+module header.

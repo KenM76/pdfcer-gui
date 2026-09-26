@@ -24,17 +24,9 @@ const OBJECT_RUNG: &str = "Object"; // ui-text-exempt: a trace token, never disp
 const PART_RUNG: &str = "Part"; // ui-text-exempt: a trace token, never displayed
 
 /// Which chunk of the fixture each click aims at, in the order clicked.
-///
-/// **A, B, A** — the alternation the header argues for. The first two entries
-/// are two chunks apart so an aim off by a few points still lands on the
-/// intended line.
 const AIMS: [usize; 3] = [0, 2, 0];
 
 /// How far apart, in points, the two aim points are.
-///
-/// Stated rather than recomputed in a message: it is the number that makes
-/// *the two lines report the same chunk* a finding about the hit test rather
-/// than about the aim.
 const AIM_SEPARATION_PT: usize = 32;
 
 /// What one click produced, read off `canvas-selection`.
@@ -74,11 +66,6 @@ impl Check for ClickingAChunkSelectsThatChunk {
 }
 
 /// Click once and read what the selection became.
-///
-/// `Ok(None)` means the application wrote no `canvas-selection` line since the
-/// mark taken here — which, because every click in this check is meant to
-/// change the selection, is itself a finding. It is returned rather than
-/// reported so each step can say what that silence means where it happened.
 fn click_and_read(session: &Session, driver: &Driver, at: ScreenPoint) -> Result<Option<Picked>> {
     let mark = session.trace()?.mark();
     driver.click_at(at)?;

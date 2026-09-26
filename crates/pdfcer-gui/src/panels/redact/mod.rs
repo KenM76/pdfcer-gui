@@ -17,10 +17,6 @@ use crate::panels::PanelsState;
 use crate::text::redact as t;
 
 /// Named region: the whole panel body.
-///
-/// Matched **literally** by `tools/ui-verify/src/checks/redaction.rs`, so
-/// renaming one of these silently un-aims the check that drives it. The same
-/// contract `crate::dialogs::ocr`'s region names carry.
 const REGION_PANEL: &str = "redact-panel"; // ui-text-exempt: trace region name, never displayed
 
 /// Named region: the search field.
@@ -33,21 +29,9 @@ const REGION_SEARCH: &str = "redact-search"; // ui-text-exempt: trace region nam
 const REGION_WHOLE_PAGE: &str = "redact-whole-page"; // ui-text-exempt: trace region name, never displayed
 
 /// Named region: the control that opens the apply report.
-///
-/// Declared **only while it is enabled**, which is itself an assertion a
-/// harness wants: its absence from the trace is evidence that nothing is
-/// marked, rather than that a click missed.
 const REGION_APPLY: &str = "redact-apply"; // ui-text-exempt: trace region name, never displayed
 
 /// The command the apply control invokes.
-///
-/// Raised as [`Action::Command`] rather than opening the dialog here, on
-/// `crate::app::mod`'s stated rule for the Find bar's OCR offer: a surface
-/// outside the ribbon that means an existing *command* routes through the one
-/// dispatch choke point, so the command's guards live in one place. A panel
-/// that called `DialogsState::open_redact` itself would be a second
-/// implementation of `edit.redact_apply`, and the two would drift the first
-/// time the command grew a precondition.
 const APPLY_COMMAND: &str = "edit.redact_apply"; // ui-text-exempt: a command id, never displayed
 
 /// The operator's own state in this panel.
@@ -160,10 +144,6 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
 }
 
 /// The three ways to make a mark.
-///
-/// Split out because [`body`] would otherwise be one long function whose two
-/// halves — *make marks* and *review marks* — change for entirely different
-/// reasons, which is the same seam `app/actions.rs` is split along.
 fn marking_controls(
     ui: &mut egui::Ui,
     doc: &OpenDoc,
@@ -338,11 +318,6 @@ fn census_and_apply(
 }
 
 /// One row per mark: where it is, and a way to take it off.
-///
-/// Two controls and no third. The row itself navigates — a plain button rather
-/// than a `selectable_label`, because a row is a **navigation command** and not
-/// a selection, and a highlighted row would imply a selected-mark concept this
-/// panel deliberately does not have.
 fn mark_rows(
     ui: &mut egui::Ui,
     marks: &[pdfcer_core::redact::RedactionMark],
@@ -472,12 +447,6 @@ mod tests {
     use crate::app::state::{FOUR_PAGES, open_fixture};
 
     /// **A whole-page mark covers what the page displays.**
-    ///
-    /// The crop box rather than the media box, argued at
-    /// [`whole_page_spec`]. The failure this catches is silent in both
-    /// directions: a media-box mark covers content the operator was never
-    /// shown, and a hand-shrunk rectangle would leave a margin of live text
-    /// under a mark labelled "whole page".
     #[test]
     fn a_whole_page_mark_covers_the_displayed_page() {
         let doc = open_fixture(FOUR_PAGES);
@@ -512,12 +481,6 @@ mod tests {
     }
 
     /// **Marking really does add a mark the census can see.**
-    ///
-    /// The end-to-end shape in the smallest form a headless test can hold, and
-    /// the reason it is worth having: the census reads
-    /// `session.graph()` while the mark is authored into the session overlay,
-    /// and a build that read `session.document()` anywhere in that chain would
-    /// report zero for every mark the operator had just made.
     #[test]
     fn a_mark_authored_into_the_session_is_visible_to_the_census() {
         let mut doc = open_fixture(FOUR_PAGES);
@@ -545,10 +508,6 @@ mod tests {
     }
 
     /// The panel's own state is forgotten with the document.
-    ///
-    /// A search term left over from a previous file is one an operator could
-    /// run against a document it was never meant for — and this feature answers
-    /// a search by authoring marks over whatever it hits.
     #[test]
     fn the_search_query_does_not_survive_a_new_document() {
         let mut state = PanelsState::default();

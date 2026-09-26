@@ -66,3 +66,36 @@ the check: **when two routes must agree, the trace line they are judged by
 belongs in the one function both of them call** — here `resizing::action` —
 and not in either route's own code, or the instrument measures the route
 instead of the claim.
+
+## Item notes
+
+### `const SCROLL_ATTEMPTS`
+
+Six. The button sits directly under the four fields, so one or two notches
+is the realistic case; six is enough for a panel slot squeezed by other
+panels above it and small enough that a check which will never find it fails
+quickly rather than scrolling for a minute.
+
+### `const COMMIT_EVENT`
+
+Deliberately not `resize-commit`, which is the *gesture's* line and
+carries the grip that was dragged — the typed route never writes it, so an
+oracle naming it reports a working Apply as inert. See the module header.
+
+### `const APPLIED`
+
+The typed route shares `resizing::action` with the grips, so whatever
+verb that function reaches is the verb this check must name — which is the
+whole reason the two routes share it. ⚠ Naming a MECHANISM rather than an
+outcome is what makes this constant a liability: the check goes red on the
+day the mechanism improves, with nothing wrong in the application. See
+`resize.rs`'s note on the same constant.
+
+### `const SCRUB_PX`
+
+At the panel's `SPEED` of 0.5 points per pixel this is **+40 points** — far
+beyond the tenth-of-a-point tolerance `plan` uses to decide the operator
+typed something, and far enough that `sx` is unambiguously greater than 1 on
+any object bigger than a few points. A ten-pixel scrub would be five points,
+which on a large shape rounds to `sx = 1.004` and could also be produced by a
+build that ignored the draft and re-seeded from slightly stale bounds.

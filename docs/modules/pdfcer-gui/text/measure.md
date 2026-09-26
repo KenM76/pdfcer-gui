@@ -37,3 +37,12 @@ the same resolution [`crate::text::markup::deleted_collateral`] reached for
 `DeletionReport`. The **refusal is still surfaced by name**, which is what
 the obligation actually asks for; what changes is which crate owns the
 English, and that is decision 002 R1.
+
+## Item notes
+
+### `fn a_forced_parallel_reading_states_the_angle_it_overrode`
+
+The one assertion this module exists for. A build that says "read as
+parallel" without the angle has a checkbox hiding the fact that makes
+the decision a decision — `pdfcer-core`'s own words, and the reason it
+populates the field precisely when the override fires.

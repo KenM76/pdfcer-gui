@@ -68,13 +68,6 @@ pub(super) fn apply_action(doc: &mut OpenDoc, action: FileAction) {
 }
 
 /// **Read `path` and place it as new pages.**
-///
-/// # Errors are worded, never dropped
-///
-/// Three of them: the file cannot be read, its bytes are not UTF-8, and the
-/// engine refused. All three reach the status row, because a File ▸ Import that
-/// does nothing and says nothing is this project's founding defect wearing a
-/// different hat.
 fn import(
     doc: &mut OpenDoc,
     path: &std::path::Path,
@@ -166,13 +159,6 @@ fn import(
 }
 
 /// **Everything the import decided, as sentences.**
-///
-/// Ordered by what an operator would act on, not by the struct's field
-/// order. The count of pages comes first because it is the answer to *"did that
-/// work?"*; the undo warning comes second because it is the only one with a
-/// deadline on it; the six judgements follow, and the engine's self-check is
-/// last because it is a defect report rather than a disclosure and should not
-/// be read as one of the six.
 fn disclosures(report: &PlaceTextReport, pages_before: usize) -> Vec<String> {
     let mut out = Vec::new();
     out.push(t::pages_created(report.pages_created, pages_before));
@@ -216,10 +202,6 @@ fn disclosures(report: &PlaceTextReport, pages_before: usize) -> Vec<String> {
 }
 
 /// **One refusal, as a sentence.**
-///
-/// See the module header for why exactly three are named. The catch-all carries
-/// the engine's own message rather than a shrug, which is
-/// `annots::refusal_for`'s posture and its argument applies here unchanged.
 fn refusal_for(error: &PlaceTextError) -> String {
     match error {
         // Both of these are the SAME operator problem seen from two sides —

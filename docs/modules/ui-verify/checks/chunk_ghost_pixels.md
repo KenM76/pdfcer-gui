@@ -115,3 +115,121 @@ binary is the commonest cause of a falsification that did not reproduce.
 4. **Mark the canvas.** Paint the un-moved line over itself at
    `Color32::from_white_alpha(110)` after the blit in `draw_raster_ghost`.
    Question 3 goes red and nothing else does.
+
+## Item notes
+
+### `const VIEWPORT_REGION`
+
+Every measured rectangle is clipped to it, and the check reads blank
+panel furniture as content without that. A line of this fixture is 267 pt
+wide and the canvas at [`WANT_ZOOM`] is narrower than that, so the band a
+document rectangle converts to runs off the right-hand edge of the canvas
+and on into whatever dock is beside it. `logical_to_capture_pixels` clamps
+to the WINDOW, which is the wrong boundary here and cannot know it.
+
+### `const LINE`
+
+Line 0 is the widest — 266.8 pt against line 5's 38.0 — so it puts the most
+glyph pixels inside the measured region. Every question here is a statistic
+over that region, and a statistic over forty pixels is a coin toss.
+
+### `const DROP_DY_PT`
+
+Negative because PDF y increases upwards and the drag goes down the sheet.
+150 pt puts the copy's band at 550.0 to 558.4 — blank paper on this
+document, 62 pt clear of the lowest line of the paragraph, and near enough
+to the source that both ends of the gesture are on screen at [`WANT_ZOOM`].
+
+### `const WANT_ZOOM`
+
+Not a preference — an arithmetic requirement, and the check reports SKIP
+rather than a verdict without it. The subject is one 8.4 pt line of text;
+at the zoom a letter sheet arrives fitted to the window it is six device
+pixels tall, which leaves nothing at all once [`INSET_PX`] has taken the
+outline off both edges. Two page points to the logical point gives about
+seventeen, and an interior of eleven rows to take a mean over.
+
+The ceiling on it is the other end of the gesture: the copy is dropped
+[`DROP_DY_PT`] away, and a zoom that put the destination outside the
+viewport would make `doc_to_window` refuse the conversion.
+
+### `const ZOOM_SPINS`
+
+A notch's factor is egui's, not this harness's to know, so the loop reads
+the application's own `zoom=` back after every spin rather than counting. The
+cap is a runaway guard.
+
+### `const INSET_PX`
+
+Three, and the number is load-bearing in both directions. Smaller and the
+outline ghost's own stroke — one logical point, up to two pixels at the
+scale factors this runs at — is inside the region, which would let a box
+satisfy an assertion about lettering. Larger and a 8.4 pt line at fit zoom
+has no interior left to measure.
+
+### `const LIGHTER_BY`
+
+The raster ghost composites at 190/255, so a black glyph over white paper
+lands at 65 and the gap over a region of ordinary text is two orders of
+magnitude above this. The floor is set where it is to be clear of capture
+quantisation rather than to be a tolerance on the alpha: a build whose tint
+had drifted from 190 to 230 should still pass, because the ask is *a copy,
+visibly not the content*, and it is not a claim about a constant.
+
+### `const UNMARKED_WITHIN`
+
+Meant to be zero: the same pixels, captured twice, by a deterministic
+screenshot of a window that is not animating. It is not written as an exact
+comparison because the page under the source line is being repainted every
+frame while the drag is in flight, and a single antialiased pixel landing
+differently is not the defect this question is about.
+
+### `const COVERAGE_BAND`
+
+Wide on purpose. The copy is the same glyphs at 74.5 % over the same paper,
+so its core pixels are ink by [`pixels::ink_run_into`]'s threshold and some
+of its antialiased edge pixels are not — a real and expected loss that
+tracks the alpha. What this band excludes is the case it was written for: a
+UV that sampled blank paper, where the fraction is zero.
+
+### `fn of`
+
+A region with no pixels is an `Err` rather than a zero: it means the
+rectangle fell outside the capture, which is a finding about the layout
+and must never be averaged into a verdict.
+
+### `fn inset`
+
+`None` rather than a degenerate rectangle: a zero-area region reads as
+"nothing was sampled" in every oracle in [`pixels`], which is
+indistinguishable from "nothing was drawn" and is the exact confusion this
+check exists to avoid.
+
+### `fn clip`
+
+`None` rather than an empty rectangle, for [`inset`]'s reason: every oracle
+in [`pixels`] reads a zero-area region as "nothing was sampled", which is
+indistinguishable from "nothing was drawn".
+
+### `fn band_to_pixels`
+
+Written from the geometry table rather than read from anything the
+application published, deliberately: an oracle that takes its aim point from
+the build it is measuring agrees with whatever that build does.
+
+### `fn zoom_in_at`
+
+The application's own `zoom=` is read back after every spin rather than the
+factor of a notch being assumed: that factor is egui's, and a harness that
+counted notches would be asserting against its own arithmetic. Stops early
+when a spin moves the number not at all, which is the ceiling or a wheel
+landing somewhere other than the canvas — both cases the caller has to hear
+about rather than spin through.
+
+### `fn aim_screen`
+
+[`crate::checks::text_selection::aim`] re-reads the trace on every call,
+which is right for a check whose gestures change the layout between aims and
+wrong here: every rectangle and both endpoints of the one gesture must come
+from the SAME mapping, or the displacement the ghost is measured against is
+not the displacement the pointer travelled.

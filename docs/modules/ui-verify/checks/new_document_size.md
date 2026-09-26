@@ -49,3 +49,20 @@ It launches with no `--pdf`. `file.new_from_template` is registered with no
 `enabled_when` because an operator with nothing open is the one it exists
 for, and a check that needed a document open would be testing a state the
 command is least likely to be used from.
+
+## Item notes
+
+### `const A3_INDEX`
+
+The list is A0, A1, A2, A3, … — largest-first, which is the engine's own
+ordering and is deliberate: this operator's sheets are A1 and A3, and
+burying them under A4 would make the common case the hard one. Spelled out
+as a constant with the ordering stated so that a reordering of `ALL` fails
+here with a readable reason rather than silently checking A2.
+
+### `const TOLERANCE_MM`
+
+A3 is 420 × 297 mm exactly by definition, and the points are derived from
+that, so the round trip should be exact to well under a tenth of a
+millimetre. One millimetre is a tolerance that cannot mask a real defect —
+the smallest wrong answer available is A4 (210 × 297), which is 123 mm out.

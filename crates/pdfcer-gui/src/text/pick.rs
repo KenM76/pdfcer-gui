@@ -184,11 +184,6 @@ mod tests {
     }
 
     /// The Links row must not promise what the build cannot do.
-    ///
-    /// `PickClass::Link` is off by default because nothing can pick a link, and
-    /// its tooltip is the only place the operator is told that. If link picking
-    /// lands and this tooltip is not rewritten, the shell starts lying in the
-    /// helpful direction — which is the direction nobody reports.
     #[test]
     fn the_links_row_says_it_does_nothing_yet() {
         assert!(

@@ -152,12 +152,6 @@ pub fn attribute(uploads: &[Upload], drained: native_gl::Drained) -> Attribution
 
 /// Where the frame's ordered uploads are stashed between being ordered and
 /// being judged.
-///
-/// `ctx.data` rather than a field on `PdfcerApp`, for the reason every other
-/// cross-cutting per-frame value in this crate travels that way (the theme,
-/// the selected tool, the text draft, the dialog owner): the producers are an
-/// `OpenDoc` method, a panel, a dialog and an icon cache, and threading a
-/// field to all four would put a graphics-memory concern into each of them.
 #[derive(Clone, Default)]
 struct Ordered(Vec<Upload>);
 
@@ -323,12 +317,6 @@ mod tests {
     }
 
     /// A thumbnail is NOT the canvas, even though it is a whole page.
-    ///
-    /// The two share [`crate::render::raster::texture_from_pixels`] and are
-    /// built from the same key type, so a rule keyed on the pixels alone
-    /// cannot tell them apart — and would blame a 40 kB thumbnail, at whatever
-    /// page happened to scroll into the Pages panel, for a failure raised by
-    /// the font atlas. This test is what makes that a build failure.
     #[test]
     fn a_thumbnail_is_never_blamed_though_it_is_a_whole_page_raster() {
         let thumb = Upload {
@@ -364,11 +352,6 @@ mod tests {
     }
 
     /// A lone region upload is reported as such, not blamed.
-    ///
-    /// Region rasters are a fixed multiple of the viewport at every zoom, so
-    /// one failing is evidence about the machine — O221 — and lowering a zoom
-    /// ceiling in response would take zoom away for a reason that had nothing
-    /// to do with zoom.
     #[test]
     fn a_lone_region_upload_is_reported_but_not_blamed() {
         let region = Upload {
@@ -396,10 +379,6 @@ mod tests {
     }
 
     /// A drained set with no OOM in it still produces a verdict.
-    ///
-    /// `attribute` keys on `is_clean`, deliberately: a frame that raised an
-    /// `INVALID_OPERATION` had something happen, and a trace reporting nothing
-    /// would hide it. Acting on it is `out_of_memory`'s job, at the call site.
     #[test]
     fn an_unrelated_error_still_produces_a_verdict() {
         let other = native_gl::Drained {
@@ -414,10 +393,6 @@ mod tests {
     }
 
     /// The record survives being written and read back through `ctx.data`.
-    ///
-    /// Pins the two halves together: a `record_*` that stashed under one id and
-    /// a `take` that read another would silently report `NoUploads` forever,
-    /// which is indistinguishable from a healthy session.
     #[test]
     fn a_recorded_upload_comes_back_out_once() {
         let ctx = egui::Context::default();

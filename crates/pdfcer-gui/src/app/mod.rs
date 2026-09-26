@@ -195,47 +195,19 @@ pub mod window;
 use state::Status;
 
 /// Named region: the whole central panel, in window logical points.
-///
-/// The outermost region this crate owns today. When the ribbon, the docks and
-/// the status bar land, each declares its own — see [`crate::diag::ui_rect`]
-/// for the seam and for the naming rule.
 const REGION_CENTRAL_PANEL: &str = "central-panel"; // ui-text-exempt: trace region name, never displayed
 
 /// Named region: the one-sentence explanation shown when nothing is open, or
 /// when the document could not be opened.
-///
-/// One name for all four non-open arms. A check asking "is the shell's
-/// explanatory text legible?" is asking about the region, not about which of
-/// the four sentences happens to be in it — and the four are laid out
-/// identically, so they are genuinely the same region.
 const REGION_STATUS_MESSAGE: &str = "status-message"; // ui-text-exempt: trace region name, never displayed
 
 /// Trace slot: what the dock drew this frame.
-///
-/// De-duplicated on the rendered line, so a dock that is not changing costs
-/// one line rather than one per frame — the lesson `canvas-pointer` taught
-/// when a stationary pointer emitted fifty identical lines in nine seconds.
 const DOCK_SLOT: &str = "dock"; // ui-text-exempt: trace slot name, never displayed
 
 /// Trace slot: the drop offer a drag over the dock is being shown.
-///
-/// Its own slot rather than a second line under [`DOCK_SLOT`], because two
-/// call sites sharing a slot each suppress the other's lines: the dock's own
-/// summary changes on a layout edit and the offer changes on every pointer
-/// move, so sharing would erase whichever moved second.
-///
-/// Reports `none` rather than falling silent when no drag is in flight. A
-/// change-only slot that simply stops emitting cannot be told apart from a
-/// program that stopped running the code, and *the offer was withdrawn* is
-/// exactly what a check asserting a stand-down needs to read.
 const DOCK_DROP_SLOT: &str = "dock-drop"; // ui-text-exempt: trace slot name, never displayed
 
 /// Trace slot: the window a drag carried outside the dock would open.
-///
-/// Separate from [`DOCK_DROP_SLOT`] for that slot's reason, and because the
-/// two are mutually exclusive by construction — the compass needs a
-/// compartment under the pointer and the tear needs there to be none — so a
-/// frame reporting both named is a defect the two lines make visible.
 const DOCK_TEAR_SLOT: &str = "dock-tear"; // ui-text-exempt: trace slot name, never displayed
 
 /// The whole application state.
@@ -1210,60 +1182,6 @@ pub(crate) mod tests;
 
 /// **Which mode the ribbon opens in** — the restored one if there is one, and
 /// otherwise whatever it was already set to.
-///
-/// # Why this is a function and not two lines inside `PdfcerApp::new`
-///
-/// Because it was two lines inside `PdfcerApp::new` and one of them was
-/// missing for ten days, and the shape of that absence is worth a name.
-///
-/// `new` builds the `RibbonState` **before** it calls [`modes::start`], and
-/// seeds it with `modes().first()` — Read — because an unset mode makes the
-/// shell show every tab regardless of the selector. `start` then restores the
-/// operator's remembered mode into [`modes::Modes`], the dock and the layout.
-/// The ribbon, already built, kept Read. `PdfcerApp::docks` reconciles the two
-/// once a frame by comparing `ribbon.mode()` against `modes.active()` and
-/// treats the **ribbon** as authoritative — so the restored mode lived exactly
-/// one frame and was then thrown away.
-///
-///
-/// > Someone who spent an afternoon in Edit came back the next morning to a
-/// > program that had silently forgotten.
-///
-/// It bites markup hardest: markup is authored in **Review**, and the program
-/// reopened in Read every single time.
-///
-/// # The start-up trace said it was working
-///
-/// `modes::assemble` emits `mode-restore stored=Some("review")
-/// using=Some("review")` — true of what *that stage* adopted — and forty lines
-/// further down the same trace carries `mode-changed from=Some("review")
-/// to=read`. ⇒ **A stage's trace records what the stage decided, not what the
-/// frame settled on.** The two are different claims wherever a later stage may
-/// overrule an earlier one, and a harness grepping only the first would report
-/// a working feature.
-///
-/// It was found, and the fix proven, by launching the **release binary** off
-/// screen against a `layout.ron` holding `mode: Some("review")` and reading
-/// which ribbon tabs published a rect:
-///
-/// | | tabs that drew |
-/// |---|---|
-/// | before | `file`, `view` |
-/// | after | `file`, `view`, `pages`, `markup`, `measure` |
-///
-/// # What the test below can prove, and what only the launch can
-///
-/// This function's test drives the **decision** and is falsifiable: hand it a
-/// restored `"review"` beside a current `"read"` and it must answer `"review"`,
-/// which the ten-day-old code — passing `first` unconditionally — could not.
-///
-/// It cannot prove that `PdfcerApp::new` still *calls* it. An earlier attempt
-/// asserted `app.ribbon.mode() == app.modes.active()` after `PdfcerApp::new()`
-/// and **stayed green with the fix deleted**, because `new` reads the real
-/// layout file and on a machine with no stored mode both sides are Read for a
-/// trivial reason. A check that cannot fail is not evidence, so that test was
-/// removed rather than left to imply coverage it did not have. The wiring's
-/// oracle is the off-screen launch above.
 fn opening_ribbon_mode(restored: Option<&str>, current: Option<&str>) -> Option<String> {
     restored.or(current).map(str::to_owned)
 }
@@ -1273,10 +1191,6 @@ mod opening_mode_tests {
     use super::opening_ribbon_mode;
 
     /// The restored mode wins over whatever the ribbon was seeded with.
-    ///
-    /// Falsified by replacing the body with `current.or(restored)`, which is
-    /// the ten-day-old behaviour: this goes red and the two below stay green,
-    /// which is why all three exist rather than only this one.
     #[test]
     fn a_restored_mode_beats_the_seeded_first_mode() {
         assert_eq!(

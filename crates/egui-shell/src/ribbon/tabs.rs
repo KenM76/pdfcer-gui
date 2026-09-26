@@ -102,6 +102,8 @@
 //! [`super::strip`]'s header carries the measurement of what that costs.
 //! Planning a row is not a thing a "which tabs are visible" module should
 //! contain, so the row lives there and the tabs live here.
+//!
+//! Design and rationale: `docs/modules/egui-shell/ribbon/tabs.md`.
 
 use egui::{RichText, Stroke, TextStyle, vec2};
 
@@ -244,13 +246,6 @@ pub(crate) fn visible_tabs<'a>(
 }
 
 /// Whether any item on `tab` is visible under `conditions`.
-///
-/// **A tab with no groups, or groups with no items, is `true`.** That is
-/// deliberate and is not the case this rule is about: an empty tab is a
-/// manifest under construction, and hiding it would make a half-written
-/// manifest look like a working one with a missing feature. What this
-/// suppresses is a tab whose items exist and are all **conditioned away**,
-/// which is a statement the manifest made on purpose.
 fn has_something_to_show(tab: &Tab, conditions: &ConditionSet) -> bool {
     let mut saw_item = false;
     for group in tab.groups() {
@@ -350,13 +345,6 @@ pub(crate) fn render_tabs(
 }
 
 /// Draw one tab button, wherever it is. Returns whether it was clicked.
-///
-/// `truncate()` is unconditional, and it is what makes the pinned active
-/// tab's promise keepable: [`super::plan::plan_tab_strip`] guarantees the
-/// active tab a slot but cannot guarantee that slot is as wide as its
-/// label, so when the row is narrow the tab loses characters rather than
-/// losing its place. See [`super::band::command_button`]'s `truncate`
-/// section on why the band makes the opposite choice.
 fn draw_tab(ui: &mut egui::Ui, ctx: &mut Ctx<'_>, tab: &Tab, is_active: bool) -> bool {
     let accent = ctx.theme.palette.accent;
     let cues = tab_cues(is_active);
@@ -524,16 +512,6 @@ mod tests {
     use crate::manifest::Item;
     /// **A tab every one of whose items is conditioned away is not
     /// shown at all.**
-    ///
-    /// The symmetric completion of the band's *"a group with nothing left is
-    /// not drawn"*. Without it the two disagree, and the operator gets a tab
-    /// they can click with an empty band beneath it.
-    ///
-    /// This is also the rule that makes a **generous tab list** safe, which
-    /// is the point of having it: a mode can name a tab it only sometimes
-    /// needs and the tab appears exactly when it has something to offer. It is
-    /// what lets a command live on the tab it belongs on rather than on the tab
-    /// a mode happened to be granted.
     #[test]
     fn a_tab_with_every_item_conditioned_away_is_not_shown() {
         let shell = Shell::new()
@@ -571,12 +549,6 @@ mod tests {
     }
 
     /// A manifest that never uses conditions is untouched by the rule.
-    ///
-    /// The guard that makes it safe to add to a shipped shell: the question
-    /// asked is *"is every item conditioned away?"*, and an unconditioned item
-    /// answers no. An **empty** tab is also still shown — that is a manifest
-    /// under construction, and hiding it would make a half-written manifest
-    /// look like a working one with a feature missing.
     #[test]
     fn an_unconditioned_or_empty_tab_is_always_shown() {
         let shell = Shell::new()
@@ -622,11 +594,6 @@ mod tests {
     }
 
     /// **A mode shows its own tabs, in its own order.**
-    ///
-    /// `MODES_AND_PANELS.md` Part 1's whole premise: Read is *File ·
-    /// View*, Edit is everything. Nothing in this crate names those
-    /// modes — they come out of the manifest — which is the "Read/Review/
-    /// Edit is configuration, not a built-in" requirement made concrete.
     #[test]
     fn a_mode_shows_only_its_own_tabs() {
         let shell = shell();
@@ -642,11 +609,6 @@ mod tests {
     }
 
     /// **A mode's order wins over the manifest's.**
-    ///
-    /// A mode is a workspace. A workspace that silently reordered itself
-    /// to match the underlying tab list would not be one, and the
-    /// operator who put Tools first would find it back in fourth place
-    /// with no explanation.
     #[test]
     fn a_modes_order_wins_over_the_manifests() {
         let shell = shell().with_mode(Mode::new("backwards", "Backwards", ["tools", "file"]));
@@ -661,11 +623,6 @@ mod tests {
     }
 
     /// No modes, or an unknown mode, shows every ordinary tab.
-    ///
-    /// Both are fail-soft in the safe direction: showing everything can
-    /// never hide a capability, and `SHELL_FRAMEWORK.md`'s rule for a
-    /// stale customization is that it loses one thing rather than the
-    /// layout.
     #[test]
     fn an_absent_or_unknown_mode_shows_everything() {
         let shell = shell();
@@ -684,11 +641,6 @@ mod tests {
     }
 
     /// **A contextual tab appears exactly while its condition holds.**
-    ///
-    /// `RIBBON_IA.md` §4: Format appears when something is selected. It
-    /// is appended after the mode's tabs rather than inserted into them,
-    /// because a tab that changed the *position* of the others as it came
-    /// and went would move every target under the operator's cursor.
     #[test]
     fn a_contextual_tab_appears_only_while_its_condition_holds() {
         let shell = shell();
@@ -708,12 +660,6 @@ mod tests {
     }
 
     /// A contextual tab with no condition never appears.
-    ///
-    /// The opposite of the empty-string case in
-    /// [`super::ctx::condition_holds`], and deliberately so: a tab placed
-    /// in `contextual_tabs` with **no** `visible_when` key at all has not
-    /// said when it appears, and a contextual tab that is always present
-    /// is an ordinary tab in the wrong list.
     #[test]
     fn a_contextual_tab_with_no_condition_never_appears() {
         let shell = Shell::new()
@@ -730,10 +676,6 @@ mod tests {
     }
 
     /// A hidden tab is skipped even when a mode names it.
-    ///
-    /// The operator's own hide outranks the mode's list — hiding is a
-    /// customization, and `SHELL_FRAMEWORK.md` §5 puts "hide them" in the
-    /// allowed column.
     #[test]
     fn a_hidden_tab_is_skipped_even_when_a_mode_names_it() {
         let mut shell = shell();
@@ -746,11 +688,6 @@ mod tests {
 
     /// **An active tab that disappears falls back to the first visible
     /// one, in the same frame.**
-    ///
-    /// Two ways a tab disappears while active: the operator switches to a
-    /// mode that does not contain it, or a contextual tab's condition
-    /// stops holding. Both must recover without a blank band and without
-    /// a click. See the module header on why the alternatives are worse.
     #[test]
     fn an_active_tab_that_disappears_falls_back_to_the_first() {
         let shell = shell();
@@ -799,22 +736,6 @@ mod tests {
 
     /// **R84: the active tab differs from an inactive one by more than
     /// colour.**
-    ///
-    /// A fill-only cue is invisible to a colour-blind operator, invisible
-    /// on a projector, and invisible in a greyscale screenshot — which is
-    /// also how it becomes invisible in a bug report. Two of the four
-    /// cues here are the presence or absence of a *shape*, and either
-    /// alone is sufficient to read the strip.
-    ///
-    /// Written against the *count* of non-colour cues rather than against
-    /// the specific ones, so a future redesign may swap an underline for
-    /// a top rule or a border for a notch — but may not quietly reduce
-    /// the set to the fill.
-    ///
-    /// **`emphasised_text` is deliberately not counted.** See the module
-    /// header: `RichText::strong()` in `egui` 0.35 is a stronger *colour*
-    /// at the same weight, and treating it as a weight cue is exactly the
-    /// mistake this project's own preferences document made.
     #[test]
     fn the_active_tab_is_distinguished_by_more_than_colour() {
         let active = tab_cues(true);

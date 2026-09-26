@@ -310,12 +310,6 @@ mod tests {
     }
 
     /// **The nearest handle wins, not the first.**
-    ///
-    /// An anchor's two handles can be within a few pixels of each other on a
-    /// shallow curve. "Whichever came first in the list" would make which one
-    /// the operator got depend on the decomposition order — a coin toss they
-    /// cannot see and cannot learn, and one that would show up as "sometimes it
-    /// drags the wrong side".
     #[test]
     fn the_nearest_of_two_close_handles_wins() {
         let hs = vec![

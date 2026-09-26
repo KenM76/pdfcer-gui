@@ -74,3 +74,18 @@ same commit that first makes two others run, would destroy the independent
 evidence at the moment it is most needed. [`crate::checks::driving`]'s
 header records the identical judgement about `markup_rectangle`. ⚠ The
 tripwire against that copy drifting is [`tests::the_two_implementations_agree_on_the_click_bound`].
+
+## Item notes
+
+### `fn the_two_implementations_agree_on_the_click_bound`
+
+[`crate::checks::measure_linear`] keeps its own copy of the loop, for
+the argued reason stated there and here. This asserts the one number
+the two copies must not disagree about — if `measure_linear` ever
+decides a pick may take three clicks, or this module does, the two
+stop being the same behaviour and a reader comparing their traces is
+misled.
+
+It is keyed on the OTHER module's constant, not on a literal
+restatement of it here, so it measures the copy rather than measuring
+this test's own opinion.

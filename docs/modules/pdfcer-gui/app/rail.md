@@ -46,3 +46,22 @@ zoom, which is a loop this project has paid for twice.
 further rows; below that the `ScrollArea` here carries them. A rail that
 simply cut its last entry off the bottom edge of a short window would be
 the unreachable-control defect arriving by a different route.
+
+## Item notes
+
+### `fn entry`
+
+Hand-drawn rather than an `egui::Button`, and the reason is the width.
+A button sizes itself from its content; this row must be exactly the strip
+wide at every rung, whatever the label says. Allocating the rectangle first
+and painting into it is the only arrangement in which the label physically
+cannot influence the geometry — which is the R128 argument made structural
+rather than promised in a comment.
+
+### `fn chevron`
+
+It is drawn only when it holds something — a chevron over an empty
+overflow is the dead control R9 forbids — and it is **never itself
+folded**: [`egui_shell::dock::rail::build`] appends it after the ladder has
+run. That is Inkscape failure mode #8 (past about six tabs the overflow
+button is the thing that gets hidden) refused by construction.

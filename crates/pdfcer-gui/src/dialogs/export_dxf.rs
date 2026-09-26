@@ -194,17 +194,6 @@ impl ExportDxfDialog {
 
     /// **This window's state, reduced to what a different document would still
     /// want** — the producing half of `OPERATOR_REQUESTS.md` **O196**.
-    ///
-    /// The membership rule and the argument for every inclusion and every
-    /// omission live on [`crate::app::prefs::ExportDxfPrefs`], which is the type
-    /// this returns; this function is only the projection. It is one struct
-    /// literal with **no `..Default::default()`**, so a field added to
-    /// `ExportDxfPrefs` is a compile error here rather than a preference written
-    /// to disk as its own default and never actually remembered.
-    ///
-    /// ⚠ **`scale` is not here, and it is not an oversight.** It is the one
-    /// field of `DxfOptions` this window edits that must be derived per page
-    /// rather than carried between them.
     fn habits(&self) -> crate::app::prefs::ExportDxfPrefs {
         crate::app::prefs::ExportDxfPrefs {
             units: self.options.units,
@@ -351,10 +340,6 @@ impl ExportDxfDialog {
     }
 
     /// What pdfcer inferred, and what the operator should make of it.
-    ///
-    /// Drawn **above** the field rather than below it, because it is the reason
-    /// the number in the field is what it is — and a caveat under a control is
-    /// a caveat read after the control has been used.
     fn scale_disclosure(&mut self, ui: &mut Ui) {
         match &self.suggestion {
             DxfScaleSuggestion::Calibrated {
@@ -498,16 +483,6 @@ mod tests {
     }
 
     /// Habits that differ from the engine's defaults on **every** field.
-    ///
-    /// The anti-vacuity fixture, and it is asserted rather than trusted. A
-    /// `seeded_options` that ignored `remembered` entirely and returned
-    /// `DxfOptions::default()` would satisfy every assertion below if the
-    /// fixture happened to equal that default. So each field is checked
-    /// against the engine's own value here, once, and the whole module fails
-    /// loudly if the engine ever moves a default onto this fixture.
-    ///
-    /// That is this project's standing lesson about a check whose input was
-    /// chosen for convenience: what is fed in is part of the assertion.
     fn habits() -> ExportDxfPrefs {
         let engine = DxfOptions::default();
         let habits = ExportDxfPrefs {
@@ -552,17 +527,6 @@ mod tests {
 
     /// **A calibrated ce dimension group overrules the remembered units**,
     /// and this is the assertion the rest of O196 is dangerous without.
-    ///
-    /// The operator habitually exports millimetres. This page was dimensioned
-    /// in inches and pdfcer can prove it. If the habit won, the DXF would be
-    /// out by 25.4× — and it would open cleanly, measure consistently, and be
-    /// wrong, which is the failure this module exists to prevent. The person
-    /// who discovers it is whoever cuts from the file.
-    ///
-    /// **Before O196 this could not happen**, because there was no habit: the
-    /// window always started from `DxfOptions::default()` and a calibration
-    /// only ever overwrote a default. Remembering is what created the ordering
-    /// question, so remembering is what owes it a test.
     #[test]
     fn a_calibrated_page_overrules_the_remembered_units() {
         let habits = habits();
@@ -600,10 +564,6 @@ mod tests {
     }
 
     /// **A conflicting page leaves the habit standing.**
-    ///
-    /// Nothing has overruled it: the window is about to say it cannot choose,
-    /// and a window that cannot choose a scale has not thereby learned
-    /// anything about units either.
     #[test]
     fn a_conflicting_page_leaves_the_habit_standing() {
         let options = seeded_options(
@@ -621,13 +581,6 @@ mod tests {
 
     /// **Every kind of suggestion has its own stable, lowercase, payload-free
     /// token.**
-    ///
-    /// The `export-dxf-open` trace is machine-read by `ui-verify`, and
-    /// [`suggestion_key`] records at length why a `{suggestion:?}` was not good
-    /// enough: the `Debug` payload carries a group name that varies with the
-    /// document, so a substring check degrades to *"the window opened"* — a
-    /// claim satisfied by every build ever shipped, including the one O196
-    /// exists to replace.
     #[test]
     fn every_suggestion_kind_has_its_own_stable_token() {
         let kinds = [

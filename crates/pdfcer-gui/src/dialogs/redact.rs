@@ -60,58 +60,25 @@ const REGION_DESTINATION_REPLACE: &str = "redact-apply-destination-replace"; // 
 const REGION_OVERWRITE_ACK: &str = "redact-apply-overwrite-ack"; // ui-text-exempt: trace region name, never displayed
 
 /// The *this document* destination choice — the default since 2026-09-04.
-///
-/// Declared **unconditionally**, unlike its two siblings, and that asymmetry is
-/// the assertion: this destination is available on every document, including
-/// one created in this session that has no file to replace, so its ABSENCE
-/// from a trace is evidence about the build rather than about the document.
 const REGION_DESTINATION_INTO_DOCUMENT: &str = "redact-apply-destination-into-document"; // ui-text-exempt: trace region name, never displayed
 /// The *this document, now* radio, for `ui-verify`.
 // ui-text-exempt: trace region name, never displayed
 const REGION_DESTINATION_INTO_DOCUMENT_NOW: &str = "redact-apply-destination-into-document-now";
 
 /// The *a new file* destination choice, also declared unconditionally.
-///
-/// Published so `tools/ui-verify` can **click** it. Its redaction check
-/// drives the whole feature to a file — that the source was not touched, that
-/// the output lacks the secret, that a second process extracts nothing from it
-/// — and the default destination produces no file at all, so the harness has to
-/// move off the default deliberately and needs a rect to move to.
 const REGION_DESTINATION_NEW_FILE: &str = "redact-apply-destination-new-file"; // ui-text-exempt: trace region name, never displayed
 
 /// The staging disclosure, declared **only while it is on screen** — i.e. only
 /// while the deferred destination is selected.
-///
-/// It is a region rather than only a string so a harness can assert that the
-/// sentence is *above the confirm control*, which is the whole of its value:
-/// `tools/ui-verify`'s redaction check can compare this rect's bottom against
-/// [`REGION_CONFIRM`]'s top and fail if the disclosure ever moves below the
-/// button it is meant to precede.
-///
-/// **The name must keep describing the sentence.** A region name that
-/// says one thing while the label below it says another aims a harness at a
-/// sentence it will not find, and the check then passes while measuring
-/// something else.
 const REGION_STAGING_NOTE: &str = "redact-apply-staging-note"; // ui-text-exempt: trace region name, never displayed
 
 /// Height kept clear below the report for the checkbox and button rows.
 const FOOTER_RESERVE: f32 = 150.0;
 
 /// The least height the report may be given.
-///
-/// Without a floor, a small window produces a scroll area that draws **nothing
-/// at all** — `available_height()` minus a reservation goes negative, and a
-/// negative `max_height` is a silently empty area rather than an error. On this
-/// dialog that would be a confirmation with no report above it, which is the
-/// one shape it must never take. The About and OCR dialogs record the same
-/// trap.
 const REPORT_FLOOR: f32 = 120.0;
 
 /// Where one apply transaction has got to.
-///
-/// A state machine rather than several `Option`s, because the states are
-/// mutually exclusive and an `Option` quadruple has combinations that would all
-/// compile and none of which means anything.
 #[derive(Debug)]
 enum Phase {
     /// The removal ran, the proof passed, and the bytes are waiting for a
@@ -242,15 +209,6 @@ pub struct RedactDialog {
 
 impl RedactDialog {
     /// **Prepare the redaction and build the dialog around the answer.**
-    ///
-    /// The whole removal runs here — see §2 — so this call is as expensive as a
-    /// full rewrite of the document, once, on a deliberate click.
-    ///
-    /// `reach` is read from the operator's preferences by the caller, once,
-    /// at the moment the window opens. It is deliberately not re-read while the
-    /// window is up: every number on screen was computed at one reach, and a
-    /// value that could move underneath them would make the report describe a
-    /// removal other than the one *Apply* performs.
     fn open(doc: &OpenDoc, reach: RedactionReach) -> Self {
         let phase = match prepare_redaction_apply(&doc.session, reach) {
             Ok(prepared) => {
@@ -353,25 +311,6 @@ impl RedactDialog {
     }
 
     /// **Consume the *call the removal off* press, if there was one.**
-    ///
-    /// A method rather than four lines inside [`Self::show`], and the reason is
-    /// this suite's standing one: [`Self::show`] needs an `egui::Context` and a
-    /// real viewport, so nothing inside it can be asserted headlessly, and the
-    /// one thing worth asserting about this press is **which action it
-    /// raises**. A build that raised [`crate::redact::Staging::Stage`] here
-    /// would re-arm the removal the operator just asked to call off, silently,
-    /// on a control whose label says the opposite.
-    ///
-    /// It pushes an `Action` rather than touching the session. The engine's
-    /// `cancel_pending_redaction` takes `&mut EditSession`, `Arc::get_mut` is
-    /// the funnel's second step, and performing that from inside a dialog's
-    /// draw is exactly what the funnel exists to prevent.
-    ///
-    /// It closes the window. The outcome is reported by the funnel's edit
-    /// disclosure like any other edit, and a window left open beside it would
-    /// be a second account of one event — and, worse, an account of a state the
-    /// document is no longer in, since this phase exists only while a removal
-    /// is armed.
     fn take_cancel(&mut self, actions: &mut Vec<crate::app::actions::Action>) {
         if !std::mem::take(&mut self.cancel_requested) {
             return;
@@ -387,10 +326,6 @@ impl RedactDialog {
     }
 
     /// Whether the confirm control may be enabled.
-    ///
-    /// Pure, and the whole of the gate's rule — so every property of it is
-    /// asserted headlessly, which is `crate::viewer`'s standing split applied
-    /// to the one control in the program that must not be enabled early.
     fn ready_to_confirm(&self) -> bool {
         let Phase::Prepared(prepared) = &self.phase else {
             return false;
@@ -409,18 +344,6 @@ impl RedactDialog {
 
     /// **The staging disclosure, or nothing** — the sentence drawn between
     /// the destination choice and the confirm control.
-    ///
-    /// Pure, and a method rather than three lines inside [`Self::gates`], for
-    /// [`Self::choose_destination`]'s reason: this is the disclosure that
-    /// stands between a button labelled *"the removal happens when I save"* and
-    /// an operator who has never used a redaction tool that did not blacken the
-    /// page instantly. A property that load-bearing is asserted headlessly
-    /// rather than left to a reading of the draw order.
-    ///
-    ///
-    /// `None` on the two write-now destinations, and that is a claim rather
-    /// than an omission: those routes do produce a file at the click, so a
-    /// sentence saying nothing is written would be false there.
     fn staging_disclosure(&self) -> Option<&'static str> {
         // Asked as *"does this write a file?"* rather than by naming the
         // variant: the disclosure belongs to the destination that defers, which
@@ -430,40 +353,12 @@ impl RedactDialog {
     }
 
     /// Whether replacing the open document is an option at all.
-    ///
-    /// `is_file` rather than a flag, and the question is asked of the **file
-    /// system**, exactly as `crate::app::save::has_a_file` asks it and for the
-    /// reason recorded there: *"a `created_here: bool` flag is a second source
-    /// of truth… and the failure mode when it drifts is writing over the wrong
-    /// file."*
-    ///
-    /// A document created in this session has a bare name rather than a path,
-    /// so there is nothing to replace and the choice is not drawn — an inert or
-    /// meaningless control being worse than an absent one (the no-inert-controls
-    /// rule).
     fn can_replace_original(&self) -> bool {
         self.source.is_file()
     }
 
     /// **Take the destination choice, and retire the acknowledgement that was
     /// given about the previous one.**
-    ///
-    /// Pure, and a method rather than four lines inside [`Self::gates`], so
-    /// the rule can be asserted headlessly — `crate::viewer`'s standing split
-    /// applied to the one flag that stands between a click and the deletion of
-    /// the source document.
-    ///
-    /// The rule: **changing the destination un-ticks
-    /// [`Self::overwrite_acknowledged`].** Without it, an operator could tick
-    /// the box, think better of it, select *a new file*, change their mind
-    /// again, and arrive back at *replace* with the button already live — the
-    /// consent standing from a decision they had explicitly withdrawn in
-    /// between. That is not a hypothetical sequence; it is what "I'll just look
-    /// at what the other option says" looks like from the program's side.
-    ///
-    /// It fires on **any** change of destination rather than only on leaving
-    /// the replace choice. Retiring a tick that was not needed costs nothing;
-    /// deciding *which* changes matter is where a future edit gets it wrong.
     fn choose_destination(&mut self, choice: Destination) {
         if choice != self.destination {
             self.overwrite_acknowledged = false;
@@ -519,11 +414,6 @@ impl RedactDialog {
 
     /// The measured report: what will be removed, what was verified, and what
     /// could not be.
-    ///
-    /// Every optional line is drawn **only when its count is non-zero**. A
-    /// report that listed "0 annotations removed" beside four real findings
-    /// would train the operator to skim it, and the skim is what this whole
-    /// surface exists to prevent.
     fn report(
         ui: &mut egui::Ui,
         theme: &Theme,
@@ -848,49 +738,6 @@ impl RedactDialog {
     }
 
     /// **Send the redacted bytes to the destination the operator chose.**
-    ///
-    ///
-    /// > *"It asks, every time, and the suggestion is never the file that was
-    /// > opened — see [`suggested_path`]. There is no 'save over the original'
-    /// > branch to find, because there is none to write, and on this operation
-    /// > that is the difference between a copy and the destruction of the only
-    /// > remaining source of the content being removed."*
-    ///
-    /// The operator overruled it, and the reasoning is in [`Destination`]. What
-    /// survives of the old ruling is the part that was a *mechanism* rather than
-    /// a *prohibition*: [`suggested_path`] still never proposes the source file.
-    /// What is gone is the refusal to write the branch at all.
-    ///
-    /// ⚠ **Corrected 2026-09-05.** This paragraph said *"[`Destination::NewFile`]
-    /// is still the default"* — and by then [`DEFAULT_DESTINATION`] two hundred
-    /// lines above it read [`Destination::OpenDocument`], moved on 2026-09-04.
-    /// **One file asserting two different defaults about itself**, which is
-    /// worse than a stale sentence in a document nobody reads: this is the
-    /// paragraph a future session consults *before* changing the default.
-    ///
-    /// The claim it was making is still true of the mechanism, and that is
-    /// why it survived a rewrite of the surrounding argument: both defaults are
-    /// safe, for **different reasons** — `NewFile` never *overwrote*,
-    /// `OpenDocument` never *writes*. A sentence that is right about the
-    /// principle and wrong about the value is the hardest kind to notice.
-    ///
-    /// So there are now two paths, and the asymmetry between them is the whole
-    /// safety argument:
-    ///
-    /// | destination | how the path is obtained | what stands between the click and the write |
-    /// |---|---|---|
-    /// | [`Destination::NewFile`] | the save picker, suggesting `-redacted` | the picker itself, plus the OS's own overwrite prompt if the operator navigates onto an existing file |
-    /// | [`Destination::ReplaceOriginal`] | [`Self::source`], with no picker | a **third** checkbox naming the file, and a confirm button whose label names it too |
-    ///
-    /// Replacing takes no picker **deliberately**. A picker pre-filled with
-    /// the source would be a dialog whose safe answer is to change the field,
-    /// which is the shape of every accidental overwrite there has ever been.
-    /// The consent is taken before the click, in words, at a control the
-    /// operator had to select; once taken, the program does what it said.
-    ///
-    /// The write itself is atomic — temp file, then rename — because on this
-    /// path a torn write destroys the last remaining copy of the content being
-    /// removed. See [`crate::redact::PreparedRedaction::write_to`].
     fn commit(&mut self, actions: &mut Vec<crate::app::actions::Action>) {
         let Phase::Prepared(prepared) = &self.phase else {
             return;
@@ -1054,17 +901,6 @@ impl RedactDialog {
 }
 
 /// **The file name a sentence should use for `path`.**
-///
-/// The name rather than the whole path, because every sentence that needs one
-/// is read in a window about 700 pt wide and a Windows path is routinely longer
-/// than that. Falls back to the whole path when there is no final component,
-/// which is the only case in which the longer string is the more informative
-/// one.
-///
-/// Shared by [`outcome_line`] and by the destination controls so the file is
-/// spelled the same way in the choice, in the acknowledgement, on the button
-/// and in the outcome. Four different spellings of one file name on one screen
-/// is how an operator ends up unsure which file the sentence is about.
 #[must_use]
 fn file_name_of(path: &Path) -> String {
     path.file_name().map_or_else(
@@ -1074,23 +910,6 @@ fn file_name_of(path: &Path) -> String {
 }
 
 /// **The sentence shown once bytes are on disk.**
-///
-/// Free rather than a method so the catalog's rule 1 — *a residual is named in
-/// the same sentence as the success* — is decided by a pure function a test can
-/// drive, rather than inside a `match` on a window's state.
-///
-/// The branch is on `residuals`, and the two sentences are genuinely different
-/// copy rather than one with a number in it. An operator who acknowledged a
-/// residual in this dialog and then closed it is owed a standing record of what
-/// remains, and *"…and verified absent from the saved file"* would be a lie in
-/// that case rather than merely an omission.
-///
-/// The **file name** rather than the whole path, because the sentence is read
-/// in a window that is about 700 pt wide and a Windows path is routinely longer
-/// than that. The full destination is on the trace line
-/// `PreparedRedaction::write_to` emits, which is where a reader who needs it
-/// will look.
-///
 #[must_use]
 fn outcome_line(
     path: &Path,
@@ -1108,34 +927,6 @@ fn outcome_line(
 }
 
 /// **Every item the report discloses as NOT removed.**
-///
-/// The single expression that both gates the extra acknowledgement and prints
-/// the section — one derivation, so a residual can never be listed without
-/// being acknowledgeable or acknowledged without being listed. Three sources,
-/// in this order:
-///
-/// 1. **carriers the engine could not scrub** — `CarrierAction::
-///    DisclosedNotScrubbed`, the cardinal-rule-honest outcome for a carrier
-///    this build cannot fully redact;
-/// 2. **raw-byte residuals** — [`crate::redact::proof`]'s middle verdict, a
-///    byte run that survives outside every decoded stream and that pdfcer
-///    genuinely cannot classify;
-/// 3. **retained marks** — regions where nothing was removed because the image
-///    under them could not be decoded. The engine names this as the number to
-///    read before saying "redacted", and it is the strongest kind of residual
-///    on this list: the content is still there, under a rectangle that says it
-///    is not;
-/// 4. **vector geometry that could not be cut**, and **clips whose outline had
-///    to be kept** — an outline on a drawing can be as identifying as the text
-///    it surrounded;
-/// 5. **objects promoted out of a compressed container** by materialising the
-///    operator's unsaved edits (engine rule R38).
-///
-/// The last is the mildest and is listed anyway. Page content cannot live in
-/// an object stream at all (ISO 32000-1 §7.5.7), so it cannot hold redacted
-/// text — but it is a leftover of the operator's own edits, and a report that
-/// silently drops the findings it judges harmless is a report whose judgement
-/// the operator has no way to audit.
 #[must_use]
 fn residual_lines(prepared: &PreparedRedaction) -> Vec<String> {
     use pdfcer_core::redact::CarrierAction;

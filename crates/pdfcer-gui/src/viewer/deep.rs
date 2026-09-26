@@ -211,14 +211,6 @@ mod tests {
     const DEEP: [f64; 4] = [1_000.0, 100_000.0, 1_000_000.0, 10_000_000.0];
 
     /// **A page point round-trips through the screen at every depth.**
-    ///
-    /// The property the canvas depends on, and the one the `f32` scroll offset
-    /// loses: at 10,000,000 % the offset's representable step is sixteen screen
-    /// pixels, so a position could not survive this round trip at all.
-    ///
-    /// The tolerance is in **page points**, scaled by the zoom — a tenth of a
-    /// screen pixel at whatever magnification is under test. A fixed page-space
-    /// tolerance would get easier as the zoom rises, which is backwards.
     #[test]
     fn a_page_point_survives_the_round_trip_at_every_depth() {
         let anchor = DeepAnchor {

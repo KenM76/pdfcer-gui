@@ -83,3 +83,43 @@ that gets the original back.
 undo entry, so it goes through [`super::apply::vector_edit`] like every
 other one — the render worker stopped, the mutation, the epoch bumped, the
 page invalidated. Nothing here is special except the wording.
+
+## Item notes
+
+### `fn from`
+
+The same reasoning [`super::vector`]'s `From` carries: which sub-enum a
+verb is filed under is this module's business, and a panel button that
+renames a field has none of it. `.into()` at the push, `From` here.
+
+### `fn set_button_action`
+
+# The disclosure this owes, and it is the whole reason `replaced` exists
+
+`ButtonActionChange::replaced` names what was destroyed — **as a `String`,
+including `"JavaScript"`, deliberately**. `pdfcer-core`'s own reasoning:
+`Option<ButtonAction>` would have made a removed script inexpressible and
+forced it to be reported as `None`, i.e. as *"there was nothing there"*.
+
+A form editor overwriting another tool's work needs to know it did, and
+this is the one moment it can be told. The status line carries it.
+
+pdfcer will not write a script back. That asymmetry is deliberate and is
+disclosed on the row rather than here: a `Foreign` action renders no Change
+control at all, so the only way to reach this function with a script in the
+way is through a route that has already said so.
+
+### `fn correctable`
+
+A free function taking `&EditError` so it is testable without an
+`EditSession`, a document or a frame — the same shape
+`crate::dialogs::insert_image`'s arithmetic was pushed into, and for the
+same reason: `pdfcer_core::edit::EditError` is `#[non_exhaustive]`, so this
+match needs a wildcard, and a wildcard inside a closure inside a funnel is
+a place a future variant goes to be silently ignored.
+
+Here it is one visible function with a test beside it. The wildcard means
+*"anything else is a fault, not a chore"*, which is a real distinction and
+the right default: a new refusal variant appearing in a future engine build
+reaches the trace with its own words and does not silently acquire one of
+these two sentences, which would be worse than saying nothing.

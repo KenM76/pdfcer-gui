@@ -14,13 +14,6 @@ use crate::report::CheckReport;
 use crate::trace::Trace;
 
 /// The document this check opens, pinned, with `--pdf` ignored.
-///
-/// An A1 CAD sheet fits at about 30 %, so six rungs of zoom-in land at
-/// 125 % — a discrete climb that stays entirely under the whole-page raster
-/// ceiling. The suite's usual clean control opens near 100 % and the same
-/// ladder would run into the refusal, which would make a rung's silence
-/// ambiguous between *"the seam did not deliver"* and *"the rasterizer
-/// declined"*, and those two send a reader to opposite ends of the program.
 const FIXTURE: &str = "a1-titleblock.pdf";
 
 /// The seam's environment variable.
@@ -61,18 +54,9 @@ const SPAWN: &str = "render-spawn";
 const ZOOM_EPSILON: f32 = 0.01;
 
 /// Off the desktop, at the harness's usual size.
-///
-/// Nothing is ever aimed at this window and no OS input is sent to it — which
-/// is the whole point of the seam — so this check can run while the operator
-/// is working.
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
 
 /// How long to wait for the last rung to appear before giving up on it.
-///
-/// The seam paces its chords twenty frames apart and requests a repaint on
-/// every frame while chords remain, so on any machine this runs on the whole
-/// list is delivered in about a second. The generous deadline is for a loaded
-/// machine; exceeding it is reported as a finding rather than a hang.
 const RUNG_DEADLINE: std::time::Duration = std::time::Duration::from_secs(30);
 
 /// The list the seam is given, in order.
@@ -187,11 +171,6 @@ fn read_rungs(trace: &Trace) -> Vec<Rung> {
 }
 
 /// One line per list entry, carrying its own position, in order.
-///
-/// A seam that delivered a chord twice, skipped one, or renumbered them would
-/// pass every zoom assertion below by accident — the windows would still be in
-/// ascending order and the zoom would still climb. This is what makes the
-/// rung-to-chord mapping real rather than assumed.
 fn check_delivery(rungs: &[Rung], list: &[&str]) -> Option<String> {
     if rungs.len() != list.len() {
         return Some(format!(
@@ -480,12 +459,6 @@ fn launch_scripted(ctx: &CheckContext, exe: &Path, list: &[&str]) -> Result<Sess
 }
 
 /// Wait until the seam has delivered the last chord, then let its effect land.
-///
-/// Not [`Session::settle`]. That polls the frame counter, and this
-/// application stops drawing the moment the seam stops asking it to — so a
-/// settle asked for more frames than the run has left would spin out its whole
-/// cap on every green run. The thing being waited for is a trace line, so the
-/// trace line is what is waited for.
 fn wait_for_rung(session: &Session, index: usize) -> Result<Trace> {
     let deadline = std::time::Instant::now() + RUNG_DEADLINE;
     loop {

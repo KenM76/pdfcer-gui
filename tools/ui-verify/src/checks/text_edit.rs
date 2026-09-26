@@ -17,12 +17,6 @@ use crate::checks::driving::{self, SHELL_DIAG_ENV};
 use crate::checks::save_copy::{FILE_TAB, SAVE, click_command, click_tab};
 
 /// The mode this check has to be in.
-///
-/// `edit.text` is gated on `Capabilities::edit_content`, which the shipped
-/// manifest gives to Edit alone — and the application opens in **Read** (its
-/// remembered default), so a check that did not switch would be measuring the
-/// mode gate rather than the tool. That is exactly what this check's first run
-/// did: `command-declined id=edit.text reason=mode-cannot-edit-content`.
 const MODE: &str = "edit";
 
 /// The Edit tab, and the command that arms the caret tool.
@@ -58,11 +52,6 @@ const ELSEWHERE: (f64, f64) = (300.0 / 612.0, 600.0 / 792.0);
 const UNTOUCHED_TM: &str = "412.64 668.00 Tm";
 
 /// Where on the page to click, as a fraction of the page box.
-///
-/// The middle of `REVISION B`, which the generator reports as spanning
-/// x = 431.31…500.00 at y = 700 on a 612 x 792 page. Written as fractions
-/// because `crate::checks`' rules allow a check only `DocPoint` and `FracRect`
-/// literals — a screen coordinate would be a number about this machine.
 const AIM: (f64, f64) = (465.0 / 612.0, 700.0 / 792.0);
 
 /// See the module documentation.

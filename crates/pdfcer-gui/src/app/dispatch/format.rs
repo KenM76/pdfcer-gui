@@ -774,49 +774,6 @@ pub(crate) fn dispatch(
 }
 
 /// **The ribbon's Delete, asked through the same function as the key.**
-///
-/// # Why this is a function and not four lines inside the arm
-///
-/// Because the rule is destructive and there must be exactly one of it. Both
-/// claimants — this command and the Delete **key** in `canvas::keys` — ask
-/// `crate::canvas::deleting::subject`, which answers for whichever rung of the
-/// ladder the operator is on.
-///
-/// Two hand-written copies of one destructive rule is exactly what
-/// `deletable_objects_on`'s own header refuses, and the divergence is not
-/// hypothetical: it has happened over form fields, where the key reached a
-/// selected widget and this command did not, so Delete-the-key and
-/// Delete-the-command acted on different things — which `app::keyboard`'s
-/// header calls the defect the single dispatcher exists to make impossible.
-///
-/// **Both** callers therefore ask [`crate::canvas::deleting::subject`], and
-/// the Part and Node rungs come with it: the ribbon's Delete removes one line,
-/// one label or one corner point exactly as the key does, because there is
-/// only one answer to ask for.
-///
-/// # The provider, and why it is read here rather than passed in
-///
-/// The dispatcher is not inside the canvas's frame — it runs from the command
-/// funnel, after the ribbon or a menu has already closed — so it cannot inherit
-/// the canvas's borrow the way `canvas::keys` does. (It takes an
-/// `egui::Context` for a different arm's parked operand; a context is not a
-/// frame and buys this one nothing.) `doc.page_objects()` is keyed on
-/// `(page, edit_epoch)` and the canvas built it on the frame that drew the
-/// selection outline the operator is looking at, so this is a cache read rather
-/// than a second `decompose_page` — the same key, the same epoch, the same
-/// `Ref`.
-///
-/// The `Ref` is taken and dropped inside the `map_or_else` below, before
-/// anything is pushed, because `doc` is borrowed immutably for the whole arm and
-/// holding a `RefCell` guard across an `actions.push` is how a re-entrant read
-/// becomes a panic nobody can reproduce.
-///
-/// # What it deliberately does NOT do
-///
-/// It does not clear the selection, it does not take the erase preview, and it
-/// does not word anything. The first two belong to `actions::vector::apply`
-/// (which owns the four-step protocol and the O63 preview) and the third to
-/// [`crate::text::deleting`]. This function's whole job is *ask, then raise*.
 fn delete_the_selection(doc: &crate::app::state::OpenDoc, actions: &mut Vec<Action>) {
     let page = doc.view.page_index;
     let outcome = {

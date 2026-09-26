@@ -41,3 +41,22 @@ that forgot to invalidate.
 `tests::an_undo_is_an_edit_and_moves_the_epoch_like_one` in [`super::apply`]
 is the assertion, and it lives there deliberately: it is about what an
 `Action` does, which is that module's subject.
+
+## Item notes
+
+### `fn peek`
+
+`EditSession::undo_kind`/`redo_kind`, which take `&self` — so this is
+askable before the render worker is stopped and before `Arc::get_mut` is
+attempted, which is what lets an empty stack be declined without paying
+for a cancelled raster. `None` is the empty stack, and it is the same
+answer `can_undo`/`can_redo` give, from the same field.
+
+### `fn applied`
+
+Distinct from [`Self::event`] on purpose, and it is the same two-line
+vocabulary `markup-commit` / `add-markup` already uses: the first line is
+**the shell decided**, and carries the `CommandKind`; the second is
+**the engine did it**, and carries the epoch. A harness that wants to
+know whether the caches were invalidated reads the second, and a harness
+that wants to know what the operator took back reads the first.

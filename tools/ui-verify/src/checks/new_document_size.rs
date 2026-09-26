@@ -27,12 +27,6 @@ const CREATE: &str = "new-document.create";
 const SIZED_EVENT: &str = "new-document-sized";
 
 /// The index of A3 in `pdfcer_core::paper::PaperSize::ALL`.
-///
-/// The list is A0, A1, A2, A3, … — largest-first, which is the engine's own
-/// ordering and is deliberate: this operator's sheets are A1 and A3, and
-/// burying them under A4 would make the common case the hard one. Spelled out
-/// as a constant with the ordering stated so that a reordering of `ALL` fails
-/// here with a readable reason rather than silently checking A2.
 const A3_INDEX: usize = 3;
 
 /// A3's short side and long side, in millimetres.
@@ -40,11 +34,6 @@ const A3_SHORT_MM: f64 = 297.0;
 const A3_LONG_MM: f64 = 420.0;
 
 /// How close is close enough, in millimetres.
-///
-/// A3 is 420 × 297 mm exactly by definition, and the points are derived from
-/// that, so the round trip should be exact to well under a tenth of a
-/// millimetre. One millimetre is a tolerance that cannot mask a real defect —
-/// the smallest wrong answer available is A4 (210 × 297), which is 123 mm out.
 const TOLERANCE_MM: f64 = 1.0;
 
 pub struct NewDocumentSizesThePage;

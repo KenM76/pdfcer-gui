@@ -34,3 +34,38 @@ in wherever the page itself has nothing to offer.
 O204 decision 3. The field ring crosses pages because a form is one thing to
 fill in; an object ring that changed page would also have to scroll, and
 that is a second gesture nobody asked for.
+
+## Item notes
+
+### `const PAGE_SIZED_FORM`
+
+The operator's CAD case in miniature, and the reason this module
+exists: a ring over the page's own paint order would have exactly one
+stop on this sheet and it would be the wrapper.
+
+### `fn the_fixture_is_one_page_sized_wrapper_over_three_squares`
+
+Its own test so that a fixture that stopped having a form fails here,
+with a sentence about the fixture, instead of turning the rest of this
+module into a confusing report about tab order.
+
+### `fn a_page_sized_wrapper_is_skipped_and_the_ring_is_its_contents`
+
+A ring of one stop that is the entire drawing is indistinguishable
+from Tab doing nothing, which is the report this whole row started
+from. The fallback is what keeps the gesture meaning something on the
+only kind of file the operator actually opens.
+
+### `fn a_filter_that_excludes_the_contents_leaves_no_ring`
+
+The three squares are paths. Asking for text only must not produce a
+ring of paths by some other route — the second and third branches of
+`stops` both apply `allowed`, and this is what proves it.
+
+### `fn every_stop_indexes_into_this_providers_own_lists`
+
+`object_class` guards on the page index and answers `None` off it,
+which `allowed` deliberately reads as *let it through* — so the guard
+that matters here is the one in `advance`'s caller, and this pins the
+one thing `stops` itself can promise: it never invents a target index
+that is not in this provider's own lists.

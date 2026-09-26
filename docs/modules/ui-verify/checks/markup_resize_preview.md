@@ -47,3 +47,24 @@ clean, the tests were green, and the operator watched nothing happen.
    that cannot be satisfied by a ghost that is drawn once at the selection's
    own dimensions and never updated. That is precisely *"the bounding box
    stays the same size"*, and a check asserting only (3) would pass on it.
+
+## Item notes
+
+### `const SHAPE`
+
+Deliberately the same rectangle `markup_move` uses. Two checks aiming at
+one shape means a fixture that breaks one breaks both visibly, rather than
+one of them quietly measuring an empty patch of paper.
+
+### `const DRAG_TO`
+
+Both axes, for `markup_move`'s reason applied to a different value: a
+resize that scaled only x would satisfy a check that dragged only in x, and
+`sy` is the factor with the sign convention to get wrong.
+
+### `fn extent`
+
+Width and height rather than the corners, because the assertion is about
+**size** and carrying the position would invite a check that accidentally
+asserts the ghost is somewhere in particular — which it is not required to
+be, since the pivot is the opposite corner and moves with the grip.

@@ -329,18 +329,6 @@ pub struct Frame<'a> {
 }
 
 /// **Apply one frame of a resize drag: preview it, or commit it.**
-///
-/// Mirrors [`crate::canvas::moving::drag`] deliberately, down to the return
-/// type, so the caller's two arms read the same and a reader who has understood
-/// one has understood both. What it hands back is the **scale factors** for the
-/// ghost, where the move drag hands back a displacement.
-///
-/// # A refusal is worded ONCE, on `Complete`
-///
-/// Not on every frame of the drag. `moving::drag` makes the same choice and its
-/// reason applies unchanged: an in-flight gesture is a question, and answering a
-/// question the operator has not finished asking would put a sentence on the
-/// status row sixty times a second while they were still deciding.
 fn to_pdf(
     at: egui::Pos2,
     map: &PageMapping,
@@ -642,20 +630,6 @@ pub(crate) fn decline(reason: Refusal) {
 
 /// The rectangle `bounds` becomes when both its corners are scaled about
 /// `pivot` by `(sx, sy)`.
-///
-/// # Both corners, because a pivot is not always a corner
-///
-/// This is the identical map `overlay::draw_resize_ghost` paints —
-/// `pivot + (p - pivot) * s` — so the box that is written is the box the
-/// operator watched, by construction rather than by two derivations agreeing.
-///
-/// The earlier spelling derived one far corner as `bounds.min + bounds.max -
-/// 2 * pivot`, which is right only while the pivot **is** a corner.
-/// [`Grip::pivot`] deliberately answers a **mid-edge** point for the four edge
-/// grips, and on such a grip's cross axis that expression is exactly zero — so
-/// the derived corner collapsed onto the pivot and an edge drag committed a
-/// zero-extent `/Rect`. The corner grips were unaffected and kept working,
-/// which is what O209 reports as *"only the corner drag handles work."*
 fn scaled_about(bounds: Rect, pivot: Pos2, sx: f32, sy: f32) -> Rect {
     let map = |p: Pos2| {
         egui::pos2(
@@ -676,17 +650,6 @@ mod tests {
     }
 
     /// **An edge grip's scaled box keeps its cross-axis extent.**
-    ///
-    /// The regression O209 names: *"only the corner drag handles work."* An
-    /// east or west drag leaves the height alone and a north or south drag
-    /// leaves the width alone, because [`Grip::pivot`] answers a **mid-edge**
-    /// point on those four and the box is scaled about it rather than reflected
-    /// through it.
-    ///
-    /// It asserts the extent that must survive, not merely that the rectangle
-    /// is non-empty — a box collapsed on one axis and a box that merely failed
-    /// to grow are both "not what the operator dragged", and only the first was
-    /// the defect.
     #[test]
     fn an_edge_grip_scales_only_its_own_axis() {
         let bounds = box_100x50();
@@ -707,10 +670,6 @@ mod tests {
     }
 
     /// **A corner grip is unchanged by the fix.**
-    ///
-    /// The two spellings agree wherever the pivot is itself a corner, and that
-    /// is the half that kept working — so this is the control that says the
-    /// repair widened the set of grips that commit rather than moving it.
     #[test]
     fn a_corner_grip_pins_the_opposite_corner() {
         let bounds = box_100x50();
@@ -725,12 +684,6 @@ mod tests {
     }
 
     /// **Dragging the south-east grip right and down grows both axes.**
-    ///
-    /// The base case, and the one whose y sign is easy to get backwards: screen
-    /// y is down, so a positive `dy` on a *south* grip is growth. Getting it
-    /// wrong produces an object that shrinks when you pull it bigger, which is
-    /// the kind of defect that survives review because both directions "look
-    /// like a resize".
     #[test]
     fn the_south_east_grip_grows_both_axes() {
         let (sx, sy) = factors(Grip::SouthEast, box_100x50(), Vec2::new(50.0, 25.0)).expect("box");
@@ -749,10 +702,6 @@ mod tests {
 
     /// **A mid-edge grip scales ONE axis**, which is the whole reason the
     /// four of them are offered separately from the corners.
-    ///
-    /// A build that treated them as corners would let an operator aiming at
-    /// "make this wider" also make it taller — a change they did not ask for,
-    /// on the axis they were deliberately not touching.
     #[test]
     fn a_mid_edge_grip_leaves_the_other_axis_alone() {
         let (sx, sy) = factors(Grip::East, box_100x50(), Vec2::new(50.0, 40.0)).expect("box");
@@ -775,10 +724,6 @@ mod tests {
     }
 
     /// **A collapse or a mirror is refused, not clamped.**
-    ///
-    /// Clamping would silently substitute a different edit for the one the
-    /// operator made — and a mirrored path is a legal, plausible-looking
-    /// document they did not ask for.
     #[test]
     fn collapsing_and_mirroring_are_refused() {
         assert!(!is_usable(0.0, 1.0));
@@ -790,11 +735,6 @@ mod tests {
 
     /// **The map is anchored**: the anchor point does not move, and
     /// everything else moves in proportion to its distance from it.
-    ///
-    /// Asserted as the two properties rather than against a table of
-    /// coordinates, because the properties are what "resize about a corner"
-    /// means and a coordinate table would pass for a build that had the anchor
-    /// at the centre.
     #[test]
     fn the_anchor_stays_put_and_distance_scales() {
         let anchor = Point::new(10.0, 20.0);

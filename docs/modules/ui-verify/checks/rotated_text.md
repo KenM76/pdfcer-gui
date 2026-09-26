@@ -91,3 +91,32 @@ by the `#[ignore]`d `the_operators_own_vertical_stamp_comes_back_whole` in
   describe the page it would be sweeping;
 * the clipboard could not be cleared or is being written by another process,
   so assertion 4 could not be attributed to this run.
+
+## Item notes
+
+### `const ORIGIN`
+
+Named rather than inlined because the two sweep points below are both
+derived from it, and a reader checking this check against the fixture should
+find the fixture's own numbers here and not two magic constants.
+
+### `const ASCENDER_OFFSET_PT`
+
+**Left**, and it is the whole reason this sweep lands. For text turned 90°
+anticlockwise the glyph's ascender direction is page **−x**, so the ink of a
+letter at `x = 100` occupies roughly `x ∈ 91..103`. Aiming at the baseline
+itself would sit on the ink's edge; aiming to the RIGHT would be off the
+letter entirely, on the side where the extraction's own — axis-aligned, and
+wrong — glyph box lies.
+
+Three points is a quarter of the 12 pt size, which is the same offset
+`canvas::textsel`'s unit tests use to find ink, derived the same way.
+
+### `const SWEEP_FROM_PT`
+
+The string is six capitals at 12 pt Helvetica and runs about 53 pt. Three
+points in is inside the first letter's front half, so the caret lands
+**before** `U`; fifty points in is past the last letter's midpoint, so it
+lands **after** `D`. Both are the ordinary caret rule and both are inside
+the band, which is what makes this a sweep across the word rather than a
+sweep that relies on a nearest-line fallback.

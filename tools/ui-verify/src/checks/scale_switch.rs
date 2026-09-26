@@ -15,32 +15,13 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// Review mode and the rectangle tool.
-///
-/// **`view.panel_tool` is no longer rung, because it no longer exists.**
-/// `OPERATOR_REQUESTS.md` O123 dissolved the Tool panel and moved the three
-/// resize switches to Properties, on the operator's own argument that they were
-/// never the tool's: *"everything can be in object and properties."*
-///
-/// Properties is mounted by every mode's default arrangement, so nothing has to
-/// be opened here at all — which also removes the hazard the old comment on this
-/// constant was about. Opening a panel changes the dock's width and therefore
-/// the canvas rect, and every coordinate this check computes would have been
-/// taken against a layout that then moved.
 const INVOKE: &str = "mode.review,markup.rectangle";
 
 /// The Properties panel's body compartment, as the DOCK reports it — the oracle
 /// for *"can the operator see the switches' panel?"*.
-///
-/// The dock's name rather than a panel-published one, and that is the whole
-/// upgrade: it goes through `crate::diag::ui_rect_visible`, so its presence is a
-/// claim about **reachability** rather than about a function having run.
 const PANEL_REGION: &str = "dock.body.file.properties";
 
 /// The Properties panel's dock tab header, for raising it from behind a sibling.
-///
-/// A tab header, never a ribbon toggle. The toggle would *unmount* a panel
-/// that is already mounted, and the check would then report absent switches
-/// about a panel it closed itself.
 const PANEL_TAB_REGION: &str = "dock.tab.file.properties";
 /// The line the canvas writes when a shape is authored.
 const COMMIT_EVENT: &str = "markup-commit";
@@ -59,51 +40,14 @@ const PAGE_REGION: &str = "page";
 const SHAPE: ((f64, f64), (f64, f64)) = ((0.30, 0.30), (0.50, 0.45));
 /// How many frames to wait for the Tool panel to swap its armed block for its
 /// idle one, after the select tool has been armed from the ribbon.
-///
-/// **This is a poll, not a retry.** Nothing is pressed again inside the loop
-/// — the invoke is already confirmed against the shell's own trace — so the
-/// only question left is *which frame does the panel redraw in*, and a fixed
-/// settle would be a guess at it. It was `DISARM_TRIES` while the step pressed
-/// Escape five times, and the rename is the point: a bound on waiting and a
-/// bound on pressing are different things, and conflating them is what let a
-/// step that never worked look like a step that was merely slow.
-///
-/// Bounded so a build where the idle block genuinely never draws fails in
-/// seconds rather than hanging.
 const IDLE_TRIES: usize = 5;
 
 /// How far the bottom-right grip travels, as a fraction of **the shape's own
 /// size** — so the two scale factors come out equal.
-///
-/// ## Three wrong answers before this one, and each was wrong differently
-///
-/// | attempt | value | why it was not uniform |
-/// |---|---|---|
-/// | 1 | `0.10` of the **page**, both axes | equal fractions of a 1584 × 1224 page are 158.4 pt and 122.4 pt |
-/// | 2 | `90.0` **points**, both axes | equal distances grow a wide box less, in ratio, than a tall one |
-/// | 3 | `0.25` of the **shape**, both axes | ✔ `sx = (w + 0.25w)/w = 1.25 = sy` |
-///
-/// ⇒ **A uniform scale is equal RATIOS, not equal distances**, and the space
-/// the travel must be expressed in is the operand's, not the page's and not
-/// the screen's. Both earlier values produced a working resize that the
-/// check's own guard then declined to read — the guard was right each time,
-/// and this constant was the thing that was wrong.
-///
-/// The check asserts the two scale factors AGREE off the trace rather than
-/// arithmetic, which is what turned two silent mis-measurements into two
-/// specific, self-describing skips.
 const GRIP_TRAVEL_OF_SHAPE: f64 = 0.25;
 
 /// How far the two scale factors may disagree and still count as one uniform
 /// drag.
-///
-/// It is **pointer quantisation**, not a fudge. The pointer is delivered at
-/// integer screen pixels; the shape is about 86 px on a side at fit zoom on
-/// this fixture, so one pixel of rounding on a 25 % travel moves a scale factor
-/// by about `1 / 86` ≈ 0.012. Twice that is the ceiling used here, which leaves
-/// room for a slightly smaller shape and is still an order of magnitude below
-/// any distortion an operator would call one. Measured on the first run that
-/// ever reached this line: `sx=1.2508 sy=1.2449`, a disagreement of **0.0059**.
 const SCALE_AXIS_TOLERANCE: f64 = 0.025;
 
 /// See the module documentation.

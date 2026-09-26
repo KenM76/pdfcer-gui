@@ -11,21 +11,12 @@ use crate::app::modes::Capabilities;
 use crate::canvas::tool::CanvasTool;
 
 /// Where the pending placement lives in [`egui::Memory`].
-///
-/// Beside `canvas::tool`'s own `TOOL_MEMORY_KEY`, and for the same reason: it
-/// is per-window state with no meaning outside the frame loop, and putting it
-/// on `OpenDoc` would make a *gesture* a property of the *document*.
 const PLACING_MEMORY_KEY: &str = "pdfcer-canvas-placing"; // ui-text-exempt: internal memory id, never displayed
 
 /// Where a completed placement waits for `app::frame` to collect it.
 const RESULT_MEMORY_KEY: &str = "pdfcer-canvas-placing-result"; // ui-text-exempt: internal memory id, never displayed
 
 /// Where a cancellation waits to be collected.
-///
-/// Separate from the result rather than an `Option` inside it. *"The
-/// operator placed nothing"* and *"the operator has not finished yet"* are
-/// different states, and a single slot would make them the same absence — the
-/// distinction `crate::app::files::Picked` exists to preserve, applied here.
 const CANCELLED_MEMORY_KEY: &str = "pdfcer-canvas-placing-cancelled"; // ui-text-exempt: internal memory id, never displayed
 
 /// **Which window is waiting for a point.**
@@ -263,16 +254,6 @@ pub fn band_released(
 }
 
 /// One page-space `(f64, f64)` as the `Pos2` this module's arithmetic uses.
-///
-/// A named function rather than two inline casts, and not only for tidiness:
-/// the narrowing happens at exactly one boundary — where `markup::band`'s
-/// `f64` endpoints meet `egui`'s `f32` geometry — so a reader asking *"where
-/// does the precision go?"* gets one answer instead of two identical ones with
-/// an attribute apiece.
-///
-/// The loss is not material here. These are page coordinates on a sheet
-/// measured in points, where `f32` carries about seven significant figures
-/// against a largest sensible magnitude in the low hundreds of thousands.
 #[allow(clippy::cast_possible_truncation)] // ui-text-exempt: a clippy lint name, never displayed
 fn page_pos(p: (f64, f64)) -> egui::Pos2 {
     egui::pos2(p.0 as f32, p.1 as f32)
@@ -300,10 +281,6 @@ fn finish(ctx: &egui::Context, kind: PlaceKind, rect: pdfcer_core::page_tree::Re
 
 /// `pdfcer_core::page_tree::Rect` is not `Clone` in the way `egui::Memory`
 /// wants, so it travels wrapped.
-///
-/// A newtype rather than four `f64`s in the slot: the four numbers have an
-/// order and a meaning, and a tuple of them is a thing three call sites could
-/// each get subtly wrong.
 #[derive(Debug, Clone, Copy)]
 struct PlacedRect(pdfcer_core::page_tree::Rect);
 
@@ -318,11 +295,6 @@ mod tests {
 
     /// A cancellation and a result are different answers and must not share a
     /// slot.
-    ///
-    /// The property `Picked` exists to preserve, asserted here because the
-    /// tempting simplification — one `Option<Rect>` slot where `None` means
-    /// cancelled — makes "they pointed nowhere" and "they have not pointed
-    /// yet" the same observation, and the second is true on almost every frame.
     #[test]
     fn a_cancellation_is_not_an_absent_result() {
         let ctx = egui::Context::default();
@@ -341,10 +313,6 @@ mod tests {
     }
 
     /// Cancelling nothing is not an event.
-    ///
-    /// Load-bearing: Escape consults this on every press, and a `cancel` that
-    /// reported success unconditionally would swallow the key from the three
-    /// claimants below it in `canvas::keys`.
     #[test]
     fn cancelling_nothing_reports_nothing() {
         let ctx = egui::Context::default();
@@ -370,19 +338,6 @@ mod tests {
     }
 
     /// **A click is recorded in PDF space, not canvas space.**
-    ///
-    /// The regression test for the defect the driven check found on its first
-    /// run: `click` took the canvas point it was handed and wrote it into a
-    /// `page_tree::Rect` unconverted, so a placement near the TOP of the sheet
-    /// was recorded near the BOTTOM. Nothing refused it — a mirrored
-    /// coordinate is a perfectly ordinary number on a perfectly ordinary page.
-    ///
-    /// Note what the previous version of this test asserted: that the rect
-    /// carried the numbers passed in. That is true of the broken build and of
-    /// the fixed one, because it was a test of the *plumbing* on a function
-    /// whose defect was the *space*. This one asserts the flip by magnitude —
-    /// canvas y 200 on an 800 pt page is PDF y 600 — which no unconverted
-    /// build can satisfy.
     #[test]
     fn a_click_places_a_corner_and_a_drag_places_a_box() {
         let ctx = egui::Context::default();

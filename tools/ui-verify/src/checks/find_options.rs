@@ -14,10 +14,6 @@ use crate::sys::vk;
 use crate::trace::Trace;
 
 /// How many frames to let the window settle before the first keystroke.
-///
-/// The 48 `find_bar` waits, for the same reason: a search run against a
-/// document still rastering reports zero hits for a reason that is not Find's,
-/// and zero hits is what both checks below treat as "no evidence".
 const SETTLE_FRAMES: u32 = 48;
 
 // ===========================================================================
@@ -359,11 +355,6 @@ impl Plan {
     }
 
     /// Launch, open Find, type the needle, press Enter, and hand back the trace.
-    ///
-    /// `tag` names the artefact, so a failing run leaves both launches' traces
-    /// side by side — which is the first thing anybody reading the failure will
-    /// want, because every assertion in this file is a comparison between two
-    /// runs.
     fn gesture(&self, ctx: &CheckContext, report: &mut CheckReport, tag: &str) -> Result<Trace> {
         let mut spec =
             LaunchSpec::new(&self.exe, ctx.out(&format!("find_options.{tag}.trace.txt")));
@@ -451,19 +442,6 @@ fn last_search(trace: &Trace) -> Option<Search> {
 }
 
 /// Write the sandbox's preference file.
-///
-/// Through `sandbox::write_prefs`, never `fs::write`. The header it
-/// prepends carries `ask_default_app = false`, and three checks that wrote the
-/// file directly re-enabled the O173 startup offer in front of their own
-/// launches — one of which then measured the *dialog's* client area and
-/// reported a working preference as broken.
-///
-/// # Errors
-///
-/// The directory could not be created or the file could not be written. A SKIP
-/// at the call site: a preference that could not be written means the check
-/// never began, and reporting that as a Find failure would name the wrong
-/// subsystem.
 fn write_prefs(userdata: &Path, body: &str) -> Result<()> {
     crate::sandbox::write_prefs(userdata, body).map_err(|e| {
         Error::new(format!(
@@ -475,20 +453,6 @@ fn write_prefs(userdata: &Path, body: &str) -> Result<()> {
 }
 
 /// Put the sandbox back to the bare seed when the check ends, however it ends.
-///
-/// A guard rather than a line at the end, because there are a dozen returns
-/// above and the one that gets forgotten is the one that leaves
-/// `find_zoom_on_jump = false` behind for every check that runs afterwards. A
-/// suite that shares state measures the order it ran in.
-///
-/// Reset rather than deleted, for the reason `ui_scale` records: a *missing*
-/// file exercises the absent-file path, which is a different state and not the
-/// one the other checks were written against.
-///
-/// Failure to restore is warned about rather than fatal — this type runs during
-/// unwinding as well as on the ordinary path, and a harness that turned its own
-/// housekeeping problem into a verdict would be reporting itself as a defect in
-/// the program.
 struct RestorePrefs(PathBuf);
 
 impl Drop for RestorePrefs {
@@ -508,34 +472,18 @@ mod tests {
     use super::*;
 
     /// The needle is the letter `e`.
-    ///
-    /// Pinned because the failure text quotes it and the SKIP messages tell the
-    /// operator to *"point the check at a document containing the letter `e`"*.
-    /// A key code that drifted from that sentence would send somebody looking
-    /// for the wrong character in their own file.
     #[test]
     fn the_needle_is_the_letter_e() {
         assert_eq!(u32::from(vk::E), u32::from(b'E'));
     }
 
     /// The space bar is `VK_SPACE`.
-    ///
-    /// A wrong code here does not fail loudly: it types some other character,
-    /// the search legitimately finds nothing like it, and the check reports
-    /// that trimming is broken. That reads as an application defect and is a
-    /// harness bug.
     #[test]
     fn the_blank_is_the_space_bar() {
         assert_eq!(vk::SPACE, 0x20, "VK_SPACE");
     }
 
     /// A `Plan` starts without the trailing space.
-    ///
-    /// O179's check never sets the flag, and if the default were `true` it
-    /// would be silently driving O180's gesture instead — and still passing,
-    /// because a trimmed query searches for the same needle. A wrong default
-    /// here is invisible in every outcome, which is exactly the class this
-    /// project pins.
     #[test]
     fn the_trailing_space_is_off_until_a_check_asks_for_it() {
         // Constructed by hand rather than through `Plan::new`, which needs a

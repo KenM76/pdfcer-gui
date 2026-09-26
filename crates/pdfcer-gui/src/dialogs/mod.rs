@@ -202,58 +202,6 @@ pub mod settings;
 use crate::app::state::{OpenDoc, Status};
 
 /// **Whether a dialog that has just drawn must be dropped out of its slot.**
-///
-/// `open` is what the dialog's own `show` returned — *"should I still be on
-/// screen?"* — and `answered` is whether it is holding a decision its owner has
-/// not collected yet. A dialog is retired only when **both** say no: it is off
-/// screen *and* it has nothing left to hand over.
-///
-/// # WHY THIS IS NOT `!open`
-///
-/// `!open`, expressed at each call site as
-/// `if …map(|d| d.show(ctx)) == Some(false) { self.slot = None; }`, is exactly
-/// right for eleven of the thirteen dialogs: they act through `actions` while
-/// they draw, so a closed one has nothing left in it.
-///
-/// The two **confirmation** windows are different in kind, and the difference
-/// is the whole defect. `unsaved` and `signature` deliberately do NOT act. They
-/// *park* an answer and let `crate::app::PdfcerApp` perform it —
-/// `resume_after_unsaved` and `resume_after_signature`, both later in the same
-/// frame — because the acts in question (closing a document, writing over the
-/// operator's own file) are the two most destructive things this shell does and
-/// must have exactly one route each. A window that could call `save_in_place`
-/// would be a second route.
-///
-/// So for those two, `show` returning `false` and the dialog being *finished*
-/// are different facts. Pressing the button sets the answer, which is what
-/// makes `show` answer `false` — so a `!open` branch destroys the dialog **and
-/// the answer inside it** before the drain three call frames later can look,
-/// and `take_signature_answer` finds an empty slot and returns `None`.
-///
-/// ⇒ The observable result, and what `an_invalidating_save_is_warned_about`
-/// drives the binary to check: the signature warning opens, holds the save,
-/// draws its proceed button, takes the click, **closes** — and traces no
-/// `signature-confirmed` and writes no file. A signed document cannot be saved
-/// at all by any route the guard covers, which is worse than having no guard:
-/// it stops the save and never lets it through.
-///
-/// Neither half is wrong on its own, which is why no unit test can see it. The
-/// dialog returns its answer when asked; the drain performs whatever it is
-/// given; the defect lives entirely in the **lifetime between them**, and a
-/// lifetime is not a value any assertion over either half can name. That is the
-/// same shape `PROJECT_PLAN.md` §4 built the driving harness for.
-///
-/// # The invariant this creates, stated where it can be checked
-///
-/// > **Every caller of [`DialogsState::show`] must drain the parked answers in
-/// > the same frame.**
-///
-/// There is one caller — `crate::app::frame` — and it drains both, immediately
-/// after. A retained-because-answered dialog therefore lives for zero frames:
-/// it is emptied and dropped by `take_*_answer` before anything can draw it
-/// again. A caller that did not drain would see the window redraw for as long
-/// as it ignored it, which is a loud failure rather than a silent one, and that
-/// direction was chosen deliberately over discarding the answer.
 const fn retire(open: bool, answered: bool) -> bool {
     !open && !answered
 }
@@ -1265,11 +1213,6 @@ impl DialogsState {
     }
 
     /// Drop the state of every dialog that is about the open document.
-    ///
-    /// One place, so a document-scoped dialog added later cannot be forgotten
-    /// by whichever of the close paths its author did not think of.
-    /// Application-scoped dialogs are deliberately absent — see
-    /// [`Self::show`].
     fn close_document_scoped(&mut self) {
         // The Sign window is document-scoped, and closing it also DROPS
         // THE LOADED PRIVATE KEY, which is the strongest reason it belongs on

@@ -11,33 +11,12 @@ use crate::text::markup as t;
 use crate::text::markup::AnnotDeleteRefusal;
 
 /// The section's rect, for `ui-verify`.
-///
-/// A published region name is a cross-repo stability contract: the harness
-/// asserts on it by string, so renaming one turns a check into a skip rather
-/// than a failure.
 const REGION: &str = "properties.annot_delete"; // ui-text-exempt: trace region name, never displayed
 /// The **refusal** sentence's own rect, published only when a gate refuses.
-///
-/// "Only when refused" is the whole value of it. A driven check asserting
-/// that a certified document withholds Delete reads two things: this region
-/// **present**, and `properties.format.delete` — the ribbon control's region —
-/// **absent**. An absence is admissible evidence only because [`TRACE`] is
-/// written on every frame this section runs either way, so a check can tell
-/// *"the control was withheld"* from *"the panel never drew"*. The harness's
-/// own rule 4 states the same obligation from the other side.
 const REGION_REFUSED: &str = "properties.annot_delete.refused"; // ui-text-exempt: trace region name, never displayed
 /// The **collateral** sentence's rect, published only when there is collateral.
 const REGION_COLLATERAL: &str = "properties.annot_delete.collateral"; // ui-text-exempt: trace region name, never displayed
 /// The per-frame census of what the gate answered and what the preview found.
-///
-/// The name carries a verb suffix — `annot-delete-…` rather than
-/// `delete-annotation-…` — because `tools/gates/check-trace-names.py` forbids a
-/// module's own summary line from sharing its first token with a `vector_edit`
-/// funnel label, and `delete-annotation` is exactly such a label. A harness
-/// asking `last("delete-annotation")` would otherwise get the funnel's line,
-/// which carries `page`, `n`, `epoch` and `disclosures` and none of the keys
-/// this line exists to publish. That failure has happened three times on this
-/// project and it presents as a confident false negative.
 const TRACE: &str = "annot-delete-gates"; // ui-text-exempt: diagnostic trace name, never displayed
 
 /// **Why the selected annotation cannot be deleted**, or `None` if it can.
@@ -198,24 +177,6 @@ impl Refusal {
 }
 
 /// Which sentence an `EditError` from `annotation_deletion_refusal` earns.
-///
-/// # A total match with a named catch-all, not a `_ =>` with a guess
-///
-/// Every variant the query's own documentation names has an arm, **in the order
-/// the engine checks them**, so this function and
-/// `EditSession::annotation_deletion_refusal`'s two-line body can be read side
-/// by side. That is the shape `crate::app::actions::xobject::refusal_for` uses
-/// for `unshare_form`, and the failure it prevents is the one that is invisible
-/// in a diff: somebody adds an arm, mistypes a variant name, the compiler is
-/// happy because `_ =>` catches it, and the operator meets *"pdfcer cannot delete
-/// comments from this document"* where they should have met the sentence about
-/// the signature.
-///
-/// A free function rather than a `From` impl, for the same reason that one is:
-/// a `From` invites the mapping to be reused for another verb's errors and it is
-/// not reusable. `DocumentEncrypted` earns *this* sentence because the subject
-/// is an annotation; the same variant out of `unshare_form` earns a sentence
-/// about a drawing.
 fn refusal_for(error: &pdfcer_core::edit::EditError) -> AnnotDeleteRefusal {
     use pdfcer_core::edit::EditError;
     match error {
@@ -255,11 +216,6 @@ pub struct DeletionPreview {
 impl DeletionPreview {
     /// The collateral sentence for `id` at this document's current epoch,
     /// asking the engine only when the stamp has moved.
-    ///
-    /// `&mut self` and a borrowed return, so the string is neither cloned per
-    /// frame nor re-derived — the same shape
-    /// `crate::panels::properties::text::TextStyleDraft::sync` uses for the far
-    /// more expensive run inspection next door, and for the same reason.
     fn line(&mut self, doc: &OpenDoc, id: ObjId) -> Option<&str> {
         let stamp = (id, doc.edit_epoch);
         if self.stamp != Some(stamp) {
@@ -379,16 +335,6 @@ mod tests {
 
     /// **Every refusal the query documents earns its own sentence**, and
     /// none of them falls through to the catch-all.
-    ///
-    /// The failure this pins is the one that is invisible in a diff: somebody
-    /// adds an arm to [`refusal_for`], mistypes a variant name, and the compiler
-    /// is happy because `_ =>` catches it. The operator then meets *"pdfcer
-    /// cannot delete comments or markup from this document"* where they should
-    /// have met the sentence naming the certification signature — which is the
-    /// difference between a dead end and an explanation.
-    ///
-    /// The same test guards `crate::app::actions::xobject::refusal_for` for
-    /// `unshare_form`, and it is the same test because it is the same hazard.
     #[test]
     fn each_documented_refusal_earns_its_own_sentence() {
         for (error, expected) in [
@@ -417,10 +363,6 @@ mod tests {
     }
 
     /// **The three sentences are three different sentences.**
-    ///
-    /// An encrypted drawing and a certified one look identical on the canvas.
-    /// If these collapsed to one wording the enum would be decoration, and an
-    /// operator would be sent hunting for a signature that is not in their file.
     #[test]
     fn the_refusals_are_told_apart_by_their_words() {
         let lines = [
@@ -438,13 +380,6 @@ mod tests {
     }
 
     /// **`Locked` beats the document's own refusal when both are true.**
-    ///
-    /// Asserted through [`Refusal::line`] rather than by re-reading the branch,
-    /// because what is being pinned is the *operator's* outcome: the more
-    /// actionable of two true facts is the one that gets said. An operator told
-    /// their comment is marked unchangeable can go and look at that comment; an
-    /// operator told the document is certified can do nothing about one
-    /// annotation.
     #[test]
     fn the_locked_sentence_is_the_one_that_leaves_a_next_step() {
         assert_ne!(
@@ -472,21 +407,9 @@ mod fixtures {
     /// `/Perms`, because nothing else differs.
     const ORDINARY: &str = "threaded-comments.pdf";
     /// The `/Square` under test — object 20 in both fixtures, by construction.
-    ///
-    /// Named by object number rather than found by a walk, deliberately. The
-    /// fixture is authored by this repository byte for byte, so the number is a
-    /// fact about a file in this tree rather than an assumption about a
-    /// document somebody else produced — and a test that *searched* for "the
-    /// square" would pass on a fixture that had lost its pop-up, which is half
-    /// of what these assert.
     const SQUARE: u32 = 20;
 
     /// A target naming the fixture's square, unlocked.
-    ///
-    /// `locked: false` matters. [`gate`] checks §12.5.3 bit 8 **first**, so a
-    /// locked target would be refused by the older half of the ladder and the
-    /// certification assertion below would pass without the certification being
-    /// consulted at all.
     fn square_target() -> crate::canvas::selection::annot::AnnotTarget {
         crate::canvas::selection::annot::AnnotTarget {
             page: 0,
@@ -499,11 +422,6 @@ mod fixtures {
 
     /// **An enforced certification withholds the Delete control, and the
     /// sentence names the signature.**
-    ///
-    /// The end-to-end assertion for R83 on this surface: the engine's query is
-    /// asked, its `EditError` is mapped, and the operator-facing sentence is the
-    /// one about a certification rather than the catch-all. Every link in that
-    /// chain is exercised on a real file rather than on a constructed error.
     #[test]
     fn a_certified_document_withholds_the_delete_control() {
         let doc = open_local_fixture(CERTIFIED);
@@ -526,32 +444,6 @@ mod fixtures {
 
     /// **The gate answers about the selection it is HANDED, not the one on
     /// the document** — the regression test for the defect of 2026-08-29.
-    ///
-    /// # What went wrong, in one sentence
-    ///
-    /// `canvas::interact` moves the selection off the document for the length of
-    /// a canvas frame (`std::mem::take(&mut doc.selection)`), and it filled in
-    /// `canvas::keys::Keys::annot_delete_refused` by calling
-    /// [`refuses_selected`] — which reads `doc.selection`. So the flag was
-    /// `false` on every frame, on every document, and the Delete key's
-    /// annotation rung never declined once: it raised the action, the engine
-    /// refused it into `vector_edit`'s silent `Err` arm, and the selection was
-    /// cleared anyway, removing the panel sentence that explained the refusal.
-    ///
-    /// # Why THIS shape of test, and why the old one could not have caught it
-    ///
-    /// The assertion in `a_certified_document_withholds_the_delete_control`
-    /// above is `refuses_selected(&doc) == doc.selection.annot().is_some()`,
-    /// which on a freshly-opened fixture is `false == false` — true of the fixed
-    /// build and true of the broken one. Every unit test in `canvas::keys`
-    /// likewise sets `annot_delete_refused` **by hand**, so none of them was
-    /// ever downstream of the call that was wrong.
-    ///
-    /// What this test asserts is the property the caller actually needs: that
-    /// the two arguments are independent, by putting the annotation in a
-    /// **detached** selection and leaving `doc.selection` empty — which is
-    /// precisely the state `canvas::interact` is in when it asks. A build that
-    /// reaches for `doc.selection` answers `false` here and fails.
     #[test]
     fn the_gate_reads_the_selection_it_is_given() {
         let doc = open_local_fixture(CERTIFIED);
@@ -589,12 +481,6 @@ mod fixtures {
 
     /// **The same document without the certification offers the control**,
     /// which is what makes the test above evidence rather than a tautology.
-    ///
-    /// A `gate` that refused unconditionally would satisfy the certified
-    /// assertion perfectly. The two fixtures differ in exactly one dictionary,
-    /// so this pins that the difference the gate reacts to is that dictionary
-    /// and not the presence of a signature, or of an annotation, or of a
-    /// pop-up.
     #[test]
     fn the_same_document_without_the_certification_offers_it() {
         let doc = open_local_fixture(ORDINARY);
@@ -608,16 +494,6 @@ mod fixtures {
     }
 
     /// **The collateral is stated before the click, with both clauses.**
-    ///
-    /// `annotation_deletion_preview` on the square must find the `/Popup`
-    /// companion (§12.5.6.14 makes taking it a `shall`) and the one `/IRT`
-    /// referrer that Table 170's default `/RT` of `R` classifies as a **reply**.
-    /// Two clauses rather than one, because one would not prove the joining is
-    /// right.
-    ///
-    /// Asserted through [`DeletionPreview::line`] — the memo — rather than by
-    /// calling the engine directly, so what is pinned is the string an operator
-    /// would read on the frame the annotation is selected, stamp and all.
     #[test]
     fn the_collateral_names_the_popup_and_the_orphaned_reply() {
         let doc = open_local_fixture(ORDINARY);
@@ -636,13 +512,6 @@ mod fixtures {
     }
 
     /// **The memo answers from the stamp on the second call.**
-    ///
-    /// The whole cost argument rests on this: `annotation_deletion_preview`
-    /// walks the page's `/Annots` looking for `/IRT` referrers, and the panel
-    /// would otherwise pay that every frame the annotation stayed selected. A
-    /// stamp hit is asserted by *poisoning the payload* and reading it back —
-    /// if the engine had been re-asked, the real sentence would have returned
-    /// and the poison would be gone.
     #[test]
     fn the_second_frame_costs_no_engine_call() {
         let doc = open_local_fixture(ORDINARY);
@@ -659,12 +528,6 @@ mod fixtures {
     }
 
     /// **A moved epoch re-asks**, which is the other half of the stamp.
-    ///
-    /// Without the epoch term the panel would show the collateral of a document
-    /// state that no longer exists — a reply deleted a moment ago would go on
-    /// being counted, which is exactly the failure that makes a properties
-    /// panel untrustworthy. Asserted the same way round: the poison must be
-    /// gone.
     #[test]
     fn a_moved_epoch_re_asks_the_engine() {
         let mut doc = open_local_fixture(ORDINARY);

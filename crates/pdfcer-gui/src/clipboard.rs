@@ -356,16 +356,6 @@ mod tests {
     use super::*;
 
     /// **The placement order is SVG, EMF, PNG, DIB — and nothing else.**
-    ///
-    /// The single most important assertion in this module. The order was
-    /// *measured* by the engine against a real Word paste through combridge,
-    /// not chosen for tidiness, and a reader takes the first format it
-    /// recognises — so reordering these four silently changes what Word,
-    /// LibreOffice and Inkscape each receive, with no error anywhere.
-    ///
-    /// Asserted as the whole array in one comparison rather than as four
-    /// index checks, so a *swap* (the likeliest edit) fails as loudly as a
-    /// replacement.
     #[test]
     fn the_placement_order_is_the_measured_one() {
         assert_eq!(
@@ -384,12 +374,6 @@ mod tests {
     }
 
     /// **The two vector formats come before the two raster ones.**
-    ///
-    /// Stated as a property rather than as the literal array above, because
-    /// it is the property the whole feature rests on and it should survive a
-    /// deliberate, considered change to the order of two entries within a
-    /// half. If a raster format ever precedes a vector one, Word's paste is a
-    /// flat picture and the feature has quietly stopped working.
     #[test]
     fn every_vector_format_precedes_every_raster_one() {
         let first_raster = ORDER
@@ -409,11 +393,6 @@ mod tests {
 
     /// **The SVG entry carries one trailing NUL and the source string
     /// does not.**
-    ///
-    /// Chromium's exact byte shape, which is what Office was validated
-    /// against. Both halves are asserted: the terminator is present, and it is
-    /// *one* byte rather than being doubled by a caller that had already added
-    /// one.
     #[test]
     fn the_svg_payload_is_utf8_with_exactly_one_trailing_nul() {
         let payload = svg_payload("<svg/>");
@@ -435,10 +414,6 @@ mod tests {
 
     /// **The NUL is not in the payload struct**, so the same string can be
     /// written to a `.svg` file.
-    ///
-    /// XML 1.0 §2.2 does not permit a NUL anywhere in a document, so a file
-    /// carrying one is refused by strict parsers. This asserts the seam: the
-    /// terminator belongs to the clipboard boundary and nowhere else.
     #[test]
     fn the_stored_svg_has_no_terminator_of_its_own() {
         let payload = CopyPayload {
@@ -455,10 +430,6 @@ mod tests {
     }
 
     /// **A payload with rasters and no vectors is refusable, by name.**
-    ///
-    /// The engine's note: *"place only the raster formats and it degrades to
-    /// a plain picture."* This is the predicate a caller asks before placing,
-    /// and the reason a half-built copy-out is worse than none.
     #[test]
     fn a_raster_only_payload_reports_that_it_would_degrade_words_paste() {
         let raster_only = CopyPayload {
@@ -510,10 +481,6 @@ mod tests {
     }
 
     /// **The two registered names are exactly `image/svg+xml` and `PNG`.**
-    ///
-    /// Byte-for-byte, because `RegisterClipboardFormat` is case-sensitive:
-    /// `"png"` registers a different, private format that nothing on the
-    /// machine reads, and the copy would appear to succeed.
     #[test]
     fn the_registered_names_are_byte_exact() {
         assert_eq!(ClipFormat::Svg.name(), "image/svg+xml");
@@ -528,11 +495,6 @@ mod tests {
     }
 
     /// **The DIB header is 124 bytes, top-down, `BI_BITFIELDS`, BGRA.**
-    ///
-    /// Every one of those four is a silent-corruption failure if it is wrong:
-    /// a wrong header length reads pixels from the wrong offset, a positive
-    /// height pastes the picture upside down, `BI_RGB` leaves the alpha byte
-    /// formally undefined, and a channel-order slip turns red into blue.
     #[test]
     fn the_dib_header_is_top_down_bitfields_bgra() {
         let mut pixmap = Pixmap::new(2, 1).expect("2x1 is a valid pixmap");
@@ -566,14 +528,6 @@ mod tests {
     }
 
     /// **The pixels are premultiplied BGRA, not straight alpha.**
-    ///
-    /// The convention Chromium writes and Mozilla reads. A straight-alpha DIB
-    /// produces dark haloes around soft edges in exactly the readers that fall
-    /// back to `CF_DIBV5`, and it looks correct in every reader that does not.
-    ///
-    /// `tiny_skia` stores premultiplied natively, so what this really asserts
-    /// is that nothing on the way out **un**-premultiplies — which is the
-    /// tempting "fix" for a channel that looks too dark.
     #[test]
     fn the_dib_pixels_are_premultiplied_and_not_unpremultiplied_on_the_way_out() {
         let mut pixmap = Pixmap::new(1, 1).expect("1x1 is a valid pixmap");
@@ -599,11 +553,6 @@ mod tests {
     }
 
     /// **Pixels per metre is the exact inch, rounded to nearest.**
-    ///
-    /// 300 DPI / 0.0254 is 11811.02…, so truncation gives 11810 and a paste
-    /// lands very slightly wrong. A nonsense resolution yields 0, which is
-    /// `CF_DIBV5`'s own "unspecified" and is better than a garbage number a
-    /// reader would honour.
     #[test]
     fn the_dib_resolution_is_the_exact_inch_rounded_to_nearest() {
         assert_eq!(pixels_per_metre(300.0), 11811);

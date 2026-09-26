@@ -18,11 +18,6 @@ const REGION_BODY: &str = "insert-pages.body";
 const REGION_INSERT: &str = "insert-pages.insert";
 
 /// Where the pages land, as the four radios offer it.
-///
-/// A local enum **only** for the radio state, converted to
-/// `pdfcer_core::pageops::InsertPosition` at the point of use — because two of
-/// the four need the current page index, which the radio does not carry and the
-/// dialog does.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Where {
     /// Before the page the operator is looking at.
@@ -102,10 +97,6 @@ impl InsertPagesDialog {
 
     /// The source pages this dialog currently names, or `None` if the typed
     /// range is unparseable.
-    ///
-    /// `None` is what disables the commit button *and* draws the refusal — one
-    /// derivation feeding both, so the button cannot be live while the sentence
-    /// says the range is bad.
     fn chosen(&self) -> Option<Vec<usize>> {
         if self.all {
             return Some((0..self.source_pages).collect());
@@ -267,11 +258,6 @@ mod tests {
 
     /// The four radios produce the engine's four positions, and the two that
     /// need a page carry the RIGHT one.
-    ///
-    /// The failure this catches is an off-by-one between "after page 7" as the
-    /// operator reads it and `After(6)` as the engine takes it — invisible in
-    /// any test that only checks that *a* position was produced, and visible to
-    /// an operator as pages landing one sheet away from where they asked.
     #[test]
     fn each_position_maps_to_the_engines_own() {
         let mut d = dialog();
@@ -286,11 +272,6 @@ mod tests {
     }
 
     /// An unparseable range names NO pages, which is what hides the button.
-    ///
-    /// Both halves matter: a bad range must not fall back to "all" — that would
-    /// insert a document the operator did not ask for — and an empty result
-    /// must be `None` rather than `Some(vec![])`, or the button would be drawn
-    /// over a selection of nothing.
     #[test]
     fn a_bad_range_names_nothing_and_does_not_fall_back_to_all() {
         let mut d = dialog();
@@ -304,11 +285,6 @@ mod tests {
     }
 
     /// The default is every page, after the page the operator was on.
-    ///
-    /// Pinned because it is the fast path: an operator who wants the whole file
-    /// after the page they are on presses Insert twice and reads nothing. Any
-    /// change to the seeded state costs that operator a dialog they were not
-    /// reading.
     #[test]
     fn it_opens_on_every_page_after_the_current_one() {
         let d = dialog();
@@ -318,12 +294,6 @@ mod tests {
     }
 
     /// The range grammar is the print dialog's, including the two surprises.
-    ///
-    /// Order is preserved and duplicates are kept, because the text is a
-    /// SEQUENCE the operator wrote. Here that is not a quirk to tolerate — it
-    /// is how an operator inserts pages in a different order, or twice, in one
-    /// gesture. Asserted so that a later "tidy-up" into a sorted set has to
-    /// argue with a test rather than with nothing.
     #[test]
     fn the_range_is_a_sequence_not_a_set() {
         let mut d = dialog();

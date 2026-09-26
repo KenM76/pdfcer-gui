@@ -21,10 +21,6 @@ use pdfcer_core::text_edit::{
 use pdfcer_core::text_extract::{ExtractOptions, extract_page_view};
 
 /// Median of a sample, which is what a per-keystroke cost should be reported as.
-///
-/// A mean over ten iterations on a Windows desktop is a mean including whatever
-/// else the machine did; the median is the cost of a typical keystroke, which is
-/// the thing an operator experiences.
 fn median(mut v: Vec<f64>) -> f64 {
     v.sort_by(f64::total_cmp);
     v[v.len() / 2]
@@ -42,12 +38,6 @@ fn timed(n: usize, mut f: impl FnMut()) -> f64 {
 }
 
 /// The documents to measure against, when they are present.
-///
-/// The two outside the repository are the ones that matter — they are the
-/// operator's real material — so a missing one **skips that row** and says so
-/// rather than failing. A
-/// measurement that cannot run is not a measurement that passed;
-/// `run-all.sh`'s three-state model is the same rule one level up.
 fn corpus() -> Vec<(&'static str, PathBuf)> {
     let mine = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/tail-alignment.pdf");
     let mut v: Vec<(&'static str, PathBuf)> = vec![("tail-alignment (tiny, 3 lines)", mine)];
@@ -139,12 +129,6 @@ fn measure(label: &str, path: &Path) {
 }
 
 /// **The measurement.** Prints; asserts nothing about time.
-///
-/// A timing assertion in a suite that runs on whatever machine happens to be
-/// free is a flake, and a flake gets `#[ignore]`d and then deleted. What is
-/// asserted is only that the harness *ran* — the rule that a layout test must
-/// assert a measurement happened rather than only its value, applied to a
-/// timing one.
 #[test]
 #[ignore = "a measurement, not an assertion — run it and read the numbers"]
 fn what_a_per_keystroke_re_measure_would_cost() {

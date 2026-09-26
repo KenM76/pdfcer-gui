@@ -98,3 +98,99 @@ it asserts, against the engine directly, that an unpinned request on
 So the pin below is choosing between two edits the engine would both have
 made — without this a reader could believe it was decoration over something
 the engine disambiguated anyway.
+
+## Item notes
+
+### `const RUN`
+
+Three characters rather than his thirty-six, because the property under test
+is *"more than one show operator"* and three is the smallest number that also
+exercises a middle operator — an edit that spans only the first and last
+would pass on a matcher that never looked between them.
+
+### `const STRADDLED`
+
+The changed region therefore covers all three show operators, so the
+engine cannot narrow the rewrite to one of them. See
+[`a_change_that_straddles_operators_keeps_the_spanning_form`].
+
+### `fn page_runs`
+
+Separate from [`page_text`] and not a convenience: with two identical
+strings on one page, *which* one changed is expressible only as a position
+in this list. A concatenated string can say the fix is present; it cannot
+say the clicked run is the one that has it, and that is the whole question
+`span_from_pin` exists to answer.
+
+### `fn the_fixtures_runs_are_written_one_glyph_per_operator`
+
+If it were one operator the exact-pin path would be taken, the `find` would
+be dropped, and every test here would be measuring the branch that already
+worked — passing, and about nothing. This is the same hazard `facewall`'s
+first control covers, and it is worth the four lines for the same reason.
+
+### `fn a_typo_in_a_run_written_one_glyph_at_a_time_can_be_corrected`
+
+Driven through the real [`super::plan`] rather than by hand-building an
+`EditRequest`, because the claim is about **what the shell decides**. A test
+that assembled the request itself would pass on a build where `plan` had gone
+back to sending the pin, which is precisely the build this exists to catch.
+
+### `fn left_edge`
+
+It names a run, and that is the whole point. The minimum `llx` over
+*every* run on the page answers a different question — *"is anything on this
+page still at the far left?"* — and on a sheet with a title block something
+always is, so an edit could fling the corrected line across the page while
+that number did not move at all. The fixtures here hold one and two runs, so
+both readings agree on them and the defect would have shipped invisibly.
+
+Panics when the run has no `bbox`, which is the honest outcome: a run whose
+box could not be derived cannot answer the question, and `f64::INFINITY`
+folded in silently would make the comparison pass.
+
+### `fn a_typo_that_appears_twice_on_the_page_edits_the_one_that_was_clicked`
+
+# What this test asserted until today, and why it was right then
+
+It asserted a **refusal**. Three things, each with its own way of going
+missing: that the count saw both occurrences, that the pin was kept — which
+made the request unmatchable *on purpose* — and that the refusal classified
+as `AmbiguousOnThePage` rather than as [`EditRefusal::SplitAcrossPieces`],
+both being true of this page and only the first being what stopped it.
+
+That was the best available answer while `EditRequest` carried no way to
+say *which* occurrence. The shell had exactly two options — address this
+run **or** span across operators — and it chose to refuse rather than to
+guess on a signed drawing.
+
+# What changed
+
+`Pass 272.0` gave it a third:
+[`EditRequest::spanning_from`](pdfcer_core::text_edit::EditRequest::spanning_from)
+starts the span search **at the pinned operator**. `find` says what, the
+pin says which one, and every guard the span search already had is
+unchanged. Shipped the same day this shell filed for it.
+
+⇒ So the page that could not be edited is now edited **correctly**, and
+this test proves it by the only means that discriminates: it checks that
+the *first* occurrence changed and the *second* did not. A build that
+scanned from operator 0 would also produce a page containing the fix and
+would pass any assertion phrased as "the corrected text is present".
+
+That trap is not hypothetical — the engine's own reply records its third
+sabotage passing twice, once because the fixture lacked a third
+occurrence and once because the assertion asked *"does this operator appear
+somewhere"* rather than naming the line.
+
+### `fn the_engine_would_have_edited_the_wrong_one`
+
+Without this, a reader could believe `per-glyph-twice.pdf` refuses because
+the engine refuses it, which would make the test above vacuous and the count
+decoration. It does not: **unpinned, the engine applies the edit happily**,
+to whichever occurrence it reaches first.
+
+⚠ That is the build this module exists to prevent shipping, and this test is
+the closest thing to it that can be safely written down: it demonstrates the
+wrong behaviour on a throwaway session, so that nobody has to wonder what
+would happen if the pin were dropped unconditionally.

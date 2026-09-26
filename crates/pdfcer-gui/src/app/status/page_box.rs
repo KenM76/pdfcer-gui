@@ -21,19 +21,9 @@ use crate::app::state::OpenDoc;
 use crate::text::status as t;
 
 /// How wide the editable page box is.
-///
-/// Four digits of a proportional face plus the field's own margins: enough
-/// for `9999` without eliding, which covers every document anyone has opened
-/// in this application. A box that grew with the page count would move the
-/// two step buttons every time a different document was opened.
 const PAGE_BOX_WIDTH_PTS: f32 = 44.0;
 
 /// The most characters the page box will hold.
-///
-/// Not a validation rule — [`resolve`] is what decides whether the text
-/// names a page — but a guard against an operator pasting a paragraph into a
-/// 44-point-wide field and losing the control's shape. Nine digits is past
-/// any real page count and past the point where the text is legible anyway.
 const PAGE_BOX_MAX_CHARS: usize = 9;
 
 /// Named region: `⏴ ⟨n⟩ / ⟨N⟩ ⏵`, plus the clamp/reject note when there is
@@ -41,10 +31,6 @@ const PAGE_BOX_MAX_CHARS: usize = 9;
 const REGION_PAGE: &str = "status-group:page"; // ui-text-exempt: trace region name, never displayed
 
 /// Named region: the editable box alone.
-///
-/// Named separately from [`REGION_PAGE`] because it is the control this
-/// stage exists to build: a legibility or hit-target check wants the field
-/// itself, not the field plus two buttons and a possible note.
 const REGION_PAGE_BOX: &str = "status-page-box"; // ui-text-exempt: trace region name, never displayed
 
 /// The wheel-paging toggle, so a driven check can find it and assert that it
@@ -53,13 +39,6 @@ const REGION_PAGE_BOX: &str = "status-page-box"; // ui-text-exempt: trace region
 const REGION_WHEEL_PAGING: &str = "status-wheel-paging"; // ui-text-exempt: trace region name, never displayed
 
 /// The page box's `egui` id.
-///
-/// **Fixed and explicit, not auto-generated.** Three things depend on it
-/// being stable across frames: `TextEdit` finds its own cursor and selection
-/// under it, `ctx.text_edit_focused()` finds the `TextEditState` under it
-/// (defect D1's guard — see the module docs), and [`tests`] request focus on
-/// it directly. An auto id derived from widget order would change the moment
-/// a note appeared beside the box.
 const PAGE_BOX_ID: &str = "pdfcer-status-page-box"; // ui-text-exempt: widget id, never displayed
 
 /// Where the draft text and the last commit's verdict are kept.
@@ -144,37 +123,6 @@ pub(super) fn group(
 
 /// **What the wheel does on a single page**, offered where the operator is
 /// already thinking about pages — `OPERATOR_REQUESTS.md` O30.
-///
-/// > *"when in single page view there should be an option on screen near the
-/// > button to scroll or flip through pages, or the current way it is now when
-/// > the scroll wheel is used."*
-///
-/// # It renders NOTHING under a continuous display mode
-///
-/// R9: an unavailable capability renders nothing, and greying is reserved for
-/// *temporarily* unavailable. Under
-/// [`crate::viewer::PageDisplay::Continuous`] the wheel scrolls the whole
-/// document **by definition** — there is no second answer to offer, so there
-/// is no control. A disabled toggle there would be a permanent apology for a
-/// choice that does not exist.
-///
-/// It sits immediately to the left of `⏴`, inside the page group's own
-/// right-to-left scope, so it is adjacent to the two buttons it is an
-/// alternative to. Placing it in the empty middle of the bar would put the
-/// question a hand's width from its subject.
-///
-/// # A toggle, not a pair of labels
-///
-/// The two answers are not peers: one is what the build has always done and
-/// the other is the departure from it. A pressed/unpressed control says that
-/// — *flipping is on* — where two `selectable_label`s would present them as
-/// equals and cost twice the width in a 24-point bar. The tooltip carries
-/// both sentences, and the settings window carries the full argument for each.
-///
-/// Drawn wherever the choice changes what the wheel does: every
-/// non-continuous display, a one-page document included, where flipping on
-/// stops the wheel scrolling the fitted page
-/// ([`crate::canvas::paging::wheel_turns_pages`]).
 fn wheel_toggle(ui: &mut egui::Ui, doc: &OpenDoc, wheel_paging: &mut WheelPaging) {
     if doc.view.display.is_continuous() {
         return;
@@ -194,15 +142,6 @@ fn wheel_toggle(ui: &mut egui::Ui, doc: &OpenDoc, wheel_paging: &mut WheelPaging
 }
 
 /// The editable field itself: draw it, and commit it when it is committed.
-///
-/// See the module docs for the commit rule, the three outcomes, and why this
-/// must be a real [`egui::TextEdit`].
-///
-/// While a draft exists the box shows the draft and **not** the page, which
-/// is what makes rejection non-destructive: refusing `abc` leaves `abc` in
-/// the field with a note beside it, rather than silently restoring the
-/// current page and leaving the operator to wonder whether the field is
-/// broken or they mistyped.
 fn field(
     ui: &mut egui::Ui,
     state: &mut PageBox,
@@ -320,10 +259,6 @@ pub(super) struct PageBox {
 
 /// What the last commit did, when it did something the operator should be
 /// told about.
-///
-/// There is no `Ok` variant: a commit that went exactly where it was asked
-/// needs no explanation, and a note beside every successful navigation would
-/// train the operator to stop reading the ones that matter.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Note {
     /// The number was outside the document. `asked` is the 1-based number
@@ -336,10 +271,6 @@ enum Note {
 }
 
 /// What a committed string resolves to.
-///
-/// A separate type from [`Note`] because the two answer different questions:
-/// this one says *what to do*, including the successful cases; `Note` says
-/// *what to tell the operator*, which is only the surprising subset.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum PageCommit {
     /// Go to this 0-based page index.
@@ -353,46 +284,6 @@ enum PageCommit {
 }
 
 /// Decide what a committed page-box string means.
-///
-/// **Pure, and that is the point.** `crate::viewer`'s header states the
-/// project's split — *"this module is unit-testable and the widget code is
-/// not"* — and every property this control is judged on lives here rather
-/// than inside an `egui` closure: what counts as a number, what happens at
-/// the ends of the document, what happens to nonsense.
-///
-/// # The rules, and why each is what it is
-///
-/// - **Surrounding whitespace is ignored.** `" 37 "` is a pasted page
-///   number, not a typo, and refusing it would be pedantry the operator has
-///   to work around by hand.
-/// - **A leading `+` is accepted, a leading `-` is not.** `+37` is a number;
-///   `-37` is a *different* number, one no document has, and silently
-///   reading it as 37 would be inventing an intent. It falls to
-///   [`PageCommit::NotANumber`], which keeps the text so the operator can
-///   see what they typed.
-/// - **Only ASCII digits count.** A full-width `３` or an Arabic-Indic `٣`
-///   is refused rather than guessed at; pdfcer has no locale model, and a
-///   half-implemented one that worked for three scripts would be worse than
-///   an honest refusal.
-/// - **An absurdly long run of digits is a number, not nonsense.**
-///   `99999999999999999999` overflows `usize`, and `parse` would report that
-///   as an error indistinguishable from `abc`. It is saturated to
-///   [`usize::MAX`] instead, so it clamps to the last page and *reports the
-///   clamp* — which is the honest answer to "go to page ten quintillion".
-/// - **Page 0 does not exist.** The box is 1-based (see
-///   [`crate::text::status::page_number`]), so `0` is out of range at the
-///   near end and clamps to page 1 with a note, exactly as `99` clamps to
-///   the far end with one.
-/// - **The clamp is `crate::viewer::clamp_page_index`**, not a second
-///   spelling of the same arithmetic. There is one rule for "which page is
-///   this really", it is already tested against the empty-document case, and
-///   a private copy here is how two clamps drift apart.
-///
-/// `page_count == 0` yields [`PageCommit::Empty`]: there is nowhere to go.
-/// The caller never asks — [`group`] draws nothing for a document with no
-/// pages — but a decision function that panicked or invented an answer for
-/// an input its caller happens not to produce is one refactor away from
-/// being wrong.
 #[must_use]
 fn resolve(text: &str, page_count: usize) -> PageCommit {
     let trimmed = text.trim();
@@ -435,10 +326,6 @@ mod tests {
 
     /// **The box is 1-based and the action is 0-based**, and the
     /// conversion happens exactly once.
-    ///
-    /// An off-by-one here is the most likely defect this control can carry
-    /// and the least likely to be noticed in review: typing `37` and landing
-    /// on 36 looks like a rendering delay until you check twice.
     #[test]
     fn the_displayed_number_and_the_action_index_differ_by_exactly_one() {
         for page in 1..=42usize {
@@ -455,11 +342,6 @@ mod tests {
 
     /// **Out of range clamps into the document, at both ends, and is
     /// reported.**
-    ///
-    /// The verdict carries the number that was asked for as well as the one
-    /// that was given, because that is what
-    /// `crate::text::status::page_clamped_note` needs to distinguish "your
-    /// number was out of range" from "the box ignored you".
     #[test]
     fn an_out_of_range_number_clamps_and_says_what_it_asked_for() {
         assert_eq!(
@@ -488,11 +370,6 @@ mod tests {
     }
 
     /// A number too large for `usize` is still a number.
-    ///
-    /// `parse` reports an overflow the same way it reports `abc`, and
-    /// treating "go to page ten quintillion" as a typing error would refuse
-    /// an input whose meaning is perfectly clear. It clamps to the last page
-    /// and reports the clamp.
     #[test]
     fn an_absurdly_large_number_clamps_rather_than_being_refused() {
         assert_eq!(
@@ -505,10 +382,6 @@ mod tests {
     }
 
     /// **Non-numeric input is refused.**
-    ///
-    /// The other half of the requirement — that the text survives the
-    /// refusal — is a property of the widget and is asserted in
-    /// [`a_refused_commit_keeps_what_the_operator_typed`].
     #[test]
     fn non_numeric_input_is_refused() {
         for text in ["abc", "3.5", "37a", "-1", "3 7", "٣", "３", "+"] {
@@ -535,11 +408,6 @@ mod tests {
     }
 
     /// A document with no pages has nowhere to go.
-    ///
-    /// Unreachable through the widget — [`group`] draws nothing for
-    /// `/Count 0` — and pinned anyway, because a decision function that
-    /// invented an answer for an input its caller happens not to produce is
-    /// one refactor away from being wrong.
     #[test]
     fn a_document_with_no_pages_resolves_to_nothing() {
         assert_eq!(resolve("1", 0), PageCommit::Empty);
@@ -577,23 +445,6 @@ mod tests {
     }
 
     /// **The D1 regression test, from the page box's end.**
-    ///
-    /// `crate::app::keyboard`'s guard is `ctx.text_edit_focused()`, and it
-    /// only protects a control that egui recognises as a text edit. This
-    /// asserts, in order:
-    ///
-    /// 1. `egui_wants_keyboard_input()` is genuinely `true` — so the test is
-    ///    known to be exercising the condition rather than passing
-    ///    vacuously. Its absence from the original D1 test is exactly why
-    ///    that defect shipped.
-    /// 2. `text_edit_focused()` is `true`, i.e. the box really is a
-    ///    `TextEdit` under the id the guard resolves. Replace it with a
-    ///    `DragValue` in display mode or a painted field and this fails.
-    /// 3. With the box focused, `keyboard::collect` installs **no**
-    ///    unmodified binding — so a digit typed on the way to `42` cannot
-    ///    also page the document.
-    /// 4. Typing does not commit. Nothing is raised until Enter or focus
-    ///    loss.
     #[test]
     fn typing_a_digit_into_the_page_box_does_not_also_step_the_page() {
         let ctx = Context::default();
@@ -666,10 +517,6 @@ mod tests {
     }
 
     /// The guard is not permanent: with the box unfocused, `PageDown` works.
-    ///
-    /// The mirror of the test above, and the reason it matters is D1 itself
-    /// — a guard that is always on is exactly as broken as one that is
-    /// always off, and it is much harder to notice.
     #[test]
     fn the_page_keys_come_back_the_moment_the_box_loses_focus() {
         let ctx = Context::default();
@@ -765,10 +612,6 @@ mod tests {
     }
 
     /// **A refused commit keeps what the operator typed.**
-    ///
-    /// Wiping the field to "helpfully" restore the current page destroys the
-    /// evidence of what the operator meant, and leaves them unable to tell a
-    /// rejection from a control that does nothing.
     #[test]
     fn a_refused_commit_keeps_what_the_operator_typed() {
         let ctx = Context::default();
@@ -785,10 +628,6 @@ mod tests {
     }
 
     /// A clamp note stops being shown once the operator is somewhere else.
-    ///
-    /// The note explains where *this* commit put them. Left in place it
-    /// would attach that explanation to a page they reached with the ⏴
-    /// button, which is a small lie told confidently.
     #[test]
     fn a_clamp_note_is_forgotten_once_the_operator_moves_away() {
         let ctx = Context::default();
@@ -819,16 +658,6 @@ mod tests {
     }
 
     /// The step buttons raise the same actions everything else does.
-    ///
-    /// Not a tautology: the whole value of a mirror surface is that it
-    /// invokes the *same* command, and a status bar that raised its own
-    /// page-stepping arithmetic would be a second navigation model to keep
-    /// in step with the keyboard's.
-    ///
-    /// Asserted through the action type rather than by clicking, which would
-    /// need synthesized pointer input at a rect this test has to predict.
-    /// What is worth pinning is that the variants exist and are the ones
-    /// `keyboard::collect` produces.
     #[test]
     fn the_step_buttons_raise_the_shared_navigation_actions() {
         let ctx = Context::default();

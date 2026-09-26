@@ -192,20 +192,6 @@ pub enum Relation {
 
 /// Whether a subtype's `/Contents` is an accessibility description rather
 /// than a note.
-///
-/// The list is §12.5.6.2's: `Link`, `Movie`, `Widget`, `PrinterMark` and
-/// `TrapNet` use `/Contents` purely as an accessibility alternate.
-///
-/// `Widget` and `TrapNet` are in the list even though [`collect`] excludes
-/// both, and that is deliberate: this predicate answers *"what does the
-/// standard say about this subtype"*, and a copy of the spec's list that had
-/// been trimmed to match today's filter would silently become wrong the day
-/// the filter changed. Two rules, kept separate.
-///
-/// Everything not named is treated as a subtype that **displays** its
-/// `/Contents`, which is the conservative direction: mislabelling a markup
-/// note as an accessibility description would tell an operator that somebody's
-/// comment was written for a screen reader.
 #[must_use]
 fn contents_is_description(subtype: &str) -> bool {
     matches!(
@@ -418,11 +404,6 @@ pub fn thread_root(rows: &[CommentRow], id: ObjId) -> ObjId {
 }
 
 /// How many `/IRT` links [`thread_root`] follows before giving up.
-///
-/// Eight, matching `crate::canvas::notepopup::model::MAX_THREAD_DEPTH` — the
-/// two walk the same graph in opposite directions and a shell whose upward
-/// bound differed from its downward one could resolve a Go to onto a root
-/// whose own window would not list the row that was clicked.
 const MAX_THREAD_DEPTH: usize = 8;
 
 #[cfg(test)]
@@ -450,16 +431,6 @@ mod tests {
     }
 
     /// **A pop-up is excluded, and it is counted rather than dropped.**
-    ///
-    /// `popup-not-painted.pdf` carries exactly one annotation and it is a
-    /// `/Popup`. The listing is therefore empty — which is the *correct*
-    /// answer and the one most likely to be mistaken for a broken panel — and
-    /// the exclusion count is what lets the panel say so.
-    ///
-    /// §12.5.6.14: a pop-up *"shall not appear alone but is associated with a
-    /// markup annotation, its parent annotation"*. It is a reader-UI window,
-    /// never independent content, so one row per real annotation is the whole
-    /// rule.
     #[test]
     fn a_popup_is_excluded_and_counted() {
         let l = listing("annot/popup-not-painted.pdf");
@@ -497,10 +468,6 @@ mod tests {
     }
 
     /// **A `/TrapNet` is excluded.**
-    ///
-    /// Prepress output state — it records the trapping a RIP applied to the
-    /// page. Neither a comment nor anything a person wrote, so it is not
-    /// listed; `crate::panels::comments`' header carries the full argument.
     #[test]
     fn a_trapnet_is_excluded_and_counted() {
         let l = listing("annot/undeletable.pdf");
@@ -518,12 +485,6 @@ mod tests {
     }
 
     /// **ce dimensions are NOT excluded, and are named as what they are.**
-    ///
-    /// Both sides of the exclusion argument at once. They are `/Line`
-    /// annotations, so they appear here; excluding them by subtype would also
-    /// hide a genuine `/Line` markup an operator drew. And because the sidecar
-    /// can tell the two apart, the row says "ce dimension" instead of "Line"
-    /// without the filter ever being involved.
     #[test]
     fn a_ce_dimension_is_listed_and_recognised() {
         let (session, pages) = open("dimension/linear-dim.pdf");
@@ -551,11 +512,6 @@ mod tests {
     }
 
     /// **…and a document with no sidecar calls nothing a ce dimension.**
-    ///
-    /// The other direction, which is the one that would go wrong silently. If
-    /// [`ce_dimension_annots`] ever returned something for an undimensioned
-    /// document, every `/Line` markup in the corpus would be relabelled and
-    /// the mislabelling would look like a document fact.
     #[test]
     fn a_document_with_no_sidecar_has_no_ce_dimensions() {
         let (session, _pages) = open("annot/demo-annotated.pdf");
@@ -565,13 +521,6 @@ mod tests {
     }
 
     /// **The order is page order, then `/Annots` order.**
-    ///
-    /// Asserted as a monotonic page index rather than against a hard-coded
-    /// list, because the second half — `/Annots` order — is the file's own
-    /// array order and pinning it would be pinning
-    /// [`pdfcer_core::annot::page_annotations`]' contract rather than this
-    /// module's. What this module owns is the outer loop, and the failure it
-    /// would produce is a list that jumps between sheets.
     #[test]
     fn rows_are_in_page_order() {
         let l = listing("annot/thread.pdf");
@@ -588,12 +537,6 @@ mod tests {
     }
 
     /// **A reply is recognised through `effective_reply_type`.**
-    ///
-    /// `thread.pdf` carries `/IRT` links. Table 170 makes `/RT` default to
-    /// `R`, so an annotation with `/IRT` and no `/RT` **is** a reply — and a
-    /// call site that read `reply_type` directly would report `None` and get
-    /// the ordinary threaded comment wrong. Core names that as the trap; this
-    /// pins that the panel does not walk into it.
     #[test]
     fn a_threaded_annotation_is_recognised_as_a_relation() {
         let l = listing("annot/thread.pdf");
@@ -621,11 +564,6 @@ mod tests {
     }
 
     /// **A suppressed annotation is listed and flagged, never dropped.**
-    ///
-    /// A panel that silently omitted a suppressed annotation would be hiding
-    /// document content. Hidden annotations are a recognised document-forensics
-    /// vector, which is why core counts them rather than dropping them and why
-    /// this panel is the off-canvas surface that reports them.
     #[test]
     fn a_hidden_annotation_is_listed_and_flagged() {
         for fixture in ["annot/flags-hidden.pdf", "annot/flags-noview.pdf"] {
@@ -659,17 +597,6 @@ mod tests {
     }
 
     /// **`/Contents` on a subtype that displays no text is a description.**
-    ///
-    /// The §12.5.2 dual purpose, decided here because core deliberately
-    /// declines to: *"a UI labelling this 'comment' is right for markup and
-    /// wrong for a Link"*, and the interpretation *"belongs to whoever
-    /// displays it."*
-    ///
-    /// Asserted against the predicate rather than a fixture because the corpus
-    /// has no `/Link` carrying `/Contents` — and a test that silently proved
-    /// nothing would be worse than one that pins the rule it implements. The
-    /// list is checked in both directions, which is what stops a markup note
-    /// being relabelled as a screen-reader string.
     #[test]
     fn the_five_non_text_subtypes_are_descriptions_and_nothing_else_is() {
         for s in ["Link", "Movie", "Widget", "PrinterMark", "TrapNet"] {
@@ -707,25 +634,6 @@ mod tests {
 
     /// **The subtype a note edit is judged on is the ENGINE's, and this
     /// panel's copy of the same vocabulary must not drift from it.**
-    ///
-    /// [`CommentRow::subtype`] is filled from `pdfcer-core`'s own
-    /// `Annotation::subtype_label` — the raw `/Subtype` name — and
-    /// `crate::text::textannot::paints_its_note` is a **string match on that
-    /// same vocabulary**. The status-line disclosure asks it with
-    /// `MarkupNoteChange::subtype`, which is the same string from the same
-    /// producer, so the two are coupled by the spelling of a name and by
-    /// nothing else. Title-casing this panel's subtype for display, or swapping
-    /// it for an enum, is the first step toward them coming apart, and the
-    /// symptom is a *missing* sentence — which no screenshot shows.
-    ///
-    /// Reusing the row above's list is the point: it is this panel's own
-    /// enumeration of what displays its `/Contents`, i.e. exactly the rows that
-    /// get an editor, so the two cannot be brought into disagreement by adding
-    /// a subtype to one list and not the other.
-    ///
-    /// The positive assertion is first and is load-bearing. A version that only
-    /// looped the `!paints_its_note` claims would pass on a `paints_its_note`
-    /// reduced to `false`.
     #[test]
     fn the_panels_subtype_vocabulary_is_the_one_the_disclosure_asks() {
         use crate::text::textannot::paints_its_note;
@@ -767,13 +675,6 @@ mod tests {
 
     /// **An absent `/Contents` is [`Note::Absent`], and that drives the
     /// document-wide disclosure.**
-    ///
-    /// The condition the panel keys its "shapes pdfcer drew carry no note"
-    /// sentence on. It must be true when every row lacks note text, false when
-    /// any row has some, and false on an empty listing — the third being the
-    /// one a naive `.all()` gets wrong, because `.all()` on an empty iterator
-    /// is `true` and would print a paragraph about note text under a heading
-    /// that just said there is nothing at all.
     #[test]
     fn the_all_without_notes_condition_is_not_vacuously_true() {
         assert!(!Listing::default().every_row_lacks_note_text());
@@ -808,12 +709,6 @@ mod tests {
     }
 
     /// **Every listed row carries a page index inside the document.**
-    ///
-    /// The index is fed straight to
-    /// [`crate::app::actions::Action::GoToPage`], so an out-of-range value
-    /// would be a navigation to nowhere. It cannot happen — the index is the
-    /// enumeration of `pages` — and it is pinned anyway, because this is the
-    /// one number in the row that leaves the panel.
     #[test]
     fn every_row_can_be_navigated_to() {
         let (session, pages) = open("annot/thread.pdf");

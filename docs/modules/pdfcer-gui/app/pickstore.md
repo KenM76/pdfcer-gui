@@ -76,3 +76,13 @@ not tell anyone, which is a judgement about *this* preference rather than
 about errors: losing a selection filter across a restart is an
 inconvenience, and a modal about a preferences file at the moment the
 operator clicked a checkbox would be worse than the thing it reports.
+
+## Item notes
+
+### `fn an_empty_file_means_nothing_selectable_not_never_configured`
+
+An operator who switched every class off and quit must get that back,
+not a helpfully-restored default. If this ever fails, the shell has
+started overruling a deliberate choice once per restart, and the
+operator's report will be "my filter keeps resetting" with no way for
+them to see why.

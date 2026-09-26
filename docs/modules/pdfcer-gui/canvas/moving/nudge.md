@@ -102,3 +102,40 @@ Illustrator, InDesign and Acrobat all do, and the alternative (coalescing a
 held key into one entry) needs a notion of *gesture end* that a keyboard does
 not offer without a timer. It is a nice-to-have and it is deliberately not
 built: correctness first, and one press → one entry is the correct half.
+
+## Item notes
+
+### `fn step_for`
+
+# Why the modifiers are read rather than matched by `consume_key`
+
+[`egui::InputState::consume_key`] matches with
+[`egui::Modifiers::matches_logically`], whose documented behaviour is that
+**extra Shift and Alt modifiers are ignored**. So `consume_key(NONE,
+ArrowUp)` fires for `Shift+Up`, for `Alt+Up` and for `Ctrl+Alt+Shift+Up`.
+
+`Alt+Up` is bound in the built-in keymap to `pages.move_up`. A nudge written
+the obvious way would therefore have moved the selected mark **and** the page
+it is on, from one press, and the second effect would have been invisible in
+any unit test that injected a bare arrow.
+
+⇒ So the shapes are enumerated here, exhaustively and exclusively, and
+anything else declines. `command` rather than `ctrl` for the fine step: it is
+Ctrl everywhere and Cmd on macOS, which is `crate::app::keyboard`'s standing
+rule for every chord this shell reads.
+
+### `fn direction`
+
+The one place a sign is written in this module, and it is a screen fact
+rather than a PDF one: canvas space is y-down, so *up* is negative. The flip
+into PDF's y-up and any page rotation are [`super::page_delta`]'s, which is
+the whole point of routing through it — see the module header's section on
+the Y sign.
+
+### `fn refuse`
+
+Both, not one. The trace is what a driven check reads and what a harness on
+a machine nobody can see reports from; the status row is what the operator
+reads. They carry the same fact in two registers, and neither substitutes for
+the other — `crate::canvas::deleting::decline` is the same shape and states
+the same reason.

@@ -29,10 +29,6 @@ const APPLY_EVENT: &str = "add-markup";
 /// The line the canvas writes when a click selects an annotation.
 const SELECT_EVENT: &str = "annot-select";
 /// `set-markup-style …` — `vector_edit`'s line for the restyle.
-///
-/// The bare name and not `-applied`: `apply::vector_edit` names the edit
-/// itself, and a refusal traces `set-markup-style-refused`, which the failure
-/// message points at.
 const RESTYLE_EVENT: &str = "set-markup-style";
 /// What a refused `vector_edit` writes instead.
 const REFUSED_SUFFIX: &str = "-refused";
@@ -41,10 +37,6 @@ const REFUSED_SUFFIX: &str = "-refused";
 const INVOKE_EVENT: &str = "ribbon-command-invoked";
 
 /// The four controls a `/Square` must be given.
-///
-/// A `/Square` and not "a markup", because which controls apply is a property
-/// of the subtype: a highlight has no border to widen, an arrow has no interior
-/// to fill. This check draws a rectangle, so this is the list for a rectangle.
 const EXPECTED: [(&str, &str); 4] = [
     ("ribbon.item.format.colour", "the line-colour swatch (`/C`)"),
     ("ribbon.item.format.fill", "the fill swatch (`/IC`)"),
@@ -56,12 +48,6 @@ const EXPECTED: [(&str, &str); 4] = [
 ];
 
 /// The control that must be drawn as **nothing** for a `/Square`.
-///
-/// `/LE` is meaningful for a `/Line` alone. `manifest::format` deliberately gives
-/// this item no condition and lets `markupband::endings` decide its own absence
-/// from the value it read — *"a control that decides its own absence from the
-/// value it reads, in the one place that has read it"* — so the only way to
-/// check that decision is to look at how much room it took.
 const ABSENT_FOR_A_SQUARE: &str = "ribbon.item.format.arrowheads";
 
 /// The namespace a failure lists when it cannot find one of [`EXPECTED`].
@@ -69,33 +55,9 @@ const ITEM_PREFIX: &str = "ribbon.item.format.";
 
 /// The smallest logical width **and** height a control must occupy to count as
 /// drawn.
-///
-/// # Why "declared" is not enough, in both directions
-///
-/// `markupband::draw` publishes its `ui-rect` from the response of an
-/// `add_enabled_ui` **whether or not the closure drew anything**, so an absent
-/// control still declares a rect — a degenerate one. Presence and absence are
-/// therefore both statements about *area*, not about the name appearing in the
-/// trace, and a check that only asked "is it declared" would pass on a build
-/// where every one of the six drew nothing.
-///
-/// The number is a floor on the smaller of the two dimensions rather than on the
-/// area, because the failure this guards against is a control laid out with **no
-/// usable extent in one axis** — which is the redaction panel's apply button
-/// shipped below the bottom of its own pane, a defect this project has already
-/// had once. 10 logical px is under half the height of the smallest control in
-/// the band and an order of magnitude over the ~0 an empty `add_enabled_ui`
-/// allocates.
 const MIN_CONTROL_EXTENT: f32 = 10.0;
 
 /// How far the pointer drags the width field, in logical pixels.
-///
-/// `DragValue::speed(0.1)` means 0.1 pt per pixel, so 200 px is +20 pt against a
-/// field whose range is 0.25–12 pt. **Deliberately past the ceiling**: the
-/// commit is compared against the range's own maximum rather than against an
-/// arithmetic prediction, so this check does not have to track the speed
-/// constant, and a clamp that stopped working would show up as a value over 12
-/// rather than as a check that had to be re-tuned.
 const WIDTH_DRAG_PX: f32 = 200.0;
 
 /// What is typed into the width field when a drag on it commits nothing.
@@ -105,19 +67,9 @@ const WIDTH_DRAG_PX: f32 = 200.0;
 const TYPED_WIDTH: &str = "12";
 
 /// How much of a band item's published rect is certainly the widget.
-///
-/// A third. `markupband::FIELD_WIDTH` is 46 logical px and a two-digit
-/// `DragValue` with a ` pt` suffix is comfortably wider than 15, so the left
-/// third is inside the spinner on any theme this shell has had. See the drag's
-/// note for what the centre cost.
 const GRAB_FRACTION: f32 = 0.33;
 
 /// The width the field must land on: `markupband::MAX_WIDTH_PT`.
-///
-/// Spelled here rather than imported, like every other constant in this crate:
-/// the harness must be able to fail against a binary built from a different
-/// tree, and an import would make the check assert that the application agrees
-/// with itself.
 const MAX_WIDTH_PT: f64 = 12.0;
 
 /// The width a freshly drawn shape starts at — `canvas::markup::pen`'s 2 pt.
@@ -127,26 +79,6 @@ const MAX_WIDTH_PT: f64 = 12.0;
 const START_WIDTH_PT: f64 = 2.0;
 
 /// How much more ink the strip must hold after the restyle, as a multiple.
-///
-/// # Why 1.5 and not 6
-///
-/// The width goes from 2 pt to 12 pt, which is **six times** the line — and the
-/// ink count does not go up sixfold, because the strip is a fixed box and a
-/// thicker line fills more of its height but no more of its length. Measured on
-/// this fixture at fit-page zoom (20 %), a 2 pt line covers about one row of the
-/// strip and a 12 pt line about two: the honest expectation is a doubling, not a
-/// sextupling.
-///
-/// ⇒ **A floor derived from what the geometry can actually produce**, not from
-/// the ratio of the numbers that were typed. A check demanding six times would
-/// go red on a working build, and the session that met it would go looking for a
-/// rendering defect. This project has already spent a morning on exactly that
-/// mistake in the other direction (`markup_rectangle`'s note on three candidate
-/// palettes).
-///
-/// 1.5 is comfortably under the measured doubling and comfortably over the ±2
-/// pixels an antialiased edge moves by, on a strip that starts with tens of ink
-/// pixels.
 const MIN_THICKENING: f64 = 1.5;
 
 /// Where the shape is drawn, as fractions of the page.
@@ -154,12 +86,6 @@ const SHAPE: ((f64, f64), (f64, f64)) = ((0.35, 0.35), (0.55, 0.50));
 
 /// Half-height of the strip laid along the top edge, as a fraction of the page
 /// height.
-///
-/// Four times `markup_palette`'s, and the difference is the subject: that
-/// check reads a *colour* and wants as little paper in the box as possible, this
-/// one reads a *thickness* and needs room above and below for the line to grow
-/// into. A strip only as tall as the thin line would saturate at the first
-/// widening and report nothing about the rest.
 const STRIP_HALF: f64 = 0.02;
 
 /// How much of the top edge's length the strip covers, as a fraction of the
@@ -167,20 +93,9 @@ const STRIP_HALF: f64 = 0.02;
 const STRIP_SPAN: f64 = 0.6;
 
 /// Where the pointer is parked before a capture, as fractions of the page.
-///
-/// Blank paper in a corner, and `markup_palette`'s first run is why: a
-/// pointer left on the shape pops the *"No note has been written on this
-/// markup."* tooltip, a floating dark panel that lands on the very box being
-/// measured and reads as ink. A driven check photographs the pointer as well as
-/// the program.
 const PARK: (f64, f64) = (0.10, 0.90);
 
 /// Where the deselecting click goes, as fractions of the page.
-///
-/// Far from the shape and far from the strip, so it can neither re-select the
-/// mark nor add ink to what is about to be measured. Distinct from [`PARK`] on
-/// purpose: the click lands here and the pointer then moves on, so the tooltip
-/// question and the deselection question do not share an answer.
 const ELSEWHERE: (f64, f64) = (0.80, 0.15);
 
 /// The smallest ink count that counts as *something is drawn here*, and the
@@ -226,11 +141,6 @@ fn strip_box(page: PageGeometry) -> (DocPoint, DocPoint) {
 }
 
 /// Capture the window and count the ink lying along the shape's top edge.
-///
-/// The mapping is re-derived by the caller for every reading rather than cached:
-/// a cached mapping is a stale coordinate, and a stale coordinate is
-/// symptom-identical to a broken conversion — the confusion behind one
-/// filed-then-retracted defect in this codebase.
 fn edge_ink(
     session: &Session,
     mapping: &CanvasMapping,
@@ -258,10 +168,6 @@ fn substantial(rect: LRect) -> bool {
 }
 
 /// The leftmost `frac` of a rect, full height.
-///
-/// See the drag's own note: a band item's published rect is the widget **plus**
-/// whatever padding the renderer allocated to make the row line up, and the
-/// padding is always on the right.
 fn left_part(rect: LRect, frac: f32) -> LRect {
     LRect::new(
         rect.min,
@@ -740,10 +646,6 @@ mod tests {
     use super::*;
 
     /// A degenerate rect is not a control.
-    ///
-    /// The property the whole of link 4 rests on: `markupband::draw` publishes
-    /// a `ui-rect` for an item whose closure drew nothing, so *declared* and
-    /// *drawn* are different questions and this is what tells them apart.
     #[test]
     fn an_empty_control_is_not_substantial() {
         let empty = LRect::new(Pt::new(100.0, 40.0), Pt::new(100.0, 40.0));
@@ -762,11 +664,6 @@ mod tests {
 
     /// The strip is centred on the shape's top edge and does not reach its
     /// sides.
-    ///
-    /// A check aimed at the wrong box produces an articulate failure message
-    /// about nothing, which is this project's commonest wasted afternoon. The
-    /// arithmetic that decides where this one looks is therefore asserted rather
-    /// than eyeballed.
     #[test]
     fn the_strip_lies_on_the_top_edge_and_clear_of_the_corners() {
         let page = PageGeometry {

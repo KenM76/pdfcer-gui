@@ -23,28 +23,8 @@ const REGION_CUT: &str = "attachments.cut"; // ui-text-exempt: a trace region na
 /// paste, which is itself the assertion a check makes about R9 here.
 const REGION_PASTE: &str = "attachments.paste"; // ui-text-exempt: a trace region name, never displayed
 /// The replacement warning's rectangle, drawn when a file of that name is here.
-///
-/// **Paired with [`REGION_FRESH`], and the pairing is not decoration.**
-///
-/// `crate::diag::ui_rect` is a **change log**: a region that stops being drawn
-/// does not un-declare itself, so a harness cannot learn "this warning is not
-/// showing" from the absence of the name. That is written up in
-/// `D:/dev/rag/egui/a_change_log_ui_rect_trace_cannot_report_that_a_widget_stopped_being_drawn.md`.
-/// It bites this control in particular: a check that asserts the warning is
-/// absent in one document will read the declaration this panel legitimately
-/// made frames earlier against **another** document that really did hold a file
-/// of that name.
-///
-/// ⇒ So the control declares **one of two names**, always exactly one, and a
-/// reader takes whichever came last. An absence assertion becomes a presence
-/// assertion, which a change log can answer.
 const REGION_REPLACES: &str = "attachments.paste.replaces"; // ui-text-exempt: a trace region name
 /// The paste's "nothing will be displaced" state. See [`REGION_REPLACES`].
-///
-/// It has **no visible text** — there is nothing to say, and a line reading
-/// *"this will not replace anything"* on every paste is the noise that trains
-/// an operator to stop reading the one that matters. It publishes the button's
-/// own rectangle under a second name, which costs a trace line and no pixels.
 const REGION_FRESH: &str = "attachments.paste.fresh"; // ui-text-exempt: a trace region name
 
 /// Draw Copy and Cut for one row.
@@ -101,25 +81,6 @@ pub(super) fn row_controls(
 }
 
 /// Read one attachment and park it on the clipboard. `true` if it went.
-///
-/// # Why this is here and not an `Action`, unlike almost everything else
-///
-/// `copy_attachment` is `&self` and commits nothing, and the panel already
-/// holds `&OpenDoc`. Routing it through the queue would gain nothing and cost
-/// the thing `canvas::clipboard::cut` is careful about: the copy has to be able
-/// to **fail before the delete is raised**, and an action queued behind another
-/// action cannot report back to the code that decides whether to queue the
-/// second one.
-///
-/// ⇒ So Copy and Cut are widget-layer, exactly as `canvas::clipboard::copy` and
-/// `canvas::fieldclip::copy` are, and only the delete crosses into the queue.
-///
-/// **And that is why `EditSession::cut_attachment` is never called.** It
-/// exists, it works, and it folds its two commands into one undo entry with a
-/// private method — which a shell cannot reach. Here it does not matter: the
-/// copy half commits nothing, so copy-then-`Detach` is already **one** command
-/// and therefore one `Ctrl+Z`. The same argument `canvas::clipboard::cut`
-/// records for `cut_objects`. Recorded in `EDITABLE_SURFACES.md`.
 fn take(ctx: &egui::Context, doc: &OpenDoc, key: &[u8], name: &str) -> bool {
     match doc.session.copy_attachment(key) {
         Ok(clip) => {
@@ -212,11 +173,6 @@ pub(crate) fn put(ctx: &egui::Context, clip: pdfcer_core::attachments::Attachmen
 mod tests {
     /// The five regions are named apart, so a driven check aiming at one
     /// cannot match another by prefix.
-    ///
-    /// `attachments.paste` and `attachments.paste.replaces` deliberately share
-    /// a stem — the harness's `declared_names(.., "attachments.paste")` lists
-    /// both, which is wanted — but `declared(.., "attachments.paste")` is an
-    /// exact match and resolves only the button.
     #[test]
     fn the_regions_are_named_apart() {
         let all = [

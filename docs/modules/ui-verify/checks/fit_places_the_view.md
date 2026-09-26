@@ -43,3 +43,58 @@ page rect is rounded to the pixel grid, so demanding exact equality would
 be a check that fails on arithmetic rather than on behaviour. A few points
 — far below the *hundreds* the defect moves the page by, and far above the
 rounding.
+
+## Item notes
+
+### `const PAN_NOTCHES`
+
+O23 gives a whole viewport of slack on each side, so this has to be enough
+to cross it. Overshooting is free — the scroll area clamps — and
+undershooting would leave the page still on screen, which the precondition
+below catches rather than silently accepting.
+
+### `const EDGE_TOLERANCE`
+
+Not a tolerance on the DEFECT, which moves the page by a whole viewport
+or more. This absorbs the `f32` fit division and the pixel-grid rounding of
+the page's drawn rect, and nothing else: a build that placed the page one
+tenth of a viewport out would still fail by a wide margin.
+
+### `const CANVAS_MARGIN`
+
+Read once, from the application's own reason for existing rather than
+from an observation. `canvas`'s comment: the margin is subtracted from the
+viewport BEFORE the fit divides, *"so 'fit page' really does fit with the
+gap visible instead of fitting exactly and then being clipped by the
+gap"*. A check that demanded the page sit flush against the viewport would
+therefore fail a correct build by exactly this number — which is what the
+first driven run of this check did, and it is worth keeping the reason
+rather than the constant: **an extreme-end mismatch is usually the
+instrument, and here the instrument was asserting a promise the
+application had never made.**
+
+### `const RESIZE_BY_PX`
+
+Large enough that the change dwarfs [`EDGE_TOLERANCE`] — a resize the
+check cannot distinguish from noise would make the phase vacuous — and
+small enough that the ribbon still lays out, since a window too narrow to
+draw the ribbon fails for a reason that is not the subject.
+
+### `const BORDER_PX`
+
+Approximate on purpose, and the check does not depend on the number
+being right: it resizes by a delta and asserts the CANVAS changed, then
+restores by the same arithmetic. An error here makes the window a few
+pixels different from where it started and is invisible to every claim —
+whereas assuming `client_size` IS the window size would shrink it by the
+chrome on every iteration, which compounds.
+
+### `enum Claim`
+
+Three claims rather than a pair of `fill` booleans, because the three
+modes do not differ by a flag — they differ by **what they promise**, and
+fit-page's promise is the odd one: it does not fill either axis in general
+(a landscape sheet in a tall window fills the width and floats in the
+middle vertically), it *contains and centres*. Writing that as two
+booleans is what produced a first draft that asserted fit-page filled both
+axes, which is false for every page whose aspect differs from the window's.

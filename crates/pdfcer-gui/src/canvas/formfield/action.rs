@@ -313,23 +313,6 @@ impl ButtonDoes {
 }
 
 /// Whether an address is one pdfcer can state unambiguously.
-///
-/// # The two refusals are the engine's, restated, and each has a reason
-/// that is about READERS rather than about safety
-///
-/// - **Relative** — §7.11.2.2 resolves it against the document's own location,
-///   and ISO issue #256 records readers disagreeing about §12.6.4.8's `/Base`
-///   concatenation badly enough that *"only the host portion gets used"* in
-///   some of them. Two readers, two destinations, one file.
-/// - **Non-ASCII** — §7.11.5 requires RFC 1738 encoding; ISO 32000-2 then types
-///   `/URI` as an `ASCII string` in one column and *"encoded in UTF-8"* in the
-///   next.
-///
-/// **`http://` is allowed and is not a refusal.** Destination policy is open
-/// by operator ruling — *"we'll allow a submit to send filled data wherever the
-/// document's author said"* — and `https` appears **zero times** in ISO 32000-1.
-/// Blocking it would be pdfcer inventing a conformance requirement. It is
-/// disclosed instead, which is the honest half.
 fn url_blocker(url: &str) -> Option<ActionBlocker> {
     let trimmed = url.trim();
     if trimmed.is_empty() {
@@ -370,21 +353,6 @@ mod tests {
     use super::*;
 
     /// **THE TRIPWIRE FIRED, AND THIS IS WHAT IT LEFT BEHIND.**
-    ///
-    /// It read *"a tripwire that names its own deletion"* and asserted that
-    /// `pdfcer-core` could write a button's action and not read one — so this
-    /// module served the PLACEMENT path only, and the Forms panel had no row
-    /// for a button already in the document.
-    ///
-    ///
-    /// Kept as a headstone rather than deleted outright, because the shape
-    /// paid out for the fifth time in three days and the count is the
-    /// argument: a test that ASSERTS a limitation goes red on the first build
-    /// after `cargo update` that lifts it, and names the code to change while
-    /// somebody is still looking.
-    ///
-    /// What survives as an assertion is the half that is still true: `Nothing`
-    /// clears, and every other kind writes.
     #[test]
     fn the_reader_landed_and_this_is_what_was_owed() {
         let does = ButtonDoes {

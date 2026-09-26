@@ -117,6 +117,8 @@
 //! information, which is why the count is in the label rather than being a
 //! bare chevron, and it is the best this toolkit version allows. It is
 //! stated here rather than papered over.
+//!
+//! Design and rationale: `docs/modules/egui-shell/ribbon/strip.md`.
 
 use egui::{Align, Layout, Rect, RichText, Sense, UiBuilder, pos2};
 
@@ -367,13 +369,6 @@ pub(crate) fn render(
 }
 
 /// Lay a region out inside a `Ui` that **is** `rect`, left to right.
-///
-/// The `id_salt` is fixed per region rather than derived from the content,
-/// so `egui`'s per-id state — focus, hover, an open popup — survives a
-/// resize that moves a tab into or out of the menu. See
-/// [`super::ctx::Ctx::id`] on why that matters: an id that shifts with the
-/// layout produces a control that loses keyboard focus when the window is
-/// dragged, which reads as a focus bug rather than as an id bug.
 fn island<R>(
     ui: &mut egui::Ui,
     id_salt: &'static str,
@@ -394,21 +389,6 @@ fn island<R>(
 }
 
 /// The "⏷ N more" affordance and the menu of hidden tabs behind it.
-///
-/// Modelled on [`super::band`]'s, deliberately, down to the `min_size` and
-/// the `truncate()`:
-///
-/// - `min_size(rect.size())` makes the control exactly as big as the
-///   arithmetic promised, so the reservation is not quietly under-spent.
-/// - `truncate()` is the other half. Without it a label wider than the
-///   rect makes the *button* wider than the rect, and the affordance hangs
-///   into the mode selector in precisely the situation — a crowded row —
-///   where it most needs to be reachable. Truncating spends the shortfall
-///   on characters, which is recoverable: the tooltip states the count in
-///   full.
-///
-/// Returns the tab the operator picked, if any, and the affordance's
-/// `egui::Id` so a harness can hit-test it.
 fn render_affordance(
     ui: &mut egui::Ui,
     ctx: &mut Ctx<'_>,
@@ -459,12 +439,6 @@ fn render_affordance(
 }
 
 /// Announce everything the tab plan gave up, once per frame.
-///
-/// Kept out of [`render`] so the drawing code reads as drawing. Each event
-/// is a separate fact — a strip that overflowed, a pinned tab that
-/// truncated, an affordance that was crowded — and a harness that wants
-/// only one of them should not have to parse the others out of a combined
-/// line.
 fn disclose_tab_plan(plan: &StripPlan, visible: &[&Tab], room: f32) {
     if !plan.hidden.is_empty() {
         crate::verify::event("ribbon-tab-strip-overflowed")

@@ -39,6 +39,8 @@
 //! change the width of a panel that has **already laid out inside it**, so one
 //! frame would draw a body at one width inside a container at another. The
 //! apply phase runs once, after every side has drawn.
+//!
+//! Design and rationale: `docs/modules/egui-shell/dock/collapse.md`.
 
 use egui::Rect;
 
@@ -49,25 +51,12 @@ use super::plan;
 use super::report;
 
 /// How wide the rail a collapsed side leaves behind is, in points.
-///
-/// Narrow enough that it costs the document almost nothing, wide enough that it
-/// is unmistakably a control rather than a border. Every program in the class
-/// lands in the same range.
 const RAIL_WIDTH_PTS: f32 = 16.0;
 
 /// How tall the clickable part of a collapse control or a rail is, in points.
-///
-/// Larger than the glyph it contains, deliberately. A live target may exceed
-/// the drawn affordance and must never be smaller than it. A chevron is a few
-/// points across and would be a miserable thing to hit.
 const RAIL_HIT_PTS: f32 = 22.0;
 
 /// How far down the rail's chevron sits.
-///
-/// Aligned with the top of where the panel's own tab bar would be, so
-/// collapsing and expanding do not make the control jump. An operator who
-/// clicks to collapse should find the way back under the pointer they still
-/// have there.
 const RAIL_TOP_PAD_PTS: f32 = 6.0;
 
 /// **The rail a collapsed side leaves behind** — the way back.

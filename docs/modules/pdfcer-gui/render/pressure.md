@@ -57,3 +57,40 @@ In a debug build `egui_glow`'s own `check_for_gl_error!` runs immediately
 after each GL call and **clears** the flag. By the time [`poll`] looks,
 there is nothing on it. That is not a defect in either party — it is why
 any measurement taken with this module must be taken from a release build.
+
+## Item notes
+
+### `struct Ordered`
+
+`ctx.data` rather than a field on `PdfcerApp`, for the reason every other
+cross-cutting per-frame value in this crate travels that way (the theme,
+the selected tool, the text draft, the dialog owner): the producers are an
+`OpenDoc` method, a panel, a dialog and an icon cache, and threading a
+field to all four would put a graphics-memory concern into each of them.
+
+### `fn a_thumbnail_is_never_blamed_though_it_is_a_whole_page_raster`
+
+The two share [`crate::render::raster::texture_from_pixels`] and are
+built from the same key type, so a rule keyed on the pixels alone
+cannot tell them apart — and would blame a 40 kB thumbnail, at whatever
+page happened to scroll into the Pages panel, for a failure raised by
+the font atlas. This test is what makes that a build failure.
+
+### `fn a_lone_region_upload_is_reported_but_not_blamed`
+
+Region rasters are a fixed multiple of the viewport at every zoom, so
+one failing is evidence about the machine — O221 — and lowering a zoom
+ceiling in response would take zoom away for a reason that had nothing
+to do with zoom.
+
+### `fn an_unrelated_error_still_produces_a_verdict`
+
+`attribute` keys on `is_clean`, deliberately: a frame that raised an
+`INVALID_OPERATION` had something happen, and a trace reporting nothing
+would hide it. Acting on it is `out_of_memory`'s job, at the call site.
+
+### `fn a_recorded_upload_comes_back_out_once`
+
+Pins the two halves together: a `record_*` that stashed under one id and
+a `take` that read another would silently report `NoUploads` forever,
+which is indistinguishable from a healthy session.

@@ -13,13 +13,6 @@ use crate::report::CheckReport;
 use crate::trace::Trace;
 
 /// The mode this drives. **Read**, deliberately.
-///
-/// Filling a form is not editing a document, and this shell has said so
-/// since canvas filling landed: a field is fillable in Read mode because
-/// filling in a reading stance is what forms are *for*. Driving it here rather
-/// than in Edit also proves the disclosure reaches the one mode whose dock
-/// does not mount the Forms panel — which is the whole argument for putting the
-/// sentence on the status bar rather than in the panel alone.
 const MODE: &str = "read";
 
 /// `form-box page=… field=… widget=… kind=… rect=(x,y)+(w,h)` — the
@@ -37,19 +30,6 @@ const FLOOR: &str = "floor";
 
 /// The status bar's fill-disclosure group, published by
 /// `app::status::disclosure::disclosure_line` through `diag::ui_rect`.
-///
-/// Asserting this is what turns the check from *"the engine reported a
-/// floor"* into *"the operator was told"*. The bound reaching the trace proves
-/// the value survived the shell's own plumbing; it does **not** prove the bar
-/// drew anything, and a build whose status row never called `fill_disclosure`
-/// would satisfy every assertion above it.
-///
-/// ⚠ It proves the line was DRAWN, not which sentence it holds. The wording is
-/// pinned by `app::status::tests` and by
-/// `tests/autosize_floor_says_it_will_overflow.rs`; a pixel oracle for the
-/// glyphs would be the only way to close that last inch and is not worth it
-/// here, because the branch that chooses the sentence is a `match` on the very
-/// value this check has already read out of the trace.
 const BAR_REGION: &str = "status-group:fill-disclosure";
 
 /// `Ctrl`, `A`, `Enter` as Windows virtual keys.
@@ -58,31 +38,6 @@ const VK_A: u16 = 0x41;
 const VK_RETURN: u16 = 0x0D;
 
 /// The value typed in.
-///
-/// Long enough that the **width** bound drives the size under the engine's 4 pt
-/// legibility floor, and the length is **measured rather than reasoned**:
-///
-/// a first draft of 84 characters drove this fixture to `autosize=5.1
-/// bound=width` — close, and not there. The chosen size scales inversely with
-/// the text's width, so the 4.0 pt floor needs about `84 x 5.1 / 4.0 = 107`
-/// characters; this is 132, which leaves room for a font-metric change without
-/// leaving so much that the check stops resembling anything an operator types.
-///
-/// That first run is why the SKIP arm below quotes `autosize=` as well as
-/// `bound=`. *"It came out at 5.1"* names the next edit; *"it was not floor"*
-/// does not.
-///
-/// Letters and spaces only, and the constraint is the instrument rather than
-/// the subject: `type_ascii` refuses punctuation because `-`, `.` and `/` are
-/// `VK_OEM_*` codes whose meaning is keyboard-layout specific, so a check typing
-/// them would pass here and type something else on another machine. A hyphen in
-/// this name would have been a silent layout dependency for no gain.
-///
-/// Plain ASCII on purpose. `type_ascii` sends key events, and a check that
-/// also exercised the `WinAnsi` substitution path would be testing two
-/// disclosures at once — and the other one has its own sentence, which would
-/// then be concatenated onto this one and break the assertion for a reason that
-/// has nothing to do with auto-size.
 const TOO_LONG: &str = "Alexandra Christina Wetherby Fitzgerald of the Northern Districts \
                         Planning and Development Authority Second Floor East Wing";
 
@@ -111,13 +66,6 @@ impl Check for AFieldTooSmallForItsTextSaysSo {
 }
 
 /// One `form-box` census line, parsed back into a canvas-space centre.
-///
-/// The application's numbers, not the fixture's — the same rule
-/// `form_field`'s `placed_boxes` states: a check that computed the rect from
-/// the PDF would be asserting that two independent derivations agree, and would
-/// report a disagreement as a hit-test failure.
-/// One widget, as the application says it drew it.
-///
 struct PlacedBox {
     page: usize,
     field: String,

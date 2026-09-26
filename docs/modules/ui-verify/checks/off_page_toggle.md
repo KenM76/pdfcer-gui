@@ -112,3 +112,25 @@ No binary, no diagnostic channel, no `canvas-viewport` region, not enough
 grey on screen to reach x = −100 at 100 % zoom, or a capture that could not
 be taken. **Not** any of the five rungs' own assertions: each of those is a
 failure, and they are the reason this file exists.
+
+## Item notes
+
+### `const READ`
+
+The same pair the sibling checks use and for the reason `off_page_visible`
+measured: fit-page on a 200 × 200 fixture puts x = −100 outside the
+viewport, the conversion refuses — correctly — and the check SKIPS, which
+is not red.
+
+`mode.read` is named EXPLICITLY on every Read rung rather than relied on
+as the default, because the profile remembers the mode it was last in.
+Rung 5 follows a rung that ended in Edit, and a rung that assumed Read
+because the first launch was in Read would be reading Edit's answer while
+reporting Read's.
+
+### `fn the_ladder_covers_both_directions_and_all_three_writers`
+
+The failure this catches is a later edit that trims the ladder into
+something that still passes: five rungs that all expect `on=true`, or
+five that all read `off-page-seed` and therefore never exercise the
+mode change. Either would leave a green check over an untested half.

@@ -22,11 +22,6 @@ use crate::sys::vk;
 const BAND_PARTS_EVENT: &str = "marquee-parts"; // ui-text-exempt: a trace event name, never displayed
 
 /// `marquee-mode crossing=… mode=… hits=… …` — the **object-rung** band's line.
-///
-/// Read as a failure witness, never as a success one. The two bands are
-/// mutually exclusive in one release, so this line appearing where
-/// [`BAND_PARTS_EVENT`] was required is the defect this check exists for,
-/// quotable rather than describable.
 const BAND_OBJECTS_EVENT: &str = "marquee-mode"; // ui-text-exempt: a trace event name, never displayed
 
 /// `selection-set page=… object=… part=… level=… held=… via=…` —
@@ -78,11 +73,6 @@ const SUBTRACT: &str = "subtract"; // ui-text-exempt: a trace token, never displ
 const TOUCHED: &str = "touched"; // ui-text-exempt: a trace token, never displayed
 
 /// The chunk the descent aims at, and the one the set is dragged by.
-///
-/// Line 0, which [`WIDE_BAND`] also reaches — so the drag in step G begins on
-/// a line the band selected, which is the ordinary case and the one this check
-/// means to measure. Pressing on an *unselected* line is a different gesture
-/// with its own row, in [`crate::checks::chunk_multi_move`].
 const ANCHOR_CHUNK: usize = 0;
 
 /// The band that takes lines 0, 1 and 2 — see the module header's table.
@@ -113,12 +103,6 @@ const NARROW_REACH: usize = 1;
 const DRAG_PX: f32 = 40.0;
 
 /// How deep the undo log must be when undo is pressed.
-///
-/// **One**, and that is the assertion: the plural move issues one
-/// `move_text_run` per run of every selected line and `fold_undo` coalesces
-/// them into a single entry. A build that skipped the fold moves three lines
-/// and then needs one press of undo per line, which the operator experiences as
-/// undo not working.
 const EXPECTED_DEPTH: usize = 1;
 
 /// See the module documentation.
@@ -146,10 +130,6 @@ impl Check for ARubberBandInsideANoteTakesItsLines {
 }
 
 /// What a step measured, or the sentence a FAIL should carry.
-///
-/// The outer `Result` is this harness's: its `Err` is a SKIP, *the check could
-/// not run*. The inner one separates *the assertion did not hold* from *here is
-/// the number it read*.
 type Step<T> = Result<std::result::Result<T, String>>;
 
 /// What one band produced, read off [`BAND_PARTS_EVENT`].
@@ -168,10 +148,6 @@ struct Swept {
 }
 
 /// Sweep one band, with `modifier` held throughout, and read what it did.
-///
-/// `Ok(Err(_))` is the FAIL sentence for a band that never reached the chunk
-/// rung at all — the defect — quoting the object-rung line when the build wrote
-/// one.
 fn sweep(
     session: &Session,
     driver: &Driver,
@@ -318,10 +294,6 @@ fn held_after_band(session: &Session, mark: usize, label: &str) -> Step<usize> {
 }
 
 /// Ascend to the top of the ladder, then descend to the one chunk under `at`.
-///
-/// Two clicks, because the chunk rung is entered on the second. The leading
-/// Escapes make this callable without inheriting a rung from whatever ran
-/// before it.
 fn descend(session: &Session, driver: &Driver, at: ScreenPoint) -> Step<usize> {
     driver.press(vk::ESCAPE)?;
     session.settle(12);

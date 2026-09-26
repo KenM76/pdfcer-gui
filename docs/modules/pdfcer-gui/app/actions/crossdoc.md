@@ -100,3 +100,15 @@ R8b rule 4's surviving half is the reason this is disclosed rather than
 left to be discovered: *"inferences the operator cannot see … still owe an
 off-canvas report"*. A form field whose widget arrived without its
 definition looks exactly like a form field until it is filled in.
+
+## Item notes
+
+### `fn take_pages_from`
+
+# Why the disclosure is stamped with the TARGET's epoch
+
+Because the target is the document on screen. `crate::app::status` draws
+the **active** document's disclosure and nothing else, so a sentence
+filed against the source's revision would be recorded, correct, and
+invisible — the shape of failure `app::actions::vector_edit`'s own
+header calls *recorded, not disclosed*.

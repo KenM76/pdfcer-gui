@@ -78,3 +78,70 @@ Phase 2: `text-style-applied … applied=N` **and** the `format-text` label
 `vector_edit` writes when the edit reached the engine — the same two-line
 oracle `restyle_text` uses, for its reason: the first without the second is
 a module that decided to act and whose action never landed.
+
+## Item notes
+
+### `const VK_T`
+
+Pressed only in **phase 2**, and the fact that phase 1 works without it is
+the point of the check: the whole complaint is that an operator does not
+know to press it, so the surfaces that tell them must be observed in the
+state where they have not.
+
+### `enum Aim`
+
+Separated from the wording above so the READ is testable without a running
+program: every variant here is reachable from a three-line trace, and the
+tests at the foot of this module reach all four. That is the whole point of
+the split — a guard against a harness misreading its own oracle is worth
+nothing if the guard itself can only be exercised by driving the mouse.
+
+### `fn aim_verdict`
+
+**Order matters, and it is "what" before "how many".** A click that lands
+on a path inside a marquee of eleven is an aim problem twice over, and the
+kind is the more useful half to be told about: it names the fixture
+coordinate that has to change. Reporting "11 objects selected" first would
+send a reader looking for a stray Shift.
+
+### `fn list_of`
+
+`driving::list` takes owned `String`s and `driving::list_str` takes a slice
+of `&str` — this is the latter, spelled locally only because the filter
+above produces a `Vec<&str>` and handing it straight over reads better than
+a collect-into-owned at the call site.
+
+### `fn the_two_font_lists_describe_the_same_five_controls`
+
+Two hand-written lists over one set is the shape a completeness check
+goes blind in: a sixth control added to the band and to one list reads as
+a measured group from either end. The pairing is mechanical — a region
+is `ribbon.item.` followed by the command id — so it can be asserted
+even though neither list is derived from the other.
+
+### `fn a_click_that_landed_on_a_path_is_the_harnesss_aim_and_not_a_defect`
+
+These are the actual values from a run at `--doc-point 0,300,500` — a
+drawing view on `SW41177.pdf` — where the check reported the program's
+correct silence as O37's complaint returning.
+The verdict must be a SKIP that names the kind, so the reader is sent to
+the fixture coordinate rather than to `panels::properties::text`.
+
+### `fn a_multi_selection_whose_first_object_is_text_still_skips`
+
+This is the case `properties-panel` alone cannot see: it describes the
+first selected object and says nothing about how many there are, which
+is why the count is read from `canvas-selection` instead of inferred.
+
+### `fn a_missing_selection_count_is_zero_and_not_one`
+
+`canvas-selection` is written through `diag::trace_changed`, so a run
+that never changed its selection carries no line — and defaulting that
+to one would let the guard pass on silence, which is the failure mode
+the guard exists to end.
+
+### `fn the_oracle_names_are_the_ones_the_program_writes`
+
+Pinned here rather than trusted: the two lines are quoted verbatim from
+`canvas::trace` and `panels::properties::mod::object_section`, and the
+kind spelling is `summary::ObjectKind::Text` under `{:?}`.

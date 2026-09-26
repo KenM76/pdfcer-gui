@@ -137,13 +137,6 @@ pub fn store_path(ui: &mut Ui, draft: &mut super::Draft) {
 }
 
 /// The live resolved-state sentence for a [`crate::trust::Located`].
-///
-/// Split out so the mapping from state to sentence is a pure function over a
-/// value and can be asserted without a frame. Three of the four states get
-/// their own sentence; `Configured` and `Discovered` share one, because from
-/// the operator's side they are the same fact — *pdfcer will read this file* —
-/// and the difference between "you told me" and "I found it" is visible in the
-/// field two lines above.
 fn resolved_note(located: &crate::trust::Located) -> String {
     match located {
         crate::trust::Located::Configured(path) | crate::trust::Located::Discovered(path) => {
@@ -161,31 +154,6 @@ fn resolved_note(located: &crate::trust::Located) -> String {
 }
 
 /// The **import** control: read the store now and report what is in it.
-///
-/// ## Why "import" is a read and not a copy
-///
-/// Because pdfcer keeps no anchor file of its own. Nothing is copied out of
-/// Acrobat's store into pdfcer's configuration, at any point, and this button
-/// does not create one — it reads the operator's own file and prints its
-/// contents. `ENGINE_BACKLOG.md`'s argument for the whole feature is why:
-///
-/// > an anchor set that silently went stale is worse than one that was never
-/// > imported.
-///
-/// A copy has no way to say how old it is that anybody will ever read. A live
-/// read has one that costs nothing — the file's modification time — so
-/// [`crate::text::trust::store_line`] prints the count and the date as one
-/// sentence, and there is no function in the catalog that produces one without
-/// the other.
-///
-/// ## The answer is cached, and the cache key is the button press
-///
-/// Deliberately the simplest possible: the result is held in `egui` memory
-/// under this control's own id, and pressing the button replaces it. Parsing
-/// 3 MB of COS and decoding ~1,800 certificates is not a per-frame act, and a
-/// key over the file's stat would make the button look inert to somebody who
-/// pressed it twice — where here the second press is a genuine re-read, which
-/// is what a person who has just told Acrobat to update its list wants.
 fn inspect(ui: &mut Ui, path: &std::path::Path) {
     // ui-text-exempt: an egui memory key, never displayed.
     let id = egui::Id::new("settings-trust-store-inspect");
@@ -242,10 +210,6 @@ mod tests {
     use std::path::PathBuf;
 
     /// **The four resolved states produce four different sentences.**
-    ///
-    /// The failure this refuses is the cheap one: a single *"no trust list
-    /// found"* line under every state, which would tell a person who made a
-    /// typo that their machine has no Acrobat.
     #[test]
     fn every_located_state_says_something_different() {
         let p = PathBuf::from(r"D:\nowhere\addressbook.acrodata");
@@ -271,13 +235,6 @@ mod tests {
     }
 
     /// **`Configured` and `Discovered` deliberately say the same thing.**
-    ///
-    /// Recorded as an assertion rather than as a comment, because it is the one
-    /// place in this module where two states SHARE a sentence and a reader
-    /// would otherwise reasonably suspect an oversight. From the operator's
-    /// side they are one fact — *pdfcer will read this file* — and the
-    /// difference between "you told me" and "I found it" is already visible in
-    /// the field two lines above.
     #[test]
     fn a_configured_store_and_a_discovered_one_read_alike() {
         let p = PathBuf::from(r"D:\nowhere\addressbook.acrodata");

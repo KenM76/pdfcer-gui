@@ -212,3 +212,58 @@ the saved file will render it.** No badge, no tint, no "provisional"
 styling: the one-line test is whether a screenshot of the canvas would
 differ from a screenshot of the same document saved and reopened, and
 nothing in this module can make it differ.
+
+## Item notes
+
+### `fn face_row`
+
+# The list was the page's fonts and no longer only is
+
+This doc comment used to open *"`set_font` **selects** an existing resource;
+it does not **create** one. Offering Helvetica on a page that carries only
+Arial would produce a refusal on press."* That was true, it was the reason
+the chooser only ever offered what the page already had, and `Pass 162.0`
+ended it: pdfcer now authors a standard-14 `/Font` resource on demand, so
+Helvetica on a page built from Arial is a change that works rather than a
+refusal.
+
+The old sentence is kept above rather than deleted because the *rule* it
+states has not changed — a chooser must not offer entries that cannot work —
+only the set of entries that can. `super::face::choices` is where that set is
+computed and it carries the argument.
+
+# What is drawn here, and what is not
+
+This function owns the **row**: the label, the combo, the current face and
+the region. The **popup body** — two groups, their headings, the disclosure
+the standard-14 half owes and every clickable row — is
+[`super::face::popup_body`], shared verbatim with the ribbon's Format ▸ Font
+chooser in [`crate::app::fontband`].
+
+Shared rather than copied, and that is the change this project keeps
+having to make: the two were two copies of one loop, and *"a face offered in
+one surface and not the other"* is the divergence found here more than once.
+A disclosure added to one copy and not the other would be worse than either.
+
+### `fn size_row`
+
+Committed on `drag_stopped` or `lost_focus`, never on `.changed()`. Each
+commit is a content-stream rewrite and an undo entry, so a drag across the
+spinner would author one edit per pixel — the same rule
+[`super::markup`]'s width and opacity rows follow, for the same reason.
+
+### `fn weight_row`
+
+See the module header: there is no "is this run bold" bit in a PDF, so a
+pressed-in toggle would claim to have read a fact that is not recorded.
+Neither is ever greyed; the engine's two verbs cover every page between
+them.
+
+### `fn colour_row`
+
+`None` renders a sentence, not a swatch. A run painted in DeviceCMYK, a
+Separation or an ICC space has no faithful `[u8; 3]`, and a swatch showing
+its nearest RGB would write that RGB back on the next press — converting
+the operator's ink without being asked. `pdfcer-core` deliberately does not
+force-convert to DeviceRGB the way Acrobat does, and this control must not
+undo that on its behalf.

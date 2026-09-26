@@ -136,11 +136,6 @@ mod tests {
     }
 
     /// **A `Program Files` path survives parsing.**
-    ///
-    /// The single most likely place Acrobat is installed contains a space, so
-    /// the naive `split_whitespace().next()` yields `C:\Program`. That failure
-    /// presents as "discovery does not work on any normal machine", which is
-    /// exactly the kind of thing a test is for.
     #[test]
     fn a_command_line_yields_the_executable_and_not_its_first_word() {
         assert_eq!(

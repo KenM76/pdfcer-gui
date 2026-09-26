@@ -55,18 +55,6 @@ pub struct Click<'a> {
 
 impl Click<'_> {
     /// **Is this right-click about a form field?**
-    ///
-    /// A **hit test**, not a read of `doc.selected_field`, and the module
-    /// header's table says why: the selection this very click raises is applied
-    /// at the end of the frame, and the popup opens now.
-    ///
-    /// OR'd with the state, deliberately. A right-click on a field that is
-    /// *already* selected still opens its menu, and on that frame the two
-    /// answers agree anyway. The disjunction is what keeps the menu available
-    /// when the pointer is a few points outside the box of the field the
-    /// operator selected a moment ago — the same forgiveness
-    /// [`menus::select_under_right_click`]'s rule 3 gives an object selection,
-    /// where a mis-aimed right-click must not destroy work.
     fn field_menu(&self) -> bool {
         // Nothing is computed on a frame with no secondary click. `attach`
         // uses this only inside its own `if response.secondary_clicked()`, and

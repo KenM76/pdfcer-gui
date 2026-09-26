@@ -71,3 +71,11 @@ which is the same reason print is document-scoped and About is not.
 state. This one reads a texture that has already been uploaded and renders
 nothing new. It has nothing to undo, nothing to order against and nothing
 that could alias.
+
+## Item notes
+
+### `fn footer`
+
+Its own function because both bodies above need it and the early return
+for "nothing drawn" must not be a window with no way out but the title
+bar's cross.

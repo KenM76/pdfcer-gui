@@ -88,20 +88,6 @@ pub(super) fn show(ui: &mut egui::Ui, filter: &mut PickFilter) -> egui::Response
 }
 
 /// The body of the Select popup — a heading, All/None, and one row per class.
-///
-/// # `CloseOnClickOutside`, not `CloseOnClick`
-///
-/// egui's default for a menu is to close as soon as anything in it is clicked,
-/// which is right for a list of commands and wrong for a list of checkboxes.
-/// Switching four classes off is one operator decision expressed as four
-/// clicks; a popup that vanished after the first would charge a reopen for each
-/// of the remaining three, and the reopen is the expensive part —
-/// `FEATURES.md` records the measured cost of exactly that ritual as the
-/// complaint this feature answers.
-///
-/// This is the convention every filter list in the class follows: AutoCAD's
-/// object-snap list, Illustrator's layer locks, a browser's cookie panel. A
-/// list you can only make one change to is a menu, not a filter.
 fn popup(ui: &mut egui::Ui, filter: &mut PickFilter) {
     // Deliberately NOT `.strong()`. `tools/gates/check-strong-text.sh`
     // rejects it, and the reason is defect D11: egui has no role for
@@ -175,11 +161,6 @@ fn popup(ui: &mut egui::Ui, filter: &mut PickFilter) {
 }
 
 /// The glyph for one class's row.
-///
-/// Six of the eleven reuse icons the set already had and five were authored for
-/// this popup; [`crate::icons::Icon`] carries the argument for each. A `match`
-/// rather than a lookup table so that adding a class is a compile error here —
-/// a row that silently drew no glyph would be the one row that looked broken.
 const fn class_icon(class: PickClass) -> crate::icons::Icon {
     use crate::icons::Icon;
     match class {
@@ -226,10 +207,6 @@ mod tests {
 
     /// Run one frame of [`show`], returning the Select button's popup id and its
     /// rect.
-    ///
-    /// Only this control is built, not the whole bar: the question under test is
-    /// *"does clicking this button open its popup"*, and nothing else on the bar
-    /// can change that answer.
     fn frame(
         ctx: &egui::Context,
         filter: &mut PickFilter,
@@ -271,24 +248,6 @@ mod tests {
     }
 
     /// **CLICKING SELECT OPENS THE POPUP.**
-    ///
-    ///
-    /// > *"I see a Select button, but this should be a menu that pops up."*
-    ///
-    /// Everything that DID exist — 1,628 unit tests, 17 gates, and an offscreen
-    /// smoke launch confirming the button's published rect sat exactly where the
-    /// layout intended — observed the **button**, and the button was never the
-    /// broken part.
-    ///
-    /// The defect was a second `Popup::toggle_id` beside `Popup::menu`, which
-    /// already toggles on click (`egui-0.35.0/src/containers/popup.rs:228`). Two
-    /// toggles of one flag in one frame open and close the popup before it is
-    /// drawn, which from outside is indistinguishable from a control that was
-    /// never wired up at all.
-    ///
-    /// It asserts on `Popup::is_id_open` — the exact flag the two toggles were
-    /// fighting over — so a regression fails here rather than somewhere
-    /// downstream that merely reads the flag.
     #[test]
     fn clicking_select_opens_the_popup() {
         let ctx = egui::Context::default();
@@ -310,10 +269,6 @@ mod tests {
     }
 
     /// **AND CLICKING IT AGAIN CLOSES IT.**
-    ///
-    /// The other half of a toggle, and the half a careless fix breaks: deleting
-    /// the duplicate could as easily have been deleting *the* toggle, leaving a
-    /// popup that opens and cannot be dismissed from the control that opened it.
     #[test]
     fn clicking_select_again_closes_the_popup() {
         let ctx = egui::Context::default();
@@ -336,10 +291,6 @@ mod tests {
     }
 
     /// **An idle frame opens nothing.**
-    ///
-    /// Without this, the test above would pass on a build where the popup was
-    /// simply always open — which is a different defect wearing the same green
-    /// tick.
     #[test]
     fn an_idle_frame_leaves_the_popup_shut() {
         let ctx = egui::Context::default();

@@ -86,3 +86,12 @@ a human pressing it once. The same reasoning, and the same limit, as
 **It never presses commit.** Same rule, same reason, and it is stated in
 both files rather than by reference: a harness that can start a print job
 will eventually start one by accident.
+
+## Item notes
+
+### `fn last_plan`
+
+The **last** line rather than the first: the dialog emits one per frame, so
+the first describes the state it opened in and only the last describes the
+state after a click. Reading the first is a mistake that would make every
+assertion below trivially true and is worth naming.

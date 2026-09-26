@@ -143,11 +143,6 @@ mod tests {
     use pdfcer_core::settings::Settings;
 
     /// Every preset the shell offers has a name and a key that round-trips.
-    ///
-    /// The bridge this module is: a preset whose key `from_key` does not
-    /// recognise would render as a radio nobody can select — click it, the
-    /// token is written, `from_key` returns `None` next frame, and the window
-    /// shows the unknown-theme sentence about a theme it has just offered.
     #[test]
     fn every_offered_preset_round_trips_through_its_token() {
         for preset in Preset::ALL {
@@ -162,12 +157,6 @@ mod tests {
     }
 
     /// The shipped default token is one the shell knows.
-    ///
-    /// `pdfcer-core` writes `"quiet"` as a **literal** in `Settings::default`,
-    /// for the layering reason in this module's header — core may not name a
-    /// shell type. A literal is exactly what can drift, and this is the test
-    /// that catches it: a fresh profile must not open showing the
-    /// unknown-theme disclosure.
     #[test]
     fn the_shipped_default_token_is_a_theme_this_build_has() {
         let token = Settings::default().theme;
@@ -179,10 +168,6 @@ mod tests {
     }
 
     /// An unrecognised token is preserved, not corrected.
-    ///
-    /// The property the disclosure promises. A draft carrying a token from a
-    /// newer pdfcer must still carry it after the window has drawn — this test
-    /// covers the data half; the sentence is covered in the catalog.
     #[test]
     fn an_unknown_token_is_not_silently_replaced() {
         let mut settings = Settings::default();

@@ -363,14 +363,6 @@ pub fn describe_object(object: &VectorObject) -> ObjectSummary {
 }
 
 /// The disclosure, if any, a text preview's decoding outcome earns.
-///
-/// `Unavailable` earns none on purpose: it means no font resolver was
-/// supplied, which only happens on the headless/unit-test path (`decompose`
-/// rather than `decompose_page`). The GUI always resolves fonts, so a note
-/// about it would be a sentence describing a code path the operator is never
-/// on — noise, and noise in a disclosure surface teaches people to stop
-/// reading it. `Empty` earns none because "this text object shows nothing"
-/// is not a failure to explain.
 fn decode_note(preview: &TextPreview) -> Option<ObjectNote> {
     match preview {
         TextPreview::Undecodable => Some(ObjectNote::TextUndecodable),
@@ -382,14 +374,6 @@ fn decode_note(preview: &TextPreview) -> Option<ObjectNote> {
 }
 
 /// The colour a viewer actually sees for a path, per its paint disposition.
-///
-/// A stroke-only path never shows its fill colour, and an `n`-op path shows
-/// neither — so reporting `fill_color` unconditionally would print a colour
-/// that appears nowhere on the page. Centralising the resolution here is
-/// what stops the Objects row and the Properties panel from drifting apart.
-/// ⚠ A path that both fills and strokes reports only its fill: the
-/// both-present case needs two fields rather than a different winner.
-/// `DEFECTS.md` D45.
 fn visible_colour(style: PaintStyle, fill: Rgb, stroke: Rgb) -> Option<Rgb> {
     if style.fill.is_some() {
         Some(fill)
@@ -401,13 +385,6 @@ fn visible_colour(style: PaintStyle, fill: Rgb, stroke: Rgb) -> Option<Rgb> {
 }
 
 /// Classify a bounding box's degeneracy, if any.
-///
-/// Exact comparison against zero rather than an epsilon, deliberately: the
-/// case this exists for is a bbox whose two corners are *literally the same
-/// number* (a `100 200 m 300 200 l S` rule, or a `re` with a zero operand),
-/// which is what makes the outline rect strokable-but-invisible. A hairline
-/// that is 0.01 pt tall does render an outline, so widening this to an
-/// epsilon would start disclosing "zero height" about objects that are not.
 fn degeneracy_note(bounds: Bounds) -> Option<ObjectNote> {
     if bounds.is_empty() {
         return Some(ObjectNote::NoBounds);
@@ -492,12 +469,6 @@ mod tests {
     /// Describe every object on a FIXTURE's first page, through
     /// `decompose_page` — i.e. with real font and XObject resolvers, which
     /// is the path the GUI is actually on.
-    ///
-    /// [`describe_all`] above uses the resolver-free `decompose`, which is
-    /// the right seam for the geometry cases (no file needed) but reports
-    /// `TextPreview::Unavailable` for every text object by construction. The
-    /// text-preview and pixel-size cases can only be honest against a real
-    /// document, so they use this.
     fn describe_fixture(rel: &str) -> Vec<ObjectSummary> {
         let path = crate::panels::objects::test_support::engine_fixture(rel);
         let doc = pdfcer_core::document::Document::load(&path).expect("the fixture loads");
@@ -643,10 +614,6 @@ mod tests {
     /// The other headline case, and the one the operator most likely hit:
     /// a text object is ALWAYS approximate, so its stated extent covers
     /// whitespace around and above the glyphs.
-    ///
-    /// `only` decomposes with no document behind it, so no font resolves and
-    /// the basis is the em-box fallback — which is exactly the state whose
-    /// disclosure has to be the blunt one.
     #[test]
     fn a_text_object_always_discloses_its_approximate_bounds() {
         let s = only(b"BT /F1 12 Tf 40 40 Td (Hi) Tj ET");
@@ -749,14 +716,6 @@ mod tests {
     }
 
     /// **The catalogs are complete and free of duplicates.**
-    ///
-    /// [`ObjectNote::ALL`] and [`ObjectKind::ALL`] are hand-written arrays,
-    /// which is the only way to enumerate a Rust enum without a derive — and
-    /// a hand-written array is exactly the kind that silently loses an entry
-    /// when a variant is added. Every sweep test in
-    /// [`crate::text::panels::objects`] iterates these, so an array that
-    /// quietly stopped being exhaustive would turn those sweeps into
-    /// samples with no test failing.
     #[test]
     fn the_note_and_kind_catalogs_hold_no_duplicates() {
         let mut notes = ObjectNote::ALL.to_vec();

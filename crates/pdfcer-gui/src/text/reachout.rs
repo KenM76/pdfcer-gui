@@ -26,6 +26,8 @@
 //! `app::status` has one slot for consequences. A document with a submit button
 //! and a launch action gets both facts in one line rather than two lines of
 //! which the operator reads the last.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/text/reachout.md`.
 
 use crate::app::reachout::ReachOut;
 
@@ -108,10 +110,6 @@ mod tests {
     }
 
     /// A truncated scan that found nothing must NOT read as an all-clear.
-    ///
-    /// The engine's own words about why this is the urgent case: *"a check that
-    /// under-reports reads as a clean bill of health, because silence and
-    /// safety are indistinguishable to the reader."*
     #[test]
     fn a_truncated_scan_with_no_findings_says_unchecked_not_clean() {
         let s = disclosure(reach(0, 0, false, true));
@@ -139,10 +137,6 @@ mod tests {
     }
 
     /// Every sentence says pdfcer does not do it AND that something else might.
-    ///
-    /// Both halves, always. Drop the first and it is an alarm about a thing
-    /// that cannot happen here; drop the second and it is a shrug about a thing
-    /// that can happen anywhere else.
     #[test]
     fn every_finding_carries_both_halves_of_the_tone() {
         for r in [

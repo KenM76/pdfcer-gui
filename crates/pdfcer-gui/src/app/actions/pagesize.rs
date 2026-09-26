@@ -317,23 +317,11 @@ pub(super) fn set(
 }
 
 /// How many changes ended in `want`.
-///
-/// A helper rather than three inline filters because `MediaBoxEntry` is
-/// `#[non_exhaustive]`: one place to look when a variant is added, instead of
-/// three that each silently stop counting it.
 fn count_entry(changes: &[MediaBoxChange], want: MediaBoxEntry) -> usize {
     changes.iter().filter(|c| c.entry == want).count()
 }
 
 /// The rule-4 sentences for a set of [`MediaBoxChange`]s.
-///
-/// **Counted across the set rather than named per page**, which is the opposite
-/// of what the CLI does and right for the opposite reason. The CLI's invocation
-/// *is* the commit and it has one file in front of it, so it prints a note per
-/// page. This surface is a status line an operator reads in passing while the
-/// document is on screen in front of him: *"7 sheets lost area"* is a fact he
-/// can act on, and seven sentences differing only in a number is a wall he will
-/// stop reading — which is how a disclosure stops being one.
 fn disclosures(changes: &[MediaBoxChange]) -> Vec<String> {
     let mut notes = Vec::new();
 
@@ -399,12 +387,6 @@ mod tests {
     }
 
     /// **The overhang is the operator's own case, in his own numbers.**
-    ///
-    /// His A1 title block sits at x 1831–2207 pt (measured from
-    /// `fixtures/a1-titleblock.pdf` with `extract-text --json`). A4 stops at
-    /// 595.28. This is the arithmetic the window shows him before he presses
-    /// anything, and getting it wrong in either direction is the difference
-    /// between a warning he heeds and one he ignores.
     #[test]
     fn his_title_block_is_measured_as_running_off_the_right_edge() {
         let mut survey = survey_of(vec![Rect::from_corners(0.0, 0.0, 2383.94, 1683.78)]);
@@ -431,12 +413,6 @@ mod tests {
     }
 
     /// **"Could not measure" is not "nothing falls off".**
-    ///
-    /// The single most dangerous confusion available in this module, and the
-    /// one the engine's own residual refuses to make. `None` must survive as
-    /// `None` all the way to the caller, because the caller words the two
-    /// differently and a `unwrap_or_default()` anywhere on this path would
-    /// silently turn a stated boundary into a promise.
     #[test]
     fn an_unmeasured_extent_is_none_and_not_zero() {
         let survey = survey_of(vec![Rect::from_corners(0.0, 0.0, 2383.94, 1683.78)]);
@@ -449,10 +425,6 @@ mod tests {
     }
 
     /// **A drawing that fits reports zeros, not `None`.**
-    ///
-    /// The other half of the pair above. Without this, a build that returned
-    /// `None` whenever the overhang was zero would pass the test above and
-    /// never once show the operator the sentence that says he is safe.
     #[test]
     fn a_drawing_that_fits_reports_a_measured_zero() {
         let mut survey = survey_of(vec![Rect::from_corners(0.0, 0.0, 595.0, 842.0)]);
@@ -464,11 +436,6 @@ mod tests {
     }
 
     /// **A set is uniform to the producer's rounding, not to the bit.**
-    ///
-    /// A4 in points is 595.2755905511811, and producers write 595.276, 595.28
-    /// and 595.32. An exact-equality check would call a set of ten identical A4
-    /// sheets "mixed" and put a false sentence on screen for every real
-    /// document.
     #[test]
     fn producer_rounding_does_not_make_a_uniform_set_mixed() {
         let survey = survey_of(vec![
@@ -481,11 +448,6 @@ mod tests {
     }
 
     /// **A real mixed set is seen as mixed.**
-    ///
-    /// The falsifying direction of the test above: a tolerance wide enough to
-    /// absorb producer rounding must not be wide enough to call an A3 detail
-    /// sheet an A1. The nearest two distinct sizes in the engine's table differ
-    /// by far more than a point, which is what makes 1 pt safe.
     #[test]
     fn a_drawing_set_with_a_detail_sheet_reads_as_two_sizes() {
         let survey = survey_of(vec![
@@ -499,10 +461,6 @@ mod tests {
 
     /// **An offset sheet keeps its corner**, and a mixed-corner pick falls
     /// back to the origin.
-    ///
-    /// Both directions, because each is a single missing clause and each
-    /// produces a silent shift of the paper relative to the drawing —
-    /// invisible on screen and visible on a plot.
     #[test]
     fn the_new_sheet_keeps_the_corner_the_old_sheets_shared() {
         let offset = survey_of(vec![
@@ -528,29 +486,6 @@ mod tests {
 
     /// **The verb reaches the document, and the disclosure follows the
     /// DIRECTION of the change.**
-    ///
-    /// The only test in this module that calls [`set`] — everything above it
-    /// exercises the arithmetic the window reads, and none of it would notice
-    /// an engine call that was never made or a disclosure wired to the wrong
-    /// field.
-    ///
-    /// Both directions, in one document, because that is what makes it a
-    /// measurement rather than a coincidence:
-    ///
-    /// * **A4 → A1** grows the sheet. Nothing can fall off, so `lost_area` must
-    ///   be false and the operator must be told **nothing** — a window that
-    ///   warned about losing content every time it was used would be a window
-    ///   nobody reads.
-    /// * **A1 → A5** shrinks it, and the lost-area sentence must appear.
-    ///
-    /// A build with the two arms swapped, or with the disclosure raised
-    /// unconditionally, passes neither half. A build that never calls the
-    /// engine passes neither, because the assertion is on `session.pages()`.
-    ///
-    /// R1 still applies: this is not a report of working software. It cannot
-    /// see the ribbon, the window, the operand rule or the save. That is
-    /// `ui-verify`'s `resizing_a_sheet_changes_the_paper_in_the_saved_file`,
-    /// whose verdict is taken in a different process from a written file.
     #[test]
     fn the_verb_reaches_the_document_and_only_shrinking_is_disclosed() {
         let (doc, _pages) = crate::app::blank::document().expect("the template parses");
@@ -585,19 +520,6 @@ mod tests {
     }
 
     /// **A certified document is refused, by name, with nothing written.**
-    ///
-    /// Measured against the engine (`fixtures/certified-comments.pdf`
-    /// → `CertificationForbidsChange`), and asserted here as the *shape* the
-    /// shell relies on: [`set`] propagates the refusal rather than swallowing
-    /// it, so `vector_edit` can trace it and
-    /// [`crate::text::page_size::refused_certified`] can word it.
-    ///
-    /// ⓘ The blank template carries no certification, so what this can assert
-    /// without a certified fixture in this crate is the **other** refusal on
-    /// the same path: a degenerate rectangle, raised by `normalize_media_box`
-    /// **before anything is touched**. The property is the same one and it is
-    /// the one that matters — a refusal leaves the document exactly as it was,
-    /// rather than half-resized.
     #[test]
     fn a_refused_change_leaves_the_document_exactly_as_it_was() {
         let (doc, _pages) = crate::app::blank::document().expect("the template parses");
@@ -620,11 +542,6 @@ mod tests {
     }
 
     /// **The ordinary sheet is byte-identical to the engine's own table.**
-    ///
-    /// What makes [`SheetSurvey::target_rect`]'s corner rule safe to apply
-    /// unconditionally: on a page at `(0, 0)` — every CAD export in his corpus
-    /// — it produces exactly what `PaperSize::rect_with` produces, so the
-    /// offset case costs the common case nothing.
     #[test]
     fn an_origin_anchored_sheet_is_exactly_the_engines_rectangle() {
         let survey = survey_of(vec![Rect::from_corners(0.0, 0.0, 2383.94, 1683.78)]);

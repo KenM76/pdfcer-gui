@@ -1103,11 +1103,6 @@ impl SelectionState {
 
     /// The canvas-space rect to outline for one entry: the **part's** box
     /// once the operator is inside one, the object's box otherwise.
-    ///
-    /// Falling back to the object's box when a part has no bounds is
-    /// deliberate — the alternative is drawing nothing for a selection that
-    /// exists, and a correct action with no feedback is indistinguishable
-    /// from a broken one.
     fn outline_rect(&self, targets: &dyn CanvasTargetProvider, entry: &Selection) -> Option<Rect> {
         // A leaf has no page paint-order index, so it has no *part* box
         // either — the part rung is not offered for one. Its object box is,
@@ -1124,37 +1119,6 @@ impl SelectionState {
     }
 
     /// A plain or shift click while at the Object rung.
-    ///
-    /// # The second click on a text block narrows to the chunk under it
-    ///
-    /// `OPERATOR_REQUESTS.md` **O215** ask 1, in his words: *"sometimes it moves
-    /// the chunk and sometimes it takes the whole block."* Selection has always
-    /// descended to a chunk — [`Self::select_part`] and the run menu address one
-    /// — but the ladder's own descent gesture is a double-click, and on text
-    /// that gesture is spent opening the caret. So the rung had no entrance a
-    /// hand could find, and which unit a drag picked up was decided on **press**
-    /// by [`crate::canvas::presspick::covers`] against a rectangle nothing drew.
-    ///
-    /// The narrowing is offered on a **plain click**, and exactly three
-    /// conditions have to hold at once:
-    ///
-    /// | condition | what it stops |
-    /// |---|---|
-    /// | `hit.chunk` | a path's subpath, and a text block whose boxes are switched off or which holds one line — narrowing to a unit with no box drawn around it is the same invisible aim, from the other side |
-    /// | this object is **already** the whole selection | a click on a different block, which selects it whole |
-    /// | `hit.part` is `Some` | a click in the white inside the block's box, which keeps the block |
-    ///
-    /// *"Already the whole selection"* is not enough on its own, and the
-    /// hazard is the reason [`crate::canvas::presspick::changed_selection`]
-    /// exists: the press of this very click may be what selected the block, and
-    /// the state it leaves is identical. The click path folds that answer into
-    /// `hit.chunk`, so the first click of a gesture selects the block and puts
-    /// the boxes up, and the second — with somewhere visible to aim — takes one
-    /// chunk.
-    ///
-    /// Everything below the Object rung is [`Self::click_inside`]'s, which
-    /// already re-picks a part on every click, so once here the gesture is
-    /// repeatable by a route that was always there.
     fn click_at_object_rung(&mut self, page: usize, hit: ClickHit, shift: bool) {
         match (shift, hit.object) {
             (false, Some(object)) => {
@@ -1186,13 +1150,6 @@ impl SelectionState {
     }
 
     /// A plain or shift click while inside an object.
-    ///
-    /// Three outcomes, in precedence order: re-pick at the current rung; fall
-    /// back one rung and re-pick there; or leave the object entirely and
-    /// behave like an ordinary Object-rung click. The middle case is what
-    /// stops an operator being stranded at a rung whose targets they keep
-    /// missing — at the Node rung, a click that misses every anchor but lands
-    /// on a part ascends to that part rather than doing nothing.
     fn click_inside(&mut self, page: usize, hit: ClickHit, shift: bool) {
         let Some(entered) = self.entered_object() else {
             // No entry to be inside of: the level and the entries disagreed,
@@ -1248,11 +1205,6 @@ impl SelectionState {
     }
 
     /// Descend one rung into whatever is under a double-click.
-    ///
-    /// A double-click on a **different** object enters that object rather
-    /// than descending inside the current one: PDF path objects do not nest,
-    /// so carrying a part or node index across would address an index in a
-    /// different object's space.
     fn descend(&mut self, page: usize, hit: ClickHit) {
         // **A LEAF DESCENDS TOO** — `OPERATOR_REQUESTS.md` O70.
         //
@@ -1313,18 +1265,6 @@ impl SelectionState {
     }
 
     /// Restore the two structural rules the rest of the module relies on.
-    ///
-    /// 1. **Entries are ordered and unique.** Document order, so the outlines
-    ///    paint in a stable sequence rather than re-stacking on every
-    ///    shift-click; unique, so a batched edit is handed a clean operand
-    ///    list.
-    /// 2. **A rung above `Object` means exactly one object is entered.** A
-    ///    rung is a place *inside one thing*, and [`Self::entered_object`]
-    ///    derives that from the first entry. Anything that would leave the
-    ///    two disagreeing collapses to the Object rung instead — recovering
-    ///    is better than asserting, because the state is reachable from a
-    ///    marquee arriving while inside an object and the honest response is
-    ///    to step out.
     fn normalise(&mut self) {
         self.entries.sort_unstable();
         self.entries.dedup();

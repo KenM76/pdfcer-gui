@@ -17,6 +17,8 @@
 //! both of which govern every test here. The positive control this file owes it
 //! is [`a_drag_along_its_own_strip_is_not_a_drop`], which is also the test that
 //! says the two affordances do not both claim one gesture.
+//!
+//! Design and rationale: `docs/modules/egui-shell/dock/overlay_tests.md`.
 
 use egui::{Pos2, Rect, Vec2};
 
@@ -28,12 +30,6 @@ use super::{Column, DockLayout, DockSide, PanelId, SideLayout, Stack};
 
 /// Two columns on the left and one on the right — the smallest layout in which
 /// every release the grammar can express is reachable.
-///
-/// `layers` alone in the second left column is the load-bearing part: taking it
-/// out prunes that column, so a drop of `layers` anywhere re-lays the whole left
-/// side. That is the case a preview read off the target's *current* rect gets
-/// wrong, and [`the_outcome_is_the_layout_after_the_take_not_the_target_as_it_stands`]
-/// is what measures it.
 fn two_columns() -> DockLayout {
     DockLayout::new(
         SideLayout::new([
@@ -81,11 +77,6 @@ fn columns(h: &Harness, side: DockSide) -> usize {
 }
 
 /// A compartment less its tab strip — the rectangle the compass divides.
-///
-/// Read through [`super::compass::body_of`] rather than subtracted here,
-/// because a fixture with its own spelling of "the compartment less its strip"
-/// would be aiming at zones a strip's height away from the ones the release is
-/// resolved against, and would report that as a defect in the overlay.
 fn body(h: &Harness, at: StackAddr) -> Rect {
     super::compass::body_of(h.state.geometry(), at).expect("the compartment was drawn")
 }
@@ -97,13 +88,6 @@ fn body_centre(h: &Harness, at: StackAddr) -> Pos2 {
 
 /// **The control.** A drag that stays on its own tab strip is a reorder, and
 /// the compass does not appear.
-///
-/// Two things at once, and they are the same fact from either side: the pump
-/// reaches the tabs at all — without which every absence asserted below is
-/// satisfied by a build that never sensed a drag — and the two affordances do
-/// not both claim one gesture. An overlay that offered a five-zone compass over
-/// the compartment a reorder is passing across would put a wash of colour under
-/// the caret the operator is aiming with.
 #[test]
 fn a_drag_along_its_own_strip_is_not_a_drop() {
     let mut h = Harness::new(two_columns());
@@ -129,13 +113,6 @@ fn a_drag_along_its_own_strip_is_not_a_drop() {
 
 /// **The gesture.** Drag a tab onto another compartment's centre and release,
 /// and the panel joins that group.
-///
-/// Four assertions, because four different builds pass any three: one that
-/// offered and never applied, one that applied and never offered, one that left
-/// the panel in both stacks, and one that reported the move as a reorder — which
-/// is a real distinction, because an application telling the operator "moved"
-/// for a rearranged tab bar is reporting a structural change that did not
-/// happen.
 #[test]
 fn dragging_a_tab_onto_another_compartments_centre_joins_that_group() {
     let mut h = Harness::new(two_columns());
@@ -224,10 +201,6 @@ fn a_release_against_a_compartments_edge_starts_a_column_beside_it() {
 
 /// **A release over another stack's strip is a boundary, not a zone** — and it
 /// draws the same caret the reorder does.
-///
-/// The compass is not offered there, because a tab strip already answers a
-/// better question than "which of five": it answers *where among these tabs*,
-/// and the operator aiming at a strip is aiming between two labels.
 #[test]
 fn a_release_over_another_stacks_strip_is_a_caret_between_its_tabs() {
     let mut h = Harness::new(two_columns());
@@ -271,13 +244,6 @@ fn a_release_over_another_stacks_strip_is_a_caret_between_its_tabs() {
 }
 
 /// **The zones and the outcome are published as regions, and they go.**
-///
-/// The visible form of this affordance is a wash of colour over a
-/// quadrilateral: precise to look at, and nothing a harness can assert on. So
-/// the armed zone and the outcome are named, for the reason
-/// `crate::dock::report`'s header gives — and a region published on every frame
-/// would be furniture rather than a marker, which is why the absence after the
-/// release is asserted too.
 #[test]
 fn the_armed_zone_and_the_outcome_are_published_and_then_go() {
     let mut h = Harness::new(two_columns());
@@ -315,18 +281,6 @@ fn the_armed_zone_and_the_outcome_are_published_and_then_go() {
 }
 
 /// **The zones divide the body, not the whole compartment.**
-///
-/// The tab strip is not part of the compass — it answers a better question, and
-/// [`super::compass::body_of`] subtracts it before dividing. A compass laid over
-/// the compartment *including* its strip is drawn one strip height above the
-/// zones the release is resolved against: the operator aims at a painted "top"
-/// band and the pointer is over the tab bar, so the release inserts a tab where
-/// a split was offered. R8b's failure mode #2, in paint.
-///
-/// The assertion is the armed band's **top edge**, because that is what the
-/// wrong mechanism cannot produce: it would start the band at the compartment's
-/// top, a strip's height higher. Containment inside the compartment is satisfied
-/// by both, which is why it is not the measurement.
 #[test]
 fn the_zones_divide_the_compartment_less_its_strip() {
     let mut h = Harness::new(two_columns());
@@ -374,18 +328,6 @@ fn the_zones_divide_the_compartment_less_its_strip() {
 
 /// **The outcome is the layout after the take, not the target as it
 /// stands.**
-///
-/// `layers` is alone in the second left column, so removing it prunes that
-/// column and the first one grows to the whole side — *before* the panel
-/// arrives. A preview that looked the destination up in the current geometry
-/// would outline half the side and then deliver the whole of it, which is the
-/// disclosure failure this project names failure mode #2, in the commonest drag
-/// there is.
-///
-/// The width comparison is what the wrong mechanism cannot produce: it would
-/// return the destination's rect unchanged, and that rect is measured here
-/// before the gesture starts. The equality after the release is the other half —
-/// the promise was kept, not merely different.
 #[test]
 fn the_outcome_is_the_layout_after_the_take_not_the_target_as_it_stands() {
     let mut h = Harness::new(two_columns());
@@ -436,12 +378,6 @@ fn the_outcome_is_the_layout_after_the_take_not_the_target_as_it_stands() {
 }
 
 /// **A release that changes nothing is offered dimmed, not refused.**
-///
-/// Dropping a panel back into the middle of the group it already leads is
-/// legal and permutes nothing. Refusing it would be a lie about the grammar;
-/// promising a move that will not happen is the other half of the same lie. So
-/// the offer stands, `lands` is false — which is what knocks the ink back — and
-/// the outcome outlined is the compartment the panel is already in.
 #[test]
 fn a_release_that_would_change_nothing_is_offered_dimmed() {
     let mut h = Harness::new(two_columns());
@@ -469,12 +405,6 @@ fn a_release_that_would_change_nothing_is_offered_dimmed() {
 
 /// **A drag carried over a splitter is offered nothing**, and releasing there
 /// docks nothing.
-///
-/// A splitter is recorded in no compartment's rect, so
-/// [`super::DockLayout::resolve_drop`] answers `None` — the same answer as the
-/// canvas. Asserted because the failure mode is the opposite of a refusal: a
-/// resolution that snapped to the nearest compartment would dock a panel the
-/// operator released into a gap on purpose.
 #[test]
 fn a_release_over_a_splitter_docks_nothing() {
     let mut h = Harness::new(two_columns());
@@ -500,14 +430,6 @@ fn a_release_over_a_splitter_docks_nothing() {
 }
 
 /// **A drag pulled out over the document is not a dock, and ends.**
-///
-/// The canvas is where [`super::tear`] attaches, and what happens there is
-/// asserted in its own file. What must not happen is anything from *this* one:
-/// no compass over a document, no `moved`, and no compartment on the right-hand
-/// side quietly gaining a tab because the nearest stack won by default. The
-/// gesture must also end — a drag that survived its release would carry the
-/// compass into the next frame, and the one after, with no button held to get
-/// rid of it.
 #[test]
 fn a_release_over_the_document_docks_nothing_and_ends_the_drag() {
     let mut h = Harness::new(two_columns());

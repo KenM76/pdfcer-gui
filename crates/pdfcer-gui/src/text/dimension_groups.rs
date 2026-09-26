@@ -486,13 +486,6 @@ mod tests {
     use super::*;
 
     /// The never-set scale phrase is the engine's own string, unaltered.
-    ///
-    /// Asserted against the constant rather than against a literal, which is
-    /// the difference between a test that pins the *relation* and one that pins
-    /// two copies of a magnitude. `NO_SURFACE.md` records the day a test in
-    /// this crate asserted a literal triple against a function returning the
-    /// literal triple and could therefore never fail; this is the shape that
-    /// does fail if somebody paraphrases.
     #[test]
     fn the_no_scale_disclosure_is_the_engines_own_words() {
         assert_eq!(
@@ -503,11 +496,6 @@ mod tests {
     }
 
     /// The moving-count sentence distinguishes all five cases it has to.
-    ///
-    /// The one that matters is `(0, n)`: an operator pressing a control that
-    /// will change nothing on screen, because every member overrides the
-    /// property. Reporting "0" as a bare number would read as a failure; the
-    /// sentence says which of the two zeroes it is.
     #[test]
     fn the_moving_count_says_which_kind_of_zero_it_is() {
         assert!(members_that_will_move(0, 0).contains("no dimensions yet"));

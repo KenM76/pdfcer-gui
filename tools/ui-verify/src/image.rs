@@ -25,6 +25,8 @@
 //! hidden: on a machine without it, [`Image::load_png`] fails with a message
 //! naming that, and the check reports SKIPPED. Live capture — the path that
 //! actually matters — does not use this and does not care.
+//!
+//! Design and rationale: `docs/modules/ui-verify/image.md`.
 
 use std::path::{Path, PathBuf};
 
@@ -271,10 +273,6 @@ impl Image {
 }
 
 /// A unique path in the system temp directory.
-///
-/// Uniqueness comes from the process id plus a monotonic counter, which is
-/// enough for a harness that never runs two conversions concurrently and does
-/// not warrant a uuid dependency.
 fn temp_path(stem: &str, ext: &str) -> PathBuf {
     use std::sync::atomic::{AtomicU64, Ordering};
     static SEQ: AtomicU64 = AtomicU64::new(0);

@@ -71,3 +71,19 @@ window back. It is not driven here, and the reason is not laziness:
 ⇒ A driven Escape would re-test a mechanism that cannot fail per route, at
 the cost of a flaky step. Step D is the load-bearing observation and it *is*
 driven.
+
+## Item notes
+
+### `const AT`
+
+Away from the edges and away from the centre. A default placement already
+sits near the middle, so a click there could pass against a build that
+ignored the pointer completely.
+
+### `const TOLERANCE_PT`
+
+Generous against the real error and tight against the real defect. The
+measured agreement is under half a point; one screen pixel at the fit zoom
+this fixture opens at is about 3 pt, so a few points absorbs the click
+quantisation. The mirror this check was written after is about 300 pt out,
+and a centre-defaulting build is of the same order.

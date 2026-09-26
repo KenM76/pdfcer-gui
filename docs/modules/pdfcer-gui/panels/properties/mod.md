@@ -128,3 +128,119 @@ not tell — the Fonts panel lists each one separately"*. Picking one when
 the name is ambiguous would be an inference presented as a fact, and
 unlike most inferences this one is invisible: a confidently wrong "Yes"
 looks exactly like a right one.
+
+## Item notes
+
+### `mod dimension`
+
+It makes this panel's founding premise false and says so: the ui-spec's
+*"nothing else competed for the word Properties"* stopped holding the day a
+canvas selection became a second claimant on it. Its own header carries the
+argument for broadening this panel's purpose rather than inventing a ninth.
+
+### `mod disclose`
+
+The 47-word refusal sentence that has never been readable needed a surface
+whose width is decided before its body draws. The status bar is not one
+(R128), and its own header checks that rather than assuming it.
+
+### `mod markup`
+
+Its header carries why this is the PANEL rather than the Format tab
+(`RIBBON_IA.md` §5.8) and why every control raises one action carrying one
+field.
+
+### `fn body_sections`
+
+Split out so the scroll area is impossible to forget: a section added to
+this function is inside it by construction, where a section appended to
+`body` after the `.show(..)` call would silently be outside it again — which
+is the defect this arrangement exists to make unwritable.
+
+### `fn object_section`
+
+`something_drew` is passed rather than re-derived so this function knows
+whether the panel is already saying something — see the *nothing focused*
+arm.
+
+The parameter is named `something_drew` and not after any one section: it
+carries a disjunction of every section above, and a name that points at one
+of them is a trap for the next reader.
+
+# It returns whether it DREW, and nothing reads that
+
+`true` on the two paths that draw property rows, `false` on both early
+returns **including** the *nothing is selected* label — that sentence draws,
+but it is not a description of a selection.
+
+This is the last thing in the panel, so the value is bound to `_drew_object`
+at the call site rather than deleted: the distinction it encodes is real, it
+is one line, and the next section appended here will want it. Deleting it
+leaves the next author to rediscover that *"nothing is selected"* must not
+count as having spoken.
+**No `PanelsState`**, deliberately. Taking one to read a panel-local
+`focus` is what the read below replaces; the absent parameter is what keeps
+a future reader from wiring panel-local state back in without noticing they
+are recreating it.
+
+### `const REGION_OBJECT`
+
+Published only on the frames it draws, so its ABSENCE is evidence that
+the panel is not describing a selection. That is the distinction the row is
+about, and without a region a driven check could only observe the document
+section being present — which it always was.
+
+### `fn the_four_commissioned_facts_are_all_reported`
+
+> the read-only facts (winding rule, node count, embedded-font
+> status, exact geometry) that belong beside the Objects panel's
+> inventory rather than in a ribbon band
+
+Three of them are on a path and the fourth is on text, so the check
+takes two objects. This is the panel's acceptance criterion, and it
+is the one a later refactor is most likely to erode a field at a
+time.
+
+### `fn an_absent_property_is_omitted_and_an_unstated_one_says_so`
+
+The distinction the panel's whole legibility argument rests on. A
+path has no font — the row must not exist. An object with no finite
+bounds *has* a position the file does not state — the row must exist
+and say so, or the operator is left to notice an absence.
+
+### `fn a_no_paint_path_reports_no_colour_at_all`
+
+Its fill colour is default black and appears nowhere on the page.
+Printing it would be a confidently wrong answer about a real,
+addressable object — the exact class of error the panel exists to
+avoid.
+
+### `fn a_stroked_path_reports_the_colour_a_viewer_sees`
+
+The one-description rule at work: the resolution happens once, in
+`describe_object`, so this panel and the Objects row cannot name
+different colours for one object.
+
+### `fn the_embedded_font_join_declines_when_the_name_is_not_a_key`
+
+The join is by `/BaseFont`, and a name is not a key. Two dictionaries
+with one name need not agree about embedding, so pdfcer declines —
+because a confidently wrong "Yes" is indistinguishable from a right
+one, which makes this the one field on the panel that could mislead
+silently.
+
+Driven through a real inventory rather than a hand-built one, so the
+`/BaseFont` values are the ones a document actually produces.
+
+### `fn no_field_is_ever_rendered_blank`
+
+A blank value is indistinguishable from a field pdfcer forgot to fill
+in, and the panel's whole value is that its silences are as legible
+as its numbers. Swept across several object kinds so a kind-specific
+arm cannot slip through.
+
+### `fn a_text_object_always_has_something_to_disclose`
+
+Text is always approximate, so it always carries at least the
+bounds-basis note. This pins the panel's most-used disclosure path:
+if it ever came out empty, the heading would draw over nothing.

@@ -34,3 +34,35 @@ armed kind rather than declining.
 A read must not write. Persisting from here would make moving the pointer an
 edit to shared state, and arming is the only thing that should decide what
 is armed.
+
+## Item notes
+
+### `fn the_master_toggle_off_returns_the_raw_point`
+
+The master toggle is the operator's, and a tool that snapped anyway
+would be applying an inference they had switched off — which is rule 4's
+definition of sneaky rather than fuzzy.
+
+### `fn a_caller_with_no_stored_state_gets_the_shipped_defaults`
+
+The vertex drag's case, and the reason [`snap_point`] exists rather than
+the caller doing `read(ctx)?`. [`load`] persists nothing and [`read`]
+answers `None` until a measure tool has been *clicked*, so a `?` here
+would mean **snapping switches on only after you have used a different
+tool** — which is not a smaller version of the feature; it is the exact
+defect `resolve_hover`'s own header records, which shipped and was
+reported as *"the measuring tools don't give me any indication of what
+is being selected"*.
+
+Asserted through the master toggle rather than through a candidate,
+because what is being proved is *which state was used*: a build that
+declined on empty memory answers the raw point with `None`, and so does
+a build that found nothing nearby. The distinguishable fact is that the
+fallback carries `snap_master: true`.
+
+### `fn the_snap_radius_is_wider_than_the_selection_radius_at_every_zoom`
+
+Both are screen-pixel constants divided by the same zoom, so the
+relation is scale-invariant — and an assertion on a relation alone
+passes for a build whose magnitudes have both gone wrong together, so
+the magnitudes are checked too.

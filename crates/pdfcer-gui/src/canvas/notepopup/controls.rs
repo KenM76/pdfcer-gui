@@ -167,76 +167,6 @@ pub(super) fn save_draft(
 
 /// **Record this comment's window state in the FILE** —
 /// `EditSession::set_annotation_open`, `pdfcer-core` `Pass 253.3`.
-///
-/// # THE UNDO DECISION, and it is the whole reason this is a separate
-/// control
-///
-/// `/Open` is a key in the document, so writing it is a document change and
-/// lands in the undo log like every other edit — that part was never in
-/// question. What was in question is **which gesture writes it**, and the
-/// choice made here is *only an explicit act*:
-///
-/// | gesture | what moves | undo entries |
-/// |---|---|---|
-/// | clicking a note on the page | [`open`]'s per-document override — interface state | none |
-/// | pressing this window's ✕ | the same override | none |
-/// | ticking **Open by default** | the document's `/Open`, on the note and on its `/Popup`, in one command | **one** |
-///
-/// ## Why not "write on every open and close"
-///
-/// Because reading a marked-up drawing *is* opening and closing bubbles, dozens
-/// of times, and none of it is an edit the operator would recognise as one. Wire
-/// it and a reviewer who glanced at six comments ends the session with six undo
-/// entries between `Ctrl+Z` and the last thing they actually changed, and a
-/// document that reports itself modified after a sitting in which they altered
-/// nothing. The Save dialog would then ask them to write a file they did not
-/// mean to change — and they would say yes, because they have no way to know
-/// what the six entries were.
-///
-/// ## Why not coalesce
-///
-/// It was the third candidate and it is the worst of the three, because it
-/// makes the undo log's contents depend on **timing**. Two presses inside the
-/// window are one entry and two presses either side of it are two, so `Ctrl+Z`
-/// stops meaning anything an operator can predict — and the failure is
-/// invisible: nothing on screen says which side of the boundary a press landed
-/// on. A rule an operator cannot see is a rule they cannot rely on.
-///
-/// ## Why not "accept the entries as honest"
-///
-/// It is the most defensible of the three rejected options and it was rejected
-/// on a measurement rather than a preference: the entries would be honest and
-/// they would be **overwhelming**. The undo stack's job is to let an operator
-/// walk back their own work, and a log in which nineteen of twenty entries are
-/// *"looked at a comment"* does not do that job however true each line is.
-///
-/// ⇒ `crate::canvas::markup::swatch`'s header argues the same shape from the
-/// other side and reaches the opposite conclusion for its own case — a pen
-/// colour *"has no undo, it raises no `Action`"* because it touches no
-/// document. The rule both obey: **the undo log records changes to the
-/// document, and only the ones the operator meant as changes.** A pen colour
-/// fails the first test; opening a bubble to read it fails the second.
-///
-/// # Why the on-screen state is pinned when the document's is written
-///
-/// The override is set to the window's **current** state — open, because this
-/// control is only drawn inside an open window — at the same moment the
-/// document is written. Without that, unticking *Open by default* would make
-/// `authored_open` false, the override would still be unset, and the window the
-/// operator is looking at would **vanish under their hand** on the next frame.
-/// Recording a preference for the next reader is not a request to close the
-/// thing you are reading.
-///
-/// # R83: not drawn when there is nowhere to write it
-///
-/// [`model::can_record_open_state`] carries the table. The short form: Table
-/// 169 gives `/Open` to `/Text` and to `/Popup` and to nothing else, and the
-/// engine will not manufacture a companion, so a `/Square` with no `/Popup` in
-/// the file has no window state to express. The engine reports that case as a
-/// **no-op rather than a refusal** — deliberately, so a caller over a mixed
-/// selection need not filter by subtype — which makes the affordance this
-/// shell's to withhold. `crate::text::annotpopup::open_state_written` words it
-/// anyway, for the case where this gate and the engine ever disagree.
 fn open_default(ui: &mut egui::Ui, f: &Ctx<'_>, note: &NoteView, actions: &mut Vec<Action>) {
     if !model::can_record_open_state(note) {
         return;
@@ -266,30 +196,6 @@ fn open_default(ui: &mut egui::Ui, f: &Ctx<'_>, note: &NoteView, actions: &mut V
 }
 
 /// *Delete comment*, and the guard that decides whether it is drawn at all.
-///
-/// # The Comments panel's *"this build has no Delete"* was true and is not
-///
-/// That paragraph was written on 2026-08-14 and its stated reason —
-/// *"`crate::app::actions::Action` has no variant that could carry the
-/// intent"* — stopped being true when `AnnotAction::Delete` landed. It is
-/// corrected in place, dated, in that module's own header, along with the
-/// `/TrapNet` reasoning that depended on it. **A limitation sentence is a
-/// citation with an hours-long shelf life**, and this project has now paid for
-/// that lesson six times.
-///
-/// # R83: the control is omitted when the engine would refuse
-///
-/// `EditSession::annotation_deletion_refusal` answers *"would
-/// `delete_annotation` refuse right now?"* for the two document-wide reasons —
-/// encryption and a certification signature — and asking it is what lets this
-/// draw nothing instead of offering a button whose only outcome is a worded
-/// decline. The per-annotation refusals (a locked annotation, a ce dimension)
-/// are handled above by the same rule.
-///
-/// ⚠ It is **not a perfect oracle**, and `docs/core-api/03-capabilities.md`
-/// §3.4 says so: the real call can still refuse. That is why the funnel's
-/// worded decline stays the answer of record and this is only a filter on the
-/// affordance.
 fn delete(ui: &mut egui::Ui, f: &Ctx<'_>, note: &NoteView, actions: &mut Vec<Action>) {
     if f.doc.session.annotation_deletion_refusal().is_some() {
         return;

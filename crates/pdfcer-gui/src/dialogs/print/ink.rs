@@ -13,37 +13,6 @@
 use egui::Rect;
 
 /// Cells across the mask's **longer** side.
-///
-/// # What this number buys, and what it costs, as arithmetic rather than a
-/// # guess
-///
-/// The mask is a downsample of the preview raster, whose longest side is
-/// capped at `super::preview::MAX_SIDE_PX` = 2200 px. At 256 cells on the long
-/// side, one cell is at most `2200 / 256 ≈ 8.6` raster pixels on a side.
-///
-/// **Memory.** The grid is `Vec<bool>`, one byte per cell. The worst case is a
-/// square page, `256 × 256 = 65,536` cells = **64 KiB**. The raster it
-/// describes is up to `2200 × 2200 × 4` bytes = **19.3 MiB**, so the mask
-/// costs **0.33%** of the picture it summarises, and is built once per raster
-/// rather than once per frame. A bit-packed grid would take it to 8 KiB and is
-/// deliberately not done: 64 KiB against 19 MiB is not a cost worth trading
-/// legibility for, and this module's whole value is that a reader can check
-/// its arithmetic.
-///
-/// **Spatial resolution, in the units the operator cares about.** On a US
-/// Letter sheet (612 × 792 pt) the long side is 792 pt, so a cell is
-/// `792 / 256 ≈ 3.1 pt ≈ 1.1 mm`. On an ANSI E sheet (2448 × 3168 pt) a cell
-/// is `3168 / 256 ≈ 12.4 pt ≈ 4.4 mm`. Both are far finer than any margin
-/// decision an operator makes from a preview, and the error is **always in the
-/// direction of hatching slightly more** than is strictly lost — see
-/// [`InkMask::from_rgba_premultiplied`], where a cell is inked if *any* pixel
-/// in it is.
-///
-/// **Why not simply test the raster pixels directly and skip the mask?** The
-/// overhang band would be re-scanned on every frame, at up to a few million
-/// pixels a frame, for an answer that cannot change until the raster does. The
-/// mask is computed exactly once per raster and cached beside it under the
-/// same key — see `super::preview::PreviewKey` and the field it keys.
 const CELLS_LONG_SIDE: u32 = 256;
 
 /// The lightest `min(R, G, B)` a pixel may have and still count as **ink**.
@@ -336,16 +305,6 @@ impl InkMask {
 }
 
 /// Is one premultiplied RGBA pixel **ink**?
-///
-/// See [`INK_MAX_LEVEL`] for the measurement behind the threshold, and
-/// [`InkMask::from_rgba_premultiplied`] for why alpha is checked at all when
-/// every pixel the preview produces today is opaque.
-///
-/// `min(R, G, B)` rather than a luminance: a saturated colour has a low
-/// minimum channel even when its luminance is high — a pure yellow
-/// `(255, 255, 0)` is 89% luminance and unmistakably ink — so the minimum is
-/// what catches coloured linework, which is most of what a CAD sheet is made
-/// of. A luminance test would have to be tuned per hue to see the same marks.
 const fn is_ink(r: u8, g: u8, b: u8, a: u8) -> bool {
     // A pixel the page group did not fully cover is something painted into,
     // and its premultiplied channels understate its colour. Ink, without
@@ -364,10 +323,6 @@ mod tests {
 
     /// Build a premultiplied-RGBA raster of `w × h` opaque white, then paint
     /// the given pixel rectangles solid black.
-    ///
-    /// Opaque white is what `render_page_with_view` actually produces (this
-    /// module's header records the measurement), so a fixture built any other
-    /// way would be testing a raster the preview never sees.
     fn raster(w: u32, h: u32, ink: &[(u32, u32, u32, u32)]) -> Vec<u8> {
         let mut data = vec![255u8; (w * h * 4) as usize];
         for &(x0, y0, x1, y1) in ink {
@@ -392,14 +347,6 @@ mod tests {
 
     /// **The operator's own case: a 1:1 drawing whose overhang is empty
     /// paper gets NO hatch.**
-    ///
-    /// > *"Our drawing get drawn 1:1 and the area that isn't printed is just
-    /// > empty border."*
-    ///
-    /// The page carries plenty of ink — a title block in the middle — and the
-    /// placement would report a clip, because the page box does exceed the
-    /// printable rectangle. The band that will actually be cropped is blank,
-    /// so nothing is hatched. This is the request, in one assertion.
     #[test]
     fn a_blank_overhang_is_not_hatched_even_though_the_page_is_full_of_ink() {
         // 400 x 400 raster, ink confined to the left three quarters.
@@ -426,13 +373,6 @@ mod tests {
     }
 
     /// **One inked cell in the overhang is hatched, and nothing else is.**
-    ///
-    /// The same page as the test above with a single small mark added out in
-    /// the border — a stray revision stamp, a pdf-dimension leader that ran
-    /// past the frame (rule 15: CAD-exported page content, not a ce dimension
-    /// pdfcer authored),
-    /// the corner of a title block. The extent returned must cover that mark
-    /// and must not spread to the rest of the band.
     #[test]
     fn one_inked_spot_in_the_overhang_hatches_that_spot_and_no_more() {
         // A 256-cell grid over 400 px is 1.5625 px per cell, so a 4 px mark
@@ -494,15 +434,6 @@ mod tests {
 
     /// **Near-white CAD paper is not ink**, and this is the measurement
     /// [`INK_MAX_LEVEL`] exists for.
-    ///
-    /// `fixtures/a1-titleblock.pdf` renders its paper as `(249, 249, 249)` —
-    /// 236,443 of 250,916 pixels. Under the intuitive `< 255` test that whole
-    /// sheet, empty border included, is ink and the hatch covers everything:
-    /// O113's defect, reintroduced by a wrong definition of the word.
-    ///
-    /// The measured value is written into the fixture rather than described,
-    /// so if either the constant or the exporter's paper colour moves, this
-    /// says which.
     #[test]
     fn near_white_cad_paper_is_not_ink() {
         const MEASURED_CAD_PAPER: u8 = 249;
@@ -548,11 +479,6 @@ mod tests {
 
     /// **A transparency test would find nothing**, which is the failure this
     /// module's header warns is silent.
-    ///
-    /// Every pixel the preview renders is alpha 255 — measured on three
-    /// documents. A mask built on alpha would return `None` for every region of
-    /// every page, hatch nothing ever, and look exactly like the fix working.
-    /// This pins that the test used is the colour one.
     #[test]
     fn ink_is_decided_by_colour_and_not_by_alpha() {
         assert!(
@@ -585,17 +511,6 @@ mod tests {
 
     /// **The extent is never SMALLER than the ink**, checked at every pixel
     /// of a row, which is where a top-left-corner mapping quietly fails.
-    ///
-    /// A pixel is an area. Assigning it to the single cell its top-left corner
-    /// lands in leaves the far edge of that pixel outside the cell whenever the
-    /// grid does not divide the raster — so the reported extent stops short of
-    /// the ink by up to one pixel, in the direction that under-discloses a
-    /// loss. See [`InkMask::from_rgba_premultiplied`] for the measured case.
-    ///
-    /// This sweeps a one-pixel mark across a whole row of a raster whose width
-    /// (400) is not a multiple of the grid (256), and asserts at every position
-    /// that the extent contains the pixel's **full** span. A top-left mapping
-    /// fails this at roughly a third of the positions.
     #[test]
     fn the_extent_never_stops_short_of_the_ink() {
         const W: u32 = 400;

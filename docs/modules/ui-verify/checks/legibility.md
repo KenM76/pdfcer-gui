@@ -69,3 +69,21 @@ need to: a traced rect carries its own calibration, in the sense that the
 surface it describes is the window it was measured in, which is the window
 that was then captured. That is the same argument as above, stated as an
 absence of machinery.
+
+## Item notes
+
+### `struct Measurement`
+
+`contrast` is `None` for a region that could not be sampled at all — an
+off-surface region. Deliberately an `Option` rather than a contrast of
+1.0 over zero pixels: the two are the same number and completely different
+findings, and this crate's whole thesis is that a measurement of nothing
+must not be presentable as a measurement.
+
+### `fn clip`
+
+A traced rect is already clamped to the client area by
+[`crate::coords::WindowFrame::logical_to_capture_pixels`]; this repeats the
+clamp against the *image* because the two can differ by a pixel when a
+window is resized between the measurement and the capture, and because
+`--image` mode can hand a plan a surface of an entirely different size.

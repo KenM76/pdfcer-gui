@@ -105,3 +105,61 @@ armed. All three are covered by unit test alone.
   not describe the page it would be sweeping;
 * **no band had text under it** — phase C never succeeded, so phase A's
   silence proves nothing and phase D has no operand.
+
+## Item notes
+
+### `const MODE`
+
+Read and Review already sweep text with the select tool, so arming the tool
+there is a no-op an operator cannot see; the two gaps it closes are both in
+Edit, whose primary button is the content marquee. A check aimed at Review
+would pass against a build where `view.tool_text` did nothing at all.
+
+### `const TOOL_SIBLING`
+
+The two pointer-tool toggles are one group and one idea, and a build that
+registered the new one while losing the old would otherwise pass this check
+completely — the same half-done-registration guard
+[`crate::checks::text_markup`] applies to Strikeout and Squiggly.
+
+### `const MARK_ITEM`
+
+Underline rather than Strikeout or Squiggly for
+[`crate::checks::text_markup`]'s reason: the three are one dispatch arm with
+one `match` between them, `shell::commands::mapping` walks all three, and the
+*join* under test here is per-command only in its id.
+
+### `fn selections`
+
+Filtered on `chars > 0` for the reason both sibling checks record: a *clear*
+is traced too, with `chars=0`, so counting the event would be satisfied by
+the gesture that ends a selection.
+
+### `fn invokes`
+
+A **count**, never a presence: this check clicks the same control twice and
+two different controls in one run, so "has it ever been invoked?" would be
+answered `true` by a click made ten seconds earlier.
+
+### `fn click_tab`
+
+Three tab clicks in one run is what this check costs — View to arm, Markup to
+mark, and Markup again after the sweep — so the move is written once rather
+than three times. It is not in [`driving`] because the two existing tab
+clicks in the suite are inline and folding them in would rewrite checks that
+are already known to detect their defects, which is the argument that
+module's own header makes about `markup_rectangle`.
+
+### `fn the_selectors_match_the_shells_own_spelling`
+
+Pinned for the reason both sibling checks pin theirs: the two crates are
+joined by a **string** and nothing else, so a rename would leave both
+sides compiling while every assertion here quietly stopped matching — and
+a check that matches nothing passes vacuously.
+
+### `fn arming_and_retiring_are_told_apart_by_the_tool_field`
+
+`canvas::tool::toggle_text` traces the tool it moved *to*, so arming and
+retiring differ only in that one word. A check that grepped for the event
+name alone would be satisfied by either, and phase E — the falsifier —
+would then pass on the frame the tool was armed.

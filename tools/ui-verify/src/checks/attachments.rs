@@ -11,43 +11,6 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// Supplied at launch: **Edit mode, and nothing else.**
-///
-/// # `edit.attachments` was here until a smoke launch showed it CLOSING the
-/// panel
-///
-/// The command is a **toggle** — `app::panels::toggle_panel` closes a panel that
-/// `dock::is_on_screen` reports as showing, and that predicate is *mounted **and**
-/// its side visible **and** it is the active tab*. Edit's default arrangement
-/// mounts Attachments as the last tab of its right-hand stack, and the last tab
-/// is the active one.
-///
-/// So the launch invoked it and the trace answered
-/// `panel-closed id=edit.attachments closed=true`. **Every phase below would
-/// have failed on a correct build**, at phase A, reporting that the panel was
-/// not on screen — which it had been, until this check shut it.
-///
-/// ⇒ It is the fourth "cannot pass" in this suite and the only one a
-/// **reading** could not have found: an audit that walked all eleven checks
-/// two hours earlier marked this one SOUND, correctly, because which tab a
-/// stack activates by default is a property of the running program and not of
-/// the source. **Launching it offscreen for seven seconds found it.**
-///
-///
-/// This was `"mode.edit"` alone, on the reasoning recorded above: ask whether
-/// the panel is already drawing, and press the ribbon toggle only if it is not.
-/// The asking is right and it is kept. What was wrong is the fallback: the
-/// ribbon shows **one tab at a time**, so `ribbon.item.edit.attachments` is not
-/// declared unless the Edit tab happens to be the one showing — and when it is
-/// not, the toggle cannot be pressed and this check SKIPPED.
-///
-/// It had been skipping. A driven check that skips has stopped working and
-/// nothing will tell you; that is a rule this project already had, filed to
-/// `D:/dev/rag/egui/a_driven_check_that_skips_has_stopped_working_and_nothing_will_tell_you.md`,
-/// and it went on being true here for however long the saved Edit layout has
-/// not had this panel showing.
-///
-/// ⇒ The seam reaches the command wherever it lives. The ask-then-toggle logic
-/// below is untouched and is now the SECOND route rather than the only one.
 const INVOKE: &str = "mode.edit,edit.attachments";
 /// The ribbon control that toggles the panel, for the case where Edit's saved
 /// arrangement does not have it showing.

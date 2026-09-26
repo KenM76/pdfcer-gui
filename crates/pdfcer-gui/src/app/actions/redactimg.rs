@@ -13,12 +13,6 @@ use crate::canvas::target::CanvasTargetProvider;
 use pdfcer_core::vector::{FormMarquee, MarqueeMode};
 
 /// How many of `targets` on `page_index` are raster images.
-///
-/// Split out as its own function because it is the whole factual claim this
-/// module makes, and because it is the part that could be wrong in a way an
-/// operator would notice: over-counting invents a warning about a page that
-/// would have redacted cleanly, and under-counting is the silence this module
-/// exists to end.
 fn image_count(
     doc: &OpenDoc,
     page_index: usize,

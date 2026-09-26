@@ -96,3 +96,52 @@ composited in — owes an off-canvas report.
 |---|---|---|
 | A | open a page with transparency at fit zoom | **no** blend-space line |
 | B | Ctrl+wheel up until the raster passes 13.4 Mpx | the line appears |
+
+## Item notes
+
+### `const CEILING_PX`
+
+Duplicated from `pdfcer-render`, where it is `pub(crate)` and therefore
+unreadable from here. **That is the finding, not an accident**: this shell
+cannot choose a raster that respects a ceiling it cannot see, which is why
+`render::strategy` keeps asking for whole pages four times past it. Filed as
+an engine request. The number is used only to decide how far this check
+should zoom, never to make an assertion, so a change in the engine makes the
+check zoom the wrong distance rather than report a false verdict.
+
+### `fn last_raster_scale`
+
+`raster-blend-space`, which the worker emits when a render FINISHES —
+not `render-spawn`, which it emits when one starts. Both were tried and the
+difference cost a run: a whole-page raster past the ceiling is 30 M pixels
+and takes seconds, so the check saw `render-spawn scale=8.01`, believed the
+question had been asked, and asserted against a texture still showing the
+scale-3.6 render. The zoom, the spawn and the finished raster are three
+different clocks and only the third one drives the status bar.
+
+### `fn ever_declared`
+
+`ui_rect` is a **change log**, not a per-frame census — this project's
+own RAG records that a widget which stops being drawn publishes nothing, so
+"the region has ever appeared" and "the region is on screen" are different
+questions. Phase A therefore checks that the line has **never** appeared,
+which a change log can answer honestly, rather than that it is absent now,
+which it cannot.
+
+### `fn buffer_was_engaged`
+
+The precondition that tells a fixture with no transparency apart from one
+whose ink survived — see this module's header table. Without it those two
+are the same picture to this check, and it reported FAIL for both.
+
+### `fn buffer_was_refused`
+
+The precondition the verdict rests on — see its call site for the run that
+made it necessary. `refused` counts the times a composite fell back to sRGB
+because the buffer would have exceeded its ceiling; a page that never asks
+for the buffer reports `refused=0` at every scale, and so does a page whose
+zoom never crossed the ceiling.
+
+The second of those is already excluded above by the `rastered < crossing`
+guard, so reaching here with `refused=0` everywhere means the first: **the
+page has no transparency on it.**

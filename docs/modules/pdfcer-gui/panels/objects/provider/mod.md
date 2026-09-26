@@ -68,3 +68,23 @@ it.
   it there. Declaring a second copy of a screen-pixel tolerance in this
   module would put one rule in two places, which is the cause of the
   defect that test guards rather than a way to guard it.
+
+## Item notes
+
+### `fn resolve`
+
+A degenerate tolerance (`0.0` from a non-finite or zero zoom, or a
+negative value) would silently make every query a miss. Falling back to
+the fixed canvas-space value instead is the right trade: *fussy at low
+zoom* is a far better failure than *selection is broken*.
+
+Extracted into one function rather than repeated at each of the four call
+sites that need it, because the four must agree — a click that selects an
+object and then finds none of its subpaths reads as "the second level is
+broken" when the real answer is that one site forgot the fallback.
+
+### `mod node_rung_tests`
+
+Separate from the module's main test block because these answer a
+different question — not "does a click find the object" but "does the
+index the operator sees mean what `node-move --node N` means".

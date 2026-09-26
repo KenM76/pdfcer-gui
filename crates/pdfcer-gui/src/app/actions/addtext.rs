@@ -75,57 +75,6 @@ pub(super) fn commit(doc: &mut OpenDoc, placed: Placed) {
 
 /// **The text arrives SELECTED** — `OPERATOR_REQUESTS.md` **O198**, and the
 /// half of it that is about text the operator typed himself.
-///
-/// The operator: *"the font selector and editing tools like bold
-/// and italic ... that entire area is always greyed out in the menu, and the
-/// properties area is uneditable too. **This is true even when I add a new line
-/// of text.**"*
-///
-/// That last sentence is the one that rules out every "CAD text is hard"
-/// explanation, and the cause is here rather than anywhere near a font. An arm
-/// that authors an object and selects **nothing** leaves
-/// `selection.formattable` unpublished, so the contextual Format tab does not
-/// appear at all — the operator has just typed a line of text and the ribbon
-/// has no Font group on it to be greyed.
-///
-/// # The same convention `InsertImage` follows, for the same reason
-///
-/// `super::apply`'s image arm carries the long-form argument. The operator:
-/// *"if I add an image I expect to click on it to resize but dragging doesn't
-/// resize"* — which was never about resizing: the image arrived unselected, so
-/// the first press landed on unselected paper and `gesture::meaning` read it as
-/// a marquee. Every one of the eight applications surveyed leaves a newly
-/// placed object selected; text is not an exception to that.
-///
-/// # Why the LAST object, and why the model is rebuilt rather than counted
-///
-/// `add_text` appends one `BT` ... `ET` to the page's content, so the authored
-/// object is last in paint order and therefore the decomposition's final index.
-/// `AddTextReport` carries no object index, so there is nothing better to read;
-/// see the hand-off in `D:/Dev/FeatureRequests/pdfce_FeatureRequests/` if that
-/// ever changes.
-///
-/// The count is taken from the model rebuilt AFTER the edit, never from a
-/// count kept before it: the edit invalidated the cache, `page_objects()`
-/// rebuilds against the new epoch, and a remembered count would be a count of
-/// the page as it was. The `Ref` is dropped in the same statement that reads
-/// the length, because `select_placed` wants `&mut doc.selection` and holding
-/// the borrow across it does not compile — the borrow checker enforcing the
-/// short-borrow discipline `app::cache`'s docs ask for.
-///
-/// # The two ways this declines, and why each is silence rather than a guess
-///
-/// - **The page will not decompose.** `page_objects()` answers `None` and the
-///   selection is left alone. The text is on the page; what is missing is the
-///   shell's ability to NAME it, and inventing an index would put handles round
-///   whatever sits at that position.
-/// - **The authored page is not the viewed page.** `page_objects()` builds for
-///   `doc.view.page_index` and for nothing else, so an index taken from it is
-///   only meaningful for that sheet. A caret is always on the viewed page
-///   today, so this is a guard against a future gesture rather than a live
-///   case — but it is the kind of mismatch that selects a plausible wrong
-///   object rather than failing, which is why it is checked rather than
-///   assumed.
 fn select_what_was_authored(doc: &mut OpenDoc, page: usize) {
     if page != doc.view.page_index {
         crate::diag::trace(move || {
@@ -259,10 +208,6 @@ mod tests {
 
     /// **A one-line click is still a POINT add**, and this is the regression
     /// guard for the whole rule.
-    ///
-    /// The commonest gesture in the program — click, type a label, click away —
-    /// must reach the engine as a point add. A build that boxed every add would
-    /// wrap a short label at a width nobody chose, and would do it silently.
     #[test]
     fn a_single_line_click_is_not_promoted() {
         let (req, promoted) = request(&placed("SHEET 1 OF 4", None), Some(crop()));
@@ -275,14 +220,6 @@ mod tests {
 
     /// **A multi-line click IS promoted, and the box runs to the sheet's own
     /// edges.**
-    ///
-    /// O127's defect 2 at the point where it meets the engine: `\n` in a point
-    /// add is a **named refusal** — `\n` has no code in any standard encoding —
-    /// so without this the operator's second line loses the whole add, with an
-    /// error about a character they cannot see.
-    ///
-    /// Every number in the assertion is the operator's or the page's. That is
-    /// the property being pinned: no margin, no default, nothing chosen here.
     #[test]
     fn a_multi_line_click_is_boxed_from_the_click_to_the_sheet_edges() {
         let (req, promoted) = request(&placed("first\nsecond", None), Some(crop()));
@@ -308,12 +245,6 @@ mod tests {
     }
 
     /// **The newline survives to the engine.**
-    ///
-    /// The fact the whole feature rests on: `with_box` splits on `\n` and wraps
-    /// each paragraph independently. A build that joined the lines with a space
-    /// on the way here would author plausible, wrong, single-line text — which
-    /// is the failure mode O127 named in advance (*"rather than silently
-    /// joining with spaces"*).
     #[test]
     fn the_hard_newline_reaches_the_engine_intact() {
         let (req, _) = request(&placed("first\nsecond", None), Some(crop()));
@@ -324,11 +255,6 @@ mod tests {
     }
 
     /// **A dragged box reaches the engine as origin AND EXTENT.**
-    ///
-    /// The transposition that compiles. The action carries corners, because
-    /// that is what a dragged rectangle is; `with_box` takes `(x, y, w, h)`.
-    /// Getting it wrong puts the text somewhere plausible and wrong, on a page
-    /// nobody will look at again until it is printed.
     #[test]
     fn a_dragged_box_reaches_the_engine_as_origin_and_extent() {
         let (req, promoted) = request(
@@ -350,10 +276,6 @@ mod tests {
     }
 
     /// **A page whose rectangle cannot be read declines to invent one.**
-    ///
-    /// The engine then refuses by page index, in its own words, which is a
-    /// sentence about the real problem. A guessed cropbox would turn it into a
-    /// sentence about a rectangle this shell made up.
     #[test]
     fn no_cropbox_means_no_invented_box() {
         let (req, promoted) = request(&placed("first\nsecond", None), None);
@@ -363,10 +285,6 @@ mod tests {
 
     /// **A click past the sheet's edge falls back rather than authoring a
     /// degenerate box.**
-    ///
-    /// A zero- or negative-width rectangle is a request the engine would refuse
-    /// for a reason unrelated to what the operator did. Reaching for a minimum
-    /// width would be inventing the one number this module refuses to invent.
     #[test]
     fn a_click_outside_the_sheet_falls_back_to_a_point() {
         let mut p = placed("first\nsecond", None);
@@ -377,10 +295,6 @@ mod tests {
     }
 
     /// **The pen reaches the engine in every one of the three cases.**
-    ///
-    /// Two branches each building a request would be two places for a font to
-    /// be forgotten. There are three exits, so the property is asserted across
-    /// all of them rather than argued for in a comment.
     #[test]
     fn every_route_carries_the_pen() {
         let pen = TextPen::default();

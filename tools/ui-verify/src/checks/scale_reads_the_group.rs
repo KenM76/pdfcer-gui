@@ -17,44 +17,13 @@ use crate::report::CheckReport;
 use crate::trace::Trace;
 
 /// How far apart the two picked points are, in PDF points along x.
-///
-/// The same span `measure_calibrate` uses, and deliberately so: the two checks
-/// drive the same gesture and a reader comparing their traces should not have
-/// to account for a different number. See that module for why 400 pt.
 const SPAN_PT: f64 = 400.0;
 
 /// The real-world length typed into the calibrated window, as a bare number.
-///
-/// No unit suffix and no punctuation. `Driver::type_ascii` sends key events
-/// and refuses punctuation, and this crate's own note on that is a finding
-/// rather than an excuse — so the value is chosen to be typeable rather than
-/// realistic. The group's display unit supplies the unit, which is the ordinary
-/// behaviour of the field: an operator typing `100` into a metric group means
-/// a hundred metres.
-///
-/// ### It is APPENDED, not entered into an empty field
-///
-///
-/// That is recorded rather than corrected. Clearing the field would mean
-/// sending Ctrl+A, and Ctrl+A on a build where focus has silently gone
-/// elsewhere is *Select All* on the page — a gesture with consequences, in a
-/// check whose subject is not selection. The assertion below needs the scale
-/// to MOVE, not to land on a predicted number, so the exact value is not
-/// load-bearing and the check keeps working if the default text ever changes.
 const TYPED_REAL_LENGTH: &str = "100";
 
 /// How far the seeded ratio must move before this check believes the window
 /// read the document.
-///
-/// A **relative** floor rather than an absolute one, and generous. The point
-/// is not to predict the arithmetic — `ScaleEntryFields::for_group` has five
-/// unit tests for that, including one calibrated by hand against the engine's
-/// own documented formula. The point is to distinguish *"seeded from the
-/// document"* from *"seeded from `for_group_panel`'s constant"*, and those two
-/// differ by orders of magnitude for any real calibration.
-///
-/// A tight bound here would be this check re-deriving the inversion, which is
-/// an oracle built from the system under test.
 const RATIO_MUST_MOVE_BY: f64 = 0.10;
 
 /// See the module documentation.
@@ -82,11 +51,6 @@ impl Check for SetScaleReadsTheGroupItIsAboutToOverwrite {
 }
 
 /// The seeded ratio's real side, from the most recent `scale-seeded` line.
-///
-/// Two plain numeric keys rather than one `1:100` field, because a check that
-/// has to split a packed field is a check that can report the opposite of the
-/// truth while quoting the truth in its own message. `dialogs::scale`'s
-/// `reseed` emits them separately for this reader.
 fn seeded_ratio_real(trace: &Trace) -> Option<f64> {
     trace
         .events("scale-seeded")

@@ -88,3 +88,60 @@ makes **both** halves of this check legal on the same shape: the insert
 takes it to five and the remove takes it back to four, so a single traced
 shape exercises the two verbs in sequence and the corner count is a running
 number a reader can check by eye — `4 → 5 → 4`.
+
+## Item notes
+
+### `const TOOL_DECLINED`
+
+**The Points tool's arming is asserted as the ABSENCE of this line, and
+that is forced by the instrument rather than chosen.** `canvas::tool::select`
+writes no trace at all — it is a two-line memory write, and the four tools
+that DO trace (`text-tool`, `markup-tool`, `measure-tool`,
+`text-edit-tool`) each do it from their own toggle rather than from
+`select`. So there is no positive line saying *the Points tool is now armed*.
+
+
+⇒ The absence is a weak signal on its own and it is **not carrying the
+assertion alone**. The positive proof is downstream and total:
+`canvas::dimdrag::intent` returns `Move` unless
+`canvas::tool::active(ctx).is_node()`, so a `dimension-vertex-insert` line
+**cannot** be produced by a build where the tool did not arm. Step 5 is
+therefore the real evidence, and this step exists to make a failure legible
+— without it a build with the old gate would fail at step 5 with a message
+about modifiers.
+
+Reported rather than worked around: a one-line trace in
+`canvas::tool::select` would make this a positive assertion and would serve
+every future tool check. The session that wrote this owned only that file's
+Node capability arm.
+
+### `const ENGINE_INSERT`
+
+Distinct from [`SHELL_INSERT`] deliberately, and the distinction is the
+whole reason both are asserted: one says the gesture was understood and the
+other says the document changed. A check that read only the first could not
+tell a shell that never asked from an engine that refused — which is
+`measure_perimeter`'s own note about `dimension-vertex` versus
+`move-dimension-vertex`, and the reason `check-trace-names.py` exists.
+
+### `fn drag_holding`
+
+**The modifier is held ACROSS the press, the walk and the release, and
+that is not politeness.** `Driver::press_held`'s own note records the
+finding: a modifier that goes down and up inside one frame's event batch can
+be applied and undone before the event it was meant to carry is dispatched,
+because modifier state reaches egui through winit's `ModifiersChanged`. A
+harness that pressed Ctrl just before the button would produce a plain drag
+and report *"the corner was moved, not added"* about a perfectly working
+build.
+
+It also matches what `canvas::dimdrag::intent` actually does: it reads the
+modifiers **live on every frame**, so a Ctrl released half way through the
+walk turns the gesture back into a move — deliberately, and visibly, because
+the preview follows. Holding it throughout is the only way to drive the
+gesture the operator's hand makes.
+
+Written here rather than on `Driver` because `Driver::drag_via` already
+takes a single `Option<Key>` modifier and this needs two; widening that
+signature is a change to a shared instrument, and the session that wrote
+this check did not own `tools/ui-verify/src/input.rs`.

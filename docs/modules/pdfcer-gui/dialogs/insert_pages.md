@@ -52,3 +52,47 @@ The dialog states what it will do and does it. The one inference pdfcer makes
 on the operator's behalf is the **refusal** of an unparseable range, and
 that is disclosed in words with the reason, never by silently inserting a
 guess — the same posture the print dialog takes with the same parser.
+
+## Item notes
+
+### `enum Where`
+
+A local enum **only** for the radio state, converted to
+`pdfcer_core::pageops::InsertPosition` at the point of use — because two of
+the four need the current page index, which the radio does not carry and the
+dialog does.
+
+### `fn chosen`
+
+`None` is what disables the commit button *and* draws the refusal — one
+derivation feeding both, so the button cannot be live while the sentence
+says the range is bad.
+
+### `fn each_position_maps_to_the_engines_own`
+
+The failure this catches is an off-by-one between "after page 7" as the
+operator reads it and `After(6)` as the engine takes it — invisible in
+any test that only checks that *a* position was produced, and visible to
+an operator as pages landing one sheet away from where they asked.
+
+### `fn a_bad_range_names_nothing_and_does_not_fall_back_to_all`
+
+Both halves matter: a bad range must not fall back to "all" — that would
+insert a document the operator did not ask for — and an empty result
+must be `None` rather than `Some(vec![])`, or the button would be drawn
+over a selection of nothing.
+
+### `fn it_opens_on_every_page_after_the_current_one`
+
+Pinned because it is the fast path: an operator who wants the whole file
+after the page they are on presses Insert twice and reads nothing. Any
+change to the seeded state costs that operator a dialog they were not
+reading.
+
+### `fn the_range_is_a_sequence_not_a_set`
+
+Order is preserved and duplicates are kept, because the text is a
+SEQUENCE the operator wrote. Here that is not a quirk to tolerate — it
+is how an operator inserts pages in a different order, or twice, in one
+gesture. Asserted so that a later "tidy-up" into a sorted set has to
+argue with a test rather than with nothing.

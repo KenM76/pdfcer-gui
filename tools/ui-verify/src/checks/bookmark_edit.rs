@@ -14,55 +14,6 @@ use crate::report::CheckReport;
 use crate::sys::vk;
 
 /// The mode the Bookmarks panel is **authored** in.
-///
-///
-/// Read's dock does carry Bookmarks (see `app::modes::defaults` — *Read: Pages,
-/// Bookmarks*), so the panel is on screen and `dock.body.view.panel_bookmarks`
-/// is published. What Read does **not** carry is the *authoring row*: the
-/// application deliberately withholds `bookmarks.new_title` and `bookmarks.add`
-/// there, and `bookmark_add`'s second half —
-/// `read_mode_offers_no_bookmark_authoring` — asserts that absence and passes.
-///
-/// So this check's phase A, which types a title into that box to give itself a
-/// bookmark to rename, could never begin. Its SKIP reason was accurate and
-/// unhelpful: *"no `bookmarks.new_title` region … Regions beginning
-/// `bookmarks`: none."* Nothing was broken; the check was asking Read for a
-/// control Read is specified not to offer.
-///
-/// ⇒ **Review**, which is the mode `bookmark_add` authors in and the one whose
-/// whole posture is marking up somebody else's drawing. Its default dock also
-/// carries Bookmarks, so no extra toggle is needed — which is why [`INVOKE`]
-/// stopped toggling the panel at the same time.
-///
-///
-/// It is kept rather than deleted because it is the inference that produced a
-/// defect, and a reader who never sees it will draw it again.
-///
-/// *Carried in the default dock* means the panel is **mounted**. It does not
-/// mean the panel is **raised**, and those came apart on the very day that
-/// sentence was written. Ken asked on 2026-09-05 for *"no tabs in the left
-/// side bar when the left rail is visible"*, and the dock now draws no tab
-/// strip whenever a rail can raise every panel in the stack — which, in this
-/// application, it always can. `dock.tab.view.panel_bookmarks` has not been
-/// published since.
-///
-/// This check calls [`driving::raise_dock_tab`] and **discards the bool**. It
-/// got `false`, correctly, and carried on; the panel it then read was whatever
-/// happened to be in front. Three checks in this family did the same and all
-/// three skipped for a week with a green suite, because a SKIP is not red.
-///
-/// The repair is in `raise_dock_tab` — it now falls back to the left rail,
-/// which publishes `rail.tabs.<id>` in every mode and cannot be folded away —
-/// so nothing here changed and this check passes again. The rule it earned is
-/// on that function: **a helper that can decline must not hand back a `no` a
-/// caller is free to ignore.**
-///
-/// The general shape, and it is this project's commonest: **a check that
-/// SKIPs is not red, so a check aimed at a surface the application has since
-/// been specified not to have can sit there for ever looking like an ordinary
-/// wrong-fixture skip.** The tell here was two checks disagreeing — one
-/// asserting the row is absent in Read and passing, three others requiring it
-/// in Read and skipping.
 const MODE: &str = "review";
 /// Supplied at launch. **Nothing**, deliberately.
 ///
@@ -81,19 +32,6 @@ const CENSUS: &str = "bookmarks-panel";
 /// within. See the row-picking comment in [`drive`].
 const PANEL_BODY: &str = "dock.body.view.panel_bookmarks";
 /// **One line per outline row drawn, carrying that row's own rectangle.**
-///
-/// This is how the row is aimed at, and it is not a `ui_rect` region because a
-/// row is not one: `panels::bookmarks::rows` draws a frameless `Button` per
-/// item inside a `ScrollArea` and traces
-/// `bookmark-row level=… title=… page=… enabled=… rect=…` from the same
-/// `Response`. `rect` is `egui::Rect`'s `Debug`, so `TraceLine::get_rect` reads
-/// it and `WindowFrame::declared_center` converts it exactly as it converts a
-/// declared region — same space, same origin, same frame.
-///
-/// `.last()` is the most recently drawn row of the most recently drawn
-/// frame. This check authors exactly one bookmark before it aims, so there is
-/// one row and the choice does not arise; a check that authored several would
-/// have to filter on `title=` instead.
 const ROW: &str = "bookmark-row";
 /// The panel's line for a rename press.
 const RENAME_PRESSED: &str = "bookmark-rename";
@@ -108,10 +46,6 @@ const DELETED: &str = "delete-bookmark";
 /// word.
 const TITLE_KEYS: [u16; 5] = [vk::T, vk::I, vk::T, vk::L, vk::E];
 /// `DETAIL`, the name it is renamed to — a DIFFERENT LENGTH, deliberately.
-///
-/// Six letters against five is the whole oracle: the panel traces the length
-/// of a bookmark name and not its text, so a rename to a same-length word would
-/// be indistinguishable from no rename at all in the only evidence available.
 const RENAME_KEYS: [u16; 6] = [vk::D, vk::E, vk::T, vk::A, vk::I, vk::L];
 
 /// See the module documentation.

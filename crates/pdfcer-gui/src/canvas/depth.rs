@@ -123,13 +123,6 @@ mod tests {
 
     /// **A selection this depth was not measured for claims nothing** —
     /// and nobody had to remember to clear it.
-    ///
-    /// The four routes that change a selection without a click are an edit
-    /// re-resolving it, Escape, an Objects-panel row click, and a placement.
-    /// Each lands on a different object, or on the same object on a different
-    /// page, and either way the record stops matching. That is the whole
-    /// mechanism: no `forget()` to call, so no fifth route to forget to add it
-    /// to.
     #[test]
     fn a_depth_measured_for_another_selection_is_not_claimed() {
         let ctx = egui::Context::default();

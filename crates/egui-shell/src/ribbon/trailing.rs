@@ -55,6 +55,8 @@
 //! same reflow rule [`crate::manifest::Item::Command`]'s `visible_when`
 //! documents for a band group, applied to a region whose whole reason for
 //! existing is that its contents come and go.
+//!
+//! Design and rationale: `docs/modules/egui-shell/ribbon/trailing.md`.
 
 use crate::commands::Command;
 use crate::manifest::{Item, Trailing};
@@ -67,11 +69,6 @@ use super::report;
 use super::sizing;
 
 /// The items that will actually be drawn this frame.
-///
-/// One helper rather than the same `filter` written twice, because
-/// [`measure`] and [`render`] disagreeing about which items exist is exactly
-/// the class of defect this region's reservation is supposed to make
-/// impossible.
 fn shown<'a>(trailing: Option<&'a Trailing>, ctx: &Ctx<'_>) -> Vec<(&'a str, Command)> {
     let Some(trailing) = trailing else {
         return Vec::new();

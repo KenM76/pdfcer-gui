@@ -173,12 +173,6 @@ impl Default for PosterPrefs {
 
 impl Default for PrintPrefs {
     /// **Exactly what `PrintDialog::open` hard-coded before this existed.**
-    ///
-    /// That is the whole specification of this impl, and it is worth stating as
-    /// a rule rather than as a coincidence: a fresh `userdata` folder must open
-    /// the print dialog in the state every previous build of pdfcer opened it
-    /// in. Anything else would make "delete the preferences file" a way to
-    /// change behaviour rather than a way to reset it.
     fn default() -> Self {
         Self {
             printer: None,
@@ -811,10 +805,6 @@ mod tests {
     use super::*;
 
     /// **Every orientation survives a trip through the file.**
-    ///
-    /// The list is exhaustive by construction: a variant added to the enum
-    /// makes `orientation_key`'s `match` fail to compile, which is the point of
-    /// storing the dialog's own type rather than a mirrored one.
     #[test]
     fn every_orientation_round_trips() {
         for value in [
@@ -843,17 +833,6 @@ mod tests {
     }
 
     /// **Every annotation scope this build can name survives the file.**
-    ///
-    /// Including `ContentOnly`, which the dialog does not offer — see
-    /// [`scope_key`] for why a value the UI cannot produce still needs a token.
-    ///
-    /// ⚠ "Every scope this build can name" is the strongest claim available:
-    /// the type is `#[non_exhaustive]`, so this list is hand-written and a scope
-    /// added by a newer engine will not appear in it and will not fail to
-    /// compile. That is the standing lesson about hand-written lists inside
-    /// completeness tests, stated here rather than left to be rediscovered —
-    /// the mitigation is [`scope_key`]'s `_` arm being a *correct* answer rather
-    /// than a panic, not this test being complete.
     #[test]
     fn every_scope_round_trips() {
         for value in [
@@ -868,11 +847,6 @@ mod tests {
     }
 
     /// **Every scale mode round-trips to the same MODE.**
-    ///
-    /// `Custom`'s payload deliberately does not survive, and this test says
-    /// so by comparing the token rather than the value. The percentage has its
-    /// own key; asserting the payload here would pin a duplication the module
-    /// header argues against.
     #[test]
     fn every_scale_mode_round_trips_to_the_same_mode() {
         for value in [
@@ -891,12 +865,6 @@ mod tests {
     }
 
     /// **A specific sheet is written as a policy, never as an id.**
-    ///
-    /// ⚠ The property asserted is *deliberate loss*: `Form(257)` must come back
-    /// as "from the printer's own settings" and must **not** come back as
-    /// `Form(257)`. A file that could round-trip a form id would silently
-    /// request a vendor-defined sheet on whatever printer the operator owns
-    /// next — see the module header.
     #[test]
     fn a_form_id_is_deliberately_not_persisted() {
         assert_eq!(
@@ -949,10 +917,6 @@ mod tests {
     }
 
     /// **A token carries nothing the file format splits on.**
-    ///
-    /// `preferences.txt` is `key = value` split on the first `=`, and values are
-    /// trimmed. A token containing `=`, `#` or a newline would be unparseable or
-    /// would silently truncate the line into a comment.
     #[test]
     fn no_token_carries_a_character_the_format_reserves() {
         let tokens = [
@@ -974,34 +938,6 @@ mod tests {
     }
 
     /// **Every remembered field is actually read back into the dialog.**
-    ///
-    /// The half of O166 that no compiler and no other test can see, and it is
-    /// the half most likely to rot.
-    ///
-    /// `PrintDialog::habits` is a struct literal with no `..Default::default()`,
-    /// so **writing** a new preference is compiler-enforced: add a field to
-    /// [`PrintPrefs`] and that function stops building. The **reading** side
-    /// has no such property. `PrintDialog::open` is a struct literal of the
-    /// *dialog's* fields, and a field of `PrintPrefs` that nothing over there
-    /// mentions compiles perfectly — the dialog simply opens on its hard-coded
-    /// value while the preferences file dutifully records, writes and reloads
-    /// a number nobody ever looks at. Every test in this module would still
-    /// pass: the round trip works, the tokens are unique, the default matches.
-    /// The only symptom is the operator saying *"it still doesn't remember
-    /// the copy count"*, months later.
-    ///
-    /// ⚠ **The field list is read out of this file's own source, not typed
-    /// here.** A hand-written list inside a completeness test is exactly the
-    /// gap it was built to find — a new field would be invisible to the check
-    /// and the count would still add up. This parses the `struct PrintPrefs`
-    /// block, so adding a field adds an assertion whether or not anybody
-    /// remembers this test exists.
-    ///
-    /// It is a source-text check and therefore proves only that the name is
-    /// *mentioned* in the right place, not that it is used correctly. That is
-    /// still the whole difference between a preference that is wired up and
-    /// one that is silently inert, and the driven `ui-verify` check for O166
-    /// is what proves the value survives a restart.
     #[test]
     fn every_remembered_field_is_read_back_by_the_print_dialog() {
         let here = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
@@ -1057,12 +993,6 @@ mod tests {
     }
 
     /// **A fresh install opens the dialog exactly as every previous build did.**
-    ///
-    /// The specification of [`PrintPrefs::default`], asserted rather than left
-    /// as a comment: deleting `preferences.txt` must be a way to reset pdfcer,
-    /// never a way to change what it does.
-    ///
-    ///
     #[test]
     fn the_default_is_what_the_dialog_used_to_hard_code() {
         let prefs = PrintPrefs::default();

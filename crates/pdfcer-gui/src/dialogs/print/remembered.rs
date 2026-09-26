@@ -116,29 +116,6 @@ impl PrintDialog {
 
     /// **The only writer of `prefs.print`, and the only emitter of the
     /// `print-remembered` trace.**
-    ///
-    /// `how` is the stable token the trace reports the direction under:
-    /// `habits` for [`Self::remember`], `restored` for [`Self::restore`]. A
-    /// driven check reading a `print-remembered` line without it could not tell
-    /// a Keep from a Cancel, because the two are identical in every other field
-    /// whenever the window opened on the settings it is being asked to keep.
-    ///
-    /// # Why it returns two booleans rather than one
-    ///
-    /// Because the two callers are asking different questions and only one of
-    /// them is about the write:
-    ///
-    /// | caller | the operator's question | field |
-    /// |---|---|---|
-    /// | [`Self::remember`] | *"are my settings kept?"* | `stored` |
-    /// | [`Self::restore`] | *"were my changes undone?"* | `changed` |
-    ///
-    /// They disagree on exactly the case that matters: **nothing to do**. A
-    /// Keep on settings already on disk kept them (`stored`), and a Cancel on
-    /// an untouched window undid nothing (`!changed`). One boolean would have
-    /// to pick one of those, and whichever it picked the other caller would be
-    /// reporting the opposite of the truth — in a trace line, where nobody
-    /// would see it, because a well-formed field reads as a measured one.
     fn store(
         &self,
         prefs: &mut crate::app::prefs::Prefs,

@@ -348,3 +348,72 @@ the same split [`crate::panels::forms::edit::FormEdit::label`] makes and for
 the same reason: a name is metadata a log needs in order to be useful, and a
 value may be what an operator typed into a `/Ff` `Password` field, which
 pdfcer has just warned them is stored in the clear.
+
+## Item notes
+
+### `fn sync`
+
+# Where this differs from the panel, and why
+
+[`crate::panels::forms::FormsUi`] keys its drafts on `(path, epoch)` and
+**drops them all** when either moves. Doing that here would be wrong in
+a case the panel does not have: clicking field B while field A is
+focused commits A *and* focuses B in one frame, so the very next frame
+carries a new epoch — and dropping the focus on it would put the caret
+out of a field the operator had just clicked into.
+
+So a path change discards, and an epoch change **re-seeds**: the focus
+survives, the draft is replaced by what the document now holds. That is
+the same correctness the panel's rule buys — after an undo the box shows
+the reverted value rather than the typed one, so it cannot re-commit
+what was just undone — with the one behaviour the panel does not need.
+
+Nothing is lost by re-seeding for the same reason nothing is lost in the
+panel: an epoch moves only when a document edit lands, every gesture
+that can land one takes focus away first, and taking focus away commits.
+
+### `const MAX_TRACED_BOXES`
+
+Not a round number for its own sake: it is comfortably more than any real
+form's *visible* field count and small enough that a truncated census is
+still a few screens of trace rather than a wall. A form that exceeds it
+says so on the next line rather than silently stopping, because a census
+that ends without saying it ended is a census a harness would read as
+complete.
+
+### `fn editor`
+
+Returns whether the editor claimed this frame's primary click, so
+[`overlay`] does not also read the same press as a request to focus
+something.
+
+### `fn click`
+
+The click is read from the **page's own `Response`** rather than from a
+widget of this module's, which is the whole of the input-layering decision —
+see the module header §4.
+
+### `fn focus_button`
+
+Without this a click on a check box would take the ring's place in the
+form away from it: the page's own response is focusable, so the click
+leaves egui's focus on the PAGE, `tabnav` finds no published owner, and
+the next Tab walks the ribbon -- which is O204's complaint, reached from
+the one gesture most likely to precede a Tab.
+
+`seated: false` so [`tabbing::button_focus`] asks for the keyboard on the
+next frame; `waiting: 0` because a box under the pointer is on screen, and
+a frame that cannot draw it has genuinely lost it.
+
+### `fn cursor`
+
+**The whole of the discovery affordance**, and the only thing this module
+puts on screen for a field that is not being edited — see the module header
+§3 on why rule 4 permits a cursor and forbids a tint.
+
+Set here, before
+[`crate::canvas::interact`](crate::canvas::interact::interact) runs, so
+[`crate::canvas::tool::cursor_for`] still has the last word: with the select
+tool it has no opinion and this survives, and where it does have one — an
+in-flight drag, a hovered resize grip — that opinion is about a gesture
+already under way and outranks a hover.

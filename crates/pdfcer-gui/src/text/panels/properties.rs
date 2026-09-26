@@ -907,10 +907,6 @@ mod tests {
     use super::*;
 
     /// **Every field label is a bare noun phrase with no trailing colon.**
-    ///
-    /// The colon is layout. Baking it into the string means a future
-    /// two-column or grid layout has to strip it back out of every entry,
-    /// and the one that gets missed renders as `Type::`.
     #[test]
     fn no_field_label_carries_its_own_punctuation() {
         for label in ALL_FIELD_LABELS {
@@ -924,11 +920,6 @@ mod tests {
     }
 
     /// **No two fields share a label.**
-    ///
-    /// Two rows reading "Size" — one for the bounding box and one for the
-    /// image's samples — is exactly the confusion [`value_pixels`]'s "px vs
-    /// pt" comment is about, arriving through the label column instead of
-    /// the value column.
     #[test]
     fn every_field_label_is_distinct() {
         let mut seen: Vec<&str> = Vec::new();
@@ -939,11 +930,6 @@ mod tests {
     }
 
     /// The catalog of field labels, for the sweeps above.
-    ///
-    /// Hand-written, like every enumeration of things Rust cannot enumerate
-    /// for us. It is only used by tests, so an entry missed here weakens a
-    /// check rather than shipping a defect — but it is listed in the same
-    /// order as the panel draws them so a reader can diff the two.
     const ALL_FIELD_LABELS: [&str; 15] = [
         "Type",
         "Index",
@@ -993,10 +979,6 @@ mod tests {
 
     /// Position and size are in points, to one decimal, and a zero extent is
     /// a real answer.
-    ///
-    /// The decimal is not decoration: a horizontal rule is 0.0 pt tall and a
-    /// hairline is 0.5 pt tall, and rounding to whole points makes those the
-    /// same object.
     #[test]
     fn geometry_values_keep_one_decimal_and_state_their_unit() {
         assert_eq!(value_position(72.0, 144.26), "72.0, 144.3 pt");
@@ -1005,10 +987,6 @@ mod tests {
     }
 
     /// An image's samples are labelled px, never pt.
-    ///
-    /// The Size field a few rows above is in points and describes a
-    /// different thing. Two numbers of the same shape with the same unit
-    /// would read as one measurement stated twice.
     #[test]
     fn image_samples_are_never_labelled_in_points() {
         let px = value_pixels(640, 480);
@@ -1017,11 +995,6 @@ mod tests {
     }
 
     /// **The three embedded-font answers are three different answers.**
-    ///
-    /// The ambiguous one is the load-bearing case: a confidently wrong "Yes"
-    /// is indistinguishable from a right one, so the panel has to be able to
-    /// decline. It must not read like either of the definite answers, and it
-    /// must point at the surface that can be definite.
     #[test]
     fn the_embedded_font_answers_include_an_honest_dont_know() {
         let yes = value_font_embedded_yes();
@@ -1041,23 +1014,12 @@ mod tests {
     }
 
     /// An unstated value is a sentence, never a blank.
-    ///
-    /// A blank field is indistinguishable from one pdfcer forgot to fill in,
-    /// and this panel's whole value is that its silences are as legible as
-    /// its numbers.
     #[test]
     fn an_absent_value_says_so() {
         assert!(!value_not_stated().trim().is_empty());
     }
 
     /// **The panel must not promise typed geometry it cannot accept.**
-    ///
-    /// `RIBBON_IA.md` §5.8 specifies editable X/Y/W/H here, and it is not
-    /// built: there is no selection model and no mutating action to carry
-    /// the edit. The read-only note is the one string that says so, and a
-    /// well-meaning copy edit that turns it into "editing coming soon" would
-    /// make it a promise — which P3 forbids in prose exactly as it forbids
-    /// in a widget.
     #[test]
     fn the_read_only_note_states_the_boundary_without_promising_a_control() {
         let note = properties_read_only_note();

@@ -214,3 +214,158 @@ regenerates a widget's `/AP` but does not touch `/Annots`, so the order is
 stable across fills — but a future reorder would change it, and a view
 reading the file on disk would show the operator the order they had just
 changed away from.
+
+## Item notes
+
+### `fn empty_form`
+
+Written out rather than defaulted because `AcroForm` has no `Default`
+impl — deliberately, in the engine: every one of these entries is a fact
+read off a real dictionary, and a default would invent a document.
+
+### `struct FakeGraph`
+
+Two required methods, and the other four come free from the trait's
+provided implementations — including `resolved`, which is what
+[`tabs_name`] calls. So a `HashMap<ObjId, Object>` is a complete graph
+for these purposes, and it lets the `/Tabs` tests state a page tree in
+six lines instead of hand-assembling a PDF.
+
+It is built by hand rather than from a fixture because **a test that
+cannot reach the case is satisfied by any implementation.** Exactly one
+of the eleven form
+fixtures carries a `/Tabs` at all, none carries one on an ancestor, and
+none carries an unrecognised name — so inheritance, precedence and the
+catch-all would every one of them be untested against the corpus, and a
+build that ignored ancestors entirely would pass.
+
+### `fn the_five_tabs_names_decode_and_imply_the_right_sequence`
+
+The `A` and `W` rows are the reason this test is worth writing rather
+than obvious. They are **PDF 2.0** additions, they were not in the
+version of Table 30 the engine's comment cites, and they are the only
+two values under which this view's list *is* the tab order. A build that
+swept them into the catch-all would show the "this is not the tab order"
+warning over a page whose file explicitly asked for exactly this order.
+
+### `fn a_page_with_no_tabs_entry_is_absent_and_unnamed`
+
+The constraint this whole view is built around. `/Tabs` is Optional and
+most files omit it, so this is the common case — and the temptation is
+to give it a label ("manual", "unspecified") because Acrobat shows one.
+What that state mechanically denotes is recorded in `D:\Dev\pdfcer`'s
+roadmap as **unsourced after two attempts**, so a label here would be an
+assertion nobody can support.
+
+### `fn a_tabs_on_an_ancestor_is_neither_inherited_nor_hidden`
+
+The correction in this module's §4, pinned from both directions. ISO
+32000-2 Table 31 marks `Rotate` inheritable and marks `Tabs` merely
+"(Optional; PDF 1.5)", and the table's preamble makes non-marked
+attributes non-inheritable — so an ancestor's value does not reach the
+page.
+
+Both halves matter. Reporting it as [`TabsEntry::OnPage`] would assert
+an inheritance the standard denies; reporting it as [`TabsEntry::Absent`]
+would hide a fact about the file that changes what another viewer might
+do. The third state is what lets the view say both true things.
+
+### `fn the_nearest_declaration_wins`
+
+`PageSlot::ancestors` is root-first, so a `.first()` here would read the
+root's value and silently ignore an intermediate `Pages` node — which is
+precisely the shape of file this precedence rule exists for (a `/Tabs`
+set once for a chapter, overridden for one page).
+
+### `fn the_structure_tab_order_fixture_declares_it_on_the_page`
+
+The one fixture in the corpus with a `/Tabs`, and the case the brief
+named as the one most worth seeing. Its page dictionary is
+`<< /Type /Page /Parent 2 0 R … /Tabs /S >>`, so this is `OnPage`, not
+`OnAncestor` — which is the assertion that would fail if the walk read
+the ancestors first.
+
+Note what the fixture does **not** have: an `/AcroForm`, or a single
+annotation. So it exercises the `/Tabs` read and nothing else, and the
+row assertions below use the form fixtures instead. Stated rather than
+left to be rediscovered by whoever opens it expecting a form.
+
+### `fn the_ordinary_form_fixtures_declare_no_tabs_at_all`
+
+The other direction, and the one that would go wrong silently: if
+[`page_tabs`] ever returned something for a page that declares nothing,
+every form in the corpus would acquire a tab-order mode it does not
+have, and the mislabelling would look like a document fact.
+
+### `fn a_real_form_is_numbered_from_one_on_every_page`
+
+The end-to-end shape of the read path. It asserts what a screenshot
+cannot: that the positions are a dense 1..n **per page** rather than a
+document-wide running total, and that every name is a field of this
+form rather than a widget id rendered as text.
+
+### `fn a_multi_widget_field_appears_once_per_widget`
+
+This is **correct, not a duplicate**, and it is the single most likely
+thing for a later reader to "fix". Tab order is a property of a page and
+a field is a document-level thing, so a field with three widgets
+genuinely occupies three positions — possibly in three different
+sequences on three different pages. A view that de-duplicated by field
+name would show two of them nowhere at all.
+
+### `fn a_field_with_no_widget_is_counted_and_never_listed`
+
+Asserted against the arithmetic rather than a named fixture: whichever
+documents carry such a field, the count must equal the number of
+`/Fields` entries with an empty `widgets`, and no row may name one.
+
+### `fn a_widget_with_no_p_entry_is_still_listed`
+
+`/P` is Optional (§12.5.2 Table 164) and frequently absent, and
+`pdfcer-core` reads it without resolving through the graph, so a direct
+`/P` reads as absent too. The obvious implementation of *"which page is
+this widget on?"* — look up `Widget::page` — returns **nothing at all**
+on such a form.
+
+Every one of the eleven form fixtures writes `/P` on every widget, so a
+test opening a fixture cannot reach it; `crate::canvas::forms::boxes`
+carries the same test for the same reason, and the engine team hit the
+case when a deliberate sabotage of their own `/P` handling passed against
+their whole corpus.
+
+Here the form is built by hand with `page: None` on its widget, and the
+assertion is that the row is produced anyway — so every other assertion
+in this module is also an assertion that `/P` is not consulted.
+
+### `fn a_document_with_widgets_and_no_acroform_lists_them_all`
+
+Two different facts that a single "not listed" number would blur. An
+A document with WIDGETS and NO `/AcroForm` lists every one of
+them as unclaimed.
+
+The state pdfcer manufactures and could not display. `insert_pages`
+copies everything reachable from a page; `/Annots` reaches the widgets;
+`/AcroForm` is a **catalog** entry and is never in the copied set. So a
+form's pages inserted into a CAD drawing arrive as boxes that draw like
+fields, swallow every keystroke, and belong to nothing at all.
+
+Asserted at the model rather than through the panel because the model
+is where the `Option<&AcroForm>` lives; the panel's half is covered by
+the driven check that inserts a form's pages and registers one of the
+orphans.
+
+### `fn a_directly_written_widget_is_anonymous_not_unclaimed`
+
+Table 164 requires an annotation to be an indirect object. One written
+inline has no `ObjId`, so it cannot be matched to a field even in
+principle — which is a different statement from "no field claims it",
+and merging the two would tell an operator their form was malformed when
+the *annotation* was.
+
+### `fn every_page_index_is_inside_the_document`
+
+The page index is fed straight to
+[`crate::app::actions::Action::GoToPage`], so an out-of-range value
+would be a navigation to nowhere. It cannot happen — the index is the
+enumeration of `slots` — and it is pinned anyway, because this is the
+one number that leaves the view.

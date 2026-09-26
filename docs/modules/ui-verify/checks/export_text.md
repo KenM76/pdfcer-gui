@@ -78,3 +78,21 @@ window's defaults, the identity above stops holding and this check must say
 opposite findings and a check that cannot tell them apart is worse than no
 check — so the preconditions are read out of the trace and reported as their
 own failure.
+
+## Item notes
+
+### `const MODE`
+
+**Read**, deliberately, and it is an assertion rather than a convenience —
+[`super::export_dxf`]'s reason, and here it is the stronger one. Taking the
+words out of a drawing is the archetypal reading act, and it is the same
+argument that moved `copy_page_text` onto the File tab in the first place:
+*replacing Acrobat Reader* is what Read mode is for, and a Read that cannot
+get the text out is wrong about the thing it exists to be.
+
+### `const REFUSED`
+
+Read even on a successful run, because it is the branch this feature
+exists for and a build that took it here would otherwise be reported only as
+*"no `export-text` line"* — true, and it would not say which of four
+different things happened.

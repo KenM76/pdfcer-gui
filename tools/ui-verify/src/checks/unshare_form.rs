@@ -14,11 +14,6 @@ use crate::report::CheckReport;
 use crate::trace::Trace;
 
 /// **The shared fixture: one form, two pages, one invocation each.**
-///
-/// See the module header. This is the file that makes "shared" a fact rather
-/// than a claim — object 6 is drawn from page 0 *and* from page 1, so
-/// unsharing page 0 leaves exactly one other page on the original and the
-/// disclosure has a real number to state.
 const SHARED_FIXTURE: &str = "forms-xobject/shared-across-two-pages.pdf";
 
 /// **The unshared fixture: one form, one page, one invocation.**
@@ -26,40 +21,16 @@ const SHARED_FIXTURE: &str = "forms-xobject/shared-across-two-pages.pdf";
 const UNSHARED_FIXTURE: &str = "forms-xobject/page-sized-form.pdf";
 
 /// Both fixtures' page box, in PDF points.
-///
-/// Stated rather than read, for `form_selection`'s reason: each file is a
-/// handful of objects of hand-written syntax, and a page size that changed
-/// would change what every constant below means. They agree at 200 × 200,
-/// which is why one constant serves both.
 const PAGE: PageGeometry = PageGeometry {
     width_pt: 200.0,
     height_pt: 200.0,
 };
 
 /// The centre of the shared fixture's square (PDF user space).
-///
-/// Its content stream is `q 1 0 0 1 20 20 cm /Fm0 Do Q` over a form whose
-/// `/BBox` is `[0 0 40 40]`, so the square spans (20, 20) → (60, 60) and its
-/// centre is (40, 40). Forty points from two page edges at a zoom that fits a
-/// 200 pt page to a full-size canvas is a comfortable margin — and the point
-/// is well inside the page box, which is what `CanvasMapping::doc_to_window`
-/// refuses to clamp for.
 const ON_THE_SHARED_SQUARE: (f64, f64) = (40.0, 40.0);
 
 /// The centre of the unshared fixture's middle square (PDF user space,
 /// 80,80 → 120,120).
-///
-/// The **middle** one, exactly as `form_selection` aims: it is furthest from
-/// every page edge, so a small error in the coordinate hop lands on paper
-/// rather than off-window — and a failure then reads "selected nothing" rather
-/// than "the click went outside the client area", which are different
-/// diagnoses.
-///
-/// It matters twice here rather than once, because the same point is
-/// right-clicked. A popup opened near an edge is repositioned by `egui`, which
-/// is exactly the case the published rect exists to survive — but a check
-/// should not be *testing* that incidentally while trying to test something
-/// else.
 const ON_A_SQUARE: (f64, f64) = (100.0, 100.0);
 
 /// `canvas-selection … first=object:N|leaf:N|none` — what a click selected.
@@ -86,12 +57,6 @@ const MEASURED: &str = "unshare-form-measured";
 const DECLINED: &str = "unshare-form-declined";
 /// The `vector_edit` funnel label, written **once per committed edit** as
 /// `unshare-form page=… n=… epoch=… disclosures=…`.
-///
-/// The unshared check asserts this line is ABSENT, which is its proof that the
-/// document was not touched: no `edit_epoch` bump, no undo entry, no dirty
-/// flag. `Trace::events` matches the whole first token, so this never collides
-/// with the three suffixed names above — the property
-/// `tools/gates/check-trace-names.py` exists to hold.
 const FUNNEL: &str = "unshare-form";
 /// `other=…` on [`MEASURED`] — how many pages OTHER than this one draw the
 /// form. The number the decision is made from and the number the disclosure
@@ -99,12 +64,6 @@ const FUNNEL: &str = "unshare-form";
 const OTHER_FIELD: &str = "other";
 
 /// What one check needs to know about the document it opens.
-///
-/// Its existence is the point made in the module header: these two checks
-/// differ in **which file they open**, and almost nowhere else. Bundling the
-/// three facts that vary keeps [`open_and_press`] identical for both, so a
-/// change to the gesture sequence cannot be made for one case and forgotten
-/// for the other.
 struct Scenario {
     /// Path under `D:/Dev/pdfcer/fixtures/synthetic`.
     fixture: &'static str,
@@ -181,21 +140,12 @@ impl Check for TheUnshareDeclinesWhenNothingElseDrawsTheForm {
 }
 
 /// Resolve a fixture under the engine repository's synthetic corpus.
-///
-/// The path is derived, not configured, and `None` rather than a panic —
-/// `form_selection`'s helper verbatim in shape, for the reason its own docs
-/// give: `D:\Dev\pdfcer` is READ-ONLY to this project, and a missing corpus is a
-/// SKIP with a reason rather than a crash mid-suite.
 fn engine_fixture(rel: &str) -> Option<std::path::PathBuf> {
     let path = std::path::Path::new("D:/Dev/pdfcer/fixtures/synthetic").join(rel);
     path.is_file().then_some(path)
 }
 
 /// What survives [`open_and_press`] when the gesture sequence completed.
-///
-/// The `Session` travels because the process must stay alive for the caller to
-/// read the trace it wrote — dropping it kills the application, and a trace
-/// read afterwards would be whatever happened to be flushed.
 struct Pressed {
     /// The running application, still open on the fixture.
     session: Session,
@@ -210,12 +160,6 @@ struct Pressed {
 /// Steps 1–4, identical for both checks: open the fixture, leave Read mode,
 /// select a leaf inside the form, open the context menu on it, and press the
 /// unshare row.
-///
-/// Returns `Ok(Ok(Pressed))` when the row was pressed, `Ok(Err(failure))` when
-/// an assertion up to and including step 4 did not hold, and `Err(skip)` when a
-/// precondition was absent. The three-way split is the suite's SKIP/FAIL/PASS
-/// rule made structural: an author who reaches for `?` gets a SKIP, which is
-/// the safe default — the unsafe default would be a pass.
 #[allow(clippy::too_many_lines)]
 fn open_and_press(
     ctx: &CheckContext,
@@ -437,10 +381,6 @@ fn open_and_press(
 
 /// Read the `other=` field off the last [`MEASURED`] line, which is the number
 /// the verb's whole decision was made from.
-///
-/// `None` means the line is absent or malformed, and both callers treat that as
-/// the same finding: **the walk did not run**, which is the state the feature
-/// shipped in and the state these checks exist to prevent returning to.
 fn other_pages(trace: &Trace) -> Option<usize> {
     trace.last(MEASURED).and_then(|l| l.get_usize(OTHER_FIELD))
 }
@@ -680,12 +620,6 @@ fn drive_unshared(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option
 
 /// A page-space point, through the mapping and the window frame, to a desktop
 /// point.
-///
-/// Its own function so the click and the right-click cannot hop differently —
-/// the class of error `crate::coords` exists to prevent. Both gestures in this
-/// check aim at the *same* screen point, and that is load-bearing: the menu
-/// must open over the thing that was selected, not over a second guess at where
-/// it is.
 fn aim(mapping: &CanvasMapping, frame: &WindowFrame, point: (f64, f64)) -> Result<ScreenPoint> {
     let window = mapping.doc_to_window(DocPoint {
         page: 0,
@@ -696,12 +630,6 @@ fn aim(mapping: &CanvasMapping, frame: &WindowFrame, point: (f64, f64)) -> Resul
 }
 
 /// The `first=` value of the most recent `canvas-selection` line, if any.
-///
-/// The **last** line rather than a count of new ones, for
-/// `form_selection::last_first`'s reason: `canvas-selection` is emitted through
-/// `diag::trace_changed`, so a click producing the same selection as the
-/// previous one emits nothing, and a consumer that counted lines would read a
-/// legitimate no-change as a dropped event.
 fn last_first(trace: &Trace) -> Option<String> {
     trace
         .last(SELECTION_EVENT)

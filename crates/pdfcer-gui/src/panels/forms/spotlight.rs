@@ -60,11 +60,6 @@ mod tests {
     use super::*;
 
     /// Set, read, clear — the whole contract, over a real `Context`.
-    ///
-    /// Worth a test despite being three lines of `data_mut`, because the key is
-    /// a string constant and a typo between the writer and the reader would
-    /// produce a feature that silently never lights up — with no error, no
-    /// panic and nothing in the trace.
     #[test]
     fn the_spotlight_round_trips_through_the_temp_store() {
         let ctx = egui::Context::default();
@@ -86,11 +81,6 @@ mod tests {
     }
 
     /// The key is distinct from the canvas's own focus key.
-    ///
-    /// Pinned because the two are adjacent in purpose and a shared key would be
-    /// the worst kind of bug here: clicking a panel row would move the canvas's
-    /// text caret into that field, which is a different act from pointing at it
-    /// and one the operator did not ask for.
     #[test]
     fn the_key_is_not_the_canvas_focus_key() {
         assert!(

@@ -73,10 +73,6 @@ impl Overrides {
 }
 
 /// The egui id this document's overrides are stored under.
-///
-/// The **path**, not the `OpenDoc` address or an index: see the module header.
-/// A path is stable across a re-render, unique between open tabs, and already
-/// the thing this shell uses to say which document it means everywhere else.
 fn key(path: &Path) -> egui::Id {
     egui::Id::new(("pdfcer-note-popup-open", path)) // ui-text-exempt: internal widget id, never displayed
 }
@@ -115,12 +111,6 @@ mod tests {
     }
 
     /// **An untouched note reads its state out of the file.**
-    ///
-    /// The assertion this module's whole shape exists for. An implementation
-    /// that started every pop-up closed — the obvious one — passes every other
-    /// test here and fails this one, and would have shipped the operator's
-    /// complaint back to him in a new form: a note he authored open that
-    /// stays shut.
     #[test]
     fn an_untouched_note_takes_the_files_word() {
         let overrides = Overrides::default();
@@ -129,11 +119,6 @@ mod tests {
     }
 
     /// The operator outranks the file, in **both** directions.
-    ///
-    /// Both, because asserting only "opening a closed note works" would pass
-    /// on an implementation whose override could only ever turn a pop-up on —
-    /// and then the close button would be dead on exactly the notes that need
-    /// it most, the ones the file authored open.
     #[test]
     fn an_override_wins_either_way() {
         let mut overrides = Overrides::default();

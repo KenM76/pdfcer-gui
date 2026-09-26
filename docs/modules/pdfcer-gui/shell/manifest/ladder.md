@@ -46,3 +46,37 @@ the rest by how far they are from that tab's reason for existing:
 **Lower collapses first**, and the numbers are deliberately sparse (1, 2,
 3, 4) rather than dense, so a group can be inserted between two existing
 rungs later without renumbering the tab.
+
+## Item notes
+
+### `const LADDER`
+
+A group absent from this table **never collapses**, which is the safe
+default and the reason absence rather than a sentinel means "never": a tab
+added later without a ladder entry behaves exactly as it did before this
+feature existed.
+
+### `fn every_ladder_entry_names_a_real_group`
+
+The guard that pays for keeping the ranking away from the definitions.
+A renamed group would otherwise lose its rung silently: the ribbon
+would still work, still collapse, and simply never collapse *that*
+group — a defect with no symptom until an operator's band overflows at
+a width where it used not to.
+
+### `fn the_built_manifest_carries_the_priorities`
+
+Named separately from the test above because they fail for opposite
+reasons: that one catches a stale table, this one catches an `apply`
+that stopped being called — which would leave every group unrankable
+and every band collapsing nothing, a state that looks exactly like the
+feature having never been built.
+
+### `fn every_tab_keeps_something_expanded`
+
+This is the invariant that stops the ladder from being tuned into
+uselessness. A tab whose every group may collapse can reach a width at
+which it is a row of identical chevron buttons and nothing else: the
+operator can still reach every command, and the band has stopped
+telling them anything. Word never does this — Clipboard is expanded at
+460 pt, the narrowest width measured.

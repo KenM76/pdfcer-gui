@@ -44,3 +44,19 @@ so this is the same mechanism at the same scope, not a second one.
 The panel writes it and the canvas reads it, both once per frame. A panel
 that is not drawn writes nothing, so hiding the panel puts the spotlight out
 by construction rather than by anybody remembering to clear it.
+
+## Item notes
+
+### `fn the_spotlight_round_trips_through_the_temp_store`
+
+Worth a test despite being three lines of `data_mut`, because the key is
+a string constant and a typo between the writer and the reader would
+produce a feature that silently never lights up — with no error, no
+panic and nothing in the trace.
+
+### `fn the_key_is_not_the_canvas_focus_key`
+
+Pinned because the two are adjacent in purpose and a shared key would be
+the worst kind of bug here: clicking a panel row would move the canvas's
+text caret into that field, which is a different act from pointing at it
+and one the operator did not ask for.

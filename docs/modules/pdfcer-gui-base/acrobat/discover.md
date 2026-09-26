@@ -34,3 +34,12 @@ which is the worst possible moment to discover that a button meant something
 else. So the handler is consulted for a *path* and then asked to prove it is
 an Acrobat by its file name, which is the only evidence available without
 reading version resources out of the binary.
+
+## Item notes
+
+### `fn a_command_line_yields_the_executable_and_not_its_first_word`
+
+The single most likely place Acrobat is installed contains a space, so
+the naive `split_whitespace().next()` yields `C:\Program`. That failure
+presents as "discovery does not work on any normal machine", which is
+exactly the kind of thing a test is for.

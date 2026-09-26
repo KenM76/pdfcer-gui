@@ -4,6 +4,8 @@
 //! guard that stops a field committing a value nobody typed. The text box
 //! itself, the popup and the focus dance are facts about a laid out `egui`
 //! frame and a real pointer, and R1 puts those in `tools/ui-verify/`.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/canvas/forms/choosing/typing/tests.md`.
 
 use egui::{Rect, pos2};
 
@@ -78,12 +80,6 @@ fn options() -> Vec<(String, String)> {
 
 /// The guard that stops a field the operator only **looked at** from
 /// being written.
-///
-/// `/V` legally holds either half of an option, and the box shows the display
-/// half. A field whose `/V` is the export `S` therefore draws "Small", and a
-/// naive "the draft differs from the stored value" test would commit `Small`
-/// on the way out of a field nobody typed in — a document edit, and an undo
-/// entry, for a glance.
 #[test]
 fn the_display_of_a_stored_export_is_not_a_change() {
     assert!(display_matches(&options(), &["S".to_owned()], "Small"));

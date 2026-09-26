@@ -22,6 +22,8 @@
 //!
 //! Every size in this module is a **window** size in points — neither a ce
 //! dimension nor a pdf dimension appears anywhere in it.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/host/fit.md`.
 
 use egui::Vec2;
 
@@ -29,66 +31,13 @@ use super::Host;
 
 /// How much a dialog's body must overflow its window before the window is
 /// grown to fit it.
-///
-/// See [`Host::fit`], whose first version had no such floor and grew the About
-/// window from 560 px to 1,624 px in a few frames. It is a floor in BOTH
-/// directions and that is the whole of its job: content within 8 pt of the
-/// inner rect is treated as fitting, so a one-pixel rounding difference
-/// between what egui laid out and what the compositor gave back cannot ask for
-/// a resize -- and a resize, once asked for, changes the very number that was
-/// measured.
-///
-/// ## Rule 15
-///
-/// A **window** size in points. Neither a ce dimension nor a pdf dimension.
 const FIT_MARGIN: f32 = 8.0;
 
 /// How many times one dialog may be grown to fit its content before the host
 /// concludes the measurement is circular and stops.
-///
-/// See the growth budget in [`Host::fit`]. The legitimate case settles in one
-/// round trip and two covers a body that re-flows in response to the first;
-/// three is one more than has ever been needed, and it is the difference
-/// between a bounded nuisance and a window that grows for as long as it is
-/// open.
 const FIT_BUDGET: usize = 3;
 
 /// **The size a window should be grown to**, or `None` to leave it alone.
-///
-/// # Why this is a free function
-///
-/// Because the growth branch could not otherwise be tested. `Host::fit` needs
-/// a live viewport to read `inner_rect` and to issue the resize, so the whole
-/// decision was reachable headlessly only in its no-op half — and the adjacent
-/// test said as much in its own doc comment: *"only the no-op half is
-/// reachable headlessly … the growing branch is asserted by the driven check,
-/// which is the only place it can be."*
-///
-/// That was true of the *resize*, and it was never true of the *arithmetic*.
-/// Splitting them costs one function and buys the convergence test that would
-/// have caught the print dialog's runaway before an operator did: feed this
-/// its own output and it must reach a fixed point.
-///
-/// # The contract
-///
-/// * `None` when the content already fits within [`FIT_MARGIN`] on both axes.
-///   The margin is a floor on what is worth acting on — below it the
-///   difference is noise between `min_rect` and a client size the window
-///   manager reports, and acting on noise is what creep is made of.
-/// * Otherwise a size that is **never smaller than the current window** on
-///   either axis, and never smaller than `min_size`. Growth only: shrinking to
-///   content would fight the operator every time they enlarged a window, and
-///   would shrink a scrollable body to its own scroll viewport, which is
-///   circular by construction.
-///
-/// Note what this function cannot do, and why the budget in [`Host::fit`]
-/// exists as well. Its answer is **idempotent** — feed it a window that has
-/// already been grown to its content and it returns `None` — but idempotence
-/// only holds if `content` stays put when the window changes. When the content
-/// is measured *from* the window, every answer is new and correct in
-/// isolation, and the sequence still runs away. No pure function of
-/// `(inner, content)` can detect that; only a count of how often it has been
-/// asked can.
 fn fit_target(inner: Vec2, content: Vec2, min_size: Vec2) -> Option<Vec2> {
     if content.x <= inner.x + FIT_MARGIN && content.y <= inner.y + FIT_MARGIN {
         return None;
@@ -244,11 +193,6 @@ mod tests {
 
     /// **A window already big enough for its body is left alone**, which is
     /// the guard that keeps [`Host::fit`] from being a feedback loop.
-    ///
-    /// Only the no-op half is reachable headlessly — issuing the resize needs a
-    /// live viewport — and the no-op half is the one with the hazard in it.
-    /// Named rather than claimed: the growing branch is asserted by the driven
-    /// check, which is the only place it can be.
     #[test]
     fn fitting_a_window_that_already_fits_asks_for_nothing() {
         let ctx = egui::Context::default();
@@ -262,24 +206,6 @@ mod tests {
 
     /// **A reopened dialog is fitted from scratch** — the operator's
     /// *"the second stamp's window is too small to show Add"*, 2026-09-10.
-    ///
-    /// Both of [`Host::fit`]'s guards live in `egui::Memory` keyed on the
-    /// dialog's id, and both are statements about **one opening**:
-    ///
-    ///   * `fit_key` says *"I have already asked for this size"*, which on a
-    ///     brand-new window at its opening bid is false and suppressed the
-    ///     only resize that mattered;
-    ///   * `budget_key` counts growths, and a cumulative count means the
-    ///     fourth opening of a dialog in a session can never grow at all.
-    ///
-    /// The remembered POSITION deliberately survives a close (G6). The fit
-    /// state deliberately does not, and this is the line that says which is
-    /// which.
-    ///
-    /// ⚠ What this test does NOT cover: that [`Host::show`] actually calls
-    /// [`Host::forget_fit`] on the opening pass. That needs a live viewport,
-    /// so it belongs to the driven check. The mechanism is asserted here; the
-    /// wiring is asserted there.
     #[test]
     fn a_reopened_dialog_forgets_the_last_opening_s_fit() {
         let ctx = egui::Context::default();
@@ -305,10 +231,6 @@ mod tests {
     }
 
     /// **Growing to fit reaches a fixed point in one step, and stays there.**
-    ///
-    /// The half the test above says it cannot reach. It can, now that the
-    /// arithmetic is a free function: grow once, then feed the result back and
-    /// require silence.
     #[test]
     fn growing_to_fit_settles_after_one_step() {
         let min = Vec2::splat(10.0);
@@ -339,23 +261,6 @@ mod tests {
 
     /// **The print dialog's runaway, reproduced as arithmetic — and the
     /// proof that no pure function could have stopped it.**
-    ///
-    /// Operator report, 2026-08-25: the print dialog *"keeps expanding its size
-    /// in little steps to infinity"* after pressing Print. The cause was a
-    /// footer row whose right-to-left button block reached the right edge of
-    /// whatever width it was offered, with a status label appended AFTER it —
-    /// so the row overflowed by the label's width no matter how wide the
-    /// window became.
-    ///
-    /// This test models exactly that: content that is always `OVERFLOW` wider
-    /// than its window. Every individual answer [`fit_target`] gives is
-    /// correct, every one is a size it has never returned before, and the
-    /// sequence still diverges — which is precisely why the fix is a **count**
-    /// in [`Host::fit`] and not a smarter comparison here.
-    ///
-    /// It is written as a test rather than a comment so that anyone tempted to
-    /// replace the budget with "just check the size is different" has to delete
-    /// an assertion that says why it will not work.
     #[test]
     fn content_measured_from_its_own_window_diverges_and_never_repeats() {
         const OVERFLOW: f32 = 24.0;

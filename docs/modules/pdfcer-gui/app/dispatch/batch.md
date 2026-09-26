@@ -37,3 +37,19 @@ dialog at all. A window offering options nobody has asked for would be
 ceremony, and the two things an operator might eventually want (reorder the
 sources, take a subset of a source's pages) are features with their own
 designs rather than defaults this verb is missing.
+
+## Item notes
+
+### `fn merge_files`
+
+# Nothing is gated on a document being open, and that is deliberate
+
+This is one of the handful of commands live with an empty window, and it
+belongs there: it produces a document **from files on disk**, so requiring
+one to be open first would be a precondition with no reason behind it. An
+operator who has just launched pdfcer in order to combine four drawings is
+exactly the person this command is for.
+
+The consequence is recorded rather than hidden: with nothing open there is
+no status row to put a sentence on, so a merge from an empty window reports
+only to the trace. See `app::actions::merge`'s note on the gap.

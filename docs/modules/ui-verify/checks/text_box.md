@@ -45,3 +45,26 @@ It counts **hard** newlines rather than laid-out lines, deliberately: the
 engine wraps to the box's width using the face's own metrics and this
 harness does not have them, so a wrapped count would be a number neither
 side could check.
+
+## Item notes
+
+### `const EDIT_TAB`
+
+A mode is not a tab. `click_mode_segment` puts the shell in Edit *mode*,
+which is what decides `edit_content` — and leaves whichever tab was already
+showing. The control has to be reached on its own tab, and the first run of
+this check found that out by reporting the control as undeclared.
+
+### `const TOOL`
+
+**Add text, not Edit text**, and the distinction is what keeps two
+features off one gesture. `edit.add_text` arms
+`CanvasTool::TextEdit(TextEditKind::Add)`, whose drag draws a box; the
+separate `view.tool_text` arms `CanvasTool::Text`, whose drag **sweeps** and
+must go on sweeping, because `text_tool_selects_and_marks_in_edit` depends
+on it to make a text selection the markup verbs can act on.
+
+The box was briefly offered from the sweep tool's rung instead, and two unit
+tests said no — correctly. Two features claiming one drag is a choice
+somebody has to make, and taking a shipped gesture away to make room is the
+wrong way to make it.

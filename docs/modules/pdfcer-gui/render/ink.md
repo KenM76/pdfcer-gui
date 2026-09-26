@@ -44,3 +44,34 @@ square still reads `ink=1`. That question belongs to `render::region`'s
 calibration against `pdfcer_render::region_base_geometry_of`, which is where
 O174 was actually caught, and the two instruments are deliberately
 independent of each other.
+
+## Item notes
+
+### `const TONE_CAP`
+
+Nothing downstream cares whether a page has 90 tones or 9,000; the questions
+are *"is it one?"* and *"is it clearly more than one?"*. Capping keeps the
+working set small and the trace line short.
+
+### `const TONE_SAMPLE_TARGET`
+
+A region raster can be 16,383 px on a side — 268 million pixels — and this
+runs on **every** completed render, including the ones arriving during a live
+zoom. A full scan would be a frame-rate defect introduced by an instrument,
+which is a poor trade for a number whose only job is to separate blank from
+not-blank.
+
+### `fn one_dark_row_on_white_paper_is_not_uniform`
+
+This is the assertion that makes the field useful rather than merely
+present: the interesting case is not a busy drawing, it is *one line on
+otherwise empty paper*, which is what a deep-zoom viewport of a CAD sheet
+actually contains when it contains anything at all.
+
+### `fn the_sample_is_bounded_however_large_the_raster`
+
+Not a timing test — those are flaky — but a statement of the invariant
+the stride exists to hold: a raster two orders of magnitude larger than
+the sample target still examines about the sample target's worth of
+pixels. Written as an arithmetic assertion on the stride itself so it
+cannot pass by accident on a fast machine.

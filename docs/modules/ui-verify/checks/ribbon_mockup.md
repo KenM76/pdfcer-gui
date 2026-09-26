@@ -96,3 +96,96 @@ one behaviour the fix deliberately kept.
 So it drives the **File** tab, whose band holds no toggle at all, and it
 parks the pointer at the window's bottom-left corner before capturing. Both
 are stated in [`RESTING_TAB`] and [`assess`] rather than assumed.
+
+## Item notes
+
+### `const RESTING_TAB`
+
+**File**, and the choice is load-bearing rather than alphabetical: it is
+the tab the operator compared, it is the widest one, and — the property
+row 4 depends on — **not one of its controls is a toggle**. Every other tab
+carries at least one command that is selected at rest (View's page display,
+View's armed tool, Markup's shape), and a selected control draws a plate on
+purpose.
+
+### `const MOCKUP_WIDTH`
+
+See the module header: comparing a 1700 px mockup with an 1100 px capture
+makes the collapse ladder look like a defect. The default is stated here so
+a run that does not pass `--width` still compares like with like.
+
+### `const SLACK`
+
+One point. Below what anyone can see, above `egui`'s own rounding, and the
+same slack `egui-shell`'s own layout tests use — deliberately, so a
+disagreement between the two is a real disagreement rather than two
+tolerances.
+
+### `fn board`
+
+The oracle needs its own test for the reason `PROJECT_PLAN.md` §4.1
+keeps restating: a predicate that has only ever been seen to say "yes"
+is indistinguishable from one that cannot say "no". This file's whole
+value is one boolean, and that boolean is asserted here against both
+answers.
+
+### `fn a_control_off_the_capture_is_declined_rather_than_guessed`
+
+The third answer, and the one that keeps the other two honest. A
+control laid out past the window's edge — the state
+`RIBBON_SCALING.md`'s scroll rung exists to make reachable, and the
+state `sizing::render_large`'s zero-height defect actually shipped in —
+has no pixels to sample. An oracle that answered `true` there would let
+every off-screen control certify the band as frameless, which is the
+exact shape of *"a check that cannot fail"*.
+
+The rect is wholly off a 40×30 board, so every one of the four probe
+pairs falls outside and `judged` stays zero.
+
+### `fn a_control_at_the_left_edge_is_still_judged_on_its_other_corners`
+
+This is a real state, not a fixture curiosity: the first item of the
+first group sits at the band's left edge once the band has scrolled.
+Its two left-hand probes would need a negative x, and the two failure
+modes this pins are the two obvious ways to write that:
+
+1. **Plain `u32` subtraction panics**, in debug, on the first
+   left-edge control the harness meets — which is a driven check that
+   dies rather than reporting, on a state the collapse ladder makes
+   ordinary. `checked_sub` is what stops it.
+2. **Declining the whole control** because one corner could not be
+   probed throws away the three corners that could, and a band whose
+   leftmost control is never judged is a band whose frame is never
+   checked where the operator looks first.
+
+Note what this does **not** distinguish, because a falsification
+pass found it out rather than assuming: clamping the probe to zero
+instead of declining it passes this test. It does so for a benign
+reason — a clamped "outside" probe lands on the control's own left
+column, which `far(outside)` then rejects as not-the-band, so the
+corner is skipped either way. The decline is the clearer statement of
+intent; the guard is what actually carries it.
+
+### `fn a_ground_taken_from_a_collapsed_groups_plate_produces_no_verdict`
+
+The incident, 2026-09-05: [`assess`] sampled its reference from the
+first `ribbon.group.file.*` region it found, and on that run the first
+one was `…export.collapsed` — a captioned button with a **plate** under
+it and no items inside it. The plate is `#E8E8EA`; the band is
+`#F2F2F3`; the channel-sum distance is **29** against `far`'s threshold
+of 24. Every probe pair was then discarded as "not the background",
+`judged` fell to zero for the whole band, and the check reported
+*"0 resting band controls were judged for a frame"* — a PASS the day
+before, and nothing measured the day after.
+
+This pins the consequence rather than the cause, deliberately: the
+cause is one `find` predicate in [`assess`] and would be re-broken by
+any future region name that is a `ribbon.group.*` and not a band group.
+What must never change is that a wrong reference **refuses** instead of
+answering — `None`, not `Some(true)`. An oracle that certified the band
+frameless while sampling zero pixels is the exact failure this file's
+header says it exists to remove.
+
+The two figures are the measured ones, so a theme change that narrows
+the gap below `far`'s threshold turns this test red rather than turning
+the check silently vacuous.

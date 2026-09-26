@@ -1367,19 +1367,11 @@ use crate::report::CheckReport;
 
 /// **The contract** — the [`Check`] trait and the [`CheckContext`] every check
 /// is handed.
-///
-/// Its own file under **R2**, and the seam is argued in its header: this module
-/// is the *index* of which checks exist, which grows with every landing, and
-/// that one is the contract, which does not.
 mod harness;
 
 pub use harness::{Check, CheckContext};
 
 /// **The roster** — every check, in the order the suite runs them.
-///
-/// Its own file under **R2**, and the seam is argued in its header: this
-/// module is the *index* of which checks exist, and that one is the *list*,
-/// which grows again every time one is re-ordered.
 mod roster;
 
 pub use roster::all;

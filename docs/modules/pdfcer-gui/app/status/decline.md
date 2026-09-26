@@ -77,3 +77,29 @@ It needs no document identity. A decline that outlived a document close is
 filtered out on the next frame anyway, because a freshly-opened document has
 drawn no page and has nothing selected, which makes the sentence true rather
 than stale.
+
+## Item notes
+
+### `const REGION_DECLINE`
+
+Named for the same reason its two disclosure siblings are: the whole
+requirement of a decline is that it is **on screen and legible**, and
+`ui-verify` can only assert that about a rect the application published.
+Matched literally by `tools/ui-verify`, so renaming it silently un-aims
+whatever check was measuring it.
+
+### `mod fresh`
+
+See `decline/fresh.rs`'s header for the seam. In one line: it is the
+**pure** half of this module's second job, and it leaves behind the half
+that needs a context and a document ([`live`], [`show`]), so each file now
+has one testability story instead of two.
+
+### `mod canvas`
+
+Its own file rather than a function in `record`, for `clipboard`'s and
+`textedit`'s stated reason: it carries an argument of its own — why an
+action raised by a read-only surface must carry a two-armed vocabulary and
+not a [`Declined`] — and that argument would be buried among twenty
+siblings. The size gate decided it as well: this file stood at 1,367
+lines and the variant above is fifty-seven of them.

@@ -24,10 +24,6 @@ pub(crate) fn handles(id: &str) -> bool {
 }
 
 /// Which settings group an id asks to land on, or `None` for the whole window.
-///
-/// One function, so [`handles`] and [`dispatch`] cannot answer differently
-/// about the same id — `routes::target` states that rule and it applies here for
-/// the same reason.
 #[must_use]
 fn focus(id: &str) -> Option<&'static str> {
     // ui-text-exempt: a command id and a settings group key, never displayed.
@@ -67,11 +63,6 @@ mod tests {
 
     /// **Only the font route asks for a group, and it asks for one that
     /// exists.**
-    ///
-    /// The second half is the load-bearing one: the group key is a string
-    /// matched against `widgets::group_focused`'s `key` in the dialog, so a typo
-    /// produces a window that opens at the top with no error anywhere — the
-    /// exact failure the landing exists to prevent, restored silently.
     #[test]
     fn the_font_route_lands_on_a_group_the_dialog_draws() {
         assert_eq!(focus("file.settings"), None);

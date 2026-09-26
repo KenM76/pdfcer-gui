@@ -31,3 +31,57 @@ Nothing here marks the canvas, in either caller. After placement the colour
 is applied and from that instant the page shows what the saved file will
 show. Before placement there is no content yet to mark; the swatch is part
 of the cursor, not part of the document.
+
+## Item notes
+
+### `fn no_colour_would_change_something`
+
+False only when the key already holds the empty array. Named rather than
+inlined so [`the_two_entries_never_offer_the_same_state`] can walk Table
+189's states against both predicates at once.
+
+### `fn removal_would_change_something`
+
+False only when the key is already absent — including when it is absent and
+the operator is looking at a *no colour* entry that is live, which is the
+pair everyone reads backwards.
+
+### `fn mk_value`
+
+Separate from [`row`] because this is the whole of Table 189's four-state
+reading and the only part a test can reach without a live `Ui`. `cmyk` is
+threaded in rather than computed here so the caller owns the `String` the
+returned value borrows.
+
+### `fn component`
+
+Clamped, because the engine reports the file's own numbers **unclamped** —
+*"an out-of-range component is a malformed file, not a value to silently
+correct"* — and a byte is what a swatch needs. The clamp happens on the way
+to the SCREEN and never on the way to the file: nothing here writes a
+clamped value back.
+
+### `fn a_mk_key_reaches_the_swatch_in_four_distinguishable_states`
+
+The two that matter and would not be noticed if they collapsed:
+DeviceGray is drawn and DeviceCMYK is not, and *the file is silent*
+carries a different face from *the file states no colour*. The second is
+the whole reason the engine models the key as `Option<MkColor>` with an
+`MkColor::None` inside, and a surface showing one glyph for both would
+throw that distinction away where the operator reads it.
+
+### `fn an_out_of_range_component_is_clamped_for_the_screen_only`
+
+The engine reports a `/MK` component as the file states it, unclamped,
+because an out-of-range component is a malformed file rather than a
+value to silently correct. A swatch needs a byte, so it clamps — and the
+thing to prove is that nothing clamped comes back the other way, which
+is what `fraction`'s domain being `u8` gives for free and what this pins.
+
+### `fn the_two_entries_never_offer_the_same_state`
+
+The pair this guards is the one that reads backwards: an **absent** key
+offers *no colour* and not *remove*, and an **empty** key offers
+*remove* and not *no colour*. Swap the two predicates and every state
+still lights exactly one entry, so nothing short of the full table
+catches it.

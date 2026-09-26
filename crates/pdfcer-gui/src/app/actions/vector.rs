@@ -15,14 +15,6 @@ use pdfcer_core::vector::{Handle, Matrix, Point};
 
 impl From<VectorAction> for super::action::Action {
     /// So a call site says what it MEANS and the wrapping is not its problem.
-    ///
-    /// Thirty-five places raise one of these, and almost all of them are a
-    /// single `actions.push(…)` at the end of a gesture. Making each write
-    /// `Action::Vector(VectorAction::MoveNodes { … })` would put the enum's
-    /// filing system into every one of them — and the filing system is an R2
-    /// artefact rather than something a drag needs to know about.
-    ///
-    /// `.into()` at the push, `From` here, one line.
     fn from(v: VectorAction) -> Self {
         Self::Vector(v)
     }
@@ -683,40 +675,6 @@ pub enum VectorAction {
 
 /// **How many objects the page has, and how many parts one of them has** —
 /// read once, for the trace line the three part-deletes write.
-///
-/// # Why this is measured at all, and why BOTH numbers
-///
-/// `RESUME.md`'s standing rule: *a trace line must carry the number a wrong
-/// build would get wrong.* For a part-delete that number is not "did something
-/// get deleted" — it is **whether the enclosing object survived**. That is the
-/// entire subject of `Pass 32.0`: on the operator's drawing one text object
-/// holds all 237 pdf-dimension labels, and a build that deleted the object
-/// instead of the label removes every label on the sheet while looking, from a
-/// trace that reported only success, exactly like a build that worked.
-///
-/// So the pair is:
-///
-/// * `objects` — the page's own paint-order count. **Unchanged** is the whole
-///   claim: the enclosing object is still there.
-/// * `parts` — the entered object's lines, runs or points. **One fewer** is the
-///   other half: something really was removed.
-///
-/// Either number alone is satisfiable by a wrong build. `parts` alone is
-/// ambiguous after a whole-object delete, because deletion **renumbers** — the
-/// index the caller held then names a different object, and asking it for a run
-/// count answers about whatever moved into the slot. `objects` alone cannot
-/// tell a delete that removed a line from one that removed nothing.
-///
-/// # Reading it costs a decomposition, and that is already paid
-///
-/// `page_objects` is keyed on `(page, edit_epoch)`. The "before" read is the
-/// decomposition the canvas already built to draw the selection outline the
-/// operator is looking at; the "after" read is the one the very next frame will
-/// build anyway to re-resolve the selection. Neither is a second walk.
-///
-/// The `Ref` is dropped at the end of the statement, before `vector_edit`
-/// takes `&mut doc` — the same ordering `DeleteSelection`'s erase preview has
-/// to observe, and for the same reason.
 fn census(
     doc: &crate::app::state::OpenDoc,
     object: usize,
@@ -762,18 +720,6 @@ fn trace_part_delete(
 
 /// Fold this gesture's `pieces` engine commands into one undo entry, and say so
 /// when the fold does not happen.
-///
-/// A visual line is however many show operators its producer wrote it as, so
-/// one drag or one Delete is `pieces` engine commands. `coalesce_last` answers
-/// `false` **only** when the undo stack was shorter than `pieces`; every change
-/// is applied and only the grouping failed, so the contract's instruction is to
-/// disclose and neither retry nor ignore.
-///
-/// The de-duplication is not cosmetic. `plan_move_text_run` emits one identical
-/// inserted-`Td` sentence per run it had to place an operator for, and a line
-/// of nine pieces would otherwise report the same fact nine times — which
-/// reads as nine separate things having happened. First-seen order is kept, so
-/// the sentences still arrive in the order the engine produced them.
 fn fold_undo(
     session: &mut EditSession,
     pieces: usize,

@@ -414,12 +414,6 @@ pub fn attributions() -> &'static [Attribution] {
 #[cfg(test)]
 mod tests {
     /// **The build stamp is present and is not a placeholder.**
-    ///
-    /// `build.rs` sets `PDFCER_BUILD_TIME` from `PDFCER_BUILD_STAMP` when the
-    /// packager supplies one and from a computed UTC clock otherwise. Both
-    /// paths must produce something an operator can read; an empty string would
-    /// render as "built  from abc1234", which looks like a layout bug rather
-    /// than a missing value.
     #[test]
     fn the_build_stamp_is_populated() {
         let stamp = env!("PDFCER_BUILD_TIME");
@@ -434,11 +428,6 @@ mod tests {
 
     /// The engine is REALLY named, because this is the row that identifies
     /// which pdfcer is inside a given executable.
-    ///
-    /// A `Cargo.lock` this build script could not read would leave the version
-    /// empty and the About box would say "pdfcer - not in this build" about a
-    /// program that is nothing but pdfcer. That reads as a far worse claim than
-    /// a missing date, so it is asserted rather than left to be noticed.
     #[test]
     fn the_engine_reports_a_version_and_a_revision() {
         assert!(
@@ -452,11 +441,6 @@ mod tests {
     }
 
     /// A component line reads as a sentence with and without a commit date.
-    ///
-    /// The date is optional because a dependency taken from a source this build
-    /// cannot run `git` in - crates.io, or an `https://` remote - still has a
-    /// version and a revision worth printing. What it must not do is print a
-    /// dangling "committed" with nothing after it.
     #[test]
     fn a_component_line_survives_a_missing_commit_date() {
         let with = component_line("pdfcer", "0.7.0", "6af5655", "2026-08-18 14:02");
@@ -492,11 +476,6 @@ mod tests {
     }
 
     /// Every field of every attribution is populated.
-    ///
-    /// A half-filled entry is worse than none: it looks like an attribution
-    /// has been made while leaving out the part the licence actually asked
-    /// for. `licence_url` is excluded because `None` is a real answer for the
-    /// licence families here — see its own documentation.
     #[test]
     fn every_attribution_says_all_five_things() {
         let list = attributions();
@@ -526,16 +505,6 @@ mod tests {
     }
 
     /// The dialog and the shipped notice file cannot disagree.
-    ///
-    /// This is the property that makes two surfaces safe rather than twice
-    /// the maintenance. The dialog names a work and its licence; the file
-    /// carries that licence's text. If a work is named in the program and
-    /// absent from the file, the operator is told about terms they have no
-    /// way to read — which is a worse state than either surface alone.
-    ///
-    /// It fails LOUDLY, which is the point. A generated artefact whose only
-    /// check is somebody else running a round-trip rots unnoticed; this
-    /// assertion runs in every `cargo test`.
     #[test]
     fn the_shipped_notice_carries_every_attribution_this_dialog_makes() {
         let notice = notice();
@@ -553,10 +522,6 @@ mod tests {
     }
 
     /// The notice file carries the licence texts, not just their names.
-    ///
-    /// Guards against the regeneration having produced a stub — a truncated
-    /// or failed `cargo about generate` still writes a file, and a file that
-    /// exists is exactly what the assertion above would be satisfied by.
     #[test]
     fn the_shipped_notice_is_a_real_notice_and_not_a_stub() {
         let notice = notice();
@@ -573,11 +538,6 @@ mod tests {
     }
 
     /// pdfcer's own licence line agrees with the file that ships beside it.
-    ///
-    /// Claim-bearing copy: the About box states the terms the operator grants
-    /// to everyone who receives this program. It is verified against
-    /// `LICENSE` rather than trusted, because the cost of the two disagreeing
-    /// is borne by somebody relying on the wrong one.
     #[test]
     fn the_licence_line_matches_the_shipped_licence_file() {
         let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))

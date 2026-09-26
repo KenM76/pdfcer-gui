@@ -97,3 +97,91 @@ the size can be read back out of the annotation the engine produced. Whether
 30 pt text is legible, or whether the `/Rect` grew to hold it, is the
 engine's own tests' business — and the box growing is disclosed off-canvas by
 `annots::textannotstyle` rather than drawn, under R8b rule 4.
+
+## Item notes
+
+### `const BOX_PT`
+
+The same 220 pt [`super::stamp_size`] uses, for the same two reasons:
+unambiguously a drag rather than a click the gesture machine might round to
+one, and small enough to stay on the sheet from any `--doc-point` that is
+itself on it.
+
+### `const WANTED_PT`
+
+**30, and the number is load-bearing in three directions.** It must not be
+`12` (`StampStyle::default()`'s flat size, which a build that threw the typed
+value away and re-defaulted would produce); it must not be `24` (what
+[`super::stamp_size`] presses in the placing dialog, so a build that somehow
+replayed the placing choice would be caught); and it must not be whatever a
+220 pt box derives, which is **asserted at run time** rather than assumed —
+see the module header's first falsification.
+
+### `const SAME_PT`
+
+Half a point, and it is a tolerance rather than an equality because the
+number makes a round trip through a `/DA` string and back. The engine writes
+what it was given; the reader parses what it finds. A build that wrote 30 and
+read back `29.999999` is not the defect the operator reported, and a check
+that failed on it would send whoever read the report into the wrong file.
+Anything a *wrong* build produces here — a dropped edit leaving the derived
+size, a re-default to 12 — is tens of points away, not tenths.
+
+### `const PROPERTIES_TAB_REGION`
+
+⚠ A dock draws only its **active** tab. In Review the right dock opens on
+Comments, so a check that read the trace without pressing this would report
+*"the panel published no size row"* about a build whose panel is perfect.
+That mistake has been made on this project three times, in three checks, and
+produced zero application defects.
+
+### `fn row_size`
+
+# Why the panel's own line and not the `ui-rect` line
+
+`ui-rect` carries a name and a rectangle and no text whatsoever, so a check
+that tried to read the number out of it would answer `None` on every build
+that has ever existed — and would then go on to say the field *"reads
+nothing"*, narrating an absence it never measured. The application grew
+`stamp-label-row` for this. Every caller here treats `None` as a **failure to
+observe** and reports it as such, never as a reading.
+# `last`, and why a fossil is the RIGHT reading here
+
+This suite's standing hazard is reading a whole capture's `last()` and
+getting a line the surface stopped emitting some time ago — three wrong
+defect reports came from exactly that. `stamp-label-row` is the one shape
+where the fossil is the answer: it is written through `diag::trace_changed`,
+a **state slot**, so the newest line is by construction what the row is
+displaying now, and silence means *nothing changed* rather than *nobody is
+looking*. Reading only lines newer than some anchor would turn "the panel
+still shows the old number" — which is the operator's complaint, exactly —
+into "the panel reports nothing", and send the reader to the wrong file.
+
+[`row_size_since`] is the companion for the one question this cannot answer:
+*did the row redraw at all since I pressed Enter?*
+
+### `fn row_size_since`
+
+The distinction [`row_size`] cannot draw. After a successful edit
+there are three outcomes and only two of them are visible to a whole-capture
+read: the row re-reported a new size (good), the row re-reported the same
+size (a failed round trip), or **the row said nothing at all** — which means
+the panel did not redraw it, and points at the selection rather than at the
+size. Separating the third is what stops one message being written about two
+different defects.
+
+### `fn the_typed_size_collides_with_nothing_else_in_the_suite`
+
+`12` is `StampStyle::default()`; `24` is what `stamp_size` presses in the
+placing dialog. A build that ignored this field and re-defaulted, or one
+that somehow replayed the placing choice, would trace a size that looked
+like a pass if [`WANTED_PT`] were either of them. Asserted here because
+the reasoning lives in a doc comment, and doc comments do not fail.
+
+### `fn the_two_regions_are_distinct_and_belong_to_the_same_row`
+
+They are the harness's hand-written copies of two constants in the
+application, and a hand-written copy is exactly where two ends drift.
+Equal names would make the fit assertion pass on a build that draws only
+the spinner — the third defect the module header names, silently
+unmeasured.

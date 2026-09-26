@@ -101,10 +101,6 @@ mod tests {
     use super::*;
 
     /// The replacement note must name the file and must say what is lost.
-    ///
-    /// Both halves. A note saying only *"a file of that name exists"* leaves the
-    /// operator to guess what pressing the button does — and the answer is the
-    /// surprising one.
     #[test]
     fn the_replacement_note_names_the_file_and_the_consequence() {
         let s = replaces_note("drawing-rev-C.dwg");

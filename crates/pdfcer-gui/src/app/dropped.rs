@@ -29,13 +29,6 @@ pub enum Dropped {
 
 /// The extensions the image picker offers, which is the list this must agree
 /// with.
-///
-/// Kept in step with `app::files::pick_image_source`'s filter **by this
-/// comment and a test**, not by sharing a constant, because the two lists mean
-/// different things: that one is what the OS dialog shows, this one is what a
-/// drop is willing to try. They happen to be equal and should stay equal, and a
-/// shared constant would hide the day they legitimately diverge (a format
-/// `image_import` reads but the picker does not advertise).
 const IMAGE_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "bmp", "tif", "tiff"];
 
 /// Classify one dropped path by its extension.
@@ -140,11 +133,6 @@ mod tests {
 
     /// **Case-insensitive**, which is the property that would ship broken on
     /// Windows and be reported as "it works with some files".
-    ///
-    /// A camera writes `IMG_0001.JPG`; a scanner writes `.TIF`. Both are what an
-    /// operator actually drags, and both would fall to `Unknown` under a
-    /// case-sensitive compare — producing the message *"pdfcer does not accept
-    /// .JPG files"*, which is both wrong and insulting.
     #[test]
     fn the_extension_is_matched_without_regard_to_case() {
         for name in ["PHOTO.JPG", "Scan.TIF", "DRAWING.PDF", "logo.PnG"] {
@@ -171,11 +159,6 @@ mod tests {
     }
 
     /// **The drop list and the picker's filter must agree.**
-    ///
-    /// They are two lists in two files, and this is the test that stops them
-    /// drifting — the day someone adds `webp` to the file dialog and an operator
-    /// discovers that the format they can *choose* is one they cannot *drop*.
-    /// The module's own comment says why they are not one constant.
     #[test]
     fn the_drop_list_matches_what_the_picker_offers() {
         // The picker's filter, restated. If this assertion fails, one of the two

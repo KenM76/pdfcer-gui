@@ -69,3 +69,19 @@ It does not clamp a destination into view. A bookmark pointing off the sheet
 is a bookmark pointing off the sheet — the engine's own census counts
 dangling ones — and quietly landing somewhere plausible would hide a
 document defect the operator may need to fix.
+
+## Item notes
+
+### `fn every_view_turns_the_page_before_it_frames_anything`
+
+A view is relative to a page, so one applied before the turn frames a
+region of the wrong sheet — and on a drawing package, where consecutive
+bookmarks point at details of *different* sheets, that lands the
+operator on a plausible-looking wrong detail.
+
+### `fn a_zero_zoom_is_not_a_zoom`
+
+The mirror of this test is the one that cannot be written here and is
+stated instead: a `left` of `0.0` is a REAL left edge and must reach the
+scroll. Collapsing the two conventions is how a destination at a page's
+top-left corner silently becomes "no change".

@@ -35,21 +35,10 @@ const BECAME_ADD_EVENT: &str = "text-edit-became-add";
 
 /// The draft's own account of its selection, as `canvas::textedit::keys`
 /// publishes it: `from=… to=… n=…`, or `none caret=…`.
-///
-/// Emitted by `trace_on_change`, so it appears once per change rather than
-/// once per frame — which is what makes counting the lines meaningful and what
-/// makes the *last* one the current state.
 const SELECT_EVENT: &str = "text-select";
 
 /// `text-edit-plan page=… run=… disposition=… reason=… pinned=…` — **the line
 /// whose absence was the whole defect.**
-///
-/// Raised by `app::actions::textcommit::commit_text_edit` before the engine is
-/// called, so its presence says an action was raised and a plan was built, and
-/// says nothing about whether the engine agreed. Those are separate questions
-/// and this check asks them in that order: a build that reinstates the guard
-/// fails here, a build whose engine refuses fails one step further down with
-/// the engine's own sentence quoted.
 const PLAN_EVENT: &str = "text-edit-plan";
 
 /// `edit-text page=… n=… epoch=… disclosures=…` — the funnel's success line.

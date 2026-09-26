@@ -73,3 +73,62 @@ order, so a permutation that moved a `/Link` would change what is drawn over
 what — a visible change to the page, produced by a gesture whose whole
 subject was tab sequence. That the count is zero is the one correctness
 claim this harness is in a position to make.
+
+## Item notes
+
+### `const HEADER`
+
+Deliberately closed — the section is a diagnostic rather than the panel's
+main job — so a check that assumed it open would report the whole feature
+missing on a correct build. That exact mistake has been made in this harness
+before, on the OCR check, where a collapsed ribbon group made a working
+command look absent.
+
+### `const MIN_ROWS`
+
+Two. With one, every gap is the row's own boundary and the correct answer to
+a drag is *do nothing* — so a run on a one-widget page could not tell a
+working gesture from a dead one, which is the failure mode this check
+exists to catch. It would report PASS on a build with no drag at all.
+
+### `const LAND_DOWN`
+
+Nine-tenths, not the bottom edge. The row's own midpoint decides *before* or
+*after*, so anything past halfway means the same gap — and a point exactly
+ON the boundary is the one place a rounding difference between the
+application's `f32` rectangle and this harness's reading of it could flip
+the answer. The page rail's check makes the same argument for its
+three-quarters across.
+
+### `fn enlarge_forms_pane`
+
+The splitter is resolved by **geometry** rather than by name: whichever
+published `…split.row.N` region sits immediately above the Forms panel body
+is the one that controls its top edge. Naming `dock.right.0.split.row.1`
+would bake in which dock the panel happens to live in and which of three
+stacked panes it is, both of which are layout that can legitimately change.
+
+Silent when there is no splitter above it — a panel that is already the only
+pane in its dock needs no help, and the caller's own assertions report the
+case where the rows still do not appear.
+
+### `fn scroll_rows_into_view`
+
+Returns as soon as at least [`MIN_ROWS`] rows are on screen. If the panel
+runs out of scroll without producing them, the caller's own check reports
+that — this function does not decide it is a failure, because "the section
+is empty on this document" and "the section is below the fold" are different
+findings and only the caller knows which it was looking for.
+
+### `const FIXTURE`
+
+Two widgets on one page — `FullName` and `Subscribe` — which is exactly
+[`MIN_ROWS`] and the smallest document a drag can be distinguished from a
+dead gesture on.
+
+### `fn overlaps`
+
+A caret is a zero-height line, so this is deliberately an *overlap* test
+rather than a containment one: the caret sits ON the row's boundary, and a
+containment test would reject the correct answer half the time depending on
+which side of the edge floating point put it.

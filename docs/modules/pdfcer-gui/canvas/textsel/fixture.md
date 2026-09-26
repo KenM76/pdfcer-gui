@@ -33,3 +33,26 @@ moved both would still pass. Hand-written content streams state the text
 matrices literally, which is the one thing this fixture is *for*: `0 1 -1 0
 100 300 Tm` is the input, in the file, readable, and not the output of
 anything.
+
+## Item notes
+
+### `const LINES`
+
+`[a b c d e f]` is §9.4.2's `Tm`. The rotation lives in `a b c d`; `e f` is
+where the string starts. Every rotated entry is **capitals**, for the reason
+in the module header.
+
+### `fn regenerate_the_rotated_text_fixture`
+
+`#[ignore]`d: it writes into the repository, and a test that edits the
+tree it is run from should be an act rather than a side effect. Run it
+deliberately —
+`cargo test -p pdfcer-gui regenerate_the_rotated_text_fixture -- --ignored`
+— and commit what it produces.
+
+### `fn the_committed_fixture_matches_its_generator`
+
+Without this, the generator and the file could drift and every test that
+reads the fixture would still pass — while the header above, which
+explains the fixture in terms of the generator's `LINES` table, would
+have quietly become fiction.

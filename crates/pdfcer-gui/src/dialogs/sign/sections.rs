@@ -27,6 +27,8 @@
 //! and the loaded identity — the two fields this window's `Debug` impl goes out
 //! of its way to hide — to be widened to `pub(super)` in order to draw a text
 //! box. **A layout split must not widen the visibility of key material.**
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/sign/sections.md`.
 
 use egui_shell::theme::Theme;
 use pdfcer_core::sign::apply::MdpPermission;
@@ -322,13 +324,6 @@ impl SignDialog {
 
     /// **The pre-placed signature fields, one row each, with what the author
     /// attached to them.**
-    ///
-    /// The two disclosures below a row — the `/Lock` and the `/SV` — are
-    /// drawn **here, before the press**, and that is the whole point of reading
-    /// them out of the document rather than waiting for `SignReport`. Signing a
-    /// locked box freezes fields the author nominated; a consequence the
-    /// operator learns about after the file is written is a consequence he did
-    /// not consent to.
     fn field_list(&mut self, ui: &mut egui::Ui, theme: &Theme) {
         // Cloned rather than borrowed, because the loop below assigns to
         // `self.field`. Three small strings per field, once per frame, on a

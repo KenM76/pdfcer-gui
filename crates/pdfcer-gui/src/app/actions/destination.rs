@@ -121,11 +121,6 @@ mod tests {
     }
 
     /// **Every view turns the page first.**
-    ///
-    /// A view is relative to a page, so one applied before the turn frames a
-    /// region of the wrong sheet — and on a drawing package, where consecutive
-    /// bookmarks point at details of *different* sheets, that lands the
-    /// operator on a plausible-looking wrong detail.
     #[test]
     fn every_view_turns_the_page_before_it_frames_anything() {
         for view in [
@@ -164,11 +159,6 @@ mod tests {
 
     /// **A zoom of `0` means "keep the current magnification"** — Table 151
     /// states that equivalence for `zoom` and for nothing else.
-    ///
-    /// The mirror of this test is the one that cannot be written here and is
-    /// stated instead: a `left` of `0.0` is a REAL left edge and must reach the
-    /// scroll. Collapsing the two conventions is how a destination at a page's
-    /// top-left corner silently becomes "no change".
     #[test]
     fn a_zero_zoom_is_not_a_zoom() {
         let k = kinds(&DestView::Xyz {

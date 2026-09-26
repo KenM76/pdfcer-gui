@@ -59,3 +59,52 @@ timestamp"* is how a file ends up claiming 30 February. The engine
 explicitly does **not** check the calendar — *"accepting a caller's nonsense
 date is their claim about their own document"* — so nothing downstream will
 catch an error made here.
+
+## Item notes
+
+### `fn format_pdf_date`
+
+Split out for exactly that reason and for no other. A function that reads
+the clock and formats it in one body is a function whose formatting can only
+be tested by asserting on today's date — which is a test that passes for a
+year and then starts failing at a month boundary for reasons nobody
+remembers.
+
+### `fn civil_from_days`
+
+Howard Hinnant's `civil_from_days`, the algorithm C++20 `<chrono>`
+specifies. The shift to a **March-based** year is the whole trick: with
+March as month 1, the leap day lands on the last day of the year, so the
+day-of-year formula is a single linear expression and the leap rule needs
+no branch at all.
+
+The magic numbers are the algorithm's own and are not tunable:
+`719_468` is the day count from 0000-03-01 to 1970-01-01, `146_097` is the
+days in a 400-year Gregorian cycle, and `153` and `2` are the coefficients
+of the linear month-length pattern March..February. Changing any of them
+does not make it approximate — it makes it wrong.
+
+### `fn known_instants_format_exactly`
+
+Four dates chosen for what each one would break: the epoch itself, a
+leap day, the day after a leap day, and a century year that is **not** a
+leap year. The last is the one a hand-rolled calendar gets wrong — 1900
+and 2100 are divisible by four and are common years — and it is why the
+algorithm is Hinnant's rather than `days / 365`.
+
+### `fn the_engine_accepts_what_this_module_writes`
+
+Not a re-implementation of `MarkupNote::validate` — the real one, called
+on the real output. A format that drifted from what the engine parses
+would be refused at author time with `MarkupDateMalformed`, and the
+operator would meet it as *"my comment did not save"*.
+
+⇒ This is the assertion that makes the two sides of the boundary agree
+by test rather than by both files claiming to follow §7.9.4.
+
+### `fn the_live_clock_is_shaped_like_a_pdf_date`
+
+Deliberately weak — it asserts the SHAPE and a lower bound on the year,
+never the value. A test that asserted today's date would be a test that
+starts failing tomorrow, and the formatting itself is pinned above by
+instants that do not move.

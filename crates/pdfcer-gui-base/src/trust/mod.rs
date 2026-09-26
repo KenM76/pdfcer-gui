@@ -17,18 +17,6 @@ mod tests;
 
 /// The Acrobat/Reader release tracks whose `Security` directory may hold a
 /// downloaded trust list.
-///
-/// **The same four, in the same order, as `pdfcer-cli`'s
-/// `acrobat_trust_store_paths`.** Deliberately mirrored rather than reasoned
-/// out again: two front ends of one program that look in different places
-/// produce the single most confusing support conversation available — *"the
-/// command line finds my store and the window does not"* — and neither answer
-/// is wrong on its own terms.
-///
-/// `DC` first because it is the only track Adobe still ships to; the three
-/// older ones are there because an install that stopped being updated still has
-/// a store, and a stale store is a thing this module can disclose rather than a
-/// thing it must refuse.
 const TRACKS: &[&str] = &["DC", "2020", "2017", "11.0"];
 
 /// The file name Acrobat writes its address book into.
@@ -326,10 +314,6 @@ pub fn examine<G: ObjectGraph + ?Sized>(
 }
 
 /// Load the anchor pool, or nothing.
-///
-/// Returns the [`Located`] alongside the [`Store`] so the caller does not have
-/// to locate twice; the absence path re-locates because it needs the *failed*
-/// state, which by definition produced no store.
 fn resolve_anchors(setting: AcrobatTrustStore, configured: &str) -> Option<(Located, Store)> {
     if setting != AcrobatTrustStore::AtOwnRisk {
         return None;
@@ -341,10 +325,6 @@ fn resolve_anchors(setting: AcrobatTrustStore, configured: &str) -> Option<(Loca
 }
 
 /// Which of the three no-anchors states applies.
-///
-/// Separated from [`resolve_anchors`] because the happy path must not pay for
-/// building an explanation, and because an explanation assembled from the same
-/// inputs twice is one that can be tested on its own.
 fn describe_absence(setting: AcrobatTrustStore, configured: &str) -> Anchors {
     if setting != AcrobatTrustStore::AtOwnRisk {
         return Anchors::OptedOut;
@@ -414,25 +394,6 @@ pub fn modified_date(at: SystemTime) -> Option<String> {
 // ---------------------------------------------------------------------------
 
 /// What a cached [`Report`] was computed from.
-///
-/// **Every input is in the key, and that is the whole safety property.**
-///
-/// A panel redraws sixty times a second and verification is a SHA-256 over the
-/// whole file plus an RSA or ECDSA verify per signature, on top of a 3 MB COS
-/// parse of the anchor store. Doing that per frame is not an option; caching it
-/// against a key that misses an input is worse than not caching, because the
-/// panel then shows a verdict about a file, a setting or an anchor set that is
-/// no longer the one in force — and it looks exactly like a correct answer.
-///
-/// So the key is the file's identity **and** its length **and** its
-/// modification time (the two cheap facts that change when a file is written
-/// to), plus both halves of the trust configuration. Change any of them and the
-/// verdict is recomputed.
-///
-/// `len` and `modified` together rather than either alone: an incremental
-/// save that appends always changes the length, and a same-length rewrite
-/// always changes the time. Neither is sufficient on its own and both are one
-/// `stat`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct CacheKey {
     path: PathBuf,
@@ -443,20 +404,6 @@ struct CacheKey {
 }
 
 /// The `egui` memory slot the cached report lives in.
-///
-/// # Why `egui::Memory` rather than a field on `PanelsState`
-///
-/// Because the cache is an implementation detail of **one panel** and of the
-/// Settings group beside it, and a field on the shared panel state would make
-/// it part of every panel's contract. `dialogs::settings::widgets::text_value`
-/// already keeps its per-control edit buffer here for the same reason and says
-/// so.
-///
-/// It is `insert_temp`, so it is never serialised into the layout file. A
-/// signature verdict is a measurement of a file at a moment; persisting one
-/// across restarts would produce a verdict about a file that may have been
-/// replaced while pdfcer was not running, which is precisely the failure the
-/// key above exists to prevent — reintroduced by a different door.
 fn slot() -> egui::Id {
     egui::Id::new("pdfcer.trust.report") // ui-text-exempt: an egui memory key, never displayed.
 }
@@ -509,11 +456,6 @@ pub fn cached_report(
 }
 
 /// The anchor state as one trace token.
-///
-/// Not an operator string and not in the catalog: it is a diagnostic word a
-/// driven check matches on. `ui-verify` asserts on `anchors=off` /
-/// `anchors=none` / `anchors=used:N`, and a check that matched translated prose
-/// would break the day the prose improved.
 fn anchor_trace(anchors: &Anchors) -> String {
     match anchors {
         Anchors::OptedOut => "off".to_owned(),

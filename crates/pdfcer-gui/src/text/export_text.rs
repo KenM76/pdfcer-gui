@@ -466,13 +466,6 @@ mod tests {
     use super::*;
 
     /// **The scan sentence names the remedy, by its ribbon label.**
-    ///
-    /// This is the assertion the whole feature's honesty rests on. A refusal
-    /// that says *"nothing to export"* and stops is a dead end; one that names
-    /// `Recognise text` is a next step. The label is asserted **literally**, so
-    /// that renaming the command on the ribbon without renaming it here fails
-    /// here rather than in front of an operator hunting for a control that no
-    /// longer has that name.
     #[test]
     fn the_empty_scan_sentence_points_at_the_command_that_fixes_it() {
         for pages in [1_usize, 6] {

@@ -916,11 +916,6 @@ impl Identity {
 }
 
 /// `None` for a field the operator left alone.
-///
-/// Trims first. A field holding one space is an untouched field as far as
-/// anybody looking at the screen is concerned, and writing `/Reason ( )` into a
-/// legal document because of a stray keystroke is the kind of thing nobody ever
-/// finds.
 fn non_empty(value: &str) -> Option<String> {
     let trimmed = value.trim();
     if trimmed.is_empty() {

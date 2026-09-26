@@ -109,15 +109,6 @@ impl PdfcerApp {
 
     /// **The second half of a move** — remove the pages from the document they
     /// came from, now that the first half has demonstrably happened.
-    ///
-    ///
-    /// # Why the disclosure is stamped with the TARGET's epoch
-    ///
-    /// Because the target is the document on screen. `crate::app::status` draws
-    /// the **active** document's disclosure and nothing else, so a sentence
-    /// filed against the source's revision would be recorded, correct, and
-    /// invisible — the shape of failure `app::actions::vector_edit`'s own
-    /// header calls *recorded, not disclosed*.
     fn take_pages_from(
         &mut self,
         source_slot: usize,

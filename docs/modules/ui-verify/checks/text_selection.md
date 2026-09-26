@@ -91,3 +91,45 @@ on the line.
   not describe the page it would be sweeping;
 * **no band had text under it** — phase A never succeeded, so there is
   nothing for phase C's silence to be measured against.
+
+## Item notes
+
+### `const EDIT`
+
+Edit rather than Review, deliberately, and for the *opposite* reason
+[`crate::checks::read_mode`] chooses it: Review would also sweep text —
+`edit_content` is false there too — so a check that compared Read against
+Review would be comparing two selections and would pass against a build that
+had removed the mode gate entirely.
+
+### `const PAGE_TEXT_EVENT`
+
+Read here for the **cost** note rather than for a verdict: a cache that
+worked emits one of these per `(page, epoch)` and a cache that did not emits
+one per gesture frame, and the difference is visible by counting.
+
+### `fn selections`
+
+Filtered on `chars > 0` rather than counting the event, because a *clear* is
+traced too — `chars=0` — and a check that counted lines would be satisfied by
+the gesture that ends a selection as readily as by the one that makes it.
+
+### `fn the_control_mode_is_the_one_that_does_not_sweep`
+
+`EDIT` in particular: comparing Read against **Review** would compare two
+modes that both sweep text, and would pass against a build that had
+deleted the mode gate outright. See [`EDIT`]'s own documentation.
+
+### `fn only_a_non_empty_selection_counts`
+
+`canvas::trace` emits `chars=0` for a clear — deliberately, because a
+clear is a real event with a real cause — so a check that counted
+`canvas-text-selection` lines would be satisfied by the gesture that
+*ends* a selection as readily as by the one that makes it. Phase C's
+whole verdict turns on this filter.
+
+### `fn a_selection_with_no_boxes_is_visible_to_the_filter`
+
+This is the one-derivation promise's failure mode, and it is a FAIL and
+not a SKIP: unlike "no text under the sweep", it is evidence the gesture
+ran and produced half an answer.

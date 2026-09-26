@@ -65,11 +65,6 @@ mod tests {
     use super::*;
 
     /// The shipped scale is the identity, and it is reachable on its control.
-    ///
-    /// Both halves matter. Identity is the "the shipped default reproduces a
-    /// build without the choice" rule; reachability is the recurring one that a
-    /// default must sit inside its own widget's range, or the first operator to
-    /// open the window has their value rewritten without touching anything.
     #[test]
     fn the_shipped_scale_is_the_identity_and_is_reachable() {
         assert!((DEFAULT_UI_SCALE - 1.0).abs() < f32::EPSILON);
@@ -81,12 +76,6 @@ mod tests {
     }
 
     /// Normalising is idempotent.
-    ///
-    /// The property that makes the load path safe to run on its own output —
-    /// which it is, every time pdfcer saves and reloads. A rounding that moved
-    /// a value it had already produced would make the preference drift a step
-    /// per restart, which is the kind of defect that takes a fortnight to be
-    /// noticed and is then very hard to attribute.
     #[test]
     fn normalising_twice_changes_nothing() {
         let mut value = MIN_UI_SCALE;
@@ -109,11 +98,6 @@ mod tests {
     }
 
     /// Every value the control can produce survives normalising unchanged.
-    ///
-    /// The weld between the widget's step and the file's grammar. If the
-    /// slider could land on a value the loader would round away, the operator
-    /// would set a scale, restart, and find a different one — with the file
-    /// on disk holding what they chose and the program showing something else.
     #[test]
     fn every_value_the_control_offers_round_trips() {
         let steps = ((MAX_UI_SCALE - MIN_UI_SCALE) / UI_SCALE_STEP).round() as i32;

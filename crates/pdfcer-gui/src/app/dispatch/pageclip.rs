@@ -33,13 +33,6 @@ pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mu
 }
 
 /// Copy the operand sheets, and on a cut also raise their deletion.
-///
-/// The copy runs **first and unconditionally**, so a cut whose delete is
-/// refused still leaves the pages on the clipboard rather than losing them —
-/// the opposite of `canvas::clipboard::cut`'s ordering, and deliberately so.
-/// There the refusal is *about the thing being cut* and a half-executed cut
-/// leaves a duplicate; here the delete arm's own gate is about the **document**
-/// and a copy is harmless either way.
 fn copy_or_cut(app: &mut PdfcerApp, ctx: &egui::Context, cutting: bool, actions: &mut Vec<Action>) {
     let Some(pages) = app.page_operands() else {
         return;
@@ -103,19 +96,6 @@ fn copy_or_cut(app: &mut PdfcerApp, ctx: &egui::Context, cutting: bool, actions:
 }
 
 /// Paste the clipboard's pages after the current sheet.
-///
-/// # Why after the current page, and not at the end
-///
-/// Because the operator is looking at a sheet, and *"put these here"* is what a
-/// paste means everywhere else in this shell — a markup lands where the page is
-/// showing, a form field lands under the pointer. Appending to the end would be
-/// defensible only if the Pages panel had an insertion caret to point at, and
-/// it does not.
-///
-/// Acrobat's own page paste offers Before/After/First/Last in a dialog. That is
-/// a dialog on every paste, and the engine's `InsertPosition` carries all four
-/// — so the other three are a *future control*, not a missing capability. This
-/// picks the one an operator wants most of the time and says where it went.
 fn paste(app: &mut PdfcerApp, ctx: &egui::Context, actions: &mut Vec<Action>) {
     let Some(crate::canvas::clipboard::Clipped::Pages { bytes, count }) =
         crate::canvas::clipboard::read(ctx)
@@ -148,11 +128,6 @@ mod tests {
     use super::*;
 
     /// This module's ids, and none of the `pages.*` verbs that are not ours.
-    ///
-    /// The negative half is the half that matters. `dispatch::pages` owns
-    /// `pages.delete` and this module raises `PageAction::DeletePages`, so a
-    /// prefix rule here would claim the very command the cut delegates to and
-    /// route it back into this module — a loop that compiles.
     #[test]
     fn handles_the_three_and_none_of_the_neighbours() {
         for id in ["pages.copy", "pages.cut", "pages.paste"] {

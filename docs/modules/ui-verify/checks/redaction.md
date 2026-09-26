@@ -110,3 +110,98 @@ is the field itself.
 | G | **the source file changed** — a redaction that wrote over the document it came from |
 | H | the secret survives in the output, or the survivor does not |
 | I | a second process can still extract the redacted page's text |
+
+## Item notes
+
+### `const DESTINATION_REPLACE_REGION`
+
+Declared by the application **only while the document has an original to
+replace** — `RedactDialog::can_replace_original`, which asks the file system
+— so its absence is ambiguous between "this build does not draw the control"
+and "the fixture is no longer on disk". Phase E2 says so rather than
+choosing.
+
+### `const DESTINATION_INTO_DOCUMENT_REGION`
+
+Declared **unconditionally**, unlike its two siblings: every document can
+be redacted into, including one created in this session with no file to
+replace. So its absence is unambiguous and is a **failure** rather than a
+SKIP — there is no innocent reading of it.
+
+### `const DESTINATION_INTO_DOCUMENT_NOW_REGION`
+
+# Why its absence is a FAILURE and not a SKIP
+
+The deferred destination is the default and, by its own doc's terms, **the
+page does not change** when it is chosen. Offer that alone and the operator
+presses the only button there is and watches nothing happen — which reads
+as the feature having regressed to *"just the 'don't apply yet' button"*.
+
+⇒ This row is the other half. Its absence is exactly that state, so there
+is no innocent reading of it — unconditional, like its *this
+document* sibling above, and for the same reason: every document can be
+redacted into, including one created in this session with no file to
+replace.
+
+### `const STAGING_NOTE_REGION`
+
+Declared only while the deferred destination is selected, which is what
+makes the geometric assertion in phase E3 possible: the sentence must be
+**above** the confirm control, because it is the one thing the operator
+cannot work out by looking — he presses a control about permanent removal
+and *the page does not change*.
+
+The name says **staging**, and it has to: the sentence at this region is
+about the write being deferred, not about undo history. A region name that
+described a different sentence would aim this check at one thing and find
+another — a check that passes while measuring something else, which is this
+harness's own worst outcome.
+
+### `fn digest`
+
+`checks::save_copy`'s, for its reason: the question is *"did this file
+change"*, the adversary is a bug rather than a forger, and the length is
+part of the digest so a truncation cannot hide behind a collision.
+
+### `fn invokes`
+
+A count rather than a presence: this check clicks four different controls
+across two processes, and *"has it ever been invoked?"* would be answered
+`true` by a click made ten seconds earlier.
+
+### `fn extracted_chars`
+
+`Ok(Some(chars))` when it copied something, `Ok(None)` when it declined
+because there was nothing to copy. Used **twice** — once on the fixture and
+once on the redacted output in a second process — which is the whole reason
+it is a function: the two answers have to come from the identical sequence,
+or the comparison at the end is between two different measurements.
+
+### `fn the_generated_fixture_contains_both_strings`
+
+The falsifying phase, asserted at build time as well as at run time.
+Phase 1 of the byte scan reports a harness defect if this is ever false;
+this catches the same thing without launching anything, which is where a
+developer who has just edited [`fixture_bytes`] will see it.
+
+### `fn the_secret_and_the_survivor_are_unrelated_strings`
+
+A shared prefix would make the survivor's presence satisfy a scan for
+the secret, which would turn the check's verdict into its own negative
+control. Asserted rather than eyeballed because the two constants sit
+four lines apart and are deliberately similar in shape.
+
+### `fn the_byte_scan_answers_both_ways`
+
+`contains` is the whole verdict of phases 1–3, and a scan that always
+answered `false` would make the check pass against every build. Both
+directions, plus the empty-needle case, which must be `false` — the
+mathematically correct answer (`true`) would make every run report a
+leak.
+
+### `fn the_selectors_match_the_applications_own_names`
+
+Spelling, and it is not a formality: these strings are matched literally
+against the application's `ui-rect` declarations, so a rename on either
+side silently un-aims every click this check makes and the check reports
+a missing feature that is merely spelled differently.

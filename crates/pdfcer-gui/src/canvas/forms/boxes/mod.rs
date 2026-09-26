@@ -15,32 +15,12 @@ use crate::canvas::mapping::PageMapping;
 use crate::canvas::tool::CanvasTool;
 
 /// The smallest an editor may be drawn, in **screen** points.
-///
-/// A form field is whatever size its author made it, and at 25 % zoom a
-/// perfectly ordinary 12 pt field is three pixels tall. An editor that small
-/// is an editor nobody can read what they typed in, so the box is grown about
-/// its own centre until it reaches this — which means it can overhang the
-/// field it is editing.
-///
-/// That overhang is the deliberate half. The alternative is an editor that
-/// sits exactly on a field the operator cannot see into, which trades a
-/// visible, self-explaining imprecision for an invisible, silent one. It also
-/// has an obvious operator-side remedy that needs no code: zoom in.
 const MIN_EDITOR: Vec2 = Vec2::new(60.0, 18.0);
 
 /// The proportion of an editor's height the text is set at.
-///
-/// A glyph box is taller than its letters, and a font size equal to the box
-/// height clips descenders. 0.62 is the ratio at which an ascender-plus-
-/// descender line fits inside the box with the padding `egui` adds, measured
-/// against the theme's own text style rather than derived.
 const EDITOR_TEXT_RATIO: f32 = 0.62;
 
 /// The smallest and largest point size the editor will set text at.
-///
-/// The lower bound is legibility; the upper bound stops a full-page field —
-/// a signature block, a comment box — from being typed into at 40 pt, which
-/// reads as a bug rather than as fidelity.
 const EDITOR_TEXT_RANGE: (f32, f32) = (9.0, 22.0);
 // ===========================================================================
 // What a widget is, on screen

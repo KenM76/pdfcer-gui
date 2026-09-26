@@ -179,10 +179,6 @@ pub fn scan() -> Library {
 
 /// Read one collection file into a [`Category`], plus how many of its stamps
 /// named no resolvable page.
-///
-/// `None` when the file will not open at all, or opens and has no stamp name
-/// tree — the two cases a caller counts identically because to the operator
-/// they are the same thing: a file in the folder that is not a stamp file.
 fn read_collection(path: &Path) -> Option<(Category, usize)> {
     let doc = Document::load(path).ok()?;
     let collection = pdfcer_core::stamp_file::read(&doc);
@@ -232,14 +228,6 @@ fn read_collection(path: &Path) -> Option<(Category, usize)> {
 }
 
 /// What the gallery calls a stamp.
-///
-/// The display half when there is one, the internal name when there is not —
-/// with the `#` that marks a dynamic stamp stripped, because that character is
-/// a *marker in the format*, not part of what the stamp is called. Acrobat
-/// shows `Received`, not `#Received`.
-///
-/// ⚠ Stripping it here is presentation only. [`CustomStamp::dynamic`] carries
-/// the fact, so nothing downstream has to re-derive it from a string.
 fn label_for(display: &str, internal: &str) -> String {
     let chosen = if display.trim().is_empty() {
         internal

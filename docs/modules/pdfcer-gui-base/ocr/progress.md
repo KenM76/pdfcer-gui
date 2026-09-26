@@ -50,3 +50,17 @@ them from a shared number afterwards is impossible.
 
 It also means the UI thread never blocks on the worker: `try_recv` in a
 loop, drain what is there, draw what arrived.
+
+## Item notes
+
+### `fn from_u8`
+
+An unrecognised value answers `Continue`, which is the safe direction:
+the failure mode of a corrupt read is a job that keeps going and can be
+asked again, not one that silently discards an operator's work.
+
+### `fn cancel_wins_whichever_order_the_two_arrive_in`
+
+Two adjacent buttons and a run the operator has decided against: the
+order the clicks land in must not decide whether a partial layer is
+written. Abandonment wins in both orders.

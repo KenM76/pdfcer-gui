@@ -498,21 +498,6 @@ mod tests {
     const SETTINGS_COUNT: usize = 40;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
-    ///
-    ///
-    /// The list held exactly the thirteen `pdfcer_core::settings` entries and
-    /// had never grown: the *Drawing the page* group's two preferences were
-    /// added on 2026-08-17 and neither reached it, so the window's own stated
-    /// contract — *"a setting cannot be added without answering all three,
-    /// because the code does not compile otherwise"* — was being checked over a
-    /// subset of the window while reading as though it covered all of it.
-    ///
-    /// The `header` helper's required arguments did their job: both settings
-    /// **do** answer all three. What was missing was any check that they were
-    /// non-empty, and nothing would have caught a `""` passed to satisfy the
-    /// signature. That is the whole failure mode the test exists for, and it
-    /// had quietly stopped applying to the newest group — which is this
-    /// project's most common defect shape wearing a fifth set of clothes.
     fn triples() -> Vec<(&'static str, &'static str, &'static str)> {
         vec![
             (theme_title(), theme_silence(), theme_radius()),
@@ -700,11 +685,6 @@ mod tests {
 
     /// Every setting answers all three obligations, and none of the answers
     /// is empty.
-    ///
-    /// The mechanical half of the window's stated contract. A setting added
-    /// with a title and no silence line would compile — the helper takes
-    /// `&str` — and would ship a control that says what it is and never says
-    /// why the operator is being asked.
     #[test]
     fn every_setting_states_its_silence_and_its_radius() {
         let triples = triples();
@@ -721,33 +701,6 @@ mod tests {
     }
 
     /// **The window draws exactly the settings this catalog describes.**
-    ///
-    ///
-    /// So this counts from the **other** end: it parses the dialog's own source
-    /// and counts the [`crate::dialogs::settings::widgets::header`] calls the
-    /// application actually makes.
-    ///
-    /// # Why `syn` and not a grep
-    ///
-    /// The same reason `shell::commands::reach` uses it: a substring search
-    /// would count the word in a doc comment, in a string, or in
-    /// `widgets.rs`'s own `header(ui, title, silence, radius)` sketch — which
-    /// is inside a fenced block and is not code. The syntax tree contains no
-    /// comments, so a header discussed is not a header called.
-    ///
-    /// # Why the file list is written out
-    ///
-    /// `include_str!` needs a literal path, and that is the useful half rather
-    /// than the awkward half: a **moved or deleted module is a compile error**,
-    /// so "scanned nothing" cannot pass as "found nothing" — the trap
-    /// `reach.rs` names in its own header. A *new* group module is the one case
-    /// this cannot see by construction, and it fails in the right direction:
-    /// its settings will be in neither list, the counts still agree, and the
-    /// catalog test then fails on the missing triples. The cost is that the
-    /// author has to add one line here; the alternative is a directory walk at
-    /// test time, which is the runtime file read `reach.rs` refused.
-    /// The group modules the window is built from, paired with their source.
-    ///
     const GROUP_SOURCES: &[(&str, &str)] = &[
         (
             "appearance",
@@ -787,12 +740,6 @@ mod tests {
         // rather than calling it.
 
         /// Counts calls whose callee path ends in `header`.
-        ///
-        /// Matching on the **last segment** rather than the full path, because
-        /// the call is written `widgets::header` today and `super::widgets::header`
-        /// or a plain `header` after an import would be the same call. Nothing
-        /// else in these modules is named `header`, so the loose match costs
-        /// nothing and survives an import style change.
         struct Counter(usize);
         impl<'ast> syn::visit::Visit<'ast> for Counter {
             fn visit_expr_call(&mut self, call: &'ast syn::ExprCall) {
@@ -837,24 +784,6 @@ mod tests {
     }
 
     /// EVERY GROUP MODULE IS IN THE LIST ABOVE — checked, not remembered.
-    ///
-    /// # The gap this closes, which had already been found once and left open
-    ///
-    /// The list above is hand-written, and the comment beside it says so:
-    /// *"a new settings module is invisible to the very test whose job is to
-    /// prove the window and the catalog agree."* That was written on
-    /// 2026-08-28 after `comments.rs` was missed for ten minutes, and it ends
-    /// *"if a third module is ever added, this line is the one to remember"*.
-    ///
-    ///
-    /// ⇒ So this test reads `dialogs/settings/mod.rs` and requires every module
-    /// it declares to appear above. Two modules are excluded **by name and with
-    /// a reason**, which is the part that keeps the exclusion honest:
-    ///
-    /// | module | why it is not a group |
-    /// |---|---|
-    /// | `widgets` | the helpers the groups are built from; it draws no setting of its own |
-    /// | `preset` | the preset row at the top of the window. It DOES call `header`, and that is precisely why it must be excluded rather than forgotten: a preset is not a setting, and counting its header would inflate the total by one forever |
     #[test]
     fn every_settings_module_is_counted() {
         // `defaultapp` (O173) is the third entry and the least obvious. It is
@@ -897,16 +826,6 @@ mod tests {
     }
 
     /// Every setting that changes SAVED BYTES says so, and no other does.
-    ///
-    /// The distinction the window exists to make legible: a setting whose blast
-    /// radius is the file on disk is a different kind of decision from one that
-    /// only changes the preview, and an operator must be able to tell them
-    /// apart from the words. Four of thirteen touch bytes.
-    ///
-    /// Asserted in both directions. A preview setting whose radius grew the
-    /// word "file" would be quietly claiming a consequence it does not have —
-    /// which trains the operator to stop reading these lines, and the four that
-    /// matter are the ones that then get skipped.
     #[test]
     fn exactly_the_byte_changing_settings_say_they_change_the_file() {
         // "the file you save" / "the bytes pdfcer writes" / "the saved file".
@@ -1005,16 +924,6 @@ mod tests {
     }
 
     /// Every default that is a GUESS admits it, in its own note.
-    ///
-    /// Obligation 1, mechanised — and the test that would have failed on the
-    /// old shell for five of these. `pdfcer-core` grades `image_minify`,
-    /// `unmappable_code`, `actual_text`, `missing_as` and `trailing_eol` tier
-    /// (d), reasoned inference, exactly as explicitly as it grades the two that
-    /// already said so, and all five read as confident recommendations.
-    ///
-    /// The predicate is deliberately loose about wording and strict about
-    /// presence: what matters is that the sentence disclaims external
-    /// authority, not that it uses one phrasing.
     #[test]
     fn every_guessed_default_says_it_is_a_guess() {
         let admits = |note: &str| {
@@ -1042,12 +951,6 @@ mod tests {
     }
 
     /// The one SOURCED default says it is sourced, and says it differently.
-    ///
-    /// The counterpart to the test above, and the reason that one is not
-    /// enough. If every note hedged, the operator would have no way to tell
-    /// which of thirteen defaults rests on evidence. CMYK JPEG polarity is
-    /// tier (c) — every reference engine agrees — and it must not read like a
-    /// guess.
     #[test]
     fn the_sourced_default_claims_its_evidence() {
         let note = polarity_never_note();
@@ -1063,18 +966,6 @@ mod tests {
 
     /// **The colour section offers two options and neither is the deleted
     /// third.**
-    ///
-    /// This replaces `the_acrobat_divergence_names_the_option_that_matches`,
-    /// which asserted that a note naming the divergence from Acrobat also named
-    /// the option that restores parity. That note is **gone** — the default now
-    /// matches Acrobat (`OPERATOR_REQUESTS.md` O52), so a sentence saying pdfcer
-    /// deliberately differs is backwards rather than redundant.
-    ///
-    /// The replacement asserts the **absence**, which is the harder half. A
-    /// deleted string leaves no test behind it, so nothing would notice a
-    /// future edit reinstating either one — and *"the old pdfcer formula"* is
-    /// exactly the kind of option somebody restores while looking for
-    /// something else.
     #[test]
     fn the_superseded_formula_and_its_divergence_note_are_gone() {
         let section = format!(
@@ -1100,10 +991,6 @@ mod tests {
     }
 
     /// The unknown-theme sentence quotes the token and promises to keep it.
-    ///
-    /// Both halves matter. Quoting is what makes the cause legible; the promise
-    /// is what stops the operator "fixing" it by picking one of the three,
-    /// which would discard a newer version's setting.
     #[test]
     fn an_unknown_theme_is_named_and_kept() {
         let said = theme_unknown("midnight");
@@ -1112,10 +999,6 @@ mod tests {
     }
 
     /// Every store location says something, including the one with no home.
-    ///
-    /// The `None` case is the one worth pinning: an operator whose settings
-    /// cannot be written anywhere must be told before they spend a minute
-    /// choosing, not after they press Save.
     #[test]
     fn every_store_location_is_described() {
         use std::path::PathBuf;
@@ -1151,10 +1034,6 @@ mod tests {
     }
 
     /// The two disclosures added in this port are actually present.
-    ///
-    /// Both were documented in `pdfcer-core` and shown nowhere in the old
-    /// window. A test rather than a comment, because "we should surface that"
-    /// is the kind of intention that survives one session.
     #[test]
     fn the_two_engine_facts_the_old_window_hid_are_disclosed() {
         assert!(

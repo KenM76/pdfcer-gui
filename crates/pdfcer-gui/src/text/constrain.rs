@@ -39,10 +39,6 @@ mod tests {
     use super::*;
 
     /// Every variant has words, and the two axes do not share one sentence.
-    ///
-    /// The sharing case is the one worth guarding: a copy-paste that left both
-    /// axes saying "left and right" would be invisible in review and would tell
-    /// the operator the exact opposite of the truth half the time.
     #[test]
     fn each_lock_has_its_own_sentence() {
         let h = caption(Lock::Axis(Axis::Horizontal));

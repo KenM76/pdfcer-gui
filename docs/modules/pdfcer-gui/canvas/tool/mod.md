@@ -149,3 +149,107 @@ picks the hand tool, opens another drawing and finds themselves back in the
 select tool would report that as a bug. So the tool stays in `Memory`
 precisely *because* `Memory` outlives documents, which is the property that
 disqualified it for the selection.
+
+## Item notes
+
+### `fn space_borrows_the_hand_and_releasing_returns_the_previous_tool`
+
+The third case is the one that matters: releasing space returns to
+`Select`, and it does so without anything having been stored, so there
+is no restore step that can be skipped.
+
+### `fn only_the_hand_pans_and_each_tool_paints_its_own_cursor`
+
+The markup rows are the ones that matter now: a markup tool that
+answered `true` to `pans_with_primary` would be handed a blank pointer
+frame by `canvas::interact` and could never draw anything at all — a
+tool that arms, shows a crosshair and does nothing, which is the exact
+shape of an affordance that looks available and is inert.
+
+### `fn the_text_tool_sweeps_rather_than_pans_and_says_so_with_the_pointer`
+
+All three halves, because each has a distinct and plausible failure. A
+text tool that answered `true` to `pans_with_primary` would be handed a
+**blank** pointer frame by `canvas::interact` and could never sweep
+anything at all — a tool that arms, shows an I-beam and does nothing,
+which is the exact shape of an affordance that looks available and is
+inert. A tool with no cursor would be indistinguishable from the select
+tool it replaces, on a control whose entire visible effect is the pointer.
+And an `is_text` that answered `true` for a *markup* tool would hand an
+armed pen's press to the text gesture.
+
+### `fn toggling_the_text_tool_arms_it_retires_it_and_takes_it_from_another_tool`
+
+`arm_markup`'s two halves for a tool with no kind, and both matter for the
+reason that test gives: a build that only ever armed would pass a test of
+the first press alone, and the operator's complaint would be that the tool
+cannot be put down.
+
+The third case is the one `toggle_text`'s own docs argue: arriving from a
+markup tool must **take** the text tool rather than dropping to Select,
+or one press would mean "put the pen down" and a second one "pick up the
+I-beam".
+
+### `fn space_borrows_the_hand_out_of_the_text_tool_and_escape_leaves_it_alone`
+
+The first is the property the derived-never-stored design exists for,
+asserted for the new tool exactly as it is for markup above.
+
+The second is a **deliberate absence**, asserted so that adding an Escape
+rung later is a decision rather than an accident. `canvas::keys`' rung 3b
+retires an armed markup or measure tool, and the text tool is
+deliberately not on it: those two paint a crosshair promising a gesture
+that *writes to the document*, while this one promises a selection, and —
+the deciding half — Escape's rung 5 already means "clear the selection"
+in this tool. A further press that silently moved the operator from
+sweeping text to marqueeing objects would be a change of gesture they did
+not ask for, on the key they pressed to clear something. See
+`canvas::keys`' header.
+
+### `fn the_text_tool_is_permitted_in_every_mode_where_a_pen_is_not`
+
+The Edit row (`FULL`) is the one that would break the feature outright: a
+capability check copied from the markup arm would fail on the frame the
+operator entered the one mode this tool exists for. The Read row
+(`NONE`) is the one that would break it quietly, by taking a reading tool
+away from the reading mode.
+
+Asserted beside the *markup* tool in the same loop, so this is a statement
+about the difference rather than about the text tool alone: a build that
+stopped retiring anything would pass the first half and fail the second.
+
+### `fn the_cursor_precedence_runs_tool_then_gesture_then_grip`
+
+This rule was four `if`s in the middle of `canvas::interact` and had no
+test at all — it needed a window to reach. Moving it here is what makes
+it assertable, and the rungs are asserted **against each other**: each
+case supplies a lower rung that would answer differently, so a build
+that consulted them in the wrong order fails rather than merely
+producing *a* cursor.
+
+### `fn arming_a_markup_kind_toggles_that_kind_and_switches_between_kinds`
+
+Both halves, because a build that only armed would pass a test of the
+first press alone — and the operator's complaint would be that the tool
+cannot be put down.
+
+### `fn disarming_markup_reports_whether_there_was_anything_to_disarm`
+
+`false` with nothing armed is the load-bearing half: without it Escape
+would be consumed by a tool that was not armed, and the selection ladder
+would need two presses to leave a rung.
+
+### `fn space_borrows_the_hand_out_of_the_markup_tool_and_returns_the_kind`
+
+The property the whole "derived, never stored" design exists for,
+asserted for the new tool: an operator drawing a rectangle who holds
+space to reposition the page must get the rectangle tool back on
+release, with its kind intact.
+
+### `fn a_focused_text_field_keeps_the_space_bar`
+
+Built against a real `TextEdit` for the same reason
+`canvas::tests::a_focused_text_field_keeps_delete_for_itself` is:
+`text_edit_focused()` resolves the focused id and looks for a
+`TextEditState` under it, so a hand-requested focus on a bare id would
+pass vacuously.

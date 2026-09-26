@@ -20,21 +20,6 @@ const REGION_SHEET: &str = "import-text.sheet"; // ui-text-exempt: diagnostic re
 const REGION_FACE: &str = "import-text.face"; // ui-text-exempt: diagnostic region name
 
 /// The faces this window offers.
-///
-/// # Five of the fourteen, and the narrowing is the design
-///
-/// `Std14` has fourteen members; twelve are text faces and two (`Symbol`,
-/// `ZapfDingbats`) are pictorial. A chooser listing all fourteen would offer
-/// **Dingbats** for a page of prose, which is not a choice anybody is making,
-/// and would offer four Helvetica variants where the bold and oblique ones are
-/// *emphasis* rather than a body face — and this import sets one face for the
-/// whole document, so emphasis has nothing to contrast with.
-///
-/// ⇒ What is left is the actual decision: **serif, sans, or monospace**, plus
-/// the two bolds an operator might want for a short notice. `Courier` earns its
-/// place because a text file is very often a listing, a schedule or a register
-/// where columns aligned with spaces only survive in a monospaced face — which
-/// is the one case where the *font* changes whether the import is readable.
 const FACES: &[pdfcer_core::fontdata::Std14] = &[
     pdfcer_core::fontdata::Std14::Helvetica,
     pdfcer_core::fontdata::Std14::HelveticaBold,
@@ -44,38 +29,12 @@ const FACES: &[pdfcer_core::fontdata::Std14] = &[
 ];
 
 /// The narrowest and widest font size the spinner will reach, in points.
-///
-/// Six is below the smallest an operator would set for body text and is where
-/// a `PageTooShort` refusal stops being plausible; seventy-two is one inch, past
-/// which a single line no longer fits an A4 measure and the import becomes one
-/// word per page. Both ends are far outside anything reasonable **on purpose**:
-/// this is a guard against a scrub running away, not a judgement about
-/// typography.
 const SIZE_RANGE: std::ops::RangeInclusive<f64> = 6.0..=72.0;
 
 /// The margin spinner's range, in points.
-///
-/// Zero is legal and is what somebody importing a listing to be re-cropped
-/// wants; the ceiling is a quarter of A4's short edge, past which the column is
-/// narrower than the margins around it and `PageTooShort` becomes likely. The
-/// engine refuses that case by name and this range makes reaching it a
-/// deliberate act rather than an accident of a scrub.
 const MARGIN_RANGE: std::ops::RangeInclusive<f64> = 0.0..=150.0;
 
 /// Where the pages land, as the four radios offer it.
-///
-/// A local enum **only** for the radio state, converted to
-/// `pdfcer_core::pageops::InsertPosition` at the point of use — copied
-/// deliberately from `dialogs::insert_pages`, whose own note gives the reason:
-/// two of the four need the current page index, which the radio does not carry
-/// and the dialog does.
-///
-/// ⇒ It is a *copy* rather than a shared type, and that is worth defending:
-/// the four variants are a fact about **this program's vocabulary for
-/// inserting**, and both dialogs converting the same four into the same engine
-/// enum at the same place is the property that matters. A shared enum would add
-/// a module for four unit variants and would not make the two windows any more
-/// alike than reading them side by side already does.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Where {
     /// Before the page the operator is looking at.
@@ -158,14 +117,6 @@ impl ImportTextDialog {
     }
 
     /// The template the chosen controls describe.
-    ///
-    /// Built from `PageTemplate::new()` and then overridden, rather than
-    /// constructed field by field. `PageTemplate` is the engine's type and it
-    /// gains fields — `leading`, `alignment`, `color` and `unmappable` are all
-    /// left exactly as the engine set them, which is the whole point: this
-    /// window chooses the four things it draws controls for and takes the
-    /// engine's answer for everything else, so a field added tomorrow arrives
-    /// with the engine's default rather than with a zero this shell invented.
     fn template(&self) -> pdfcer_core::text_edit::PageTemplate {
         let mut template = pdfcer_core::text_edit::PageTemplate::new();
         let (w, h) = sheet_of(self.sheet).size_pt();
@@ -310,25 +261,12 @@ impl ImportTextDialog {
 }
 
 /// The sheet at `index`, clamped.
-///
-/// Clamped rather than indexed, because `PaperSize::ALL` can shrink between
-/// builds as well as grow — the engine says the table moves — and a stored
-/// index from a longer list must not panic a window open.
 fn sheet_of(index: usize) -> pdfcer_core::paper::PaperSize {
     let all = pdfcer_core::paper::PaperSize::ALL;
     all[index.min(all.len() - 1)]
 }
 
 /// The index of the sheet this window opens on.
-///
-/// **A4, found by id rather than by position.** `PaperSize::ALL`'s order is
-/// the engine's business and it has said the table will grow; a hard-coded
-/// index would silently open on a different sheet the day one is inserted
-/// before A4 — and a window that opens on the wrong paper is a defect an
-/// operator only notices after importing.
-///
-/// Falls back to the first entry, which cannot be wrong in a way that matters:
-/// the chooser is right there and the sheet is the first thing in the window.
 fn default_sheet() -> usize {
     pdfcer_core::paper::PaperSize::ALL
         .iter()
@@ -337,12 +275,6 @@ fn default_sheet() -> usize {
 }
 
 /// The label for the face at `index` in [`FACES`], clamped.
-///
-/// A one-line adapter over `text::import_text::face_name`, and the clamp is
-/// the whole reason it exists: this window stores an INDEX, and a stored index
-/// from a longer list must not panic a window open. The words themselves live
-/// in the catalogue rather than here, because `check-ui-strings` reads the
-/// catalogue — a displayed label spelled in this file is one the gate reports.
 fn face_name(index: usize) -> &'static str {
     t::face_name(FACES[index.min(FACES.len() - 1)])
 }

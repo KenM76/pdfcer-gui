@@ -67,3 +67,12 @@ provenance line rather than a program.
 sequence for the same document and the engine's writer tests own that claim.
 What is asserted here is that the shell reaches the full writer, keeps the
 bytes it measured, and puts them where the operator asked.
+
+## Item notes
+
+### `const INVOKE`
+
+`mode.edit` first, for the usual reason: driving from a named mode makes
+the run reproducible rather than dependent on whatever mode the last session
+left behind. Compaction is permitted in every mode — it is a save — so this
+is reproducibility rather than a gate.

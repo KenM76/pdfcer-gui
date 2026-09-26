@@ -153,3 +153,104 @@ absent; a seeded value that turns out to equal the shipped default; or the
 two runs disagreeing about `suggestion=`, which would mean the control and
 the seeded measurement were taken against different pages. Each says which,
 and none of them is reported as a pass.
+
+## Item notes
+
+### `const INVOKE_LIST`
+
+Order is not significant here (unlike a mode-then-tool pair, where it is
+everything), because the three windows are independent `Option` fields on
+the dialog host and all three can be open at once.
+
+### `const EVENTS`
+
+Kept as a pair so a missing line can name the command that should have
+produced it. *"No `export-text-open`"* sends a reader to the dialog;
+*"no `export-text-open`, from `file.export_text`"* sends them to the
+dispatcher first, which is where a rung that never fired actually shows.
+
+### `const PREFS_FILE`
+
+**Reset to the bare sandbox seed** before the control run and rewritten
+before the second — never deleted. Those are not the same act: deletion
+takes `ask_default_app = false` with it, and the symptom is the O173 offer
+opening a real OS window in front of this check's own process. See
+[`crate::sandbox::reset_prefs`], and `print_remembered`'s account of what
+that cost when it was learned.
+
+### `struct Seed`
+
+Five columns rather than `print_remembered`'s three, for the two reasons in
+the module header: three of the twelve are spelled differently in the file
+and in the trace, and one field name (`scope`) appears on two events.
+
+### `const SEED`
+
+Every value is chosen to differ from this build's shipped default — and
+that is *checked at run time* against the control launch rather than
+trusted here, because a default that moves would otherwise turn this table
+into decoration without anything going red.
+
+⚠ `export_image_dpi` is written `150` and read back `150` because the
+dialog's `dpi` is an `f32` printed with `Display`, which drops a trailing
+`.0`. A seed of `150.5` would read back `150.5` and would also be fine; a
+seed of `150.0` would read back `150` and would report a defect that does
+not exist. That is the one row where the two vocabularies could drift
+without either side being wrong, so it is spelled the way the trace spells
+it.
+
+### `fn launch_all_three`
+
+Factored out because this check does it twice with different files on disk,
+and the two runs must reach the windows by **identical** means — a control
+that arrived by a different route would not be a control.
+
+### `fn open_lines`
+
+The FIRST of each, not the last. Each window emits its line once, as it
+is built; a second would mean the window was opened twice, and the first is
+the one produced by the preferences file this check just wrote.
+
+### `fn every_seeded_value_is_a_single_file_token`
+
+The seed is written straight into `preferences.txt`. A value the parser
+does not recognise would be dropped with a `PrefNote::BadValue`, the
+field would come back as its default, and this check would report a
+defect in the application that is really a typo in this file.
+
+This test cannot call `pdfcer-gui`'s parser — `ui-verify` does not
+depend on it — so it pins the shape instead: non-empty, lower case, and
+free of the whitespace that would split it into two trace fields.
+
+### `fn the_seed_touches_only_exporting`
+
+The file this check writes replaces the whole preferences file. Seeding
+a key outside its subject would be this check quietly changing
+something else — and, under `--shared-profile`, changing it for every
+check that runs after it.
+
+### `fn each_seeded_row_reads_a_different_event_and_field`
+
+`scope=` appears on the image window's line and on the text window's,
+with different shipped defaults. A uniqueness test over `field` alone
+would fail on a correct table; one that then "fixed" it by dropping a
+row would silently stop asserting one of the two windows' page scope.
+
+So this asserts the pairs are distinct **and** that the duplication is
+still there — if a future edit renamed one of them, this test says so
+rather than going quietly green on eleven rows.
+
+### `fn only_the_boolean_rows_translate_between_the_file_and_the_trace`
+
+The file spells a bool `true`/`false` (`opening::bool_key`); the three
+traces spell it `1`/`0` (`u8::from`). Every other row is the same
+string on both sides. A row whose two columns differ for any *other*
+reason is a typo that would report a defect in the application, and it
+would look exactly like a deliberate translation.
+
+### `fn the_invoke_list_names_the_command_behind_every_event_the_seed_reads`
+
+The list is an environment variable and the events are constants, so
+nothing but this ties them together. Adding a fourth export window
+means both, and a seed row naming an event nobody rings would report
+*"the window did not open"* for ever.

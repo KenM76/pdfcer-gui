@@ -13,12 +13,6 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// The mode this runs in.
-///
-/// **Read**, deliberately, and it is an assertion rather than a convenience.
-/// An export reads the document and writes elsewhere, so there is no mode in
-/// which it should be refused — and a reading stance exporting a drawing is
-/// exactly what a reading stance is for. If a capability gate ever creeps onto
-/// this command, this is where it shows up.
 const MODE: &str = "read";
 /// The window's own region.
 const WINDOW: &str = "dialog:export-dxf";

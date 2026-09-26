@@ -11,11 +11,6 @@
 use egui_shell::manifest::Shell;
 
 /// `(tab id, group id, priority)` — lower collapses first.
-///
-/// A group absent from this table **never collapses**, which is the safe
-/// default and the reason absence rather than a sentinel means "never": a tab
-/// added later without a ladder entry behaves exactly as it did before this
-/// feature existed.
 const LADDER: &[(&str, &str, u32)] = &[
     // FILE — the tab is open/save/print. Everything else is occasional.
     ("file", "pdfcer", 1),    // About, Settings — visited once a month
@@ -78,12 +73,6 @@ mod tests {
     use super::*;
 
     /// **Every entry names a group that exists.**
-    ///
-    /// The guard that pays for keeping the ranking away from the definitions.
-    /// A renamed group would otherwise lose its rung silently: the ribbon
-    /// would still work, still collapse, and simply never collapse *that*
-    /// group — a defect with no symptom until an operator's band overflows at
-    /// a width where it used not to.
     #[test]
     fn every_ladder_entry_names_a_real_group() {
         let shell = crate::shell::manifest::built_in();
@@ -106,12 +95,6 @@ mod tests {
     }
 
     /// **The ladder is actually applied**, and to the right groups.
-    ///
-    /// Named separately from the test above because they fail for opposite
-    /// reasons: that one catches a stale table, this one catches an `apply`
-    /// that stopped being called — which would leave every group unrankable
-    /// and every band collapsing nothing, a state that looks exactly like the
-    /// feature having never been built.
     #[test]
     fn the_built_manifest_carries_the_priorities() {
         let shell = crate::shell::manifest::built_in();
@@ -129,13 +112,6 @@ mod tests {
     /// **Every tab keeps at least one group off the ladder** — except the
     /// one where that is a deliberate decision, which is named here so the
     /// exception cannot be acquired by accident.
-    ///
-    /// This is the invariant that stops the ladder from being tuned into
-    /// uselessness. A tab whose every group may collapse can reach a width at
-    /// which it is a row of identical chevron buttons and nothing else: the
-    /// operator can still reach every command, and the band has stopped
-    /// telling them anything. Word never does this — Clipboard is expanded at
-    /// 460 pt, the narrowest width measured.
     #[test]
     fn every_tab_keeps_something_expanded() {
         // Tools is the deliberate exception: every group on it is an

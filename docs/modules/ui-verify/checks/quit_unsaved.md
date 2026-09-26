@@ -49,3 +49,25 @@ learned to nag.
 No binary, `--no-input`, no diagnostic channel, no way to make an edit (the
 fixture or the tool is missing), or a window that will not close — the last
 being a property of the machine on the day.
+
+## Item notes
+
+### `const SAVE_ALL_REGION`
+
+Its absence is an assertion, not an omission: the button is drawn if and
+only if more than one document is dirty, so a run with one must show no such
+region at all. See `dialogs::unsaved`'s `REGION_SAVE_ALL`.
+
+### `fn the_check_asserts_both_directions`
+
+Phase A: a clean close must NOT be held. Phase B: a dirty close MUST be.
+Either alone passes against a wrong build — A alone against one that
+never asks, B alone against one that asks always — and the pair is what
+pins the question as *conditional*.
+
+### `fn the_ending_is_the_harmless_one`
+
+Pinned as a sentence because it is a policy rather than a mechanism: this
+suite runs unattended on the operator's own machine, and a check that
+ended on Save would leave a file behind while one that ended on Discard
+would throw work away to prove that it could.

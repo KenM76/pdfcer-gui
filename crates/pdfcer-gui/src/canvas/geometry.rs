@@ -18,6 +18,8 @@
 //! were pointing. Neither can be unit-tested through a `ScrollArea`; both
 //! are trivially testable as arithmetic. So they are arithmetic, and the
 //! widget code that calls them ([`super::show`]) is wiring.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/canvas/geometry.md`.
 
 /// The scroll offset a middle-drag pan should move to, clamped to what the
 /// canvas can actually show.
@@ -64,14 +66,6 @@ fn margin(display: f32, viewport: f32) -> f32 {
 /// The pasteboard, as a multiple of the viewport. O23: half a viewport puts
 /// a page corner at the screen's centre, a whole one puts it at the opposite
 /// corner, and the operator asked for the second.
-///
-/// **A whole viewport is also, exactly, the placement at which the sheet
-/// stops being visible at all** — and that is what O186 turned out to be. The
-/// fraction is NOT reduced to fix it: it is still one viewport, because the
-/// operator's sentence is still the rule. [`MIN_SHEET_ON_SCREEN`] is
-/// subtracted from it instead, so the page corner arrives at the opposite
-/// corner and **can be seen there**, which is what he was asking for in the
-/// first place. See that constant for the measurement.
 const PASTEBOARD_FRACTION: f32 = 1.0;
 
 /// **The band of the strip the pasteboard must always leave on screen**,
@@ -140,19 +134,6 @@ const PASTEBOARD_FRACTION: f32 = 1.0;
 const MIN_SHEET_ON_SCREEN: f32 = 32.0;
 
 /// The sliver [`pasteboard`] actually reserves for a given viewport.
-///
-/// [`MIN_SHEET_ON_SCREEN`] normally, and **half the viewport** on a canvas
-/// narrower than twice it. The second case is not hypothetical — a docked
-/// panel can be dragged down to a few points, and a frame measured before
-/// layout reports a viewport of zero — and the `min` is what keeps the
-/// pasteboard non-negative there without a separate guard. At `viewport = 1.0`
-/// the pasteboard becomes `0.5`: still a pasteboard, still positive, and the
-/// interval [`visible_origin_range`] returns is still non-inverted, which is
-/// the property the rest of this module is entitled to assume.
-///
-/// Deliberately a function rather than an expression inlined at its one call
-/// site, so the tests can measure the rule directly instead of inferring it
-/// from a pasteboard that has already had the overhang branch applied to it.
 #[must_use]
 fn sheet_sliver(viewport: f32) -> f32 {
     MIN_SHEET_ON_SCREEN.min(viewport / 2.0)

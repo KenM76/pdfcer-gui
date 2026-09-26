@@ -61,3 +61,64 @@ skew and no JPEG ringing, so this check establishes the **plumbing** and
 establishes **nothing** about recognition quality on real scanned material.
 
 # Mouse only, and one consequence that matters
+
+## Item notes
+
+### `const READ`
+
+**Read, deliberately, and it is half of what this check is for.** The
+operator's instruction is that OCR be available in Read, and the first
+implementation of this feature put the command on the **Tools** tab —
+`RIBBON_IA.md` §5.7's placement — where Read cannot reach it at all, Read
+being shown `["file", "view"]` alone. Driving the ribbon in Read is what
+turns that from an argument into an observation.
+
+### `const EDIT_EVENT`
+
+Both are asserted, and the pair is the point. The dialog's line says *I
+asked*; this one says *it happened*. A build where the action was raised and
+dropped emits the first and not the second, and that is a state with a
+dialog claiming the text is in the operator's document while the document
+has none.
+
+### `const RECOGNITION_FRAMES`
+
+Generous. Recognition of one page measured about one second in a release
+build and twenty in a debug one, and this harness drives whichever binary it
+was pointed at. A wait that was too short would report "recognition did not
+happen" about a build that was still working, which is the worst available
+failure message.
+
+### `fn default_fixture`
+
+`tools/ui-verify/` → up two → the workspace root. Stable whatever the
+harness was invoked from and whatever `--source-root` says, which is the
+property the first two attempts at this lacked — see [`drive`].
+
+### `fn digest`
+
+Not cryptographic and does not need to be: the question is *"did this file
+change"*, the adversary is a bug rather than a forger, and carrying a SHA-2
+implementation into this crate to answer it would be a dependency for
+nothing. The **length is part of the digest** so a truncation cannot be
+hidden by a hash collision, which is the only failure mode a 64-bit hash
+realistically has here.
+
+### `fn the_digest_notices_a_single_changed_byte_and_a_truncation`
+
+Phase E's whole verdict rests on this function, so a digest that answered
+"unchanged" for a modified file would turn the check's most important
+assertion into a formality that always passes.
+
+### `fn the_check_drives_read_and_a_tab_read_actually_has`
+
+Pinned because the two together *are* the finding: `RIBBON_IA.md` §5.7
+puts OCR on Tools, Read is shown `["file", "view"]`, and a check that
+quietly drove Edit instead would pass against a build in which OCR is
+unreachable in Read.
+
+### `fn the_output_path_is_not_beside_the_fixture`
+
+A stray recognised copy beside the fixture would be committed by
+somebody eventually, and a repository that gains a file every time the
+harness runs is a repository whose `git status` stops being read.

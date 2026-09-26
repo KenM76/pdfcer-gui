@@ -38,3 +38,54 @@ where it went down** — measured at 94 PDF points of error on an A1 sheet at
 Reading the current position misses both, and the miss is silent: the
 gesture becomes a marquee, which *clears the selection the operator was
 trying to resize*.
+
+## Item notes
+
+### `const STICKY_SUBTYPE`
+
+Compared against the engine's own string rather than mapped through an
+enum here: `AnnotSelection::subtype` carries `/Subtype` verbatim, and a
+local enum would be a second vocabulary that has to be kept in step with a
+standard that keeps adding to it.
+
+### `fn pick_for_body`
+
+**Everything, deliberately, and not the operator's filter.** The question
+is *"is the press on the thing I have selected?"*, and the answer must not
+depend on whether that kind of object is currently pickable — an operator
+who selects an image, then switches images off in the selection filter, has
+not thereby asked for the image to become undraggable. The filter governs
+what a press may *acquire*; this asks about what is already held.
+
+### `const PRESS_SLOT`
+
+Its own slot rather than sharing one: `trace_changed` keys on the slot, so
+two unrelated lines sharing one would suppress each other, and the
+suppression looks exactly like the event never happening.
+
+### `fn the_outline_flag_is_not_the_content_flag_nor_the_grip_set`
+
+Asserted as `Grabbable` literals rather than by driving `grabbable`,
+which needs a `Context` and an `OpenDoc`. What is under test is the
+*relationship between the three flags*, which is where a mistake would
+hide: the whole point of `outline` is that it is not expressible as
+either of the other two.
+
+### `fn a_sticky_note_gets_no_resize_grips_and_every_other_markup_still_does`
+
+`/Text`'s `/Rect` says **where** the marker is, not **how big**: a
+conforming reader draws it as though `NoZoom/NoRotate` were set and
+anchors it at the rect's upper-left corner, so `resize_annotation`
+declines a corner drag by name. Eight squares round it would be the
+*visible control, silently inert* failure this shell exists to remove.
+
+⚠ **Three assertions, and the third is the one that keeps this honest.**
+A build that answered `move_only` for *everything* satisfies the first
+two and silently removes the resize from rectangles, clouds and arrows —
+the kinds that do resize, and did before this change.
+
+### `fn freetext_is_not_caught_by_the_sticky_rule`
+
+`/Text` is a sticky note; `/FreeText` is a text box and resizes. A
+`contains` or a case-insensitive compare catches the second with the
+first and silently removes the resize from every text box.

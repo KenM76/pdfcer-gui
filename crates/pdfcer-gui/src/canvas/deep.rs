@@ -346,32 +346,6 @@ fn confine(
 
 /// **The page-local scroll offset that continues where the `f64` anchor left
 /// off**, for the one frame that drops out of the deep-position tier.
-///
-/// `OPERATOR_REQUESTS.md` O26e. See the branch in [`show_in`] that calls it
-/// for why the hand-over back had to exist, and
-/// [`viewer::deep::DeepAnchor::page_local_offset`] for why the arithmetic is
-/// there and not here.
-///
-/// # What this function contributes beyond that arithmetic
-///
-/// **The last zoom step.** `DeepAnchor` describes the position at the zoom it
-/// was last updated for — `doc.frame.deep_zoom` — and this frame is running at a
-/// *new*, lower zoom whose step nothing has applied to the anchor: the deep
-/// branch's `zoomed_about` call is inside the `if deep` arm, and this frame is
-/// not in it. Handing the stale anchor straight over would keep the position
-/// but discard the final notch of zoom-about-the-cursor, so the last step out
-/// of deep zoom would be the one step that did not hold the pointer.
-///
-/// The anchor point is the pointer when it is over the canvas and the
-/// viewport's centre when it is not — the rule stated once in
-/// [`zoom::anchor_point`] and applied here in the same words the deep branch
-/// applies it in, against the same `ui.max_rect()` so that a pointer resting
-/// on a ruler gutter counts as "not over the page" for both.
-///
-/// `None` when there is no zoom to describe a placement at, which the caller
-/// treats as *"fall through to the ordinary anchor"* — the behaviour before
-/// this function existed, and safe because it is only reachable for a zoom
-/// that is not a positive finite number.
 fn handover_offset(
     ui: &egui::Ui,
     doc: &OpenDoc,

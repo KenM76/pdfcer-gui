@@ -89,13 +89,6 @@ pub fn banner(ui: &mut Ui, doc: Option<&OpenDoc>, host: Option<&MenuHost<'_>>) {
 }
 
 /// The *Put this tool down* button, moved verbatim from the armed block.
-///
-/// It still writes `canvas::tool::select` directly rather than raising an
-/// `Action`, and the argument is unchanged and worth repeating because a move
-/// is exactly when somebody would "fix" it: **the armed tool is not document
-/// state.** It contributes nothing to the undo log and has nothing to order
-/// against, so routing it through the action funnel would add a variant `apply`
-/// could only answer by writing the same memory slot.
 fn put_down(ui: &mut Ui, ctx: &egui::Context) {
     let response = ui
         .button(t::put_down_button())
@@ -111,38 +104,11 @@ fn put_down(ui: &mut Ui, ctx: &egui::Context) {
 }
 
 /// The armed tool's name, read from the command registry.
-///
-/// **Never a string of this module's own.** A second copy of a label compiles,
-/// reads identically the day it is written, and drifts the first time either is
-/// reworded — invisibly, because nothing renders both at once. The rule is
-/// inherited from the armed identity row this replaces.
 fn name_of<'a>(tool: CanvasTool, host: Option<&'a MenuHost<'_>>) -> Option<&'a str> {
     host?.label(command_for(tool)?)
 }
 
 /// The one sentence, plus whatever the old stage said on a **second** line.
-///
-/// # Why this returns a pair instead of one string
-///
-/// Six of the armed stages drew two labels, and the second was never
-/// decoration. `t::text_annot_release` is described in its own module as *"The
-/// sentence that stops a working tool reading as broken"*; `t::hand_borrow`
-/// says how the borrowed hand is given back; `t::node_shift` names the modifier
-/// that makes the node tool usable. A one-row strip has nowhere to put them,
-/// and **dropping them would be the content regression this whole change is
-/// under instruction not to commit.**
-///
-/// So they go to the hover, which is where this project sends a sentence that
-/// has been elided rather than shortened — the discipline
-/// [`crate::app::status::disclosure`] states as *"eliding defers rather than
-/// loses"*.
-///
-/// # The primary is the LIVE stage where there is one
-///
-/// One slot, two contents — the armed block's rule, and it applies here with
-/// more force rather than less. *"3 vertices placed"* is worth more than
-/// *"click each corner"* the moment the operator has clicked one, and it
-/// collapses back to the instruction when the run ends.
 fn sentence(ctx: &egui::Context, doc: &OpenDoc, tool: CanvasTool) -> (String, Option<String>) {
     match tool {
         // The resting state, and the one sentence in the application that says
@@ -216,19 +182,6 @@ fn sentence(ctx: &egui::Context, doc: &OpenDoc, tool: CanvasTool) -> (String, Op
 
 /// The perimeter tool's live sentence: the instruction before the first click,
 /// the running total after it.
-///
-/// Moved unchanged from the armed block, and the reasoning moves with it,
-/// because it is the reason this function is not two lines of arithmetic:
-/// [`pdfcer_core::dimension::format_measurement`] is the ENGINE's own
-/// formatter — the same one the committed label goes through — so the running
-/// total and the final label cannot disagree about scale, unit, precision,
-/// fraction style or decimal marker. The operator's ask was that the tool
-/// behave *"the same as the other dimensioning tools"*, and a live readout in
-/// points beside a committed dimension in metres would be two numbers for one
-/// measurement.
-///
-/// Falls back to the instruction when the group cannot be read: a total whose
-/// scale is unknown is not a total.
 fn perimeter_stage(ctx: &egui::Context, doc: &OpenDoc) -> String {
     let instruction = || t::measure_instruction(MeasureKind::Perimeter).to_owned();
     let Some(st) = crate::canvas::measure::read(ctx) else {
@@ -252,16 +205,6 @@ fn perimeter_stage(ctx: &egui::Context, doc: &OpenDoc) -> String {
 
 /// The radius/diameter tool's live sentence: the instruction before the first
 /// click, the count and the current fit after it.
-///
-/// `OPERATOR_REQUESTS.md` O105 — *"selecting more points around a hole doesn't
-/// always get it to narrow down to the size of the hole."* An operator adding
-/// points to a fit is watching a number converge, and with no number to watch
-/// every correction is a commit and an undo.
-///
-/// **Radius or diameter follows the pick set's own display toggle**, so the
-/// number the strip shows is the number the placed dimension will show. A
-/// readout that always reported the radius would disagree with a committed
-/// diameter label by a factor of two, silently.
 fn circular_stage(ctx: &egui::Context, doc: &OpenDoc) -> String {
     let Some(st) = crate::canvas::measure::read(ctx) else {
         return t::measure_instruction(MeasureKind::Circular).to_owned();
@@ -287,17 +230,6 @@ fn circular_stage(ctx: &egui::Context, doc: &OpenDoc) -> String {
 }
 
 /// The command that arms `tool`, if one does.
-///
-/// # Derived from the existing id maps, never written a second time
-///
-/// `shell::commands::markup_command` and `measure_for_command`'s inverse are
-/// the single binding between an id and a kind, exactly as
-/// `Panel::from_command_id` is for panels. Re-listing them here would be a
-/// second table to keep in step, and the failure when it drifted would be a
-/// strip naming the wrong tool — which is the one thing it exists to get right.
-///
-/// Moved verbatim from the armed block; the `None` arms are the interesting
-/// ones and each keeps its reason.
 fn command_for(tool: CanvasTool) -> Option<&'static str> {
     match tool {
         // ui-text-exempt: command ids, never displayed
@@ -343,10 +275,6 @@ mod tests {
 
     /// The reserved height is inside the band `egui-shell` will honour at a
     /// realistic window, so the strip cannot silently resolve to nothing.
-    ///
-    /// Falsifiable in one edit: drop `BANNER_HEIGHT_PTS` below the shell's
-    /// floor and this goes red rather than the strip quietly disappearing at
-    /// run time.
     #[test]
     fn the_reserved_height_survives_the_shells_clamp() {
         let resolved = egui_shell::dock::banner::resolve_height(BANNER_HEIGHT_PTS, 800.0);
@@ -358,12 +286,6 @@ mod tests {
 
     /// **Every tool that had a name has one still, and the two that never
     /// did still do not.**
-    ///
-    /// The table moved modules, and a move is where an arm gets dropped. This
-    /// asserts the `None` arms are exactly the two documented ones — a
-    /// placement, and the scale kind that is armed from inside a window — so a
-    /// tool silently losing its name shows up as a red test rather than as a
-    /// strip that renders a sentence with no subject.
     #[test]
     fn only_the_two_dialog_armed_tools_have_no_command() {
         use crate::canvas::textedit::TextEditKind;

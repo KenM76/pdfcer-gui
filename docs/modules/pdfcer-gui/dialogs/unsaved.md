@@ -78,3 +78,52 @@ for one surface is a second set of layout, focus and escape behaviours to
 get right. What matters here is not modality but that **the destructive
 action does not happen until a button is pressed**, which is a property of
 the control flow, not of the window.
+
+## Item notes
+
+### `fn an_unedited_document_is_not_asked_about`
+
+The property that keeps this from being a nag. `edit_epoch == 0` is the
+state a document is in from the moment it opens until the first edit
+lands, which is most of the time an operator spends with a file open —
+and a confirmation on every close of an unread drawing is exactly the
+"nagging" the operator named as having made the old shell worse.
+
+### `fn the_four_intents_do_not_share_a_sentence`
+
+Asserted as a **relation** rather than against the literals: the point
+is that no two intents share a sentence, because an operator who pressed
+Open and is asked about closing will read the prompt as being about a
+control they did not touch. Comparing against the strings themselves
+would pass just as well if all four returned the same one.
+
+### `fn both_kinds_of_new_ask_one_question`
+
+They are one act with two entry points — `dialogs::new_document` is the
+size chooser in front of the same replacement — so asking two different
+questions about them would be describing a distinction the operator
+cannot see.
+
+### `fn the_answer_fires_once_and_carries_its_intent`
+
+The second `take` returning `None` is what stops the owner resuming the
+intent on every frame after one press — which on `PendingIntent::Open`
+would re-open the same file forever, and on `Close` would fight anything
+the operator opened next.
+
+### `fn an_answer_is_visible_until_it_is_taken_and_not_after`
+
+It is asserted against `take_outcome` rather than alone, because the
+property that matters is that the pair agrees about what "parked" means:
+`true` too late keeps an answered window on screen forever, `false` too
+early loses the operator's decision.
+
+### `fn cancelling_answers_nothing`
+
+The two have to be separable: a window that closed *and* answered would
+make the ✕ destructive, and the ✕ is the control an operator presses
+reflexively to make a surprise go away.
+
+The [`Self::answered`] half is what lets [`crate::dialogs::retire`]
+drop a dismissed window on the frame it closes rather than holding it
+open waiting for an answer that is never coming.

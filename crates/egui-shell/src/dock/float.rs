@@ -155,6 +155,8 @@
 //! property that makes "it remembers, per mode, the way docked width
 //! already does" true by construction rather than by a second
 //! implementation that has to be kept in step.
+//!
+//! Design and rationale: `docs/modules/egui-shell/dock/float.md`.
 
 use serde::{Deserialize, Serialize};
 
@@ -749,12 +751,6 @@ mod tests {
     }
 
     /// **Float, then dock, is the identity on the arrangement.**
-    ///
-    /// The single most important property in this module, and the one an
-    /// operator will test within ten seconds of finding the command. A
-    /// round trip that returned the panel to a *different* stack would be
-    /// a command that quietly edited an arrangement nobody asked it to
-    /// touch.
     #[test]
     fn float_then_dock_puts_the_panel_back_where_it_was() {
         let before = sample();
@@ -789,10 +785,6 @@ mod tests {
     }
 
     /// **Docking back makes the panel the active tab.**
-    ///
-    /// Without this, docking a window into a three-tab stack whose front
-    /// tab is something else is a command whose only visible effect is
-    /// that a window vanished.
     #[test]
     fn docking_back_brings_the_panel_to_the_front_of_its_stack() {
         let mut l = sample();
@@ -829,13 +821,6 @@ mod tests {
     }
 
     /// **A stale home does not lose the panel.**
-    ///
-    /// The operator floats a panel out of the second column, then closes
-    /// everything else in that column so it is pruned, then docks the
-    /// float back. The recorded address names a column that no longer
-    /// exists, and [`DockLayout::dock_back`] rebuilds it rather than
-    /// refusing — it inserts the missing column and stack and clamps only
-    /// what is genuinely past the end.
     #[test]
     fn a_home_that_no_longer_exists_still_docks_the_panel() {
         let mut l = sample();
@@ -876,10 +861,6 @@ mod tests {
 
     /// **Closing a floating panel removes it entirely** — it does not
     /// leave a float entry pointing at a panel that is nowhere.
-    ///
-    /// A leaked entry would draw a window every frame for a panel the
-    /// operator closed, and no command would offer to close it again
-    /// because every "is it open" query would say no.
     #[test]
     fn closing_a_floating_panel_removes_its_float_entry() {
         let mut l = sample();
@@ -892,12 +873,6 @@ mod tests {
 
     /// **A floating panel counts as present**, so the application
     /// cannot mount a second copy of it.
-    ///
-    /// The View ▸ Panels group calls `mount` for a panel that is not
-    /// showing. If `contains` ignored floats, choosing a floating panel
-    /// there would put it in the dock *and* leave it in its window —
-    /// two surfaces drawing one panel from two `Ui`s with the same widget
-    /// ids.
     #[test]
     fn a_floating_panel_cannot_be_mounted_a_second_time() {
         let mut l = sample();
@@ -926,12 +901,6 @@ mod tests {
     }
 
     /// **A float on a hidden side is still on screen.**
-    ///
-    /// The float has no side, so collapsing the dock it came from cannot
-    /// hide it. Worth pinning because `is_on_screen`'s docked branch
-    /// consults `side.visible`, and an implementation that checked the
-    /// *home* side would get this wrong in a way nobody would notice until
-    /// they collapsed a dock.
     #[test]
     fn collapsing_the_home_side_does_not_hide_a_float() {
         let mut l = sample();
@@ -955,10 +924,6 @@ mod tests {
 
     /// **A panel that is both docked and floating is repaired by
     /// dropping the float.**
-    ///
-    /// Not reachable through any verb here; reachable through a
-    /// hand-edited `layout.ron`, which is a supported way to configure
-    /// this application.
     #[test]
     fn normalize_drops_a_float_whose_panel_is_also_docked() {
         let mut l = sample();
@@ -1004,10 +969,6 @@ mod tests {
 
     /// **A float survives a round trip through the on-disk form,
     /// with its home, its size and its position.**
-    ///
-    /// This is the "remembers, per mode, the way docked width already
-    /// does" claim, asserted against the actual serializer rather than
-    /// against the intent.
     #[test]
     fn a_float_survives_serialization() {
         let mut l = sample();
@@ -1024,10 +985,6 @@ mod tests {
     }
 
     /// **A layout written before floats existed still loads.**
-    ///
-    /// The backward-compatibility claim, asserted rather than asserted
-    /// *about*. A `layout.ron` with no `floating` key is what every
-    /// existing installation has.
     #[test]
     fn a_layout_with_no_floating_key_loads_with_no_floats() {
         let text = r#"(left: (columns: [(stacks: [(tabs: ["pages"])])]), right: (columns: []))"#;

@@ -148,3 +148,25 @@ nothing to say so.
 can be tested: the container's width is `max(widest row, viewport)`,
 never a measurement of the laid-out row. See
 `D:\dev\rag\egui\allocate_ui_clamps_to_remaining_space_so_a_horizontal_scrollarea_squeezes_a_column_instead_of_scrolling.md`.
+
+## Item notes
+
+### `fn sync`
+
+Called once per frame, before any panel body runs, so no two panels
+can disagree about which revision they are describing — which is the
+whole point of doing it here rather than in each body.
+
+**A page or revision change clears the focus and the expansion sets.**
+Paint-order indices are positions, not identities: deleting one object
+renumbers every object after it, so a retained focus would silently
+describe a *different* object with the same number, and a retained
+expansion set would open the wrong rows. Forgetting is the only honest
+response, and it is cheap.
+
+The key is `(page index, edit epoch)` and nothing else. It does not
+need to say *which document* — a different document reaches
+[`Self::forget_document`] through `PdfcerApp::open_path` before any
+panel draws, so there is nothing left to confuse it with. That is what
+let the old four-field `DocKey`, with the `Arc` address in it, be
+deleted rather than repaired; see this struct's own header.

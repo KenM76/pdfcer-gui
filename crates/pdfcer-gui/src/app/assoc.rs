@@ -263,12 +263,6 @@ pub fn open_settings_page() -> Result<(), String> {
 // ---------------------------------------------------------------------------
 
 /// One `reg add` invocation, as owned words.
-///
-/// `value` is `None` for a key's default (`/ve`) and `Some` for a named one.
-///
-/// `/f` on every write: these are idempotent declarations, not a
-/// conversation. A prompt from a subprocess with no console is a hang with no
-/// symptom.
 fn set(key: &str, value: Option<&str>, data: &str) -> Vec<String> {
     // ui-text-exempt: `reg.exe` switch names, never displayed.
     let mut args = vec!["add".to_owned(), key.to_owned()];
@@ -288,10 +282,6 @@ fn set(key: &str, value: Option<&str>, data: &str) -> Vec<String> {
 }
 
 /// Run `reg.exe` and require success.
-///
-/// # Errors
-///
-/// `reg.exe`'s own stderr, or the reason it could not be started.
 #[cfg(windows)]
 fn run(args: &[&str]) -> Result<(), String> {
     let out = command().args(args).output().map_err(|e| e.to_string())?;
@@ -313,11 +303,6 @@ fn run(_args: &[&str]) -> Result<(), String> {
 }
 
 /// Run `reg.exe` for its **output**, or `None` if it failed for any reason.
-///
-/// `None` rather than an error, because every caller is asking a question
-/// about the machine that has a legitimate *"cannot tell"* answer — a key that
-/// does not exist makes `reg query` exit non-zero, and on a fresh machine that
-/// is the normal case rather than a fault worth a sentence.
 #[cfg(windows)]
 fn reg(args: &[&str]) -> Option<String> {
     let out = command().args(args).output().ok()?;
@@ -357,10 +342,6 @@ pub fn exe_path() -> Option<String> {
 }
 
 /// Hand a URL to the shell.
-///
-/// # Errors
-///
-/// Whatever the shell said.
 #[cfg(windows)]
 fn open_url(url: &str) -> Result<(), String> {
     use std::os::windows::process::CommandExt;
@@ -433,10 +414,6 @@ mod tests {
 
     /// **The `.pdf` `OpenWithProgids` entry carries the ProgID as a NAME with
     /// empty data**, which is the shape Windows reads.
-    ///
-    /// Writing the ProgID as the *data* of a default value is the plausible
-    /// mistake, and it produces a key that exists and an *Open with* menu that
-    /// does not list pdfcer.
     #[test]
     fn open_with_progids_names_the_progid_rather_than_storing_it() {
         let args = set(

@@ -33,18 +33,9 @@ const COMMAND: &str = "file.ocr";
 const FIXTURE: &str = "fixtures/synthetic-image-only-8pages.pdf";
 
 /// How many pages [`FIXTURE`] has.
-///
-/// Used **only** to sanity-check the `of=` the application reports when the
-/// default fixture is driven. Everything else derives the denominator from the
-/// trace, so `PDFCER_VERIFY_SCAN` can point at a document of any length.
 const FIXTURE_PAGES: usize = 8;
 
 /// Environment override naming a real scanned document to drive instead.
-///
-/// An environment variable rather than a flag, deliberately: it is a property
-/// of the *machine* — whether this box happens to have a scan on it — and not
-/// of the run. A flag would have to be passed by every caller of the suite,
-/// including the ones that have no such file, and would then be forgotten.
 const SCAN_ENV: &str = "PDFCER_VERIFY_SCAN";
 
 /// `ocr-progress attempted=… of=… words=… chars=…` — the live tally's content.
@@ -75,40 +66,15 @@ const STOP_REGION: &str = "ocr-stop";
 const CANCEL_REGION: &str = "ocr-cancel";
 
 /// How long a whole eight-page run may take, in settle frames.
-///
-/// A frame here is 25 ms (`Session::settle`), so 1,600 frames is **40
-/// seconds**. Measured inputs: the synthetic page recognises in about a second
-/// in a release build, and the operator's scanned parts manual measured 2.6 s a
-/// page — so eight pages is 8–21 s and this is roughly twice the worst of
-/// those.
-///
-/// Generous on purpose, and the reasoning is `checks::ocr`'s: a budget that
-/// was too short would report *"recognition never finished"* about a build that
-/// was still working, which is the worst available failure message. This
-/// harness also drives whichever binary it was pointed at, and a debug build is
-/// twenty times slower.
 const RUN_FRAMES: u32 = 1_600;
 
 /// How long to wait for the FIRST progress line before giving up.
-///
-/// One page's worth plus a wide margin. If no page has finished in twelve
-/// seconds the run is either refused, stuck, or being driven in a debug build,
-/// and all three want a different message from "the tally did not advance".
 const FIRST_PAGE_FRAMES: u32 = 480;
 
 /// The polling granularity. Eight frames is 200 ms.
-///
-/// Small enough that a Stop lands with pages still to go on a one-second-a-page
-/// run; large enough that the loop is not re-reading a growing trace file forty
-/// times a second.
 const SLICE: u32 = 8;
 
 /// The workspace root, from this crate's manifest directory.
-///
-/// `tools/ui-verify/` → up two. Stable whatever the harness was invoked from
-/// and whatever `--source-root` says — see `checks::ocr`'s `default_fixture`
-/// for the two wrong ways this was done first, one of which overwrote the
-/// repository's own fixture.
 fn workspace_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("..")
@@ -117,11 +83,6 @@ fn workspace_root() -> PathBuf {
 
 /// The document to drive: `PDFCER_VERIFY_SCAN` if it names a real file, else the
 /// committed multi-page fixture.
-///
-/// Returns the path and whether it is the real-material one, because every
-/// report says which it drove. A green result over the synthetic fixture and a
-/// green result over a scanned manual are different amounts of evidence and
-/// must not read the same.
 fn document() -> (PathBuf, bool) {
     if let Some(from_env) = std::env::var_os(SCAN_ENV) {
         let path = PathBuf::from(from_env);
@@ -133,10 +94,6 @@ fn document() -> (PathBuf, bool) {
 }
 
 /// Poll the trace until `pred` holds, or `budget` frames are spent.
-///
-/// Returns whether it held. **Checks before it sleeps**, so a condition that is
-/// already true costs nothing — which matters for the Stop and Cancel checks,
-/// where the whole question is whether the harness got there in time.
 fn wait_until(
     session: &Session,
     budget: u32,
@@ -165,13 +122,6 @@ fn attempts(trace: &Trace) -> Vec<usize> {
 
 /// The run's shared preamble: launch, reach `file.ocr` in Read, press
 /// Recognise.
-///
-/// Everything up to the moment work starts is identical in all three checks,
-/// and duplicating it three times would be three places for the ribbon path to
-/// rot. `Err` is a SKIP in every caller.
-///
-/// Returns the session, the driver, and the resolved document with its
-/// real-material flag.
 fn start_a_run(
     ctx: &CheckContext,
     report: &mut CheckReport,
@@ -890,12 +840,6 @@ mod tests {
     use super::*;
 
     /// The fixture these drive is the multi-page image-only one.
-    ///
-    /// Pinned because both properties are load-bearing and each fails silently
-    /// on its own: a single-page fixture makes all three checks vacuous, and a
-    /// fixture with text makes the doubling guard skip every page so the run
-    /// reports nothing and the tally never moves — which reads as the very
-    /// defect being looked for.
     #[test]
     fn the_fixture_is_multi_page_and_image_only() {
         assert!(
@@ -929,12 +873,6 @@ mod tests {
     }
 
     /// **Stop and Cancel click different controls.**
-    ///
-    /// The one assertion in this file that could not be got wrong by accident
-    /// and would invalidate everything if it were: the pair of checks is a pair
-    /// precisely because the two buttons must not be the same button, and a
-    /// harness that clicked one region for both would report that they behave
-    /// identically — correctly, and about itself.
     #[test]
     fn the_two_endings_reach_two_different_controls() {
         assert_ne!(Ending::Stop.region(), Ending::Cancel.region());
@@ -959,11 +897,6 @@ mod tests {
     }
 
     /// With no override, the document is the committed fixture.
-    ///
-    /// Deliberately does not test the override branch: setting a process-wide
-    /// environment variable from a test races every other test in the binary,
-    /// and this crate runs its tests in threads. The branch is three lines and
-    /// its risk is a typo in the variable name, which this pins instead.
     #[test]
     fn the_default_document_is_the_committed_fixture() {
         assert_eq!(SCAN_ENV, "PDFCER_VERIFY_SCAN");

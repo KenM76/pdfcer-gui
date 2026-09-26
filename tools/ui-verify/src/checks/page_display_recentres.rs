@@ -23,23 +23,10 @@ const STRIP_REGION: &str = "canvas-strip";
 
 /// Where and how large the window is placed, as `PDFCER_DIAG_VIEWPORT` takes
 /// it: `x,y,w,h`.
-///
-/// Fixed rather than maximised so the numbers below mean the same thing on
-/// every machine, and wide enough that a two-page spread at a readable zoom is
-/// a shape the fit can actually produce. `PDFCER_DIAG_VIEWPORT` switches
-/// `with_active` off, so the window lays out fully without taking the desktop.
 const VIEWPORT: &str = "0,0,1600,1000";
 
 /// How far the drawn strip's centre may sit from the viewport's, in logical
 /// points, and still count as centred.
-///
-/// Generous on purpose. The page rect is rounded to the pixel grid, the fit
-/// divides in `f32`, and a scroll bar appearing or disappearing moves the
-/// viewport by its own width. The defect this check is about moves the strip by
-/// **half a page** — 300-plus points at the zoom this run reaches — so a
-/// tolerance two orders of magnitude below that separates the two states with
-/// room to spare, and a tighter one would report arithmetic rather than
-/// behaviour.
 const CENTRE_TOLERANCE_PT: f32 = 12.0;
 
 /// How far outside the viewport a drawn edge may sit and still count as
@@ -49,11 +36,6 @@ const CONTAIN_TOLERANCE_PT: f32 = 4.0;
 
 /// How far the acting page's rect must move for the wheel to have established
 /// the displaced state this check needs.
-///
-/// A precondition that is ASSERTED, not assumed. A run whose scroll did
-/// nothing would switch display modes from an already-centred start and pass
-/// while measuring nothing — the exact shape `fit_places_the_view`'s own pan
-/// precondition exists to prevent.
 const DISPLACED_PT: f32 = 40.0;
 
 /// How many wheel notches to spend scrolling the continuous strip away from
@@ -68,10 +50,6 @@ const SCROLL_AT: (f32, f32) = (0.5, 0.5);
 
 /// The narrowest a two-page row may be, as a multiple of one page's width,
 /// before this check believes it is looking at a spread.
-///
-/// 1.5 rather than 2.0: the row is two pages **plus** a gap, so the true
-/// ratio is a little over 2, and a floor at 1.5 is unambiguous against the
-/// thing it has to exclude — a row of one page, ratio exactly 1.
 const SPREAD_RATIO: f32 = 1.5;
 
 fn fixture_path() -> PathBuf {
@@ -107,11 +85,6 @@ impl Check for SwitchingThePageDisplayRecentresAndAFacingFitFitsTheSpread {
 }
 
 /// The drawn strip and the canvas viewport, as of the last frame.
-///
-/// Both are read from the **same** trace snapshot: reading them from two
-/// snapshots is how a check comes to compare a strip from one frame against a
-/// viewport from another, which on a frame where a scroll bar appeared is a
-/// difference of fifteen points for no reason at all.
 fn strip_and_viewport(session: &Session, ui_rect: &str) -> Result<Option<(LRect, LRect)>> {
     let trace = session.trace()?;
     let strip = declared(&trace, ui_rect, STRIP_REGION);

@@ -490,12 +490,6 @@ mod tests {
     use super::*;
 
     /// **Every refusal has a sentence, and no two of them are the same one.**
-    ///
-    /// The failure this catches is the copy-paste one: four arms of a `match`,
-    /// three distinct strings, and the fourth silently telling the operator
-    /// about a state they are not in. It is exactly the shape
-    /// `text::commands::tests::no_two_commands_share_a_label` catches one file
-    /// over, and it shipped there once.
     #[test]
     fn every_nudge_refusal_has_its_own_sentence() {
         let all = [
@@ -520,12 +514,6 @@ mod tests {
     }
 
     /// **No sentence here names a thing the operator cannot see.**
-    ///
-    /// The rule the header sets, asserted rather than trusted. The probe list is
-    /// the vocabulary of the file format, which is what leaks: every one of
-    /// these words is in the doc comments above — correctly, because those are
-    /// for a reader of the code — and the test is what keeps the two registers
-    /// apart.
     #[test]
     fn no_sentence_speaks_in_the_file_formats_vocabulary() {
         let sentences = [
@@ -565,10 +553,6 @@ mod tests {
     }
 
     /// **The two ends of the pair read differently.**
-    ///
-    /// `already_there(true)` and `already_there(false)` answer two different
-    /// commands, and an operator who pressed *Send to back* and read *"already
-    /// in front"* would reasonably conclude the button was mis-wired.
     #[test]
     fn front_and_back_are_not_the_same_sentence() {
         assert_ne!(already_there(true), already_there(false));
@@ -577,10 +561,6 @@ mod tests {
     }
 
     /// **The counted sentences agree in number.**
-    ///
-    /// One of each pair is a singular written out and the other a plural built
-    /// from a format string; a build that used the plural for one would read
-    /// *"1 annotations"*, which is the sort of thing an operator screenshots.
     #[test]
     fn the_counted_sentences_agree_in_number() {
         assert!(pinned(1).starts_with("One annotation "));

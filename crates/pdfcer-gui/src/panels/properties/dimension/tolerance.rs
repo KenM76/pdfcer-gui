@@ -9,20 +9,9 @@ use pdfcer_core::dimension::{Tolerance, Unit};
 use crate::text::panels::dimension as t;
 
 /// The drag speed for a tolerance magnitude.
-///
-/// An order of magnitude finer than the style module's point-valued
-/// properties, because a tolerance is a manufacturing quantity: 0.05 is a
-/// coarse fit and 0.005 is a bearing seat, and a spinner that skates past the
-/// second is a spinner nobody uses twice.
 const SPEED: f64 = 0.005;
 
 /// Every form, in the order the combo offers them.
-///
-/// Constructed with placeholder magnitudes because the combo selects a
-/// **shape**, and the value the operator was last editing is preserved by
-/// [`reshape`] rather than by the list. Listing `Symmetric { magnitude: 0.0 }`
-/// here and selecting it directly would zero a number the operator had
-/// already typed.
 const FORMS: [Tolerance; 7] = [
     Tolerance::None,
     Tolerance::Symmetric { magnitude: 0.1 },
@@ -124,10 +113,6 @@ pub fn show(ui: &mut Ui, value: &mut Tolerance, unit: Unit) -> bool {
 }
 
 /// Whether two tolerances are the same **form**, ignoring their values.
-///
-/// The combo's selected-state predicate. `PartialEq` compares magnitudes, which
-/// would leave the combo showing nothing selected the moment the operator
-/// changed a number — the control silently disowning the value it is editing.
 #[must_use]
 fn same_form(a: Tolerance, b: Tolerance) -> bool {
     core::mem::discriminant(&a) == core::mem::discriminant(&b)
@@ -135,27 +120,6 @@ fn same_form(a: Tolerance, b: Tolerance) -> bool {
 
 /// Change a tolerance's **form**, carrying across whatever value survives the
 /// change.
-///
-/// # Why this is not simply `*value = form`
-///
-/// Because an operator switching from *± 0.35* to *separate + and −* means
-/// *"start from what I typed"*, not *"throw it away and give me 0.1"*. The
-/// magnitude is the value they have been thinking about, and re-typing it is
-/// the panel making them prove they meant it.
-///
-/// The mappings, and each is the reading a drafter would make:
-///
-/// | from → to | carried |
-/// |---|---|
-/// | symmetric → deviation | `± m` becomes `+m / −m`, which is the same tolerance written the other way |
-/// | symmetric → limit | `± m` becomes `+m / −m` about the nominal, the same again |
-/// | deviation → symmetric | the **larger** magnitude, because a symmetric tolerance that is tighter than the one it replaced would silently narrow a specification |
-/// | limit → deviation | the pair, unchanged |
-/// | anything → none / basic / min / max | nothing to carry; those forms hold no value |
-///
-/// Deviation → symmetric taking the larger is the only one that could be
-/// argued, and it is argued the safe way round: a manufacturing tolerance that
-/// gets **tighter** without the operator asking is a part that gets rejected.
 #[must_use]
 fn reshape(from: Tolerance, to: Tolerance) -> Tolerance {
     match (from, to) {
@@ -198,11 +162,6 @@ mod tests {
     use super::*;
 
     /// Every form in the combo is a distinct shape, and all seven are offered.
-    ///
-    /// The count is asserted against the list rather than against a literal
-    /// seven **and** the discriminants are asserted distinct, so a form added
-    /// to the engine and forgotten here fails on the first assertion while a
-    /// form listed twice fails on the second.
     #[test]
     fn the_combo_offers_each_form_exactly_once() {
         let mut shapes: Vec<std::mem::Discriminant<Tolerance>> =
@@ -250,10 +209,6 @@ mod tests {
     }
 
     /// Collapsing a deviation to a symmetric takes the LARGER magnitude.
-    ///
-    /// The safe direction, and the reason is a manufactured part rather than a
-    /// preference: a tolerance that tightens without being asked produces
-    /// components that get rejected against a drawing nobody changed.
     #[test]
     fn collapsing_a_deviation_never_tightens_it() {
         let dev = Tolerance::Deviation {
@@ -284,10 +239,6 @@ mod tests {
     }
 
     /// The combo's selected predicate follows the shape, not the value.
-    ///
-    /// Without this the combo would show nothing selected the instant the
-    /// operator dragged the magnitude — the control disowning what it is
-    /// editing.
     #[test]
     fn the_combo_stays_selected_while_the_number_changes() {
         assert!(same_form(
@@ -302,10 +253,6 @@ mod tests {
 
     /// An inverted limit pair is refused by the engine and this module reports
     /// it rather than swapping.
-    ///
-    /// The assertion is on the ENGINE's verdict, because that is what `show`
-    /// consults — a local re-implementation of the rule is exactly what would
-    /// let the panel and the file disagree.
     #[test]
     fn an_inverted_limit_is_refused_rather_than_corrected() {
         let bad = Tolerance::Limit {

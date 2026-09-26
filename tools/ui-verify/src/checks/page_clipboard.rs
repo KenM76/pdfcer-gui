@@ -19,18 +19,6 @@ const COPY_LINE: &str = "pageclip-copy";
 const PASTE_LINE: &str = "pageclip-paste";
 
 /// The line the INSERT publishes when it lands: `pages=` after, `was=` before.
-///
-/// This is the oracle, and finding it changed the check. The first version
-/// read `open ok pages=N` at the start and hoped to read a second page count
-/// from somewhere at the end — but the application publishes its page count on
-/// **open** and not on every edit, so there was no "after" to read and the
-/// check would have compared a number to itself.
-///
-/// `insert-pages-landed` carries **both numbers from the same moment**:
-/// `was=` is the count before the insert and `pages=` the count after. That
-/// removes the whole class of error where two readings straddle a frame and
-/// describe different states — and it comes from the insert path itself, so it
-/// cannot be present unless the document actually changed.
 const LANDED: &str = "insert-pages-landed";
 
 /// See the module documentation.

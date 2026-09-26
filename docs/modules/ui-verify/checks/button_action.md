@@ -68,3 +68,18 @@ precise and entirely wrong diagnosis of the subject.
 Step A **drags** rather than clicks. A clicked button is authored at its
 default 80×22 pt, which is fine — but a drag is the operator's own route
 (O53) and it makes the dialog's arrival unambiguous.
+
+## Item notes
+
+### `const INVOKE`
+
+`edit.form_push_button` through the harness seam is also the control point
+for link 1: the seam bypasses the ribbon, so a build where the command is
+greyed but the dispatcher still arms would get past this. Link 1 is asserted
+separately, below, by reading the ribbon item's own region.
+
+### `const RESET_ROW`
+
+Named by KIND, matching the publisher. An index-named region would keep
+passing after `ButtonDoesKind::ALL` was reordered, aiming at whatever row
+now sits second.

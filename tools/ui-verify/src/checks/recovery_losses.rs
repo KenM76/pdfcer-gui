@@ -14,12 +14,6 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// The damaged file: no index, and a scan that finds two things it cannot keep.
-///
-/// Built by `fixtures/recovered-with-losses.PROVENANCE.py`, which records why
-/// each of the two exists — one is a real truncated object, the other is the
-/// bytes `9 0 obj` sitting inside the content stream's own drawn text, which the
-/// scan is obliged to try. Those are the two different stories the disclosure
-/// has to keep apart, and the fixture carries both on purpose.
 const DAMAGED: &str = "recovered-with-losses.pdf";
 
 /// The control: the same damage, nothing dropped. See the module header.
@@ -231,12 +225,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 // ---------------------------------------------------------------------------
 
 /// A launch on the real desktop, because this one is going to be clicked.
-///
-/// ⚠ Unlike `load_anomalies`' status-bar half there is no off-desktop variant
-/// here: every assertion in this file needs the properties panel open, the panel
-/// is opened by clicking, and a click needs a window a pointer can reach. So
-/// this check cannot run while the operator is at the machine, and that is a
-/// cost rather than an oversight.
 fn launch(ctx: &CheckContext, exe: &Path, fixture: &str, trace_name: &str) -> Result<Session> {
     let mut spec = LaunchSpec::new(exe, ctx.out(trace_name));
     spec.pdf = Some(crate::checks::driving::repo_fixture(
@@ -257,12 +245,6 @@ fn launch(ctx: &CheckContext, exe: &Path, fixture: &str, trace_name: &str) -> Re
 }
 
 /// Bring the Document properties panel to the front, if it is not already.
-///
-/// Reuses `properties_metadata`'s opener rather than spelling the two clicks
-/// again. It is the same ribbon item and the same toggle hazard — pressing
-/// `file.document_properties` while the panel is up CLOSES it — and a second
-/// copy of that guard would be a second place for the next ribbon move to have
-/// to be applied.
 fn open_properties(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
     if declared(&session.trace()?, ui_rect, PANEL_OPEN_WITNESS).is_some() {
         return Ok(());

@@ -80,16 +80,6 @@ fn arm(app: &mut crate::app::PdfcerApp, ctx: &egui::Context, id: &str) {
 }
 
 /// Re-wrap the paragraph the caret is in, or say why not.
-///
-/// Takes `&Status` rather than `&mut OpenDoc`: this resolves an operand and
-/// raises an [`Action`]. The document is changed by
-/// `crate::app::actions::textstyle::reflow`, one funnel later, which is where
-/// every ENGINE-side refusal is worded — the added-text guard, the encrypted
-/// document, the composite font. Those are about the page and the session; this
-/// one is about the caret, and they are deliberately not merged.
-///
-/// ⚠ The engine's refusals are a **set**, not one: the commonest on a real CAD
-/// sheet is the composite-font one, not the save-and-reopen one.
 fn reflow(ctx: &egui::Context, status: &Status, actions: &mut Vec<Action>) {
     use crate::text::textedit::ReflowRefusal;
 
@@ -127,25 +117,6 @@ fn reflow(ctx: &egui::Context, status: &Status, actions: &mut Vec<Action>) {
 }
 
 /// Say why, in the status line and in the trace, and change nothing.
-///
-/// One helper for all of them, so a further refusal cannot be added that
-/// traces but does not tell the operator — the asymmetry that makes a feature
-/// look broken while the log says it declined politely.
-///
-/// # It writes to the DECLINE slot, and that is not interchangeable with
-/// the disclosure one
-///
-/// `crate::app::actions::record_note` draws under **`⚑ About your last edit:`**.
-/// A correct sentence in that slot after a press that changed nothing is a small
-/// lie told confidently — Ken: *"I haven't seen the reflow option actually work
-/// with anything when I press it."* Nothing happens here, so the slot that says
-/// so is `⊗`, and [`crate::app::status::decline::record_reflow`] is the door to
-/// it.
-///
-/// ⇒ **This function takes no `epoch`, and must not.** A disclosure is stamped
-/// with the edit it describes so it can go stale and retire itself; a decline
-/// describes **no** edit and is retired by the operator's next command instead.
-/// An epoch here would be dating a sentence against an edit that never happened.
 fn decline(reason: &str, why: crate::text::textedit::ReflowRefusal) {
     crate::app::status::decline::record_reflow(why);
     crate::diag::trace(|| {

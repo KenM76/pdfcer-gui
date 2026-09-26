@@ -17,16 +17,6 @@ const SUBJECT: &str = "file.print";
 
 /// The window sizes the dialog is driven at, as `width,height` in physical
 /// pixels for `PDFCER_DIAG_VIEWPORT`.
-///
-/// These size the APPLICATION window, and the dialog inherits its own
-/// declared 800x620 regardless — so what this actually varies is the machine's
-/// available space and the dialog's placement, not the dialog's size. Varying
-/// the dialog itself needs an OS-level resize of the child window, which is a
-/// capability this harness does not have and which is recorded as the limit of
-/// this check rather than papered over: see `LIMITS` in the failure text.
-///
-/// What it DOES cover is the default-size case at several placements, which is
-/// the case every operator meets on first open.
 const VIEWPORTS: &[&str] = &[
     "-2400,80,1600,1000",
     "-2400,80,1100,820",
@@ -67,13 +57,6 @@ struct Body {
 }
 
 /// Read `name=[w h]` out of a trace line's field.
-///
-/// The two egui vectors are printed by `Vec2`'s `Debug`, which is `[w h]` with
-/// a space — so they cannot be read by the harness's `key=value` splitter and
-/// are parsed here. Returns `None` rather than a default on anything
-/// unexpected: a zero would satisfy every inequality below and turn a broken
-/// parse into a pass, which is the exact shape this project calls a check that
-/// cannot fail.
 fn vec_field(raw: &str, key: &str) -> Option<(f32, f32)> {
     let after = raw.split_once(&format!("{key}=["))?.1;
     let inside = after.split_once(']')?.0;

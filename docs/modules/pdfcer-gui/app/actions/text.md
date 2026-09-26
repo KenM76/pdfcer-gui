@@ -37,3 +37,38 @@ above: a paragraph set in a **composite (Type 0 / CIDFont)** face is refused
 by name, and [`crate::text::textedit::ReflowRefusal::FontIsComposite`] words
 it. That is an engine feature not yet built rather than a guard, and it is
 the answer to most reflows on a SOLIDWORKS-exported drawing.
+
+## Item notes
+
+### `fn the_three_text_verbs_compose`
+
+# What this measures, precisely
+
+1. `add_text` puts a new run on page 0 of `fixtures/paragraph.pdf`. On a
+   single-stream page that necessarily creates a **second** `/Contents`
+   stream, which is the structural condition a reinstated guard would
+   test.
+2. `reflow_block` is then asked to re-wrap block 0 — the fixture's one
+   paragraph — in the same session, with no save in between.
+3. The reflow must be **accepted**, and the added text must still be
+   extractable from the page afterwards.
+
+# Why the third step is not redundant
+
+Step 3 matters most and is the easiest to leave out. The hazard the
+composition claim guards against is **silent data loss**, not an error:
+reflow's commit sweep empties every `/Contents` stream but the first, so
+an engine that accepted the reflow and dropped the added run would
+satisfy a test asserting only `is_ok()` — and would be far worse than a
+refusal, because nothing would tell the operator. Acceptance and
+survival are therefore asserted separately, and the failure messages say
+which happened.
+
+# Why this fixture
+
+`fixtures/paragraph.pdf` is a flush-left six-line paragraph in
+`Helvetica`, a simple (single-byte) face. That matters: a composite face
+is refused by name whatever the stream layout, so a CAD sheet cannot
+distinguish "a guard came back" from "the font is out of scope" and
+would make this test permanently unable to fail for the reason it was
+written.

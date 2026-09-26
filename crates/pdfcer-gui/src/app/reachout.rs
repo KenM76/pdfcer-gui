@@ -88,12 +88,6 @@ mod tests {
     use super::*;
 
     /// An ordinary form says NOTHING.
-    ///
-    /// The single most important property here. A form that computes a total
-    /// carries calculate and format scripts, and a shell that warned about
-    /// those would put a sentence on the status row of every real form an
-    /// operator opens — which trains them to ignore the one that says their
-    /// drawing is about to be posted to a web server.
     #[test]
     fn field_level_scripts_alone_are_not_worth_saying() {
         let mut scan = FormJavaScript::default();

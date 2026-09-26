@@ -69,3 +69,11 @@ supplies for that strip.
   its previews are `dock::overlay`'s unit tests; what those cannot reach is
   whether a real pointer crossing a real window boundary arrives at the
   grammar at all, and that is this file's single question.
+
+## Item notes
+
+### `const PANEL`
+
+Layers, and the choice carries the oracle: it is a **left**-dock panel in
+Edit's default arrangement, so a drop that landed in the right dock cannot
+be a drop that went home.

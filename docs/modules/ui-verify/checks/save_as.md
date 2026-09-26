@@ -55,3 +55,43 @@ button having been pressed.
 
 No binary, `--no-input`, no diagnostic channel, the fixture missing, or a
 ribbon control that was never declared or took no click.
+
+## Item notes
+
+### `const SAVE_AS`
+
+The old path is on the line as well as the new one, and that is the point
+of tracing it at all: *"the document moved"* and *"a copy was written"*
+produce the same `save-copy` line, and only the pair says which file the next
+`Ctrl+S` will reach.
+
+### `fn digest`
+
+`checks::ocr`'s, verbatim and for its stated reason: the question is *"did
+this file change"*, the adversary is a bug rather than a forger, and the
+**length is part of the digest** so a truncation cannot hide behind a
+collision.
+
+### `fn make_an_edit`
+
+The cheapest edit that needs no canvas aim, no armed tool and no typing:
+two ribbon clicks. This check's subject is *where a save goes*, so the edit
+should be the least interesting thing in it.
+
+### `fn the_digest_notices_a_single_changed_byte_and_a_truncation`
+
+Phase D's whole verdict rests on this, so a digest that answered
+"unchanged" for a modified file would turn the check's most important
+assertion into a formality that always passes.
+
+### `fn the_destination_is_not_the_original`
+
+Trivial and load-bearing: if the destination resolved to the original,
+phase D would compare a file with itself and pass against every possible
+build, including one with no Save As at all.
+
+### `fn nothing_outside_the_output_directory_is_written`
+
+Both names are relative and are joined to `--out` by `CheckContext`.
+This pins the intent: a future edit that reached for the repository's own
+fixture directly would be writing to a tracked file, twice, on every run.

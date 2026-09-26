@@ -9,11 +9,6 @@ use crate::app::prefs::{MAX_MAX_ZOOM_PERCENT, MIN_MAX_ZOOM_PERCENT};
 use crate::text::maxzoom as t;
 
 /// The presets offered, ascending.
-///
-///
-/// The top entry is [`MAX_MAX_ZOOM_PERCENT`] rather than a literal `1e12`, so
-/// the label says what is actually stored — see
-/// [`crate::text::maxzoom::preset`]'s test on why that distinction is kept.
 const PRESETS: [f32; 6] = [
     800.0,
     1_000.0,
@@ -66,10 +61,6 @@ mod tests {
     use super::*;
 
     /// **Every preset is inside the range the preference will accept.**
-    ///
-    /// A preset the parser would clamp is a row that silently does something
-    /// other than what it says — the operator picks a billion and the file
-    /// records something else, with nothing reporting the substitution.
     #[test]
     fn every_preset_is_a_value_the_preference_accepts() {
         for percent in PRESETS {

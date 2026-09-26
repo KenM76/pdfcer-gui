@@ -15,23 +15,6 @@ use super::model::{Listing, PageTabs};
 
 /// What the operator has typed into the name boxes, and which document
 /// revision it describes.
-///
-/// # Keyed on `(path, edit_epoch)`, which is what makes undo correct
-///
-/// Exactly `super::super::FormsUi`'s rule, for exactly its reason, and it is
-/// worth restating because the consequence here is the opposite of what a
-/// naive reading suggests.
-///
-/// A successful registration bumps the epoch, so **every draft in this map is
-/// discarded**. That is right rather than lossy: the widget the operator was
-/// typing about is no longer unclaimed, its row is gone, and the box they typed
-/// into does not exist any more. Keeping the text would mean re-showing it
-/// against whichever box happened to take that row next.
-///
-/// An **undo** bumps the epoch too, which restores the row and clears the box.
-/// Also right: the name went into the document and came back out, so a box
-/// still holding it would be showing a value the document no longer has, which
-/// is the precise defect `FormsUi`'s own comment records for the fill drafts.
 #[derive(Clone, Default)]
 struct Drafts {
     /// The `(document path, edit epoch)` this map describes.
@@ -48,11 +31,6 @@ struct Drafts {
 
 impl Drafts {
     /// The egui id this state is stored under.
-    ///
-    /// Distinct from `FormsUi`'s. The two are different lifetimes of thing
-    /// keyed the same way — one holds field values, one holds proposed field
-    /// names — and sharing an id would make each frame's store overwrite the
-    /// other's.
     fn id() -> egui::Id {
         egui::Id::new("pdfcer-forms-tab-order-register")
     }
@@ -291,22 +269,9 @@ pub(super) fn rows(ui: &mut egui::Ui, doc: &OpenDoc, listing: &Listing, actions:
 }
 
 /// The prefix each row's Register control publishes its rectangle under.
-///
-/// Suffixed with the widget's **tab position** rather than its index in the
-/// unclaimed list, because the position is the only stable thing about a row
-/// across a registration: registering one removes it from the list and
-/// renumbers every index after it, so a check that pressed "row 1" twice would
-/// press two different widgets and a check that pressed "the box at position 4"
-/// twice would press the same one or find it gone. The second is a question
-/// with an answer.
 const REGION_PREFIX: &str = "tab-order.register."; // ui-text-exempt: trace region name, never displayed
 
 /// A one-word name for a refusal, for the trace only.
-///
-/// Deliberately not the error's own `Display` prose: that is a sentence, and a
-/// trace line is parsed by field. `check-ui-strings.sh`'s exclusion 3 says an
-/// error type's prose is not permission to route text through it, and this is
-/// the same rule pointing at the diagnostic channel instead of the screen.
 fn refusal_kind(error: &pdfcer_core::edit::EditError) -> &'static str {
     use pdfcer_core::edit::EditError as E;
     match error {
@@ -318,20 +283,6 @@ fn refusal_kind(error: &pdfcer_core::edit::EditError) -> &'static str {
 }
 
 /// The hover on a Register control the preview says would refuse.
-///
-/// # Three named arms and a catch-all that does NOT guess
-///
-/// `pdfcer_core::edit::EditError` is `#[non_exhaustive]`, so this needs a
-/// wildcard whatever it does. The question is what the wildcard says, and the
-/// answer is *"pdfcer cannot, and this panel does not know why"* rather than a
-/// plausible guess.
-///
-/// Two of the five refusals are unreachable from here by construction —
-/// `NotAWidget` and `WidgetAlreadyOwned`, because the ids come from exactly the
-/// widgets the `/Annots` walk found unclaimed — so reaching the catch-all means
-/// the listing and the engine disagree about what this widget is. That is a
-/// fault to find in the trace, and handing an operator a confident wrong reason
-/// for it is worse than handing them none.
 fn refusal_hint(error: &pdfcer_core::edit::EditError) -> &'static str {
     use pdfcer_core::edit::EditError as E;
     use pdfcer_core::forms_author::FormAuthorError as A;
@@ -363,10 +314,6 @@ mod tests {
     use pdfcer_core::object::ObjId;
 
     /// An empty list draws nothing at all — not an empty group, not a heading.
-    ///
-    /// R9: a page whose widgets are all claimed has no problem to offer a
-    /// remedy for, and a "0 boxes need registering" line is a placeholder
-    /// wearing a number.
     #[test]
     fn a_page_with_nothing_unclaimed_draws_nothing() {
         let ctx = egui::Context::default();
@@ -388,11 +335,6 @@ mod tests {
 
     /// The rows are drawn in the order the model gives them, which is
     /// `/Annots` order.
-    ///
-    /// Asserted through the positions rather than through pixels: a row for
-    /// position 2 must exist and must say 2, because the number is the only
-    /// handle the operator has on a box with no name — they press Tab that many
-    /// times to find it.
     #[test]
     fn each_unclaimed_widget_gets_its_tab_position() {
         assert_eq!(
@@ -416,10 +358,6 @@ mod tests {
     }
 
     /// A draft map keyed on one revision is discarded by the next.
-    ///
-    /// The property that makes undo correct here — see [`Drafts`]. Exercised on
-    /// the struct rather than through a frame, because the thing being asserted
-    /// is the key comparison and not the widget.
     #[test]
     fn an_edit_forgets_every_typed_name() {
         let mut drafts = Drafts {
@@ -436,26 +374,12 @@ mod tests {
     }
 
     /// The id this state stores itself under is not the fill panel's.
-    ///
-    /// Two `Clone` types in one `data` store under one id is a silent
-    /// overwrite: whichever stores second wins, and the symptom is a text box
-    /// that forgets a keystroke at a time.
     #[test]
     fn the_draft_store_does_not_collide_with_the_fill_panel() {
         assert_ne!(Drafts::id(), egui::Id::new("pdfcer-forms-ui"));
     }
 
     /// The catch-all refusal does not invent a reason.
-    ///
-    /// The two the operator can act on get their own sentence. Everything else
-    /// gets one that says pdfcer cannot and does not say why — because reaching
-    /// it means the listing and the engine disagree about what this widget is,
-    /// and a confident wrong reason for that is worse than none.
-    ///
-    /// `WidgetAlreadyOwned` is the probe worth having: it is the refusal that
-    /// would arrive if this panel ever offered a widget that already has a
-    /// field, and *"type a different name"* would be actively misleading advice
-    /// about it.
     #[test]
     fn an_unexpected_refusal_says_so_rather_than_guessing() {
         use pdfcer_core::edit::EditError as E;
@@ -485,11 +409,6 @@ mod tests {
     }
 
     /// The button names the field it will create, and the two labels differ.
-    ///
-    /// The blank-box case is the one that matters: the name comes out of the
-    /// FILE, and it is a string the operator has never seen — nothing in the
-    /// panel could have shown it, because the widget belongs to no field and so
-    /// no field row names it.
     #[test]
     fn the_button_names_the_field_when_the_preview_knows_it() {
         let named = t::tab_order_register_as("Address");
@@ -503,12 +422,6 @@ mod tests {
 
     /// The typeless-field hover says the registration will WORK and still not
     /// be enough.
-    ///
-    /// Rule 4's half that survives: an inference the operator cannot
-    /// see. Both halves have to be in the sentence — a hover that only said
-    /// "this will register" would be true and useless, and one that only said
-    /// "no viewer can fill it" would read as a refusal for something that is
-    /// about to succeed.
     #[test]
     fn the_typeless_warning_says_both_halves() {
         let text = t::tab_order_register_no_type();
@@ -531,25 +444,6 @@ mod tests {
 
     /// **The dotted name never reaches a press here, and the table that
     /// said it did was measuring the wrong gate.**
-    ///
-    /// [`crate::app::actions::forms::correctable`]'s reachability table marks
-    /// this surface **yes** for `DottedPartialName` — the one route of three
-    /// that can raise it — on the grounds that this box is free text gated only
-    /// on non-empty. True of *this shell's* gate. Beside the point, because the
-    /// engine put `reject_dotted_partial` inside `adopt_plan`, and
-    /// `EditSession::adopt_preview` is documented as sharing that plan by
-    /// construction. The refusal therefore arrives in the preview this row draws
-    /// from, the button greys, and the press the table describes cannot happen.
-    ///
-    /// ⇒ **A guard's placement decides which surface has to explain it.** The
-    /// engine moved this one for its own reasons — one predicate for three
-    /// enforcement sites — and the disclosure moved with it, out of the status
-    /// bar and into a hover, silently.
-    ///
-    ///
-    /// Driven on `ORPHAN_WIDGET`, the hand-authored fixture: one page, one
-    /// `/Widget` owned by no field and no `/AcroForm` at all, which is the only
-    /// shape this panel offers a Register row for.
     #[test]
     fn a_dotted_name_greys_the_register_button_and_the_hover_names_the_rule() {
         let doc = crate::app::state::open_local_fixture(crate::app::state::ORPHAN_WIDGET);
@@ -577,12 +471,6 @@ mod tests {
     }
 
     /// The bare-dot refusal is reachable from here too, and worded separately.
-    ///
-    ///
-    /// ⇒ *a private predicate with three callers is three behaviours until
-    /// something forces them to agree.* Asserted here because this surface is
-    /// one of the three, and because a regression would present as the hover
-    /// going back to the catch-all rather than as anything visibly broken.
     #[test]
     fn a_name_with_a_bare_dot_is_refused_with_its_own_sentence() {
         let doc = crate::app::state::open_local_fixture(crate::app::state::ORPHAN_WIDGET);
@@ -601,18 +489,6 @@ mod tests {
     }
 
     /// The fixture's single unclaimed `/Widget`, by object id.
-    ///
-    /// Derived through [`super::super::model::collect`] rather than typed as
-    /// a literal `ObjId`, and that is not fastidiousness about magic numbers:
-    /// **it is the derivation the row the operator presses uses**, so the tests
-    /// above drive the id this surface would hand to `FieldAction::Adopt`. A
-    /// number typed into a test is a claim about bytes nobody re-reads, and this
-    /// project has already had a harness report defects that did not exist from
-    /// exactly that.
-    ///
-    /// `form` is `None` here — the fixture's catalog has no `/AcroForm`, which is
-    /// the whole point of it — and `collect` is documented to put every widget in
-    /// `unclaimed` in that case.
     fn only_unclaimed_widget(doc: &OpenDoc) -> ObjId {
         let view = doc.session.view();
         let slots = doc.session.page_slots().expect("the fixture's page tree walks — it is five objects and its xref offsets are asserted by its own generator");

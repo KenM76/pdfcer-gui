@@ -71,17 +71,6 @@ const INK_FRACTION: f64 = 0.90;
 const PAPER_INK_FRACTION: f64 = 0.05;
 
 /// Single-page display, then 100 %.
-///
-/// The same pair the sibling checks use and for the reason `off_page_visible`
-/// measured: fit-page on a 200 × 200 fixture puts x = −100 outside the
-/// viewport, the conversion refuses — correctly — and the check SKIPS, which
-/// is not red.
-///
-/// `mode.read` is named EXPLICITLY on every Read rung rather than relied on
-/// as the default, because the profile remembers the mode it was last in.
-/// Rung 5 follows a rung that ended in Edit, and a rung that assumed Read
-/// because the first launch was in Read would be reading Edit's answer while
-/// reporting Read's.
 const READ: &str = "mode.read,view.page_single,view.zoom_actual";
 
 /// Read, and then the operator's toggle.
@@ -753,11 +742,6 @@ mod tests {
 
     /// The ladder asserts both directions, in both modes, and at least one
     /// rung reads its answer from each of the three writers.
-    ///
-    /// The failure this catches is a later edit that trims the ladder into
-    /// something that still passes: five rungs that all expect `on=true`, or
-    /// five that all read `off-page-seed` and therefore never exercise the
-    /// mode change. Either would leave a green check over an untested half.
     #[test]
     fn the_ladder_covers_both_directions_and_all_three_writers() {
         assert!(LADDER.iter().any(|r| r.want_on), "no rung expects ON");

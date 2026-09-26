@@ -302,12 +302,6 @@ mod tests {
     use super::*;
 
     /// **An uncalibrated page is told that 1:1 is a CHOICE.**
-    ///
-    /// The assertion this catalog exists for. `pdfcer-core` names the failure it
-    /// prevents — every generic converter exports at paper scale and says
-    /// nothing, so a 1:2 detail arrives at half size *looking plausible* — and
-    /// the only defence is a sentence that refuses to present a default as a
-    /// finding.
     #[test]
     fn an_uncalibrated_page_is_not_told_a_number() {
         let text = scale_uncalibrated();
@@ -334,11 +328,6 @@ mod tests {
     }
 
     /// The two text counts stay apart.
-    ///
-    /// `skipped` is *you asked*; `unreadable` is *pdfcer could not read it*. The
-    /// second is a fact about the source PDF and the reason labels the operator
-    /// can see on screen are absent from the file — and rolling them together
-    /// would let it hide inside a sentence about their own choice.
     #[test]
     fn skipped_text_and_unreadable_text_are_different_sentences() {
         let both = exported(
@@ -360,10 +349,6 @@ mod tests {
     }
 
     /// A picture on the page is always mentioned, and says why.
-    ///
-    /// *"The format has no way to carry a raster"* rather than *"images are not
-    /// supported"*: the first is a fact about DXF that no future version of
-    /// pdfcer will change, and the second reads as a gap somebody might fix.
     #[test]
     fn a_skipped_picture_names_the_formats_limit_not_pdfcers() {
         let note = exported(

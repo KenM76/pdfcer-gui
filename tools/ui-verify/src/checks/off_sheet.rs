@@ -13,38 +13,12 @@ use crate::report::CheckReport;
 use crate::trace::Trace;
 
 /// `VK_CONTROL`, held while the wheel rolls to make it a zoom.
-///
-/// Plain wheel would be the wrong gesture twice over: it scrolls rather than
-/// zooms below the threshold, and above it `smooth_scroll_delta` is what the
-/// deep pan route reads — so a plain-wheel climb would exercise the pan this
-/// check is not about and never reach the depth it is about.
 const VK_CONTROL: u16 = 0x11;
 
 /// The fixture, relative to the workspace root.
-///
-/// **A1 landscape, and the size is the reason.** Page 0 of this document is
-/// `/MediaBox [0 0 2383.937 1683.78]`, so the deep threshold —
-/// `longest_page_pt × zoom` over `SUB_PIXEL_CONTENT_EXTENT`, which is 2²⁰ since
-/// O49 — is crossed at a zoom of about **440**. On a US Letter sheet the same
-/// constant puts it at about **1,324**, which is another twenty-odd Ctrl+wheel
-/// notches and several seconds of rasterizing for no additional evidence.
-///
-/// Four pages rather than one, so the uncovered page-flip escape route named
-/// in the module header at least *exists* on the document being driven. A
-/// single-page fixture would make that route unreachable by construction and
-/// the omission harder to see.
 const FIXTURE: &str = "fixtures/four-pages.pdf";
 
 /// The commands to ring once at startup, one per frame, via `PDFCER_DIAG_INVOKE`.
-///
-/// Ribbon clicks were the first design and this is better for a specific
-/// reason: it removes three dependencies this check does not want. A ribbon
-/// click needs the group to be uncollapsed, needs `ribbon.item.*` rects to be
-/// published, and needs the View tab to be raised first — three ways for a run
-/// to fail on something that is somebody else's check's subject.
-/// `view.page_single` and `view.zoom_fit_page` are both asserted from the
-/// canvas's own trace afterwards, so the env var is a *request* that is then
-/// *verified*, not a request that is assumed.
 const INVOKE: &str = "mode.review,view.page_single,view.zoom_fit_page";
 
 /// The window size, so the arithmetic below is quoted against a known canvas.
@@ -57,11 +31,6 @@ const CANVAS_EVENT: &str = "canvas"; // ui-text-exempt: a trace event name, neve
 const POS_EVENT: &str = "canvas-pos"; // ui-text-exempt: a trace event name, never displayed
 
 /// **The clamp's own trace** — `canvas-confined axes=none|x|y|xy`.
-///
-/// This is what lets the check say *the mechanism ran* separately from *the
-/// symptom is gone*. Without it, a PASS is satisfied equally by the clamp
-/// working and by the run never having driven the anchor out of range, and an
-/// assertion both outcomes satisfy measures neither.
 const CONFINED_EVENT: &str = "canvas-confined"; // ui-text-exempt: a trace event name
 
 /// The blank-frame line. Its `reason=` field has several values; only one of
@@ -76,11 +45,6 @@ const LEARNED_EVENT: &str = "raster-ceiling-learned"; // ui-text-exempt: a trace
 
 /// The canvas scroll area, whose grey margin is the only bound an off-sheet
 /// point may be converted against.
-///
-/// Not the page's own rect. Every point this check aims at is outside that by
-/// construction; bounding against it rejects the whole check with a message
-/// about margin that is plausible and wrong. See
-/// `CanvasMapping::doc_to_window_off_page`.
 const VIEWPORT_REGION: &str = "canvas-viewport"; // ui-text-exempt: a trace region name
 
 /// The page's own rect, asserted present so "no sheet on screen" is a clear
@@ -89,104 +53,24 @@ const PAGE_REGION: &str = "page"; // ui-text-exempt: a trace region name
 
 /// **Ctrl+wheel OUT this many notches before aiming**, and this is not
 /// cosmetic — without it the check cannot aim at all.
-///
-/// Fit on an A1 landscape sheet in a 1600 × 1380 window is width-limited: the
-/// canvas is about 1600 × 1150 logical points (aspect 1.39) and the page's
-/// aspect is 1.416, so the sheet is drawn the full width and leaves roughly
-/// **ten points** of vertical margin. A point eighty-odd page points above the
-/// top edge maps above the *viewport*, and
-/// `CanvasMapping::doc_to_window_off_page` correctly refuses it — refuses to
-/// clamp, too, so there is no quiet wrong answer to misread.
-///
-/// Six notches out multiplies the zoom by about 1.2048⁻⁶ ≈ 0.29, which turns
-/// ten points of margin into roughly four hundred. The aim point then sits
-/// about sixteen points above the sheet with four hundred to spare, and the
-/// conversion stops depending on the window size on the day.
 const ZOOM_OUT_NOTCHES: usize = 6;
 
 /// How far above the sheet's top edge to aim, as a fraction of the page height.
-///
-/// ⚠ Read the module header before tuning this. It is **not** the distance the
-/// defect needs; the shallow tier's own scroll clamp normalises it long before
-/// the deep threshold is crossed. It only has to be unambiguously above the
-/// sheet — far enough that a point of `f32` rounding cannot put it back on the
-/// page — and near enough that it is still inside the viewport after
-/// [`ZOOM_OUT_NOTCHES`].
 const OFF_PAGE_FRACTION: f64 = 0.05;
 
 /// Total Ctrl+wheel notches to climb.
-///
-/// Sized from the arithmetic rather than guessed. A notch multiplies the zoom
-/// by about 1.2048 (derived in `deep_pan`'s `PRESSES`: twenty notches from
-/// `1.0` reach about 4,155 %). Starting from 0.29 after
-/// [`ZOOM_OUT_NOTCHES`], reaching the A1 sheet's deep threshold of about 440
-/// takes roughly **forty** notches, and driving the anchor far enough out of
-/// range to leave the viewport takes roughly **nine** more: the anchor's screen
-/// offset grows by 20 % a notch and has to exceed a viewport, which from the
-/// measured starting offset of a couple of hundred pixels is `ln(4.8) / ln(1.2)`
-/// notches.
-///
-/// Eighty is that fifty with a wide margin, because every term in it is a
-/// derivation and the one thing this check must not do is stop short of the
-/// tier it is named after and report PASS. It costs a few seconds.
 const CLIMB_NOTCHES: usize = 80;
 
 /// How many notches per batch, between readings.
-///
-/// Batched rather than rolled all at once because the evidence is a
-/// *trajectory*: the peak zoom, the tier, the first blank frame and the first
-/// clamp are all "when did this happen" questions, and a single eighty-notch
-/// roll answers none of them. Ten is small enough to locate the transition to
-/// within about a factor of six in zoom and large enough that the settle cost
-/// is paid eight times rather than eighty.
 const CLIMB_BATCH: usize = 10;
 
 /// Frames to settle after each batch.
-///
-/// Generous: at this depth the region rasterizer is doing real work and a
-/// reading taken before the frame settles reports the *previous* batch's zoom,
-/// which would make the trajectory lag the gesture by one batch and the located
-/// transition wrong by a factor of six.
 const SETTLE_PER_BATCH: u32 = 24;
 
 /// **The zoom the climb must pass**, as a multiplier (1.0 = 100 %).
-///
-/// This is the operator's *"the canvas will just stop zooming in"*, made into a
-/// number. It is deliberately set between the two outcomes rather than near
-/// either: the A1 sheet's deep threshold is about **440**, the defect's own
-/// measured trajectory stalled around **329** (the ceiling
-/// `render::settle` learned from a refused whole-page raster at scale 438), and
-/// a healthy eighty-notch climb from 0.29 ends in the hundreds of thousands.
-/// A thousand is comfortably above every stall that has been measured and four
-/// orders of magnitude below where a working build finishes.
-///
-/// Both ends have since been measured on this very check, and the gap is
-/// wider than the derivation assumed. The fixed build's eighty notches reached
-/// **1,071,053** (107,105,325 %); the falsification build went blank at
-/// **39.8** (3,981 %). This floor sits between them with a factor of 25 of
-/// margin below and a factor of 1,071 above.
-///
-/// ⚠ Which also means this verdict would **not** have caught O186 on its own —
-/// the blank arrived at 39.8, far under the floor. Verdict 1 is what fires, and
-/// that is why verdict 1 is asked first. A floor on the peak zoom detects *"it
-/// stopped climbing"*; it does not detect *"it climbed into a blank frame"*.
-///
-/// ⚠ It is a floor on the **peak** zoom the run reached, not on the final one.
-/// The recovery probe deliberately rolls the zoom back down, and reading the
-/// final value would assert that the recovery failed.
 const ZOOM_FLOOR: f64 = 1000.0;
 
 /// Ctrl+wheel notches to roll back OUT, as the recovery probe.
-///
-/// This is the only driven coverage of `canvas::escape::offer` anywhere, and
-/// on a *fixed* build it is a sanity check rather than a test of the hatch —
-/// the hatch exists for a blank frame, and a fixed build has none. Its value is
-/// in the falsification run: against a binary with the clamp removed this check
-/// reaches the blank state, and these notches are what prove a blank canvas is
-/// no longer terminal. See the module header for the paging route, which has no
-/// coverage and cannot have any on a fixed build.
-///
-/// Eighty out undoes eighty in, with the same margin and for the same reason.
 const RECOVER_NOTCHES: usize = 80;
 
 /// See the module documentation.
@@ -214,11 +98,6 @@ impl Check for AViewCarriedOffTheSheetComesBack {
 }
 
 /// Everything one reading of the trace can say about the climb so far.
-///
-/// A single struct built by a single function, on `deep_pan::position`'s
-/// lesson: reading two of these quantities at two different moments is how this
-/// harness has produced confident wrong verdicts before. Every field here comes
-/// from the same parse of the same capture.
 #[derive(Debug, Default, Clone)]
 struct Climb {
     /// The highest `zoom=` any `canvas` line after the mark reported.
@@ -237,12 +116,6 @@ struct Climb {
 }
 
 /// Read the whole climb out of one parse of the capture.
-///
-/// `mark` is a [`Trace::mark`] taken before the first notch, so nothing the
-/// setup did can satisfy an assertion about the climb. That anchoring is not
-/// optional: the setup fits the page and zooms out six notches, each of which
-/// emits `canvas` lines, and an unanchored "the canvas reported a zoom" would
-/// be satisfied by the fit.
 fn survey(trace: &Trace, mark: usize) -> Climb {
     let mut c = Climb::default();
 

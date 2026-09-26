@@ -160,3 +160,120 @@ what is not proven is that the chord reaches the arm.
   oracle to read;
 * the fixture carries annotations the Comments panel excludes, so `listed=`
   would not move by exactly one.
+
+## Item notes
+
+### `const MODE`
+
+`crate::checks::save_copy`'s choice, for its reason: a markup tool that works
+in Review works in Edit, and this check's subject is not the tool. Undo
+itself is mode-independent — it is on the QAT, which no mode hides — so the
+mode here is entirely about reaching an *edit* to undo.
+
+### `const UNDO`
+
+`ribbon.qat.` and not `ribbon.item.`: these two sit on **no tab**
+(`shell::manifest`'s mode list says so in as many words), so the QAT is the
+only surface a pointer can reach them on. That is also why this check never
+switches tabs to press them — the QAT is drawn beside the tab strip in every
+mode, so phases D and E press it with the Markup tab still active.
+
+### `const UNDO_DECLINED_EVENT`
+
+Read only to improve a failure message. Its presence in phases D or E would
+mean the click arrived, reached the arm, and the arm disagreed with the
+condition that armed the control — a different fix from a click that never
+arrived.
+
+### `const OBJECTS_EVENT`
+
+Emitted by `OpenDoc::trace_object_count` once per `(page index, edit epoch)`
+pair and suppressed for every repeat, so a *new* line means the epoch moved.
+See the module header for the build this catches and why the count `n` is
+deliberately not the thing asserted on.
+
+### `const OBJECTS_UNAVAILABLE_EVENT`
+
+Read for a SKIP reason: a fixture whose page cannot be decomposed emits this
+instead of [`OBJECTS_EVENT`], and the epoch oracle is then unavailable for a
+reason that has nothing to do with undo.
+
+### `const RENDER_SPAWN_EVENT`
+
+A raster starting. Nothing else asks for one after an undo, because the
+texture's key carries only the page index and the raster scale and an undo
+changes neither — so a new spawn means `vector_edit`'s fourth step ran.
+
+### `const QAT_DROPPED_EVENT`
+
+The shell's own disclosure, read for a SKIP: a dropped control declares no
+rect, and "there is nothing to aim at" would otherwise be reported as though
+the command were missing.
+
+### `const DRAG`
+
+`crate::checks::save_copy`'s drag, deliberately: two checks that author the
+same annotation the same way are two independent readings of one gesture, and
+a different rectangle here would add a variable neither of them is about.
+
+### `fn invokes`
+
+A **count**, never a presence: this check clicks the same two controls more
+than once, and "has it ever been invoked?" would be answered `true` by a
+click made ten seconds earlier — which is precisely the question phases B and
+F must not ask.
+
+### `struct Invalidation`
+
+Read together and compared together, because the failure they exist to catch
+is *one of the two steps was omitted* and a check that read them at different
+moments could not attribute a change to the phase that caused it.
+
+### `fn click_qat`
+
+Returns `true` when the click produced a new `ribbon-command-invoked`, and
+`false` when it did not — which is the answer phases B and F are asking for
+and the reason this is not [`click_command`]. A greyed `egui` control takes
+the click and emits nothing, so the two outcomes are both *expected results*
+here rather than one being a failure to be raised from inside.
+
+The rect is still required, and its absence is still a SKIP: a control that
+was never drawn cannot have been clicked, and reading *that* silence as
+"correctly greyed" would be the vacuous pass this crate's rule 4 exists to
+forbid.
+
+### `fn comments_count`
+
+Both files carried the same eight lines and therefore the same defect: the
+census was read with `Trace::last`, which searches the whole capture, so a
+panel that had been sent to the back of its dock and had **stopped tracing**
+kept answering with the count it published in the previous mode. On the
+driven sweep of 2026-09-05 that made this check and `save_copy_round_trip`
+fail in identical words against a panel that was working, and the sweep
+report read the duplication as corroboration: *"two independent witnesses"*.
+
+The reader now lives in [`crate::checks::comments_census`], once, and its
+header carries the whole finding. Nothing in this file reads the census
+directly any more, deliberately.
+
+### `struct Step`
+
+Factored because phases D and E are the **same** six assertions in opposite
+directions, and two hand-written copies would be two chances for one of them
+to lose the invalidation half — which is the half no other test in the
+workspace makes.
+
+### `fn the_selectors_match_the_shells_own_spelling`
+
+Pinned for the reason every sibling check pins its own: the two crates
+are joined by a **string** and nothing else, so a rename would leave both
+sides compiling while every assertion here quietly stopped matching — and
+a check that matches nothing passes vacuously.
+
+### `fn the_invalidation_reading_counts_lines_rather_than_finding_one`
+
+[`Invalidation`] is three lines of arithmetic and exactly the kind of
+thing that gets "simplified" into a presence test — which would pass
+against the build this check exists to catch, because an `objects` line
+from the document's *first* frame is present whether or not the undo
+produced a second one.

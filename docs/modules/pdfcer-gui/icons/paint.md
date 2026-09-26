@@ -100,3 +100,66 @@ reserve the slot, derive the tint and track the interaction state, but
 it **cannot** honour "never colour alone" on the application's behalf,
 because the second cue lives in the glyph and only the application can
 draw one. Every rule of that shape ends as a field on the request.
+
+## Item notes
+
+### `const ASSET_STROKE_UNITS`
+
+Only [`paint_missing_mark`] needs this — real glyphs carry their own
+`stroke-width` — but it is the set's weight, and the missing mark has to
+look like it belongs to the same family or it reads as a rendering
+artefact rather than as a deliberate report.
+
+### `const FULL_UV`
+
+Named rather than rebuilt at each call site so that "draw the entire
+glyph" is stated once; a subtly wrong UV rect would crop a glyph in a way
+that looks like bad artwork.
+
+### `fn theme_tint`
+
+Tests must not invent a colour: the whole point of the theming story
+is that no colour is chosen outside the theme module, and a test that
+reached for a literal would be modelling something the application
+never does.
+
+### `fn shapes_from`
+
+Shape count is a coarse instrument, and deliberately so: asserting on
+`epaint`'s internal shape *variants* would pin this module to an
+implementation detail of a dependency, and the property that actually
+matters here is "did anything get drawn at all", because the failure
+being guarded against is *nothing* getting drawn.
+
+### `fn painted`
+
+A bare egui frame is not guaranteed to emit zero shapes — plugins and
+the root `Ui` may contribute — so every assertion below is a
+*difference* against a frame that painted no icon. Asserting on the
+raw total would make these tests depend on egui's internals rather
+than on this module's behaviour.
+
+### `fn an_unknown_key_draws_a_visible_mark_rather_than_nothing`
+
+The failure this guards against is precise: by the time the painter
+is called, `shows_label` has already dropped the control's text label
+on the strength of a painter existing. A painter that silently draws
+nothing therefore produces a control with no label, no glyph and no
+explanation — the exact row of blank boxes the shell's third
+`shows_label` clause was added to prevent, reintroduced from the
+application's side.
+
+### `fn a_near_miss_key_gets_the_mark_rather_than_the_nearest_glyph`
+
+`fit_page` is one character away from a real key. Resolving it fuzzily
+would draw a plausible glyph and hide the typo forever; the mark makes
+it visible on the first frame.
+
+### `fn the_painter_satisfies_the_shell_seam`
+
+The wiring is one line in another module, and if the bound did not
+hold it would fail there rather than here — in a file this module's
+author does not own, during a build somebody else is running. This
+coerces `paint_ribbon_icon` to the shell's own
+`IconPainter` type alias, which is the same check the ribbon
+performs, done here where it is this module's problem.

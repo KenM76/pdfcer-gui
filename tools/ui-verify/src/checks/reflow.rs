@@ -14,21 +14,12 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// Edit mode, then arm the caret — both through the harness seam.
-///
-/// `edit.text` is rung here rather than clicked because arming the caret is
-/// **not what this check is about**, and it already has its own driven check.
-/// A check that re-verifies its own preconditions through the slowest possible
-/// route fails for reasons that are not its subject.
 const INVOKE: &str = "mode.edit,edit.text";
 /// `text-edit-caret page=… run=… len=…` — a click resolved a run.
 const CARET_EVENT: &str = "text-edit-caret";
 /// `text-edit-declined reason=…` — a click did not.
 const DECLINED_EVENT: &str = "text-edit-declined";
 /// The Reflow control, as (region, command id).
-///
-/// The pair is written once so the region and the id cannot drift apart: a
-/// check that clicked one control and asserted about another would pass or fail
-/// for reasons unrelated to either.
 const REFLOW_ITEM: (&str, &str) = ("ribbon.item.edit.reflow_block", "edit.reflow_block");
 /// The ribbon tab that carries [`REFLOW_ITEM`]. A mode is not a tab — see the
 /// click in [`drive`].
@@ -38,25 +29,11 @@ const RESOLVED_EVENT: &str = "reflow-resolved";
 /// `reflow-declined reason=…` — it did not, and the shell said which way.
 const DECLINE_EVENT: &str = "reflow-declined";
 /// `reflow-block-applied page=… block=… lines=A->B …` — the engine re-wrapped.
-///
-/// `-applied`, per the convention this project adopted after making the
-/// same-name mistake twice: `vector_edit` writes its own bare `reflow-block …`
-/// line for the identical edit, and `.last()` on the bare name reads that one.
 const APPLIED_EVENT: &str = "reflow-block-applied";
 /// The page's own region, so a failure can say whether a sheet was drawn.
 const PAGE_REGION: &str = "page";
 
 /// Where to put the caret, in PDF user space on the fixture.
-///
-/// Inside **line 2** of the block — `x = 120`, baseline `y = 668` — rather
-/// than in the first or last line. A first-line caret would pass on a build
-/// whose block lookup returned 0 unconditionally, and the last line is the one
-/// most likely to be split off by a recogniser that disagrees about the block's
-/// extent. The middle is the honest place to ask.
-///
-/// The numbers come from `tools/gen-reflow-fixture.py`, which prints the
-/// geometry it computed for exactly this reason. They are quoted, not derived
-/// twice.
 const CARET_AT: (f64, f64) = (120.0, 668.0);
 /// The line count the fixture starts with.
 const LINES_BEFORE: u32 = 6;
@@ -346,10 +323,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 }
 
 /// `A->B` from the trace's `lines=` field.
-///
-/// A parse rather than a `split` at the call site, so a malformed field is a
-/// SKIP with a sentence instead of a silent `0->0` that would pass the
-/// `after >= before` test by arithmetic accident.
 fn parse_lines(field: &str) -> Option<(u32, u32)> {
     let (before, after) = field.split_once("->")?;
     Some((before.trim().parse().ok()?, after.trim().parse().ok()?))

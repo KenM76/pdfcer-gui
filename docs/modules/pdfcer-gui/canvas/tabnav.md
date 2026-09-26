@@ -46,3 +46,11 @@ tab switched, the panel collapsed — cannot leave a stale claim behind,
 because egui's own end-of-pass dead-man's switch drops the focus of an id
 that was not used. **The identity test is also the freshness test**, which
 is why no pass counter appears in [`Owner`].
+
+## Item notes
+
+### `fn owner`
+
+The identity test the module header argues for, in one place because two
+callers need it: [`claim`], and [`owns_focus`] for the surfaces that have to
+stand aside from a key the ring is about to read.

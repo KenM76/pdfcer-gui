@@ -78,3 +78,19 @@ and the unit test `pen::tests::a_colour_round_trips_through_the_swatch`
 covers the conversion either side of it. That gap is named here rather than
 papered over: the honest description of this check is *"the Style group is
 drawn and its state is live"*, not *"colour picking works"*.
+
+## Item notes
+
+### `fn egui_point`
+
+Exists only so the drag endpoints above can be expressed as *parts of a
+rectangle the application published* rather than as coordinates this file
+invented — see the comment at the call site.
+
+### `fn shell_pen_lines`
+
+Counted rather than compared by value, for the reason
+`checks::delete_key`'s header sets out about absences: a count that goes up
+is positive evidence that a control acted, whereas an unchanged *value*
+could mean the control did nothing or that it was dragged back to where it
+started.

@@ -267,10 +267,6 @@ mod tests {
     use super::*;
 
     /// The operator's request, restated as an assertion.
-    ///
-    /// Read off, Review and Edit on, asserted against the *ids the manifest
-    /// uses* rather than against display names, because those ids are what
-    /// reaches [`OffPagePrefs::default_for_mode`] at runtime.
     #[test]
     fn read_ships_off_and_the_working_modes_ship_on() {
         assert!(!OffPagePrefs::default_for_mode("read"));
@@ -301,10 +297,6 @@ mod tests {
     }
 
     /// An answer equal to the shipped default is still stored.
-    ///
-    /// See [`OffPagePrefs::set`]: *chose the default* and *never answered* are
-    /// the same value and different facts, and only the stored one survives a
-    /// later build changing its mind.
     #[test]
     fn choosing_the_default_is_still_an_answer() {
         let mut prefs = OffPagePrefs::default();

@@ -110,11 +110,6 @@ const TEXT_KIND: &str = "Text";
 /// How far to sweep along the baseline, in PDF points.
 const SWEEP_PT: f64 = 60.0;
 /// `T` as a Windows virtual key — the text-sweep tool.
-///
-/// Pressed only in **phase 2**, and the fact that phase 1 works without it is
-/// the point of the check: the whole complaint is that an operator does not
-/// know to press it, so the surfaces that tell them must be observed in the
-/// state where they have not.
 const VK_T: u16 = 0x54;
 
 /// See the module documentation.
@@ -219,12 +214,6 @@ pub(super) fn aimed_at_one_text_object(
 }
 
 /// What the phase-1 click left selected, as the four answers that matter.
-///
-/// Separated from the wording above so the READ is testable without a running
-/// program: every variant here is reachable from a three-line trace, and the
-/// tests at the foot of this module reach all four. That is the whole point of
-/// the split — a guard against a harness misreading its own oracle is worth
-/// nothing if the guard itself can only be exercised by driving the mouse.
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum Aim<'a> {
     /// Exactly one object is selected and it is text. Phase 1 may proceed.
@@ -239,12 +228,6 @@ enum Aim<'a> {
 }
 
 /// Read [`Aim`] out of a settled trace.
-///
-/// **Order matters, and it is "what" before "how many".** A click that lands
-/// on a path inside a marquee of eleven is an aim problem twice over, and the
-/// kind is the more useful half to be told about: it names the fixture
-/// coordinate that has to change. Reporting "11 objects selected" first would
-/// send a reader looking for a stray Shift.
 fn aim_verdict(trace: &Trace) -> Aim<'_> {
     let Some(kind) = trace.last(PANEL_EVENT).and_then(|line| line.get("kind")) else {
         return Aim::NothingSelected;
@@ -728,11 +711,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 }
 
 /// Join borrowed names for a failure message.
-///
-/// `driving::list` takes owned `String`s and `driving::list_str` takes a slice
-/// of `&str` — this is the latter, spelled locally only because the filter
-/// above produces a `Vec<&str>` and handing it straight over reads better than
-/// a collect-into-owned at the call site.
 fn list_of(names: &[&str]) -> String {
     driving::list_str(names)
 }
@@ -768,12 +746,6 @@ mod tests {
     use super::*;
 
     /// The region list and the command list describe the same five controls.
-    ///
-    /// Two hand-written lists over one set is the shape a completeness check
-    /// goes blind in: a sixth control added to the band and to one list reads as
-    /// a measured group from either end. The pairing is mechanical — a region
-    /// is `ribbon.item.` followed by the command id — so it can be asserted
-    /// even though neither list is derived from the other.
     #[test]
     fn the_two_font_lists_describe_the_same_five_controls() {
         let paired: Vec<String> = FONT_COMMANDS
@@ -790,12 +762,6 @@ mod tests {
                            pdfcer-diag properties-panel object=412 kind=Text notes=0";
 
     /// The regression this guard was written for, in three lines.
-    ///
-    /// These are the actual values from a run at `--doc-point 0,300,500` — a
-    /// drawing view on `SW41177.pdf` — where the check reported the program's
-    /// correct silence as O37's complaint returning.
-    /// The verdict must be a SKIP that names the kind, so the reader is sent to
-    /// the fixture coordinate rather than to `panels::properties::text`.
     #[test]
     fn a_click_that_landed_on_a_path_is_the_harnesss_aim_and_not_a_defect() {
         let trace = Trace::parse(
@@ -833,10 +799,6 @@ mod tests {
 
     /// `route` is single-selection by design, so a marquee that caught a label
     /// and ten paths is an aim problem even though the FIRST object is text.
-    ///
-    /// This is the case `properties-panel` alone cannot see: it describes the
-    /// first selected object and says nothing about how many there are, which
-    /// is why the count is read from `canvas-selection` instead of inferred.
     #[test]
     fn a_multi_selection_whose_first_object_is_text_still_skips() {
         let trace = Trace::parse(
@@ -850,11 +812,6 @@ mod tests {
 
     /// A `properties-panel` line with no readable count beside it must not be
     /// waved through as one.
-    ///
-    /// `canvas-selection` is written through `diag::trace_changed`, so a run
-    /// that never changed its selection carries no line — and defaulting that
-    /// to one would let the guard pass on silence, which is the failure mode
-    /// the guard exists to end.
     #[test]
     fn a_missing_selection_count_is_zero_and_not_one() {
         let trace = Trace::parse(
@@ -866,10 +823,6 @@ mod tests {
 
     /// The event and field names are the program's, and a rename on either side
     /// silently turns this guard into "always skip".
-    ///
-    /// Pinned here rather than trusted: the two lines are quoted verbatim from
-    /// `canvas::trace` and `panels::properties::mod::object_section`, and the
-    /// kind spelling is `summary::ObjectKind::Text` under `{:?}`.
     #[test]
     fn the_oracle_names_are_the_ones_the_program_writes() {
         assert_eq!(CANVAS_SELECTION_EVENT, "canvas-selection");

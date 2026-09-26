@@ -17,10 +17,6 @@ use crate::report::CheckReport;
 const INVOKE_ENV: &str = "PDFCER_DIAG_INVOKE";
 
 /// **The panel that is carried.**
-///
-/// Layers, and the choice carries the oracle: it is a **left**-dock panel in
-/// Edit's default arrangement, so a drop that landed in the right dock cannot
-/// be a drop that went home.
 const PANEL: &str = "view.panel_layers";
 
 /// **The compartment it is aimed at** — Objects, the right dock's upper stack

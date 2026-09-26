@@ -320,12 +320,6 @@ mod tests {
     use crate::canvas::mapping::SELECT_SCREEN_TOLERANCE_PX;
 
     /// **The snap catch radius is zoom-invariant on screen.**
-    ///
-    /// The raw conversion lives in [`super::super::mapping`] and is tested
-    /// there, so re-asserting it here would be a duplicate. What is *not*
-    /// tested there and is tested here is the pairing — that the SNAP radius is
-    /// the one being converted, and that the degenerate contract survives the
-    /// wrapper.
     #[test]
     fn the_snap_tolerance_converts_inversely_with_zoom() {
         // A fixed 10px catch radius is 10 page units at 100%, 5 at 200%, 20 at
@@ -341,20 +335,6 @@ mod tests {
 
     /// **The snap radius is LOOSER than the selection radius, and the direction
     /// is the point.**
-    ///
-    /// Prose on both constants states the asymmetry; only an assertion enforces
-    /// it. A tuning pass that nudged one of the two numbers could silently
-    /// invert the relation, and the result would not look like a bug —
-    /// selection would just start grabbing neighbours while snapping got fussy,
-    /// which is the pair of symptoms the prose exists to prevent.
-    ///
-    /// Both sides are constants, so this is a `const` block: the invariant is
-    /// checked when the test module is *compiled*, and an inversion fails the
-    /// build rather than one test run. Clippy insists on it
-    /// (`assertions_on_constants`) and clippy is right — but the test wrapper is
-    /// kept anyway, because a bare `const _: () = assert!(…)` at module scope
-    /// has no name, and this invariant is one a reader should be able to find by
-    /// running `cargo test canvas::snap` and reading the list.
     #[test]
     fn the_snap_radius_is_looser_than_the_selection_radius() {
         const {
@@ -418,52 +398,6 @@ mod tests {
 
     /// Every snap kind the **engine** offers draws something, and the derived
     /// centerline's glyph is not the routine one's.
-    ///
-    /// # It consumes `SnapKind::all()` and never a hand-written list
-    ///
-    /// A hand-written `let kinds = [SnapKind::Node, …, SnapKind::Axis];` under a
-    /// name promising **every** kind agrees with the real list on every day
-    /// except the one that matters, and on that day it does not go red — it goes
-    /// green over eight of nine while its name still claims completeness.
-    ///
-    /// ## What would otherwise protect it, and why that is not the same thing
-    ///
-    /// `SnapKind` is **not** `#[non_exhaustive]` (see
-    /// `pdfcer-core/src/vector/snap.rs`), and [`snap_marker_shapes`] matches it
-    /// **exhaustively with no wildcard arm**. So a ninth variant upstream breaks
-    /// this crate's build at that match, and a stale array would be found while
-    /// fixing the error.
-    ///
-    /// ⇒ That is real protection. It is also **somebody else's**, and it is one
-    /// ordinary edit from being gone: the day a `_ => Vec::new()` arm is added to
-    /// `snap_marker_shapes` — a reasonable thing to write, and the exact thing
-    /// `info_label` does for `InfoField` — the compile error disappears, the new
-    /// kind silently draws nothing, and the one test whose job was to catch a
-    /// kind that renders nothing never looks at it. The two safeguards fail in
-    /// the same instant because they were never independent.
-    ///
-    /// ## ⇒ The general question, and it is not the one the name asks
-    ///
-    /// Not only *"does this guard cover the property it is named for?"* but
-    /// *"is that coverage **its own**, or borrowed from the current shape of a
-    /// neighbouring function?"* — **a borrowed guard has no owner, so nobody is
-    /// told when it is returned.** The commit that adds a `_ =>` arm to
-    /// [`snap_marker_shapes`] is a commit *about* `snap_marker_shapes`; it has
-    /// no reason to read this test, no gate names the dependency, and nothing
-    /// anywhere goes red on the day the protection stops existing. A guard that
-    /// reads its own subject fails loudly the moment its subject changes, which
-    /// is the only difference that matters.
-    ///
-    /// Consuming `SnapKind::all()` makes this test's coverage its own property
-    /// rather than a side effect of how the neighbouring function is written,
-    /// and it is why `tools/gates/check-completeness-tests.py` has no FOREIGN
-    /// row for this site. The accessor's own rationale is worth reading at
-    /// `SnapKind::all()`.
-    ///
-    /// **What this still cannot catch** — a kind whose marker is
-    /// indistinguishable *on screen* from another kind's. Only the one pair below
-    /// is checked, and only by shape count. The general property needs a
-    /// rendered-pixel oracle, not a unit test.
     #[test]
     fn every_snap_kind_has_a_non_empty_marker_and_the_derived_one_is_distinct() {
         let kinds = SnapKind::all();
@@ -496,11 +430,6 @@ mod tests {
     }
 
     /// **The role names are the ones `overlays.rs` defines, spelled once.**
-    ///
-    /// Cheap, and it guards the exact failure the `Overlays` docs describe: an
-    /// unknown role is `None`, not an error, so a misspelled key draws nothing
-    /// and says nothing. Pinning the literals here means a rename in the theme
-    /// breaks a test rather than a frame.
     #[test]
     fn the_indicator_and_committed_roles_are_the_pair_the_theme_defines() {
         assert_eq!(SNAP_INDICATOR_ROLE, "preview"); // ui-text-exempt: a theme role key, never displayed
@@ -513,12 +442,6 @@ mod tests {
 
     /// **With no `Overlays` set installed, the tint is `None` rather than a
     /// substitute colour.**
-    ///
-    /// A bare [`egui::Context`] has no role map, and the honest answer for a
-    /// role that is not defined is `None` rather than a substitute colour — see
-    /// [`snap_indicator_tint`]'s docs for what a `None` costs on screen. The
-    /// shipped binary installs a set in `crate::app::frame`; this asserts the
-    /// uninstalled path answers honestly rather than guessing.
     #[test]
     fn an_uninstalled_overlay_set_yields_no_tint_rather_than_a_fallback() {
         let ctx = egui::Context::default();

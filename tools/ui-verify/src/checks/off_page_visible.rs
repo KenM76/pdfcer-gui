@@ -14,18 +14,6 @@ use crate::report::CheckReport;
 
 /// Single-page display, then **100 %**. See the module header — fit-page puts
 /// the aim outside the viewport and the check skips without saying so.
-///
-/// `mode.edit` is named FIRST, and it is not decoration. Since
-/// 2026-09-11 the display of off-sheet content is a per-mode preference and
-/// **Read ships with it OFF** — the operator's request: *"by default, read
-/// doesn't show off page items, review and edit do show off page items."*
-/// This check's whole subject is off the sheet, so without an explicit mode it
-/// would run in whatever mode the shell opens in, find nothing, and report a
-/// defect that is a correctly-implemented setting.
-///
-/// Edit rather than Review because that is the mode this check's gestures
-/// belong in anyway, and because a mode named explicitly cannot drift when a
-/// later session changes which mode the shell opens in.
 const INVOKE: &str = "mode.edit,view.page_single,view.zoom_actual";
 
 /// The tier trace this check reads.
@@ -62,26 +50,12 @@ const INK_AT: (f64, f64) = (-100.0, 120.0);
 const PAPER_AT: (f64, f64) = (-100.0, 40.0);
 
 /// Half the width and half the height of each sampled patch, in page points.
-///
-/// The square is 120 × 40 pt, so ±8 pt about its centre stays 52 pt clear of
-/// its left and right edges and 12 pt clear of its top and bottom. The paper
-/// patch is the same size so that the two counts are directly comparable — a
-/// ratio between differently sized samples is a number nobody can read.
 const PATCH_PT: f64 = 8.0;
 
 /// A pixel at or below this in every channel is ink.
-///
-/// The fixture fills with `0 0 0 rg`, so true ink is `#000000`; the slack is
-/// for the capture's colour management and for antialiasing at the patch's
-/// edge, which cannot reach the middle 16 × 16 pt of a 120 × 40 pt rectangle.
 const INK: u8 = 96;
 
 /// At least this fraction of the ink patch must actually be dark.
-///
-/// Deliberately not 1.0: the patch is converted through the window frame's
-/// scale and rounded, so its outermost row can land a pixel outside the square
-/// on a fractional-DPI display. Deliberately not 0.1 either — a tenth of a
-/// patch is what a scroll bar or a tooltip edge could contribute.
 const INK_FRACTION: f64 = 0.90;
 
 /// At most this fraction of the paper patch may be dark.
@@ -123,10 +97,6 @@ fn workspace_root() -> std::path::PathBuf {
 
 /// The fraction of `patch` that is ink, and how many pixels that was measured
 /// over.
-///
-/// Returns `None` when the patch has no area in the capture at all — which is
-/// a finding, never "no ink": `WindowFrame::logical_to_capture_pixels` clamps
-/// to the capture, so a zero-area result means the address is off screen.
 fn ink_fraction(image: &Image, patch: crate::geom::PixRect) -> Option<(f64, u64)> {
     let total = u64::from(patch.w) * u64::from(patch.h);
     if total == 0 {

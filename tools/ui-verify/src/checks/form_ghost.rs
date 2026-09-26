@@ -30,21 +30,9 @@ const GHOST: &str = "form-ghost";
 const BOX_LINE: &str = "form-box";
 
 /// How far the pointer is moved between the two ghost samples, in PDF points.
-///
-/// Large enough that it cannot be confused with the jitter of a pointer
-/// landing on a pixel boundary — a page point is well under a screen pixel at
-/// the zoom a fitted A1 gets, so a one-pixel rounding is a fraction of a
-/// point — and small enough to stay on the sheet and inside the viewport from
-/// any aim point a caller would choose.
 const STEP_PT: f64 = 80.0;
 
 /// How far the measured motion may differ from [`STEP_PT`], in PDF points.
-///
-/// The pointer is set in whole screen pixels and the ghost is computed from
-/// the pointer's canvas position, so the round trip through screen space
-/// quantises to one pixel. At a fitted A1 that is roughly two page points;
-/// four is one pixel of headroom on top, and it is still a twentieth of the
-/// motion being measured — a ghost that did not follow at all is out by 80.
 const TOLERANCE_PT: f64 = 4.0;
 
 /// See the module documentation.

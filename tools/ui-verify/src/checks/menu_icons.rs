@@ -17,11 +17,6 @@ const MENU_EVENT: &str = "canvas-menu";
 const PAGE_REGION: &str = "page";
 
 /// Where the right-click lands, as page fractions.
-///
-/// Well inside the sheet, so the popup is nowhere near an edge — `egui` flips a
-/// popup to keep it on screen and a flipped menu is harder to reason about in a
-/// failure message, though this check reads names rather than positions and
-/// would survive it.
 const CLICK_AT: (f64, f64) = (0.45, 0.45);
 
 /// See the module documentation.

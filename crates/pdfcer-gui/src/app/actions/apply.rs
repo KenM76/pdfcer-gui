@@ -28,13 +28,6 @@ impl PdfcerApp {
     }
 
     /// Apply a single action.
-    ///
-    /// Every arm is a state transition on [`crate::viewer::ViewState`],
-    /// which is where the clamping and the ladder arithmetic live and are
-    /// tested. This function decides *which* transition, never *what it
-    /// means* — a zoom that saturates, a page step that stops at the last
-    /// page and a NaN that falls back to actual size are all decided in
-    /// `viewer`, under unit test.
     fn apply(&mut self, action: Action, pixels_per_point: f32) {
         // The three actions that are about WHICH document is open, matched
         // BEFORE the guard below.

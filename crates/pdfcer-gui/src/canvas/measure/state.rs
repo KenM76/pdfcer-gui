@@ -460,11 +460,6 @@ mod tests {
 
     /// **Switching kind discards a pick in progress**, which is the whole
     /// reason [`MeasureState::set_kind`] exists.
-    ///
-    /// The failure it prevents is the one the original's docs warn about in
-    /// their own words: a carried-over pick does not raise an error, it
-    /// produces *"something strange"* on the operator's **next** click, which
-    /// is the worst place to discover it.
     #[test]
     fn changing_kind_discards_a_pick_in_progress() {
         let mut st = MeasureState::for_kind(0, MeasureKind::Linear);
@@ -502,21 +497,6 @@ mod tests {
         assert!(!st.gesture_in_progress());
     }
     /// **Every pick machine is counted as a gesture in progress.**
-    ///
-    ///
-    /// # Why this is shaped as one sub-test per FIELD
-    ///
-    /// Because the thing that goes wrong is a field being added and a
-    /// disjunction not being extended, and no enum exhaustiveness check can see
-    /// that — `MeasureKind` was updated correctly in five places while this one
-    /// disjunction silently kept its old shape. The only way to catch it is to
-    /// drive each machine into a started state and assert the container
-    /// notices.
-    ///
-    /// A machine added without a line here fails nothing, which is the honest
-    /// limit of this test. What it does buy is that the *existing* five cannot
-    /// regress, and that a reader adding a sixth finds a list with an obvious
-    /// hole in it rather than a boolean expression to audit.
     #[test]
     fn every_pick_kind_is_counted_as_a_gesture() {
         let fresh = MeasureState::new(0);

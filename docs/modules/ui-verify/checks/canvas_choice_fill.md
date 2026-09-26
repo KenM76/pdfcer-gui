@@ -70,3 +70,12 @@ answered with its own first option cannot tell "opens on the answer" from
 No `PDFCER_DIAG_VIEWPORT`: an off-screen window is where its sibling
 `option_arrows` runs, and it can, because it presses nothing. Four clicks
 and six keystrokes need the window where the OS will deliver them.
+
+## Item notes
+
+### `fn choice_boxes`
+
+The application's numbers and not the fixture's, for `tab_navigation`'s
+reason: a check that derived the rect from the PDF would be asserting that
+two independent derivations agree, and would report a disagreement between
+them as a broken drop-down.

@@ -395,68 +395,11 @@ pub(super) fn rows(
 }
 
 /// The smallest and largest label size the spinner offers, in points.
-///
-/// # ⚠ These are THIS SHELL's bounds. The engine has none.
-///
-/// `set_text_annot_style` does not clamp `font_size`, and `StampStyle` does
-/// not either — a caller may ask for 0.1 pt or 900 pt and get it. So these two
-/// numbers are a usability judgement made here, not a limit reported from
-/// anywhere, and this comment exists so that nobody later quotes them as an
-/// engine fact. Below about four points Helvetica Bold is a smudge on paper;
-/// above about a gross the box `GrowToText` produces is wider than a letter
-/// page, so the stamp leaves the sheet.
-///
-/// **And a range is a hazard, which [`size_row`] handles rather than
-/// ignores.** A control narrower than the values its subject accepts *silently
-/// rewrites a value the operator never touched*: open a stamp declaring 200 pt
-/// under a spinner capped at 144, and the spinner shows 144 — then one
-/// keystroke anywhere commits it. So the rule, here and in every other spinner
-/// over a value this shell did not author: the range is **widened to admit
-/// whatever the file said**, and the action is pushed only when the number
-/// actually differs from what was read.
 const MIN_LABEL_PT: f64 = 4.0;
 /// See [`MIN_LABEL_PT`].
 const MAX_LABEL_PT: f64 = 144.0;
 
 /// **The stamp's label size, and what to do when it stops fitting.**
-///
-/// # What this closes, in the operator's own words — asked TWICE
-///
-/// ***"I STILL can't adjust the size of a stamp on the canvas, or by entering a
-/// different size in the properties box."***
-///
-/// The first half of that sentence is answered elsewhere — `annots::resize`
-/// sets `scale_stroke_width` and `allow_appearance_distortion` for a `/Stamp`
-/// target, so the canvas grips and the Properties width/height fields scale the
-/// picture. This row is the second half: the engine exposes a stamp's label
-/// size for reading and for writing, and this is the consuming side of it.
-///
-/// # Why it is a size ROW and not another entry in the placing dialog's list
-///
-/// Because the two controls answer different questions. `canvas::textannot::
-/// StampSize` offers a *list* — `Fit the box I drew`, then a ladder of stated
-/// sizes — because at placing time the operator has no stamp to look at and a
-/// ladder is how every tool they own presents a font size. Here the stamp
-/// exists, its size is a **number that came out of the file**, and the act is
-/// *change this number*. A combo box would have to invent an entry for a stamp
-/// whose file says 17 pt.
-///
-/// ⚠ **`Fit the box I drew` has no counterpart here, deliberately.** That
-/// choice means *derive the size from the box*, i.e. `font_size: None`, and
-/// `None` on this verb means *leave the size alone* — the field's contract, and
-/// the same contract that keeps a colour change from touching the icon. The two
-/// meanings collide, and the engine's field cannot express the first. Offering
-/// it would be a control whose press does nothing, which is the defect this
-/// panel already shipped once (*"live controls, every press refused"*).
-///
-/// # Absent, not greyed, when the stamp has no label pdfcer can describe
-///
-/// `stamp_label_parameters` answers `None` for a stamp whose appearance shows
-/// no text — **Acrobat's own custom stamps are artwork**, not a laid-out
-/// label — and the engine is explicit that this is *"the honest answer … not a
-/// failure"*. R9: nothing is drawn. A greyed spinner would imply that a size
-/// could appear if something were different, and for a picture of a signature
-/// nothing can be different.
 fn size_row(
     ui: &mut Ui,
     current: &Reading,
@@ -612,12 +555,6 @@ pub(super) fn source_token(source: StampSizeSource) -> &'static str {
 }
 
 /// Raise the restyle that carries a new label size — and **nothing else**.
-///
-/// Split out from [`size_row`] so the struct literal that names every field
-/// of `TextAnnotStyle` sits in one place per act rather than inside a closure
-/// three levels deep. The `None`s are the contract, not a formality: *a field
-/// left `None` is left alone*, so a size change does not touch the colour and
-/// cannot touch the icon.
 fn push_size(
     target: &crate::canvas::selection::annot::AnnotTarget,
     size: f64,
@@ -641,20 +578,6 @@ fn push_size(
 }
 
 /// The annotation's colour, `/C`.
-///
-/// # A swatch and NO Clear, unlike [`super::colour_row`]
-///
-/// The one structural difference between this row and the parent's, and it is
-/// the engine's decision rather than a control left out: `TextAnnotStyle::color`
-/// has no `Clear` arm to raise. Its doc gives the reason in full — every
-/// `TextAnnotSpec` variant carries a **required** `Color`, so the authoring type
-/// cannot express *no colour*, and a Clear would have to invent a fallback.
-///
-/// ⇒ **Absent, not greyed.** R9: a greyed Clear here would imply that clearing
-/// could become possible if something were different, and nothing can be
-/// different — the limit is in the shape of the engine's spec type. The
-/// sentence under the rows says so once rather than a tooltip saying it per
-/// press.
 fn colour_row(
     ui: &mut Ui,
     current: &Reading,
@@ -705,34 +628,6 @@ fn colour_row(
 }
 
 /// **The sticky note's icon, `/Name`** (§12.5.6.4, Table 172).
-///
-/// # The row the request was filed for
-///
-/// > *the operator places a sticky and wants a different icon* → **delete it
-/// > and place another**
-///
-/// That is what this row replaces, and the cost of the old answer was never the
-/// icon: it was the object identity, the `/M` stamp and any reply thread hung
-/// off the note, all lost to a delete-and-replace.
-///
-/// # A combo, where the placing dialog uses radios
-///
-/// Deliberately different, and the difference is the surface rather than the
-/// choice. The dialog is a **transaction** with room to spare and one question
-/// to ask, so seven radios read at a glance. The properties panel is a narrow
-/// column shared with every other section, and seven rows here would push the
-/// colour swatch and the delete control off the visible part of it. §5.8's
-/// division of labour says the panel *carries everything*, which is an argument
-/// for the control existing, not for it being the tallest thing on screen.
-///
-/// # `/Text` only, and absent otherwise
-///
-/// [`Face::takes_icon`]. A `/Stamp`'s face comes from Table 181's own
-/// vocabulary and the engine refuses a `StickyIcon` on one **by name** rather
-/// than ignoring it — `EditError::StylePropertyNotApplicable`, raised before
-/// anything is written. Silently dropping an inapplicable property is the
-/// swallowed-argument failure mode: the caller is told the act succeeded and
-/// the document does not carry what was asked for.
 fn icon_row(
     ui: &mut Ui,
     current: &Reading,

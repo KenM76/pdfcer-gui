@@ -93,3 +93,27 @@ frame, lags by one frame at 60 Hz — which no eye resolves — and, crucially,
 than a frame old, so there is no state anybody has to remember to clear.
 State that must be cleared is state that will one day be shown against the
 wrong document.
+
+## Item notes
+
+### `fn the_locked_axis_is_re_decided_from_the_live_delta`
+
+Asserted as a property of the function rather than of a gesture: the
+same call with a different delta gives a different axis, which is what
+makes an operator who commits to vertical half-way through a drag get
+vertical. A press-sampled implementation would pass every other test in
+this file.
+
+### `fn an_absolute_lock_keeps_the_offset_it_started_with`
+
+`toward` filters the displacement, so the returned point keeps whatever
+offset the press had on the locked axis. A build that filtered `at`
+instead would put the handle on the axis line through `from` — visibly a
+jump on the first frame Shift goes down.
+
+### `fn a_mid_edge_grip_scales_both_axes_under_shift`
+
+`East` leaves `sy` at exactly 1.0, which is distance zero from unity and
+therefore can never win. This is the whole reason [`aspect`] takes no
+`Grip` — and a test for it, because the next reader's instinct will be
+to add one.

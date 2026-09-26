@@ -34,21 +34,10 @@ const EXPECTED_LAYER: &str = "Visible Box";
 
 /// A point on the grey bar (`0 600 612 60 re f`), which is painted after every
 /// `EMC` and is therefore on **no** optional-content group.
-///
-/// `x = 150` rather than the bar's centre at 306: the fixture leaves a
-/// `0 0 300 792 re W n` clip in force with no `Q` to restore it, so the right
-/// two thirds of the bar may or may not be painted depending on how a renderer
-/// treats a clip inside a switched-off group. The object's page bbox spans the
-/// full width either way, but aiming where the two readings agree keeps a
-/// failure here about the layer relation rather than about clipping.
 const ON_AN_UNLAYERED_OBJECT: (f64, f64) = (150.0, 630.0);
 
 /// The commands that put the shell in a state where this can be measured, one
 /// per frame in this order.
-///
-/// `mode.edit` first and it is not optional: Read mode refuses a canvas
-/// click on content by design (`DEFECTS.md` D6), and a check that skipped this
-/// step once reported the mode gate as a selection defect.
 const INVOKE: &str = "mode.edit,view.panel_layers";
 
 /// The status bar's line — the canvas route's oracle.
@@ -401,15 +390,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 }
 
 /// The final highlight state of every layer row, keyed by name.
-///
-/// # Why the LAST line per name rather than a count
-///
-/// `panels::layers` traces one `layer-row` per drawn row **per frame**, so a
-/// run of a few seconds leaves hundreds of lines and any count is a count of
-/// repaints. What this check asks is *"what is the state now?"*, and the
-/// answer is the most recent line for each row — the same reasoning
-/// `form_selection::last_first` gives for reading the last selection line
-/// instead of counting new ones.
 fn row_states(trace: &crate::trace::Trace) -> BTreeMap<String, bool> {
     let mut out = BTreeMap::new();
     for line in trace.events(ROW_EVENT) {
@@ -436,11 +416,6 @@ fn highlighted_row(rows: &BTreeMap<String, bool>) -> Option<String> {
 }
 
 /// Resolve a fixture under the engine repository's synthetic corpus.
-///
-/// The path is derived, not configured. `D:\Dev\pdfcer` is READ-ONLY to this
-/// project and its corpus is the only place this shape exists, so the check
-/// reads from it and writes nowhere near it. `None` rather than a panic turns
-/// a missing corpus into a SKIP with a reason instead of a crash mid-suite.
 fn engine_fixture(rel: &str) -> Option<std::path::PathBuf> {
     let path = std::path::Path::new("D:/Dev/pdfcer/fixtures/synthetic").join(rel);
     path.is_file().then_some(path)
@@ -448,10 +423,6 @@ fn engine_fixture(rel: &str) -> Option<std::path::PathBuf> {
 
 /// A page-space point, through the mapping and the window frame, to a desktop
 /// point.
-///
-/// Its own function so the two call sites cannot hop differently — the class of
-/// error `crate::coords` exists to prevent, and the one a literal screen
-/// coordinate always is.
 fn aim(mapping: &CanvasMapping, frame: &WindowFrame, point: (f64, f64)) -> Result<ScreenPoint> {
     let window = mapping.doc_to_window(DocPoint {
         page: 0,

@@ -960,18 +960,6 @@ mod tests {
 
     /// **A document with no form controls gets no sentence about form
     /// controls.**
-    ///
-    /// The clause used to be unconditional — *"**Any** form fields on those
-    /// pages arrived as boxes…"* — because the shell had no count and had to
-    /// hedge. `InsertOutcome::orphaned_widgets` arrived on 2026-08-19 and the
-    /// engine's reply says the number is **exact rather than an upper bound**,
-    /// so a zero can be believed.
-    ///
-    /// Worth a test rather than a glance, because the failure is silent in the
-    /// direction that matters: a paragraph about form controls on a drawing
-    /// that has none trains the operator to stop reading the sentence, and the
-    /// sheets this application is for almost never have any. The clause that
-    /// gets skipped is then the *bookmarks* one, which is always true.
     #[test]
     fn no_orphans_means_no_clause_about_them() {
         let quiet = inserted(4, 0, 0, Structures::default(), 6);
@@ -986,20 +974,6 @@ mod tests {
     }
 
     /// A source that had nothing to lose is told nothing about losing it.
-    ///
-    /// The sentence used to end *"Bookmarks and page labels from that file did
-    /// not come across"* on **every** insert. On a CAD drawing whose source had
-    /// neither — which is most of them, in this application — that is a
-    /// paragraph about two things that never existed.
-    ///
-    /// It is worth a test rather than a glance because the cost is not the
-    /// wasted words. It is that the same sentence carries the clause about
-    /// orphaned form controls, which is *actionable*, and an operator who has
-    /// learned that this sentence is boilerplate stops reading the part that is
-    /// not.
-    ///
-    /// The clause was unconditional only because nothing reported the fact —
-    /// which is the difference between a disclosure and a disclaimer.
     #[test]
     fn a_source_with_no_structures_produces_no_clause_about_them() {
         let bare = inserted(2, 0, 0, Structures::default(), 0);
@@ -1047,15 +1021,6 @@ mod tests {
     }
 
     /// The stale-label clause is about THIS document, and it is last.
-    ///
-    /// The one fact in this sentence that describes the sheets in front of the
-    /// operator rather than a file they have finished with: their own page
-    /// numbers have quietly stopped describing the pages they are on.
-    ///
-    /// Ordered last on purpose — a sentence whose most actionable clause comes
-    /// first is read and then abandoned at the part about a document nobody is
-    /// looking at any more. Asserted, because ordering is exactly the kind of
-    /// decision a later edit undoes without noticing.
     #[test]
     fn the_stale_clause_is_about_this_document_and_comes_last() {
         let all = inserted(
@@ -1082,15 +1047,6 @@ mod tests {
     }
 
     /// A real count is stated, unhedged, agrees in number, and names the route.
-    ///
-    /// The singular is its own arm rather than an `(s)`: one orphaned control
-    /// is an ordinary case — a single signature field on a title sheet — and
-    /// *"1 form controls"* is the shape that makes an operator distrust the
-    /// number beside it.
-    ///
-    /// The route is asserted, not just the count. A disclosure that reports a
-    /// solvable problem without saying it is solvable leaves the operator with
-    /// a correct description and nothing to do with it.
     #[test]
     fn a_real_count_is_stated_without_hedging() {
         let one = inserted(1, 1, 0, Structures::default(), 0);
@@ -1108,14 +1064,6 @@ mod tests {
 
     /// The two counts are two sentences, and the recoverable one is the
     /// **difference**, not the total.
-    ///
-    /// The engine's correction, asserted. `orphaned_widgets` counts every
-    /// orphan; `orphaned_widgets_unrecoverable` counts the subset whose field
-    /// identity is not in this file at all. Reporting the total as
-    /// re-registerable would send the operator to a panel where two of the
-    /// boxes refuse, with a sentence that had promised otherwise.
-    ///
-    /// The measured case is the fixture: 13 orphans, 2 of them bare kids.
     #[test]
     fn the_recoverable_count_excludes_the_ones_that_cannot_be_recovered() {
         let measured = inserted(1, 13, 2, Structures::default(), 0);
@@ -1134,10 +1082,6 @@ mod tests {
     }
 
     /// Every orphan being unrecoverable produces one sentence, not a zero.
-    ///
-    /// R9's rule applied to prose: *"0 form controls need re-registering"* is a
-    /// placeholder wearing a number, and it would be sitting immediately beside
-    /// a sentence saying two of them are gone for good.
     #[test]
     fn all_unrecoverable_means_no_re_registering_clause() {
         let all_lost = inserted(1, 2, 2, Structures::default(), 0);
@@ -1156,19 +1100,6 @@ mod tests {
     }
 
     /// The unrecoverable clause reads correctly with NOTHING before it.
-    ///
-    /// Found by a driven run rather than by reading. On a source whose orphans
-    /// are all bare kids the re-registering clause is skipped, and the sentence
-    /// came out *"Inserted 2 pages after page 2. **3 more** lost their field
-    /// definitions entirely…"* — more than what? It reads as a sentence with
-    /// one deleted in front of it, which is exactly how an operator concludes
-    /// the program is losing text.
-    ///
-    /// It is the **second** continuation-clause defect in this one function.
-    /// The first — *"Nor did its page numbering"* with no bookmarks clause
-    /// before it — was fixed an hour earlier, three clauses up, and the sweep
-    /// that should have followed it did not happen. Both arms are now asserted
-    /// together so the next one cannot be fixed alone.
     #[test]
     fn every_conditional_clause_reads_alone_as_well_as_in_sequence() {
         // Each clause as the ONLY one, which is the case a continuation breaks.
@@ -1208,11 +1139,6 @@ mod tests {
     }
 
     /// A count larger than the total cannot panic.
-    ///
-    /// The invariant says it cannot happen — the second field counts a subset
-    /// of the first — and the subtraction saturates anyway. A disclosure runs
-    /// at the end of a *successful* edit, which is the worst possible moment to
-    /// panic on an arithmetic assumption about another crate's struct.
     #[test]
     fn an_impossible_pair_does_not_panic() {
         let odd = inserted(1, 1, 4, Structures::default(), 0);

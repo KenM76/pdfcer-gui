@@ -28,10 +28,6 @@ const FIXTURE: &str = "TR-0461-1500-copy.pdf";
 /// The nested bookmark to click — a detail on page 1, not the page itself.
 const DETAIL: &str = "Drawing View64";
 /// How much bigger a detail must be than the page fit to count as arrival.
-///
-/// 1.5×, deliberately loose. The point is to separate "framed a detail" from
-/// "did not move at all", and the exact ratio depends on the window; a tight
-/// bound would be a test of the monitor.
 const AT_LEAST: f64 = 1.5;
 
 pub struct ABookmarkLandsOnTheDetailItNames;

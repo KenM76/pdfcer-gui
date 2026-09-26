@@ -58,3 +58,18 @@ change what is drawn *without changing what is seen to have been asked
 for* — a smaller label, or a shorter one — and each therefore owes an
 off-canvas sentence, which is why
 `text::panels::textannotstyle::stamp_label_shrunk` and `…_clipped` exist.
+
+## Item notes
+
+### `fn the_default_is_grow_to_text`
+
+`TextAnnotStyle::stamp_fit`'s doc: *"`None` means
+`StampFit::GrowToText`, the authoring default"*. If this constant ever
+disagreed, the properties panel and the placing dialog would apply
+different rules to the same stamp and neither would say so.
+
+### `fn every_policy_is_offered_exactly_once`
+
+The failure this catches is a list that quietly holds two of the
+three — a policy an operator can never reach, with no error anywhere.
+The same test `pen::FACES` has, for the same reason.

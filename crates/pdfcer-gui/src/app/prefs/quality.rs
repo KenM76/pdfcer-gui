@@ -15,6 +15,8 @@
 //! That is the seam a future reader would look for, and it is the one that
 //! decides where a new preference goes: *does this change what a frame costs,
 //! or what the first frame contains?*
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/app/prefs/quality.md`.
 
 /// How sharply a page is rasterised, as a multiplier on the natural scale.
 ///
@@ -132,11 +134,6 @@ mod tests {
     use super::*;
 
     /// The tokens are stable and distinct.
-    ///
-    /// They are what the file holds, so two quality values sharing a token
-    /// would make one of them unreachable from a hand-edited file, and a token
-    /// that changed with a display name would reset everybody's preference on
-    /// upgrade.
     #[test]
     fn every_quality_has_a_distinct_stable_token() {
         for q in RenderQuality::ALL {

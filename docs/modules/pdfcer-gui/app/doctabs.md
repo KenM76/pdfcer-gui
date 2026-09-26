@@ -81,3 +81,38 @@ knowing here:
 - a tab whose file **failed to open** is still a tab, with the reason in
   its tooltip — see [`crate::app::documents`] §2 for why a failed open must
   not evict the operator's other documents.
+
+## Item notes
+
+### `const REGION_TAB_PREFIX`
+
+Indexed by slot rather than by position among the drawn, so a check that
+scrolls the strip keeps naming the same document. Absent for a tab behind
+the overflow affordance, which is itself the fact an overflow check wants.
+
+### `fn tab_item`
+
+Four arms because there are four things a tab can be, and collapsing
+the three unopened ones would lose the distinction
+[`crate::app::lifecycle`] exists to preserve: *the file is wrong*, *the
+file is fine and pdfcer is not finished*, *the file is encrypted and
+pdfcer has not been told the password*.
+
+### `fn spring_loaded_hover`
+
+Gated on the drag, deliberately and not defensively. Spring-loading a
+tab under an ordinary pointer would change documents because the
+operator paused on their way to the ribbon — the application taking an
+initiative the operator did not ask for, which this shell does not do.
+
+### `fn a_failed_open_is_a_tab_that_says_why`
+
+`documents` §2's rule, asserted at the surface that would otherwise
+quietly drop it — because the failure mode is an operator who opens a
+damaged file and loses the three documents they had open.
+
+### `fn the_unsaved_marker_is_where_truncation_cannot_reach_it`
+
+Asserted rather than trusted because the whole argument for the prefix
+is about truncation, and a trailing marker would pass any test that
+merely looked for the character somewhere in the string.

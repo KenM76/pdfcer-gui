@@ -24,20 +24,9 @@ const ITEMS: [&str; 4] = [
 const WANTED_ROWS: usize = 2;
 /// Where and how large the window is placed, as `PDFCER_DIAG_VIEWPORT` takes
 /// it: `x,y,w,h`.
-///
-/// **The width IS the precondition of the assertion**, not a convenience.
-/// See the module header's point 4. It also does not steal the desktop:
-/// `PDFCER_DIAG_VIEWPORT` switches `with_active` off, so the window lays out
-/// fully without taking focus.
 const VIEWPORT: &str = "0,0,2560,1000";
 /// How far apart two rectangles' tops may be and still count as the same row,
 /// in logical points.
-///
-/// Deliberately small. Buttons on one row share a `y` exactly in `egui`'s
-/// layout, so any tolerance at all is generous; 4 pt allows for the harness
-/// rounding a scaled coordinate and nothing else. A large tolerance here would
-/// quietly merge two genuinely-stacked rows on a compact theme and report the
-/// feature missing on a correct build.
 const SAME_ROW_PT: f32 = 4.0;
 
 /// See the module documentation.

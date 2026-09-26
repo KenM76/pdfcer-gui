@@ -11,16 +11,6 @@ use std::path::PathBuf;
 use std::time::Instant;
 
 /// The dense CAD drawing `BENCHMARK.md` is written about.
-///
-/// Not in `fixtures/` and not in the engine's corpus — it is 5.6 MB of the
-/// operator's real work, and it lives outside both repositories. Named by
-/// absolute path here rather than copied in, because a benchmark corpus that
-/// grows by copying is a repository that grows without bound.
-///
-/// The location is a `const` here rather than a sentence in a document for a
-/// reason worth keeping: a path in prose goes stale silently, while a path in a
-/// test that skips with its own printed reason tells the next reader exactly
-/// where it looked and what it did not find.
 const DRAWING: &str = r"D:\Dev\pdfTests\ncored-benchmark-cad-drawing.pdf";
 
 /// A smaller, ordinary page, for the contrast that makes the big number mean
@@ -33,11 +23,6 @@ fn ordinary() -> PathBuf {
 }
 
 /// Time one closure, repeated, and report the median in milliseconds.
-///
-/// The **median**, not the mean and not the best. The mean is dragged by a
-/// single scheduler hiccup on a machine that is also running an editor and a
-/// browser; the best-of is a number the operator will never experience. The
-/// median is what a press feels like.
 fn median_ms(runs: usize, mut body: impl FnMut()) -> f64 {
     let mut samples: Vec<f64> = Vec::with_capacity(runs);
     for _ in 0..runs {
@@ -69,12 +54,6 @@ fn load(path: &std::path::Path) -> Option<pdfcer_core::document::Document> {
 }
 
 /// **How long does the ENGINE take to accept one edit?**
-///
-/// Prints a table. Asserts nothing about the numbers, and that is deliberate:
-/// a threshold asserted here would be a number nobody chose, on hardware nobody
-/// specified, and the first slow machine would turn a measurement into a red
-/// suite. What it asserts is that the measurement **happened** — a run that
-/// silently measured nothing is the failure this whole harness exists to remove.
 #[test]
 #[ignore = "needs the 5.6 MB CAD drawing; run with --ignored --nocapture --release"]
 fn edit_latency_the_commit_half() {

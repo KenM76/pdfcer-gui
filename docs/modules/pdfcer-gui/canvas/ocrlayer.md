@@ -77,3 +77,41 @@ on its neighbours. The drawing is still routed through that page's own
 they are the same page today, and using the acting map would be the exact
 failure `painting`'s find-wash comment records as the one most likely to
 ship silently, waiting for the day the cache learns a second page.
+
+## Item notes
+
+### `const COLOUR_KEY`
+
+Two homes, exactly as `canvas::chunks` has: the live answer here, because
+the painter reaches it with a [`egui::Context`] and nothing else, and the
+persisted answer on [`crate::app::prefs::Prefs`], because O229 asks for the
+setting to be remembered. `crate::app::frame` mirrors the second into the
+first once a frame, in that direction only.
+
+### `fn paper`
+
+The same value and the same argument as `canvas::shapes`' — PDF has no page
+background, and `render_page` composited this raster onto an opaque white
+backdrop per §11.4.7. Fading the raster towards anything else would fade it
+towards a colour the renderer never used, and the page would change hue on
+its way to blank.
+
+### `fn draw_run`
+
+The size is taken from the box's **height** and then corrected by a
+measurement of the laid-out width, which is at most two layouts and usually
+one. Taking it from the glyph metrics instead would mean reproducing the
+text matrix here; taking it from the width alone would make a two-word run
+and a twenty-word run in equal boxes render at wildly different sizes.
+
+### `fn the_slider_stops_are_no_paint_and_full_paint`
+
+A build that inverted the slider satisfies neither: it would paint the
+veil at the left stop, which is the position that means *show me the
+scan*.
+
+### `fn every_size_is_a_multiple_of_the_quantum`
+
+The property the atlas argument rests on, asserted over a walk rather
+than at two chosen points: a rounding that worked at 12.3 and failed
+near the clamps would pass the test above.

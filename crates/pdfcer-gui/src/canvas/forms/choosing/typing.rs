@@ -244,16 +244,6 @@ pub(super) fn type_into(
 
 /// Raise a fill for the typed string, if it says anything the field does not
 /// already hold.
-///
-/// The whole of what bit 19 buys: `set_choice_value` matches the string
-/// against `/Opt` first, so a typed *"Large"* is the same command as a picked
-/// *"Large"*, and a typed *"Extra large"* is a free-text value the engine
-/// stores as its own export. Nothing here has to tell the two apart.
-///
-/// One function because it is reached from three exits — Enter, focus loss and
-/// Escape — and *"tabbing through a field writes nothing"* has to mean the same
-/// thing at all three. [`display_matches`] is the half that makes it true when
-/// the field's `/V` is an export whose display text is what the box shows.
 fn commit_typed(
     field: &str,
     options: &[(String, String)],
@@ -278,10 +268,6 @@ fn commit_typed(
 }
 
 /// Whether `text` is already the display or export of the selected option.
-///
-/// Without this, opening an editable combo whose `/V` is an export that
-/// differs from its display would commit the *display* on the way out — a
-/// write the operator did not ask for, on every field they merely looked at.
 fn display_matches(options: &[(String, String)], selected: &[String], text: &str) -> bool {
     selected.iter().any(|v| {
         options
@@ -316,11 +302,6 @@ fn trace_leave(field: &str, how: &str) {
 const ARROW: &str = "pdfcer-canvas-form-combo-arrow"; // ui-text-exempt: internal widget id, never displayed
 
 /// Paint the drop button: a chevron on the theme's own plate.
-///
-/// `accent_pair`, never a named colour — `tools/gates/check-theme-colors.sh`
-/// forbids the second and `check-plate-colour.sh` requires that an `on_accent`
-/// ink state the plate it is drawn on. Both are satisfied by taking the pair
-/// together, which is also the only way the contrast is gated.
 fn chevron(ui: &Ui, rect: Rect, open: bool) {
     let (plate, ink) = egui_shell::theme::Theme::accent_pair(ui.ctx());
     let painter = ui.painter();

@@ -35,3 +35,14 @@ reach an ancestor's private items, so `record_edit_disclosure` is callable
 here without being made `pub` to anybody else. Splitting a store from its
 type to follow its writer would have been the tidier-looking edit and the
 one that widened a private thing's visibility for no gain.
+
+## Item notes
+
+### `fn apply`
+
+Every arm is a state transition on [`crate::viewer::ViewState`],
+which is where the clamping and the ladder arithmetic live and are
+tested. This function decides *which* transition, never *what it
+means* — a zoom that saturates, a page step that stops at the last
+page and a NaN that falls back to actual size are all decided in
+`viewer`, under unit test.

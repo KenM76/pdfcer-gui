@@ -10,11 +10,6 @@
 
 /// **The Render-notes vocabulary** — every sentence the renderer's honesty
 /// report can produce.
-///
-/// Re-exported whole, on [`selection`]'s precedent: a catalog area is keyed
-/// by the consumer it serves — here `app::status::notes` and nothing else —
-/// so no call site changed and `t::diagnostics_clean` resolves where it always
-/// did.
 mod diagnostics;
 pub use diagnostics::{
     diagnostics_annots_no_appearance, diagnostics_clean, diagnostics_contents_missing,
@@ -991,10 +986,6 @@ mod tests {
 
     /// **The absent case is a different sentence, not the same one with a
     /// zero in it.**
-    ///
-    /// A build that formatted `0 blocks` would satisfy every check that only
-    /// looked for a non-empty string, and would tell an operator staring at an
-    /// un-OCR'd scan that the mode is working.
     #[test]
     fn a_page_with_no_recognised_text_says_so_instead_of_counting_to_zero() {
         let none = ocr_layer_line(65, 0);
@@ -1016,10 +1007,6 @@ mod tests {
     }
 
     /// The disclosure must say which state it is in.
-    ///
-    /// A toggle whose two states read identically is a toggle whose state
-    /// the operator has to discover by clicking it, which is exactly the
-    /// affordance a disclosure triangle exists to remove.
     #[test]
     fn the_disclosure_reads_differently_open_and_closed() {
         assert_ne!(diagnostics_toggle(false), diagnostics_toggle(true));
@@ -1027,20 +1014,6 @@ mod tests {
 
     /// **`pdfcer-core`'s sentences reach the operator unaltered, and on one
     /// line.**
-    ///
-    /// Two properties, and both are load-bearing:
-    ///
-    /// - **Verbatim.** The disclosure prose is written where the fact is known
-    ///   — inside the planner that decided to rewrite a rectangle as four
-    ///   lines. A shell that paraphrased it would put two descriptions of one
-    ///   surgery into the product, and the one further from the code is the
-    ///   one on screen. So this asserts *containment*, which is the mechanical
-    ///   form of "we added framing and changed nothing".
-    /// - **One line.** `crate::app::status` draws this inside a row whose
-    ///   height may not vary (R128), eliding what does not fit. A newline
-    ///   would defeat that from the string side, where no layout assertion is
-    ///   looking — the label wraps, the row grows, and the page re-fits itself
-    ///   at the moment the operator finishes a drag.
     #[test]
     fn the_edit_disclosure_frames_cores_sentences_without_altering_them() {
         let notes = vec![
@@ -1069,30 +1042,6 @@ mod tests {
     }
 
     /// **A decline does not read like a disclosure.**
-    ///
-    /// The whole reason the worded decline got its own strings — rather than
-    /// borrowing the line the vector verbs already put in this bar — is that
-    /// *"this happened, and here is the part you cannot see"* and *"this did
-    /// not happen"* are different speech acts. One wording in one slot would
-    /// make a completed gesture and a refused one indistinguishable, in the
-    /// same place, which is worse than the trace-only state these replace.
-    ///
-    /// Four properties, and each would be silently lost by an edit that looked
-    /// harmless:
-    ///
-    /// 1. **The lead-in diverges.** Neither decline may open with the edit
-    ///    disclosure's *"About your last edit"*.
-    /// 2. **The mark diverges.** `⊗` and not `⚑` — the mark is what tells the
-    ///    two apart at a glance, before either sentence is read.
-    /// 3. **The two declines read differently from each other.** "Nothing is
-    ///    selected" and "the page is still drawing" have different remedies,
-    ///    and the operator gets one line to tell them apart — the same
-    ///    property [`the_two_page_box_notes_read_differently`] defends for the
-    ///    page box's pair.
-    /// 4. **One line.** `crate::app::status` draws these inside a row whose
-    ///    height may not vary (R128), eliding what does not fit. A newline
-    ///    would defeat that from the string side, where no layout assertion is
-    ///    looking.
     #[test]
     fn a_decline_does_not_read_like_a_disclosure() {
         let declines = [
@@ -1136,17 +1085,6 @@ mod tests {
     }
 
     /// **The decline does not tell the operator they did something wrong.**
-    ///
-    /// `view.zoom_selection` is greyed on `selection.bounds`, so the sentence
-    /// is reached by a chord — or, worse, in the race where the selection
-    /// evaporates between the frame that drew the enabled control and the
-    /// frame that applied it. In that second case the operator clicked a
-    /// control that was offered to them, and an imperative telling them to
-    /// select something first would be instructing them to repeat what they
-    /// just did.
-    ///
-    /// Asserted as an absence of imperatives rather than against a fixed
-    /// string, so the copy can be rewritten and the property survives.
     #[test]
     fn the_decline_reports_the_state_rather_than_instructing_the_operator() {
         let line = zoom_declined_no_selection();
@@ -1180,16 +1118,6 @@ mod tests {
     ];
 
     /// **One is singular everywhere it can be.**
-    ///
-    /// Not pedantry: these lines are read in a small weak font at the edge
-    /// of the window, and "1 glyphs" is the kind of thing a reader notices
-    /// *instead of* the number, which is the part that matters.
-    ///
-    /// The property is asserted structurally rather than against a table of
-    /// expected sentences: **the singular must not be the plural with the
-    /// digit swapped.** That catches a missing branch on every entry,
-    /// including the ones whose noun is not the first word ("text from 1
-    /// font not drawn"), and it keeps working when the copy is edited.
     #[test]
     fn every_counted_note_is_singular_at_one() {
         for f in COUNTERS {
@@ -1221,10 +1149,6 @@ mod tests {
     }
 
     /// **The clamp note names both numbers.**
-    ///
-    /// The whole value of the note is that it distinguishes "your number was
-    /// out of range" from "the box ignored you". A note that named only the
-    /// page landed on could not do that.
     #[test]
     fn the_clamp_note_names_what_was_asked_and_what_was_given() {
         let note = page_clamped_note(99, 42, 42);
@@ -1233,10 +1157,6 @@ mod tests {
     }
 
     /// The two failure notes must not read alike.
-    ///
-    /// "I typed a page that does not exist" and "I typed something that is
-    /// not a page number" are different mistakes with different fixes, and
-    /// the operator gets one line to tell them apart.
     #[test]
     fn the_two_page_box_notes_read_differently() {
         assert_ne!(page_clamped_note(99, 42, 42), page_rejected_note());
@@ -1262,11 +1182,6 @@ mod tests {
     }
 
     /// **The three fit labels are distinct, and so are their tooltips.**
-    ///
-    /// Three controls in a row that read alike is the failure the ribbon's
-    /// own salvage notes record (two adjacent Content buttons both reading
-    /// `Aa`, distinguished only by their tooltips). Here both halves are
-    /// asserted.
     #[test]
     fn the_three_fit_controls_are_distinguishable() {
         let labels = [fit_actual_size(), fit_width(), fit_page()];
@@ -1284,18 +1199,6 @@ mod tests {
     }
 
     /// **Each fit tooltip names exactly the chord that reaches it.**
-    ///
-    /// The property defended here is not that any particular one of the three
-    /// is silent. It is **"a status-bar tooltip names a chord if and only if
-    /// that chord reaches the control"** — which, with one owner per chord
-    /// (`crate::app::keyboard`), means Actual size names `Ctrl+0` and the
-    /// other two name nothing.
-    ///
-    /// The three assertions below are the direct expression of that, and the
-    /// last two are the ones that matter most — a chord *removed* from the
-    /// keyboard leaves no compile error behind, so the only thing standing
-    /// between the operator and a tooltip that lies is an assertion that the
-    /// string stayed silent.
     #[test]
     fn each_fit_tooltip_names_exactly_the_chord_that_reaches_it() {
         assert!(
@@ -1316,12 +1219,6 @@ mod tests {
     }
 
     /// **The mirrors say exactly what the ribbon says.**
-    ///
-    /// The header's claim, asserted rather than trusted. Three status-bar
-    /// controls mirror three View ▸ Zoom commands under amendment P1a, and a
-    /// mirror that paraphrases is how a product acquires two mental models of
-    /// one verb. It is also what let the chord defect live on one surface and
-    /// not the other for as long as it did.
     #[test]
     fn the_fit_mirrors_repeat_the_ribbon_word_for_word() {
         use crate::text::commands as c;
@@ -1334,10 +1231,6 @@ mod tests {
     }
 
     /// The page-box tooltip must state the commit rule.
-    ///
-    /// It is the only place the operator can learn that typing does not
-    /// navigate, and that property is the reason the control is usable at
-    /// all — see `crate::app::status`.
     #[test]
     fn the_page_box_tooltip_states_the_commit_rule() {
         let t = page_box_tooltip();

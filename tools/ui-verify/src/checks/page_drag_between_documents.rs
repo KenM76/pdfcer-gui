@@ -32,23 +32,11 @@ const CTRL_O: u16 = 0x4F;
 
 /// **How long the pointer rests on the tab**, as a multiple of the
 /// application's own `SPRING_DWELL`.
-///
-/// Twice, and generously. The application's timer runs on `egui`'s input clock
-/// and only advances on frames it actually draws; a machine that is
-/// rasterizing a dense CAD sheet at the same moment can drop several. Waiting
-/// exactly the threshold would make this check a stopwatch race against a
-/// renderer, and that is the classic shape of a flake: **a full suite red is
-/// not a defect report until the member has been re-run alone.**
 const DWELL: Duration = Duration::from_millis(1_400);
 
 /// The trace line the source-side removal produces, on a move.
 /// `page-move-take-refused page=… n=… detail=…` — the engine declining the
 /// removal half of a move, with its own sentence.
-///
-/// Distinct from [`TOOK`]'s `removed=0`, and the distinction decides the
-/// verdict: `removed=0` says *the source still has them*, which has two causes
-/// pointing opposite ways — a build that never attempted the delete (a defect)
-/// and an engine that refused it for a reason about the document (not one).
 const TOOK_REFUSED: &str = "page-move-take-refused";
 const TOOK: &str = "page-move-took";
 

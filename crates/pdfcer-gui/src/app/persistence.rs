@@ -40,10 +40,6 @@ pub const SAVE_SETTLE: Duration = Duration::from_millis(750);
 pub const SAVE_MAX_DEFER: Duration = Duration::from_secs(5);
 
 /// When a change is waiting to be written.
-///
-/// Two instants rather than one, because the deadline is the *earlier* of
-/// two independent promises: quiet for [`SAVE_SETTLE`], and never later
-/// than [`SAVE_MAX_DEFER`] after the first unsaved change.
 #[derive(Debug, Clone, Copy)]
 struct Pending {
     /// When the first still-unwritten change happened.
@@ -100,21 +96,6 @@ pub struct LayoutStore {
 
 impl Default for LayoutStore {
     /// A store with nowhere to write and nothing loaded.
-    ///
-    /// Exists for one concrete reason rather than for symmetry:
-    /// [`crate::app::PdfcerApp`] derives [`Default`], and a field whose type
-    /// has no `Default` would break that derive — turning "hold the layout
-    /// store on the application" into a refactor of every place an app is
-    /// constructed.
-    ///
-    /// It is deliberately the same state as [`StoreKind::None`]: an empty
-    /// document, no path, and saving that quietly does nothing. That is the
-    /// honest meaning of "a store nobody has loaded", and it is a state the
-    /// rest of the module already handles — see
-    /// `a_store_with_nowhere_to_write_still_loads_and_runs`. What it must
-    /// **not** be is a store pointing at the real layout file with an empty
-    /// document, which would overwrite the operator's arrangement the first
-    /// time anything armed a write.
     fn default() -> Self {
         Self {
             path: None,
@@ -436,14 +417,6 @@ impl LayoutStore {
     }
 
     /// Perform the write, clearing the pending state either way.
-    ///
-    /// **A failure clears the pending state too**, deliberately. Retrying
-    /// every frame against a path that cannot be written — a read-only
-    /// share, a full disk — burns the write attempt sixty times a second
-    /// to produce the same error, and the operator has already been told.
-    /// The next actual change re-arms it, which is the same posture
-    /// [`crate::app::PdfcerApp::settle_and_rasterize`] takes towards a page
-    /// that would not render.
     fn write(&mut self) {
         self.pending = None;
         let Some(path) = self.path.as_ref() else {
@@ -547,11 +520,6 @@ mod tests {
 
     /// **The layout file sits beside the settings file, in the directory
     /// `pdfcer-core` chose.**
-    ///
-    /// The location rule, asserted against `pdfcer-core`'s own resolution
-    /// rather than against a path spelled out here — a second spelling is
-    /// exactly how a layout file ends up in a different folder from the
-    /// settings file it was supposed to sit next to.
     #[test]
     fn the_layout_file_lives_beside_the_settings_file() {
         let dir = temp_dir("beside");
@@ -578,11 +546,6 @@ mod tests {
     }
 
     /// **A first run is not news.**
-    ///
-    /// A missing file yields the fallback, records the fact, and reports
-    /// nothing worth telling anybody — an application that announced this
-    /// would tell every operator on every fresh profile that their layout
-    /// could not be restored.
     #[test]
     fn a_first_run_loads_the_fallback_and_says_nothing() {
         let dir = temp_dir("first-run");
@@ -598,10 +561,6 @@ mod tests {
     }
 
     /// **Broken syntax falls back, discloses, and does not interrupt.**
-    ///
-    /// The one genuinely wholesale case — a parser cannot say which half of
-    /// a broken file was meant — and it must still be a *disclosure*, never
-    /// a dialog and never a silent reset.
     #[test]
     fn broken_syntax_falls_back_and_is_reported() {
         let dir = temp_dir("broken");
@@ -652,13 +611,6 @@ mod tests {
 
     /// **A panel this build does not offer loses its tab — and the save
     /// does not put it back.**
-    ///
-    /// `SHELL_FRAMEWORK.md` §5b from both sides. The loader drops the
-    /// unregistered mount and discloses it; the write path emits the
-    /// sanitized document, so there is no route by which the dropped id
-    /// reappears in the file. Asserted on the *text on disk*, because an
-    /// assertion on the in-memory document would pass even if the writer
-    /// re-emitted something it had kept aside.
     #[test]
     fn a_dropped_panel_is_not_written_back_into_the_file() {
         let dir = temp_dir("dropped");
@@ -693,10 +645,6 @@ mod tests {
     }
 
     /// **One gesture is one write, not one write per frame.**
-    ///
-    /// A splitter drag reports a change every frame. Sixty ticks inside the
-    /// settle window must produce no writes at all; the write happens once,
-    /// after the gesture stops.
     #[test]
     fn a_continuous_drag_costs_one_write_rather_than_one_per_frame() {
         let dir = temp_dir("debounce");
@@ -735,11 +683,6 @@ mod tests {
     }
 
     /// **A change cannot be deferred forever.**
-    ///
-    /// A continuous rearrangement re-arms the settle window on every frame,
-    /// which without a ceiling would starve the write for as long as the
-    /// operator keeps dragging — reintroducing the "only saved at exit"
-    /// failure through the mechanism meant to prevent it.
     #[test]
     fn an_endless_gesture_still_gets_written_within_the_ceiling() {
         let dir = temp_dir("ceiling");
@@ -805,12 +748,6 @@ mod tests {
     }
 
     /// **No writable location is a working session, not a failure.**
-    ///
-    /// `StoreKind::None` is what `pdfcer-core` returns when neither the
-    /// portable directory nor the platform one can be written. Everything
-    /// loads from defaults, the dock is arrangeable, and only saving is
-    /// impossible — and a caller can find that out before promising the
-    /// operator anything.
     #[test]
     fn a_store_with_nowhere_to_write_still_loads_and_runs() {
         let mut store = LayoutStore::at(None, StoreKind::None, &fallback(), &AnyPanel);
@@ -831,12 +768,6 @@ mod tests {
     }
 
     /// **A default store cannot overwrite an operator's layout.**
-    ///
-    /// `Default` exists so `PdfcerApp` can keep deriving it. The hazard that
-    /// buys is a store that looks loaded, holds an empty document, and
-    /// points at the real file — which would erase the operator's
-    /// arrangement the first time anything armed a write. It points nowhere
-    /// instead.
     #[test]
     fn a_default_store_points_nowhere_and_can_erase_nothing() {
         let mut store = LayoutStore::default();

@@ -65,3 +65,21 @@ fail a correct build on a Windows behaviour nobody controls.
    `crate::clipboard::ORDER` and asserted there — but a staging bug, a
    `HashMap` somewhere, or a future "tidy" that sorts the entries would
    reorder them between the assertion and the clipboard.
+
+## Item notes
+
+### `const EXPECTED`
+
+Written out here rather than imported, deliberately. `ui-verify` drives
+the built binary through the operating system and must not link the crate
+under test — an expected value taken from the code being checked is a
+tautology, and this list is the *engine's measurement*, which is the
+independent source. If these two ever disagree, one of them is wrong and the
+check is the only thing that would say so.
+
+### `fn is_format`
+
+Registered formats are matched by **name**, because their numeric ids are
+assigned at run time and differ between boots. Predefined ones are matched
+by **id**, because Windows gives them no name at all — see
+`sys::clipboard_formats`.

@@ -112,3 +112,60 @@ and report zero fields removed about a deletion that removed four. This
 project has made that mistake twice: `text-style` and `import-form-data`,
 both fixed the same way. **A module's own summary line takes a verb suffix;
 the funnel's label keeps the bare name.**
+
+## Item notes
+
+### `static ARMED`
+
+One rather than a map keyed by group name, and that is a decision.
+Arming a second group while a first is armed **replaces** it, because
+two disclosure blocks open at once in a narrow dock pane is two
+destructive confirmations competing for one glance — and the operator
+can only be about to press one of them.
+
+### `const FIXTURE`
+
+The fixture is chosen for the **cascade**, which is the case the
+disclosure exists for. A one-level group would exercise the verb and
+prove nothing about the number an operator cannot predict — how many
+*other* nodes go with the one they named. `PROVENANCE.md` records that
+`Personal.Name` sits one level shallower on purpose.
+
+### `fn a_preview_is_taken_then_confirmed_and_retires_itself`
+
+Written as one test rather than three because the facts it asserts are
+only meaningful in sequence: a preview that is readable is worth nothing
+if the deletion that follows removes a different set, and an epoch rule
+is worth nothing unless something actually moves the epoch.
+
+The four claims, in order:
+
+1. **The preview reaches the store**, with the counts the panel draws.
+2. **It is invisible at any other revision** — which is the entire
+   safety argument for keeping it outside `OpenDoc`, and covers undo and
+   redo without either of them knowing this store exists.
+3. **The deletion removes the whole subtree in one command**, so the
+   epoch moves exactly once.
+4. **The armed preview retires itself** on that move, with nothing
+   having called a clear.
+
+### `fn cancelling_clears_the_block_and_edits_nothing`
+
+Asserted separately because it is the one path that must move no
+epoch: an operator who backs out of a destructive confirmation has done
+nothing, and a shell that bumped the revision for it would silently
+retire whatever disclosure was on screen and mark a clean document
+edited.
+
+### `fn a_terminal_name_arms_nothing`
+
+The engine rules that `NotAGroupingNode` is a *wrong verb on a sound
+document* and deliberately does not fall back to `delete_field` —
+*"the two remove different amounts, and guessing which the caller meant
+is exactly the sneakiness rule 4 forbids on a destructive verb."* This
+asserts the shell inherits that rather than arming something.
+
+It is unreachable from the panel, which only ever passes names out of
+`AcroForm::groups`. Asserted anyway: the day a caller passes a field
+name, the operator must get nothing armed rather than a confirmation
+block describing a deletion of the wrong size.

@@ -150,3 +150,43 @@ Nothing here marks the canvas. The recoloured text renders exactly as the
 saved file will render it; what was skipped, what disagreed and what is a
 named ink is disclosed **off-canvas**, in this panel and in the status bar
 through `app::actions::disclosure`.
+
+## Item notes
+
+### `fn sync`
+
+The expensive call is behind the stamp comparison and nothing else, so
+the ordinary frame — the operator looking at a selection they made three
+seconds ago — costs one tuple comparison.
+
+### `fn classify`
+
+Its own function, and every branch is a decision O89 argued:
+
+1. **A glyphless run is not a colour.** It has no show operator, so
+   `textstyle::apply` skips it; counting it would let a derived word space
+   make an object "mixed".
+2. **An ink pdfcer will not convert wins over everything.** It is checked
+   before agreement, not after, because *"they all agree and one of them is a
+   spot ink"* must not draw a swatch. The check is
+   [`super::text::rgb_of`] — the same predicate the swept-text swatch uses —
+   so the two surfaces cannot disagree about which spaces are safe.
+3. **`DefaultBlack` is black**, not "no opinion". §8.6.8 says an absent
+   colour operator paints black, so an object of one red run and one
+   default-black run is genuinely **mixed** and must say so. See
+   [`RunFill`]'s own docs for the flattening that collapsing this would
+   cause.
+
+### `fn one_undecodable_run_removes_the_swatch_for_the_whole_object`
+
+The assertion this module exists for. If the ink check ran *after* the
+agreement check, an object of nine black runs and one `/Separation` run
+would draw a black swatch, and one click would convert the plate colour
+— invisibly, permanently, looking entirely normal.
+
+### `fn a_default_black_run_disagrees_with_a_coloured_one`
+
+The [`RunFill`] distinction, asserted where it is consumed. Written as
+its own test because the failure it guards has no symptom: the control
+would open on red, and pressing nothing would change nothing, so only a
+deliberate check can see it.

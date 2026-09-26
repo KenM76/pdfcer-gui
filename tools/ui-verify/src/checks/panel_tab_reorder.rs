@@ -76,11 +76,6 @@ impl Strip {
 }
 
 /// **Find a tab bar with at least two tabs drawn in it.**
-///
-/// By containment rather than by name: a tab region is named for its panel and
-/// carries no compartment, which is deliberate — a panel keeps its name when
-/// the operator moves it — so the only thing that says which bar a tab is in
-/// is where it was drawn.
 fn find_strip(trace: &crate::trace::Trace, ui_rect: &str) -> Option<Strip> {
     let tabs: Vec<(String, LRect)> = declared_names(trace, ui_rect, TAB)
         .into_iter()

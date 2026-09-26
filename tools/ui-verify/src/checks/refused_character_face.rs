@@ -42,31 +42,9 @@ const PAGE: PageGeometry = PageGeometry {
 };
 
 /// Reset the dock, take Edit, mount Properties, arm the caret — one per frame.
-///
-/// `view.reset_layout` first, and it is not decoration: the application
-/// persists its dock layout across runs and the harness does not clear it, so a
-/// launch inherits whatever the previous launch left — including a previous
-/// *driven* one. `typo_refusal`'s own header records the run this project spent
-/// reading last run's furniture. Its arrival is asserted below rather than
-/// assumed.
-///
-/// `file.properties` before `edit.text`, and `mode.edit` before both: the
-/// dock follows the ribbon mode on the same frame, so a panel mounted before the
-/// mode moved would be mounted into the workspace this check is about to leave.
-/// `std14_face` learned that the expensive way.
 const INVOKE: &str = "view.reset_layout,mode.edit,file.properties,edit.text";
 
 /// The character seeded into every draft this check opens.
-///
-/// See the module header for why it is `q` rather than `€`. Seeded rather than
-/// typed because `sys::vk` is a deliberately closed list of non-character
-/// virtual keys and this machine cannot inject an arbitrary character — and the
-/// keystroke is not the subject here, the refusal after the commit is.
-///
-/// It replaces the draft's whole text rather than appending to it
-/// (`keys::typing` does `draft.text.clear()` before inserting the seed), so the
-/// commit is `find="ABC" replace="q"` — which is exactly the command line
-/// measured in the fixture's provenance note, on both sides of the face swap.
 const SEED: &str = "q";
 
 /// `layout-reset scope=… changed=…`. `changed=false` is a good answer: it
@@ -80,11 +58,6 @@ const DECLINED_EVENT: &str = "text-edit-declined";
 const REFUSED_EVENT: &str = "edit-text-refused";
 /// `edit-text page=… n=… epoch=… disclosures=…` — the funnel's SUCCESS arm, and
 /// the negative control's oracle.
-///
-/// Deliberately not `text-edit-*`: `vector_edit`'s label is the bare verb name
-/// and a module's own summary line takes a suffix, which is what
-/// `tools/gates/check-trace-names.py` exists to keep true. Matching is on the
-/// exact first token, so the two never collide.
 const APPLIED_EVENT: &str = "edit-text";
 /// `edit-text-classified page=… run=… kind=… one_operator=… character=…
 /// said=…` — the shell's own classification of the engine's refusal.
@@ -112,10 +85,6 @@ const POPUP_NEW_REGION: &str = "properties.refusedchar.face.new";
 /// whether a sheet was on screen at all.
 const PAGE_REGION: &str = "page";
 /// The Properties panel's dock tab, so the body can be brought to the front.
-///
-/// A docked pane that is not in front publishes **nothing**, which is
-/// indistinguishable from a panel with nothing to say. This project filed one
-/// such report; `dock.tab.<id>` is published for exactly this.
 const PROPERTIES_PANEL: &str = "file.properties";
 /// How many notches to spend scrolling the panel for the chooser.
 const SCROLL_ATTEMPTS: usize = 6;
@@ -147,12 +116,6 @@ impl Check for ARefusedCharacterOffersAFaceThatCanTypeIt {
 }
 
 /// Do two rectangles share any area?
-///
-/// [`LRect`] carries `contains_rect` and not this, deliberately — *"can the
-/// operator click this?"* is a containment question. The question here is the
-/// opposite one and it is rule 4's: **is any part of this sentence drawn over
-/// the page?** Overlap by a pixel would be enough to make the answer *yes*, so
-/// the weaker predicate is the right one.
 fn overlaps(a: LRect, b: LRect) -> bool {
     a.min.x < b.max.x && b.min.x < a.max.x && a.min.y < b.max.y && b.min.y < a.max.y
 }
@@ -871,11 +834,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
 /// The distinct `refused-char` states the run passed through, in order and with
 /// runs of the same value collapsed.
-///
-/// Collapsed because the line is published on **every frame the block draws**,
-/// so the raw sequence is hundreds of repetitions of three values and says
-/// nothing a reader can use. What is being asserted is the block's path through
-/// its own state machine, and a path is a sequence of transitions.
 fn states_walked(trace: &crate::trace::Trace) -> Vec<String> {
     let mut walked: Vec<String> = Vec::new();
     for state in trace.events(OFFER_EVENT).filter_map(|l| l.get("state")) {
@@ -888,15 +846,6 @@ fn states_walked(trace: &crate::trace::Trace) -> Vec<String> {
 
 /// **The negative control for the branch where the character goes in**: an edit
 /// that SUCCEEDED must take the offer off the screen.
-///
-/// Split out because it is reached from one arm of [`drive`] rather than from
-/// its end, and because what it does is one idea: *the block speaks for the
-/// character the font could not type and is silent for the one it could*.
-///
-/// The absence is made non-vacuous first. A build that had simply stopped
-/// repainting would publish no regions at all and would pass an
-/// absence-of-region test for free, so the count of frames painted after the
-/// commit is asserted before the absence is.
 fn offer_must_retire(
     ctx: &CheckContext,
     session: &Session,
@@ -962,16 +911,6 @@ fn offer_must_retire(
 
 /// **Wait until one of `events` appears past trace line `after`**, and answer
 /// how long that took in milliseconds.
-///
-/// Bounded, and the ceiling is generous rather than tight: a wait that gives
-/// up early reports a working feature as inert, which is the most expensive kind
-/// of wrong this harness can be. On timeout it returns rather than erroring —
-/// the caller's own assertion is what says which event was missing and what that
-/// means, and it says it far better than a generic timeout could.
-///
-/// `after` rather than a whole-capture `last(..)` for this crate's standing
-/// reason: a whole-capture search is a fossil finder, and every event this check
-/// waits for has a predecessor it must be later than.
 fn wait_for(session: &Session, events: &[&str], after: usize) -> Result<u128> {
     const CEILING_MS: u128 = 20_000;
     let started = std::time::Instant::now();

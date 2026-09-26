@@ -67,3 +67,13 @@ program. That is a deliberate stopping point rather than an oversight:
 convention rule above says to follow it — but that would then arrive with a
 visible control, not as a silent file. This paragraph exists so that is a
 decision rather than a discovery.
+
+## Item notes
+
+### `fn standard_token`
+
+**Deliberately an exhaustive match with no wildcard arm.** `StampName`
+is not `#[non_exhaustive]`, so the day the engine adds a fifteenth face this
+function stops compiling and names itself, which is the whole point. A
+`_ => "other"` arm would keep building and quietly collapse two stamps into
+one token, and the check that told them apart would go on passing.

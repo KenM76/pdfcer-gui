@@ -127,31 +127,6 @@ impl DefaultAppDialog {
     }
 
     /// **Write the operator's answer, and save it.**
-    ///
-    /// The whole of O173's *"ask once"* lives in this function, and the
-    /// asymmetry is deliberate:
-    ///
-    /// | What they did | Asked again next launch? |
-    /// |---|---|
-    /// | Pressed the button | **No.** They engaged; asking again is nagging. |
-    /// | Ticked the box | **No.** That is what the box says. |
-    /// | *Not now*, box clear | **Yes.** *Not this time* is not *never*. |
-    ///
-    /// The third row is the conventional behaviour of every browser on the
-    /// platform, and the standing rule is that the convergence of the product
-    /// class is the specification.
-    ///
-    /// ⚠ **The offer is what stops, never the capability.** The button stays at
-    /// the top of Settings whatever is written here — `dialogs::settings` does
-    /// not read this preference at all, which is the mechanical form of that
-    /// promise rather than a comment claiming it.
-    ///
-    /// # The save failure is swallowed, and that matches every other preference
-    ///
-    /// `print::remembered::remember` states the rule: one discrete operator
-    /// decision is one write, and losing a preference across a restart does not
-    /// justify a modal in front of somebody who has just declined a dialog. The
-    /// worst case is being asked once more.
     fn settle(&self, prefs: &mut crate::app::prefs::Prefs) {
         if !self.dont_ask && !self.acted {
             return;
@@ -254,12 +229,6 @@ mod tests {
     }
 
     /// **Pressing the button silences it too**, box or no box.
-    ///
-    /// The row of [`DefaultAppDialog::settle`]'s table most likely to be
-    /// removed by somebody tidying: it looks like the checkbox's job. It is
-    /// not — asking again after the operator engaged is the nagging this
-    /// project refuses, and the remedy for a change of mind is the Settings
-    /// button rather than a question that comes back.
     #[test]
     fn engaging_with_the_offer_silences_it() {
         let mut prefs = Prefs::default();
@@ -270,10 +239,6 @@ mod tests {
     }
 
     /// **The checkbox starts unticked.**
-    ///
-    /// A pre-ticked *don't ask me again* suppresses itself when somebody
-    /// dismisses the window without reading it, and there is no way to notice
-    /// that happened.
     #[test]
     fn the_box_is_not_pre_ticked() {
         assert!(!DefaultAppDialog::new().dont_ask);
@@ -281,10 +246,6 @@ mod tests {
 
     /// **A machine that already opens PDFs with pdfcer is not asked**, and the
     /// preference is not what decides it.
-    ///
-    /// This asserts only the cheap half — that the preference gates the
-    /// question — because the other half spawns processes and depends on the
-    /// machine the test runs on. The live half belongs to a driven check.
     #[test]
     fn a_silenced_preference_is_never_asked() {
         let prefs = Prefs {

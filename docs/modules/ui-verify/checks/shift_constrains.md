@@ -82,3 +82,71 @@ it is unit-tested, but *sharing a function is not the same as reaching it*,
 and this project has shipped three features whose parts were all correct and
 whose join was unobserved. Named as a gap in `OPERATOR_REQUESTS.md` O14
 rather than left to be discovered.
+
+## Item notes
+
+### `const DRAG_X_OF_SHAPE`
+
+Deliberately far more than [`DRAG_Y_OF_SHAPE`]. See the module header: a
+lopsided travel is what makes assertions 1 and 3 able to fail.
+
+
+The old pair — `90.0` px on x against `12.0` px on y — expressed the travel
+in **the screen's** space, and assertion 3 then read *"x travelled further,
+so `sx` is the dominant factor"*. That inference is only sound when the
+drag's pixel ratio beats the selection box's own aspect ratio, and on
+`SW41177` it does not:
+
+
+So the pointer travelled further **along y in the operand's own terms**, the
+shell kept `sy`, and the check called it *"the wrong factor"* while stating
+a rule the shell never claimed. `canvas::constrain::aspect` keeps the factor
+further from unity and its header says why that metric *is* relative travel;
+the run bore that out exactly — `sx=1.7799 sy=1.9888` unmodified, and
+`1.9888` kept. **The shell was right and this constant was wrong.**
+
+⇒ This is the fourth time this project has spent a red run on the same
+mistake, and the sibling check states the lesson in full
+(`scale_switch`'s `GRIP_TRAVEL_OF_SHAPE`, whose own three wrong answers were
+page fractions, then points, then — correctly — fractions of the shape):
+
+> **A uniform scale is equal RATIOS, not equal distances**, and the space
+> the travel must be expressed in is the operand's, not the page's and not
+> the screen's.
+
+A *lopsided* scale is the same statement with the equality removed: to make
+`sx` dominate by construction, on any shape, the x travel must be a larger
+fraction of the box's **width** than the y travel is of its **height**.
+`0.25` against `0.04` is a 6.25 : 1 margin in the space that decides, and it
+no longer depends on what the fixture's aspect ratio happens to be.
+
+It is also indifferent to the 1/zoom inflation recorded as `DEFECTS.md`
+**D18**: that scales both factors by the same constant, and a common factor
+cannot change which of two numbers is further from unity.
+
+### `const DRAG_Y_OF_SHAPE`
+
+Small on purpose, and allowed to round to zero screen pixels on a short
+box: `factors` answers `sy = 1.0` for a zero-travel axis, `aspect` can never
+keep a factor at unity, and assertion 1's discrimination guard compares the
+pair rather than requiring both to move. A y travel that vanishes therefore
+makes this check *sharper*, not blind — which is why there is no pixel floor
+underneath it to drag the constant back into the screen's space.
+
+### `const MIN_DISCRIMINATION`
+
+Below this the drags are effectively square, assertion 2 could pass by luck,
+and the honest outcome is SKIP. Chosen as five per cent because the intended
+travel is 6.25:1 **in the operand's space**, so anything close to square
+means the drag did not reach the grip at all — a fact about the fixture and
+the harness, not about the build.
+
+### `fn one_drag`
+
+The grip is re-located from the selection outline **on every call**, not
+cached: the first drag changes the object's extent, so a cached corner would
+aim the second drag at the interior — which is a MOVE, and would produce no
+`resize-commit` at all.
+
+`Ok(Err(String))` is a check failure with its sentence already written;
+`Err` is a skip.

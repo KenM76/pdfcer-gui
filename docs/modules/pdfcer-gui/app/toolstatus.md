@@ -67,3 +67,99 @@ armed."*
 its own early-return rather than folded into the format string, because the
 tempting shape — one `format!` with an empty name — silently ships a line
 beginning with an em dash.
+
+## Item notes
+
+### `fn put_down`
+
+It still writes `canvas::tool::select` directly rather than raising an
+`Action`, and the argument is unchanged and worth repeating because a move
+is exactly when somebody would "fix" it: **the armed tool is not document
+state.** It contributes nothing to the undo log and has nothing to order
+against, so routing it through the action funnel would add a variant `apply`
+could only answer by writing the same memory slot.
+
+### `fn name_of`
+
+**Never a string of this module's own.** A second copy of a label compiles,
+reads identically the day it is written, and drifts the first time either is
+reworded — invisibly, because nothing renders both at once. The rule is
+inherited from the armed identity row this replaces.
+
+### `fn sentence`
+
+# Why this returns a pair instead of one string
+
+Six of the armed stages drew two labels, and the second was never
+decoration. `t::text_annot_release` is described in its own module as *"The
+sentence that stops a working tool reading as broken"*; `t::hand_borrow`
+says how the borrowed hand is given back; `t::node_shift` names the modifier
+that makes the node tool usable. A one-row strip has nowhere to put them,
+and **dropping them would be the content regression this whole change is
+under instruction not to commit.**
+
+So they go to the hover, which is where this project sends a sentence that
+has been elided rather than shortened — the discipline
+[`crate::app::status::disclosure`] states as *"eliding defers rather than
+loses"*.
+
+# The primary is the LIVE stage where there is one
+
+One slot, two contents — the armed block's rule, and it applies here with
+more force rather than less. *"3 vertices placed"* is worth more than
+*"click each corner"* the moment the operator has clicked one, and it
+collapses back to the instruction when the run ends.
+
+### `fn perimeter_stage`
+
+Moved unchanged from the armed block, and the reasoning moves with it,
+because it is the reason this function is not two lines of arithmetic:
+[`pdfcer_core::dimension::format_measurement`] is the ENGINE's own
+formatter — the same one the committed label goes through — so the running
+total and the final label cannot disagree about scale, unit, precision,
+fraction style or decimal marker. The operator's ask was that the tool
+behave *"the same as the other dimensioning tools"*, and a live readout in
+points beside a committed dimension in metres would be two numbers for one
+measurement.
+
+Falls back to the instruction when the group cannot be read: a total whose
+scale is unknown is not a total.
+
+### `fn circular_stage`
+
+`OPERATOR_REQUESTS.md` O105 — *"selecting more points around a hole doesn't
+always get it to narrow down to the size of the hole."* An operator adding
+points to a fit is watching a number converge, and with no number to watch
+every correction is a commit and an undo.
+
+**Radius or diameter follows the pick set's own display toggle**, so the
+number the strip shows is the number the placed dimension will show. A
+readout that always reported the radius would disagree with a committed
+diameter label by a factor of two, silently.
+
+### `fn command_for`
+
+# Derived from the existing id maps, never written a second time
+
+`shell::commands::markup_command` and `measure_for_command`'s inverse are
+the single binding between an id and a kind, exactly as
+`Panel::from_command_id` is for panels. Re-listing them here would be a
+second table to keep in step, and the failure when it drifted would be a
+strip naming the wrong tool — which is the one thing it exists to get right.
+
+Moved verbatim from the armed block; the `None` arms are the interesting
+ones and each keeps its reason.
+
+### `fn the_reserved_height_survives_the_shells_clamp`
+
+Falsifiable in one edit: drop `BANNER_HEIGHT_PTS` below the shell's
+floor and this goes red rather than the strip quietly disappearing at
+run time.
+
+### `fn only_the_two_dialog_armed_tools_have_no_command`
+
+The table moved modules, and a move is where an arm gets dropped. This
+asserts the `None` arms are exactly the two documented ones — a
+placement, and the scale kind that is armed from inside a window — so a
+tool silently losing its name shows up as a red test rather than as a
+strip that renders a sentence with no subject.

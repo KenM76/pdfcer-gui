@@ -53,6 +53,8 @@
 //! what was drawn would be a measurement feeding the size that produced it.
 //! [`clamp`] is a pure function of the width and the group widths; it never
 //! reads what was drawn.
+//!
+//! Design and rationale: `docs/modules/egui-shell/ribbon/overflow.md`.
 
 use egui::{Align, Layout, Rect, RichText, UiBuilder, Vec2};
 
@@ -81,18 +83,6 @@ impl Direction {
     }
 
     /// The `ui_rect` name this arrow publishes.
-    ///
-    /// The RIGHT arrow's name is `ribbon.overflow`, which names the question
-    /// rather than the glyph. Region names are a **cross-repo stability
-    /// contract** with `tools/ui-verify`, and what those checks ask of this
-    /// control is: is the affordance on screen at every width, is it
-    /// hit-testable under real metrics, does any visible group overlap it.
-    /// None of that is a claim about the mechanism, so naming the region after
-    /// the mechanism would put an implementation detail into a cross-repo
-    /// contract.
-    ///
-    /// The left arrow answers a question nothing asked before, so it carries a
-    /// name of its own.
     const fn region(self) -> &'static str {
         match self {
             Self::Left => "ribbon.scroll.left",

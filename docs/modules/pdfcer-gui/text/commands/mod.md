@@ -62,3 +62,11 @@ Two things are trimmed:
 objects**. They are the primary content-editing tools and were the
 least legible controls in the application — and the first two returned
 the *same literal*, `"Aa"`, distinguished only by icon and tooltip.
+
+## Item notes
+
+### `mod view`
+
+Glob-re-exported, so a caller sees no seam at all: every call site still
+writes `crate::text::commands::view_zoom_in()`. See that module's header
+for why the cut is there and nowhere else.

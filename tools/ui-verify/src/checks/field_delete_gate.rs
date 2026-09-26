@@ -15,46 +15,19 @@ use crate::report::CheckReport;
 use crate::sys::vk;
 
 /// Edit mode, with the Properties panel put on screen.
-///
-/// `file.properties` is the command that mounts and activates the panel from
-/// any arrangement, so the check does not have to know what dock layout the
-/// machine it runs on happens to have persisted. `mode.edit` is load-bearing
-/// rather than cosmetic — see the module header's last section.
 const INVOKE: &str = "mode.edit,file.properties";
 /// The certified fixture. See the module header and
 /// `tools/gen-certified-fixture.py`.
-///
-/// **Relative to `CARGO_MANIFEST_DIR`, which is `tools/ui-verify`** — two
-/// levels up, not three. See [`super::annot_delete_gate`]'s note on the same
-/// constant: this file inherited the wrong depth from it, and both resolved to
-/// a `D:/Dev/fixtures/` that does not exist, so both SKIPPED on every run while
-/// telling the reader to run a generator that writes somewhere else.
 const CERTIFIED: &str = "../../fixtures/certified-comments.pdf";
 /// The same document with the certification removed.
 const ORDINARY: &str = "../../fixtures/threaded-comments.pdf";
 /// The line `canvas::forms` writes when a click selects a form field.
 const SELECT_EVENT: &str = "form-field-selected";
 /// The per-frame census `panels::properties::formfield` writes.
-///
-/// The `-gates` suffix is not decoration: `tools/gates/check-trace-names.py`
-/// forbids a module's own summary line from sharing its first token with a
-/// `vector_edit` funnel label. A harness reading a bare name would get the
-/// funnel's line — `page`, `n`, `epoch`, `disclosures`, and none of the keys
-/// read below. That confusion has produced a confident false negative on this
-/// project three times.
 const GATES_EVENT: &str = "form-field-gates";
 /// The line `canvas::keys` writes when a Delete rung declines.
-///
-/// Shared with the annotation rung, which is why the `reason=` key is read
-/// rather than the event alone: in Edit mode both rungs are reachable, and a
-/// decline from the wrong one would say nothing about the gate under test.
 const DECLINED_EVENT: &str = "canvas-delete-declined";
 /// The **funnel's** own line for a widget delete that reached the engine.
-///
-/// Asserted **absent** in phase D. Its presence means the ladder let the action
-/// through and the engine refused it — which is the pre-fix behaviour exactly,
-/// and which no region assertion would catch, because the panel would still
-/// have drawn its sentence on the frames before the press.
 const FUNNEL_EVENT: &str = "delete-widget";
 /// The **Delete field** button's region, published only when it is drawn.
 const DELETE_REGION: &str = "properties.form_field.delete";
@@ -67,13 +40,6 @@ const REFUSED_REGION: &str = "properties.form_field.delete_refused";
 const PAGE_REGION: &str = "page";
 
 /// The signature widget's `/Rect` centre, in PDF user space on page 1.
-///
-/// Derived from `objs[11]` in `tools/gen-certified-fixture.py`
-/// (`/Rect [60 60 300 120]`), and stated as a point rather than as a page
-/// fraction for the reason [`super::annot_delete_gate`] gives about its own
-/// operand: the target is **in the fixture**, so the aim has to be where the
-/// fixture put it. Phase B asserts the click really selected `Certifier` by
-/// name, so a click that missed reports as a miss rather than as a broken gate.
 const WIDGET_CENTRE: DocPoint = DocPoint {
     page: 0,
     x: 180.0,
@@ -81,11 +47,6 @@ const WIDGET_CENTRE: DocPoint = DocPoint {
 };
 
 /// The field the fixture pair names, asserted by `/T` rather than discovered.
-///
-/// The whole evidential value of the pair is that the two documents are
-/// identical apart from one dictionary. A check that went looking for
-/// *"a field"* could find a different one in each run and would report the
-/// difference as a gate difference.
 const FIELD_NAME: &str = "Certifier";
 
 /// See the module documentation.
@@ -116,12 +77,6 @@ impl Check for ACertifiedDocumentWithholdsFieldDelete {
 
 /// One launch: open `fixture`, click the widget, and return the gate census's
 /// `delete_refused` flag together with whether each region was declared.
-///
-/// Factored because phases A–C and phase E are the **same** sequence against
-/// two files, and the whole value of the pair is that they were driven
-/// identically. Two hand-written copies would eventually differ in a settle or
-/// in an aim, and the difference would be reported as a difference between the
-/// documents.
 struct Run {
     session: Session,
     driver: Driver,
@@ -250,11 +205,6 @@ fn open_and_select(
 }
 
 /// The fixtures' page size, which the generator writes as A4.
-///
-/// Stated rather than read from the file: the check is bound to fixtures the
-/// repository generates itself, so a page size read back from them could only
-/// confirm what the generator wrote — and a `--page-size` override would let a
-/// caller aim this check at a document it is not about.
 const fn page_geometry() -> PageGeometry {
     PageGeometry {
         width_pt: 595.0,

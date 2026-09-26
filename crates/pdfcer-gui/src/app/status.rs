@@ -18,26 +18,11 @@ mod fit;
 /// the reachability clause that makes shedding legitimate.
 pub(super) mod fitting;
 /// **Where the OCR blend sits, and whether the page has anything to blend.**
-///
-/// The canvas may not be marked to say *this page carries no recognised
-/// text* — R8b — so the one state where the mode is on and draws nothing is
-/// stated here or nowhere. See its header.
 mod ocrlayer;
 /// Page navigation and the editable page-number box. See this module's
 /// header for the seam, and that one's for the control.
 mod page_box;
 /// **How to get the application back** — the read-mode exit statement.
-///
-/// `OPERATOR_REQUESTS.md` O115, the operator: *"I didn't see a way to get back
-/// out of read mode."* Read mode hides the ribbon, and the only
-/// control that turns it off is on the ribbon — so the mode hides its own exit.
-///
-/// It is on **this** bar because this bar is the one piece of chrome §2 of
-/// `app::window` deliberately keeps, and because read mode composes with full
-/// screen: in the combined state there is no ribbon *and* no title bar, so the
-/// window title — which carries the same statement — is absent in exactly the
-/// state with the least chrome left. Its header carries the full argument for
-/// why two surfaces is not duplication here.
 mod readmode;
 /// **What is selected, said in words** — the readout that turns *"all I get is
 /// the page selected"* into a diagnosis. See its header.
@@ -213,10 +198,6 @@ pub const ROW_HEIGHT_PTS: f32 = 24.0;
 
 /// The panel must be taller than the row it contains, or the bar's own
 /// content is clipped by the frame that is supposed to hold it.
-///
-/// Checked at **compile time** rather than in a test: the relationship
-/// between the two constants is a property of the constants, and a test
-/// would only re-discover at run time what the compiler can refuse outright.
 const _: () = assert!(
     HEIGHT_PTS > ROW_HEIGHT_PTS,
     // ui-text-exempt: compile-error text, never displayed in the UI
@@ -224,20 +205,6 @@ const _: () = assert!(
 );
 
 /// The **floor** under the zoom readout's reserve, and only the floor.
-///
-/// `8%` and `800%` are different widths, and without a reserve the − button
-/// would step sideways every time the operator clicked +. Four characters is
-/// **not** the width to reserve: O24 made the ceiling a preference,
-/// `MAX_MAX_ZOOM_PERCENT` is `1e12` and
-/// [`crate::text::status::zoom_percent`] formats with `{:.0}`, so the readout
-/// can be asked to draw `1000000000000%` — fourteen characters.
-///
-/// Kept as a FLOOR rather than deleted, because it is still doing the
-/// original job at the bottom of the range: `10%` measures narrower than four
-/// characters, and letting the reserve shrink to it would move the − button
-/// the other way. The reserve is now `max(this, the measured width of the
-/// widest string the CURRENT ceiling can produce)` — see
-/// [`status::zoom::readout_width`].
 const ZOOM_READOUT_WIDTH_PTS: f32 = 46.0;
 
 /// The share of the bar the render-notes line may occupy before eliding.
@@ -317,40 +284,18 @@ const REGION_ZOOM: &str = "status-group:zoom"; // ui-text-exempt: trace region n
 
 /// Prefix for one row of the open maximum-zoom popup:
 /// `status-maxzoom-row:<index>`.
-///
-/// Indexed rather than named, for the reason the filter's rows are: a label
-/// is operator copy and gets reworded, an index is stable, and a harness
-/// chooses positionally.
 const REGION_MAXZOOM_ROW: &str = "status-maxzoom-row"; // ui-text-exempt: trace region name, never displayed
 
 /// The Find toggle.
 const REGION_FIND: &str = "status-group:find"; // ui-text-exempt: trace region name, never displayed
 
 /// The selection-filter button — the CLOSED control, not its popup.
-///
-/// The popup publishes its own rows separately (see [`REGION_FILTER_ROW`]),
-/// because a harness that can open a list but not choose from it can only
-/// assert *the control exists*, which is the one claim that is also true of
-/// every inert control.
 const REGION_FILTER: &str = "status-group:filter"; // ui-text-exempt: trace region name, never displayed
 
 /// The standing line shown when the filter has left nothing selectable.
-///
-/// A named region rather than a bare label, because the whole requirement for
-/// this sentence is that it is **on screen and legible** at the moment the
-/// canvas has stopped responding — and that can only be asserted about a rect
-/// the application published.
 const REGION_FILTER_EMPTY: &str = "status-group:filter-empty"; // ui-text-exempt: trace region name, never displayed
 
 /// Prefix for one row of the open filter popup: `status-filter-row:<index>`.
-///
-/// **Indexed, not named.** Labels are operator copy and get reworded; an
-/// index is stable and a harness is choosing positionally anyway. The index is
-/// the position in [`PickClass::ALL`], which is also the display order.
-///
-/// These regions exist only on the frames the popup is open, which is what an
-/// `Area` laid out at paint time does — see
-/// `D:/dev/rag/egui/a_combobox_popup_is_an_area_laid_out_at_paint_time_so_only_the_app_can_publish_its_entry_rects.md`.
 const REGION_FILTER_ROW: &str = "status-filter-row"; // ui-text-exempt: trace region name, never displayed
 
 /// The popup's **All** button.
@@ -733,30 +678,11 @@ pub fn show(
 // ---------------------------------------------------------------------------
 
 /// The Find toggle, and the whole of what this bar knows about searching.
-///
-/// A `selectable_label` showing whether the bar is open — see the module
-/// docs for why it shows state at all, and why it writes [`FindState`]
-/// instead of raising an [`Action`].
-///
-/// Drawn only with a document open (the caller has already returned
-/// otherwise), because `crate::find::bar` draws nothing without one: a toggle
-/// that produced no visible bar would be the placeholder P3 forbids, and the
-/// registered command is gated on `doc.pages` for the same reason.
-/// The `egui::Memory` slot the bar's measured group widths live in.
-///
-/// One id for the whole map rather than one per group: they are written
-/// together at the end of a frame and read together at the start of the next,
-/// and five separate slots would admit the state where three are from this
-/// frame and two from the last.
 fn fitting_id() -> egui::Id {
     egui::Id::new("status.fitting.widths") // ui-text-exempt: a memory key, never displayed
 }
 
 /// What each group of the fixed cluster occupied last frame.
-///
-/// Empty on the first frame of a session, which [`fitting::affordable`] treats
-/// as *show everything* — see its docs on why that bootstrap is required rather
-/// than merely tolerant.
 fn fitting_widths(ctx: &egui::Context) -> fitting::Widths {
     ctx.data_mut(|d| d.get_temp::<fitting::Widths>(fitting_id()))
         .unwrap_or_default()

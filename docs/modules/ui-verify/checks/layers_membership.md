@@ -104,3 +104,44 @@ coverage the file does not have.
   layer has been filtered out of the list needs typing into the search
   field, which `layers_search`'s own header explains this harness has no
   seam for.
+
+## Item notes
+
+### `const ON_AN_UNLAYERED_OBJECT`
+
+`x = 150` rather than the bar's centre at 306: the fixture leaves a
+`0 0 300 792 re W n` clip in force with no `Q` to restore it, so the right
+two thirds of the bar may or may not be painted depending on how a renderer
+treats a clip inside a switched-off group. The object's page bbox spans the
+full width either way, but aiming where the two readings agree keeps a
+failure here about the layer relation rather than about clipping.
+
+### `const INVOKE`
+
+`mode.edit` first and it is not optional: Read mode refuses a canvas
+click on content by design (`DEFECTS.md` D6), and a check that skipped this
+step once reported the mode gate as a selection defect.
+
+### `fn row_states`
+
+# Why the LAST line per name rather than a count
+
+`panels::layers` traces one `layer-row` per drawn row **per frame**, so a
+run of a few seconds leaves hundreds of lines and any count is a count of
+repaints. What this check asks is *"what is the state now?"*, and the
+answer is the most recent line for each row — the same reasoning
+`form_selection::last_first` gives for reading the last selection line
+instead of counting new ones.
+
+### `fn engine_fixture`
+
+The path is derived, not configured. `D:\Dev\pdfcer` is READ-ONLY to this
+project and its corpus is the only place this shape exists, so the check
+reads from it and writes nowhere near it. `None` rather than a panic turns
+a missing corpus into a SKIP with a reason instead of a crash mid-suite.
+
+### `fn aim`
+
+Its own function so the two call sites cannot hop differently — the class of
+error `crate::coords` exists to prevent, and the one a literal screen
+coordinate always is.

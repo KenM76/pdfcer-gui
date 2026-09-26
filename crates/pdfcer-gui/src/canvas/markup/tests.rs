@@ -8,6 +8,8 @@
 //! and no document."* This is the enumeration of those rules, and the parent is
 //! the rules — the same split `gesture::meaning` and `canvas::keys` took in the
 //! same week.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui/canvas/markup/tests.md`.
 
 // The INNER attribute, not just the `mod tests;` declaration in the parent.
 // `check-ui-strings.sh`'s exclusion 2b recognises a whole test file from the
@@ -27,14 +29,6 @@ fn band(start: (f64, f64), end: (f64, f64)) -> Geometry {
 // -----------------------------------------------------------------
 
 /// **Every kind belongs to exactly one gesture family.**
-///
-/// The property `canvas::interact`'s routing and
-/// `gesture::press_kind`'s early return both rest on, asserted as a
-/// partition rather than as three membership lists. A kind in **two**
-/// families would be reached by two gestures — a press that both started a
-/// band and placed a vertex — and a kind in **none** would arm a tool whose
-/// press means nothing, which is the *"visible control, silently inert"*
-/// failure with a crosshair on it.
 #[test]
 fn the_three_families_partition_every_kind() {
     for &kind in MarkupKind::ALL {
@@ -62,13 +56,6 @@ fn the_three_families_partition_every_kind() {
 
 /// **An arrow dragged up-and-left keeps its head at the end the operator
 /// dragged to.**
-///
-/// The salvaged arrow-direction decision, asserted in the direction a
-/// normalising
-/// implementation fails. A normalised rect would report
-/// `start = (min, min)`, which for this drag is the **head**, so the
-/// arrowhead would be at the tail — and, with a single head, nothing in the
-/// document would say so.
 #[test]
 fn an_arrow_dragged_backwards_keeps_its_head_at_the_end() {
     let tail = (400.0, 500.0);
@@ -94,10 +81,6 @@ fn an_arrow_dragged_backwards_keeps_its_head_at_the_end() {
 
 /// …and every rectangle kind IS normalised, in all four drag directions,
 /// because a `Rect` with `llx > urx` is not a rectangle any reader draws.
-///
-/// Asserted over all four kinds and all four directions rather than one
-/// case, because the failure is per-kind: it is exactly the shape of
-/// mistake that gets fixed for Rectangle and left in Ellipse.
 #[test]
 fn every_rectangle_kind_is_normalised_in_all_four_drag_directions() {
     let corners = [(100.0_f64, 200.0_f64), (300.0, 500.0)];
@@ -187,16 +170,6 @@ fn each_kind_authors_its_own_subtype() {
 
 /// **A vertex run and an ink stroke reach the file in the order they were
 /// drawn**, point for point.
-///
-/// The one-derivation promise for the two list-driven families. `/Vertices`
-/// and `/InkList` are sequences whose consecutive entries are joined by a
-/// segment, so a build that sorted, de-duplicated or re-ordered them would
-/// author a *different figure* from the one the preview drew — and the
-/// difference would only be visible after saving.
-///
-/// The polygon row carries the extra claim: the closing vertex is **not**
-/// appended, because `/Polygon` closes by specification and a duplicate
-/// first point would author a zero-length segment.
 #[test]
 fn a_vertex_run_and_an_ink_stroke_are_authored_in_drawing_order() {
     let points = vec![(10.0, 10.0), (40.0, 12.0), (25.0, 60.0), (12.0, 30.0)];
@@ -346,13 +319,6 @@ fn the_smallest_real_extent_on_either_axis_still_commits() {
 
 /// **A polygon needs three vertices and a polyline needs two** — the one
 /// place this shell is deliberately stricter than `pdfcer-core`.
-///
-/// The engine's `validate_geometry` refuses `< 2` for both, so a two-vertex
-/// `/Polygon` is legal PDF it would happily author: a closed shape from A to
-/// B and back, which renders as a line. That is never what a gesture meant,
-/// so the shell refuses it — and refuses it by **name**, so the trace
-/// distinguishes "you double-clicked one click early" from "the run had no
-/// extent".
 #[test]
 fn a_polygon_needs_three_vertices_where_a_polyline_needs_two() {
     let two = Geometry::Vertices(vec![(0.0, 0.0), (10.0, 5.0)]);

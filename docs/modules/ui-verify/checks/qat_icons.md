@@ -77,3 +77,26 @@ different reason and the control is honestly a label. That is correct. This
 check's subject is the painter, and a build with no icons has nothing to
 paint. `crate::checks::ribbon_captions` covers the ribbon's legibility
 either way.
+
+## Item notes
+
+### `const MAX_ASPECT`
+
+An icon-only control is a square glyph box plus symmetric padding, so its
+ratio is 1.0 before padding and drifts *below* 1.0 as vertical padding is
+added — measured at 24 × 18 pt, i.e. 1.33, on the build that fixed the
+defect.
+
+2.0 is therefore loose by design, and the looseness is the point: the
+failing case was 4.1 (`Open…`, 73 × 18) and 5.9 (`Save a copy…`,
+107 × 18). Anything between 2 and 4 would be a control this check has no
+theory about, and a threshold set just above the passing measurement would
+fail the first time somebody adds a point of padding.
+
+### `fn the_threshold_separates_the_measured_states`
+
+These are not invented numbers: 73 x 18 and 107 x 18 are the widths the
+defective build published for `file.open` and `file.save_copy`, and
+24 x 18 is what the fixed build publishes. Pinning them here means a
+future change to `MAX_ASPECT` has to be made against the evidence
+rather than against a guess about what "roughly square" means.

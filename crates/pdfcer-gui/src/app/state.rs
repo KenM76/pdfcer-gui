@@ -1050,12 +1050,6 @@ impl OpenDoc {
     }
 
     /// The one place an `OpenDoc` is assembled, for both origins.
-    ///
-    /// [`Self::new`]'s own argument — *"a `reset()` method would be a second,
-    /// weaker way to achieve the same thing"* — applies with equal force to a
-    /// second struct literal. Two constructors that each listed thirty fields
-    /// would drift the moment one of them gained a field, and the drift would
-    /// be invisible: the compiler is satisfied by both.
     fn assemble(path: PathBuf, origin: Origin, session: EditSession, pages: Vec<Page>) -> Self {
         // The one field read from disk here rather than started empty, and
         // the one `ViewState` default it overrides. `canvas::guides::opening`

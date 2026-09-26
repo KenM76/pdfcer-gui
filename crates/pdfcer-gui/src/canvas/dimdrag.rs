@@ -323,12 +323,6 @@ pub const VERTEX_HANDLE_PT: f32 = 7.0;
 pub const VERTEX_REGION: &str = "canvas.dimension-vertex"; // ui-text-exempt: trace region name
 
 /// How much slack a press gets around a vertex handle, in points.
-///
-/// The drawn square is the promise; this is the target. They differ because a
-/// 7 pt square is a hard thing to hit with a mouse on a dense drawing, and the
-/// standing convention here — stated at `handles::grip_at` — is that a grip's
-/// live area may exceed its drawn one, never the reverse. A target smaller than
-/// its picture is the operator missing something they can see.
 const VERTEX_GRAB_SLACK_PT: f32 = 3.0;
 
 /// **Every vertex of the selected perimeter, in CANVAS space**, in index order.
@@ -699,11 +693,6 @@ fn inner(
 
 /// Everything one frame of an **add-a-corner** or **remove-a-corner** drag
 /// needs.
-///
-/// A struct for [`VertexFrame`]'s reason and one more: five of its ten members
-/// are already in scope at the one call site under names that would be trivial
-/// to transpose positionally — `index` and the two `usize`-adjacent values, and
-/// two point-shaped things in the same space.
 struct CountEdit<'a> {
     /// The ce dimension being reshaped.
     id: DimensionId,
@@ -733,12 +722,6 @@ struct CountEdit<'a> {
 }
 
 /// The page-space segments a perimeter with these corners would be drawn as.
-///
-/// Through `dimension_preview_segments`, this module's standing rule: what is
-/// previewed and what is committed come from one function, so a corner cannot
-/// be shown in one place and written to another. `offset` and `text_along` are
-/// zero because the preview draws the *shape*, and the label's placement is not
-/// what this gesture changes.
 fn preview_of(points: &[Point], closed: bool) -> Vec<(Point, Point)> {
     super::measure::pick::dimension_preview_segments(&DimensionKind::Perimeter {
         points: points.to_vec(),
@@ -749,21 +732,6 @@ fn preview_of(points: &[Point], closed: bool) -> Vec<(Point, Point)> {
 }
 
 /// Which of the shell's three sentences an engine refusal is.
-///
-/// The mapping lives here rather than in `crate::text::measure` for
-/// `app::actions::annots::refusal_for`'s reason, which is this project's
-/// standing division: the engine's error enum is a *shell* concern, and the
-/// catalog holds operator prose only. A `crate::text::` module that matched on
-/// `EditError` would put the engine's vocabulary into the string catalog and
-/// give the catalog a reason to change every time the engine adds a variant.
-///
-/// The `_` arm is not laziness. The remaining refusals —
-/// `DimensionNotFound`, `DimensionGroupNotFound`, `VertexIndexOutOfRange`,
-/// `DimensionHasNoVertices`, `DocumentEncrypted`, the certification guard and
-/// `SidecarWrittenByNewerBuild` — are either unreachable from a handle the
-/// painter drew from this same model, or are properties of the FILE that no
-/// wording about corners could help with. They get the general sentence rather
-/// than a fabricated specific one.
 fn refusal_for(error: &pdfcer_core::edit::EditError) -> crate::text::measure::VertexEditRefusal {
     use crate::text::measure::VertexEditRefusal as R;
     use pdfcer_core::edit::EditError as E;
@@ -776,33 +744,6 @@ fn refusal_for(error: &pdfcer_core::edit::EditError) -> crate::text::measure::Ve
 }
 
 /// Advance one frame of an **add-a-corner** or **remove-a-corner** drag.
-///
-/// # The preflight is asked FIRST, and the preview is derived from its
-/// answer
-///
-/// `vertex_edit_preview` shares one body with the mutating verb
-/// (`EditSession::vertex_edit_plan`), so it cannot disagree with what the
-/// release would do. Asking it before drawing anything is what makes this
-/// gesture obey the honesty contract the label drag states at [`drag`]: **the
-/// preview is a shape the release would commit, or it is the shape that is
-/// already there.** A build that drew the corner vanishing and then refused on
-/// release would be showing the operator an edit that never happens — the
-/// worst reading of a gesture, because it looks like it worked until the next
-/// frame repaints.
-///
-/// It costs one `read_dimension_model` per frame of a count-editing drag.
-/// That is a sidecar read on a gesture that lasts a second or two and is
-/// deliberate: the alternative is a second copy of the minimum-count rule in
-/// this shell, which is the *"two things that must agree and eventually will
-/// not"* the engine's own doc comment argues against by name.
-///
-/// # The decline is recorded on the RELEASE and not on every frame
-///
-/// A refused frame in flight is not an event — the operator is still holding
-/// the button and can drop the gesture by moving off, or by letting Ctrl go.
-/// What is an event is releasing on a refusal, and that is the one frame that
-/// writes a sentence. Recording per frame would rewrite the same slot sixty
-/// times a second and would fire on gestures the operator abandoned.
 fn count_edit(edit: CountEdit<'_>) -> Option<VertexDrag> {
     let CountEdit {
         id,

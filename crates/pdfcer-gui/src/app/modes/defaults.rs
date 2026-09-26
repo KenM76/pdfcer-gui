@@ -55,21 +55,6 @@ pub const ABSENT_PANELS: &[(&str, &str)] = &[
 ];
 
 /// One side's default arrangement: a list of stacks, each a list of tabs.
-///
-/// A single column per side, deliberately. Multiple columns are what the
-/// dock is *for* — a narrow navigator beside a wide inspector — but they
-/// are an arrangement the operator reaches by widening and splitting, not
-/// one to hand somebody on their first launch. The model expresses them;
-/// the defaults do not use them.
-///
-/// **Owned rather than a `&'static` table**, for one reason worth stating
-/// because the static form is the obvious first attempt and does not
-/// compile: [`Panel::command_id`] is an ordinary function, so its result
-/// cannot be promoted into a `'static` slice literal. The alternative is a
-/// table of string literals plus a test asserting each one still matches
-/// its panel — a second spelling of every id, kept in step by a test rather
-/// than by construction. Two `Vec`s built on a mode change are cheaper than
-/// that, in every sense.
 type SideSpec = Vec<Vec<&'static str>>;
 
 /// Both sides of one mode's default arrangement.
@@ -85,19 +70,6 @@ struct ModeSpec {
 }
 
 /// The Comments panel's id.
-///
-/// **Asked of the panel, never spelled as a literal** — and both halves of
-/// `const COMMENTS: &str = "view.panel_comments"` would be wrong, which is why
-/// this is a function like [`pages`] rather than a corrected constant.
-///
-/// The *value* would be wrong: the panel's command is `markup.comments`,
-/// because `RIBBON_IA.md` §7's migration map sends the control to
-/// Markup ▸ Comments by name, and a ruling about one control beats §5.2's list
-/// that merely contains its name. The *form* would be wrong for the reason
-/// [`pages`] records:
-/// a literal here is a second spelling of an id that
-/// [`Panel::command_id`] already owns, kept in step by a test instead of by
-/// construction. Asking the panel is how the two cannot drift.
 fn comments() -> &'static str {
     Panel::Comments.command_id()
 }
@@ -121,76 +93,14 @@ pub(super) fn pages() -> &'static str {
 }
 
 /// The default width of a navigator dock, in points.
-///
-/// Wide enough for two columns of page thumbnails, which is the measurement
-/// that decides this number: a thumbnail rail one column wide wastes the
-/// dock, and three columns makes each too small to recognise a drawing by.
 const NAVIGATOR_WIDTH: f32 = 280.0;
 
 /// The default width of an inspector dock, in points.
-///
-/// Wider than a navigator because its rows are `label: value` pairs whose
-/// values are paths, font names and coordinate triples — content that wraps
-/// badly and reads terribly when it does.
-///
-/// This is Read's and Review's width. Edit's is [`EDIT_INSPECTOR_WIDTH`], and
-/// the two being different constants is the whole of what *"remembered per
-/// mode"* needs from this file — see that constant's section.
 const INSPECTOR_WIDTH: f32 = 320.0;
 
 /// The default width of **Edit's** inspector dock, in points —
 /// `OPERATOR_REQUESTS.md` **O123**: *"Default dock width 360 px in Edit,
 /// remembered per mode."*
-///
-/// ## "Remembered per mode" is already built, and this is the other half
-///
-/// A width is stored on [`egui_shell::dock::SideLayout::width_pts`], which is
-/// per side, of a [`egui_shell::dock::DockLayout`], which is saved **per mode**
-/// as a named workspace by `super::Modes::record_layout` every time the dock
-/// reports `layout_changed`. So a splitter drag in Edit has never been able to
-/// move Read's dock, and this change adds no mechanism — it changes what the
-/// *unremembered* case starts from.
-///
-/// ⇒ Which is why it is a second constant and not a runtime branch: an
-/// operator who has dragged Edit's dock is unaffected by either number, because
-/// their saved workspace wins. This is only the first frame of a fresh profile.
-///
-/// ## Why 360 rather than "as wide as the widest row"
-///
-/// Because no width fits every row and a dock that tried would be one nobody
-/// wants. The complaint this number answers is real: our object rows already
-/// carry paint style, colour hex, line width, node count, text preview, font
-/// name and size, image pixels **and a trailing diagnostic note the mockup has
-/// no equivalent for**. They are never missing content; at 320 pt they are cut
-/// mid-character.
-///
-/// ## ⚠ No width stops the common row being cut, and this one does not either
-///
-/// Driven against `fixtures/a1-titleblock.pdf`,
-/// `the_inspector_is_one_master_detail_column` reports **8 of 8 object rows
-/// elided** at 360, and the panel's `objects-rows overflow=` field names the
-/// numbers: the widest row wants **473.6 pt**, the narrowest **306.3 pt**,
-/// against **296 pt** of text room. *Every* row of that sheet is over — so
-/// "the common row" is the case a width lever fails at, not the case it
-/// handles.
-///
-/// ⚠ That run also traces `mode-changed … remembered=true`: the dock restores
-/// a saved workspace and this constant is never consulted. **A default width
-/// cannot reach an operator who has ever dragged the dock**, which is the
-/// second and more permanent reason the width is the wrong lever.
-///
-/// ⇒ The remedy lives in the row rather than in the width, and this number is
-/// deliberately left where it is: `crate::panels::objects`' row work draws a
-/// headline (widest on that sheet: 207.6 pt) and hovers the full description.
-/// **Nothing here follows the content** — R128 — and a future reader tempted
-/// to raise this constant because a row does not fit should read that module's
-/// §1b first, and the `overflow=` field second.
-///
-/// ⚠ **Widening this is a harness re-baseline.** The canvas rect moves when the
-/// right dock widens, so every canvas-relative click coordinate in
-/// `tools/ui-verify` shifts. It is a one-line constant change that is a
-/// suite-wide event, and it is the single most under-estimated edit this file
-/// offers.
 const EDIT_INSPECTOR_WIDTH: f32 = 360.0;
 
 /// The default arrangement for `mode_id`, **before** this build's panels
@@ -225,11 +135,6 @@ pub fn layout_for_build(mode_id: &str, catalog: &dyn PanelCatalog) -> DockLayout
 }
 
 /// The specification for one mode.
-///
-/// The `match` is the one place in this crate that knows what "read" means
-/// as an *arrangement*. Note what it is not: it is not a list of the modes
-/// that exist. [`super::Modes`] takes that from the manifest, so a mode with
-/// no arm here still works — it simply starts from the full arrangement.
 fn spec(mode_id: &str) -> ModeSpec {
     match mode_id {
         // Read — a reader. The two surfaces that answer "where am I", and
@@ -578,11 +483,6 @@ mod tests {
 
     /// The panel registry a full build would have: every panel this crate
     /// actually implements.
-    ///
-    /// Duplicated in `super`'s own test module rather than shared, because
-    /// a `#[cfg(test)]` helper reachable across module boundaries has to be
-    /// made visible in the non-test build too. Six lines of fixture is the
-    /// cheaper of the two costs.
     fn registry() -> PanelRegistry {
         let mut r = PanelRegistry::new();
         for panel in Panel::ALL {
@@ -599,18 +499,6 @@ mod tests {
 
     /// **Edit's inspector starts at 360 pt and the reading stances start
     /// at 320** — `OPERATOR_REQUESTS.md` O123, part 6.
-    ///
-    /// Asserted per mode rather than as one constant, because *"remembered per
-    /// mode"* is the operator's phrase and the failure it guards against is the
-    /// tempting one-line version: bumping `INSPECTOR_WIDTH` alone, which would
-    /// widen Read's and Review's docks too and take that room from the page in
-    /// the two modes whose whole subject is the page.
-    ///
-    /// The left widths are asserted in the same test on purpose. Edit's left
-    /// side became ONE stack of five tabs in this change, and a five-tab bar in
-    /// a 280 pt navigator is where the dock's overflow affordance starts to
-    /// matter — so a future widening of the navigator is a decision somebody
-    /// should have to change a test to make.
     #[test]
     fn the_inspector_is_wider_in_edit_than_in_the_reading_stances() {
         let edit = layout_for("edit");
@@ -639,14 +527,6 @@ mod tests {
 
     /// **Edit's left side is ONE stack, and it holds all five navigators**
     /// — `OPERATOR_REQUESTS.md` O123, part 5.
-    ///
-    /// > *"Layers, Signatures and Fonts join Pages and Bookmarks as tabs in one
-    /// > dock instead of a second dock with a fixed split."*
-    ///
-    /// The count is asserted as well as the membership, and the count is the
-    /// half that matters: a build that put all five panels back into two stacks
-    /// would satisfy a membership assertion exactly, and would be the fixed
-    /// split he asked to be rid of.
     #[test]
     fn edits_navigators_share_one_stack() {
         let edit = layout_for("edit");
@@ -667,16 +547,6 @@ mod tests {
 
     /// **Objects sits directly above Properties on Edit's right side, and
     /// nothing sits above them** — `OPERATOR_REQUESTS.md` O123, parts 3 and 4.
-    ///
-    /// > *"Objects and Properties become master–detail in one panel with a
-    /// > draggable split … I'd also like those one to appear in the space where
-    /// > the tool dock currently shown."*
-    ///
-    /// Two adjacent stacks in one column is the master–detail shape, and the
-    /// split between them is the dock's own draggable stack splitter. What this
-    /// test pins is the part a refactor could undo without anybody noticing:
-    /// that **Objects is the first stack**, which is only true because the Tool
-    /// panel's stack was removed rather than merely emptied.
     #[test]
     fn edits_right_side_is_objects_over_properties() {
         let edit = layout_for("edit");
@@ -697,11 +567,6 @@ mod tests {
 
     /// **Each mode's default is the arrangement `MODES_AND_PANELS.md`
     /// specifies.**
-    ///
-    /// Asserted on the *unfiltered* defaults, because that is where the
-    /// intent lives: filtering is what this build's panel set does to it,
-    /// and asserting the filtered form would make the test say less every
-    /// time a panel is missing.
     #[test]
     fn the_three_defaults_are_the_specified_arrangements() {
         let read = layout_for("read");
@@ -783,36 +648,6 @@ mod tests {
     }
 
     /// **Read can read the comments — both halves of it.**
-    ///
-    /// # The report this exists for
-    ///
-    /// Ken: *"I could add a yellow sticky note but even in read mode I don't
-    /// think I could figure out how to read it."*
-    ///
-    /// He is right, and it is an **absence**, not a discoverability problem.
-    /// Two independent barriers stand between him and a comment he has just
-    /// written, and each one alone is sufficient:
-    ///
-    /// 1. Read's default dock held Pages, Bookmarks and Forms. **No comment
-    ///    list was mounted at all.**
-    /// 2. The panel's only command, `markup.comments`, sits on the **Markup**
-    ///    tab, and the mode table shows Read `["file", "view"]`. **So the
-    ///    toggle could not be reached to fix (1) by hand.**
-    ///
-    /// ⇒ **This test asserts BOTH**, deliberately in one place, because
-    /// that is the property that was violated. Two separate tests, each
-    /// passing, would each have been green on a build where he still could
-    /// not read his note — a barrier removed while another remains is
-    /// indistinguishable, from his chair, from nothing having been done. This
-    /// project has a standing lesson for that shape: *an absence claim is a
-    /// claim about EVERY route.*
-    ///
-    /// # What it is NOT
-    ///
-    /// It is not a claim that the popup on the canvas works, or that the
-    /// panel renders the words. It says the surface is **mounted and
-    /// reachable in Read**, which is the barrier this pair of lines removed.
-    /// A rendered screenshot is still the only oracle for the rest.
     #[test]
     fn read_mode_can_reach_the_comment_list_by_both_routes() {
         let read = layout_for("read");
@@ -882,12 +717,6 @@ mod tests {
 
     /// **A panel this build does not have is not mounted, and takes
     /// nothing else with it.**
-    ///
-    /// `SHELL_FRAMEWORK.md` §5b applied to the *defaults* rather than to a
-    /// saved file: the intended arrangement names Pages and Comments, this
-    /// build registers neither, and what the operator gets is the rest of
-    /// the arrangement — never a tab whose body cannot be drawn, and never
-    /// an empty compartment where a panel would have gone.
     #[test]
     fn a_default_drops_panels_this_build_does_not_register() {
         let registry = registry();
@@ -968,13 +797,6 @@ mod tests {
 
     /// **Every panel a default names either exists or is declared
     /// absent.**
-    ///
-    /// [`ABSENT_PANELS`] is the `PLANNED` discipline applied to panels, and
-    /// this is what keeps it honest in both directions: a default may not
-    /// name an id that is neither implemented nor declared absent, and an
-    /// id declared absent may not already exist. The second half is the one
-    /// that matters over time — it makes the day a Pages panel lands a
-    /// failing test rather than a stale comment.
     #[test]
     fn every_default_panel_is_registered_or_declared_absent() {
         let implemented: Vec<&str> = Panel::ALL.iter().map(|p| p.command_id()).collect();

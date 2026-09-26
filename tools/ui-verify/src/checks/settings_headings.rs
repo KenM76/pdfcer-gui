@@ -15,22 +15,9 @@ pub struct SettingsHeadingsLegible;
 const SET: &str = "settings_headings";
 
 /// The prefix the application publishes each collapsible heading's rect under.
-///
-/// Matched **literally**, so it is part of the contract with
-/// `crate::dialogs::settings::REGION_HEADING_PREFIX`. That constant's own doc
-/// comment states the other half of the bargain: the key is deliberately not
-/// derived from the caption, because a caption is operator copy that may be
-/// reworded or translated, and a check aimed at a region named after it would
-/// silently stop finding its subject and report *a heading that is not there*
-/// rather than *a heading that is illegible*. Those are different verdicts and
-/// only one of them is true.
 const HEADING_PREFIX: &str = "settings.heading.";
 
 /// How this check describes what it looked for, when it found nothing.
-///
-/// Completes the sentence "the application declared no …", so it names this
-/// check's own convention rather than a generic one — a reader who gets this
-/// SKIP should know exactly which string to grep the application for.
 const CONVENTION: &str = "settings dialog heading regions (`settings.heading.<group>`)";
 
 impl Check for SettingsHeadingsLegible {
@@ -253,45 +240,6 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 
 /// **Get the Settings dialog on screen**, by whichever route this window
 /// offers.
-///
-///
-/// `file.settings` is the first item of the *pdfcer* group, which is the LAST
-/// group on the File tab. At the shipped 1100 pt window width that group does
-/// not fit, so the item has no rect of its own — and there are **two different
-/// things** the ribbon may have done with it:
-///
-/// | | what the trace shows | how to reach the item |
-/// |---|---|---|
-/// | on the band | `ribbon.item.file.settings` | click it |
-/// | folded into the overflow | `ribbon.overflow` | open the overflow, then click |
-/// | **collapsed as a group** | `ribbon.group.file.pdfcer.collapsed` | click the group button, then click |
-///
-/// The third arrived with the O31 ribbon work, which gave the band a middle
-/// rung: when it runs short of width a whole group folds into one captioned
-/// button whose items live in its popup. This function hand-rolled the first
-/// two and therefore **could not run at all** afterwards — every invocation
-/// SKIPped with *"neither `ribbon.item.file.settings` nor `ribbon.overflow` was
-/// declared"*, which was true, and not the whole truth: the trace it printed
-/// contained `ribbon.group.file.pdfcer.collapsed` five lines down.
-///
-/// **It SKIPped rather than FAILed, and that is the only reason this was
-/// cheap.** A check that had claimed the Settings control was missing would
-/// have sent somebody looking for a defect in a ribbon that was behaving
-/// exactly as designed — the false-failure-believed pattern this suite has paid
-/// for twice. The honest SKIP cost nothing but the coverage.
-///
-/// # The fix is to stop hand-rolling it
-///
-/// `driving::declared_or_in_overflow` already knows all three places and tries
-/// them in the right order — direct, then each collapsed group (non-destructive:
-/// a popup can be opened and closed without moving the band), then the overflow
-/// (which scrolls, and so must be last). It was written for exactly this and
-/// `export_dxf` already uses it.
-///
-/// **A rule stated twice is a rule that drifts**, and this is what the drift
-/// looks like: the shared helper gained a third case, this copy did not, and
-/// nothing failed — the check simply stopped being able to begin. There is now
-/// one statement of "where can a ribbon command be".
 fn open_settings(
     session: &crate::launch::Session,
     driver: &crate::input::Driver,

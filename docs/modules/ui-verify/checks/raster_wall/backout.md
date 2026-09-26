@@ -89,3 +89,25 @@ occurs"*, i.e. `reason=render-failed` — has no driven coverage from here**;
 covers `render-failed`. The operator still reports reaching that state, so
 it is reachable and this harness cannot yet reach it on demand; O221's
 document-count dependence is the standing candidate for the lever.
+
+## Item notes
+
+### `const BACKOUT_NOTCHES`
+
+Budgeted against the climb rather than guessed: part B spends at most
+`CLIMB_NOTCHES_B` (160) plus `EXTRA_NOTCHES_B` (12) getting up there, and a
+symmetric wheel cannot need more than that to come down. The margin is for
+the learned ceiling's pull-back, which moves the view without costing a
+notch.
+
+### `const BACKOUT_BATCH`
+
+Matches part B's `CLIMB_BATCH_B` so the two directions cost the same per
+settle, which is what makes *"it came down in about as many notches as it
+went up"* a sentence worth reading in the report.
+
+### `const MIN_FALL`
+
+A notch is a multiplicative step, so any real response clears this by orders
+of magnitude; the tolerance exists only so a float that came back
+bit-identical is not read as a fall.

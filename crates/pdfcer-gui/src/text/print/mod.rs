@@ -1149,14 +1149,6 @@ mod tests {
     use super::*;
 
     /// The three no-printer sentences must be genuinely different.
-    ///
-    /// Not a tautology test — the same argument as
-    /// `crate::text::tests::the_three_open_failures_read_differently`. The
-    /// value of the distinction is that an operator can tell from the words
-    /// alone which of "this build cannot print", "you have no printers" and
-    /// "this printer would not answer" is true, because the three have
-    /// different remedies. Three functions producing near-identical prose
-    /// would satisfy the type system and defeat the design.
     #[test]
     fn the_three_no_printer_sentences_read_differently() {
         let a = spooler_unavailable();
@@ -1168,10 +1160,6 @@ mod tests {
     }
 
     /// The commit label carries the count, and the count is visible in it.
-    ///
-    /// This is the whole disclosure mechanism: if the number ever stopped
-    /// appearing in the string, the button would silently become an ordinary
-    /// Print button on a job that loses content.
     #[test]
     fn the_commit_label_states_the_clip_count() {
         assert!(commit_with_clipping(7).contains('7'));
@@ -1182,10 +1170,6 @@ mod tests {
     }
 
     /// Singular and plural are both grammatical.
-    ///
-    /// Cheap to get wrong ("1 sheets will be clipped"), and prose that reads
-    /// as machine output is prose an operator trusts less — which matters
-    /// most on exactly the sentences that are trying to warn them.
     #[test]
     fn the_counted_sentences_are_grammatical_at_one() {
         assert!(commit_with_clipping(1).contains("1 sheet will"));
@@ -1201,18 +1185,6 @@ mod tests {
     /// **The three commit labels are three different claims**, and an
     /// operator must be able to tell which one they are being shown from the
     /// words alone — operator request O113, 2026-09-04.
-    ///
-    /// | label | what it claims | when |
-    /// |---|---|---|
-    /// | [`commit_with_clipping`] | N page boxes exceed the printable area | nothing examined |
-    /// | [`commit_losing_content`] | N sheets really do lose ink | every clipped sheet examined |
-    /// | [`commit_may_lose_content`] | **at most** N sheets lose ink | some examined, some not |
-    ///
-    /// The hedge is the load-bearing distinction: it must be present on the
-    /// bounded claim and absent from the two measured ones. A wording change
-    /// that put "may" on all three, or took it off the ceiling, would collapse
-    /// three states into one sentence and hide exactly the difference the
-    /// count was made better to expose.
     #[test]
     fn the_three_commit_labels_are_distinguishable_claims() {
         let geometric = commit_with_clipping(3);
@@ -1241,10 +1213,6 @@ mod tests {
     }
 
     /// The bounded job-wide sentence hedges where its measured twin does not.
-    ///
-    /// [`clip_summary`] serves both the geometric and the measured state — in
-    /// the first it is the unchanged shipped wording, in the second it is
-    /// verified — so the only sentence that may hedge is the ceiling's.
     #[test]
     fn only_the_bounded_summary_hedges() {
         assert!(!clip_summary(2, 5).contains("may"));
@@ -1253,10 +1221,6 @@ mod tests {
     }
 
     /// The capped-resolution disclosure names all three numbers.
-    ///
-    /// An operator deciding whether to raise the cap needs the cost of doing
-    /// so, not merely the fact that a cap exists. Dropping any one of the
-    /// three turns a decision aid back into a notification.
     #[test]
     fn the_dpi_disclosure_names_what_it_costs() {
         let message = dpi_capped(300, 1200, 139);

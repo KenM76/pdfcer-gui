@@ -36,3 +36,21 @@ been misled by a fact.
 [`members_that_will_move`] therefore takes the count the *caller* computed
 from `StyleProvenance::follows_group()`, and the caller computes it before
 the edit is applied. See `dialogs::dimension_groups::style`.
+
+## Item notes
+
+### `fn the_no_scale_disclosure_is_the_engines_own_words`
+
+Asserted against the constant rather than against a literal, which is
+the difference between a test that pins the *relation* and one that pins
+two copies of a magnitude. `NO_SURFACE.md` records the day a test in
+this crate asserted a literal triple against a function returning the
+literal triple and could therefore never fail; this is the shape that
+does fail if somebody paraphrases.
+
+### `fn the_moving_count_says_which_kind_of_zero_it_is`
+
+The one that matters is `(0, n)`: an operator pressing a control that
+will change nothing on screen, because every member overrides the
+property. Reporting "0" as a bare number would read as a failure; the
+sentence says which of the two zeroes it is.

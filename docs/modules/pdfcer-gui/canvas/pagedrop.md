@@ -64,3 +64,33 @@ the Pages panel's header, exactly as rule 4 requires.
 is a different mechanism with a different operand. Both can be in flight at
 once and they do not interact; this one is only ever about pages already
 open in pdfcer.
+
+## Item notes
+
+### `const CARET_PTS`
+
+`panels::pages`' `CARET_PTS`, restated rather than imported, because the two
+are the same *number* and not the same *decision*: this one is measured
+against a rendered page at the operator's zoom and that one against a
+thumbnail tile. If a future zoom-aware caret makes one of them change, the
+other must not follow by accident.
+
+### `const CARET_INSET_PTS`
+
+Enough to read as *"in the gap"* rather than as a border the sheet has
+grown, which is the same reason the grid's caret sits half the inter-tile
+spacing beyond the tile.
+
+### `const CARET_DIMMED`
+
+`panels::pages::CARET_DIMMED`, and the argument travels with it: **dimmed,
+not hidden**, because drawing nothing over a boundary that would not land
+cannot be told apart from the canvas having stopped tracking the pointer —
+and the no-op boundary is where every same-document drag begins.
+
+### `fn resolve`
+
+`None` when the pointer is outside the page view, or over no page — the
+margin around a page that is smaller than the viewport is not a gap, and
+treating it as one would let a drop land somewhere the operator was not
+pointing.

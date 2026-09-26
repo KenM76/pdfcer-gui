@@ -313,3 +313,12 @@ a signature is an *incremental update*, so the replaced file still contains
 every byte it had. Nothing is lost by signing in place. It is still not the
 default, because "the file I sent out" and "the file I signed" being one
 keystroke apart is worth one deliberate act.
+
+## Item notes
+
+### `fn non_empty`
+
+Trims first. A field holding one space is an untouched field as far as
+anybody looking at the screen is concerned, and writing `/Reason ( )` into a
+legal document because of a stray keystroke is the kind of thing nobody ever
+finds.

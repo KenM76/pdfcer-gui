@@ -109,3 +109,71 @@ No binary, `--no-input`, no diagnostic channel, no page on screen, the Select
 tool unreachable from the ribbon, or **not enough grey margin on screen to
 reach x = −100** — a property of the window size on the day, reported as a
 skip that names the geometry and never as a pass.
+
+## Item notes
+
+### `const INVOKE`
+
+**The zoom is load-bearing and fit-page is wrong here.** This check
+aims at x = -100 pt, which is 100 pt of grey to the left of the sheet, and
+what matters is how many SCREEN pixels that is. Fit-page on a 200 x 200
+fixture in a maximised window puts the sheet at roughly 3.8 px per point, so
+the aim lands 381 px left of the page edge where only ~243 px of viewport
+exists -- `doc_to_window_off_page` refuses, correctly, and the check SKIPS.
+
+
+It also fixes the aim in a way fit-page cannot: 100% is a property of
+the DOCUMENT, so the geometry this check depends on no longer varies with
+the window size on the day.
+
+`mode.edit` is named FIRST, and it is not decoration. Since
+2026-09-11 the display of off-sheet content is a per-mode preference and
+**Read ships with it OFF** — the operator's request: *"by default, read
+doesn't show off page items, review and edit do show off page items."*
+This check's whole subject is off the sheet, so without an explicit mode it
+would run in whatever mode the shell opens in, find nothing, and report a
+defect that is a correctly-implemented setting.
+
+Edit rather than Review because that is the mode this check's gestures
+belong in anyway, and because a mode named explicitly cannot drift when a
+later session changes which mode the shell opens in.
+
+### `const BAND_FROM`
+
+Left of the media box and above every mark in the file. See the module
+header for why it is 36 pt clear of the off-page square rather than beside
+it.
+
+### `const SQUARE_B`
+
+`#[cfg(test)]` because the DRIVEN half must not read it. The check's
+oracle at run time is `hits == 1`, and it is airtight only because the
+geometry was argued in advance; a run-time comparison against these numbers
+would be the harness agreeing with itself. They exist so that an edit to the
+fixture fails the build instead of quietly making the count ambiguous.
+
+### `fn the_press_does_not_begin_on_the_page`
+
+This is the ONLY thing that distinguishes this check from
+`off_page_marquee`, whose origin is deliberately on blank paper. If this
+ever became true the two checks would test the same thing, one of them
+would be deleted as a duplicate, and the cause that hid for three weeks
+would be uncovered again.
+
+### `fn the_band_misses_the_on_page_square_on_both_axes`
+
+Asserted on both axes independently, because the check's failure message
+claims both and a message that claims more than the test holds is how a
+reader is sent to the wrong place.
+
+### `fn the_drag_is_right_to_left`
+
+Pinned separately from the enclosure argument above: they are two
+reasons for the same coordinate and a future edit is likely to satisfy
+one while breaking the other.
+
+### `fn the_origin_clears_the_off_page_square`
+
+20 pt is the floor asserted here rather than the 36 pt the current
+coordinates give, so the test states a requirement rather than
+restating the constant.
