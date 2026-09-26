@@ -95,7 +95,12 @@ impl StampCollectionDialog {
             .unwrap_or_default();
 
         let rows = doc.pages.len();
-        let plan = Plan::new(rows, &category, &existing);
+        let plan = Plan::new(
+            rows,
+            &category,
+            &existing,
+            crate::text::stamps::default_stamp_name,
+        );
 
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed

@@ -7,7 +7,7 @@
 //! in Acrobat's own menu the next time he starts it, which is what he asked
 //! for in `OPERATOR_REQUESTS.md` **O169**.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/stamps/folder.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/stamps/folder.md`.
 
 use std::path::{Path, PathBuf};
 
@@ -78,16 +78,17 @@ fn pick_generation(found: &[(String, bool)]) -> Option<String> {
         .map(|(name, _)| name.clone())
 }
 
-/// A filename for a collection whose category is `category`.
+/// A filename for a collection whose category is `category`, or
+/// `fallback_stem` when the category cannot make one.
 #[must_use]
-pub fn suggested_file_name(category: &str) -> String {
+pub fn suggested_file_name(category: &str, fallback_stem: &str) -> String {
     let cleaned: String = category
         .chars()
         .map(|c| if is_path_hostile(c) { '_' } else { c })
         .collect();
     let trimmed = cleaned.trim().trim_matches('.');
     let stem = if trimmed.is_empty() {
-        crate::text::stamps::default_category_file_stem()
+        fallback_stem
     } else {
         trimmed
     };

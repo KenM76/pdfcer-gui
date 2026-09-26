@@ -1686,8 +1686,10 @@ now calls the engine: `check-backlog-verdict-drift.py` and
 `shell` (`icons`→`shell` 1, `shell`→`icons` 4). One reference in one
 direction is the whole obstruction, which is the argument for the gate in
 Stage 1 — an edge that small is invisible to review and fatal to a split.
-`stamps`, `protect` and `clipboard` reach up into `app` or `text` and wait
-for Stage 3.
+`stamps` is in base on the `sign` pattern: `Plan::new` takes the default
+page name and `folder::suggested_file_name` the fallback stem, so both
+wordings stay in `text`. `protect` and `clipboard` hold an `app::state::OpenDoc`
+and wait for Stage 3.
 
 **Stage 3 — the one that pays, and the one with real risk.** Cut
 `app` ↔ {`canvas`, `text`, `panels`, `dialogs`} by extracting the *state* the

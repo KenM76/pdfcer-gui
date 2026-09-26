@@ -57,14 +57,6 @@ pub mod render;
 // as rendering code. See SHELL_FRAMEWORK.md; this module is the sole
 // consumer of `text::{ribbon, commands}`.
 pub mod shell;
-/// **Putting the operator's own digital signature on a document** — the
-/// answer to this shell's request of 2026-09-03, *"a document cannot be
-/// signed"*, which `pdfcer-core` answered with `pdfcer_core::sign` and which
-/// this build then failed to compile in for three days because the manifest
-/// stripped the engine's default-on `signing` feature.
-/// **Acrobat-compatible custom stamp collections** — the shell half of
-/// engine `Pass 288.0`, and the answer to `OPERATOR_REQUESTS.md` **O169**.
-pub mod stamps;
 pub mod text;
 
 pub mod viewer;
@@ -84,7 +76,7 @@ pub mod viewer;
 #[cfg(feature = "signing")]
 pub use pdfcer_gui_base::sign;
 pub use pdfcer_gui_base::{
-    acrobat, diag, ocr, pagedrag, pagetree, poster, redact, secret, trust, units,
+    acrobat, diag, ocr, pagedrag, pagetree, poster, redact, secret, stamps, trust, units,
 };
 
 use std::path::PathBuf;

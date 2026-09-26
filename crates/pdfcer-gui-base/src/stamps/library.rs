@@ -4,7 +4,7 @@
 //! own custom stamps and use them, preferrably exactly the same way acrobat
 //! does."* — and the load-bearing half of that sentence is **use them**.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/stamps/library.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/stamps/library.md`.
 
 use std::path::{Path, PathBuf};
 

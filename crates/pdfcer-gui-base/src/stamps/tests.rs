@@ -21,7 +21,7 @@
 //! stamps the wrong picture every time. There is no symptom short of looking
 //! at the artwork.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/stamps/tests.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/stamps/tests.md`.
 
 //! ## `#![cfg(test)]` as well as the parent's `#[cfg(test)] mod tests;`
 //!
@@ -47,9 +47,22 @@
 
 use super::{Adjustment, Blocker, ExistingName, Plan, derive_internal};
 
+/// The default-name wording `text::stamps::default_stamp_name` supplies.
+fn stamp_name(page_number: usize) -> String {
+    format!("Stamp {page_number}") // ui-text-exempt: mirrors the catalogue wording for assertions
+}
+
+/// A repository fixture, loaded.
+fn fixture(rel: &str) -> pdfcer_core::document::Document {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../fixtures")
+        .join(rel);
+    pdfcer_core::document::Document::load(&path).expect("the fixture loads")
+}
+
 /// A plan over `pages` pages with no pre-existing collection.
 fn plan(pages: usize) -> Plan {
-    Plan::new(pages, "Signatures", &[])
+    Plan::new(pages, "Signatures", &[], stamp_name)
 }
 
 /// The names an already-written collection carries, as the plan sees them.
@@ -208,7 +221,7 @@ fn an_excluded_row_claims_no_name_and_frees_it() {
     // An excluded row must not consume a name. If it did, the row that
     // actually claimed the name would show a `MadeUnique` disclosure the
     // operator cannot explain, because the row that took it is not in the file.
-    let mut p = Plan::new(2, "Signatures", &[]);
+    let mut p = Plan::new(2, "Signatures", &[], stamp_name);
     p.stamps[0].display = "Approved".to_owned();
     p.stamps[1].display = "Approved".to_owned();
     p.stamps[0].include = false;
@@ -229,7 +242,7 @@ fn rederiving_after_a_rename_drops_the_stale_disclosure() {
     // "we renamed it" sentence must go with the collision that caused it —
     // otherwise the operator reads a permanent explanation of something that is
     // no longer true.
-    let mut p = Plan::new(2, "Signatures", &[]);
+    let mut p = Plan::new(2, "Signatures", &[], stamp_name);
     p.stamps[0].display = "Approved".to_owned();
     p.stamps[1].display = "Approved".to_owned();
     p.rederive();
@@ -247,7 +260,7 @@ fn rederiving_after_a_rename_drops_the_stale_disclosure() {
 
 #[test]
 fn adjustments_ignore_excluded_rows() {
-    let mut p = Plan::new(1, "Signatures", &[]);
+    let mut p = Plan::new(1, "Signatures", &[], stamp_name);
     p.stamps[0].display = "#Dynamic".to_owned();
     p.rederive();
     assert_eq!(p.adjustments().len(), 1);
@@ -298,7 +311,7 @@ fn an_existing_collection_is_matched_by_page_not_by_tree_position() {
     // lexicographically (§7.9.6) and the pages are not, so zipping the two
     // lists attaches the wrong name to every page.
     let names = existing(&[(Some(0), "Approved"), (Some(4), "Completed")]);
-    let p = Plan::new(5, "Standard Business", &names);
+    let p = Plan::new(5, "Standard Business", &names, stamp_name);
 
     assert_eq!(p.stamps[0].display, "Approved");
     assert_eq!(
@@ -315,7 +328,7 @@ fn an_existing_collection_is_matched_by_page_not_by_tree_position() {
 #[test]
 fn a_stamp_naming_no_page_does_not_claim_one() {
     let names = existing(&[(None, "Ken")]);
-    let p = Plan::new(2, "Signatures", &names);
+    let p = Plan::new(2, "Signatures", &names, stamp_name);
     assert_eq!(p.stamps[0].display, "Stamp 1");
     assert_eq!(p.stamps[1].display, "Stamp 2");
 }
@@ -328,8 +341,8 @@ fn a_stamp_naming_no_page_does_not_claim_one() {
 /// the three properties the driven check reads.**
 #[test]
 fn the_driven_checks_fixtures_are_what_the_check_believes_they_are() {
-    let doc = crate::app::state::open_local_fixture("stamp-collection.pdf");
-    let collection = pdfcer_core::stamp_file::read(doc.session.document());
+    let doc = fixture("stamp-collection.pdf");
+    let collection = pdfcer_core::stamp_file::read(&doc);
 
     assert!(
         crate::stamps::is_collection(&collection),
@@ -376,9 +389,9 @@ fn the_driven_checks_fixtures_are_what_the_check_believes_they_are() {
     assert_eq!(collection.stamps[1].page_index, Some(0));
 
     // The control for the absence half.
-    let plain = crate::app::state::open_local_fixture("four-pages.pdf");
+    let plain = fixture("four-pages.pdf");
     assert!(
-        !crate::stamps::is_collection(&pdfcer_core::stamp_file::read(plain.session.document())),
+        !crate::stamps::is_collection(&pdfcer_core::stamp_file::read(&plain)),
         "four-pages.pdf is the CONTROL for the driven absence check and it now \
          reads as a stamp collection. Pick a different control; do not widen \
          the check"

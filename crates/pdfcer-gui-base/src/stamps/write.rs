@@ -3,7 +3,7 @@
 //! Four engine calls in a fixed order, and the order is the whole content of
 //! this module. Everything else here is disclosure.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/stamps/write.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/stamps/write.md`.
 
 use std::path::Path;
 
@@ -13,7 +13,7 @@ use pdfcer_core::settings::Settings;
 use pdfcer_core::stamp_file;
 
 use super::Plan;
-use crate::app::settings::SettingsExt;
+use crate::settings::SettingsExt;
 
 /// Everything that happened on the way to the bytes.
 #[derive(Debug, Clone, PartialEq, Eq)]

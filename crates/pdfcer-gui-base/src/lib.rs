@@ -43,6 +43,10 @@ pub mod secret;
 
 pub mod settings;
 
+/// **Acrobat-compatible custom stamp collections** — the shell half of
+/// engine `Pass 288.0`, and the answer to `OPERATOR_REQUESTS.md` **O169**.
+pub mod stamps;
+
 /// Poster printing: one page across many sheets, with a band along each
 /// sheet's top and left for cut marks and the assembly label, and the drawing
 /// of both. The tiling is `pdfcer_print::imposition::plan_poster`'s.
@@ -50,6 +54,7 @@ pub mod poster;
 
 pub mod redact;
 
+/// Putting the operator's own digital signature on a document.
 #[cfg(feature = "signing")]
 pub mod sign;
 

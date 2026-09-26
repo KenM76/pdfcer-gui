@@ -1,7 +1,7 @@
 //! # `stamps::lastused` — which stamp he reached for last, and why that is
 //! a NAME rather than a stamp
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/stamps/lastused.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/stamps/lastused.md`.
 
 use crate::stamps::library::{CustomStamp, Library};
 use pdfcer_core::annot_author::StampName;

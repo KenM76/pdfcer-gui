@@ -92,7 +92,8 @@ pub(super) fn collection(doc: &mut OpenDoc, plan: &Plan) {
 
 /// The folder and filename the picker opens on.
 fn suggested_path(doc: &OpenDoc, plan: &Plan) -> PathBuf {
-    let name = crate::stamps::folder::suggested_file_name(&plan.category);
+    let name =
+        crate::stamps::folder::suggested_file_name(&plan.category, t::default_category_file_stem());
     if let Some(dir) = crate::stamps::folder::user_stamps_dir() {
         return dir.join(name);
     }
@@ -107,7 +108,7 @@ mod tests {
 
     /// A plan with a category, over a two-page document.
     fn plan(category: &str) -> Plan {
-        Plan::new(2, category, &[])
+        Plan::new(2, category, &[], t::default_stamp_name)
     }
 
     #[test]
@@ -116,7 +117,10 @@ mod tests {
         // every other `suggested_path` in this crate invites: the category is
         // what a person browsing the stamps folder is looking for, and the
         // document a collection was cut from may be called `Sheet1.pdf`.
-        let name = crate::stamps::folder::suggested_file_name(&plan("Signatures").category);
+        let name = crate::stamps::folder::suggested_file_name(
+            &plan("Signatures").category,
+            t::default_category_file_stem(),
+        );
         assert_eq!(name, "Signatures.pdf");
     }
 
@@ -124,7 +128,10 @@ mod tests {
     fn a_category_with_a_path_separator_still_makes_a_filename() {
         // `Approved / Rejected` is an entirely reasonable thing to type into a
         // free-text field, and it is not a legal Windows filename.
-        let name = crate::stamps::folder::suggested_file_name("Approved / Rejected");
+        let name = crate::stamps::folder::suggested_file_name(
+            "Approved / Rejected",
+            t::default_category_file_stem(),
+        );
         assert!(!name.contains('/'), "got {name:?}");
         assert!(name.ends_with(".pdf"), "got {name:?}");
     }

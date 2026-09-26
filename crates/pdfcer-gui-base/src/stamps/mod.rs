@@ -5,7 +5,7 @@
 //! document into a *plan* an operator can look at and correct, and turning
 //! what the engine read into sentences a panel can show.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/stamps/mod.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/stamps/mod.md`.
 
 use pdfcer_core::stamp_file::{StampCollection, StampEntry};
 
@@ -132,8 +132,14 @@ pub struct Plan {
 
 impl Plan {
     /// Build a plan for a document with `pages` pages.
+    /// `default_name` words a page number for a page nothing else names.
     #[must_use]
-    pub fn new(pages: usize, category: &str, existing: &[ExistingName]) -> Self {
+    pub fn new(
+        pages: usize,
+        category: &str,
+        existing: &[ExistingName],
+        default_name: fn(usize) -> String,
+    ) -> Self {
         let by_page = |index: usize| -> Option<&ExistingName> {
             existing.iter().find(|s| s.page_index == Some(index))
         };
@@ -145,7 +151,7 @@ impl Plan {
             let display = found
                 .map(|s| s.display.clone())
                 .filter(|d| !d.is_empty())
-                .unwrap_or_else(|| default_display(page_index));
+                .unwrap_or_else(|| default_name(page_index.saturating_add(1)));
             let (internal, adjustments) = derive_internal(&display, &taken);
             taken.push(internal.clone());
             stamps.push(PlannedStamp {
@@ -241,12 +247,6 @@ pub enum Blocker {
     /// The category name is empty. It becomes `/Info` `/Title`, which is what
     /// Acrobat's stamp menu uses as the submenu heading.
     NoCategory,
-}
-
-/// The display name a page gets when nothing else names it.
-#[must_use]
-pub fn default_display(page_index: usize) -> String {
-    crate::text::stamps::default_stamp_name(page_index.saturating_add(1))
 }
 
 /// Turn a display name into a legal, unique internal name.
