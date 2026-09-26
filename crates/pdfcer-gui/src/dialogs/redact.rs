@@ -24,8 +24,8 @@ use crate::redact::{
 };
 use crate::text::redact as t;
 
-mod destination;
 use destination::{DEFAULT_DESTINATION, Destination};
+use pdfcer_gui_base::redactdestination as destination;
 
 // ---------------------------------------------------------------------------
 // Named regions

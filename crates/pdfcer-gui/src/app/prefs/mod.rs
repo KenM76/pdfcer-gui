@@ -17,7 +17,7 @@ pub use pdfcer_gui_base::fontsearch as fonts;
 
 /// How much memory pdfcer may spend so a page it has already drawn does not
 /// have to be drawn again.
-pub mod cache;
+pub use pdfcer_gui_base::prefscache as cache;
 
 /// How big the **program's own controls** are drawn — the one accessibility
 /// preference, and the only one here that changes nothing about the document.
@@ -25,7 +25,7 @@ pub use pdfcer_gui_base::chromescale as chrome;
 
 /// What an operator is shown when a page **first appears** — read once per
 /// document open, never on the hot path.
-pub mod opening;
+pub use pdfcer_gui_base::openingfit as opening;
 
 /// **What the three Export windows open with** — `OPERATOR_REQUESTS.md`
 /// **O196**. Its own file for the reason [`printing`] has one: it carries this
@@ -43,7 +43,7 @@ pub mod offpage;
 
 /// Which chord means which form-field paste — O58. Its own file because
 /// neither order is obviously right and the argument for each is worth keeping.
-pub mod pastechords;
+pub use pdfcer_gui_base::pastechords;
 /// **What the Print window opens with** — `OPERATOR_REQUESTS.md` **O166**.
 /// Its own file because deciding *which* of that window's controls may be
 /// remembered is a judgement worth keeping, and because it carries this group's
@@ -55,7 +55,7 @@ pub(crate) mod printing;
 pub use pdfcer_gui_base::renderquality as quality;
 
 /// What a plain wheel does when the document is not one long scroll — O30.
-pub mod wheel;
+pub use pdfcer_gui_base::wheelpaging as wheel;
 
 /// What colour the recognised text is drawn in over a scan — O229. Its own
 /// file because the preferences file's notation for a colour, and the refusal

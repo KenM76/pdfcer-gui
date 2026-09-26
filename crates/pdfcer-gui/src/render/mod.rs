@@ -66,5 +66,5 @@ mod prefetch;
 pub mod settle;
 // Several pages at once: the bounded texture cache, and what an undrawn page
 // says about itself.
-pub mod strip;
+pub use pdfcer_gui_base::renderstrip as strip;
 pub use pdfcer_gui_base::renderworker as worker;

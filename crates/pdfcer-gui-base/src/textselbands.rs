@@ -1,0 +1,126 @@
+//! # `textselbands` — from glyph cells to the boxes a selection shows
+//!
+//! The accumulation half of `textsel`'s §5 promise: **what is highlighted is
+//! what is copied**. [`super::resolve`] walks a range once and, for each glyph
+//! it covers, decides which band the glyph belongs to and grows that band by the
+//! glyph's cell. This module is the two types that make "grow" mean the right
+//! thing in each of the two frames the shell now has to work in.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui-base/textselbands.md`.
+
+use pdfcer_core::annot_author::Quad;
+use pdfcer_core::page_tree::Rect as PdfRect;
+
+/// **Which band a glyph's cell joins**, and therefore which frame it is
+/// measured in.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Band {
+    /// A line [`writing`] recovered — measured in that line's own axes. §8.
+    Rotated(usize),
+    /// A line the engine derived — measured in the page's axes, exactly as
+    /// before this distinction existed.
+    Engine(usize),
+    /// A glyph no line claimed, identified by itself so it merges with nothing.
+    Loose(usize, usize),
+}
+
+impl Band {
+    /// Whether other glyphs may join this band.
+    pub const fn merges(self) -> bool {
+        !matches!(self, Self::Loose(..))
+    }
+}
+
+/// A band's accumulated extent, in whichever frame its [`Band`] chose.
+#[derive(Debug, Clone, Copy)]
+pub enum Accum {
+    /// Page axes: the union of glyph cells as an axis-aligned rectangle.
+    Page(PdfRect),
+    /// A rotated line's own frame — see [`super::writing`] §3.
+    Frame {
+        /// The line's unit writing direction in PDF user space.
+        dir: (f32, f32),
+        /// The frame's origin: the first covered glyph's own origin. Any fixed
+        /// point on the line would do; this one needs no arithmetic to find.
+        origin: (f32, f32),
+        /// Extent along the writing direction, relative to `origin`.
+        along: (f32, f32),
+        /// Extent across it — descender to ascender.
+        perp: (f32, f32),
+    },
+}
+
+impl Accum {
+    /// Grow this band to include `other`.
+    pub fn absorb(&mut self, other: &Self) {
+        match (self, other) {
+            (Self::Page(a), Self::Page(b)) => {
+                *a = PdfRect::from_corners(
+                    a.llx.min(b.llx),
+                    a.lly.min(b.lly),
+                    a.urx.max(b.urx),
+                    a.ury.max(b.ury),
+                );
+            }
+            (
+                Self::Frame {
+                    dir,
+                    origin,
+                    along,
+                    perp,
+                },
+                Self::Frame {
+                    origin: other_origin,
+                    along: other_along,
+                    perp: other_perp,
+                    ..
+                },
+            ) => {
+                // The incoming cell is measured from ITS OWN origin, so it is
+                // rebased onto this band's before the extremes are taken. That
+                // projection is the whole of why a band is exact at any angle:
+                // the offset between two glyphs on one line is almost entirely
+                // `along`, and whatever `perp` it has is a real difference in
+                // baseline that the band must cover.
+                let d = (other_origin.0 - origin.0, other_origin.1 - origin.1);
+                let shift_along = d.0 * dir.0 + d.1 * dir.1;
+                let shift_perp = d.0.mul_add(-dir.1, d.1 * dir.0);
+                along.0 = along.0.min(other_along.0 + shift_along);
+                along.1 = along.1.max(other_along.1 + shift_along);
+                perp.0 = perp.0.min(other_perp.0 + shift_perp);
+                perp.1 = perp.1.max(other_perp.1 + shift_perp);
+            }
+            _ => {}
+        }
+    }
+
+    /// The band as four PDF-user-space corners.
+    pub fn quad(self) -> Quad {
+        match self {
+            Self::Page(rect) => Quad::from_rect(rect),
+            Self::Frame {
+                dir,
+                origin,
+                along,
+                perp,
+            } => {
+                // The frame's across-axis: the writing direction turned a
+                // quarter turn towards the ascender. For `dir = (1, 0)` this is
+                // `(0, 1)`, i.e. up the page, which is where an ascender is.
+                let up = (-dir.1, dir.0);
+                let at = |a: f32, p: f32| -> (f64, f64) {
+                    (
+                        f64::from(a.mul_add(dir.0, p.mul_add(up.0, origin.0))),
+                        f64::from(a.mul_add(dir.1, p.mul_add(up.1, origin.1))),
+                    )
+                };
+                Quad {
+                    ul: at(along.0, perp.1),
+                    ur: at(along.1, perp.1),
+                    ll: at(along.0, perp.0),
+                    lr: at(along.1, perp.0),
+                }
+            }
+        }
+    }
+}

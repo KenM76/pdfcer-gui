@@ -29,7 +29,7 @@ pub mod gate;
 
 /// **How a selection's glyph cells become the boxes it paints and marks** — the
 /// accumulation half of §5, in the two frames §8 made necessary.
-mod bands;
+use pdfcer_gui_base::textselbands as bands;
 
 /// **The rotated-text page §8's rules are tested on** — test-only.
 #[cfg(test)]

@@ -10,7 +10,7 @@
 pub mod model;
 
 /// Which pop-ups are showing, and who decided.
-pub mod open;
+pub use pdfcer_gui_base::notepopupopen as open;
 
 /// **Everything in the window that CHANGES something** — the note
 /// editor's controls, *Delete comment*, and the `/Open` write-back.

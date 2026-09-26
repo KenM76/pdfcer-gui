@@ -9,7 +9,7 @@ mod drag;
 pub mod model;
 /// The rows that register an unclaimed widget back into the form.
 mod register;
-pub mod tabs;
+pub use pdfcer_gui_base::taborderstated as tabs;
 
 use pdfcer_core::forms::AcroForm;
 use pdfcer_core::view::DocumentView;

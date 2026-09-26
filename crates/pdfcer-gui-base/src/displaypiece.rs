@@ -1,0 +1,178 @@
+//! # `displaypiece` — which piece of View ▸ Display an action is about
+//!
+//! One enum and its two methods, held here rather than in [`super`] so that
+//! the action vocabulary stays inside R2's 1,500-line ceiling.
+//!
+//! ## Why this is the seam
+//!
+//! [`super`] is the **action vocabulary** — one enum, and the argument for
+//! every variant in it. `ViewChrome` is not an action; it is an *operand* of
+//! one, and it is the only operand in that file that has its own type, its own
+//! `ALL`, and its own id mapping. Everything else a variant carries is a
+//! `usize`, a `Point` or a type from `pdfcer-core`.
+//!
+//! That makes it separable in the way `tools/gates/check-file-size.sh` asks
+//! for — *one subject per file* — and it is separable **without** the enum
+//! itself moving, which nothing could do.
+//!
+//! ## Why it is here and not in `canvas`
+//!
+//! It is the operand of an **action**, and `shell::commands` maps a command id
+//! to one. Putting it in `canvas` would
+//! make the shell's id map reach into the canvas to name a value, which is a
+//! dependency in the wrong direction for a type that is about *what the
+//! operator asked for* rather than about *what draws it*.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui-base/displaypiece.md`.
+
+/// Which piece of View ▸ Display chrome a [`Action::ToggleViewChrome`] is
+/// about.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ViewChrome {
+    /// `view.rulers` — the gutters along the canvas edges.
+    Rulers,
+    /// `view.grid` — the drawing grid over each page.
+    Grid,
+    /// `view.guides` — whether the operator's guides are shown and draggable.
+    Guides,
+    /// `view.show_points` — an object's anchors, without descending into it.
+    ShowPoints,
+    /// `view.line_weights` — **are strokes drawn at the widths the file
+    /// declares, or every one of them at one device pixel?**
+    ///
+    /// `OPERATOR_REQUESTS.md` **O137**, asked for by name:
+    /// *"the button to show all lines without their thickness — thin lines or
+    /// something like cad has … I do want that display option!"*
+    ///
+    /// **The only variant that is not chrome DRAWN OVER the page.** The
+    /// others add a mark the canvas paints on top of a finished texture; this
+    /// one changes what the texture *is*
+    /// ([`pdfcer_render::font::RenderOptions::stroke_display`]). It is in this
+    /// enum anyway, and the reason is worth stating rather than leaving to be
+    /// re-litigated: what this enum models is **View ▸ Display's independent
+    /// toggles** — a set of switches an operator flips while reading, each of
+    /// which renders pressed and each of which is dispatched by the same
+    /// action. A separate mechanism for this one switch would have been a
+    /// second `Action`, a second `selected:` publisher and a second id
+    /// mapping, to express the same gesture.
+    ///
+    /// What it DOES need beyond the others is a **stale raster**. See
+    /// [`crate::viewer::ViewState::line_weights`]: the answer is part of
+    /// `pdfcer_gui::render::worker::RenderKey`, because a cache that served the
+    /// texture drawn under the opposite answer would make this toggle look
+    /// exactly as inert as the dead button it replaces.
+    ///
+    /// `true` (the default) is *faithful widths*. This is the one variant
+    /// whose "on" is the shipped behaviour rather than an addition — the
+    /// operator's gesture is turning it **off**.
+    LineWeights,
+    /// `view.off_page` — **may the canvas show, and reach, the marks that
+    /// sit outside the sheet?**
+    ///
+    /// The operator's request of 2026-09-11, verbatim: *"in our view ribbon
+    /// area we need an option to show the stuff that is off page or not
+    /// (and when not showing the stuff that is off page there shouldn't be
+    /// a gap between pages where the stuff is, so it just goes back to
+    /// looking before we added the view things that are off the page
+    /// feature)."*
+    ///
+    /// **The only variant whose "off" changes the LAYOUT.** The others add
+    /// or remove a mark; this one decides how
+    /// big the canvas is, because off-sheet material is only reachable if
+    /// the pasteboard grows to hold it. The parenthesis in the request is
+    /// the requirement that follows from that and it is the hard half: with
+    /// this off, the gap the band opened between one sheet and the next
+    /// must be **gone**, not merely empty. Both are one mechanism —
+    /// `pdfcer_gui::canvas::tier::overhang` returns zero, so no band is
+    /// measured, so no layout ever hears about it.
+    ///
+    /// Unlike the others, this one has a **remembered answer per
+    /// ribbon mode** (`pdfcer_gui::app::prefs::offpage`): Read ships off,
+    /// Review and Edit ship on, and the operator's own answer is kept for
+    /// each. So the `ToggleViewChrome` arm persists for this variant and
+    /// for no other, and a mode change re-seeds it.
+    ///
+    /// It needs **no** stale-raster handling, which is the way it differs
+    /// from [`Self::LineWeights`] and the thing a reader will expect it to
+    /// share. `canvas::tier::decide` recomputes the raster region every
+    /// frame and `OpenDoc::region_for` feeds both the cache key and the
+    /// request from that one value, so a changed region is already a
+    /// changed key.
+    OffPage,
+    /// `view.ocr_layer` — **the X-ray over a scanned page's invisible text.**
+    ///
+    /// `OPERATOR_REQUESTS.md` **O226**. A scan carries its recognised words as
+    /// text drawn at rendering mode 3, which by construction reaches no pixel:
+    /// the operator can search it, copy it and edit it, and cannot **see** it.
+    /// This switch draws it.
+    ///
+    /// **The only variant that is not a `bool` underneath.** It reads and
+    /// writes [`crate::viewer::ViewState::ocr_overlay`], an
+    /// `Option<f32>` — the slider O226 asks for — through `.is_some()` and
+    /// [`crate::viewer::OCR_OVERLAY_DEFAULT`]. It is in this enum anyway, and
+    /// the reason is the one [`Self::LineWeights`] gives at greater length:
+    /// what the enum models is **View ▸ Display's independent toggles**, each
+    /// dispatched by one action and each rendering pressed from one
+    /// `selected:` publisher. A separate mechanism for this switch would be a
+    /// second action, a second publisher and a second id mapping, to express
+    /// the same gesture — and the slider would still need this toggle to say
+    /// whether the mode is on at all.
+    ///
+    /// It needs **no** stale raster, which is the way it differs from
+    /// [`Self::LineWeights`] and the thing a reader will expect it to share.
+    /// Nothing here reaches [`pdfcer_render::RenderOptions`]: the raster is
+    /// veiled by the canvas and the text is drawn over it, both every frame.
+    /// `pdfcer_gui::canvas::ocrlayer` carries why veiling beats re-rasterizing.
+    OcrLayer,
+}
+
+impl ViewChrome {
+    /// Every variant, in the order View ▸ Display lists them.
+    pub const ALL: &'static [ViewChrome] = &[
+        ViewChrome::Rulers,
+        ViewChrome::Grid,
+        ViewChrome::Guides,
+        ViewChrome::ShowPoints,
+        ViewChrome::LineWeights,
+        ViewChrome::OffPage,
+        ViewChrome::OcrLayer,
+    ];
+
+    /// Read this toggle out of a view state.
+    #[must_use]
+    pub fn read(self, view: &crate::viewer::ViewState) -> bool {
+        match self {
+            ViewChrome::Rulers => view.rulers,
+            ViewChrome::Grid => view.grid,
+            ViewChrome::Guides => view.guides,
+            ViewChrome::ShowPoints => view.show_points,
+            ViewChrome::LineWeights => view.line_weights,
+            ViewChrome::OffPage => view.off_page,
+            // The one variant whose field is not a `bool`. *Is the mode on?*
+            // is `.is_some()`, and where the slider sits inside the mode is a
+            // question this enum does not ask — `None` and `Some(0.0)` are
+            // genuinely different states and the field's own note says why.
+            ViewChrome::OcrLayer => view.ocr_overlay.is_some(),
+        }
+    }
+
+    /// Write this toggle into a view state.
+    pub fn write(self, view: &mut crate::viewer::ViewState, on: bool) {
+        match self {
+            ViewChrome::Rulers => view.rulers = on,
+            ViewChrome::Grid => view.grid = on,
+            ViewChrome::Guides => view.guides = on,
+            ViewChrome::ShowPoints => view.show_points = on,
+            ViewChrome::LineWeights => view.line_weights = on,
+            ViewChrome::OffPage => view.off_page = on,
+            // Turning it on lands the slider at the default rather than at
+            // the position it last held, and that is deliberate: the previous
+            // position may have been either stop, and arriving at a stop makes
+            // the first gesture *find the slider* instead of *read the page*.
+            // See `viewer::OCR_OVERLAY_DEFAULT`.
+            ViewChrome::OcrLayer => {
+                view.ocr_overlay = on.then_some(crate::viewer::OCR_OVERLAY_DEFAULT);
+            }
+        }
+    }
+}

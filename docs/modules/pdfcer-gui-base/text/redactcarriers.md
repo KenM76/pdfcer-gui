@@ -1,0 +1,159 @@
+# `text::redactcarriers` — the places a copy of the removed text can hide
+
+
+[cc]: pdfcer_core::redact::CarrierAction::CheckedClean
+
+## What a *carrier* is, in one paragraph, because the word is doing work
+
+ISO 32000-1 §12.5.6.23 obliges a redaction to remove the marked content from
+**all** of the document, not from the page. A PDF can hold the same run of
+text in a dozen places that are not the page: the document-information
+dictionary, an XMP packet, a form's XML description, the tagged-reading
+tree, an attached file, an earlier saved revision. The engine calls each of
+those a **carrier**, sweeps every one of them, and records a verdict per
+carrier in [`RedactionReport::carriers`][cs]. This module is where those
+verdicts become English.
+
+[cs]: pdfcer_core::redact::RedactionReport::carriers
+
+## The defect this module was written to close
+
+Before it, this shell read the carrier list at exactly two sites and both
+were the same `==` filter against `DisclosedNotScrubbed`. That has three
+consequences, and each is worse than the last:
+
+1. **The carrier's raw engine key was printed to the operator.** The
+   sentence he saw read *"⚠ struct_tree: present in this document…"*. The
+   engine documents those keys as *"a short stable identifier"* — an
+   identifier for a program, in a report written for a person.
+2. **`residual_sweep` got the generic sentence**, which is about a carrier
+   that *holds* content. The sweep holds nothing; it is the engine's search
+   of every other object in the file. The generic sentence was therefore not
+   merely jargon but false, in the residual list, on the one surface where
+   rule 1 forbids a comfortable sentence.
+3. **`CheckedClean` was invisible.** Because both readers are `==` filters
+   and neither is a `match`, the new variant was not swallowed by a
+   catch-all — it was never read at all, and nothing on screen changed by
+   one character. The engine's own doc comment says what that costs:
+
+   > *"a shell that tells an operator 'nothing to do' when the truth is
+   > 'checked, clean' has taken away the one thing that distinguishes a
+   > diligence sweep from a no-op."*
+
+   And this is not a theoretical variant. `pdfcer_core::redact`'s
+   `carrier_info` reports `CheckedClean` from its own final `else`, and so
+   does `carrier_residual_sweep` — the two commonest carriers on the
+   operator's own files.
+
+## The wording rule this group adds to the three it inherits
+
+[`crate::text::redact`]'s rules 1–3 bind here unchanged. This group adds a
+fourth, and every string below obeys it:
+
+> **Say where, in his vocabulary, never in the engine's.** A carrier name is
+> the whole actionable content of a residual line: *"the tagged-reading
+> structure a screen reader follows"* is something an operator can decide
+> about in a second, and *"struct_tree"* is something he can only click
+> past. This is the same finding `raw_residual_line` was corrected for on
+> 2026-09-04, one sentence over, after his report that the warning *"always
+> finds text that wasn't redacted"*.
+
+**The fallback is the raw key, deliberately.** `CarrierStatus::carrier` is
+an open vocabulary — a future engine build may add one — and the choice at
+that moment is between printing an unknown identifier and printing nothing.
+Printing nothing would drop a disclosure the engine went to the trouble of
+making. So an unknown carrier reads awkwardly and is still *there*, which is
+the correct trade on this surface. The engine-API drift gate is what will
+tell us a new key exists; it is how `CheckedClean` was found in the first
+place.
+
+## Item notes
+
+### `fn carrier_name`
+
+The fourteen keys are the **union** of two sets that do not coincide: the
+ten `pdfcer_core::redact::CarrierStatus::carrier` documents, and the twelve
+`pdfcer_core::redact`'s own `add_carrier` calls actually emit. `thumbnails`
+and `overlapping_annotations` are documented and never produced;
+`residual_sweep`, `images`, `vector_paths` and `shadings` are produced and
+never documented. Both halves are matched anyway, because the cost of an
+unused arm is nothing and the cost of a missing one is the raw key on
+screen.
+
+Grep `add_carrier(` in the engine to re-measure the emitted set; it is a
+set that grows without a signature change, which is exactly why this match
+falls through to the key itself rather than to an `unreachable!`.
+
+Returns the input unchanged for a key it does not know — see the module
+header for why that beats returning nothing.
+
+Each phrase is a **noun phrase**, because every caller drops it into the
+subject slot of a sentence it does not control (*"⚠ {name}: present in this
+document…"*, *"pdfcer also checked … — {list} —"*). A phrase that read as a
+clause would break both.
+
+### `fn residual_carrier_line`
+
+Dispatches to [`residual_sweep_line`] for the one carrier the generic
+sentence is **false** about. Selecting the sentence here rather than at the
+call site is deliberate: the call site is a `.map` over the whole carrier
+list and has no business knowing that one member of that list is a different
+kind of thing. The catalog owns the words, and owns which words.
+
+### `fn residual_sweep_line`
+
+The engine reports `residual_sweep` as `DisclosedNotScrubbed` for two
+distinct reasons, and this sentence has to be true of both, because the
+carrier list does not distinguish them:
+
+| cause | engine site | what happened |
+|---|---|---|
+| the sweep never ran | `carrier_residual_sweep`, its `evidence.is_empty()` branch | every removed piece is shorter than the engine's match floor, so searching for them would edit on a coincidence |
+| the sweep ran and stopped short | `carrier_residual_sweep`, its `disclosed` branch | some stream objects hold the text and are not safe to blank — a font programme, an image, or text drawn through a subset font whose operand bytes are glyph codes rather than characters |
+
+**The second cause is the operator's own files.** `OPERATOR_REQUESTS.md`
+O142's finding is that his CAD sheets draw text one glyph at a time through
+subset fonts, which is exactly the shape the engine names here. So this is
+not the rare arm; on his sheets it is the likely one.
+
+It ends by pointing at [`engine_notes_heading`]'s section, because that is
+where the *object numbers* are — the engine puts them in a note, and a
+sentence that says "some objects" while the numbers sit four inches below is
+withholding the only part he can act on.
+
+### `fn sweep_scrubbed_line`
+
+The three counters `pdfcer-core` `369d4de` added, in one sentence. They are
+reported separately by the engine and stay separate here for the reason its
+own doc comment gives: *"A single total would hide the fact that the second
+number is the one nobody expected to be non-zero."*
+
+* `entries` — stored text entries removed from dictionaries anywhere in the
+  file: a superseded copy of the document properties, a thread's information
+  dictionary, anything else whose strings quoted the removed text.
+* `objects` — how many objects are edited in total. Always ≥ the number of
+  dictionaries, because it also counts metadata packets blanked and content
+  streams blanked.
+* `content_streams` — of those, the ones that are **drawing instructions**.
+
+The third gets its own clause and no other treatment would do. Every
+other member of the sweep removes a metadata string, which changes nothing
+anybody looks at. This one changes what a page would paint if anything still
+pointed at it — and the engine's own note on the field says a shell
+disclosing *"pdfcer edited N objects"* should be able to say how many of them
+were content. That is rule 1 in a different costume: a report that folds an
+edit to drawing instructions into a count of metadata edits has quietly
+picked which of the two is worth mentioning.
+
+Future tense throughout, like every other sentence in the report body: this
+is shown **before** the operator confirms, and nothing has happened yet.
+
+### `fn engine_notes_lead`
+
+Rule 1 territory: some of these notes ARE residuals — the retained-mark
+note, the sweep's object list — and some are cosmetic. They are shown
+unedited rather than summarised because a note pdfcer wrote about its own
+uncertainty is the one thing this report must not paraphrase, and because
+the sentences that matter most are already lifted out into the residual
+section above by their own derivations. This section is the record; the
+section above it is the warning.

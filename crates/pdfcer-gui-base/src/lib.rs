@@ -231,3 +231,57 @@ pub mod printregions;
 
 /// The reach allow-list.
 pub mod reachregister;
+
+/// Which piece of View > Display an action is about.
+pub mod displaypiece;
+
+/// How much memory the page cache may spend.
+pub mod prefscache;
+
+/// Which chord means which paste.
+pub mod pastechords;
+
+/// What the mouse wheel does when the document is not a scroll.
+pub mod wheelpaging;
+
+/// What an operator is shown when a page first appears.
+pub mod openingfit;
+
+/// Does this document reach outside itself?
+pub mod reachout;
+
+/// Making pdfcer the program Windows opens a PDF with.
+pub mod assoc;
+
+/// Where an annotation's artwork actually sits.
+pub mod annotquad;
+
+/// Which surface this frame's gesture belongs to.
+pub mod pasteboard;
+
+/// What rides along when a resize scales something.
+pub mod scaling;
+
+/// From glyph cells to the boxes a text selection shows.
+pub mod textselbands;
+
+/// Which note pop-ups are showing, and who decided.
+pub mod notepopupopen;
+
+/// The pure arithmetic behind panning and zooming.
+pub mod viewgeometry;
+
+/// Solid or dashed, on every surface that draws a markup line.
+pub mod linestyle;
+
+/// Where the redacted document goes.
+pub mod redactdestination;
+
+/// What the file states about tab order.
+pub mod taborderstated;
+
+/// Narrowing the Layers list as you type.
+pub mod layersearch;
+
+/// Several pages at once, and what an undrawn one says.
+pub mod renderstrip;

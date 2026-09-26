@@ -26,7 +26,7 @@ use crate::text::panels::layersearch as ts;
 /// **Narrowing the list as you type** — the predicate, the counts, and the
 /// three decisions behind them. Its own file under R2, and because a rule in
 /// a file of its own can be swept with no window open.
-mod search;
+use pdfcer_gui_base::layersearch as search;
 
 /// **Which layer the current selection is on** — the five-valued answer, the
 /// join that folds a multi-object selection, and the two engine divergences

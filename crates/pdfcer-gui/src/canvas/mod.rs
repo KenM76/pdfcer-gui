@@ -36,7 +36,9 @@ mod deep;
 mod offset;
 // Spending a fit command's request to place the view -- O28.
 mod fit;
-pub mod geometry;
+pub use pdfcer_gui_base::viewgeometry as geometry;
+#[cfg(test)]
+mod geometry_tests;
 pub mod gesture;
 mod viewpos;
 // Draggable alignment lines: what a guide belongs to, where it lives on disk,
@@ -72,7 +74,9 @@ pub mod annotnodes;
 /// `/Rect` is required upright and therefore cannot answer the question.
 /// **A declared workaround** — its header says what is filed at the engine and
 /// carries the tripwire that fires when the answer arrives.
-pub mod annotquad;
+pub use pdfcer_gui_base::annotquad;
+#[cfg(test)]
+mod annotquad_tests;
 /// **The boxes that show what a text block is made of** — one outline per
 /// chunk of the selected text, so the unit a click is aiming at is visible
 /// before the click. `OPERATOR_REQUESTS.md` O215 ask 3; its header carries why
@@ -212,7 +216,7 @@ mod paging;
 mod escape;
 /// **Reaching an object that is off the page** — which of the canvas's
 /// two interactive rectangles owns this frame's gesture.
-pub mod pasteboard;
+pub use pdfcer_gui_base::pasteboard;
 
 /// The page is a keyboard focus owner — `OPERATOR_REQUESTS.md` O204
 /// decision 2. One keyboard-only widget per drawn page, so `Memory::focused`
@@ -255,7 +259,7 @@ pub mod runmerge;
 /// switches of `OPERATOR_REQUESTS.md` O51. Its header carries the correction
 /// they are: convergence among reference implementations argues for a DEFAULT,
 /// not against an OPTION.
-pub mod scaling;
+pub use pdfcer_gui_base::scaling;
 // The ruler gutters, the 1-2-5 tick ladder they and the grid share, and what
 // unit the whole thing reads in. Its header carries the three decisions this
 // feature turns on: the unit, the space the grid lives in, and why the

@@ -14,7 +14,7 @@ pub mod actions;
 /// deep link to the Windows page where the operator confirms it. Its header
 /// carries why the second half cannot be automated on Windows 10/11 and why
 /// `reg.exe` was chosen over the registry API under `#![forbid(unsafe_code)]`.
-pub mod assoc;
+pub use pdfcer_gui_base::assoc;
 /// Where a document made by `file.new` comes from: the 443-byte blank-A4
 /// template that ships as an asset, and the argument for why New parses a file
 /// rather than the engine growing a way to create one.
@@ -96,7 +96,7 @@ pub mod quitting;
 pub use pdfcer_gui_base::rail;
 /// The shell's OWN preferences — how pdfcer draws, as distinct from how it
 /// reads and writes PDFs.
-pub mod reachout;
+pub use pdfcer_gui_base::reachout;
 pub mod recent;
 /// Writing a copy of the open document to a file the operator names — the body
 /// of `file.save_copy`. Why the save mode is **incremental**, why nothing on

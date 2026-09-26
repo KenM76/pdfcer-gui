@@ -233,6 +233,15 @@ pub mod unshare;
 /// exit, said on the window title and on the status bar.
 pub mod window;
 
+/// The places a copy of the removed text can hide.
+pub mod redactcarriers;
+
+/// The copy naming where the redacted document goes.
+pub mod redactdestcopy;
+
+/// The removed words themselves, not the count of them.
+pub mod redactremoved;
+
 use std::path::Path;
 
 /// The window title.

@@ -24,7 +24,7 @@ pub mod ink;
 /// **Solid or dashed** — `/BS` `/S` and `/D` (§12.5.4, Table 166), as the
 /// four choices this shell offers and the one reading it can only report.
 ///
-pub mod linestyle;
+pub use pdfcer_gui_base::linestyle;
 /// Which markup gesture one drag reaches — band, freehand trail, or the
 /// line-grouped quads of a highlight that found text. Split out of
 /// `canvas::interact` under R2; its header carries the fallback ordering.
