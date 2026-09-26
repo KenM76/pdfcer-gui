@@ -9,14 +9,18 @@
 /// `Document::load_anomalies()` that both the bar's census line and the
 /// Document-properties list are drawn from. See its header for why the
 /// derivation is shared and why it carries no `edit_epoch` key.
-pub(crate) mod anomalies;
+pub use pdfcer_gui_base::anomalycensus as anomalies;
+#[cfg(test)]
+mod anomalies_tests;
 mod disclosure;
 // The four named zoom levels -- Actual size, Fit width, Fit height, Fit page.
 // See its header for the layout rule.
 mod fit;
 /// **What the bar can afford when the window is narrow** — the shed rule, and
 /// the reachability clause that makes shedding legitimate.
-pub(super) mod fitting;
+pub use pdfcer_gui_base::statusfitting as fitting;
+#[cfg(test)]
+mod fitting_tests;
 /// **Where the OCR blend sits, and whether the page has anything to blend.**
 mod ocrlayer;
 /// Page navigation and the editable page-number box. See this module's

@@ -1,4 +1,4 @@
-# `panels::objects::summary` — the ONE description of a page object
+# `objectsummary` — the ONE description of a page object
 
 Turns a `pdfcer_core::vector::VectorObject` into a small, GUI-shaped
 **fact record** ([`ObjectSummary`]) that every surface which has to say

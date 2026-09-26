@@ -1,4 +1,4 @@
-# `shell::manifest::ladder` — which groups give up their rows first
+# `ribbonladder` — which groups give up their rows first
 
 **The editorial half of S3.** `egui-shell`'s
 [`egui_shell::ribbon::plan::collapse`] knows *how* to collapse a group; it

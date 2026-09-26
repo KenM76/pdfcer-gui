@@ -1,4 +1,4 @@
-# `shell::manifest::rail` — what is in the left rail
+# `railmanifest` — what is in the left rail
 
 `OPERATOR_REQUESTS.md` **O123** part 7, his words:
 

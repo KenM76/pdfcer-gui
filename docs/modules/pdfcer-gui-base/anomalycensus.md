@@ -1,4 +1,4 @@
-# `app::status::anomalies` — one reading of `load_anomalies()`, for two
+# `anomalycensus` — one reading of `load_anomalies()`, for two
 surfaces
 
 The derivation behind the status bar's *"this file contradicted itself"* line

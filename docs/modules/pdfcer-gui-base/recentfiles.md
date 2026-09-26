@@ -1,4 +1,4 @@
-# `app::recent` — the documents this operator had open, on disk
+# `recentfiles` — the documents this operator had open, on disk
 
 `GUI_ROADMAP.md` Phase 3 asks for a recent-files list. Nothing in the
 salvaged shell wrote one — `grep -i recent` over the old crate returns

@@ -1,4 +1,4 @@
-//! # `app::prefs::ocrlayer` — the colour the recognised text is drawn in
+//! # `ocrlayerpref` — the colour the recognised text is drawn in
 //!
 //! One preference, `OPERATOR_REQUESTS.md` **O229**: *"we should be able to
 //! change the editing colour of the ocr text layer just for editing, and
@@ -7,7 +7,7 @@
 //!
 //! ## Why the default is not written here
 //!
-//! [`crate::canvas::ocrlayer::DEFAULT_COLOUR`] is the one home, and the
+//! `pdfcer_gui::canvas::ocrlayer::DEFAULT_COLOUR` is the one home, and the
 //! painter's module is the right one because the *reason* for the value is a
 //! rendering argument — magenta is a colour a scanned drawing is unlikely to
 //! contain. A second literal here would be a number that drifts from the
@@ -26,7 +26,7 @@
 //! it, and silently substituting the default would be the one outcome they did
 //! not ask for.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/prefs/ocrlayer.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/ocrlayerpref.md`.
 
 /// Read a colour out of the preferences file.
 #[must_use]
@@ -61,51 +61,4 @@ pub fn parse(value: &str) -> Option<[u8; 3]> {
 pub fn format(rgb: [u8; 3]) -> String {
     let [r, g, b] = rgb;
     format!("#{r:02X}{g:02X}{b:02X}")
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// What the writer produces, the parser reads — over the default and over
-    /// a value with no round number in it.
-    ///
-    /// The second case is the one that matters. A round-trip tested only on
-    /// the default would pass on a writer that emitted a constant.
-    #[test]
-    fn what_is_written_is_what_comes_back() {
-        for rgb in [
-            crate::canvas::ocrlayer::DEFAULT_COLOUR,
-            [1, 130, 255],
-            [0, 0, 0],
-        ] {
-            assert_eq!(parse(&format(rgb)), Some(rgb), "{rgb:?} did not survive");
-        }
-    }
-
-    /// The forms a hand-editor will actually type.
-    #[test]
-    fn the_notations_an_operator_writes_are_all_read() {
-        assert_eq!(parse("#CC0099"), Some([204, 0, 153]));
-        assert_eq!(parse("cc0099"), Some([204, 0, 153]));
-        assert_eq!(parse("  #cC0099  "), Some([204, 0, 153]));
-        // Doubled rather than shifted — see `parse`.
-        assert_eq!(parse("#F80"), Some([255, 136, 0]));
-    }
-
-    /// A value this cannot read is refused, so the caller can report it.
-    #[test]
-    fn a_value_it_cannot_read_is_refused_rather_than_guessed() {
-        for bad in [
-            "",
-            "#",
-            "#CC009",
-            "#CC00999",
-            "magenta",
-            "204,0,153",
-            "#GG0099",
-        ] {
-            assert_eq!(parse(bad), None, "`{bad}` should not have parsed");
-        }
-    }
 }

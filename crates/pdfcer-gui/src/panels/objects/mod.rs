@@ -6,7 +6,9 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/objects/mod.md`.
 
 pub mod provider;
-pub mod summary;
+pub use pdfcer_gui_base::objectsummary as summary;
+#[cfg(test)]
+mod summary_tests;
 
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;

@@ -97,7 +97,9 @@ pub use pdfcer_gui_base::rail;
 /// The shell's OWN preferences — how pdfcer draws, as distinct from how it
 /// reads and writes PDFs.
 pub use pdfcer_gui_base::reachout;
-pub mod recent;
+pub use pdfcer_gui_base::recentfiles as recent;
+#[cfg(test)]
+mod recent_tests;
 /// Writing a copy of the open document to a file the operator names — the body
 /// of `file.save_copy`. Why the save mode is **incremental**, why nothing on
 /// `OpenDoc` moves when one succeeds, and why the picker runs in the apply
@@ -140,7 +142,9 @@ pub(crate) mod textoperand;
 pub mod toolstatus;
 /// Read mode and full screen — the two View ▸ Window verbs that change the
 /// shape of the application rather than anything about the document.
-pub mod window;
+pub use pdfcer_gui_base::windowshape as window;
+#[cfg(test)]
+mod window_tests;
 
 use state::Status;
 

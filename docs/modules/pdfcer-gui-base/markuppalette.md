@@ -1,4 +1,4 @@
-# `canvas::markup::palette` — **Acrobat's own markup colours**, measured
+# `markuppalette` — **Acrobat's own markup colours**, measured
 rather than chosen
 
 

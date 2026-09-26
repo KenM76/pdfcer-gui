@@ -10,11 +10,15 @@
 mod edit;
 mod file;
 mod format;
-mod ladder;
+use pdfcer_gui_base::ribbonladder as ladder;
+#[cfg(test)]
+mod ladder_tests;
 mod markup;
 mod measure;
 mod pages;
-pub mod rail;
+pub use pdfcer_gui_base::railmanifest as rail;
+#[cfg(test)]
+mod rail_tests;
 mod tools;
 mod view;
 

@@ -12,7 +12,9 @@
 pub mod import;
 pub use pdfcer_gui_base::pageops as ops;
 pub mod previews;
-pub mod select;
+pub use pdfcer_gui_base::pageselection as select;
+#[cfg(test)]
+mod select_tests;
 pub mod thumbnails;
 
 use egui_shell::HandlerToken;

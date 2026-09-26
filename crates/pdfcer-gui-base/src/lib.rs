@@ -285,3 +285,39 @@ pub mod layersearch;
 
 /// Several pages at once, and what an undrawn one says.
 pub mod renderstrip;
+
+/// The colour recognised text is drawn in.
+pub mod ocrlayerpref;
+
+/// One reading of the load anomalies, for the status bar.
+pub mod anomalycensus;
+
+/// Which pages the operator has picked.
+pub mod pageselection;
+
+/// Acrobat's own markup colours.
+pub mod markuppalette;
+
+/// What a mode lets the canvas do.
+pub mod modecapability;
+
+/// The documents this operator had open, on disk.
+pub mod recentfiles;
+
+/// The View > Window verbs that change the shape of the window.
+pub mod windowshape;
+
+/// Which ribbon groups give up their rows first.
+pub mod ribbonladder;
+
+/// What is in the left rail.
+pub mod railmanifest;
+
+/// What the status bar can afford to show when the window is narrow.
+pub mod statusfitting;
+
+/// The one description of a page object.
+pub mod objectsummary;
+
+/// Turning a document into a comment list.
+pub mod commentmodel;

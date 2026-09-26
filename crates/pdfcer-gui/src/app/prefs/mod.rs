@@ -60,7 +60,9 @@ pub use pdfcer_gui_base::wheelpaging as wheel;
 /// What colour the recognised text is drawn in over a scan — O229. Its own
 /// file because the preferences file's notation for a colour, and the refusal
 /// rule behind it, are worth keeping together with their tests.
-pub mod ocrlayer;
+pub use pdfcer_gui_base::ocrlayerpref as ocrlayer;
+#[cfg(test)]
+mod ocrlayer_tests;
 
 use std::path::PathBuf;
 

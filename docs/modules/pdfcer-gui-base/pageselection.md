@@ -1,4 +1,4 @@
-# `panels::pages::select` — which pages the operator has picked
+# `pageselection` — which pages the operator has picked
 
 A page selection, and the three-modifier click rule that builds it. Pure:
 no `egui`, no document, no rendering. That is deliberate and it is what

@@ -1,4 +1,4 @@
-# `panels::comments::model` — turning a document into a comment list
+# `commentmodel` — turning a document into a comment list
 
 The whole of the Comments panel that is not drawing. [`collect`] walks the
 session's pages, applies the exclusion rule, classifies what survives, and

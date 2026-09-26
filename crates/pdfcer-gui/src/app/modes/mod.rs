@@ -6,7 +6,9 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/modes/mod.md`.
 
-pub mod capability;
+pub use pdfcer_gui_base::modecapability as capability;
+#[cfg(test)]
+mod capability_tests;
 pub mod defaults;
 
 pub use capability::Capabilities;

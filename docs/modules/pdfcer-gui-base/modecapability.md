@@ -1,4 +1,4 @@
-# `app::modes::capability` — what a mode lets the canvas do
+# `modecapability` — what a mode lets the canvas do
 
 **The one place the rule "Read does not edit the document" is written
 down.** Everything else — the gesture machine, the key handler, the

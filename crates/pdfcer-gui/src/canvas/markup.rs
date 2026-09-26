@@ -32,7 +32,9 @@ pub mod route;
 
 /// **Acrobat's own markup colours, measured** — the ten values Adobe
 /// authors comments in, and the grid the Style swatch offers them from.
-pub mod palette;
+pub use pdfcer_gui_base::markuppalette as palette;
+#[cfg(test)]
+mod palette_tests;
 
 /// The colour and width the next markup is authored with — the **Style**
 /// group `RIBBON_IA.md` §5.5 specifies and this shell shipped without.

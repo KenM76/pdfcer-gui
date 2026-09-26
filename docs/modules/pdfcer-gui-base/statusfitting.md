@@ -1,4 +1,4 @@
-# `status::fitting` — what the bar can afford to show when the window is narrow
+# `statusfitting` — what the bar can afford to show when the window is narrow
 
 ## The defect this exists for
 

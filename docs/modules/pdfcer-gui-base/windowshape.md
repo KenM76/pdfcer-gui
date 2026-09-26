@@ -1,4 +1,4 @@
-# `app::window` — the two verbs in View ▸ Window that change the *shape of
+# `windowshape` — the two verbs in View ▸ Window that change the *shape of
 the application* rather than anything about the document
 
 `view.read_mode` (`Ctrl+H`) and `view.fullscreen` (`F11`). Five surfaces

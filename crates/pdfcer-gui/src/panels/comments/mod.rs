@@ -14,7 +14,9 @@ pub mod filter;
 
 /// Turning a document into a comment list — the classification, testable
 /// without a `Ui`.
-pub mod model;
+pub use pdfcer_gui_base::commentmodel as model;
+#[cfg(test)]
+mod model_tests;
 
 /// **A comment's review status** — `/State` and `/StateModel` (§12.5.6.3),
 /// read into a per-reviewer history, shown on the row, filtered beside the

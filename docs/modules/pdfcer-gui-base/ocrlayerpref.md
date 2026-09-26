@@ -1,4 +1,4 @@
-# `pdfcer-gui/app/prefs/ocrlayer`
+# `pdfcer-gui-base/ocrlayerpref`
 
 ## Item notes
 
