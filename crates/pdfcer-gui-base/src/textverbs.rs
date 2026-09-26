@@ -1,9 +1,9 @@
-//! # `app::actions::text` — the verbs that re-shape a page's own text
+//! # `textverbs` — the verbs that re-shape a page's own text
 //!
 //! Every variant here has the page's existing text as its subject: the caret
 //! commit, the free-text commit, the restyle and the reflow.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/actions/text.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/textverbs.md`.
 
 /// The verbs that re-shape a page's own text.
 #[derive(Debug, Clone, PartialEq)]
@@ -38,7 +38,7 @@ pub enum TextAction {
     /// # Why a keystroke needs an `Action` to say something
     ///
     /// Because of a module boundary that is worth keeping. `app::status::decline`
-    /// is `pub(super)` inside `crate::app`, with its own note saying why:
+    /// is `pub(super)` inside `pdfcer_gui::app`, with its own note saying why:
     ///
     /// > *"a decline is written by the one dispatcher and read by the one
     /// > bar."*
@@ -46,7 +46,7 @@ pub enum TextAction {
     /// `canvas::textedit::keys` is neither, and widening that visibility so a
     /// keystroke could reach the store directly would trade a real invariant
     /// for two saved lines. An `Action` is the channel this shell already has
-    /// for *"something in the canvas happened and `crate::app` must react"* —
+    /// for *"something in the canvas happened and `pdfcer_gui::app` must react"* —
     /// the same one every commit, every markup and every move travels on.
     ///
     /// It carries no fields, and that is the honest shape: there is exactly
@@ -61,7 +61,7 @@ pub enum TextAction {
     /// else. Like [`Self::EnterCannotSplit`] it changes **no document**: the
     /// keystroke has already been declined by the time this is raised, and this
     /// exists solely to carry the sentence — and the offer — across the
-    /// `crate::app` boundary. The same module-visibility argument applies
+    /// `pdfcer_gui::app` boundary. The same module-visibility argument applies
     /// verbatim; see that variant's docs.
     ///
     /// # Why this one carries fields when its neighbour carries none

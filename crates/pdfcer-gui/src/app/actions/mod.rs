@@ -77,7 +77,7 @@ mod crossdoc;
 pub mod dimensions;
 /// The sentences one edit owed, and the epoch rule that keeps them honest.
 /// Its own header carries the seam.
-pub mod disclosure;
+pub use pdfcer_gui_base::editdisclosure as disclosure;
 /// The four actions that replace the open document — Open, New, NewSized,
 /// Close — and the two guards all four share.
 mod document;
@@ -141,14 +141,6 @@ pub mod sign;
 // The edit disclosure — what [`vector_edit`] carries out to `app::status`
 //
 
-/// **An instrument, not a feature** — how long the engine takes to accept one
-/// edit, measured rather than reasoned. `#[cfg(test)]` and `#[ignore]`d; it
-/// exists because `OPERATOR_REQUESTS.md` O63's whole design turns on whether
-/// the delay an operator feels is the commit or the raster, and `BENCHMARK.md`
-/// exists because the last time this project answered that from architecture it
-/// was wrong.
-#[cfg(test)]
-mod latency;
 /// **Changing how EXISTING text looks** — size, colour, face, weight, slant.
 ///
 /// `pub` because [`action::Action::TextStyle`] names its `StyleChange` and the
@@ -183,7 +175,7 @@ pub mod annot;
 /// reflow is not like its neighbours: it re-emits the page's FIRST content
 /// stream and the commit sweep empties the rest, so it refuses a page carrying
 /// a non-empty extra stream.
-pub mod text;
+pub use pdfcer_gui_base::textverbs as text;
 /// The three verbs that exist only to move a native file picker out of the
 /// layout pass — DXF, form data and a compacted copy. Its header carries the
 /// property they share and the reason a SAVE is filed with two exports.

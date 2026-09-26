@@ -1,4 +1,4 @@
-# `panels::forms::spotlight` — **the panel→canvas channel: which field is
+# `formspotlight` — **the panel→canvas channel: which field is
 being filled**
 
 

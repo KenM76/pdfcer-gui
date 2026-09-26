@@ -1,4 +1,4 @@
-# `app::actions::text` — the verbs that re-shape a page's own text
+# `textverbs` — the verbs that re-shape a page's own text
 
 Every variant here has the page's existing text as its subject: the caret
 commit, the free-text commit, the restyle and the reflow.

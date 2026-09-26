@@ -103,7 +103,7 @@ pub mod recent;
 /// `OpenDoc` moves when one succeeds, and why the picker runs in the apply
 /// phase rather than in the dispatcher.
 pub mod save;
-pub mod spinnerdraft;
+pub use pdfcer_gui_base::spinnerdraft;
 
 /// The operator's configuration, and the **funnel** that makes it reach the
 /// engine.

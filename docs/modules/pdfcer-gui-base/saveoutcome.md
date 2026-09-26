@@ -1,4 +1,4 @@
-# `pdfcer-gui/app/save/outcome`
+# `pdfcer-gui-base/saveoutcome`
 
 ## Item notes
 

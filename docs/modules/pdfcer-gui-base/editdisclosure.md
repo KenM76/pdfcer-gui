@@ -1,4 +1,4 @@
-# `pdfcer-gui/app/actions/disclosure`
+# `pdfcer-gui-base/editdisclosure`
 
 ## Item notes
 

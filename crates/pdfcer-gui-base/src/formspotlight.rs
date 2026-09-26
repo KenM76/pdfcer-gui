@@ -1,7 +1,7 @@
-//! # `panels::forms::spotlight` — **the panel→canvas channel: which field is
+//! # `formspotlight` — **the panel→canvas channel: which field is
 //! being filled**
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/panels/forms/spotlight.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/formspotlight.md`.
 
 use egui::Id;
 

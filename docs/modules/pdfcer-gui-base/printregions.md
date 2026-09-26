@@ -1,4 +1,4 @@
-# `pdfcer-gui/dialogs/print/regions`
+# `pdfcer-gui-base/printregions`
 
 ## Item notes
 

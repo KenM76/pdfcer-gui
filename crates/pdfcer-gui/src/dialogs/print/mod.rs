@@ -96,14 +96,12 @@ mod poster;
 /// **Fixed line width** — O233: every line printed at one width.
 mod lines;
 
-/// The names this dialog publishes for `tools/ui-verify`. See the module's own
-/// header for why they are together and not beside the controls they name.
-mod regions;
-// A private glob, not a re-export: the constants are `pub(super)` in
-// `regions`, which is already the whole of `dialogs::print`, and a private
-// binding here is what keeps `super::REGION_*` resolving from `tabs` and
-// `position` without widening anything.
-use regions::*;
+// The names this dialog publishes for `tools/ui-verify`. A private glob keeps
+// `super::REGION_*` resolving from `tabs` and `position`; the three named
+// explicitly are the ones only this file and `tabs` reach, so
+// `check-region-names` can see their use.
+use pdfcer_gui_base::printregions::*;
+use pdfcer_gui_base::printregions::{REGION_PROPERTIES, REGION_RESOLUTION, REGION_TAB_PREFIX};
 
 /// Why the window is closing, and what that does to the remembered
 /// settings. Split out at O185 under R2; see the module header for why

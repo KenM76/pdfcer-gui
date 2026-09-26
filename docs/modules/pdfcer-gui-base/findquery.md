@@ -1,4 +1,4 @@
-# `find::query` — preparing a typed query for the engine
+# `findquery` — preparing a typed query for the engine
 
 One subject, one file: the single decision about what the operator typed
 versus what is handed to `EditSession::search_text`. It exists because that

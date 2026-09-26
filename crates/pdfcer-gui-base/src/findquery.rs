@@ -1,4 +1,4 @@
-//! # `find::query` — preparing a typed query for the engine
+//! # `findquery` — preparing a typed query for the engine
 //!
 //! One subject, one file: the single decision about what the operator typed
 //! versus what is handed to `EditSession::search_text`. It exists because that
@@ -6,7 +6,7 @@
 //! agree with both, and three things that must agree are three things that
 //! drift when they live in three files.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/find/query.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/findquery.md`.
 
 /// **Does the raw query have whitespace at either end?**
 #[must_use]

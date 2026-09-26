@@ -9,7 +9,7 @@ use crate::app::files::{self, Picked};
 use crate::app::state::OpenDoc;
 use crate::dialogs::signature::{Disclosure, impact_of_saving};
 
-mod outcome;
+use pdfcer_gui_base::saveoutcome as outcome;
 
 use outcome::{SaveError, Written};
 

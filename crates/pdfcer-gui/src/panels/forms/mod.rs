@@ -22,7 +22,7 @@ pub mod rows;
 /// **The panel→canvas channel** — which field the panel is pointing at, so the
 /// canvas can spotlight it (`OPERATOR_REQUESTS.md` O98). A permitted affordance
 /// under rule 4's fourth clause; the module is that channel and nothing more.
-pub mod spotlight;
+pub use pdfcer_gui_base::formspotlight as spotlight;
 /// The order this form is tabbed through, per page — a **read-only** second
 /// list beside the fill list. See that module's header for what it is, why it
 /// is a section rather than a panel, and why it offers no reorder affordance.

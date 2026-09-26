@@ -1,9 +1,9 @@
-//! # `app::prefs::chrome` — how big the program's own controls are drawn
+//! # `chromescale` — how big the program's own controls are drawn
 //!
 //! One preference, and it is the only one in this store that is an
 //! **accessibility** control rather than a taste or a speed trade.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/prefs/chrome.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/chromescale.md`.
 
 /// The smallest scale offered.
 pub const MIN_UI_SCALE: f32 = 0.8;

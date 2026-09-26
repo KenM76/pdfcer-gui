@@ -1,7 +1,7 @@
-//! # `canvas::stampfit` — the operator's standing answer to *"what happens
+//! # `stampfit` — the operator's standing answer to *"what happens
 //! when a stamp's words do not fit its box?"*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/stampfit.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/stampfit.md`.
 
 use pdfcer_core::annot_author::StampFit;
 

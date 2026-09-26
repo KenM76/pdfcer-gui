@@ -22,7 +22,7 @@ pub mod reveal;
 /// interior whitespace is left alone. Its own file because that decision,
 /// the preference attached to it and the sentence that discloses it must
 /// agree, and three things that must agree drift when they live apart.
-pub mod query;
+pub use pdfcer_gui_base::findquery as query;
 
 pub use reveal::{Reveal, take_reveal_offset};
 

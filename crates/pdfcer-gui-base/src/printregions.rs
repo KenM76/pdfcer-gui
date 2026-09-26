@@ -12,39 +12,39 @@
 //! per-control — because those arguments are what a future addition has to fit
 //! into.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/print/regions.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/printregions.md`.
 
 /// The **Properties…** button's published region.
-pub(super) const REGION_PROPERTIES: &str = "print.properties";
+pub const REGION_PROPERTIES: &str = "print.properties";
 
 /// The paper selector's published region — the combo itself, closed.
-pub(super) const REGION_PAPER: &str = "print.paper";
+pub const REGION_PAPER: &str = "print.paper";
 
 /// One published region per entry in the OPEN paper list, indexed from zero
 /// with the "from the printer's own settings" entry as index 0.
-pub(super) const REGION_PAPER_ITEM_PREFIX: &str = "print.paper.item.";
+pub const REGION_PAPER_ITEM_PREFIX: &str = "print.paper.item.";
 
 /// The **Match the pages in this document** entry's own published region —
 /// operator request O167, 2026-09-10.
-pub(super) const REGION_PAPER_AUTO: &str = "print.paper.auto";
+pub const REGION_PAPER_AUTO: &str = "print.paper.auto";
 
 /// One published region per scale mode, suffixed with the mode's own WORD.
-pub(super) const REGION_SCALE_PREFIX: &str = "print.scale.";
+pub const REGION_SCALE_PREFIX: &str = "print.scale.";
 
 /// The Position group's five buttons, one region each.
-pub(super) const REGION_POSITION_RESET: &str = "print.position.reset";
+pub const REGION_POSITION_RESET: &str = "print.position.reset";
 /// See [`REGION_POSITION_RESET`].
-pub(super) const REGION_POSITION_CENTRE: &str = "print.position.centre";
+pub const REGION_POSITION_CENTRE: &str = "print.position.centre";
 /// See [`REGION_POSITION_RESET`].
-pub(super) const REGION_POSITION_CENTRE_H: &str = "print.position.centre-h";
+pub const REGION_POSITION_CENTRE_H: &str = "print.position.centre-h";
 /// See [`REGION_POSITION_RESET`].
-pub(super) const REGION_POSITION_CENTRE_V: &str = "print.position.centre-v";
+pub const REGION_POSITION_CENTRE_V: &str = "print.position.centre-v";
 /// See [`REGION_POSITION_RESET`].
-pub(super) const REGION_POSITION_RESET_ALL: &str = "print.position.reset-all";
+pub const REGION_POSITION_RESET_ALL: &str = "print.position.reset-all";
 
 /// One published region per tab, suffixed with the tab's own WORD.
-pub(super) const REGION_TAB_PREFIX: &str = "print.tab.";
+pub const REGION_TAB_PREFIX: &str = "print.tab.";
 
 /// The highest-resolution field on the Pages tab. Drawn on every open, capped
 /// or not.
-pub(super) const REGION_RESOLUTION: &str = "print.resolution";
+pub const REGION_RESOLUTION: &str = "print.resolution";

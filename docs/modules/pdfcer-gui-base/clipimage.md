@@ -1,4 +1,4 @@
-# `canvas::clipimage` — **the copied selection, as a picture other programs
+# `clipimage` — **the copied selection, as a picture other programs
 # can paste**
 
 ## What this closes

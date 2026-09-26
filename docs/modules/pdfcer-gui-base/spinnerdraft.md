@@ -1,4 +1,4 @@
-# `pdfcer-gui/app/spinnerdraft`
+# `pdfcer-gui-base/spinnerdraft`
 
 ## Item notes
 

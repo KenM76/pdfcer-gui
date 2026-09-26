@@ -536,11 +536,7 @@ fn resolution(ui: &mut Ui, dialog: &mut PrintDialog, resolution: Option<JobResol
                     .suffix(t::dpi_suffix()),
             )
             .on_hover_text(t::raster_note());
-        crate::diag::ui_rect_visible(
-            super::regions::REGION_RESOLUTION,
-            field.rect,
-            ui.clip_rect(),
-        );
+        crate::diag::ui_rect_visible(super::REGION_RESOLUTION, field.rect, ui.clip_rect());
         if let Some(res) = resolution
             && !res.capped
         {

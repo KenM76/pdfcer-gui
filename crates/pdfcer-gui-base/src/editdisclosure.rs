@@ -13,7 +13,7 @@
 //! since been undone is worse than no sentence, and the key is what makes that
 //! unrepresentable rather than merely avoided.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/actions/disclosure.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/editdisclosure.md`.
 
 use std::cell::RefCell;
 
@@ -50,18 +50,18 @@ pub fn last_edit_disclosure(epoch: u64) -> Option<EditDisclosure> {
 }
 
 /// Record what an edit disclosed — or, with `None`, that it disclosed nothing.
-pub(crate) fn record_edit_disclosure(disclosure: Option<EditDisclosure>) {
+pub fn record_edit_disclosure(disclosure: Option<EditDisclosure>) {
     LAST_EDIT.with_borrow_mut(|slot| *slot = disclosure);
 }
 
 /// **Put one sentence on the status bar's disclosure row**, stamped with the
 /// revision currently on screen.
-pub(crate) fn record_note(epoch: u64, note: String) {
+pub fn record_note(epoch: u64, note: String) {
     record_notes(epoch, vec![note]);
 }
 
 /// **Put several sentences on the status bar's disclosure row**, stamped with
 /// the revision currently on screen.
-pub(crate) fn record_notes(epoch: u64, notes: Vec<String>) {
+pub fn record_notes(epoch: u64, notes: Vec<String>) {
     record_edit_disclosure(Some(EditDisclosure { epoch, notes }));
 }

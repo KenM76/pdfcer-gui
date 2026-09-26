@@ -1,9 +1,9 @@
-//! # `app::actions::latency` — **which half of an edit is the one you can feel?**
+//! # `editlatency` — **which half of an edit is the one you can feel?**
 //!
 //! An instrument, not a feature. It exists to answer one question, and the
 //! whole design of `OPERATOR_REQUESTS.md` **O63** turns on the answer.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/actions/latency.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/editlatency.md`.
 
 #![cfg(test)]
 

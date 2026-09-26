@@ -1,11 +1,11 @@
-//! # `canvas::clipimage` — **the copied selection, as a picture other programs
+//! # `clipimage` — **the copied selection, as a picture other programs
 //! # can paste**
 //!
 //! ## What this closes
 //!
 //! The operator (`OPERATOR_REQUESTS.md` **O71**):
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/clipimage.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/clipimage.md`.
 
 use pdfcer_core::vector::ObjectClip;
 

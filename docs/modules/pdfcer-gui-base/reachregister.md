@@ -1,4 +1,4 @@
-# `pdfcer-gui/shell/commands/reach/register`
+# `pdfcer-gui-base/reachregister`
 
 ## Item notes
 

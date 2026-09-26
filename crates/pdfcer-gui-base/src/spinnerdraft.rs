@@ -1,4 +1,4 @@
-//! # `app::spinnerdraft` — keeping a spinner's value alive between frames
+//! # `spinnerdraft` — keeping a spinner's value alive between frames
 //!
 //! Two functions that **every** `DragValue` or `Slider` in this crate whose
 //! value is a local re-seeded from a getter each frame must route through.
@@ -8,7 +8,7 @@
 //! reachable only from there leaves every sibling control free to reinvent the
 //! same dead drag.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/spinnerdraft.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/spinnerdraft.md`.
 /// **Hold a spinner's value across frames while it is being dragged.**
 ///
 /// # The defect this exists to stop
@@ -57,7 +57,7 @@
 /// changed**. A draft that outlived a no-op drag would shadow the document
 /// silently, and a control showing a value the file does not have is a worse
 /// symptom than the dead drag this fixes.
-pub(crate) fn drafted<T>(ui: &egui::Ui, id: egui::Id, from_document: T) -> T
+pub fn drafted<T>(ui: &egui::Ui, id: egui::Id, from_document: T) -> T
 where
     T: Copy + Send + Sync + 'static,
 {
@@ -65,12 +65,7 @@ where
 }
 
 /// Store or drop [`drafted`]'s value according to the widget's own state.
-pub(crate) fn keep_draft<T>(
-    ui: &egui::Ui,
-    id: egui::Id,
-    response: &egui::Response,
-    value: T,
-) -> bool
+pub fn keep_draft<T>(ui: &egui::Ui, id: egui::Id, response: &egui::Response, value: T) -> bool
 where
     T: Copy + Send + Sync + 'static,
 {

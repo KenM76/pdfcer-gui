@@ -195,3 +195,39 @@ pub mod filedrag;
 
 /// Tab moves through what the operator clicked on.
 pub mod tabnav;
+
+/// The verbs that re-shape a page's own text.
+pub mod textverbs;
+
+/// How long the engine takes to accept one edit; a `#[cfg(test)]`, `#[ignore]`d instrument.
+pub mod editlatency;
+
+/// What a save produced, or why it produced nothing.
+pub mod saveoutcome;
+
+/// The copied selection, as a picture other programs can paste.
+pub mod clipimage;
+
+/// How a placed stamp is sized to its box.
+pub mod stampfit;
+
+/// Keeping a spinner's value alive between frames.
+pub mod spinnerdraft;
+
+/// The forms panel-to-canvas channel: which field to spotlight.
+pub mod formspotlight;
+
+/// How big the program's own controls are drawn.
+pub mod chromescale;
+
+/// The sentences one edit owed, kept until they are said.
+pub mod editdisclosure;
+
+/// Preparing a typed query for the engine.
+pub mod findquery;
+
+/// The region names the print dialog publishes for the driving harness.
+pub mod printregions;
+
+/// The reach allow-list.
+pub mod reachregister;

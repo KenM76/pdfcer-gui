@@ -1,4 +1,4 @@
-# `canvas::stampfit` — the operator's standing answer to *"what happens
+# `stampfit` — the operator's standing answer to *"what happens
 when a stamp's words do not fit its box?"*
 
 One preference, read and written through the egui context, shared by the

@@ -21,7 +21,7 @@ pub mod cache;
 
 /// How big the **program's own controls** are drawn — the one accessibility
 /// preference, and the only one here that changes nothing about the document.
-pub mod chrome;
+pub use pdfcer_gui_base::chromescale as chrome;
 
 /// What an operator is shown when a page **first appears** — read once per
 /// document open, never on the hot path.

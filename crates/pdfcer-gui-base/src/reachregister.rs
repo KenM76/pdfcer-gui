@@ -1,4 +1,4 @@
-//! # `shell::commands::reach::register` — the allow-list, and only the allow-list
+//! # `reachregister` — the allow-list, and only the allow-list
 //!
 //! **The DATA half of [`super`]**, kept apart from the check that reads it.
 //!
@@ -29,14 +29,14 @@
 //! from here through the ordinary path, so the number quoted in `super`'s
 //! header and the length of the list below move together or fail.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/shell/commands/reach/register.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/reachregister.md`.
 
 // ===========================================================================
 // THE ALLOW-LIST
 // ===========================================================================
 
 /// **Registered, deliberately without a dispatch arm, and why.**
-pub(crate) const SCAFFOLDED: &[(&str, &str)] = &[
+pub const SCAFFOLDED: &[(&str, &str)] = &[
     // Empty. Every id that stood here has been wired, unregistered, or
     // deleted; the reasons that were transferable are in this constant's doc
     // comment, and the rest were the entries themselves.
@@ -44,4 +44,4 @@ pub(crate) const SCAFFOLDED: &[(&str, &str)] = &[
 
 /// **The mirror defect: a literal arm that no token can reach, and why each is
 /// tolerated.**
-pub(crate) const UNREACHED_ARMS: &[(&str, &str)] = &[];
+pub const UNREACHED_ARMS: &[(&str, &str)] = &[];

@@ -11,7 +11,7 @@ mod guards;
 use std::collections::{BTreeMap, BTreeSet};
 
 /// The dispatcher's own source, embedded at **compile** time.
-pub mod register;
+pub use pdfcer_gui_base::reachregister as register;
 
 pub(crate) use register::{SCAFFOLDED, UNREACHED_ARMS};
 

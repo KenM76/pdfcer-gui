@@ -6,13 +6,13 @@
 //! tree sees them -- and both exist so a caller branches on structured data
 //! rather than on the text of a message.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/save/outcome.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/saveoutcome.md`.
 
 use pdfcer_core::writer::{SaveReport, WriteError};
 /// **Which writer produced the bytes that reached the file, and what it
 /// reported.**
 #[derive(Debug)]
-pub(super) enum Written {
+pub enum Written {
     /// The ordinary §7.5.6 incremental update — §1, and everything this module
     /// promises about the previous revision staying intact.
     Ordinary(SaveReport),
@@ -29,7 +29,7 @@ pub(super) enum Written {
 
 /// Why a save-a-copy produced no file.
 #[derive(Debug)]
-pub(super) enum SaveError {
+pub enum SaveError {
     /// `pdfcer-core` could not build the update. A refusal by name from the
     /// writer — a broken provenance span, a cross-reference form that cannot
     /// express an entry it was handed.
@@ -98,7 +98,7 @@ pub(super) enum SaveError {
     /// The whole [`crate::pagetree::Audit`] is carried, not a pair of
     /// numbers, because the sentence differs by *which* node disagrees (see
     /// [`crate::text::pagetree`]) and because the trace wants the node ids —
-    /// and because `crate::app::lifecycle`'s rule is that a branch is made on
+    /// and because `pdfcer_gui::app::lifecycle`'s rule is that a branch is made on
     /// structured error data, never by inspecting a message.
     PageTreeStale {
         /// What the walk found. Never rendered verbatim: it names object ids.
@@ -137,7 +137,7 @@ impl std::fmt::Display for SaveError {
             // purpose, because it is rendered to the operator by
             // `crate::text::redact::refusal_message` and a second,
             // uncatalogued rendering is how the two drift. See
-            // `crate::app::actions::redact`, which makes the same choice at the
+            // `pdfcer_gui::app::actions::redact`, which makes the same choice at the
             // other call site for the same reason.
             Self::RedactionRefused { refusal } => write!(
                 f,

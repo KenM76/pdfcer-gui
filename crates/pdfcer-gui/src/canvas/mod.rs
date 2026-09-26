@@ -264,7 +264,7 @@ pub mod scaling;
 /// `OPERATOR_REQUESTS.md` O71. Renders the clip's own one-page PDF rather than
 /// cropping the page, and composites onto white because `CF_DIB` has no alpha
 /// consumers agree about.
-pub mod clipimage;
+pub use pdfcer_gui_base::clipimage;
 pub mod rulers;
 pub mod selection;
 /// **Smart-Selector** — a click selects a container, a double-click goes
@@ -285,7 +285,7 @@ mod backdrop;
 /// not fit its box?"* — one preference, shared by the placing dialog and the
 /// properties panel, because nothing in the file records an author's fit
 /// intent and a per-stamp control would be showing a value it invented.
-pub mod stampfit;
+pub use pdfcer_gui_base::stampfit;
 pub mod strip;
 /// **Tab moves through what the operator clicked on, not through the
 /// ribbon** — `OPERATOR_REQUESTS.md` O204. The seam that takes the press
