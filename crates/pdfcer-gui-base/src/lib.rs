@@ -94,6 +94,9 @@ pub mod pressure;
 /// is what stops the ribbon falling back to text labels — see `icons::paint`.
 pub mod icons;
 
+/// Which optional-content groups the operator has hidden.
+pub mod layeroverride;
+
 pub mod redact;
 
 /// How sharply a page is drawn, and how long zoom waits before drawing it.

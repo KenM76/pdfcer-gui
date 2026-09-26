@@ -73,13 +73,7 @@ pub(crate) fn policy_token(options: LoadOptions) -> &'static str {
 ///
 pub use crate::viewer::ZoomAnchor;
 
-/// **Which optional-content groups the operator has hidden** — split out
-/// 2026-09-12 under R2. Its header carries why a fact about what the
-/// renderer must be told is a different subject from the document model
-/// that holds it, and why the type's visibility is spelled absolutely.
-mod layers;
-
-use layers::LayerOverride;
+use pdfcer_gui_base::layeroverride::LayerOverride;
 
 /// What the render tier needs to know about a page's colour.
 mod ink;

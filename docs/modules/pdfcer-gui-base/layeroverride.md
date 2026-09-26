@@ -1,4 +1,4 @@
-# `pdfcer-gui/app/state/layers`
+# `pdfcer-gui-base/layeroverride`
 
 ## Item notes
 
