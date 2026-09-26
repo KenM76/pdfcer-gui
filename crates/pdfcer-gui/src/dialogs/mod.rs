@@ -82,7 +82,7 @@ pub mod open;
 ///
 /// Its header carries why there is no third *"open without saving"* button,
 /// which is the one place it deliberately departs from [`unsaved`]'s shape.
-pub mod open_in_acrobat;
+pub use pdfcer_gui_base::acrobatprompt as open_in_acrobat;
 /// **Changing the paper an open drawing sits on** — `pages.resize`. Its
 /// header carries the design decision the window is built around: a
 /// `/MediaBox` change crops, it does not shrink, so the window's real product
@@ -140,7 +140,7 @@ pub mod textannot;
 
 /// The Settings window — the thirteen questions the PDF standard declines to
 /// answer, and the operator's answers to them.
-pub mod shortcuts;
+pub use pdfcer_gui_base::shortcutsdialog as shortcuts;
 
 pub mod settings;
 

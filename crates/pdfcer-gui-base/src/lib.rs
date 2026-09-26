@@ -354,3 +354,12 @@ pub mod buttonactionpicker;
 
 /// Which layer a selection belongs to.
 pub mod layermembership;
+
+/// The keyboard-shortcuts reference window.
+pub mod shortcutsdialog;
+
+/// The prompt before handing the document to Acrobat.
+pub mod acrobatprompt;
+
+/// The Settings row for the default PDF application.
+pub mod defaultappsetting;

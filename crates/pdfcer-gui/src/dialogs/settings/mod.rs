@@ -19,7 +19,7 @@ mod comments;
 /// The button O173 asks for at the top of this window, and the line that
 /// says what Windows actually opens PDFs with. Its header argues why it is
 /// above even the presets row and why it is not a collapsible group.
-pub mod defaultapp;
+pub use pdfcer_gui_base::defaultappsetting as defaultapp;
 mod preset;
 
 /// The eighth group, and the only one not about the PDF standard: how pdfcer
@@ -654,7 +654,10 @@ mod tests {
         // check is about the DIRECTORY being fully scanned, and a module
         // exempted because it happens to bind nothing is a module nobody
         // re-checks when it starts binding something.
-        ("defaultapp", include_str!("defaultapp.rs")),
+        (
+            "defaultapp",
+            include_str!("../../../../pdfcer-gui-base/src/defaultappsetting.rs"),
+        ),
         ("display", include_str!("display.rs")),
         ("fonts", include_str!("fonts.rs")),
         ("forms", include_str!("forms.rs")),

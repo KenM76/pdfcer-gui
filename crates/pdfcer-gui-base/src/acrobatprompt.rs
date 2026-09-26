@@ -1,7 +1,7 @@
-//! # `dialogs::open_in_acrobat` — the question that comes before pdfcer lets
+//! # `acrobatprompt` — the question that comes before pdfcer lets
 //! go of the file
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/open_in_acrobat.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/acrobatprompt.md`.
 //!
 //! ## conventions: dialogs
 //!
@@ -24,7 +24,7 @@
 //!   has a dialog for that — it carries choices only pdfcer has, which is the
 //!   corollary's stated right reason to draw one. The one place O122 does
 //!   reach for the system's own dialog is Settings' Browse button, which is
-//!   `rfd`'s native file picker (`crate::app::files::pick_acrobat`).
+//!   `rfd`'s native file picker (`pdfcer_gui::app::files::pick_acrobat`).
 //! - G3 owned-by-the-app: **YES**, through `Host`. An unowned dialog falls
 //!   behind its parent and the operator concludes the button did nothing.
 //! - G4 enter-accepts-escape-cancels: **PARTIAL, and inherited.** Escape and
@@ -86,7 +86,7 @@ pub const REGION_CANCEL: &str = "open-in-acrobat.cancel"; // ui-text-exempt: tra
 pub enum Outcome {
     /// Save if there is anything to save, close the document, hand the file
     /// to Acrobat. The application does all three — see
-    /// [`crate::app::actions`] — because a window that could close a document
+    /// `pdfcer_gui::app::actions` — because a window that could close a document
     /// would be a second route to the most destructive operation this shell
     /// has.
     Proceed,
@@ -103,7 +103,7 @@ pub struct OpenInAcrobatDialog {
     /// How many edits are at stake, for the sentence that says so.
     ///
     /// Captured at **open** time rather than read per frame, exactly as
-    /// [`crate::dialogs::unsaved`] captures its own: this window is the only
+    /// `pdfcer_gui::dialogs::unsaved` captures its own: this window is the only
     /// thing on screen that could change the document (it cannot), so a live
     /// read could only return the same number — but capturing makes the
     /// sentence a statement about the moment the operator was asked, which is
@@ -159,7 +159,7 @@ impl OpenInAcrobatDialog {
         // crate — and this one needs the entry: it appears in answer to a
         // click on a control at the extreme right of the ribbon, which is
         // where an operator's pointer is on its way somewhere else.
-        let (frame, ()) = crate::dialogs::host::Host::new(
+        let (frame, ()) = crate::dialoghost::Host::new(
             "open-in-acrobat", // ui-text-exempt: a viewport key, never displayed.
             t::title(),
             egui::vec2(460.0, 200.0),

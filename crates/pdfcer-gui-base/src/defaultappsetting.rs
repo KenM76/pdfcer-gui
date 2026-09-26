@@ -1,13 +1,13 @@
-//! # `dialogs::settings::defaultapp` — the button at the top of Settings
+//! # `defaultappsetting` — the button at the top of Settings
 //!
 //! `OPERATOR_REQUESTS.md` **O173**: *"Then it should be in the top of our
 //! settings as a button to execute the changeover."*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/settings/defaultapp.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/defaultappsetting.md`.
 
 use egui::Ui;
 
-use crate::app::assoc::{self, Registration, Status};
+use crate::assoc::{self, Registration, Status};
 use crate::text::assoc as t;
 
 /// The state line's region.

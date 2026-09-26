@@ -1,4 +1,4 @@
-# `dialogs::open_in_acrobat` — the question that comes before pdfcer lets
+# `acrobatprompt` — the question that comes before pdfcer lets
 go of the file
 
 `OPERATOR_REQUESTS.md` **O122**, points 5 and 6:

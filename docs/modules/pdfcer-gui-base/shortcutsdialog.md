@@ -1,4 +1,4 @@
-# `dialogs::shortcuts` — every keyboard chord, derived from the keymap that
+# `shortcutsdialog` — every keyboard chord, derived from the keymap that
 dispatches them
 
 ## This window has **no list in it**

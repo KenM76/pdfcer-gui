@@ -1,7 +1,7 @@
-//! # `dialogs::shortcuts` — every keyboard chord, derived from the keymap that
+//! # `shortcutsdialog` — every keyboard chord, derived from the keymap that
 //! dispatches them
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/dialogs/shortcuts.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/shortcutsdialog.md`.
 
 use std::collections::BTreeMap;
 
@@ -46,7 +46,7 @@ impl ShortcutsDialog {
         // has a finite size** — the platform gives it one — so the scroll area
         // is bounded on every frame and that loop has nowhere to start. The
         // declared size below is an opening bid, not a fix.
-        let (frame, ()) = crate::dialogs::host::Host::new(
+        let (frame, ()) = crate::dialoghost::Host::new(
             "shortcuts", // ui-text-exempt: a viewport key, never displayed.
             t::window_title(),
             egui::vec2(420.0, 480.0),
@@ -88,7 +88,7 @@ fn body(ui: &mut Ui, keymap: Option<&Keymap>, registry: &CommandRegistry) {
     }
 
     // Capped and floored, the idiom five dialogs now share. See
-    // `crate::dialogs::about`'s header for why the floor is not optional: a
+    // `pdfcer_gui::dialogs::about`'s header for why the floor is not optional: a
     // negative `max_height` lays the rows out into nothing, silently.
     const FOOTER_RESERVE: f32 = 40.0;
     const LIST_FLOOR: f32 = 48.0;

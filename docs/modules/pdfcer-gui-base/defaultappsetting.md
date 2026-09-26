@@ -1,4 +1,4 @@
-# `dialogs::settings::defaultapp` — the button at the top of Settings
+# `defaultappsetting` — the button at the top of Settings
 
 `OPERATOR_REQUESTS.md` **O173**: *"Then it should be in the top of our
 settings as a button to execute the changeover."*
