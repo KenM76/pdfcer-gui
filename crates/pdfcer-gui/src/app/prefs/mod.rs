@@ -52,7 +52,7 @@ pub(crate) mod printing;
 
 /// How sharply a page is drawn, and how long zoom waits before drawing it.
 /// The two preferences that change what a **frame costs**.
-pub mod quality;
+pub use pdfcer_gui_base::renderquality as quality;
 
 /// What a plain wheel does when the document is not one long scroll — O30.
 pub mod wheel;

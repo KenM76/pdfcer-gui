@@ -1,4 +1,4 @@
-//! # `app::prefs::quality` — how sharply a page is drawn, and how long zoom waits
+//! # `renderquality` — how sharply a page is drawn, and how long zoom waits
 //!
 //! [`RenderQuality`] and the zoom-settle bounds: the two preferences that
 //! change what a rendered frame costs.
@@ -7,8 +7,8 @@
 //!
 //! Not by size. These two are both about **the cost of drawing** — a trade of
 //! sharpness or responsiveness against the time a machine takes — and both are
-//! read on the hot path, by [`crate::viewer::raster_scale`] and by
-//! [`crate::render::settle`] respectively. [`super::opening`]'s preferences are
+//! read on the hot path, by `pdfcer_gui::viewer::raster_scale` and by
+//! `pdfcer_gui::render::settle` respectively. `pdfcer_gui::app::prefs::opening`'s preferences are
 //! about **what an operator is shown first** and are read exactly once per
 //! document, in the open path.
 //!
@@ -16,7 +16,7 @@
 //! decides where a new preference goes: *does this change what a frame costs,
 //! or what the first frame contains?*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/prefs/quality.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/renderquality.md`.
 
 /// How sharply a page is rasterised, as a multiplier on the natural scale.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

@@ -12,25 +12,19 @@
 
 // Which of the four page-display arrangements is active, the spread rule the
 // facing ones use, and the per-mode default that makes Read continuous.
-pub mod display;
-// Where the per-document choice is written down. Beside the type it persists,
-// so the enum and its on-disk spelling cannot drift — see that module's header
-// for why it is a third file rather than a field in `layout.ron` or
-// `recent.txt`.
 pub mod ceiling;
-pub mod deep;
-/// **Where the view is, when the scroll offset can no longer say** —
-/// O24 step 2.
+pub mod display;
+// Where the view is, when the scroll offset can no longer say.
+pub use pdfcer_gui_base::deepanchor as deep;
 pub mod ladder;
-// What one canvas observed about itself on the previous frame, as distinct
-// from the stance it was put into. `ViewState` holds the choices; `ViewFrame`
-// holds the measurements — and with two canvases on one document, a single
-// copy of the measurements is a defect rather than a simplification.
-pub mod frame;
+// What one canvas observed about itself on the previous frame. `ViewState`
+// holds the choices; `ViewFrame` holds the measurements, one per canvas.
+pub use pdfcer_gui_base::viewframe as frame;
 // How the zoom is decided from the viewport: the three fitting modes, the
 // ratio each takes, and which axes each one PLACES the view on. Split out
 // under R2, this project's 1,500-line-per-file ceiling.
 pub mod fit;
+// Where the per-document choice is written down, beside the type it persists.
 pub mod remembered;
 // Where every page sits, in one coordinate space. The answer to Phase 4.1's
 // "a page range rather than a single index", expressed as geometry.
@@ -67,43 +61,7 @@ pub const MIN_ZOOM: f32 = 0.10;
 /// the pixmap is enormous.
 pub const MAX_ZOOM: f32 = 8.0;
 
-/// Where the pointer was over the page when a Ctrl+wheel arrived.
-#[derive(Debug, Clone, Copy)]
-pub struct ZoomAnchor {
-    /// The pointer's position as a fraction of the page's drawn size.
-    pub frac: (f32, f32),
-    /// The scroll offset before the zoom step.
-    pub offset_before: (f32, f32),
-    /// The page's drawn size before the zoom step.
-    pub display_before: (f32, f32),
-    /// The scroll viewport, needed for the centring-margin term.
-    pub viewport: (f32, f32),
-    /// **Which page every other field in this struct is about** — the page
-    /// that was being acted on when the anchor was armed.
-    ///
-    /// # Why an anchor has to name its page (`OPERATOR_REQUESTS.md` O26d)
-    ///
-    /// `frac`, `offset_before` and `display_before` are all measured against
-    /// **one page**: the anchor says *"the point at this fraction of THAT
-    /// page was at that offset when the page was that size"*. Under a
-    /// continuous mode the canvas then converts the solve's answer back into
-    /// a strip offset by adding the page's origin within the strip — and it
-    /// used to add **whichever page happened to be current on the frame the
-    /// anchor was consumed**.
-    ///
-    /// Those are two different frames and they can name two different pages:
-    /// the anchor is armed on frame N (during `show`, when the wheel is seen)
-    /// and solved on frame N+1 (once the zoom has landed), and the current
-    /// page tracks the scroll in between. When they differ, the answer is
-    /// wrong by whole page pitches — at a million percent that is 10⁷ points,
-    /// the offset clamps to the end of its range, and the page lands in a
-    /// corner of the screen with the rest of the drawing off it.
-    ///
-    /// Under [`PageDisplay::Single`] there is one page at the origin and
-    /// this field is always the current one, so nothing about that path
-    /// changes. It is the strip that made "which page" a question.
-    pub page: usize,
-}
+pub use pdfcer_gui_base::viewframe::ZoomAnchor;
 
 /// Which page is shown, at what scale, how that scale is chosen, and in what
 /// arrangement.

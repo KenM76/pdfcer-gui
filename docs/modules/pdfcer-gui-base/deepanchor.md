@@ -1,4 +1,4 @@
-# `viewer::deep` — where the view is, when the scroll offset can no longer say
+# `deepanchor` — where the view is, when the scroll offset can no longer say
 
 `OPERATOR_REQUESTS.md` **O24**, step 2. The operator:
 

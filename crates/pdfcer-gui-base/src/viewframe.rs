@@ -1,15 +1,15 @@
-//! # `viewer::frame` — what one canvas remembers between frames
+//! # `viewframe` — what one canvas remembers between frames
 //!
 //! [`ViewFrame`] is the per-**view** bookkeeping a canvas writes at the end of
 //! a frame and reads at the start of the next: where the scroll area settled,
 //! what the zoom was, where the zoom is anchored, and the deep tier's position
 //! when the scroll offset can no longer carry it.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/viewer/frame.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/viewframe.md`.
 
 use std::time::Instant;
 
-use super::ZoomAnchor;
+use crate::deepanchor::DeepAnchor;
 
 /// **What one canvas observed about itself on the previous frame.**
 #[derive(Debug, Clone, Copy)]
@@ -18,7 +18,7 @@ pub struct ViewFrame {
     /// the zoom changed at all.
     pub observed_zoom: f32,
     /// The earliest instant at which the current zoom may be committed to a
-    /// real rasterization — the [`crate::render::settle::ZOOM_SETTLE`]
+    /// real rasterization — the `pdfcer_gui::render::settle::ZOOM_SETTLE`
     /// debounce deadline.
     pub zoom_commit_at: Instant,
     /// Set by any *discrete* zoom command during this frame's action
@@ -50,7 +50,7 @@ pub struct ViewFrame {
     /// cleared on the way out — so crossing the threshold in either direction
     /// does not move the page under the operator, and re-entering starts from
     /// the truth rather than from a stale anchor.
-    pub deep_anchor: Option<super::deep::DeepAnchor>,
+    pub deep_anchor: Option<DeepAnchor>,
     /// The zoom [`Self::deep_anchor`] was last valid at, or `None` outside the
     /// deep tier.
     ///
@@ -85,4 +85,22 @@ impl ViewFrame {
             deep_zoom: None,
         }
     }
+}
+
+/// Where the pointer was over the page when a Ctrl+wheel arrived.
+#[derive(Debug, Clone, Copy)]
+pub struct ZoomAnchor {
+    /// The pointer's position as a fraction of the page's drawn size.
+    pub frac: (f32, f32),
+    /// The scroll offset before the zoom step.
+    pub offset_before: (f32, f32),
+    /// The page's drawn size before the zoom step.
+    pub display_before: (f32, f32),
+    /// The scroll viewport, needed for the centring-margin term.
+    pub viewport: (f32, f32),
+    /// The page every other field is measured against: the one acted on
+    /// when the anchor was armed. The anchor is solved a frame later, by
+    /// which time the current page may have scrolled on, so the strip offset
+    /// must be added for this page, not the current one.
+    pub page: usize,
 }

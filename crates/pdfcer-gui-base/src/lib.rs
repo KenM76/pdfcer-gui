@@ -20,6 +20,9 @@ pub mod acrobat;
 /// time labelled as one.
 pub mod clock;
 
+/// Where the view is, when the scroll offset can no longer say.
+pub mod deepanchor;
+
 /// The opt-in trace of what the shell actually received.
 pub mod diag;
 
@@ -76,6 +79,9 @@ pub mod icons;
 
 pub mod redact;
 
+/// How sharply a page is drawn, and how long zoom waits before drawing it.
+pub mod renderquality;
+
 /// The background render thread: one page raster at a time, cancellable, and
 /// a typed refusal when there are no pixels.
 pub mod renderworker;
@@ -106,3 +112,6 @@ pub mod trust;
 ///
 /// [`Unit`]: pdfcer_core::dimension::Unit
 pub mod units;
+
+/// What one canvas remembers between frames.
+pub mod viewframe;

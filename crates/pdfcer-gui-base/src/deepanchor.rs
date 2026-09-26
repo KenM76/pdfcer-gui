@@ -1,15 +1,15 @@
-//! # `viewer::deep` — where the view is, when the scroll offset can no longer say
+//! # `deepanchor` — where the view is, when the scroll offset can no longer say
 //!
 //! `OPERATOR_REQUESTS.md` **O24**, step 2. The operator:
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/viewer/deep.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/deepanchor.md`.
 
 /// Where the view is, expressed so that precision does not decay with zoom.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct DeepAnchor {
     /// The page-space point held under [`Self::screen`], in PDF points from the
     /// page's top-left, y-down — canvas space, matching
-    /// [`crate::canvas::mapping`].
+    /// `pdfcer_gui::canvas::mapping`.
     pub page: (f64, f64),
     /// Where in the window that point sits, in logical points from the
     /// viewport's top-left.
@@ -78,7 +78,7 @@ impl DeepAnchor {
     ///
     /// # Why this is the last function this module needed
     ///
-    /// [`crate::canvas::mod`]'s deep branch seeds an anchor from the scroll
+    /// `pdfcer_gui::canvas`'s deep branch seeds an anchor from the scroll
     /// offset on the way **in**. Nothing converted an anchor back into a
     /// scroll offset on the way **out**, so a zoom-out across the threshold
     /// dropped the position on the floor and the `f32` machinery resumed from
@@ -89,7 +89,7 @@ impl DeepAnchor {
     /// # The arithmetic, and where the precision goes
     ///
     /// A page-local offset is defined by
-    /// [`crate::canvas::geometry::anchor_screen_pos`]:
+    /// `pdfcer_gui::canvas::geometry::anchor_screen_pos`:
     ///
     /// ```text
     ///     screen = margin(display, viewport) + frac × display − offset
@@ -149,7 +149,7 @@ impl DeepAnchor {
     }
 
     /// The page-space rectangle visible in a viewport of `size` at `zoom` —
-    /// what [`crate::render::strategy`]'s region tier asks the renderer for.
+    /// what `pdfcer_gui::render::strategy`'s region tier asks the renderer for.
     ///
     /// Returned as `(x0, y0, x1, y1)` in canvas space. Degenerate input yields
     /// a degenerate rect rather than a panic; the caller's own guards refuse it.

@@ -1,4 +1,4 @@
-# `viewer::frame` — what one canvas remembers between frames
+# `viewframe` — what one canvas remembers between frames
 
 [`ViewFrame`] is the per-**view** bookkeeping a canvas writes at the end of
 a frame and reads at the start of the next: where the scroll area settled,

@@ -1,4 +1,4 @@
-# `pdfcer-gui/app/prefs/quality`
+# `pdfcer-gui-base/renderquality`
 
 ## Item notes
 
