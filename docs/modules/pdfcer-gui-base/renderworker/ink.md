@@ -1,4 +1,4 @@
-# `pdfcer-gui/render/ink`
+# `pdfcer-gui-base/renderworker/ink`
 
 `render::ink` — **is there anything in this raster?**
 

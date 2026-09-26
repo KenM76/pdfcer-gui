@@ -384,15 +384,28 @@ pub fn canvas_page_refused(page_number: usize, detail: &str) -> String {
     format!("Page {page_number} could not be drawn. {detail}")
 }
 
-/// Shown when the background render thread died without reporting.
+/// Shown when a page's box is empty.
 #[must_use]
 pub fn canvas_page_has_no_area() -> &'static str {
     "This page has no area to draw — its page box is empty."
 }
 
+/// Shown when the background render thread died without reporting.
 #[must_use]
 pub fn canvas_render_worker_stopped() -> &'static str {
     "The page renderer stopped unexpectedly. Reopen the document to try again."
+}
+
+/// The sentence for a render that came back with no pixels.
+#[must_use]
+pub fn render_refusal(reason: &crate::render::worker::RefusalReason) -> String {
+    use crate::render::worker::RefusalReason as R;
+    match reason {
+        R::PastRasterizer => canvas_zoom_past_rasterizer().to_owned(),
+        R::NoArea => canvas_page_has_no_area().to_owned(),
+        R::WorkerStopped => canvas_render_worker_stopped().to_owned(),
+        R::Engine(sentence) => sentence.clone(),
+    }
 }
 
 /// The document could not be read: it is damaged, truncated, or not a PDF.
@@ -463,7 +476,7 @@ mod tests {
         assert!(
             !shown.contains(panic_message) && !shown.contains("range start index"),
             "pdfcer-render put third-party panic text back into RasterizerLimit's Display, \
-             which makes the wildcard arm in render::worker unsafe again: {shown}"
+             which makes the wildcard arm in renderworker unsafe again: {shown}"
         );
         assert!(
             shown.contains("8053069"),

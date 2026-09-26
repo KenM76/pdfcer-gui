@@ -61,7 +61,7 @@ operator's `A-591.pdf`. Settling it took a hand-written test that scraped the
 region rectangles out of the trace and called `pdfcer_render` on them
 directly; the engine returned one tone for the two deepest.
 
-`ink=` on `render-async-done` (see `crates/pdfcer-gui/src/render/ink.rs`)
+`ink=` on `render-async-done` (see `crates/pdfcer-gui-base/src/renderworker/ink.rs`)
 makes that hand-written test permanent and free. The rule is now:
 
 | canvas | raster | verdict |

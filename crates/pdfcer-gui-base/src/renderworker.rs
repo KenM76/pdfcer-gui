@@ -2,10 +2,10 @@
 //!
 //! One job: keep a slow page from freezing the application. This module
 //! owns the worker thread, the channel, the cancellation token and the
-//! generation counter; [`crate::render::raster`] owns the texture upload
+//! generation counter; `pdfcer_gui::render::raster` owns the texture upload
 //! on the far side of that seam.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/render/worker.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/renderworker.md`.
 
 use std::sync::Arc;
 use std::sync::mpsc::{Receiver, RecvTimeoutError, SyncSender, sync_channel};
@@ -72,9 +72,8 @@ enum Outcome {
 /// **Why a render came back with no pixels**, as a fact the shell can act on
 /// rather than only repeat.
 pub struct RenderRefusal {
-    /// What the operator is told. Already an instruction, never engine prose
-    /// for the cases this shell has a better sentence for.
-    pub message: String,
+    /// What the operator is told, worded by `pdfcer_gui::text::render_refusal`.
+    pub reason: RefusalReason,
     /// What the shell is told.
     pub kind: RefusalKind,
 }
@@ -92,7 +91,7 @@ pub enum RefusalKind {
     /// learnable.** Both limits are overflows of a product of the page's own
     /// extent and the scale, so a page that refused at a scale refuses at
     /// every larger one. That is what lets
-    /// `crate::app::state::OpenDoc::learn_raster_ceiling` turn one refusal
+    /// `pdfcer_gui::app::state::OpenDoc::learn_raster_ceiling` turn one refusal
     /// into a permanent ceiling instead of a failure the operator meets again
     /// on every notch.
     ///
@@ -120,22 +119,37 @@ pub type RenderOutcome = Result<RenderedPixels, RenderRefusal>;
 
 impl RenderRefusal {
     /// A refusal that says nothing about how far this page can be magnified.
-    fn other(message: String) -> Self {
+    fn other(reason: RefusalReason) -> Self {
         Self {
-            message,
+            reason,
             kind: RefusalKind::Other,
         }
     }
 
     /// A refusal that **is** this page's magnification limit at this scale.
-    fn beyond_raster(message: String) -> Self {
+    fn beyond_raster() -> Self {
         Self {
-            message,
+            reason: RefusalReason::PastRasterizer,
             kind: RefusalKind::BeyondRaster,
         }
     }
 }
 
+/// What a refusal tells the operator. The shell's own sentences are
+/// instructions; the engine's prose passes through only where it has none.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RefusalReason {
+    /// The zoom is further in than the rasterizer can draw.
+    PastRasterizer,
+    /// The page box is empty.
+    NoArea,
+    /// The worker thread died without reporting.
+    WorkerStopped,
+    /// The engine's own sentence.
+    Engine(String),
+}
+
+mod ink;
 mod key;
 
 pub use key::RenderKey;
@@ -187,7 +201,7 @@ pub struct RenderRequest {
     /// Which page (0-based) — a staleness key.
     pub page_index: usize,
     /// Device pixels per PDF user-space unit — the operator's zoom already
-    /// multiplied by `pixels_per_point` ([`crate::viewer::raster_scale`]).
+    /// multiplied by `pixels_per_point` (`pdfcer_gui::viewer::raster_scale`).
     /// The second staleness key.
     pub raster_scale: f32,
     /// Whether annotation appearances are painted over the page content
@@ -216,11 +230,11 @@ pub struct RenderRequest {
     /// client.* The engine holds the same line from its side and shipped
     /// deliberately **without** a CLI flag for the same reason.
     ///
-    /// Here that rule is not prose. `crate::app::settings`' funnel builds every
+    /// Here that rule is not prose. `pdfcer_gui::app::settings`' funnel builds every
     /// `RenderOptions` in the crate and never touches this field;
     /// `render_on_worker` — which serves the canvas and nothing else — is the
     /// one function that assigns it, from this request; and
-    /// `crate::app::settings::tests::only_the_canvas_worker_sets_stroke_display`
+    /// `pdfcer_gui::app::settings::tests::only_the_canvas_worker_sets_stroke_display`
     /// parses every `.rs` in the crate with `syn` and fails the build if a
     /// second site appears. A grep would not do, for the reason that test's
     /// neighbour already gives: the identifier appears in a dozen doc comments,
@@ -379,9 +393,7 @@ impl RenderWorker {
                 // render failure rather than hanging forever waiting for
                 // a message that will never arrive.
                 let _ = handle.join();
-                Some(Err(RenderRefusal::other(
-                    crate::text::canvas_render_worker_stopped().to_owned(),
-                )))
+                Some(Err(RenderRefusal::other(RefusalReason::WorkerStopped)))
             }
         }
     }
@@ -410,9 +422,7 @@ impl RenderWorker {
                 // `-1` means "not applicable", i.e. there is no pixmap because
                 // the render was cancelled or failed.
                 let ink = match &outcome {
-                    Outcome::Done(pixels) => {
-                        i32::from(super::ink::sampled_tone_count(&pixels.pixmap))
-                    }
+                    Outcome::Done(pixels) => i32::from(ink::sampled_tone_count(&pixels.pixmap)),
                     Outcome::Cancelled | Outcome::Failed(_) => -1,
                 };
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
@@ -430,9 +440,7 @@ impl RenderWorker {
                 if let Some(handle) = flight.handle.take() {
                     let _ = handle.join();
                 }
-                Some(Err(RenderRefusal::other(
-                    crate::text::canvas_render_worker_stopped().to_owned(),
-                )))
+                Some(Err(RenderRefusal::other(RefusalReason::WorkerStopped)))
             }
         }
     }
@@ -503,7 +511,7 @@ impl Drop for RenderWorker {
 fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
     // Through the funnel, never `RenderOptions::default()`.
     //
-    // `crate::app::settings::SettingsExt` is the one place that turns the
+    // `crate::settings::SettingsExt` is the one place that turns the
     // operator's configuration into render options, and a `syn` check in that
     // module fails the build if any other file constructs these itself. The
     // rule exists because a bare `::default()` here is correct in isolation and
@@ -514,7 +522,7 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
     // font environment (reproducible on any machine) and `None` view
     // magnification (the print-correct answer, T-12.8). Each becomes a request
     // field when a surface exists to vary it, not before.
-    use crate::app::settings::SettingsExt;
+    use crate::settings::SettingsExt;
     let mut options = request.settings.render_options();
     options.cancel = Some(cancel.clone());
     options.annotations = request.annotations;
@@ -530,7 +538,7 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
     // an export path does not have to remember to say anything.
     //
     // The rule is enforced rather than asserted: see the request field's docs
-    // and `crate::app::settings::tests::only_the_canvas_worker_sets_stroke_display`.
+    // and `pdfcer_gui::app::settings::tests::only_the_canvas_worker_sets_stroke_display`.
     options.stroke_display = request.stroke_display;
     // Cloned rather than moved because the worker takes the request by
     // reference — a `BTreeSet<ObjId>` per render, against a rasterization
@@ -654,9 +662,7 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
                     u8::from(request.region.is_some())
                 )
             });
-            Outcome::Failed(RenderRefusal::beyond_raster(
-                crate::text::canvas_zoom_past_rasterizer().to_owned(),
-            ))
+            Outcome::Failed(RenderRefusal::beyond_raster())
         }
         // **THE SENTENCE THE OPERATOR ACTUALLY SAW** —
         // `OPERATOR_REQUESTS.md` O186, his words:
@@ -667,7 +673,7 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
         //
         // That is `BadRasterSize`'s `Display`, arriving here through the
         // pass-through arm below and painted into a page's rectangle by
-        // `crate::render::strip::draw_page_state`. At deep zoom that rectangle
+        // `pdfcer_gui::render::strip::draw_page_state`. At deep zoom that rectangle
         // is millions of pixels across, so it filled his drawing.
         //
         // # Why it needed a named arm, in two independent halves
@@ -690,7 +696,7 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
         // one, so a visible neighbour sheet would be ordered as a WHOLE-PAGE
         // raster at the current page's deep scale unless something asks
         // whether the order can be filled at all — which is what
-        // `crate::render::settle`'s `fill_strip` exists to ask.
+        // `pdfcer_gui::render::settle`'s `fill_strip` exists to ask.
         // `50411508 x 32619210` is 1,224 x 792 pt at scale 41,185.87: an
         // odd-sized neighbour in a mixed-size set, never the sheet the
         // operator was zoomed into.
@@ -718,7 +724,7 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
             // An empty pixmap is a request whose width or height rounded to
             // zero, which happens at a very SMALL scale. Categorising that as
             // a magnification limit would have
-            // `crate::render::ceiling::RasterCeiling` learn a ceiling near
+            // `crate::rasterceiling::RasterCeiling` learn a ceiling near
             // zero and pin the operator's zoom there — a document that
             // refuses to be magnified at all, presented as a deliberate
             // limit, on evidence that says the exact opposite.
@@ -764,26 +770,22 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
             // zoom on a guess. The engine's own sentence is the honest answer
             // there, exactly as it is in the pass-through arm below.
             if width == 0 || height == 0 {
-                Outcome::Failed(RenderRefusal::other(
-                    crate::text::canvas_page_has_no_area().to_owned(),
-                ))
+                Outcome::Failed(RenderRefusal::other(RefusalReason::NoArea))
             } else if width > pdfcer_render::MAX_PIXMAP_EDGE
                 || height > pdfcer_render::MAX_PIXMAP_EDGE
             {
-                Outcome::Failed(RenderRefusal::beyond_raster(
-                    crate::text::canvas_zoom_past_rasterizer().to_owned(),
-                ))
+                Outcome::Failed(RenderRefusal::beyond_raster())
             } else {
-                Outcome::Failed(RenderRefusal::other(
+                Outcome::Failed(RenderRefusal::other(RefusalReason::Engine(
                     pdfcer_render::RenderError::BadRasterSize { width, height }.to_string(),
-                ))
+                )))
             }
         }
         // The pass-through. Repeating the engine is the honest answer for
         // everything this shell has nothing better to say about — a content
         // stream that would not decode names the thing that would not decode,
         // and no sentence written here could.
-        Err(e) => Outcome::Failed(RenderRefusal::other(e.to_string())),
+        Err(e) => Outcome::Failed(RenderRefusal::other(RefusalReason::Engine(e.to_string()))),
     }
 }
 

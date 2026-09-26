@@ -532,7 +532,7 @@ mod tests {
     ///
     /// # The one exemption
     ///
-    /// `render/worker.rs`'s `render_on_worker`, which rasterizes the
+    /// `pdfcer_gui_base::renderworker::render_on_worker`, which rasterizes the
     /// interactive canvas and is called by nothing else. `#[cfg(test)]` modules
     /// are skipped for the reason its neighbour gives.
     ///
@@ -626,7 +626,9 @@ mod tests {
                     continue;
                 }
                 let name = path.to_string_lossy().replace('\\', "/");
-                if name.ends_with("render/worker.rs") || name.ends_with("dialogs/print/lines.rs") {
+                if name.ends_with("pdfcer-gui-base/src/renderworker.rs")
+                    || name.ends_with("dialogs/print/lines.rs")
+                {
                     continue;
                 }
                 let hits = scan(&path);
@@ -658,7 +660,7 @@ mod tests {
         // green test over a dead feature. That is the exact failure O137
         // reports about the button this replaces.
         assert_eq!(
-            scan(&root.join("render/worker.rs")),
+            scan(&base.join("renderworker.rs")),
             1,
             "the canvas worker must assign `stroke_display` exactly once — zero means \
              `view.line_weights` reaches no renderer at all"

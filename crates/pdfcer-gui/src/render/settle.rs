@@ -20,7 +20,7 @@ use crate::viewer;
 /// collecting the result, and turning whatever came back into a texture, a
 /// backdrop, an ink census or a learned zoom ceiling. Declared here rather
 /// than in `render/mod.rs` because nothing outside `settle` calls into it —
-/// the same shape as `render/worker.rs` and its `worker/key.rs`.
+/// the same shape as `renderworker.rs` and its `renderworker/key.rs`.
 mod absorb;
 
 /// How long a zoom must stop changing before it is committed to a real

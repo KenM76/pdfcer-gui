@@ -241,7 +241,7 @@ fn photograph(
         // the rectangles scraped out of the trace.
         //
         // `ink=` on `render-async-done` is that hand-written test, made
-        // permanent and free: `crates/pdfcer-gui/src/render/ink.rs` counts the
+        // permanent and free: `crates/pdfcer-gui-base/src/renderworker/ink.rs` counts the
         // raster's own distinct tones. So the shell can now be ASKED what it
         // was given, instead of inferred about.
         let ink = last_ink(session)?;

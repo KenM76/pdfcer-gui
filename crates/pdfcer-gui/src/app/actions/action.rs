@@ -1060,7 +1060,7 @@ pub enum Action {
     ///
     /// It does invalidate the page raster, and that is now expressible:
     /// `RenderKey` gained `layers_generation` in the same stage as this
-    /// variant, honouring `render/worker.rs`'s rule that *"the key ships in
+    /// variant, honouring `renderworker`'s rule that *"the key ships in
     /// the same commit as its control"*. Before that, a checkbox here would
     /// have redrawn nothing — which is why the panel shipped without one.
     SetLayerVisible {

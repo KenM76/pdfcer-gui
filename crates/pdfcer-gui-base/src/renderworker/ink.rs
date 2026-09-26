@@ -1,6 +1,6 @@
-//! `render::ink` — **is there anything in this raster?**
+//! `renderworker::ink` — **is there anything in this raster?**
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/render/ink.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/renderworker/ink.md`.
 
 use pdfcer_render::tiny_skia::Pixmap;
 

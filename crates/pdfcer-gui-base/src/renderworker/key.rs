@@ -10,7 +10,7 @@
 //! and a file whose tests live elsewhere has exactly the same subject it had
 //! before, only harder to read.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/render/worker/key.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/renderworker/key.md`.
 
 use super::RenderRequest;
 
@@ -186,8 +186,7 @@ impl RenderKey {
     }
 
     /// The key `request` describes.
-    ///
-    pub(crate) fn of(request: &RenderRequest) -> Self {
+    pub fn of(request: &RenderRequest) -> Self {
         Self::new(
             request.page_index,
             request.raster_scale,

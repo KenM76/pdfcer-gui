@@ -70,6 +70,10 @@ pub mod icons;
 
 pub mod redact;
 
+/// The background render thread: one page raster at a time, cancellable, and
+/// a typed refusal when there are no pixels.
+pub mod renderworker;
+
 /// Putting the operator's own digital signature on a document.
 #[cfg(feature = "signing")]
 pub mod sign;

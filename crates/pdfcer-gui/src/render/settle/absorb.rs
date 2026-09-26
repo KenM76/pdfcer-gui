@@ -223,7 +223,7 @@ impl OpenDoc {
                             // as a picture, so an edit to that page gets it a
                             // second attempt and an edit elsewhere does not.
                             self.page_epochs.get(key.page()),
-                            PageRaster::Failed(refusal.message),
+                            PageRaster::Failed(crate::text::render_refusal(&refusal.reason)),
                         );
                     }
                     slot => {
@@ -320,7 +320,7 @@ impl OpenDoc {
                         self.render_refused =
                             slot.map(|key| (key, self.page_epochs.get(self.view.page_index)));
                         self.page_texture = None;
-                        self.render_error = Some(refusal.message);
+                        self.render_error = Some(crate::text::render_refusal(&refusal.reason));
                     }
                 }
             }

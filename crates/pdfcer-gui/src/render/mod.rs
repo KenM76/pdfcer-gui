@@ -49,11 +49,6 @@ mod hairline;
 /// and how far the visible-region tier may look past the sheet.
 pub mod halo;
 
-/// **Is there anything in this raster?** — the `ink=` field of
-/// `render-async-done`, and the reason a blank canvas at deep zoom can be told
-/// apart from a lost one.
-pub mod ink;
-
 /// **Tests only** — the engine properties O23's second half will stand on,
 /// asserted here because the engine's own suite has never exercised them.
 pub mod offpage;
@@ -82,4 +77,4 @@ pub mod settle;
 // Several pages at once: the bounded texture cache, and what an undrawn page
 // says about itself.
 pub mod strip;
-pub mod worker;
+pub use pdfcer_gui_base::renderworker as worker;
