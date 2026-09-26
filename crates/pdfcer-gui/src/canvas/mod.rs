@@ -23,7 +23,7 @@ pub mod placing;
 // pdfcer's OWN crosshair bitmap, supplied to the OS as a real cursor. The
 // platform's stock crosshair is monochrome and its colour belongs to the
 // operator's pointer scheme, which is how it came to be white on white paper.
-pub mod cursor;
+pub use pdfcer_gui_base::cursor;
 
 /// **How deep the last click reached, and how deep it could have** — the
 /// readout that turns "all I get is the page" into a diagnosis. See its header.

@@ -1,4 +1,4 @@
-//! # `canvas::measure::scale` — scale entry, and the dimension-group actions
+//! # `measure::scale` — scale entry, and the dimension-group actions
 //!
 //! **Salvaged** from the old shell's `measure_tool.rs`
 //! (`D:\Dev\pdfce\crates\pdfce-gui\src\measure_tool.rs`, Pass 12.M2b), split at
@@ -6,7 +6,7 @@
 //! machines and [`super::state`] for the tool-entry container. The reasoning
 //! below is the original's, carried across intact.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/measure/scale.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/measure/scale.md`.
 
 use pdfcer_core::dimension::{
     FractionMode, LengthParseError, NumberFormat, ScaleEntry, ScalePreview, ScaleState, Unit,
@@ -144,7 +144,7 @@ impl ScaleEntryFields {
     ///
     /// [`Self::use_real_length`] is therefore left at whatever the caller's
     /// situation implies and is **not** set here -- see the two call sites in
-    /// [`crate::dialogs::scale`]. Seeding the ratio numbers costs nothing on
+    /// `pdfcer_gui::dialogs::scale`. Seeding the ratio numbers costs nothing on
     /// the real-length path, because [`Self::entry`] reads only the three
     /// fields belonging to the path it selects.
     ///
@@ -407,7 +407,7 @@ impl ScalePick {
 // rename and delete were absent from the engine and deliberately not
 // reimplemented here.
 //
-// What replaced it is `crate::app::actions::dimensions::DimensionAction`,
+// What replaced it is `pdfcer_gui::app::actions::dimensions::DimensionAction`,
 // which names the same four verbs and four more, and — the part `GroupAction`
 // never had — **reaches the document**, through the action funnel, as one undo
 // entry per operator gesture. Keeping both would have been two vocabularies for

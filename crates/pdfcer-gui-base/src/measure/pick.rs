@@ -1,11 +1,11 @@
-//! # `canvas::measure::pick` — the measure tools' pick state machines
+//! # `measure::pick` — the measure tools' pick state machines
 //!
 //! The **pure, GUI-free authoring-state logic** the three measure tools drive
 //! on the canvas (decision 011 §2.3/§2.4): the pick state machines and the
 //! circular fit-set. The scale-entry and dimension-group model lives in
 //! [`super::scale`], the tool-entry container in [`super::state`].
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/measure/pick.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/measure/pick.md`.
 
 use pdfcer_core::dimension::{
     DimensionKind, TwoLineAuthoring, TwoLinePlacement, TwoLineRefusal, author_from_two_lines,

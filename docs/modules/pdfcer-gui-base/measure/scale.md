@@ -1,4 +1,4 @@
-# `canvas::measure::scale` — scale entry, and the dimension-group actions
+# `measure::scale` — scale entry, and the dimension-group actions
 
 **Salvaged** from the old shell's `measure_tool.rs`
 (`D:\Dev\pdfce\crates\pdfce-gui\src\measure_tool.rs`, Pass 12.M2b), split at

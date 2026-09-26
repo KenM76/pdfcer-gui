@@ -1,10 +1,10 @@
-//! # `canvas::cursor` — pdfcer's own crosshair, because the platform's is invisible
+//! # `cursor` — pdfcer's own crosshair, because the platform's is invisible
 //!
 //!
 //! > *"The crosshairs when over the canvas are white making it hard to see
 //! > them."*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/cursor.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/cursor.md`.
 
 use std::sync::{Arc, Mutex, OnceLock};
 
@@ -412,7 +412,7 @@ pub fn apply(ctx: &egui::Context, wanted: Option<Shape>) {
         // not collide with it.
         (size * 512 + u32::from(shape.degrees()) * 2) + u32::from(matches!(shape, Shape::Ibeam(_)))
     } else {
-        // Deliberately does NOT clear: `crate::app::frame` has already done it
+        // Deliberately does NOT clear: `pdfcer_gui::app::frame` has already done it
         // for this frame, before anything drew. Clearing again here would be a
         // second owner of the same state, and the frame-level one is the only
         // one that covers a frame this function never reaches.

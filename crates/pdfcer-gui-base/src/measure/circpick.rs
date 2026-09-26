@@ -1,4 +1,4 @@
-//! # `canvas::measure::circpick` — the radius/diameter tool's point set
+//! # `measure::circpick` — the radius/diameter tool's point set
 //!
 //!
 //! ## What makes this a different subject from the picks beside it
@@ -26,7 +26,7 @@
 //! computes a centre, a radius or a residual. What it owns is *composition*:
 //! which points are in the set and how they get in and out.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/measure/circpick.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/measure/circpick.md`.
 
 use pdfcer_core::dimension::{DimensionKind, FitCircle, fit_circle_taubin};
 use pdfcer_core::vector::Point;

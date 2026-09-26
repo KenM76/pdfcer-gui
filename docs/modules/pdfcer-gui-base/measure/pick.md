@@ -1,4 +1,4 @@
-# `canvas::measure::pick` — the measure tools' pick state machines
+# `measure::pick` — the measure tools' pick state machines
 
 The **pure, GUI-free authoring-state logic** the three measure tools drive
 on the canvas (decision 011 §2.3/§2.4): the pick state machines and the

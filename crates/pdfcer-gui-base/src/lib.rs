@@ -162,3 +162,9 @@ pub mod dialoghost;
 
 /// Which parts of a rendered print sheet actually carry ink.
 pub mod printink;
+
+/// pdfcer's own crosshair and I-beam cursors, supplied to the OS.
+pub mod cursor;
+
+/// The measure tools' pick state machines and scale entry.
+pub mod measure;

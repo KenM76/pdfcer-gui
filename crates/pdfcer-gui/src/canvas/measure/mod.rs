@@ -29,15 +29,7 @@ pub(in crate::canvas) use resolve::{Resolved, resolve_hover, snap_point};
 /// (click the first vertex to close the ring). Its header says why.
 pub mod perimeter;
 
-/// `pub` rather than `pub(super)` because `crate::text` names
-/// [`circpick::PickOrigin`], which this module re-exports through [`pick`].
-pub mod pick;
-
-/// The radius/diameter tool's point set — split out of [`pick`] under R2.
-/// Its header carries the seam; [`pick`] re-exports its types so
-/// every existing `pick::CircularPick` path still resolves.
-pub mod circpick;
-pub mod scale;
+pub use pdfcer_gui_base::measure::{circpick, pick, scale};
 pub mod state;
 
 /// **Which dimensioning tool is armed.**

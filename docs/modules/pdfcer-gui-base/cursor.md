@@ -1,4 +1,4 @@
-# `canvas::cursor` — pdfcer's own crosshair, because the platform's is invisible
+# `cursor` — pdfcer's own crosshair, because the platform's is invisible
 
 
 > *"The crosshairs when over the canvas are white making it hard to see
