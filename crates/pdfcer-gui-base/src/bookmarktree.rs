@@ -1,7 +1,7 @@
-//! # `panels::bookmarks::tree` — the two questions this panel asks of an
+//! # `bookmarktree` — the two questions this panel asks of an
 //! outline, in the one place they can be tested
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/panels/bookmarks/tree.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/bookmarktree.md`.
 
 use pdfcer_core::object::ObjId;
 use pdfcer_core::outline::OutlineItem;

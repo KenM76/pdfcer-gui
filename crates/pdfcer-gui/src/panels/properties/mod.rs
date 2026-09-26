@@ -64,7 +64,7 @@ pub mod refusedchar;
 /// One text run's width, typed in points (`G038`).
 mod runwidth;
 
-pub mod swatch;
+pub use pdfcer_gui_base::swatch;
 /// The **selected text's** face, size, weight and colour — O37's Font
 /// controls, built panel-first as §5.8 says to.
 pub mod text;

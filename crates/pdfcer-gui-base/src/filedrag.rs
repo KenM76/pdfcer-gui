@@ -1,4 +1,4 @@
-//! # `app::filedrag` — **where on the window a file was dropped**
+//! # `filedrag` — **where on the window a file was dropped**
 //!
 //! ## What this closes
 //!
@@ -6,7 +6,7 @@
 //! > *"I should be able to drag and drop documents into the thumbnails section
 //! > of another pdf to import the pages."*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/filedrag.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/filedrag.md`.
 
 use std::path::PathBuf;
 
@@ -153,8 +153,10 @@ pub fn unclaimed(ctx: &egui::Context) -> Option<Landed> {
     claim(ctx)
 }
 
-/// **Plant a landing**, for the tests of a surface that claims one.
-#[cfg(test)]
+/// **Plant a landing**, for the tests of a surface that claims one. Not
+/// `#[cfg(test)]`: those tests live in `pdfcer-gui`, where this crate's
+/// test configuration does not reach.
+#[doc(hidden)]
 pub fn test_land(ctx: &egui::Context, landing: Landed) {
     ctx.data_mut(|d| d.insert_temp(id(LANDED_KEY), landing));
 }

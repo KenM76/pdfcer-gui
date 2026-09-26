@@ -1,17 +1,17 @@
-//! # `panels::properties::swatch` — one colour control, three honest states
+//! # `swatch` — one colour control, three honest states
 //!
 //! `OPERATOR_REQUESTS.md` **O89**, both pieces. It is the widget behind the
 //! clicked-text colour ([`super::textobject`]) and behind the multi-object
 //! fill/line colour ([`super::paint`]), and it exists because those two
 //! surfaces have to answer the same three questions the same way:
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/panels/properties/swatch.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/swatch.md`.
 
 use egui::Ui;
 
 /// What the selection says its colour is.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum Value {
+pub enum Value {
     /// Every member of the selection is this colour.
     Agreed([u8; 3]),
     /// The members disagree. The control still applies to all of them.
@@ -36,7 +36,7 @@ const ASPECT: f32 = 1.7;
 
 /// One frame of the control. `Some(rgb)` **only** on the frame the picker
 /// closed after the operator changed it.
-pub(super) fn show(
+pub fn show(
     ui: &mut Ui,
     id_salt: &str,
     value: Value,
@@ -141,7 +141,7 @@ pub(super) fn show(
 
 /// What one `/MK` colour key says, as far as a swatch is concerned.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) enum MkValue<'a> {
+pub enum MkValue<'a> {
     /// A colour the swatch draws exactly.
     Shown([u8; 3]),
     /// No colour this control can draw. `mark` is what the button reads
@@ -158,7 +158,7 @@ pub(crate) enum MkValue<'a> {
 
 /// What the operator chose. Returned **once**, on the frame the gesture ended.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum MkPick {
+pub enum MkPick {
     /// A colour, from the picker, on the frame it closed.
     Colour([u8; 3]),
     /// Table 189's empty array — *this widget has no such colour*, stated
@@ -175,7 +175,7 @@ pub(crate) enum MkPick {
 
 /// One `/MK` colour control's inputs, bundled because there are four and the
 /// two strings would otherwise be positional.
-pub(crate) struct MkControl<'a> {
+pub struct MkControl<'a> {
     /// What the widget's key currently says.
     pub value: MkValue<'a>,
     /// The entries above the picker, in the order they are drawn.
@@ -202,7 +202,7 @@ pub(crate) struct MkControl<'a> {
 
 /// One entry above the picker — a discrete state the key can be put into
 /// that is not a colour the picker can express.
-pub(crate) struct MkEntry<'a> {
+pub struct MkEntry<'a> {
     /// What pressing it commits. Never [`MkPick::Colour`]: a colour comes from
     /// the picker, and an entry claiming to return one would give the same
     /// outcome two routes that commit on different edges.
@@ -222,7 +222,7 @@ pub(crate) struct MkEntry<'a> {
 }
 
 /// One frame of a `/MK` colour control.
-pub(crate) fn show_mk(
+pub fn show_mk(
     ui: &mut Ui,
     id_salt: &str,
     control: &MkControl<'_>,

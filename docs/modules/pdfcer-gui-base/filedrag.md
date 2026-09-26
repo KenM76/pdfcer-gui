@@ -1,4 +1,4 @@
-# `app::filedrag` — **where on the window a file was dropped**
+# `filedrag` — **where on the window a file was dropped**
 
 ## What this closes
 

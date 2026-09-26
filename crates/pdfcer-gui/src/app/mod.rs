@@ -33,7 +33,7 @@ pub mod dispatch;
 /// accept drops, which is a conclusion they will not revisit.
 pub mod dropped;
 /// **Where on the window a file was dropped**, which the toolkit discards.
-pub mod filedrag;
+pub use pdfcer_gui_base::filedrag;
 pub mod files;
 /// The three Format ▸ Font controls the ribbon cannot draw itself — a face
 /// chooser, a size field and a colour swatch. See its header for why the
@@ -93,7 +93,7 @@ pub mod prefs;
 pub mod quitting;
 /// The left rail — the permanent strip down the left dock's outer edge.
 /// `OPERATOR_REQUESTS.md` O123 part 7.
-pub mod rail;
+pub use pdfcer_gui_base::rail;
 /// The shell's OWN preferences — how pdfcer draws, as distinct from how it
 /// reads and writes PDFs.
 pub mod reachout;

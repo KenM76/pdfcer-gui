@@ -1,4 +1,4 @@
-# `panels::properties::dimension::tolerance` — the seven forms, and the two
+# `tolerance` — the seven forms, and the two
 things a panel must not do with them
 
 ## What a tolerance is, in this model

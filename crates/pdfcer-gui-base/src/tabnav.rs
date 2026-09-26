@@ -1,8 +1,8 @@
-//! # `canvas::tabnav` — Tab moves through what the operator clicked on
+//! # `tabnav` — Tab moves through what the operator clicked on
 //!
 //! `OPERATOR_REQUESTS.md` O204:
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/tabnav.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/tabnav.md`.
 
 use egui::Id;
 

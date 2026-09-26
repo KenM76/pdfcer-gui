@@ -1,4 +1,4 @@
-# `panels::properties::swatch` — one colour control, three honest states
+# `swatch` — one colour control, three honest states
 
 `OPERATOR_REQUESTS.md` **O89**, both pieces. It is the widget behind the
 clicked-text colour ([`super::textobject`]) and behind the multi-object

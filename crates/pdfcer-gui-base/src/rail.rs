@@ -1,10 +1,10 @@
-//! # `app::rail` — drawing the left rail
+//! # `rail` — drawing the left rail
 //!
 //! `OPERATOR_REQUESTS.md` **O123** part 7 and **O126**'s addendum. The
 //! permanent vertical strip down the left dock's outer edge: the panel tabs,
 //! the navigate selectors, the selection controls, rotate.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/rail.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/rail.md`.
 
 use egui::{Align, Layout, Sense, Vec2};
 use egui_shell::commands::{Command, CommandRegistry, ConditionSet, HandlerToken};

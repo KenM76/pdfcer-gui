@@ -1,4 +1,4 @@
-# `panels::bookmarks::tree` — the two questions this panel asks of an
+# `bookmarktree` — the two questions this panel asks of an
 outline, in the one place they can be tested
 
 

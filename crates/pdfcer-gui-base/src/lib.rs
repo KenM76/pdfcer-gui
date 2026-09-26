@@ -177,3 +177,21 @@ pub mod fontsearch;
 
 /// The planned, directed and tab-scoped command lists the manifest checks against.
 pub mod commandregisters;
+
+/// One colour control with three honest states: set, mixed, and none.
+pub mod swatch;
+
+/// The seven tolerance forms of a ce dimension and their editors.
+pub mod tolerance;
+
+/// The two questions the bookmarks panel asks of an outline tree.
+pub mod bookmarktree;
+
+/// Drawing the left rail.
+pub mod rail;
+
+/// Where on the window a file was dropped.
+pub mod filedrag;
+
+/// Tab moves through what the operator clicked on.
+pub mod tabnav;

@@ -23,7 +23,7 @@ pub mod reorder;
 /// The two questions this panel asks of an outline - *where is this id?* and
 /// *how many bookmarks are under this one?* - in the one place they can be
 /// tested.
-pub mod tree;
+pub use pdfcer_gui_base::bookmarktree as tree;
 
 /// The panel's state, between frames.
 #[derive(Default)]

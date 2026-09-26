@@ -291,7 +291,7 @@ pub mod strip;
 /// ribbon** — `OPERATOR_REQUESTS.md` O204. The seam that takes the press
 /// off `egui` before its focus walk latches, and the pure ring step both
 /// canvas rings share. Its header carries why no other seam can work.
-pub mod tabnav;
+pub use pdfcer_gui_base::tabnav;
 pub mod target;
 pub mod tier;
 // Selecting TEXT on the page, and copying it: the mode gate that needs no

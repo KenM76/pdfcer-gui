@@ -1,4 +1,4 @@
-# `canvas::tabnav` — Tab moves through what the operator clicked on
+# `tabnav` — Tab moves through what the operator clicked on
 
 `OPERATOR_REQUESTS.md` O204:
 

@@ -1,7 +1,7 @@
-//! # `panels::properties::dimension::tolerance` — the seven forms, and the two
+//! # `tolerance` — the seven forms, and the two
 //! things a panel must not do with them
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/panels/properties/dimension/tolerance.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/tolerance.md`.
 
 use egui::Ui;
 use pdfcer_core::dimension::{Tolerance, Unit};
