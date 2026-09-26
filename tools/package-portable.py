@@ -348,7 +348,7 @@ PAYLOAD_DOCS = [
 #: `tools/gates/check-shipped-assets.py` cross-checks this list against its own
 #: register of redistributed engine assets, so this line cannot exist alone:
 #: the gate fails until `about.hbs` (the notice that ships) and
-#: `crates/pdfcer-gui/src/text/about.rs` (the About dialog) both carry the
+#: `crates/pdfcer-gui-base/src/text/about.rs` (the About dialog) both carry the
 #: attribution, and it fails in the other direction too if the source
 #: directory ever disappears from the engine tree. Without this list the copy
 #: would have arrived as an inline `shutil.copytree` somewhere in `main`,

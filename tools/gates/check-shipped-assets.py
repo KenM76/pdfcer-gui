@@ -56,7 +56,7 @@ For every asset directory this workspace redistributes — its own, under
    covers the whole directory.
 4. The directory is cited in **`about.hbs`**, the `cargo-about` template.
 5. PORT CHANGE — the directory is also cited in
-   **`crates/pdfcer-gui/src/text/about.rs`**, the in-application surface.
+   **`crates/pdfcer-gui-base/src/text/about.rs`**, the in-application surface.
 
 Checks 4 and 5 are the ones that reach the OPERATOR rather than the
 repository. `PROVENANCE.md` records terms for whoever reads the source tree;
@@ -213,7 +213,7 @@ _NOTICE = "THIRD_PARTY_LICENSES.md"
 #: above the entry that covers it. The path is deliberately NOT required to be
 #: in operator-visible copy: an end user does not want a source path, and
 #: forcing one into a label would make the dialog worse to satisfy a gate.
-_IN_APP_SURFACE = "crates/pdfcer-gui/src/text/about.rs"
+_IN_APP_SURFACE = "crates/pdfcer-gui-base/src/text/about.rs"
 
 #: Marks the start of `about.hbs`'s literal epilogue. Everything from here to
 #: end of file must appear verbatim in the generated notice — see check 7.

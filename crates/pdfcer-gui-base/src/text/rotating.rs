@@ -1,0 +1,235 @@
+//! # `text::rotating` — every sentence the ninth handle shows
+//!
+//! Five refusals and two disclosures, for `pdfcer_gui::canvas::rotating` and
+//! `pdfcer_gui::app::actions::annots`. The sibling of [`crate::text::resizing`],
+//! written the day `pdfcer-core` `Pass 155.0` and `Pass 159.0` gave this shell a
+//! rotation for the annotation family and for ce dimensions.
+//!
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/rotating.md`.
+
+use pdfcer_core::edit::RectDerivation;
+
+/// **Why a rotation did not happen**, in the shell's own reading of the cases.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RotateRefusal {
+    /// The engine refused by name and pointed at a different verb — a widget,
+    /// or a ce dimension handed to the annotation rotation.
+    ///
+    /// `EditError::AnnotationMoveWrongVerb`. See the enum docs: unreachable
+    /// while the routing holds, and the sentence is what makes a break in it
+    /// visible.
+    WrongVerb,
+    /// The document is **certified**, and its permissions forbid a change of
+    /// this kind.
+    ///
+    /// `EditError::CertificationForbidsChange`. The one variant here that is
+    /// genuinely reachable on an ordinary file, and the one an operator has no
+    /// way to guess at: a signed drawing looks exactly like an unsigned one on
+    /// the canvas.
+    Certified,
+    /// The selected ce dimension has **no record in the document's measurement
+    /// sidecar** that this shell could resolve.
+    ///
+    /// Shell-side, raised by `canvas::rotating` before any verb is called.
+    /// `rotate_dimension` addresses the sidecar record rather than the
+    /// annotation, so without one there is nothing to turn.
+    NoDimensionRecord,
+    /// The drag reached the **page-content** rotation and the selection names
+    /// no page object on this page.
+    ///
+    ///
+    /// It is reachable, and by an ordinary route rather than a routing bug:
+    /// `SelectionState::object_indices_on` keeps entries carrying a
+    /// `page_object_index` and drops the ones carrying only a `leaf_index`, so
+    /// an operator who has clicked **into** a form XObject has an outline, a
+    /// grip box, a painted rotate handle — and nothing this verb can address.
+    /// That is the *"you selected something this verb cannot reach"* half of
+    /// the distinction `SelectionState::leaf_indices_on` exists to let a caller
+    /// word, and it is why the sentence below does not say "select something":
+    /// they did.
+    NothingSelected,
+    /// Anything else the engine declined.
+    ///
+    /// A catch-all with a **hand-written** sentence, not a rendered error.
+    /// `TextStyleRefusal::Other` sets the precedent and the reasoning is the
+    /// same: wording a decline is catalog work per refusal, and the honest
+    /// fallback is a sentence that says *nothing changed and Ctrl+Z has nothing
+    /// to take back* rather than one that guesses at a cause.
+    Other,
+}
+
+impl RotateRefusal {
+    /// The sentence.
+    #[must_use]
+    pub const fn line(self) -> &'static str {
+        match self {
+            // It names what the operator can see — a form field, a dimension
+            // — rather than "the wrong verb", which is a fact about this
+            // program's internals and would read as an internal error. The
+            // second clause is the actionable half: nothing was changed, so
+            // there is nothing to undo and nothing to repair.
+            Self::WrongVerb => {
+                "pdfcer cannot turn that kind of item, and it changed nothing rather than turn part of it. Form fields and dimensions each need their own tool."
+            }
+            // "Signed", not "certified": the operator's word for what
+            // happened to the file is that somebody signed it. And it says the
+            // limit is the DOCUMENT's rather than pdfcer's, because an operator
+            // told only "cannot" will look for a setting to change.
+            Self::Certified => {
+                "This document has been signed, and the signature does not allow it to be changed this way. pdfcer turned nothing."
+            }
+            // It says the dimension is still usable, because the alternative
+            // reading — "this dimension is broken" — would send somebody to
+            // delete and redraw a perfectly good measurement.
+            Self::NoDimensionRecord => {
+                "pdfcer could not find the measurement behind this dimension, so it turned nothing. The dimension itself is unchanged and still measures what it did."
+            }
+            // It does NOT say "select something first" — the resize
+            // catalogue's wording for its own `NothingSelected`, and wrong
+            // here. This fires when something IS selected: an operator who has
+            // clicked into a form XObject is holding a piece of one, and being
+            // told to select something would send them to do again the thing
+            // they just did. What it names instead is the remedy — step back
+            // out to the whole shape, which is the rung this verb can address.
+            Self::NothingSelected => {
+                "pdfcer turns whole shapes, and what is selected here is a piece of one. Press Escape to select the whole shape, then drag the round handle again."
+            }
+            // No cause named, because none is known. What it does say is the
+            // one thing the operator needs: the page is exactly as it was.
+            Self::Other => {
+                "pdfcer could not turn that, and it changed nothing — the page is exactly as it was, and there is nothing to undo."
+            }
+        }
+    }
+}
+
+//
+// It read:
+//
+// > *"The dashed box around this mark is now larger, because a box that is
+// > square to the page has to be bigger to hold something turned at an angle.
+// > The mark itself is exactly the size it was."*
+//
+// Every word of that was true while **this shell drew its selection outline
+// from `/Rect`**. §12.5.2 requires that rectangle upright, so a turned mark
+// was boxed rather than described, and the operator watched a dashed box swell
+// around artwork that had not changed size. Rule 4's surviving half applied
+// exactly — a consequence the operator can see and cannot explain owes an
+// off-canvas report — and this was that report.
+//
+// **`canvas::annotquad` removed the subject.** The outline is now drawn at the
+// mark's own angle (`OPERATOR_REQUESTS.md` O147), hugging the artwork, so
+// there is no swelling box and nothing to explain. A status row still saying
+// *"the dashed box is now larger"* would describe something that does not
+// happen, which is worse than saying nothing: it teaches an operator to worry
+// about a thing that is right, and the next time he sees a box that really is
+// wrong he will have been trained to ignore it.
+//
+// ⚠ **Do not restore it for O145.** A mark rotated twice really does get
+// bigger — *the ink, not the box* — and that is an engine defect
+// (`request_rotate_annotation_grows_the_artwork_when_applied_twice.md`,
+// reproduced in `tests/annotation_rotation_grows.rs`), not a consequence to be
+// disclosed. Disclosing a defect as though it were correct behaviour is how
+// this project's predecessor accumulated its red flags.
+//
+// ⇒ The general rule, and it is why this comment is kept rather than the code:
+// **a disclosure has a subject, and when the subject goes the disclosure is a
+// lie with a citation attached.** Deleting one is as much a part of the work
+// as writing one.
+
+/// **Disclosure: this mark has nowhere to record an orientation, so its box —
+/// and its ink — really does get bigger every time it is turned.**
+///
+/// # This replaces `rect_grew`, and it is a much better sentence
+///
+/// The deleted one fired on **every** turn of **everything** that was not a
+/// quarter turn, and said the box had grown while the mark had not. It was
+/// correct while this shell drew its outline from `/Rect`; it stopped being
+/// correct the moment the outline started following the artwork, and it was
+/// deleted the same day.
+///
+/// Then `pdfcer-core` `Pass 155.1` fixed the growth itself — `/Rect` is derived
+/// from the artwork now, so *N* turns totalling θ draw the same size as one
+/// turn of θ — **except in one case that cannot be fixed by anybody**, and this
+/// sentence is for exactly that case.
+///
+/// # The case, and why no rule can do better
+///
+/// [`RectDerivation::PreviousRect`]: an annotation with **neither** an
+/// appearance stream **nor** rotatable geometry. A `/Square` or `/Circle` with
+/// no `/AP` is the example. Its artwork *is* its rectangle, §12.5.2 requires
+/// that rectangle upright, and so **there is nowhere in the annotation an
+/// orientation could be recorded**. Turning it can only bound the previous
+/// bound, which compounds. The engine says so in as many words and warns that a
+/// grip ignoring this *"re-introduces the operator's bug one level up, on
+/// exactly the annotations that cannot be fixed."*
+///
+/// # Why it discloses rather than refusing
+///
+/// Because the turn is real and the operator asked for it, and a mark that
+/// silently declines to rotate is worse than one that rotates and says what it
+/// cost. The two honest options the engine names are *refuse the grip and say
+/// why* or *bake an appearance first*; this shell takes neither yet and says
+/// so, which is a decision rather than an oversight. Baking an appearance is
+/// the better answer and is owed.
+///
+/// `None` for the two rules that compose, which is the whole point of taking
+/// the enum rather than comparing rectangles: a sentence that fired on every
+/// rotation is a sentence nobody reads by the third time, and the previous one
+/// did exactly that.
+#[must_use]
+pub fn rect_still_grows(rule: RectDerivation) -> Option<String> {
+    matches!(rule, RectDerivation::PreviousRect).then(|| {
+        "This shape carries no drawn artwork of its own, only a box — so pdfcer has nowhere to \
+         record the angle, and turning it again will make it bigger each time. Turning it once \
+         is exact. Undo returns it to the size it was."
+            .to_owned()
+    })
+}
+
+/// **Disclosure: a dimension that was locked to horizontal or vertical is no
+/// longer locked.**
+#[must_use]
+pub fn axis_lock_relaxed() -> String {
+    "This dimension was locked to run straight across or straight up, and turning it means it no \
+     longer can — it now follows the two points you picked. What it measures has not changed."
+        .to_owned()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    //
+    // `a_quarter_turn_discloses_nothing` and `a_grown_box_discloses_on_either_axis`
+    // both asserted on `rect_grew`, which is gone: the selection outline is now
+    // drawn at the mark's own angle, so no box swells and there is nothing to
+    // disclose. The account is at the deleted function's site above.
+    //
+    // ⇒ They are named here rather than silently removed because a test that
+    // vanishes from a file looks like coverage that was never written. These
+    // two were correct, they passed, and their subject stopped existing —
+    // which is a different thing from a gap.
+
+    /// Every refusal has a sentence, and none of them is empty.
+    ///
+    /// The check that a variant added later cannot ship silent — the whole
+    /// failure this enum exists to prevent, applied to the enum itself.
+    #[test]
+    fn every_refusal_is_a_sentence() {
+        for why in [
+            RotateRefusal::WrongVerb,
+            RotateRefusal::Certified,
+            RotateRefusal::NoDimensionRecord,
+            RotateRefusal::NothingSelected,
+            RotateRefusal::Other,
+        ] {
+            let line = why.line();
+            assert!(!line.is_empty(), "{why:?} has no sentence");
+            assert!(
+                line.ends_with('.'),
+                "{why:?} is not a sentence — the founding rule is that a refusal IS one"
+            );
+        }
+    }
+}
