@@ -42,21 +42,7 @@ use pdfcer_core::page_tree::Page;
 
 use crate::canvas::mapping::{annot_canvas_rect, oriented_canvas_quad};
 
-/// Which family an annotation belongs to, and therefore **which verb may
-/// restyle it**.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum AnnotKind {
-    /// Ordinary markup — a shape, a note, a stamp, a text markup.
-    /// `EditSession::set_markup_style` is its verb.
-    Markup,
-    /// A **ce dimension**: a `/Line` carrying `/IT /LineDimension` and a record
-    /// in the document's `/PieceInfo` sidecar.
-    ///
-    /// `set_dimension_style` is its verb. Handing one to `set_markup_style`
-    /// regenerates it as a bare line and loses its label and witness lines,
-    /// which is why the engine refuses that by name.
-    CeDimension,
-}
+pub use pdfcer_gui_base::annotkind::AnnotKind;
 
 /// One annotation, addressed the way the engine addresses it.
 #[derive(Debug, Clone, PartialEq, Eq)]

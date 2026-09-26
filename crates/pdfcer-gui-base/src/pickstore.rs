@@ -1,16 +1,16 @@
-//! # `app::pickstore` — the selection filter, on disk
+//! # `pickstore` — the selection filter, on disk
 //!
-//! One question, answered the way [`crate::app::persistence`] answers it for
+//! One question, answered the way `pdfcer_gui::app::persistence` answers it for
 //! the dock layout: *where does the operator's selection filter live, and when
 //! is it written?*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/pickstore.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/pickstore.md`.
 
 use std::path::{Path, PathBuf};
 
 use pdfcer_core::settings;
 
-use crate::canvas::pick::PickFilter;
+use crate::pick::PickFilter;
 
 /// The file the filter is written to, beside `settings.txt` and `layout.ron`.
 pub const FILTER_FILE: &str = "select-filter.txt"; // ui-text-exempt: a file name, never displayed as copy
@@ -54,7 +54,7 @@ pub fn load_from(path: &Path) -> PickFilter {
                     // ui-text-exempt: diagnostic trace, never displayed.
                     "pick-filter-load path={path:?} classes={} of {} empty={}",
                     filter.count(),
-                    crate::canvas::pick::PickClass::COUNT,
+                    crate::pick::PickClass::COUNT,
                     filter.is_none(),
                 )
             });
@@ -105,7 +105,7 @@ pub fn save_to(path: &Path, filter: PickFilter) -> std::io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::canvas::pick::PickClass;
+    use crate::pick::PickClass;
 
     /// A scratch directory that cleans itself up.
     fn scratch(name: &str) -> PathBuf {

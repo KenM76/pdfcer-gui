@@ -1,4 +1,4 @@
-# `pdfcer-gui/text/resizing`
+# `text::resizing`
 
 ## Item notes
 

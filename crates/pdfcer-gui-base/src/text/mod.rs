@@ -245,15 +245,33 @@ pub mod redactremoved;
 /// The three sentences a held Shift puts on the status row while it is
 /// constraining a drag. Consumed by `crate::canvas::constrain::caption`.
 pub mod constrain;
+/// **The three sentences a Delete that removed nothing shows** — for
+/// `crate::canvas::deleting`, the module that routes a Delete to the verb for
+/// the rung the operator is on.
+pub mod deleting;
 pub mod embed;
+/// The FORM-FIELD clipboard's sentences — five refusals and the paste's
+/// off-canvas loss note. Separate from [`clipboard`] because the loss note is
+/// not a refusal: the paste worked, and the sentence exists because part of the
+/// field could not travel and the operator cannot see which part.
+pub mod fieldclip;
 /// What the font-donor scan says when it skips a file — five sentences, all
 /// about something that did not happen. See its header for why a skip is worth
 /// a sentence.
 pub mod fonts;
+/// Every word the **selection filter** says — the status-bar control, the
+/// eleven class rows, and the standing line that appears when nothing at all
+/// is selectable. Consumed by `crate::app::status` and driven by
+/// `crate::canvas::pick`.
+pub mod pick;
 /// The sentence a document that reaches outside itself earns — a submit
 /// button, a launch action, a script that runs on open. Its header carries the
 /// two opposite ways to word it wrongly.
 pub mod reachout;
+/// Every word the redaction surface says — the marking panel, the apply
+/// report, the two acknowledgements, and the residual lines. Consumed by
+/// `crate::panels::redact` and `crate::dialogs::redact`.
+pub mod resizing;
 
 use std::path::Path;
 

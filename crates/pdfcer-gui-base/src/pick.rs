@@ -1,14 +1,14 @@
-//! # `canvas::pick` — WHAT a click is allowed to land on
+//! # `pick` — WHAT a click is allowed to land on
 //!
 //! ## The question this module answers, and the one it deliberately does not
 //!
 //! Every press on the page eventually asks two separate questions, and until
 //! this module existed the shell only had a vocabulary for the second:
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/canvas/pick.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/pick.md`.
 
-use crate::canvas::selection::AnnotKind;
-use crate::panels::objects::summary::ObjectKind;
+use crate::annotkind::AnnotKind;
+use crate::objectsummary::ObjectKind;
 
 /// One class of thing a click may be allowed to land on.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

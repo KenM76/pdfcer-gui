@@ -1012,7 +1012,7 @@ carried this one for the life of the selection model without noticing.
 
 ### D49 — OPEN: four Select-filter rows are inert, and their tooltips promise otherwise
 
-`PickFilter` (`crates/pdfcer-gui/src/canvas/pick.rs`) carries eleven classes and
+`PickFilter` (`crates/pdfcer-gui-base/src/pick.rs`) carries eleven classes and
 the popup writes all eleven. The pick path reads three:
 `crates/pdfcer-gui/src/canvas/input.rs:131` (`Part`), `:137` (`Node`) and `:218`
 (`filter.allows(class)`), where `class` comes from `PickClass::of_object`, which
@@ -1024,7 +1024,7 @@ filter at all, and `canvas::textsel` contains no `allows` call.
 
 Their tooltips say the opposite — *"Off: clicks pass through notes, shapes and
 stamps."*, *"Off: clicks pass through form fields, and none can be filled in."*
-(`crates/pdfcer-gui/src/text/pick.rs`). `PickClass::Link` is inert too and its
+(`crates/pdfcer-gui-base/src/text/pick.rs`). `PickClass::Link` is inert too and its
 tooltip **says so**, which is the shape the other four need until they are
 wired.
 

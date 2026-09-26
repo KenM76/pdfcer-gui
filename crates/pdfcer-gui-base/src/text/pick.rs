@@ -1,12 +1,12 @@
 //! # `text::pick` — every word the selection filter says
 //!
-//! The strings for [`crate::canvas::pick`] and for the status-bar popup that
+//! The strings for `pdfcer_gui::canvas::pick` and for the status-bar popup that
 //! drives it. That module's header carries the design and the invariants; this
 //! file carries the copy.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/text/pick.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/pick.md`.
 
-use crate::canvas::pick::PickClass;
+use crate::pick::PickClass;
 
 // ===========================================================================
 // Block A — the status-bar control itself

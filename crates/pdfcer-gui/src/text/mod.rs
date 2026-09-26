@@ -19,30 +19,16 @@ pub mod buttonaction;
 /// `crate::shell::commands`.
 /// The four sentences the object clipboard can say when it cannot act.
 pub mod clipboard;
-/// **The three sentences a Delete that removed nothing shows** — for
-/// `crate::canvas::deleting`, the module that routes a Delete to the verb for
-/// the rung the operator is on.
-pub mod deleting;
 /// Every word the Export-image window shows, and every sentence an image
 /// export owes afterwards. `OPERATOR_REQUESTS.md` O120.
 pub mod export_image;
 /// The SVG/EMF keep-text choice and what an export that kept text owes afterwards.
 pub mod export_keeptext;
-/// The FORM-FIELD clipboard's sentences — five refusals and the paste's
-/// off-canvas loss note. Separate from [`clipboard`] because the loss note is
-/// not a refusal: the paste worked, and the sentence exists because part of the
-/// field could not travel and the operator cannot see which part.
-pub mod fieldclip;
 /// Every string the Forms panel shows. Consumed by `crate::panels::forms`.
 pub mod formfield;
 /// Font-glyph coverage: *can the stack actually draw this character?*
 #[cfg(test)]
 pub mod glyphs;
-/// Every word the **selection filter** says — the status-bar control, the
-/// eleven class rows, and the standing line that appears when nothing at all
-/// is selectable. Consumed by `crate::app::status` and driven by
-/// `crate::canvas::pick`.
-pub mod pick;
 /// Every word the two Security controls that **write** protection into a file
 /// say — O119. The WRITE side; [`security`] is the READ side, and the two are
 /// separate modules because they make opposite kinds of claim. Nothing is
@@ -50,10 +36,6 @@ pub mod pick;
 /// wherever one fact serves both.
 pub mod protect;
 pub mod redact;
-/// Every word the redaction surface says — the marking panel, the apply
-/// report, the two acknowledgements, and the residual lines. Consumed by
-/// `crate::panels::redact` and `crate::dialogs::redact`.
-pub mod resizing;
 pub mod textannot;
 pub mod textedit;
 /// Every sentence the text-EDITING tool shows: the three refusals a caret can

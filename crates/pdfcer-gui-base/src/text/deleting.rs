@@ -1,11 +1,11 @@
 //! # `text::deleting` — the sentences a Delete that removed nothing shows
 //!
-//! Four of them, for [`crate::canvas::deleting`], plus the rule that decides
+//! Four of them, for `pdfcer_gui::canvas::deleting`, plus the rule that decides
 //! which refusals get one at all.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/text/deleting.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/deleting.md`.
 
-use crate::canvas::deleting::Refusal;
+use crate::refusals::delete::Refusal;
 
 /// The sentence for a refusal to delete, or `None` when the state is one the
 /// operator can already see.
@@ -84,7 +84,7 @@ pub const fn refusal(reason: Refusal) -> Option<&'static str> {
 #[cfg(test)]
 mod tests {
     use super::refusal;
-    use crate::canvas::deleting::Refusal;
+    use crate::refusals::delete::Refusal;
 
     /// Every sentence this catalogue offers is finished English prose.
     #[test]

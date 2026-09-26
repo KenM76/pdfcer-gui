@@ -1,6 +1,6 @@
 //! # `text::resizing` — every sentence the resize grips show
 //!
-//! Six refusals and one disclosure, for [`crate::canvas::resizing`].
+//! Six refusals and one disclosure, for `pdfcer_gui::canvas::resizing`.
 //!
 //! ## Why a refusal here is worth more than the feature it refuses
 //!
@@ -26,9 +26,9 @@
 //! a refusal phrased in the file format's vocabulary is a refusal that reads as
 //! an internal error.
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/text/resizing.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/resizing.md`.
 
-use crate::canvas::resizing::Refusal;
+use crate::refusals::resize::Refusal;
 
 /// The sentence for a refusal to resize.
 ///
@@ -134,26 +134,6 @@ mod tests {
     #[test]
     fn the_refusal_with_an_alternative_offers_it() {
         assert!(refusal(Refusal::NothingSelected).contains("Click"));
-    }
-
-    /// **Every refusal still standing describes a state the shell can
-    /// actually reach.**
-    #[test]
-    fn every_refusal_is_still_raised_somewhere() {
-        let src = include_str!("../canvas/resizing.rs");
-        for r in [
-            Refusal::NothingSelected,
-            Refusal::NoObjectModel,
-            Refusal::Degenerate,
-        ] {
-            let name = format!("{r:?}");
-            assert!(
-                src.contains(&format!("Refusal::{name}")),
-                "`{name}` has words and no call site — either it is dead and should go with its \
-                 sentence, or the code that raised it was deleted and an operator now gets \
-                 silence where they used to get an explanation"
-            );
-        }
     }
 
     /// The line-weight disclosure names both what happened and what it means.

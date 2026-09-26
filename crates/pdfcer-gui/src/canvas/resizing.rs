@@ -51,22 +51,7 @@ use crate::canvas::mapping::PageMapping;
 use crate::canvas::selection::SelectionState;
 use crate::panels::objects::provider::ObjectModelProvider;
 
-/// Why a resize could not be committed.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Refusal {
-    /// Nothing is selected, or the selection names no object on this page.
-    NothingSelected,
-    /// The object model could not be read, so nothing can be verified and
-    /// therefore nothing may be promised.
-    NoObjectModel,
-    /// The drag would collapse the selection to nothing on an axis, or invert
-    /// it.
-    ///
-    /// Refused rather than clamped: a zero or negative factor is a shape the
-    /// operator cannot have meant, and clamping would silently substitute a
-    /// different edit for the one they made.
-    Degenerate,
-}
+pub use pdfcer_gui_base::refusals::resize::Refusal;
 
 // THE PREFLIGHT IS NOT BUILT, AND THIS IS THE NOTE THAT SAYS SO.
 // `DEFECTS.md` D44.
@@ -568,6 +553,26 @@ fn scaled_about(bounds: Rect, pivot: Pos2, sx: f32, sy: f32) -> Rect {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// **Every refusal still standing describes a state the shell can
+    /// actually reach.**
+    #[test]
+    fn every_refusal_is_still_raised_somewhere() {
+        let src = include_str!("resizing.rs");
+        for r in [
+            Refusal::NothingSelected,
+            Refusal::NoObjectModel,
+            Refusal::Degenerate,
+        ] {
+            let name = format!("{r:?}");
+            assert!(
+                src.contains(&format!("Refusal::{name}")),
+                "`{name}` has words and no call site — either it is dead and should go with its \
+                 sentence, or the code that raised it was deleted and an operator now gets \
+                 silence where they used to get an explanation"
+            );
+        }
+    }
 
     /// A 100×50 screen box at the origin.
     fn box_100x50() -> egui::Rect {

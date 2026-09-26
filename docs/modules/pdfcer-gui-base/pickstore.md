@@ -1,4 +1,4 @@
-# `app::pickstore` — the selection filter, on disk
+# `pickstore` — the selection filter, on disk
 
 One question, answered the way [`crate::app::persistence`] answers it for
 the dock layout: *where does the operator's selection filter live, and when

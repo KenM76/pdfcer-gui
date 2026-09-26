@@ -8,9 +8,9 @@
 //! of which properties survive, because it rots silently every time we add an
 //! authoring key."*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/text/fieldclip.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/fieldclip.md`.
 
-use crate::canvas::fieldclip::Refusal;
+use crate::refusals::fieldclip::Refusal;
 
 /// The sentence for a refusal.
 #[must_use]

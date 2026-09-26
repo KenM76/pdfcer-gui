@@ -80,7 +80,7 @@ pub mod panels;
 pub use pdfcer_gui_base::dockpersist as persistence;
 /// The **selection filter**, on disk — where it lives, and why it is written
 /// immediately where the dock layout is debounced.
-pub mod pickstore;
+pub use pdfcer_gui_base::pickstore;
 
 pub mod prefs;
 /// The documents this operator had open: the capped, persisted list and the

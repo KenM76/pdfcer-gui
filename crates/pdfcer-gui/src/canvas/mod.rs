@@ -230,7 +230,7 @@ mod pagefocus;
 mod painting;
 /// **What a click is ALLOWED to land on** — the operator's selection
 /// filter, and the eleven classes it switches.
-pub mod pick;
+pub use pdfcer_gui_base::pick;
 pub mod resizing;
 pub mod rightclick;
 /// **The ninth grip** — the rotate handle above the selection box, and the

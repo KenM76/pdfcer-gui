@@ -1,4 +1,4 @@
-# `canvas::pick` — WHAT a click is allowed to land on
+# `pick` — WHAT a click is allowed to land on
 
 ## The question this module answers, and the one it deliberately does not
 

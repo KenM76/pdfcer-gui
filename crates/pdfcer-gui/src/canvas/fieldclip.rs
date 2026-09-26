@@ -22,28 +22,7 @@ pub enum PasteAs {
     Duplicate,
 }
 
-/// Why a field could not be copied, cut or pasted.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Refusal {
-    /// No form field is selected.
-    NothingSelected,
-    /// The selection names a field the document no longer has.
-    Vanished,
-    /// The widget has no `/Rect`, so there is no box to land the paste against.
-    NoGeometry,
-    /// The clipboard holds no form field.
-    NothingCopied,
-    /// **The engine declined, in its own words.**
-    ///
-    /// A `String` rather than a mirror of `EditError`'s taxonomy, for the
-    /// reason `canvas::clipboard::Refusal::EngineRefused`'s doc gives about the
-    /// same choice: a shell that modelled the engine's internals a second time
-    /// is decision 058's failure mode. The cases that actually arrive here —
-    /// `SignedFieldNotCopyable`, `FieldNameTaken`, `FieldNotFound`,
-    /// `RadioExportValueTaken`, and the encryption and certification guards —
-    /// each already carry a sentence written by the party that knows why.
-    EngineRefused(String),
-}
+pub use pdfcer_gui_base::refusals::fieldclip::Refusal;
 
 /// What the clipboard is holding when a form field was copied.
 #[derive(Debug, Clone, PartialEq)]

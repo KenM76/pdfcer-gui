@@ -327,3 +327,15 @@ pub mod fontlibrary;
 
 /// What Shift does to a drag, written down once.
 pub mod constrain;
+
+/// Which family an annotation belongs to.
+pub mod annotkind;
+
+/// What a click is allowed to land on.
+pub mod pick;
+
+/// Where the pick filter is kept between runs.
+pub mod pickstore;
+
+/// Why a canvas verb declined.
+pub mod refusals;
