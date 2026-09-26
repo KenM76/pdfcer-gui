@@ -1,4 +1,4 @@
-# `app::actions::exporttext` — the plan a text export is made of, and the
+# `exporttext` — the plan a text export is made of, and the
 pure parts of making one
 
 `file.export_text`, on the operator's ask:

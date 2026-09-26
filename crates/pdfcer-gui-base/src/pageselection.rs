@@ -132,3 +132,31 @@ impl PageSelection {
         self.anchor = self.anchor.and_then(|a| landed.get(a).copied());
     }
 }
+/// Parse `3`, `1-4`, `5,1-2` into zero-based indices.
+pub fn parse_page_range(spec: &str, count: usize) -> Option<Vec<usize>> {
+    let mut out = Vec::new();
+    for part in spec.split(',') {
+        let part = part.trim();
+        if part.is_empty() {
+            continue;
+        }
+        match part.split_once('-') {
+            Some((a, b)) => {
+                let a: usize = a.trim().parse().ok()?;
+                let b: usize = b.trim().parse().ok()?;
+                if a == 0 || b == 0 || a > b || b > count {
+                    return None;
+                }
+                out.extend((a - 1)..b);
+            }
+            None => {
+                let n: usize = part.parse().ok()?;
+                if n == 0 || n > count {
+                    return None;
+                }
+                out.push(n - 1);
+            }
+        }
+    }
+    (!out.is_empty()).then_some(out)
+}

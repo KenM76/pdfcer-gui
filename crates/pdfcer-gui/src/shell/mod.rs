@@ -11,7 +11,9 @@ pub mod menus;
 /// The optional capabilities every context menu is built with — an icon
 /// painter and a rect sink — kept apart from [`menus`] because both are
 /// properties of the build rather than of a frame. See its header.
-pub mod menus_wiring;
+pub use pdfcer_gui_base::menus_wiring;
+#[cfg(test)]
+mod menus_wiring_tests;
 pub mod ron;
 
 #[cfg(test)]

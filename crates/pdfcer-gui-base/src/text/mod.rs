@@ -250,6 +250,11 @@ pub mod constrain;
 /// the rung the operator is on.
 pub mod deleting;
 pub mod embed;
+/// Every word the Export-image window shows, and every sentence an image
+/// export owes afterwards. `OPERATOR_REQUESTS.md` O120.
+pub mod export_image;
+/// The SVG/EMF keep-text choice and what an export that kept text owes afterwards.
+pub mod export_keeptext;
 /// The FORM-FIELD clipboard's sentences — five refusals and the paste's
 /// off-canvas loss note. Separate from [`clipboard`] because the loss note is
 /// not a refusal: the paste worked, and the sentence exists because part of the

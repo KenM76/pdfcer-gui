@@ -7,7 +7,7 @@
 use pdfcer_render::emf::EmfTextOutcome;
 use pdfcer_render::svg::SvgTextOutcome;
 
-use crate::app::actions::imageexport::ImageFormat;
+use crate::imageexport::ImageFormat;
 
 /// The heading over the checkbox.
 #[must_use]

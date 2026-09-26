@@ -1,11 +1,11 @@
 //! # `text::export_image` — the words the Export-image window shows, and the
 //! sentences an image export owes afterwards
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/text/export_image.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/text/export_image.md`.
 
 use pdfcer_render::display_list::ExportTally;
 
-use crate::app::actions::imageexport::{EmfCounts, ImageFormat, Impossible};
+use crate::imageexport::{EmfCounts, ImageFormat, Impossible};
 
 // ===========================================================================
 // THE WINDOW

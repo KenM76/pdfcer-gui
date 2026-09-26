@@ -1,7 +1,7 @@
-//! # `app::actions::imageexport` — what an image export IS, decided before
+//! # `imageexport` — what an image export IS, decided before
 //! anything is written
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/actions/imageexport.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/imageexport.md`.
 
 use std::path::{Path, PathBuf};
 
@@ -280,8 +280,9 @@ pub fn resolve_pages(
                 Some((0..page_count).collect())
             }
         }
-        PageScope::Typed => crate::dialogs::print::tabs::parse_page_range(typed, page_count)
-            .filter(|p| !p.is_empty()),
+        PageScope::Typed => {
+            crate::pageselection::parse_page_range(typed, page_count).filter(|p| !p.is_empty())
+        }
     }
 }
 

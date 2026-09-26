@@ -1,4 +1,4 @@
-# `app::actions::imageexport` — what an image export IS, decided before
+# `imageexport` — what an image export IS, decided before
 anything is written
 
 ## Why this is a module and not four fields on a `WriteAction` variant

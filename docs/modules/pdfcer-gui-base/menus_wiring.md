@@ -1,4 +1,4 @@
-# `pdfcer-gui/shell/menus_wiring`
+# `pdfcer-gui-base/menus_wiring`
 
 **The optional capabilities pdfcer hands to every context menu**, and
 the account of why each one exists.

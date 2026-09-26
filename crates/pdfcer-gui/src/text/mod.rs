@@ -19,11 +19,6 @@ pub mod buttonaction;
 /// `crate::shell::commands`.
 /// The four sentences the object clipboard can say when it cannot act.
 pub mod clipboard;
-/// Every word the Export-image window shows, and every sentence an image
-/// export owes afterwards. `OPERATOR_REQUESTS.md` O120.
-pub mod export_image;
-/// The SVG/EMF keep-text choice and what an export that kept text owes afterwards.
-pub mod export_keeptext;
 /// Every string the Forms panel shows. Consumed by `crate::panels::forms`.
 pub mod formfield;
 /// Font-glyph coverage: *can the stack actually draw this character?*

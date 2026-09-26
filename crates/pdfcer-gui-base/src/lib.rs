@@ -339,3 +339,12 @@ pub mod pickstore;
 
 /// Why a canvas verb declined.
 pub mod refusals;
+
+/// Exporting pages as images: formats, resolution and page scope.
+pub mod imageexport;
+
+/// Exporting a document as plain text.
+pub mod exporttext;
+
+/// Attaching the context menus to the command registry.
+pub mod menus_wiring;

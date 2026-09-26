@@ -223,11 +223,11 @@ pub(crate) fn plant_edit_disclosure_for_test(disclosure: EditDisclosure) {
 /// whether transparency survives — decided as a value before anything is
 /// written, and with the one combination pdfcer refuses named as an enum rather
 /// than as a `bool`. `OPERATOR_REQUESTS.md` O120.
-pub mod imageexport;
+pub use pdfcer_gui_base::imageexport;
 
 /// **What a TEXT export is** — which pages, what goes between them, and how
 /// the bytes are encoded — plus the pure parts of making one.
-pub mod exporttext;
+pub use pdfcer_gui_base::exporttext;
 /// **A text file becomes pages** — `Action::ImportText`'s body, on
 /// `EditSession::place_text`. Mostly a disclosure: its header lists the
 /// judgements `PlaceTextReport` carries about the operator's own file, and why

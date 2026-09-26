@@ -1,7 +1,7 @@
-//! # `app::actions::exporttext` — the plan a text export is made of, and the
+//! # `exporttext` — the plan a text export is made of, and the
 //! pure parts of making one
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/app/actions/exporttext.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/exporttext.md`.
 
 use std::path::{Path, PathBuf};
 
