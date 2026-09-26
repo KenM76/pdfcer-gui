@@ -1,4 +1,4 @@
-# `render::strategy` — whole page, or just the window?
+# `rasterstrategy` — whole page, or just the window?
 
 `OPERATOR_REQUESTS.md` **O24**. One decision, made in one place, from
 numbers rather than from a mode flag: **at this zoom, on this page, do we

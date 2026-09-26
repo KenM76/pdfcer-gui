@@ -76,7 +76,20 @@ mod tests {
     // `ViewState` stays in the parent: it is the *state* the ladder is
     // applied to, not part of the ladder. One test drives a step through it
     // to check the clamp, which is the only coupling in either direction.
+    use crate::render::strategy::{Ink, Strategy, for_page};
     use crate::viewer::ViewState;
+
+    /// **The zoom the operator uses today does not change tiers.**
+    #[test]
+    fn every_zoom_the_shell_offers_today_still_rasterizes_the_whole_page() {
+        for zoom in ZOOM_LADDER {
+            assert_eq!(
+                for_page((1584.0, 1100.0), *zoom, Ink::Additive),
+                Strategy::WholePage,
+                "zoom {zoom} left the whole-page tier on an A1 sheet"
+            );
+        }
+    }
 
     #[test]
     fn ladder_is_ascending_and_contains_actual_size() {

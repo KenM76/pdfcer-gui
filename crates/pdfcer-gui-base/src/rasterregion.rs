@@ -1,10 +1,10 @@
-//! # `render::region` — turning "what is on screen" into "what to rasterize"
+//! # `rasterregion` — turning "what is on screen" into "what to rasterize"
 //!
 //!
 //! > *"I got a requested raster size 14580x18868 is empty or exceeds
 //! > MAX_PIXMAP_EDGE when I got to 2382% zoom."*
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/render/region.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/rasterregion.md`.
 
 use pdfcer_core::page_tree::{Page, Rect};
 
@@ -40,7 +40,7 @@ impl PageFrame {
     /// already applied — a 90-degree-rotated portrait page measures landscape.
     ///
     /// This is the size of the rectangle canvas space occupies, and it is the
-    /// value [`crate::viewer::page_extent_pts`] returns; that function
+    /// value `pdfcer_gui::viewer::page_extent_pts` returns; that function
     /// delegates here so the shell has exactly one definition of how big a
     /// page is.
     ///
@@ -181,7 +181,7 @@ impl PageFrame {
     /// The bounding box in **canvas space** of a rectangle given in PDF user
     /// space, as `(x0, y0, x1, y1)` with `x0 ≤ x1` and `y0 ≤ y1`.
     #[must_use]
-    pub(in crate::render) fn canvas_box_of(self, region: Rect) -> (f64, f64, f64, f64) {
+    pub fn canvas_box_of(self, region: Rect) -> (f64, f64, f64, f64) {
         let (ax, ay) = self.user_to_canvas(region.llx, region.lly);
         let (bx, by) = self.user_to_canvas(region.urx, region.ury);
         (ax.min(bx), ay.min(by), ax.max(bx), ay.max(by))
@@ -194,11 +194,11 @@ impl PageFrame {
 /// * `visible_canvas` — what the operator can see of this page, in canvas
 ///   points from the page's top-left, y-down, **with `/Rotate` already
 ///   resolved** (which is what canvas space means — see
-///   [`crate::viewer::page_extent_pts`]).
+///   `pdfcer_gui::viewer::page_extent_pts`).
 /// * `frame` — the page's crop box and rotation, which together say how canvas
 ///   space and PDF user space are related for *this* page.
 ///
-/// The rectangle is quantised by [`super::strategy::region_for`] first, so a
+/// The rectangle is quantised by [`crate::rasterstrategy::region_for`] first, so a
 /// small pan asks for the rectangle already rasterized — see that function for
 /// why that is the difference between panning smoothly and waiting for a redraw
 /// on every pixel of movement.
@@ -211,9 +211,9 @@ impl PageFrame {
 #[must_use]
 /// `visible_canvas` is `f64`: at deep zoom it holds a rectangle a few times
 /// 10⁻⁸ pt wide at an absolute position near 540, and `f32` cannot carry both
-/// magnitudes at once. See [`super::strategy::region_for`].
+/// magnitudes at once. See [`crate::rasterstrategy::region_for`].
 pub fn page_region(visible_canvas: (f64, f64, f64, f64), frame: PageFrame) -> Rect {
-    let (x0, y0, x1, y1) = super::strategy::region_for(visible_canvas);
+    let (x0, y0, x1, y1) = crate::rasterstrategy::region_for(visible_canvas);
     let (ax, ay) = frame.canvas_to_user(x0, y0);
     let (bx, by) = frame.canvas_to_user(x1, y1);
     // `from_corners` normalises, which is what turns the two mapped corners
@@ -284,12 +284,12 @@ pub fn region_on_screen(
 /// the same technique the engine's own deep-zoom commit describes as *"one
 /// subtraction moved into f64"*, and the same one [`DeepAnchor`] itself uses.
 ///
-/// [`DeepAnchor`]: crate::viewer::deep::DeepAnchor
+/// [`DeepAnchor`]: crate::deepanchor::DeepAnchor
 #[must_use]
 pub fn region_on_screen_deep(
     region: Rect,
     frame: PageFrame,
-    anchor: crate::viewer::deep::DeepAnchor,
+    anchor: crate::deepanchor::DeepAnchor,
     zoom: f64,
     viewport_origin: egui::Pos2,
 ) -> egui::Rect {
@@ -474,7 +474,7 @@ mod tests {
             // What `region_for` actually asked for, in canvas space — the
             // quantised rect, not the raw one, because that is what was
             // converted.
-            let (qx0, qy0, qx1, qy1) = super::super::strategy::region_for(visible);
+            let (qx0, qy0, qx1, qy1) = crate::rasterstrategy::region_for(visible);
 
             // Half a pixel. The engine floors and ceils its device corners
             // to whole pixels, so an exact conversion still lands within one;
@@ -524,7 +524,7 @@ mod tests {
                 (f64::from(on_screen.max.x) - f64::from(page_screen.min.x)) / sx,
                 (f64::from(on_screen.max.y) - f64::from(page_screen.min.y)) / sy,
             );
-            let wanted = super::super::strategy::region_for(visible);
+            let wanted = crate::rasterstrategy::region_for(visible);
             for (got, want) in [
                 (back.0, wanted.0),
                 (back.1, wanted.1),
@@ -696,7 +696,7 @@ mod tests {
             let region = page_region((300.0, 400.0, 300.1, 400.1), frame);
             let (cx0, cy0, _, _) = frame.canvas_box_of(region);
             for zoom in [1.0e6_f64, 1.0e8, 4.3e9, 1.0e11] {
-                let anchor = crate::viewer::deep::DeepAnchor {
+                let anchor = crate::deepanchor::DeepAnchor {
                     page: (cx0, cy0),
                     screen: (0.0, 0.0),
                 };

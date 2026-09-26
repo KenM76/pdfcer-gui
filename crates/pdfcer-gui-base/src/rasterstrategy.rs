@@ -1,10 +1,10 @@
-//! # `render::strategy` — whole page, or just the window?
+//! # `rasterstrategy` — whole page, or just the window?
 //!
 //! `OPERATOR_REQUESTS.md` **O24**. One decision, made in one place, from
 //! numbers rather than from a mode flag: **at this zoom, on this page, do we
 //! rasterize the whole sheet or only what is on screen?**
 //!
-//! Design and rationale: `docs/modules/pdfcer-gui/render/strategy.md`.
+//! Design and rationale: `docs/modules/pdfcer-gui-base/rasterstrategy.md`.
 
 /// How much extra to rasterize around the viewport, as a fraction of the
 /// viewport on **each** side.
@@ -163,7 +163,7 @@ pub fn overscanned(visible: (f64, f64, f64, f64)) -> (f64, f64, f64, f64) {
 /// > *"the canvas does a fading around the edges on stuff shown at the edges of
 /// > the view. I don't want this. it should render true."*
 ///
-/// He is describing [`crate::canvas::backdrop`]'s low-resolution whole-page
+/// He is describing `pdfcer_gui::canvas::backdrop`'s low-resolution whole-page
 /// texture showing along the edge of the window — a second, blurry rendering of
 /// content the sharp region raster ought to have covered. It is not a taste
 /// question and it is not a slow raster: rule 4's *"applied content renders
@@ -313,18 +313,6 @@ mod tests {
 
     /// The A1 sheet this project's benchmark and fixtures are built from.
     const A1_LONG_PT: f32 = 1584.0;
-
-    /// **The zoom the operator uses today does not change tiers.**
-    #[test]
-    fn every_zoom_the_shell_offers_today_still_rasterizes_the_whole_page() {
-        for zoom in crate::viewer::ZOOM_LADDER {
-            assert_eq!(
-                for_page((A1_LONG_PT, 1100.0), *zoom, Ink::Additive),
-                Strategy::WholePage,
-                "zoom {zoom} left the whole-page tier on an A1 sheet"
-            );
-        }
-    }
 
     /// …and the switch happens where the raster would actually fail, rather
     /// than at a number somebody chose.

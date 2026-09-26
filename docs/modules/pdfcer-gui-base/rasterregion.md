@@ -1,4 +1,4 @@
-# `render::region` — turning "what is on screen" into "what to rasterize"
+# `rasterregion` — turning "what is on screen" into "what to rasterize"
 
 
 > *"I got a requested raster size 14580x18868 is empty or exceeds

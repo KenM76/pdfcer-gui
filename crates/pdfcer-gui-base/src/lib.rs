@@ -47,6 +47,12 @@ pub mod pagetree;
 /// so zoom stops there instead of showing an error.
 pub mod rasterceiling;
 
+/// The window's rectangle in PDF user space: the region tier's one conversion.
+pub mod rasterregion;
+
+/// Whole page, or just the window: the tier decision, made from numbers.
+pub mod rasterstrategy;
+
 /// Rendered pixmaps into egui textures, and what each upload is a picture of.
 pub mod raster;
 
